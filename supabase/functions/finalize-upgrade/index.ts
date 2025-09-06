@@ -122,6 +122,25 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.retrieve(session_id);
     logStep('Retrieved checkout session', { sessionId: session.id, metadata: session.metadata });
 
+    // Extract session metadata parameters first
+    const targetPlanType = session.metadata?.target_plan_type || session.metadata?.plan_type;
+    const targetPlanName = session.metadata?.target_plan_name || session.metadata?.plan_name;
+    const targetPlanPrice = parseFloat(session.metadata?.target_plan_price || session.metadata?.price || '0');
+    const targetMonthlyLimit = parseInt(session.metadata?.target_monthly_limit || session.metadata?.monthly_limit || '0');
+    const upgradeTokens = parseInt(session.metadata?.upgrade_tokens || '0');
+    
+    // Get subscription ID from session or metadata
+    let subscriptionId = session.metadata?.subscription_id || session.subscription as string;
+    
+    logStep('Session parameters extracted', {
+      targetPlanType,
+      targetPlanName,
+      targetPlanPrice,
+      targetMonthlyLimit,
+      upgradeTokens,
+      subscriptionId
+    });
+
     // ENHANCED: Handle upgrades, downgrades, and fallback for first subscriptions
     const isUpgrade = session.metadata?.is_upgrade === 'true' || session.metadata?.action === 'upgrade';
     const isNewSubscription = session.metadata?.is_upgrade === 'false'; // Free Demo → paid plan
@@ -142,127 +161,31 @@ serve(async (req) => {
       logStep('Processing subscription operation (fallback detection)');
     }
 
-    // ENHANCED: Handle first subscription as fallback (when stripe-webhook fails)
-    if (isNewSubscription || hasSubscription) {
-      logStep('FALLBACK: Processing first subscription in finalize-upgrade', {
-        isNewSubscription,
-        hasSubscription,
-        metadata: session.metadata
-      });
-      
-      // For first subscriptions, ensure we add the subscription entry and tokens
-      // This serves as fallback when stripe-webhook doesn't fire properly
-      if (!subscriptionId && session.subscription) {
-        subscriptionId = session.subscription as string;
-        logStep('Using subscription ID from session for first subscription', { subscriptionId });
-      }
-      
-      // Force token addition for first subscriptions
-      if ((isNewSubscription || hasSubscription) && upgradeTokens > 0) {
-        logStep('FORCING token addition for first subscription fallback', { upgradeTokens });
-      }
-    }
-    
-    // If no subscription_id in metadata, get it from subscription (for new subscriptions)
-    if (!subscriptionId && session.subscription) {
-      subscriptionId = session.subscription as string;
-      logStep('Using subscription ID from session', { subscriptionId });
-    }
-
-    const targetPlanType = session.metadata?.target_plan_type || session.metadata?.plan_type;
-    const targetPlanName = session.metadata?.target_plan_name || session.metadata?.plan_name;
-    const targetPlanPrice = parseFloat(session.metadata?.target_plan_price || session.metadata?.price || '0');
-    const targetMonthlyLimit = parseInt(session.metadata?.target_monthly_limit || session.metadata?.monthly_limit || '0');
-    const upgradeTokens = parseInt(session.metadata?.upgrade_tokens || session.metadata?.upgrade_tokens || '0');
-
     if (!subscriptionId) {
-      logStep('Missing subscription ID in metadata');
-      throw new Error('No subscription ID found in session metadata');
+      logStep('Missing subscription ID in session');
+      throw new Error('No subscription ID found in session');
     }
 
-    logStep('Upgrade parameters', {
-      subscriptionId,
-      targetPlanType,
-      targetPlanName,
-      targetPlanPrice,
-      targetMonthlyLimit,
-      upgradeTokens
-    });
+    // Get user profile FIRST (needed for both upgrade and first subscription logic)
+    const { data: profile, error: profileError } = await supabaseService
+      .from('profiles')
+      .select('id, email, available_tokens, total_tokens_received, subscription_type')
+      .eq('id', user.id)
+      .single();
 
-    // Find or create stable price_id in Stripe
-    let targetPriceId: string;
-    
-    const prices = await stripe.prices.list({ 
-      limit: 100,
-      recurring: { interval: 'month' },
-      type: 'recurring'
-    });
-    
-    const existingPrice = prices.data.find(price => 
-      price.unit_amount === targetPlanPrice * 100 && 
-      price.currency === 'usd' &&
-      price.recurring?.interval === 'month'
-    );
-    
-    if (existingPrice) {
-      targetPriceId = existingPrice.id;
-      logStep('Using existing price', { priceId: targetPriceId, amount: existingPrice.unit_amount });
-    } else {
-      logStep('Creating new product and price');
-      
-      const product = await stripe.products.create({
-        name: targetPlanName,
-        description: `${targetMonthlyLimit} worksheets per month`,
-      });
-      
-      const price = await stripe.prices.create({
-        currency: 'usd',
-        product: product.id,
-        unit_amount: targetPlanPrice * 100,
-        recurring: {
-          interval: 'month',
-        },
-      });
-      
-      targetPriceId = price.id;
-      logStep('Created new price', { priceId: targetPriceId, productId: product.id });
+    if (profileError || !profile) {
+      logStep('ERROR: User profile not found', { userId: user.id, error: profileError });
+      throw new Error(`User profile not found`);
     }
 
-    // Update Stripe subscription
-    logStep('Updating Stripe subscription', { subscriptionId, newPriceId: targetPriceId });
-    
-    const currentSubscription = await stripe.subscriptions.retrieve(subscriptionId);
-    logStep('Current subscription retrieved', { 
-      id: currentSubscription.id,
-      status: currentSubscription.status,
-      currentPriceId: currentSubscription.items.data[0].price.id,
-      currentAmount: currentSubscription.items.data[0].price.unit_amount
+    logStep('Profile loaded', {
+      currentTokens: profile.available_tokens,
+      totalReceived: profile.total_tokens_received,
+      currentSubscription: profile.subscription_type
     });
 
-    // CRITICAL FIX: Set cancel_at_period_end to false to ensure subscription becomes active
-    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
-      items: [{
-        id: currentSubscription.items.data[0].id,
-        price: targetPriceId,
-      }],
-      cancel_at_period_end: false,  // FIXED: Ensure subscription becomes active after upgrade
-      proration_behavior: 'none',
-      billing_cycle_anchor: 'unchanged',
-    });
-
-    logStep('Subscription updated in Stripe successfully', { 
-      subscriptionId: updatedSubscription.id,
-      newPriceId: targetPriceId,
-      newAmount: targetPlanPrice * 100,
-      status: updatedSubscription.status,
-      currentPeriodEnd: updatedSubscription.current_period_end,
-      cancelAtPeriodEnd: updatedSubscription.cancel_at_period_end
-    });
-
-    // ENHANCED: Force create subscription and token records for first subscriptions
-    const isFirstSubscriptionFallback = isNewSubscription || (hasSubscription && !isUpgrade);
-    
-    if (isFirstSubscriptionFallback) {
+    // ENHANCED: Handle first subscription as fallback (when stripe-webhook fails)
+    if (isNewSubscription || (hasSubscription && !isUpgrade)) {
       logStep('EXECUTING FIRST SUBSCRIPTION FALLBACK LOGIC', { 
         subscriptionId, 
         upgradeTokens,
@@ -420,17 +343,88 @@ serve(async (req) => {
         }
       );
     }
-    const { data: profile, error: profileError } = await supabaseService
-      .from('profiles')
-      .select('id, email, available_tokens, total_tokens_received, subscription_type')
-      .eq('id', user.id)
-      .single();
 
-    if (profileError || !profile) {
-      logStep('ERROR: User profile not found', { userId: user.id, error: profileError });
-      throw new Error(`User profile not found`);
+    logStep('Upgrade parameters', {
+      subscriptionId,
+      targetPlanType,
+      targetPlanName,
+      targetPlanPrice,
+      targetMonthlyLimit,
+      upgradeTokens
+    });
+
+    // Find or create stable price_id in Stripe
+    let targetPriceId: string;
+    
+    const prices = await stripe.prices.list({ 
+      limit: 100,
+      recurring: { interval: 'month' },
+      type: 'recurring'
+    });
+    
+    const existingPrice = prices.data.find(price => 
+      price.unit_amount === targetPlanPrice * 100 && 
+      price.currency === 'usd' &&
+      price.recurring?.interval === 'month'
+    );
+    
+    if (existingPrice) {
+      targetPriceId = existingPrice.id;
+      logStep('Using existing price', { priceId: targetPriceId, amount: existingPrice.unit_amount });
+    } else {
+      logStep('Creating new product and price');
+      
+      const product = await stripe.products.create({
+        name: targetPlanName,
+        description: `${targetMonthlyLimit} worksheets per month`,
+      });
+      
+      const price = await stripe.prices.create({
+        currency: 'usd',
+        product: product.id,
+        unit_amount: targetPlanPrice * 100,
+        recurring: {
+          interval: 'month',
+        },
+      });
+      
+      targetPriceId = price.id;
+      logStep('Created new price', { priceId: targetPriceId, productId: product.id });
     }
 
+    // Update Stripe subscription
+    logStep('Updating Stripe subscription', { subscriptionId, newPriceId: targetPriceId });
+    
+    const currentSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+    logStep('Current subscription retrieved', { 
+      id: currentSubscription.id,
+      status: currentSubscription.status,
+      currentPriceId: currentSubscription.items.data[0].price.id,
+      currentAmount: currentSubscription.items.data[0].price.unit_amount
+    });
+
+    // CRITICAL FIX: Set cancel_at_period_end to false to ensure subscription becomes active
+    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+      items: [{
+        id: currentSubscription.items.data[0].id,
+        price: targetPriceId,
+      }],
+      cancel_at_period_end: false,  // FIXED: Ensure subscription becomes active after upgrade
+      proration_behavior: 'none',
+      billing_cycle_anchor: 'unchanged',
+    });
+
+    logStep('Subscription updated in Stripe successfully', { 
+      subscriptionId: updatedSubscription.id,
+      newPriceId: targetPriceId,
+      newAmount: targetPlanPrice * 100,
+      status: updatedSubscription.status,
+      currentPeriodEnd: updatedSubscription.current_period_end,
+      cancelAtPeriodEnd: updatedSubscription.cancel_at_period_end
+    });
+
+    
+    // Continue with UPGRADE logic (for real upgrades)
     const oldPlanType = profile.subscription_type || 'Free Demo';
 
     // Calculate new token amounts
