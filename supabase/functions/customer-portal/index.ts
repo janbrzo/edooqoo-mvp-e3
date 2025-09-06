@@ -65,7 +65,7 @@ serve(async (req) => {
     console.log('[CUSTOMER-PORTAL] Found customer:', customerId);
 
     // Create portal session with configuration
-    const origin = req.headers.get('origin') || 'https://cdoyjgiyrfziejbrcvpx.supabase.co';
+    const origin = req.headers.get('origin') || 'https://bvfrkzdlklyvnhlpleck.supabase.co';
     
     try {
       const portalSession = await stripe.billingPortal.sessions.create({
