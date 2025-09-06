@@ -79,7 +79,7 @@ serve(async (req) => {
       logStep('Created new customer', { customerId: customer.id });
     }
 
-    const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://bvfrkzdlklyvnhlpleck.supabase.co';
+    const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://cdoyjgiyrfziejbrcvpx.supabase.co';
     logStep('Origin determined', { origin });
 
     // Check for existing active subscriptions
