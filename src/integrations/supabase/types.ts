@@ -665,6 +665,31 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "teacher"
+      english_level: "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+      main_goal:
+        | "grammar"
+        | "vocabulary"
+        | "speaking"
+        | "listening"
+        | "reading"
+        | "writing"
+        | "pronunciation"
+        | "fluency"
+        | "confidence"
+        | "exam_preparation"
+        | "business_english"
+        | "academic_english"
+        | "travel_english"
+        | "conversation"
+        | "mixed"
+      subscription_status:
+        | "active"
+        | "active_cancelled"
+        | "cancelled"
+        | "expired"
+        | "paused"
+        | "pending"
+      user_role_enum: "user" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -793,6 +818,33 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "teacher"],
+      english_level: ["A1", "A2", "B1", "B2", "C1", "C2"],
+      main_goal: [
+        "grammar",
+        "vocabulary",
+        "speaking",
+        "listening",
+        "reading",
+        "writing",
+        "pronunciation",
+        "fluency",
+        "confidence",
+        "exam_preparation",
+        "business_english",
+        "academic_english",
+        "travel_english",
+        "conversation",
+        "mixed",
+      ],
+      subscription_status: [
+        "active",
+        "active_cancelled",
+        "cancelled",
+        "expired",
+        "paused",
+        "pending",
+      ],
+      user_role_enum: ["user", "admin"],
     },
   },
 } as const
