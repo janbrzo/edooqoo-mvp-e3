@@ -101,15 +101,8 @@ serve(async (req) => {
       finalExerciseCount = 6;
     }
     
-    // Handle exercise selection - use custom types if provided
-    let customExerciseTypes = null;
-    if (formData && formData.autoSelectExercises === false && formData.selectedExerciseTypes) {
-      customExerciseTypes = formData.selectedExerciseTypes;
-      console.log('Manual exercise selection detected:', customExerciseTypes);
-    }
-    
-    // Get exercise types - either custom selection or default
-    const exerciseTypes = getExerciseTypesForCount(8, customExerciseTypes);
+    // Always use the full 8-exercise set for generation
+    const exerciseTypes = getExerciseTypesForCount(8);
     
     console.log(`Generating 8 exercises, will trim to ${finalExerciseCount} if needed`);
     

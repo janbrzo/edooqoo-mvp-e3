@@ -1,4 +1,8 @@
+
 import React from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
@@ -18,38 +22,45 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import SharedWorksheet from "./pages/SharedWorksheet";
 import CookieBanner from "./components/CookieBanner";
 import GlobalFooter from "./components/GlobalFooter";
+import OnboardingChecklist from "./components/OnboardingChecklist";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <div className="min-h-screen flex flex-col">
-        <div className="flex-1">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Navigate to="/signup" replace />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/cookie-policy" element={<CookiePolicy />} />
-            <Route path="/student/:id" element={<StudentPage />} />
-            <Route path="/success" element={<PaymentSuccess />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/shared/:token" element={<SharedWorksheet />} />
-            <Route path="/waiting-list" element={<Navigate to="/" replace />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <div className="min-h-screen flex flex-col">
+          <div className="flex-1">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Navigate to="/signup" replace />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/cookie-policy" element={<CookiePolicy />} />
+              <Route path="/student/:id" element={<StudentPage />} />
+              <Route path="/success" element={<PaymentSuccess />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+              <Route path="/shared/:token" element={<SharedWorksheet />} />
+              <Route path="/waiting-list" element={<Navigate to="/" replace />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+          <GlobalFooter />
+          <OnboardingChecklist />
         </div>
-        <GlobalFooter />
-      </div>
-      <CookieBanner />
-    </BrowserRouter>
+        <CookieBanner />
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 

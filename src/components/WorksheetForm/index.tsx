@@ -30,8 +30,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const [englishLevel, setEnglishLevel] = useState<EnglishLevel>("B1/B2");
   const [languageStyle, setLanguageStyle] = useState<number>(3); // Default neutral style
   const [selectedStudentId, setSelectedStudentId] = useState<string>("no-student");
-  const [autoSelectExercises, setAutoSelectExercises] = useState<boolean>(true);
-  const [selectedExerciseTypes, setSelectedExerciseTypes] = useState<string[]>([]);
 
   const [currentPlaceholders, setCurrentPlaceholders] = useState<PlaceholderSet>(getRandomPlaceholderSet());
   const [currentSuggestions, setCurrentSuggestions] = useState<SuggestionSet[]>([]);
@@ -121,9 +119,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       additionalInformation,
       englishLevel,
       languageStyle,
-      studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined,
-      autoSelectExercises,
-      selectedExerciseTypes: autoSelectExercises ? undefined : selectedExerciseTypes
+      studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined
     };
 
     // ENHANCED: Immediate onboarding refresh after successful worksheet generation
@@ -290,11 +286,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
               <AdvancedOptions 
                 languageStyle={languageStyle}
                 onLanguageStyleChange={setLanguageStyle}
-                lessonTime={lessonTime}
-                autoSelectExercises={autoSelectExercises}
-                onAutoSelectExercisesChange={setAutoSelectExercises}
-                selectedExerciseTypes={selectedExerciseTypes}
-                onSelectedExerciseTypesChange={setSelectedExerciseTypes}
               />
 
               <div className={`mb-6 ${isMobile ? 'text-center' : ''}`}>

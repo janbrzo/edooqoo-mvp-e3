@@ -6,31 +6,15 @@ Aplikacja Edooqoo obecnie obsługuje 8 podstawowych typów ćwiczeń. Plan E3 za
 
 ## OBECNY STAN
 
-### Aktualne typy ćwiczeń (14 - FAZA 1 KOMPLETNA):
-**Oryginalne 8 typów:**
+### Aktualne typy ćwiczeń (8):
 1. **reading** - Ćwiczenia czytania ze zrozumieniem
-2. **true-false** - Prawda/Fałsz  
+2. **multiple-choice** - Pytania wielokrotnego wyboru  
 3. **matching** - Dopasowywanie par
 4. **fill-in-blanks** - Uzupełnianie luk
-5. **multiple-choice** - Pytania wielokrotnego wyboru
-6. **dialogue** - Ćwiczenia dialogowe
-7. **discussion** - Pytania do dyskusji
-8. **error-correction** - Poprawianie błędów
-
-**Nowe typy z Fazy 1 (✅ UKOŃCZONE):**
-9. **odd-one-out** - Wybór słowa niepasującego
-10. **synonyms-antonyms** - Dopasowywanie synonimów/antonimów
-11. **sentence-transformation** - Przekształcanie zdań
-12. **word-order** - Układanie słów w kolejności
-13. **gap-text** - Cloze test z formami czasowników
-14. **negative-prefixes** - Dodawanie przedrostków
-
-### Moduł wyboru ćwiczeń (✅ UKOŃCZONY):
-- **Automatyczny wybór przez AI** (domyślnie włączony) - zachowuje obecne zachowanie
-- **Ręczny wybór nauczyciela** - pozwala wybrać 4-8 ćwiczeń z 14 dostępnych typów
-- **Walidacja** - sprawdza poprawność liczby wybranych ćwiczeń
-- **Podgląd** - pokazuje wybrane ćwiczenia z czasami trwania
-- **Kompatybilność wsteczna** - nie zmienia działania istniejących funkcji
+5. **dialogue** - Ćwiczenia dialogowe
+6. **discussion** - Pytania do dyskusji
+7. **error-correction** - Poprawianie błędów
+8. **true-false** - Prawda/Fałsz
 
 ### Architektura obecna:
 - **Frontend**: Komponenty React dla każdego typu ćwiczenia
@@ -180,16 +164,4 @@ Aplikacja Edooqoo obecnie obsługuje 8 podstawowych typów ćwiczeń. Plan E3 za
 
 Plan E3 to ambitne, ale realistyczne rozszerzenie aplikacji Edooqoo. Etapowa implementacja minimalizuje ryzyko, a stopniowe wprowadzanie interaktywności pozwala na płynną ewolucję produktu. Faza 1 została już pomyślnie ukończona, co pokazuje wykonalność całego planu.
 
-**STATUS**: Faza 1 ✅ UKOŃCZONA + MODUŁ WYBORU ✅ UKOŃCZONY - gotowe do przejścia do Fazy 2
-
-### Co zostało zaimplementowane:
-1. **6 nowych typów ćwiczeń** - wszystkie komponenty React, walidatory, kalkulatory czasu
-2. **Moduł wyboru ćwiczeń** - w sekcji "Advanced Options" formularza
-3. **Kompatybilność wsteczna** - zachowano wszystkie istniejące funkcjonalności
-4. **System walidacji** - sprawdza poprawność wybranych ćwiczeń
-5. **Integracja z Edge Function** - obsługa ręcznego wyboru ćwiczeń
-
-### Dostępne do testowania:
-- Wszystkie 14 typów ćwiczeń można teraz wybrać i wygenerować
-- Nowe typy ćwiczeń są w pełni funkcjonalne i gotowe do użycia
-- AI może generować worksheets z dowolną kombinacją ćwiczeń
+**STATUS**: Faza 1 ✅ UKOŃCZONA - gotowe do przejścia do Fazy 2

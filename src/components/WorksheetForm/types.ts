@@ -18,8 +18,6 @@ export interface FormData {
   fullPrompt?: string;
   formDataForStorage?: any;
   studentId?: string;
-  autoSelectExercises?: boolean; // Default: true (AI selects)
-  selectedExerciseTypes?: string[]; // When autoSelectExercises is false
 }
 
 export interface WorksheetData {
