@@ -199,12 +199,26 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
           };
 
-          const { error: subError } = await supabaseService
+          // CRITICAL FIX: Use manual upsert logic for upgrades too
+          const { data: existingSubForUpgrade, error: existingUpgradeError } = await supabaseService
             .from('subscriptions')
-            .upsert(subscriptionData, { 
-              onConflict: 'teacher_id',
-              ignoreDuplicates: false 
-            });
+            .select('id')
+            .eq('teacher_id', profile.id)
+            .single();
+
+          let subError;
+          if (existingSubForUpgrade) {
+            const { error } = await supabaseService
+              .from('subscriptions')
+              .update(subscriptionData)
+              .eq('teacher_id', profile.id);
+            subError = error;
+          } else {
+            const { error } = await supabaseService
+              .from('subscriptions')
+              .insert(subscriptionData);
+            subError = error;
+          }
 
           if (subError) {
             logStep('ERROR: Failed to update subscriptions table', subError);
@@ -431,11 +445,14 @@ serve(async (req) => {
         shouldFreezeTokens = subscription.status === 'cancelled';
       }
 
-      // FIXED: Determine old plan type for events - check if it's first purchase
-      let oldPlanType = 'Free Demo'; // FIXED: Default for first purchase
-      
-      if (event.type === 'customer.subscription.updated' && event.data.previous_attributes) {
-        const previousAttributes = event.data.previous_attributes as any;
+    // FIXED: Determine old plan type for events - check if it's first purchase
+    let oldPlanType = profile.subscription_type || 'Free Demo'; // Use current profile subscription_type
+    
+    // Special handling for first subscription (customer.subscription.created)
+    if (event.type === 'customer.subscription.created') {
+      oldPlanType = 'Free Demo'; // Always from Free Demo for new subscriptions
+    } else if (event.type === 'customer.subscription.updated' && event.data.previous_attributes) {
+      const previousAttributes = event.data.previous_attributes as any;
         
         // Check if cancel_at_period_end changed - means cancellation or reactivation
         if ('cancel_at_period_end' in previousAttributes) {
@@ -699,12 +716,35 @@ serve(async (req) => {
         }
       });
 
-      const { error: subError } = await supabaseService
+      // CRITICAL FIX: Since there's no unique constraint on teacher_id, we need to handle manually
+      // Check if teacher already has a subscription record
+      const { data: existingSubscription, error: existingSubError } = await supabaseService
         .from('subscriptions')
-        .upsert(subscriptionData, { 
-          onConflict: 'stripe_subscription_id',  // FIXED: Use correct unique constraint
-          ignoreDuplicates: false 
-        });
+        .select('id')
+        .eq('teacher_id', profile.id)
+        .single();
+
+      let subError;
+      if (existingSubscription) {
+        // Update existing subscription
+        const { error } = await supabaseService
+          .from('subscriptions')
+          .update(subscriptionData)
+          .eq('teacher_id', profile.id);
+        subError = error;
+        if (!error) {
+          logStep('Updated existing subscription record', { teacherId: profile.id });
+        }
+      } else {
+        // Insert new subscription
+        const { error } = await supabaseService
+          .from('subscriptions')
+          .insert(subscriptionData);
+        subError = error;
+        if (!error) {
+          logStep('Inserted new subscription record', { teacherId: profile.id });
+        }
+      }
 
       if (subError) {
         logStep('ERROR: Failed to upsert subscription record', subError);
