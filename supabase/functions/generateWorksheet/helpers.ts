@@ -44,7 +44,14 @@ export function getIconForType(type: string): string {
     'dialogue': 'fa-comments',
     'discussion': 'fa-users',
     'error-correction': 'fa-exclamation-triangle',
-    'true-false': 'fa-balance-scale'
+    'true-false': 'fa-balance-scale',
+    // New Phase 1 exercise icons
+    'odd-one-out': 'fa-search',
+    'synonyms-antonyms': 'fa-exchange-alt',
+    'sentence-transformation': 'fa-random',
+    'word-order': 'fa-sort',
+    'gap-text': 'fa-text-width',
+    'negative-prefixes': 'fa-minus-circle'
   };
   
   return iconMap[type] || 'fa-tasks';

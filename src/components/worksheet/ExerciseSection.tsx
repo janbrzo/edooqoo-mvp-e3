@@ -7,6 +7,13 @@ import ExerciseFillInBlanks from "./ExerciseFillInBlanks";
 import ExerciseMultipleChoice from "./ExerciseMultipleChoice";
 import TeacherTipSection from "./TeacherTipSection";
 import ExerciseDialogue from "./ExerciseDialogue";
+// New Phase 1 exercise components
+import ExerciseOddOneOut from "./ExerciseOddOneOut";
+import ExerciseSynonymsAntonyms from "./ExerciseSynonymsAntonyms";
+import ExerciseSentenceTransformation from "./ExerciseSentenceTransformation";
+import ExerciseWordOrder from "./ExerciseWordOrder";
+import ExerciseGapText from "./ExerciseGapText";
+import ExerciseNegativePrefixes from "./ExerciseNegativePrefixes";
 import {
   handleExerciseChange,
   handleQuestionChange,
@@ -239,6 +246,91 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
         
         {exercise.type === 'true-false' && exercise.statements && 
           renderTrueFalseExercise(exercise, isEditing, viewMode, handleStatementChangeLocal)}
+
+        {/* New Phase 1 exercises */}
+        {exercise.type === 'odd-one-out' && exercise.questions && (
+          <ExerciseOddOneOut
+            questions={exercise.questions}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onQuestionChange={handleQuestionChangeLocal}
+          />
+        )}
+
+        {(exercise.type === 'synonyms-antonyms' || exercise.type === 'matching-synonyms' || exercise.type === 'matching-antonyms') && exercise.items && (
+          <ExerciseSynonymsAntonyms
+            items={exercise.items}
+            type={exercise.type === 'matching-antonyms' ? 'antonyms' : 'synonyms'}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onItemChange={handleItemChangeLocal}
+          />
+        )}
+
+        {exercise.type === 'sentence-transformation' && exercise.sentences && (
+          <ExerciseSentenceTransformation
+            sentences={exercise.sentences}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onSentenceChange={handleSentenceChangeLocal}
+          />
+        )}
+
+        {exercise.type === 'word-order' && exercise.sentences && (
+          <ExerciseWordOrder
+            sentences={exercise.sentences}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onSentenceChange={handleSentenceChangeLocal}
+          />
+        )}
+
+        {exercise.type === 'gap-text' && exercise.sentences && (
+          <ExerciseGapText
+            sentences={exercise.sentences}
+            word_bank={exercise.word_bank}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onSentenceChange={handleSentenceChangeLocal}
+            onWordBankChange={(wIndex, value) => {
+              const newWordBank = [...(exercise.word_bank || [])];
+              newWordBank[wIndex] = value;
+              const updatedExercises = [...editableWorksheet.exercises];
+              updatedExercises[index] = {
+                ...updatedExercises[index],
+                word_bank: newWordBank
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
+          />
+        )}
+
+        {exercise.type === 'negative-prefixes' && exercise.words && (
+          <ExerciseNegativePrefixes
+            words={exercise.words}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onWordChange={(wIndex, field, value) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newWords = [...exercise.words];
+              newWords[wIndex] = {
+                ...newWords[wIndex],
+                [field]: value
+              };
+              updatedExercises[index] = {
+                ...updatedExercises[index],
+                words: newWords
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
+          />
+        )}
 
         {/* Poprawione wywołanie komponentu TeacherTipSection z dodanym parametrem viewMode */}
         <TeacherTipSection

@@ -39,6 +39,25 @@ export function validateExercise(exercise: any): void {
     case 'error-correction':
       validateErrorCorrectionExercise(exercise);
       break;
+    // New Phase 1 exercise validations
+    case 'odd-one-out':
+      validateOddOneOutExercise(exercise);
+      break;
+    case 'synonyms-antonyms':
+      validateSynonymsAntonymsExercise(exercise);
+      break;
+    case 'sentence-transformation':
+      validateSentenceTransformationExercise(exercise);
+      break;
+    case 'word-order':
+      validateWordOrderExercise(exercise);
+      break;
+    case 'gap-text':
+      validateGapTextExercise(exercise);
+      break;
+    case 'negative-prefixes':
+      validateNegativePrefixesExercise(exercise);
+      break;
     default:
       console.warn(`Unknown exercise type: ${exercise.type}`);
   }
@@ -134,6 +153,89 @@ function validateErrorCorrectionExercise(exercise: any): void {
   for (const sentence of exercise.sentences) {
     if (!sentence.text || !sentence.correction) {
       throw new Error('Each error correction sentence must have both text and correction');
+    }
+  }
+}
+
+// New Phase 1 exercise validation functions
+function validateOddOneOutExercise(exercise: any): void {
+  if (!exercise.questions || !Array.isArray(exercise.questions) || exercise.questions.length < 8) {
+    throw new Error('Odd One Out exercise must have at least 8 questions');
+  }
+  
+  for (const question of exercise.questions) {
+    if (!question.options || !Array.isArray(question.options) || question.options.length !== 5) {
+      throw new Error('Each Odd One Out question must have exactly 5 options');
+    }
+    if (!question.correct_answer) {
+      throw new Error('Each Odd One Out question must have a correct answer');
+    }
+  }
+}
+
+function validateSynonymsAntonymsExercise(exercise: any): void {
+  if (!exercise.items || !Array.isArray(exercise.items) || exercise.items.length < 8) {
+    throw new Error('Synonyms/Antonyms exercise must have at least 8 items');
+  }
+  
+  for (const item of exercise.items) {
+    if (!item.word || !item.match) {
+      throw new Error('Each synonym/antonym item must have both word and match');
+    }
+  }
+}
+
+function validateSentenceTransformationExercise(exercise: any): void {
+  if (!exercise.sentences || !Array.isArray(exercise.sentences) || exercise.sentences.length < 8) {
+    throw new Error('Sentence Transformation exercise must have at least 8 sentences');
+  }
+  
+  for (const sentence of exercise.sentences) {
+    if (!sentence.original || !sentence.transformed || !sentence.instruction) {
+      throw new Error('Each transformation sentence must have original, transformed, and instruction');
+    }
+  }
+}
+
+function validateWordOrderExercise(exercise: any): void {
+  if (!exercise.sentences || !Array.isArray(exercise.sentences) || exercise.sentences.length < 8) {
+    throw new Error('Word Order exercise must have at least 8 sentences');
+  }
+  
+  for (const sentence of exercise.sentences) {
+    if (!sentence.scrambled_words || !sentence.correct_order) {
+      throw new Error('Each word order sentence must have scrambled_words and correct_order');
+    }
+  }
+}
+
+function validateGapTextExercise(exercise: any): void {
+  if (!exercise.sentences || !Array.isArray(exercise.sentences) || exercise.sentences.length < 8) {
+    throw new Error('Gap Text exercise must have at least 8 sentences');
+  }
+  
+  for (const sentence of exercise.sentences) {
+    if (!sentence.text || !sentence.answer) {
+      throw new Error('Each gap text sentence must have text and answer');
+    }
+    if (!sentence.text.includes('_____')) {
+      throw new Error('Gap text sentence must contain blank spaces (_____)');
+    }
+  }
+  
+  if (exercise.word_bank && !Array.isArray(exercise.word_bank)) {
+    throw new Error('Word bank must be an array if provided');
+  }
+}
+
+function validateNegativePrefixesExercise(exercise: any): void {
+  if (!exercise.words || !Array.isArray(exercise.words) || exercise.words.length < 8) {
+    throw new Error('Negative Prefixes exercise must have at least 8 words');
+  }
+  
+  for (const word of exercise.words) {
+    if (!word.base_word || !word.prefix) {
+      throw new Error('Each negative prefix word must have base_word and prefix');
     }
   }
 }

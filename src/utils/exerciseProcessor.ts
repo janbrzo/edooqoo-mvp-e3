@@ -113,6 +113,74 @@ export const processExercises = (exercises: any[], lessonTime: string = '45min',
       });
       console.log(`🔧 Processed multiple-choice exercise with ${exercise.questions.length} questions`);
     }
+
+    // New Phase 1 exercise processing
+    if (exercise.type === "odd-one-out" && exercise.questions) {
+      exercise.questions = exercise.questions.map((question: any) => {
+        // Ensure each question has 5 options and a correct answer
+        if (!question.options || question.options.length < 5) {
+          question.options = question.options || [];
+          while (question.options.length < 5) {
+            question.options.push(`Option ${question.options.length + 1}`);
+          }
+        }
+        // Ensure correct answer is specified (usually the last option)
+        if (!question.correct_answer) {
+          question.correct_answer = "E"; // Default to E
+        }
+        return question;
+      });
+      console.log(`🔧 Processed odd-one-out exercise with ${exercise.questions.length} questions`);
+    }
+
+    if (exercise.type === "synonyms-antonyms" && exercise.items) {
+      // Shuffle items for variety but maintain pairs
+      exercise.originalItems = [...exercise.items];
+      console.log(`🔧 Processed synonyms-antonyms exercise with ${exercise.items.length} pairs`);
+    }
+
+    if (exercise.type === "sentence-transformation" && exercise.sentences) {
+      // Ensure each sentence has the required fields
+      exercise.sentences = exercise.sentences.map((sentence: any) => {
+        if (!sentence.instruction) {
+          sentence.instruction = "Transform the sentence as indicated";
+        }
+        return sentence;
+      });
+      console.log(`🔧 Processed sentence-transformation exercise with ${exercise.sentences.length} sentences`);
+    }
+
+    if (exercise.type === "word-order" && exercise.sentences) {
+      // Ensure scrambled words format is consistent
+      exercise.sentences = exercise.sentences.map((sentence: any) => {
+        if (sentence.scrambled_words && typeof sentence.scrambled_words === 'string') {
+          // Ensure proper formatting with " / " separators
+          sentence.scrambled_words = sentence.scrambled_words.replace(/\s*\/\s*/g, ' / ');
+        }
+        return sentence;
+      });
+      console.log(`🔧 Processed word-order exercise with ${exercise.sentences.length} sentences`);
+    }
+
+    if (exercise.type === "gap-text" && exercise.sentences) {
+      // Shuffle word bank if provided
+      if (exercise.word_bank && exercise.word_bank.length > 0) {
+        exercise.originalWordBank = [...exercise.word_bank];
+        exercise.word_bank = shuffleArray([...exercise.word_bank]);
+      }
+      console.log(`🔧 Processed gap-text exercise with ${exercise.sentences.length} sentences`);
+    }
+
+    if (exercise.type === "negative-prefixes" && exercise.words) {
+      // Ensure each word has required fields
+      exercise.words = exercise.words.map((word: any) => {
+        if (!word.base_word || !word.prefix) {
+          console.warn(`🔧 Missing base_word or prefix for negative prefix word:`, word);
+        }
+        return word;
+      });
+      console.log(`🔧 Processed negative-prefixes exercise with ${exercise.words.length} words`);
+    }
     
     if (exercise.type === 'reading' && exercise.content) {
       const wordCount = exercise.content.split(/\s+/).filter(Boolean).length;

@@ -43,7 +43,13 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'error-correction': 0, // Obcięte w 45min
         'word-formation': 4,
         'word-order': 4,
-        'true-false': 3
+        'true-false': 3,
+        // New Phase 1 exercises
+        'odd-one-out': 4,
+        'synonyms-antonyms': 5,
+        'sentence-transformation': 6,
+        'gap-text': 4,
+        'negative-prefixes': 3
       },
       withoutGrammar: { // 45min total: 5 warmup + 0 grammar + 40 exercises = 45min
         'reading': 9,
@@ -55,7 +61,13 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'error-correction': 0, // Obcięte w 45min
         'word-formation': 5,
         'word-order': 5,
-        'true-false': 5
+        'true-false': 5,
+        // New Phase 1 exercises
+        'odd-one-out': 5,
+        'synonyms-antonyms': 6,
+        'sentence-transformation': 8,
+        'gap-text': 5,
+        'negative-prefixes': 4
       }
     },
     '60min': {
@@ -69,7 +81,13 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'error-correction': 4,
         'word-formation': 4,
         'word-order': 4,
-        'true-false': 3
+        'true-false': 3,
+        // New Phase 1 exercises
+        'odd-one-out': 4,
+        'synonyms-antonyms': 5,
+        'sentence-transformation': 6,
+        'gap-text': 4,
+        'negative-prefixes': 3
       },
       withoutGrammar: { // 60min total: 5 warmup + 0 grammar + 55 exercises = 60min
         'reading': 9,
@@ -81,7 +99,13 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'error-correction': 6,
         'word-formation': 6,
         'word-order': 6,
-        'true-false': 5
+        'true-false': 5,
+        // New Phase 1 exercises
+        'odd-one-out': 5,
+        'synonyms-antonyms': 6,
+        'sentence-transformation': 8,
+        'gap-text': 5,
+        'negative-prefixes': 4
       }
     }
   };
