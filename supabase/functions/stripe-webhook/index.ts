@@ -90,11 +90,12 @@ serve(async (req) => {
       throw new Error(`Webhook signature verification failed: ${err.message}`);
     }
 
-    // SIMPLIFIED: Deduplicate events - check only stripe_event_id (not event_type)
+    // Deduplicate events
     const { data: existingEvent, error: eventCheckError } = await supabaseService
       .from('subscription_events')
       .select('id')
       .eq('stripe_event_id', event.id)
+      .eq('event_type', event.type)
       .single();
 
     if (eventCheckError && eventCheckError.code !== 'PGRST116') {
@@ -352,7 +353,11 @@ serve(async (req) => {
       const price = await stripe.prices.retrieve(priceId);
       const amount = price.unit_amount || 0;
       
-      // FIXED: Use normalizer for consistent plan naming (removed duplicate declaration)
+      let subscriptionType = 'Unknown';
+      let monthlyLimit = 0;
+      let tokensToAdd = 0;
+
+      // ENHANCED: Use normalizer for consistent plan naming
       let subscriptionType = normalizePlanName(undefined, undefined, amount);
       let monthlyLimit = 0;
       let tokensToAdd = 0;
@@ -443,35 +448,103 @@ serve(async (req) => {
         shouldFreezeTokens = subscription.status === 'cancelled';
       }
 
-    // SIMPLIFIED: Determine old plan type for events
-    let oldPlanType = profile.subscription_type || 'Free Demo';
+    // FIXED: Determine old plan type for events - check if it's first purchase
+    let oldPlanType = profile.subscription_type || 'Free Demo'; // Use current profile subscription_type
     
-    // For new subscriptions, always use Free Demo as old plan
+    // Special handling for first subscription (customer.subscription.created)
     if (event.type === 'customer.subscription.created') {
-      oldPlanType = 'Free Demo';
-      logStep('First subscription purchase detected', { oldPlanType });
-    }
-    
-    // For subscription updates, detect cancellation
-    if (event.type === 'customer.subscription.updated' && event.data.previous_attributes) {
+      oldPlanType = 'Free Demo'; // Always from Free Demo for new subscriptions
+    } else if (event.type === 'customer.subscription.updated' && event.data.previous_attributes) {
       const previousAttributes = event.data.previous_attributes as any;
-      
-      // Check if cancel_at_period_end changed from false to true (means cancellation)
-      if ('cancel_at_period_end' in previousAttributes) {
-        const wasCancelledBefore = previousAttributes.cancel_at_period_end;
-        const isNowCancelled = subscription.cancel_at_period_end;
         
-        if (!wasCancelledBefore && isNowCancelled) {
-          // This is a cancellation action
+        // Check if cancel_at_period_end changed - means cancellation or reactivation
+        if ('cancel_at_period_end' in previousAttributes) {
+          const wasCancelledBefore = previousAttributes.cancel_at_period_end;
+          const isNowCancelled = subscription.cancel_at_period_end;
+          
+          if (wasCancelledBefore && !isNowCancelled) {
+            // Reactivation - subscription was cancelled, now active
+            oldPlanType = profile.subscription_type ? `${profile.subscription_type}_cancelled` : 'Inactive';
+            logStep('Detected reactivation - subscription was cancelled, now active', { oldPlanType });
+          } else if (!wasCancelledBefore && isNowCancelled) {
+            // Cancellation - subscription was active, now cancelled
+            oldPlanType = profile.subscription_type || subscriptionType;
+            logStep('Detected cancellation - subscription was active, now cancelled', { oldPlanType });
+            
+            // ENHANCED: Log subscription_events for cancel action - CRITICAL for tracking cancellations
+            const eventNewPlanType = `${subscriptionType}_cancelled`;
+            logStep('Logging cancellation event', {
+              oldPlanType,
+              eventNewPlanType,
+              subscriptionId: subscription.id
+            });
+
+            const { error: cancelEventError } = await supabaseService
+              .from('subscription_events')
+              .insert({
+                teacher_id: profile.id,
+                email: email, // CRITICAL: Always include email  
+                event_type: 'customer.subscription.updated',
+                old_plan_type: oldPlanType,
+                new_plan_type: eventNewPlanType,
+                tokens_added: 0,
+                stripe_event_id: event.id,
+                event_data: {
+                  subscription_id: subscription.id,
+                  customer_id: customer.id,
+                  cancel_at_period_end: subscription.cancel_at_period_end,
+                  status: subscription.status,
+                  action: 'cancellation',
+                  period_start: subscription.current_period_start || null,
+                  period_end: subscription.current_period_end || null
+                }
+              });
+              
+            if (cancelEventError) {
+              logStep('ERROR: Failed to log cancellation event', cancelEventError);
+              // ADDED: Force retry for cancellation events - they are critical
+              try {
+                await supabaseService
+                  .from('subscription_events')
+                  .insert({
+                    teacher_id: profile.id,
+                    email: email,
+                    event_type: 'customer.subscription.updated',
+                    old_plan_type: oldPlanType,
+                    new_plan_type: eventNewPlanType,
+                    tokens_added: 0,
+                    stripe_event_id: `${event.id}_cancel_retry`,
+                    event_data: { action: 'cancellation_retry', original_error: cancelEventError.message }
+                  });
+                logStep('Cancellation event logged successfully on retry');
+              } catch (retryError) {
+                logStep('ERROR: Even retry failed for cancellation event', retryError);
+              }
+            } else {
+              logStep('Cancellation event logged successfully - MAIN PATH', { 
+                eventNewPlanType,
+                oldPlan: oldPlanType,
+                newPlan: eventNewPlanType 
+              });
+            }
+          } else {
+            // Other changes - use current type from profile
+            oldPlanType = profile.subscription_type || subscriptionType;
+          }
+        } else {
+          // Other subscription changes - use current type
           oldPlanType = profile.subscription_type || subscriptionType;
-          logStep('CANCELLATION DETECTED', { 
-            oldPlanType,
-            newStatus: 'active_cancelled',
-            subscriptionId: subscription.id 
-          });
+        }
+      } else if (event.type === 'customer.subscription.created') {
+        // FIXED: For new subscriptions, check if user had previous cancelled subscription
+        if (profile.subscription_status === 'cancelled') {
+          oldPlanType = 'Inactive'; // User had cancelled subscription
+          logStep('New subscription after cancelled subscription - using Inactive', { oldPlanType });
+        } else {
+          oldPlanType = 'Free Demo'; // FIXED: First time purchase
+          logStep('First subscription purchase - using Free Demo', { oldPlanType });
         }
       }
-    }
 
       // Token deduplication logic - only add tokens for new subscriptions or reactivations
       let shouldAddTokens = false;
@@ -538,60 +611,69 @@ serve(async (req) => {
         tokensFrozen: shouldFreezeTokens
       });
 
-      // CRITICAL: SIMPLIFIED event logging - ALWAYS insert for main subscription events
+      // ENHANCED: Always log subscription event - CRITICAL for tracking all subscription changes
       const eventNewPlanType = newSubscriptionStatus === 'active_cancelled' 
         ? `${subscriptionType}_cancelled` 
         : subscriptionType;
 
-      logStep('CRITICAL: Logging subscription event', {
+      logStep('Preparing to log subscription event', {
         eventType: event.type,
         oldPlanType,
         eventNewPlanType,
         tokensAdded: shouldAddTokens ? tokensToAdd : 0,
-        subscriptionId: subscription.id,
-        customerId: customer.id
+        hasCurrentPeriods: !!(subscription.current_period_start && subscription.current_period_end)
       });
 
-      // MAIN EVENT INSERT - this should ALWAYS work
-      try {
-        const { error: eventError } = await supabaseService
-          .from('subscription_events')
-          .insert({
-            teacher_id: profile.id,
-            email: email,
-            event_type: event.type,
-            old_plan_type: oldPlanType,
-            new_plan_type: eventNewPlanType, 
-            tokens_added: shouldAddTokens ? tokensToAdd : 0,
-            stripe_event_id: event.id,
-            event_data: {
-              subscription_id: subscription.id,
-              customer_id: customer.id,
-              amount: amount,
-              currency: price.currency,
-              period_start: subscription.current_period_start || null,
-              period_end: subscription.current_period_end || null,
-              cancel_at_period_end: subscription.cancel_at_period_end,
-              status: subscription.status,
-              action: event.type === 'customer.subscription.created' ? 'initial_purchase' : 'subscription_update'
-            }
-          });
+      const { error: eventError } = await supabaseService
+        .from('subscription_events')
+        .insert({
+          teacher_id: profile.id,
+          email: email, // CRITICAL: Always include email
+          event_type: event.type,
+          old_plan_type: oldPlanType, // FIXED: Uses "Free Demo" for first purchase
+          new_plan_type: eventNewPlanType, 
+          tokens_added: shouldAddTokens ? tokensToAdd : 0,
+          stripe_event_id: event.id,
+          event_data: {
+            subscription_id: subscription.id,
+            customer_id: customer.id,
+            amount: amount,
+            currency: price.currency,
+            period_start: subscription.current_period_start || null, // FIXED: Handle null values
+            period_end: subscription.current_period_end || null, // FIXED: Handle null values
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            status: subscription.status,
+            current_period_start_fallback: currentPeriodStart, // ADDED: Our fallback values
+            current_period_end_fallback: currentPeriodEnd // ADDED: Our fallback values
+          }
+        });
 
-        if (eventError) {
-          logStep('ERROR: Main subscription event insert failed', eventError);
-          throw eventError;
-        } else {
-          logStep('SUCCESS: Subscription event logged', {
-            eventType: event.type,
-            oldPlan: oldPlanType,
-            newPlan: eventNewPlanType,
-            stripeEventId: event.id
-          });
+      if (eventError) {
+        logStep('ERROR: Failed to log subscription event', eventError);
+        // ADDED: Force retry with minimal data if main insert fails
+        try {
+          await supabaseService
+            .from('subscription_events')
+            .insert({
+              teacher_id: profile.id,
+              email: email,
+              event_type: event.type,
+              old_plan_type: oldPlanType,
+              new_plan_type: eventNewPlanType,
+              tokens_added: shouldAddTokens ? tokensToAdd : 0,
+              stripe_event_id: `${event.id}_retry`,
+              event_data: { minimal: true, original_error: eventError.message }
+            });
+          logStep('Subscription event logged successfully on retry');
+        } catch (retryError) {
+          logStep('ERROR: Even retry failed for subscription event', retryError);
         }
-      } catch (insertError) {
-        logStep('CRITICAL ERROR: Cannot insert subscription event', insertError);
-        // This is critical - if we can't log events, something is very wrong
-        throw new Error(`Failed to log subscription event: ${insertError.message}`);
+      } else {
+        logStep('Subscription event logged successfully - MAIN PATH', {
+          eventType: event.type,
+          oldPlan: oldPlanType,
+          newPlan: eventNewPlanType
+        });
       }
 
       // Add token transaction record only if tokens were added
@@ -719,53 +801,62 @@ serve(async (req) => {
         throw updateError;
       }
 
-      // CRITICAL: Log deletion event - SIMPLIFIED and RELIABLE
+      // ENHANCED: Log cancellation event with email - CRITICAL for tracking deletions
       const deletionNewPlanType = shouldSetCancelled ? 'Inactive' : `${profile.subscription_type}_cancelled`;
       
-      logStep('CRITICAL: Logging deletion event', {
+      logStep('Logging deletion event', {
         oldPlanType: profile.subscription_type || 'Unknown',
         deletionNewPlanType,
         shouldSetCancelled,
-        endedAt: subscription.ended_at,
-        subscriptionId: subscription.id
+        endedAt: subscription.ended_at
       });
 
-      try {
-        const { error: eventError } = await supabaseService
-          .from('subscription_events')
-          .insert({
-            teacher_id: profile.id,
-            email: email,
-            event_type: 'customer.subscription.deleted',
-            old_plan_type: profile.subscription_type || 'Unknown',
-            new_plan_type: deletionNewPlanType,
-            tokens_added: 0,
-            stripe_event_id: event.id,
-            event_data: {
-              subscription_id: subscription.id,
-              customer_id: customer.id,
-              cancelled_at: subscription.canceled_at,
-              ended_at: subscription.ended_at,
-              final_status: finalStatus,
-              tokens_frozen: shouldSetCancelled,
-              action: 'subscription_ended'
-            }
-          });
+      const { error: eventError } = await supabaseService
+        .from('subscription_events')
+        .insert({
+          teacher_id: profile.id,
+          email: email, // CRITICAL: Always include email
+          event_type: 'customer.subscription.deleted',
+          old_plan_type: profile.subscription_type || 'Unknown',
+          new_plan_type: deletionNewPlanType,
+          tokens_added: 0,
+          stripe_event_id: event.id,
+          event_data: {
+            subscription_id: subscription.id,
+            customer_id: customer.id,
+            cancelled_at: subscription.canceled_at,
+            ended_at: subscription.ended_at,
+            final_status: finalStatus,
+            tokens_frozen: shouldSetCancelled
+          }
+        });
 
-        if (eventError) {
-          logStep('ERROR: Deletion event insert failed', eventError);
-          throw eventError;
-        } else {
-          logStep('SUCCESS: Deletion event logged', {
-            oldPlan: profile.subscription_type || 'Unknown',
-            newPlan: deletionNewPlanType,
-            finalStatus,
-            stripeEventId: event.id
-          });
+      if (eventError) {
+        logStep('ERROR: Failed to log deletion event', eventError);
+        // ADDED: Force retry for deletion events - they are critical
+        try {
+          await supabaseService
+            .from('subscription_events')
+            .insert({
+              teacher_id: profile.id,
+              email: email,
+              event_type: 'customer.subscription.deleted',
+              old_plan_type: profile.subscription_type || 'Unknown',
+              new_plan_type: deletionNewPlanType,
+              tokens_added: 0,
+              stripe_event_id: `${event.id}_delete_retry`,
+              event_data: { action: 'deletion_retry', original_error: eventError.message }
+            });
+          logStep('Deletion event logged successfully on retry');
+        } catch (retryError) {
+          logStep('ERROR: Even retry failed for deletion event', retryError);
         }
-      } catch (insertError) {
-        logStep('CRITICAL ERROR: Cannot insert deletion event', insertError);
-        throw new Error(`Failed to log deletion event: ${insertError.message}`);
+      } else {
+        logStep('Deletion event logged successfully - MAIN PATH', {
+          oldPlan: profile.subscription_type || 'Unknown',
+          newPlan: deletionNewPlanType,
+          finalStatus
+        });
       }
 
       // FIXED: Update subscriptions table status with correct unique key
