@@ -13,6 +13,33 @@ const logStep = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${timestamp} ${step}${detailsStr}`);
 };
 
+// Helper: normalize plan names to ensure consistency
+const normalizePlanName = (planType?: string, monthlyLimit?: number, amount?: number) => {
+  // Priority 1: Use planType if it's already normalized
+  if (planType === 'Side-Gig') return 'Side-Gig';
+  if (planType === 'Full-Time 30') return 'Full-Time 30';
+  if (planType === 'Full-Time 60') return 'Full-Time 60';
+  if (planType === 'Full-Time 90') return 'Full-Time 90';
+  if (planType === 'Full-Time 120') return 'Full-Time 120';
+  
+  // Priority 2: Use amount to determine plan (amount in cents)
+  if (amount === 900) return 'Side-Gig';       // $9.00
+  if (amount === 1900) return 'Full-Time 30';  // $19.00
+  if (amount === 3900) return 'Full-Time 60';  // $39.00
+  if (amount === 5900) return 'Full-Time 90';  // $59.00
+  if (amount === 7900) return 'Full-Time 120'; // $79.00
+  
+  // Priority 3: Use monthlyLimit as fallback
+  if (monthlyLimit === 15) return 'Side-Gig';
+  if (monthlyLimit === 30) return 'Full-Time 30';
+  if (monthlyLimit === 60) return 'Full-Time 60';
+  if (monthlyLimit === 90) return 'Full-Time 90';
+  if (monthlyLimit === 120) return 'Full-Time 120';
+  
+  // Final fallback
+  return planType || 'Unknown';
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -153,19 +180,8 @@ serve(async (req) => {
           const newAvailableTokens = profile.available_tokens + upgradeTokens;
           const newTotalReceived = (profile.total_tokens_received || 0) + upgradeTokens;
 
-          // Determine subscription type from target plan price
-          let subscriptionType = 'Unknown';
-          if (targetPlanPrice === 9) {
-            subscriptionType = 'Side-Gig';
-          } else if (targetPlanPrice === 19) {
-            subscriptionType = 'Full-Time 30';
-          } else if (targetPlanPrice === 39) {
-            subscriptionType = 'Full-Time 60';
-          } else if (targetPlanPrice === 59) {
-            subscriptionType = 'Full-Time 90';
-          } else if (targetPlanPrice === 79) {
-            subscriptionType = 'Full-Time 120';
-          }
+          // ENHANCED: Use normalizer for upgrade subscriptions too
+          let subscriptionType = normalizePlanName(targetPlanName, targetMonthlyLimit, targetPlanPrice * 100);
 
           const { error: updateError } = await supabaseService
             .from('profiles')
@@ -199,26 +215,13 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
           };
 
-          // CRITICAL FIX: Use manual upsert logic for upgrades too
-          const { data: existingSubForUpgrade, error: existingUpgradeError } = await supabaseService
+          // NOW CAN USE PROPER UPSERT: Use teacher_id unique constraint for upgrades too
+          const { error: subError } = await supabaseService
             .from('subscriptions')
-            .select('id')
-            .eq('teacher_id', profile.id)
-            .single();
-
-          let subError;
-          if (existingSubForUpgrade) {
-            const { error } = await supabaseService
-              .from('subscriptions')
-              .update(subscriptionData)
-              .eq('teacher_id', profile.id);
-            subError = error;
-          } else {
-            const { error } = await supabaseService
-              .from('subscriptions')
-              .insert(subscriptionData);
-            subError = error;
-          }
+            .upsert(subscriptionData, { 
+              onConflict: 'teacher_id',  // NOW WORKS: unique constraint exists
+              ignoreDuplicates: false 
+            });
 
           if (subError) {
             logStep('ERROR: Failed to update subscriptions table', subError);
@@ -354,25 +357,25 @@ serve(async (req) => {
       let monthlyLimit = 0;
       let tokensToAdd = 0;
 
-      // FIXED: Determine plan based on amount with full names
-      if (amount === 900) { // $9.00 = Side-Gig
-        subscriptionType = 'Side-Gig';
+      // ENHANCED: Use normalizer for consistent plan naming
+      let subscriptionType = normalizePlanName(undefined, undefined, amount);
+      let monthlyLimit = 0;
+      let tokensToAdd = 0;
+
+      // Set limits and tokens based on normalized plan
+      if (subscriptionType === 'Side-Gig') {
         monthlyLimit = 15;
         tokensToAdd = 15;
-      } else if (amount === 1900) { // $19.00 = Full-Time 30
-        subscriptionType = 'Full-Time 30';
+      } else if (subscriptionType === 'Full-Time 30') {
         monthlyLimit = 30;
         tokensToAdd = 30;
-      } else if (amount === 3900) { // $39.00 = Full-Time 60
-        subscriptionType = 'Full-Time 60';
+      } else if (subscriptionType === 'Full-Time 60') {
         monthlyLimit = 60;
         tokensToAdd = 60;
-      } else if (amount === 5900) { // $59.00 = Full-Time 90
-        subscriptionType = 'Full-Time 90';
+      } else if (subscriptionType === 'Full-Time 90') {
         monthlyLimit = 90;
         tokensToAdd = 90;
-      } else if (amount === 7900) { // $79.00 = Full-Time 120
-        subscriptionType = 'Full-Time 120';
+      } else if (subscriptionType === 'Full-Time 120') {
         monthlyLimit = 120;
         tokensToAdd = 120;
       }
@@ -716,35 +719,13 @@ serve(async (req) => {
         }
       });
 
-      // CRITICAL FIX: Since there's no unique constraint on teacher_id, we need to handle manually
-      // Check if teacher already has a subscription record
-      const { data: existingSubscription, error: existingSubError } = await supabaseService
+      // NOW CAN USE PROPER UPSERT: Use teacher_id unique constraint created by migration
+      const { error: subError } = await supabaseService
         .from('subscriptions')
-        .select('id')
-        .eq('teacher_id', profile.id)
-        .single();
-
-      let subError;
-      if (existingSubscription) {
-        // Update existing subscription
-        const { error } = await supabaseService
-          .from('subscriptions')
-          .update(subscriptionData)
-          .eq('teacher_id', profile.id);
-        subError = error;
-        if (!error) {
-          logStep('Updated existing subscription record', { teacherId: profile.id });
-        }
-      } else {
-        // Insert new subscription
-        const { error } = await supabaseService
-          .from('subscriptions')
-          .insert(subscriptionData);
-        subError = error;
-        if (!error) {
-          logStep('Inserted new subscription record', { teacherId: profile.id });
-        }
-      }
+        .upsert(subscriptionData, { 
+          onConflict: 'teacher_id',  // NOW WORKS: unique constraint exists
+          ignoreDuplicates: false 
+        });
 
       if (subError) {
         logStep('ERROR: Failed to upsert subscription record', subError);
