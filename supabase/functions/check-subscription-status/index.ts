@@ -276,6 +276,48 @@ serve(async (req) => {
 
     console.log('[CHECK-SUBSCRIPTION] Successfully synced subscription data');
 
+    // FALLBACK: Check if subscription events are missing and add them if needed
+    const { data: eventCount } = await supabaseService
+      .from('subscription_events')
+      .select('id', { count: 'exact' })
+      .eq('teacher_id', user.id);
+
+    const hasEvents = eventCount && eventCount.length > 0;
+    
+    if (!hasEvents && subscription.status === 'active') {
+      console.log('[CHECK-SUBSCRIPTION] FALLBACK: Adding missing subscription_events for active subscription');
+      
+      // Add a fallback subscription event to maintain data consistency
+      const { error: fallbackEventError } = await supabaseService
+        .from('subscription_events')
+        .insert({
+          teacher_id: user.id,
+          email: user.email,
+          event_type: 'customer.subscription.created',
+          old_plan_type: 'Free Demo',
+          new_plan_type: subscriptionType,
+          tokens_added: 0,
+          stripe_event_id: `fallback_${subscription.id}_${Date.now()}`,
+          event_data: {
+            subscription_id: subscription.id,
+            customer_id: customerId,
+            status: subscription.status,
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: subscription.current_period_start,
+            current_period_end: subscription.current_period_end,
+            amount: amount,
+            plan_name: subscriptionType,
+            fallback_sync: true
+          }
+        });
+
+      if (fallbackEventError) {
+        console.error('[CHECK-SUBSCRIPTION] FALLBACK: Error adding subscription event:', fallbackEventError);
+      } else {
+        console.log('[CHECK-SUBSCRIPTION] FALLBACK: Added missing subscription event');
+      }
+    }
+
     return new Response(
       JSON.stringify({
         subscribed: true,

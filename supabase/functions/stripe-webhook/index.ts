@@ -181,7 +181,7 @@ serve(async (req) => {
       newPlan: newPlanType 
     });
 
-    // SIMPLIFIED: Update profiles table based on event type
+    // CRITICAL: Update BOTH profiles AND subscriptions tables directly
     let subscriptionStatus = 'active';
     let finalSubscriptionType = subscriptionType;
     
@@ -192,6 +192,7 @@ serve(async (req) => {
       finalSubscriptionType = 'Inactive';
     }
 
+    // Update profiles table
     const { error: profileUpdateError } = await supabaseService
       .from('profiles')
       .update({
@@ -208,6 +209,37 @@ serve(async (req) => {
       logStep('✓ Profiles table updated', { 
         subscriptionType: finalSubscriptionType, 
         subscriptionStatus 
+      });
+    }
+
+    // CRITICAL FIX: Also update subscriptions table directly
+    const subscriptionUpsertData = {
+      teacher_id: profile.id,
+      email: email,
+      stripe_customer_id: customer.id,
+      stripe_subscription_id: subscription.id,
+      subscription_type: finalSubscriptionType,
+      subscription_status: subscriptionStatus,
+      monthly_limit: event.type === 'customer.subscription.deleted' ? 0 : monthlyLimit,
+      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { error: subscriptionUpdateError } = await supabaseService
+      .from('subscriptions')
+      .upsert(subscriptionUpsertData, { 
+        onConflict: 'stripe_subscription_id',
+        ignoreDuplicates: false 
+      });
+
+    if (subscriptionUpdateError) {
+      logStep('WARNING: Failed to update subscriptions table', subscriptionUpdateError);
+    } else {
+      logStep('✓ Subscriptions table updated', { 
+        subscriptionType: finalSubscriptionType, 
+        subscriptionStatus,
+        subscriptionId: subscription.id
       });
     }
 
