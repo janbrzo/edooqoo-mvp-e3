@@ -3,13 +3,16 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-console.log('React object:', React);
-console.log('React version:', React.version);
-
-const rootElement = document.getElementById("root");
-if (!rootElement) {
-  throw new Error('Root element not found');
+// Disable console logs in production build
+if (import.meta.env.PROD) {
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+  // Keep console.error and console.warn for debugging production issues
 }
 
-const root = createRoot(rootElement);
-root.render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
