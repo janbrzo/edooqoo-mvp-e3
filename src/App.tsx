@@ -29,7 +29,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
+      {/* <Toaster /> - Temporarily disabled due to React hook issue */}
       <Sonner />
       <BrowserRouter>
         <div className="min-h-screen flex flex-col">
