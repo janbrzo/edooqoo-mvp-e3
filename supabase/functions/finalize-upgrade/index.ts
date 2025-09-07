@@ -124,10 +124,13 @@ serve(async (req) => {
 
     // Extract session metadata parameters first
     const targetPlanType = session.metadata?.target_plan_type || session.metadata?.plan_type;
-    const targetPlanName = session.metadata?.target_plan_name || session.metadata?.plan_name;
+    const rawTargetPlanName = session.metadata?.target_plan_name || session.metadata?.plan_name;
     const targetPlanPrice = parseFloat(session.metadata?.target_plan_price || session.metadata?.price || '0');
     const targetMonthlyLimit = parseInt(session.metadata?.target_monthly_limit || session.metadata?.monthly_limit || '0');
     const upgradeTokens = parseInt(session.metadata?.upgrade_tokens || '0');
+    
+    // CRITICAL FIX: Normalize plan name to ensure it's never null/undefined
+    const targetPlanName = normalizePlanName(targetPlanType, targetMonthlyLimit, rawTargetPlanName);
     
     // Get subscription ID from session or metadata
     let subscriptionId = session.metadata?.subscription_id || session.subscription as string;
@@ -195,10 +198,14 @@ serve(async (req) => {
       
       // Get the subscription from Stripe to ensure we have all data
       const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+      // CRITICAL FIX: Get customer ID from subscription if not in session
+      const stripeCustomerId = session.customer as string || stripeSubscription.customer as string;
+      
       logStep('Retrieved Stripe subscription for fallback', { 
         id: stripeSubscription.id,
         status: stripeSubscription.status,
-        current_period_end: stripeSubscription.current_period_end
+        current_period_end: stripeSubscription.current_period_end,
+        customer: stripeCustomerId
       });
       
       // CRITICAL: Add tokens that should have been added by stripe-webhook
@@ -231,22 +238,29 @@ serve(async (req) => {
         upgradeTokens
       });
       
-      // FORCE CREATE subscriptions table entry
+      // FORCE CREATE subscriptions table entry - FIXED: proper validation and conflict handling
+      logStep('FIRST SUBSCRIPTION FALLBACK: Creating subscriptions entry', {
+        targetPlanName,
+        stripeCustomerId,
+        targetMonthlyLimit,
+        subscriptionId
+      });
+      
       const { error: subError } = await supabaseService
         .from('subscriptions')
         .upsert({
           teacher_id: user.id,
           email: user.email,
           stripe_subscription_id: subscriptionId,
-          stripe_customer_id: session.customer as string,
+          stripe_customer_id: stripeCustomerId, // FIXED: use validated customer ID
           subscription_status: 'active',
-          subscription_type: targetPlanName,
+          subscription_type: targetPlanName, // FIXED: use normalized plan name
           monthly_limit: targetMonthlyLimit,
           current_period_start: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
           current_period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
           updated_at: new Date().toISOString()
         }, { 
-          onConflict: 'stripe_subscription_id',
+          onConflict: 'teacher_id', // FIXED: conflict on teacher_id, not stripe_subscription_id
           ignoreDuplicates: false 
         });
 
@@ -274,7 +288,13 @@ serve(async (req) => {
         logStep('FIRST SUBSCRIPTION FALLBACK: Token transaction created');
       }
       
-      // FORCE CREATE subscription event
+      // FORCE CREATE subscription event - FIXED: proper validation
+      logStep('FIRST SUBSCRIPTION FALLBACK: Creating subscription event', {
+        targetPlanName,
+        upgradeTokens,
+        stripeCustomerId
+      });
+      
       const { error: eventError } = await supabaseService
         .from('subscription_events')
         .insert({
@@ -282,14 +302,17 @@ serve(async (req) => {
           email: user.email,
           event_type: 'customer.subscription.created',
           old_plan_type: 'Free Demo',
-          new_plan_type: targetPlanName,
+          new_plan_type: targetPlanName, // FIXED: use normalized plan name
           tokens_added: upgradeTokens,
-          stripe_event_id: `fallback_${session_id}`,
+          stripe_event_id: `fallback_${session_id}_${Date.now()}`, // FIXED: make unique
           event_data: {
             stripe_session_id: session_id,
             stripe_subscription_id: subscriptionId,
+            stripe_customer_id: stripeCustomerId, // FIXED: add customer ID to event data
             fallback_reason: 'stripe_webhook_missing',
-            target_plan_name: targetPlanName
+            target_plan_name: targetPlanName,
+            current_period_start: stripeSubscription.current_period_start,
+            current_period_end: stripeSubscription.current_period_end
           }
         });
 
@@ -462,21 +485,23 @@ serve(async (req) => {
     logStep('Profile updated successfully');
 
     // Update subscriptions table with correct data - FIXED: Use correct onConflict key
+    const upgradeCustomerId = session.customer as string || updatedSubscription.customer as string;
+    
     const { error: subError } = await supabaseService
       .from('subscriptions')
       .upsert({
         teacher_id: user.id,
         email: user.email,
         stripe_subscription_id: subscriptionId,
-        stripe_customer_id: session.customer as string,
+        stripe_customer_id: upgradeCustomerId, // FIXED: validate customer ID
         subscription_status: 'active',
-        subscription_type: targetPlanName,
+        subscription_type: targetPlanName, // FIXED: use normalized plan name
         monthly_limit: targetMonthlyLimit,
         current_period_start: new Date(updatedSubscription.current_period_start * 1000).toISOString(),
         current_period_end: new Date(updatedSubscription.current_period_end * 1000).toISOString(),
         updated_at: new Date().toISOString()
       }, { 
-        onConflict: 'stripe_subscription_id',  // FIXED: Use correct unique constraint
+        onConflict: 'teacher_id',  // FIXED: Use teacher_id for conflict resolution
         ignoreDuplicates: false 
       });
 
