@@ -2,11 +2,16 @@
 
 /**
  * Gets exercise types based on count of exercises needed
- * Now uses constant sets for consistent generation
- * UPDATED: Moved true-false to position 2 (after reading)
+ * UPDATED: Now supports custom exercise selection from form
  */
-export function getExerciseTypesForCount(count: number): string[] {
-  // Standard 8-exercise set (60 min lessons) - NEW ORDER with true-false as Exercise 2
+export function getExerciseTypesForCount(count: number, customTypes?: string[]): string[] {
+  // If custom types are provided (manual selection), use them
+  if (customTypes && customTypes.length > 0) {
+    console.log(`Using custom exercise types: ${customTypes.join(', ')}`);
+    return customTypes.slice(0, count); // Ensure we don't exceed the requested count
+  }
+  
+  // Default 8-exercise set for automatic selection
   const fullSet = [
     'reading',           // Exercise 1
     'true-false',        // Exercise 2 - Now directly after reading
@@ -18,9 +23,8 @@ export function getExerciseTypesForCount(count: number): string[] {
     'error-correction'   // Exercise 8 - Was 8 (unchanged)
   ];
   
-  // Always return the full 8-exercise set
-  // The main function will trim to 6 if needed for 45 min lessons
-  return fullSet;
+  console.log(`Using default exercise types (${count} exercises)`);
+  return fullSet.slice(0, count);
 }
 
 /**

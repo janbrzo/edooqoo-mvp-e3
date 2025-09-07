@@ -3,16 +3,28 @@ import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import LanguageStyleSlider from "./LanguageStyleSlider";
+import ExerciseSelector from "./ExerciseSelector";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { LessonTime } from "./types";
 
 interface AdvancedOptionsProps {
   languageStyle: number;
   onLanguageStyleChange: (value: number) => void;
+  lessonTime: LessonTime;
+  autoSelectExercises: boolean;
+  onAutoSelectExercisesChange: (value: boolean) => void;
+  selectedExerciseTypes: string[];
+  onSelectedExerciseTypesChange: (types: string[]) => void;
 }
 
 const AdvancedOptions: React.FC<AdvancedOptionsProps> = ({
   languageStyle,
   onLanguageStyleChange,
+  lessonTime,
+  autoSelectExercises,
+  onAutoSelectExercisesChange,
+  selectedExerciseTypes,
+  onSelectedExerciseTypesChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -45,11 +57,24 @@ const AdvancedOptions: React.FC<AdvancedOptionsProps> = ({
         </CollapsibleTrigger>
         
         <CollapsibleContent className="pt-4">
-          <div className="p-4 bg-white border border-gray-200 rounded-lg">
+          <div className="p-4 bg-white border border-gray-200 rounded-lg space-y-6">
             <LanguageStyleSlider 
               value={languageStyle} 
               onChange={onLanguageStyleChange} 
             />
+            
+            <div className="border-t pt-6">
+              <h4 className={`font-medium text-gray-700 mb-4 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                Exercise Selection
+              </h4>
+              <ExerciseSelector
+                autoSelectExercises={autoSelectExercises}
+                onAutoSelectChange={onAutoSelectExercisesChange}
+                selectedExerciseTypes={selectedExerciseTypes}
+                onSelectedExerciseTypesChange={onSelectedExerciseTypesChange}
+                lessonTime={lessonTime}
+              />
+            </div>
           </div>
         </CollapsibleContent>
       </Collapsible>
