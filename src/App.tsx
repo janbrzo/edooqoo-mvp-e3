@@ -20,6 +20,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import SharedWorksheet from "./pages/SharedWorksheet";
+import TestExercises from "./pages/TestExercises";
 import CookieBanner from "./components/CookieBanner";
 import GlobalFooter from "./components/GlobalFooter";
 import OnboardingChecklist from "./components/OnboardingChecklist";
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/success" element={<PaymentSuccess />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/shared/:token" element={<SharedWorksheet />} />
+              <Route path="/test-exercises" element={<TestExercises />} />
               <Route path="/waiting-list" element={<Navigate to="/" replace />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

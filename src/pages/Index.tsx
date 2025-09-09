@@ -160,6 +160,11 @@ const Index = () => {
         Token Left: {tokenLeft}
       </Badge>
       <Button asChild variant="outline" size="sm">
+        <Link to="/test-exercises">
+          🧪 Test New Exercises
+        </Link>
+      </Button>
+      <Button asChild variant="outline" size="sm">
         <Link to="/dashboard">
           <GraduationCap className="h-4 w-4 mr-2" />
           Dashboard
@@ -177,6 +182,11 @@ const Index = () => {
   // Navigation component for anonymous users
   const AnonymousNav = () => (
     <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+      <Button asChild variant="outline" size="sm">
+        <Link to="/test-exercises">
+          🧪 Test New Exercises
+        </Link>
+      </Button>
       <Button onClick={scrollToPricing} variant="outline" size="sm">
         <DollarSign className="h-4 w-4 mr-2" />
         Pricing
