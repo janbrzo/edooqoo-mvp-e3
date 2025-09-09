@@ -11,69 +11,61 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
   sentences, isEditing, viewMode, onSentenceChange
 }) => {
   return (
-    <div className="space-y-4">
-      <h3 className="font-medium text-gray-700 mb-3">Transform the sentences as instructed:</h3>
-      
-      {sentences.map((sentence: any, sIndex: number) => (
-        <div key={sIndex} className="p-4 border rounded-lg bg-gray-50">
-          <div className="mb-3">
-            <strong className="text-gray-700">Sentence {sIndex + 1}:</strong>
-            <div className="mt-1">
-              <strong>Instruction:</strong>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={sentence.instruction}
-                  onChange={e => onSentenceChange(sIndex, 'instruction', e.target.value)}
-                  className="w-full mt-1 border p-2 editable-content"
-                  placeholder="Transformation instruction (e.g., 'Rewrite in passive voice')"
-                />
-              ) : (
-                <span className="ml-2 italic text-gray-600">{sentence.instruction}</span>
+    <div className="space-y-0.5">
+      {sentences.map((sentence, sIndex) => (
+        <div key={sIndex} className="border-b pb-1">
+          <div className="flex flex-row items-start">
+            <div className="flex-grow">
+              <p className="font-medium leading-snug">
+                {sIndex + 1}. Transform this sentence:
+              </p>
+              <div className="bg-blue-50 p-2 rounded mt-1 mb-2">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={sentence.original}
+                    onChange={e => onSentenceChange(sIndex, 'original', e.target.value)}
+                    className="w-full border p-1 editable-content"
+                  />
+                ) : (
+                  <p className="font-medium text-sm">{sentence.original}</p>
+                )}
+              </div>
+              {sentence.instruction && (
+                <p className="text-sm text-gray-600 mb-2 italic">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={sentence.instruction}
+                      onChange={e => onSentenceChange(sIndex, 'instruction', e.target.value)}
+                      className="w-full border p-1 editable-content"
+                    />
+                  ) : (
+                    sentence.instruction
+                  )}
+                </p>
+              )}
+              {viewMode === 'student' && (
+                <div className="mt-2 p-2 bg-gray-50 rounded border-dashed border-2 border-gray-300">
+                  <p className="text-sm text-gray-600">Your answer: ________________</p>
+                </div>
               )}
             </div>
-          </div>
-
-          <div className="mb-3">
-            <strong>Original:</strong>
-            {isEditing ? (
-              <input
-                type="text"
-                value={sentence.original}
-                onChange={e => onSentenceChange(sIndex, 'original', e.target.value)}
-                className="w-full mt-1 border p-2 editable-content"
-                placeholder="Original sentence"
-              />
-            ) : (
-              <div className="mt-1 p-2 bg-white border rounded">{sentence.original}</div>
+            {viewMode === 'teacher' && (
+              <div className="text-green-600 italic ml-3 text-sm">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={sentence.transformed}
+                    onChange={e => onSentenceChange(sIndex, 'transformed', e.target.value)}
+                    className="border p-1 editable-content w-full"
+                  />
+                ) : (
+                  <span>({sentence.transformed})</span>
+                )}
+              </div>
             )}
           </div>
-
-          {viewMode === 'teacher' && (
-            <div className="mt-3 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
-              <strong className="text-blue-700">Transformed:</strong>
-              {isEditing ? (
-                <textarea
-                  value={sentence.transformed}
-                  onChange={e => onSentenceChange(sIndex, 'transformed', e.target.value)}
-                  className="w-full mt-1 border p-2 bg-white editable-content"
-                  rows={2}
-                  placeholder="Correct transformation"
-                />
-              ) : (
-                <div className="mt-1 text-blue-700 font-medium">{sentence.transformed}</div>
-              )}
-            </div>
-          )}
-
-          {viewMode === 'student' && (
-            <div className="mt-3">
-              <strong>Your answer:</strong>
-              <div className="mt-1 p-2 border-2 border-dashed border-gray-300 rounded min-h-[40px] bg-white">
-                <span className="text-gray-400 italic">Write your transformation here...</span>
-              </div>
-            </div>
-          )}
         </div>
       ))}
     </div>

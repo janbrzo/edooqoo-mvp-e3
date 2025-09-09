@@ -14,26 +14,26 @@ export const mockNewExercisesData = {
       "icon": "Target",
       "time": 6,
       "instructions": "In each group, identify the word that doesn't belong and explain why.",
-      "groups": [
+      "questions": [
         {
-          "words": ["happy", "joyful", "elated", "angry", "cheerful"],
-          "odd_one": "angry",
-          "explanation": "All others are positive emotions"
+          "instruction": "Which word doesn't belong?",
+          "options": ["happy", "joyful", "elated", "angry", "cheerful"],
+          "correct_answer": "angry"
         },
         {
-          "words": ["car", "bicycle", "train", "airplane", "book"],
-          "odd_one": "book",
-          "explanation": "All others are means of transportation"
+          "instruction": "Which word doesn't belong?",
+          "options": ["car", "bicycle", "train", "airplane", "book"],
+          "correct_answer": "book"
         },
         {
-          "words": ["doctor", "teacher", "lawyer", "student", "engineer"],
-          "odd_one": "student",
-          "explanation": "All others are professions, student is a role"
+          "instruction": "Which word doesn't belong?",
+          "options": ["doctor", "teacher", "lawyer", "student", "engineer"],
+          "correct_answer": "student"
         },
         {
-          "words": ["winter", "spring", "Monday", "summer", "autumn"],
-          "odd_one": "Monday",
-          "explanation": "All others are seasons"
+          "instruction": "Which word doesn't belong?",
+          "options": ["winter", "spring", "Monday", "summer", "autumn"],
+          "correct_answer": "Monday"
         }
       ],
       "teacher_tip": "Encourage students to explain their reasoning and discuss alternative answers."
@@ -43,32 +43,37 @@ export const mockNewExercisesData = {
       "title": "Synonyms and Antonyms Matching",
       "icon": "ArrowLeftRight",
       "time": 8,
-      "instructions": "Match each word with its synonym or antonym as indicated.",
-      "type_label": "synonyms",
+      "instructions": "Find the synonym or antonym for each word as indicated.",
       "items": [
         {
           "word": "big",
-          "match": "large"
+          "type": "synonym",
+          "answer": "large"
         },
         {
           "word": "fast",
-          "match": "quick"
+          "type": "synonym", 
+          "answer": "quick"
         },
         {
           "word": "happy",
-          "match": "joyful"
+          "type": "antonym",
+          "answer": "sad"
         },
         {
           "word": "difficult",
-          "match": "hard"
+          "type": "synonym",
+          "answer": "hard"
         },
         {
           "word": "beautiful",
-          "match": "gorgeous"
+          "type": "synonym",
+          "answer": "gorgeous"
         },
         {
-          "word": "smart",
-          "match": "intelligent"
+          "word": "cold",
+          "type": "antonym",
+          "answer": "hot"
         }
       ],
       "teacher_tip": "Practice pronunciation and encourage students to use these words in sentences."
@@ -135,9 +140,33 @@ export const mockNewExercisesData = {
       "icon": "FileText",
       "time": 12,
       "instructions": "Read the text and fill in the missing words from the word bank.",
-      "text": "Learning English can be both ____ and rewarding. Many students find it ____ to master grammar rules, but with regular ____ and dedication, anyone can ____ their language skills. The key is to ____ consistently and not be afraid of making ____. Every mistake is a learning ____ that helps you grow.",
-      "word_bank": ["challenging", "improve", "practice", "opportunity", "difficult", "study", "mistakes"],
-      "correct_answers": ["challenging", "difficult", "practice", "improve", "study", "mistakes", "opportunity"],
+      "word_bank": ["challenging", "difficult", "practice", "improve", "study", "mistakes", "opportunity"],
+      "sentences": [
+        {
+          "text": "Learning English can be both _____ and rewarding.",
+          "answer": "challenging"
+        },
+        {
+          "text": "Many students find it _____ to master grammar rules.",
+          "answer": "difficult"
+        },
+        {
+          "text": "With regular _____ and dedication, anyone can improve.",
+          "answer": "practice"
+        },
+        {
+          "text": "The key is to _____ consistently every day.",
+          "answer": "study"
+        },
+        {
+          "text": "Don't be afraid of making _____ - they help you learn.",
+          "answer": "mistakes"
+        },
+        {
+          "text": "Every mistake is a learning _____ that helps you grow.",
+          "answer": "opportunity"
+        }
+      ],
       "teacher_tip": "Discuss the meaning of each word and encourage students to use context clues."
     },
     {
@@ -148,44 +177,28 @@ export const mockNewExercisesData = {
       "instructions": "Add the correct negative prefix (un-, in-, dis-, im-, ir-, il-) to make each word negative.",
       "words": [
         {
-          "base_word": "happy",
-          "negative_form": "unhappy",
-          "prefix": "un-"
+          "word": "happy",
+          "answer": "unhappy"
         },
         {
-          "base_word": "possible",
-          "negative_form": "impossible",
-          "prefix": "im-"
+          "word": "possible",
+          "answer": "impossible"
         },
         {
-          "base_word": "agree",
-          "negative_form": "disagree",
-          "prefix": "dis-"
+          "word": "agree",
+          "answer": "disagree"
         },
         {
-          "base_word": "regular",
-          "negative_form": "irregular",
-          "prefix": "ir-"
+          "word": "regular",
+          "answer": "irregular"
         },
         {
-          "base_word": "correct",
-          "negative_form": "incorrect",
-          "prefix": "in-"
+          "word": "correct",
+          "answer": "incorrect"
         },
         {
-          "base_word": "legal",
-          "negative_form": "illegal",
-          "prefix": "il-"
-        },
-        {
-          "base_word": "complete",
-          "negative_form": "incomplete",
-          "prefix": "in-"
-        },
-        {
-          "base_word": "comfortable",
-          "negative_form": "uncomfortable",
-          "prefix": "un-"
+          "word": "legal",
+          "answer": "illegal"
         }
       ],
       "teacher_tip": "Explain the rules for choosing the correct prefix and provide more examples."
