@@ -111,19 +111,19 @@ export const mockNewExercisesData = {
       "instructions": "Arrange the scrambled words to form correct sentences.",
       "sentences": [
         {
-          "scrambled_words": ["always", "coffee", "morning", "drinks", "she", "in", "the"],
+          "scrambled_words": "always / coffee / morning / drinks / she / in / the",
           "correct_order": "She always drinks coffee in the morning."
         },
         {
-          "scrambled_words": ["are", "studying", "students", "the", "library", "in", "quietly", "the"],
+          "scrambled_words": "are / studying / students / the / library / in / quietly / the",
           "correct_order": "The students are studying quietly in the library."
         },
         {
-          "scrambled_words": ["never", "homework", "his", "forgets", "to", "do", "he"],
+          "scrambled_words": "never / homework / his / forgets / to / do / he",
           "correct_order": "He never forgets to do his homework."
         },
         {
-          "scrambled_words": ["beautiful", "flowers", "garden", "the", "has", "many", "in", "it"],
+          "scrambled_words": "beautiful / flowers / garden / the / has / many / in / it",
           "correct_order": "The garden has many beautiful flowers in it."
         }
       ],
