@@ -12,7 +12,7 @@ export const mockNewExercisesData = {
       "type": "odd-one-out",
       "title": "Odd One Out",
       "icon": "Target",
-      "time": 6,
+      "time": 8,
       "instructions": "In each group, identify the word that doesn't belong and explain why.",
       "questions": [
         {
@@ -34,6 +34,26 @@ export const mockNewExercisesData = {
           "instruction": "Which word doesn't belong?",
           "options": ["winter", "spring", "Monday", "summer", "autumn"],
           "correct_answer": "Monday"
+        },
+        {
+          "instruction": "Which word doesn't belong?",
+          "options": ["red", "green", "blue", "circle", "yellow"],
+          "correct_answer": "circle"
+        },
+        {
+          "instruction": "Which word doesn't belong?",
+          "options": ["apple", "banana", "orange", "carrot", "grape"],
+          "correct_answer": "carrot"
+        },
+        {
+          "instruction": "Which word doesn't belong?",
+          "options": ["walk", "run", "jump", "sing", "dance"],
+          "correct_answer": "sing"
+        },
+        {
+          "instruction": "Which word doesn't belong?",
+          "options": ["chair", "table", "desk", "lamp", "computer"],
+          "correct_answer": "computer"
         }
       ],
       "teacher_tip": "Encourage students to explain their reasoning and discuss alternative answers."
@@ -42,38 +62,40 @@ export const mockNewExercisesData = {
       "type": "synonyms-antonyms",
       "title": "Synonyms and Antonyms Matching",
       "icon": "ArrowLeftRight",
-      "time": 8,
-      "instructions": "Find the synonym or antonym for each word as indicated.",
+      "time": 10,
+      "instructions": "Match each word to its synonym or antonym as indicated.",
       "items": [
         {
-          "word": "big",
-          "type": "synonym",
-          "answer": "large"
+          "term": "big (synonym)",
+          "definition": "large"
         },
         {
-          "word": "fast",
-          "type": "synonym", 
-          "answer": "quick"
+          "term": "fast (synonym)",
+          "definition": "quick"
         },
         {
-          "word": "happy",
-          "type": "antonym",
-          "answer": "sad"
+          "term": "happy (antonym)",
+          "definition": "sad"
         },
         {
-          "word": "difficult",
-          "type": "synonym",
-          "answer": "hard"
+          "term": "difficult (synonym)",
+          "definition": "hard"
         },
         {
-          "word": "beautiful",
-          "type": "synonym",
-          "answer": "gorgeous"
+          "term": "beautiful (synonym)",
+          "definition": "gorgeous"
         },
         {
-          "word": "cold",
-          "type": "antonym",
-          "answer": "hot"
+          "term": "cold (antonym)",
+          "definition": "hot"
+        },
+        {
+          "term": "expensive (antonym)",
+          "definition": "cheap"
+        },
+        {
+          "term": "smart (synonym)",
+          "definition": "intelligent"
         }
       ],
       "teacher_tip": "Practice pronunciation and encourage students to use these words in sentences."
@@ -82,7 +104,7 @@ export const mockNewExercisesData = {
       "type": "sentence-transformation",
       "title": "Sentence Transformation",
       "icon": "RotateCw",
-      "time": 10,
+      "time": 12,
       "instructions": "Transform each sentence according to the given instruction.",
       "sentences": [
         {
@@ -104,6 +126,26 @@ export const mockNewExercisesData = {
           "instruction": "Change to past tense:",
           "original": "He goes to work by bus.",
           "transformed": "He went to work by bus."
+        },
+        {
+          "instruction": "Change to present perfect:",
+          "original": "I wrote a letter yesterday.",
+          "transformed": "I have written a letter."
+        },
+        {
+          "instruction": "Change to conditional:",
+          "original": "It rains every day.",
+          "transformed": "It would rain every day."
+        },
+        {
+          "instruction": "Change to reported speech:",
+          "original": "John said, 'I am tired.'",
+          "transformed": "John said that he was tired."
+        },
+        {
+          "instruction": "Change to comparative:",
+          "original": "This book is interesting.",
+          "transformed": "This book is more interesting than that one."
         }
       ],
       "teacher_tip": "Focus on grammar rules and encourage students to explain the transformations."
@@ -112,7 +154,7 @@ export const mockNewExercisesData = {
       "type": "word-order",
       "title": "Word Order Exercise",
       "icon": "ArrowUpDown",
-      "time": 7,
+      "time": 10,
       "instructions": "Arrange the scrambled words to form correct sentences.",
       "sentences": [
         {
@@ -130,50 +172,73 @@ export const mockNewExercisesData = {
         {
           "scrambled_words": "beautiful / flowers / garden / the / has / many / in / it",
           "correct_order": "The garden has many beautiful flowers in it."
+        },
+        {
+          "scrambled_words": "every / goes / swimming / weekend / he / pool / the / to",
+          "correct_order": "He goes swimming to the pool every weekend."
+        },
+        {
+          "scrambled_words": "carefully / driving / was / very / she / yesterday",
+          "correct_order": "She was driving very carefully yesterday."
+        },
+        {
+          "scrambled_words": "friends / meeting / are / restaurant / the / at / my / tonight",
+          "correct_order": "My friends are meeting at the restaurant tonight."
+        },
+        {
+          "scrambled_words": "usually / work / by / goes / train / to / he",
+          "correct_order": "He usually goes to work by train."
         }
       ],
       "teacher_tip": "Emphasize word order rules and sentence structure patterns."
     },
     {
       "type": "gap-text",
-      "title": "Gap Text Exercise",
+      "title": "Gap Text (Cloze Test)",
       "icon": "FileText",
       "time": 12,
-      "instructions": "Read the text and fill in the missing words from the word bank.",
-      "word_bank": ["challenging", "difficult", "practice", "improve", "study", "mistakes", "opportunity"],
+      "instructions": "Fill in the gaps with the correct form of the verbs in brackets.",
       "sentences": [
         {
-          "text": "Learning English can be both _____ and rewarding.",
-          "answer": "challenging"
+          "text": "If he _____ (study) harder, he would pass the exam.",
+          "answer": "studied"
         },
         {
-          "text": "Many students find it _____ to master grammar rules.",
-          "answer": "difficult"
+          "text": "She _____ (work) here for five years before she got promoted.",
+          "answer": "had worked"
         },
         {
-          "text": "With regular _____ and dedication, anyone can improve.",
-          "answer": "practice"
+          "text": "They _____ (not finish) their project by tomorrow.",
+          "answer": "won't finish"
         },
         {
-          "text": "The key is to _____ consistently every day.",
-          "answer": "study"
+          "text": "I wish I _____ (be) taller so I could play basketball better.",
+          "answer": "were"
         },
         {
-          "text": "Don't be afraid of making _____ - they help you learn.",
-          "answer": "mistakes"
+          "text": "The cake _____ (bake) in the oven for 30 minutes now.",
+          "answer": "has been baking"
         },
         {
-          "text": "Every mistake is a learning _____ that helps you grow.",
-          "answer": "opportunity"
+          "text": "By the time you arrive, we _____ (leave) for the airport.",
+          "answer": "will have left"
+        },
+        {
+          "text": "If she _____ (not miss) the bus, she would have been on time.",
+          "answer": "hadn't missed"
+        },
+        {
+          "text": "He suggested that everyone _____ (bring) their own lunch.",
+          "answer": "bring"
         }
       ],
-      "teacher_tip": "Discuss the meaning of each word and encourage students to use context clues."
+      "teacher_tip": "Focus on verb tenses, conditionals, and subjunctive mood. Discuss the meaning of each sentence."
     },
     {
       "type": "negative-prefixes",
       "title": "Negative Prefixes",
       "icon": "Minus",
-      "time": 8,
+      "time": 10,
       "instructions": "Add the correct negative prefix (un-, in-, dis-, im-, ir-, il-) to make each word negative.",
       "words": [
         {
@@ -199,6 +264,14 @@ export const mockNewExercisesData = {
         {
           "word": "legal",
           "answer": "illegal"
+        },
+        {
+          "word": "polite",
+          "answer": "impolite"
+        },
+        {
+          "word": "responsible",
+          "answer": "irresponsible"
         }
       ],
       "teacher_tip": "Explain the rules for choosing the correct prefix and provide more examples."

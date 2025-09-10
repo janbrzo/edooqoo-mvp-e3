@@ -45,11 +45,6 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                   )}
                 </p>
               )}
-              {viewMode === 'student' && (
-                <div className="mt-2 p-2 bg-gray-50 rounded border-dashed border-2 border-gray-300">
-                  <p className="text-sm text-gray-600">Your answer: ________________</p>
-                </div>
-              )}
             </div>
             {viewMode === 'teacher' && (
               <div className="text-green-600 italic ml-3 text-sm">

@@ -1,60 +1,75 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 interface ExerciseSynonymsAntonymsProps {
   items: any[];
-  type: 'synonyms' | 'antonyms';
   isEditing: boolean;
   viewMode: "student" | "teacher";
-  onItemChange: (itemIndex: number, field: string, value: string) => void;
+  onItemChange: (iIndex: number, field: string, value: string) => void;
+}
+
+// Shuffle function for matching exercise
+function shuffleArray(array: any[]) {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
 }
 
 const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
-  items, type, isEditing, viewMode, onItemChange
+  items, isEditing, viewMode, onItemChange
 }) => {
+  // Use useMemo to prevent re-shuffling on every render
+  const shuffledDefinitions = useMemo(() => {
+    return shuffleArray([...items]);
+  }, [items.map(item => `${item.term}|${item.definition}`).join('||')]);
+
   return (
-    <div className="space-y-0.5">
-      {items.map((item, iIndex) => (
-        <div key={iIndex} className="border-b pb-1">
-          <div className="flex flex-row items-start">
-            <div className="flex-grow">
-              <p className="font-medium leading-snug">
-                {iIndex + 1}. Find a {type === 'synonyms' ? 'synonym' : 'antonym'} for: {' '}
-                <span className="text-blue-600 font-semibold">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={item.word}
-                      onChange={e => onItemChange(iIndex, 'word', e.target.value)}
-                      className="border p-1 editable-content"
-                    />
-                  ) : (
-                    item.word
-                  )}
-                </span>
-              </p>
-              {viewMode === 'student' && (
-                <div className="mt-2 p-2 bg-gray-50 rounded border-dashed border-2 border-gray-300">
-                  <p className="text-sm text-gray-600">Your answer: ________________</p>
-                </div>
-              )}
-            </div>
-            {viewMode === 'teacher' && (
-              <div className="text-green-600 italic ml-3 text-sm">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={item.answer}
-                    onChange={e => onItemChange(iIndex, 'answer', e.target.value)}
-                    className="border p-1 editable-content w-full"
-                  />
-                ) : (
-                  <span>({item.answer})</span>
-                )}
-              </div>
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">
+      <div className="md:col-span-5 space-y-2">
+        <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Words</h4>
+        {items.map((item, iIndex) => (
+          <div key={iIndex} className="p-2 border rounded-md bg-white">
+            <span className="text-worksheet-purple font-medium mr-2">{iIndex + 1}.</span>
+            {viewMode === 'teacher' ? (
+              <span className="teacher-answer">{String.fromCharCode(65 + shuffledDefinitions.findIndex(i => i.term === item.term))}</span>
+            ) : (
+              <span className="student-answer-blank"></span>
             )}
+            {isEditing ? (
+              <input
+                type="text"
+                value={item.term}
+                onChange={e => onItemChange(iIndex, 'term', e.target.value)}
+                className="border p-1 editable-content w-full"
+              />
+            ) : item.term}
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+
+      <div className="md:col-span-7 space-y-2">
+        <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Synonyms/Antonyms</h4>
+        {shuffledDefinitions.map((item, iIndex) => (
+          <div key={iIndex} className="p-2 border rounded-md bg-white">
+            <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + iIndex)}.</span>
+            {isEditing ? (
+              <input
+                type="text"
+                value={item.definition}
+                onChange={e => {
+                  const originalIndex = items.findIndex(i => i.term === item.term);
+                  if (originalIndex !== -1) {
+                    onItemChange(originalIndex, 'definition', e.target.value);
+                  }
+                }}
+                className="border p-1 editable-content w-full"
+              />
+            ) : item.definition}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

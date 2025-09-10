@@ -260,7 +260,6 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
         {(exercise.type === 'synonyms-antonyms' || exercise.type === 'matching-synonyms' || exercise.type === 'matching-antonyms') && exercise.items && (
           <ExerciseSynonymsAntonyms
             items={exercise.items}
-            type={exercise.type === 'matching-antonyms' ? 'antonyms' : 'synonyms'}
             isEditing={isEditing}
             viewMode={viewMode}
             onItemChange={handleItemChangeLocal}
@@ -288,23 +287,9 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
         {exercise.type === 'gap-text' && exercise.sentences && (
           <ExerciseGapText
             sentences={exercise.sentences}
-            word_bank={exercise.word_bank}
             isEditing={isEditing}
             viewMode={viewMode}
             onSentenceChange={handleSentenceChangeLocal}
-            onWordBankChange={(wIndex, value) => {
-              const newWordBank = [...(exercise.word_bank || [])];
-              newWordBank[wIndex] = value;
-              const updatedExercises = [...editableWorksheet.exercises];
-              updatedExercises[index] = {
-                ...updatedExercises[index],
-                word_bank: newWordBank
-              };
-              setEditableWorksheet({
-                ...editableWorksheet,
-                exercises: updatedExercises
-              });
-            }}
           />
         )}
 
