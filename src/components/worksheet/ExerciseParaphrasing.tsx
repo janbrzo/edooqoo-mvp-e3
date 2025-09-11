@@ -1,18 +1,18 @@
 import React from "react";
 
-interface ExerciseSentenceTransformationProps {
+interface ExerciseParaphrasingProps {
   sentences: any[];
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
 }
 
-const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationProps> = ({
+const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
   sentences, isEditing, viewMode, onSentenceChange
 }) => {
   return (
     <div>
-      <p className="mb-3 font-medium">Transform these sentences using the words given:</p>
+      <p className="mb-3 font-medium">Rewrite each sentence using the word in brackets:</p>
       
       <div className="space-y-3">
         {sentences.map((sentence, sIndex) => (
@@ -33,22 +33,19 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                   )}
                 </p>
                 
-                {sentence.instruction && (
-                  <p className="text-sm text-gray-600 mb-1">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={sentence.instruction}
-                        onChange={e => onSentenceChange(sIndex, 'instruction', e.target.value)}
-                        className="w-full border p-1 editable-content text-sm"
-                      />
-                    ) : (
-                      <span>({sentence.instruction})</span>
-                    )}
-                  </p>
-                )}
+                <p className="text-sm text-gray-600 mb-2">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={sentence.word_to_use}
+                      onChange={e => onSentenceChange(sIndex, 'word_to_use', e.target.value)}
+                      className="border p-1 editable-content"
+                    />
+                  ) : (
+                    <span>Use: <strong>{sentence.word_to_use}</strong></span>
+                  )}
+                </p>
                 
-                {/* Student answer line */}
                 <div className="mt-2">
                   <span>→ ___________________________</span>
                 </div>
@@ -59,12 +56,12 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                   {isEditing ? (
                     <input
                       type="text"
-                      value={sentence.transformed}
-                      onChange={e => onSentenceChange(sIndex, 'transformed', e.target.value)}
+                      value={sentence.answer}
+                      onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
                       className="border p-1 editable-content w-full"
                     />
                   ) : (
-                    <span>({sentence.transformed})</span>
+                    <span>({sentence.answer})</span>
                   )}
                 </div>
               )}
@@ -76,4 +73,4 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
   );
 };
 
-export default ExerciseSentenceTransformation;
+export default ExerciseParaphrasing;

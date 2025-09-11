@@ -14,6 +14,11 @@ import ExerciseSentenceTransformation from "./ExerciseSentenceTransformation";
 import ExerciseWordOrder from "./ExerciseWordOrder";
 import ExerciseGapText from "./ExerciseGapText";
 import ExerciseNegativePrefixes from "./ExerciseNegativePrefixes";
+// New Phase 2 exercise components
+import ExerciseCategorize from "./ExerciseCategorize";
+import ExerciseParaphrasing from "./ExerciseParaphrasing";
+import ExerciseCompleteWord from "./ExerciseCompleteWord";
+import ExerciseMatchingHalves from "./ExerciseMatchingHalves";
 import {
   handleExerciseChange,
   handleQuestionChange,
@@ -308,6 +313,100 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
               updatedExercises[index] = {
                 ...updatedExercises[index],
                 words: newWords
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
+          />
+        )}
+
+        {/* New Phase 2 exercises */}
+        {exercise.type === 'categorize' && (
+          <ExerciseCategorize
+            words={exercise.words}
+            categories={exercise.categories}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onWordsChange={(words) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              updatedExercises[index] = {
+                ...updatedExercises[index],
+                words: words
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
+            onCategoryChange={(cIndex, field, value) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newCategories = [...exercise.categories];
+              newCategories[cIndex] = {
+                ...newCategories[cIndex],
+                [field]: value
+              };
+              updatedExercises[index] = {
+                ...updatedExercises[index],
+                categories: newCategories
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
+          />
+        )}
+
+        {exercise.type === 'paraphrasing' && exercise.sentences && (
+          <ExerciseParaphrasing
+            sentences={exercise.sentences}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onSentenceChange={handleSentenceChangeLocal}
+          />
+        )}
+
+        {exercise.type === 'complete-word' && exercise.words && (
+          <ExerciseCompleteWord
+            words={exercise.words}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onWordChange={(wIndex, field, value) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newWords = [...exercise.words];
+              newWords[wIndex] = {
+                ...newWords[wIndex],
+                [field]: value
+              };
+              updatedExercises[index] = {
+                ...updatedExercises[index],
+                words: newWords
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
+          />
+        )}
+
+        {exercise.type === 'matching-halves' && exercise.sentence_halves && (
+          <ExerciseMatchingHalves
+            sentence_halves={exercise.sentence_halves}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onHalvesChange={(hIndex, field, value) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newHalves = [...exercise.sentence_halves];
+              newHalves[hIndex] = {
+                ...newHalves[hIndex],
+                [field]: value
+              };
+              updatedExercises[index] = {
+                ...updatedExercises[index],
+                sentence_halves: newHalves
               };
               setEditableWorksheet({
                 ...editableWorksheet,
