@@ -56,12 +56,12 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={typeof sentence === 'string' ? sentence : sentence?.text || ''}
+                      value={sentence.text}
                       onChange={e => onSentenceChange(sIndex, 'text', e.target.value)}
                       className="w-full border p-1 editable-content"
                     />
                   ) : (
-                    <>{sIndex + 1}. {typeof sentence === 'string' ? sentence.replace(/_+/g, "_______________") : sentence?.text?.replace(/_+/g, "_______________") || ''}</>
+                    <>{sIndex + 1}. {sentence.text.replace(/_+/g, "_______________")}</>
                   )}
                 </p>
               </div>
@@ -70,12 +70,12 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={typeof sentence === 'object' ? sentence?.answer || '' : ''}
+                      value={sentence.answer}
                       onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
                       className="border p-1 editable-content w-full"
                     />
                   ) : (
-                    <span>({typeof sentence === 'object' ? sentence?.answer || '' : ''})</span>
+                    <span>({sentence.answer})</span>
                   )}
                 </div>
               )}

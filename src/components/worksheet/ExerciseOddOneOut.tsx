@@ -23,6 +23,8 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
 
   return (
     <div>
+      <p className="mb-3 font-medium">In each group, identify the word that doesn't belong:</p>
+      
       <div className="space-y-3">
         {questions.map((question, qIndex) => (
           <div key={qIndex} className="border-b pb-2">

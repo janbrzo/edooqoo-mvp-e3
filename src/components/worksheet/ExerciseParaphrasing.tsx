@@ -12,6 +12,8 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
 }) => {
   return (
     <div>
+      <p className="mb-3 font-medium">Rewrite each sentence using the word in brackets:</p>
+      
       <div className="space-y-3">
         {sentences.map((sentence, sIndex) => (
           <div key={sIndex} className="border-b pb-2">

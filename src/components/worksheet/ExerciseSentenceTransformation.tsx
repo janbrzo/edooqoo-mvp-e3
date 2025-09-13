@@ -12,6 +12,8 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
 }) => {
   return (
     <div>
+      <p className="mb-3 font-medium">Transform these sentences using the instructions:</p>
+      
       <div className="space-y-3">
         {sentences.map((sentence, sIndex) => (
           <div key={sIndex} className="border-b pb-2">
