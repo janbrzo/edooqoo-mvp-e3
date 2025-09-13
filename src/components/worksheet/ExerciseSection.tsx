@@ -504,7 +504,7 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
                         className="flex-grow border p-1 editable-content"
                       />
                     ) : (
-                      <span>{typeof question === 'string' ? question : question?.question || question?.text || JSON.stringify(question)}</span>
+                      <span>{typeof question === 'string' ? question : question?.question || question?.text || ''}</span>
                     )}
                   </div>
                 ))}

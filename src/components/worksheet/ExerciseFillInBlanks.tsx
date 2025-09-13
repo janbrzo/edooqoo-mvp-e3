@@ -61,7 +61,7 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
                       className="w-full border p-1 editable-content"
                     />
                   ) : (
-                    <>{sIndex + 1}. {typeof sentence === 'string' ? sentence.replace(/_+/g, "_______________") : sentence?.text?.replace(/_+/g, "_______________") || sentence}</>
+                    <>{sIndex + 1}. {typeof sentence === 'string' ? sentence.replace(/_+/g, "_______________") : sentence?.text?.replace(/_+/g, "_______________") || ''}</>
                   )}
                 </p>
               </div>
