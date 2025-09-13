@@ -246,7 +246,7 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
           </div>
         )}
 
-        {(exercise.type === 'error-correction' || exercise.type === 'word-formation' || exercise.type === 'word-order') && 
+        {(exercise.type === 'error-correction' || exercise.type === 'word-formation') && 
           exercise.sentences && renderOtherExerciseTypes(exercise, isEditing, viewMode, handleSentenceChangeLocal)}
         
         {exercise.type === 'true-false' && exercise.statements && 

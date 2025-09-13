@@ -12,8 +12,6 @@ const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
 }) => {
   return (
     <div>
-      <p className="mb-3 font-medium">Add the correct negative prefix (un-, in-, dis-, im-, ir-, il-) to make each word negative:</p>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {words.map((wordItem, wIndex) => (
           <div key={wIndex} className="border-b pb-1">

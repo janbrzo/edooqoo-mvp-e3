@@ -16,8 +16,6 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
 
   return (
     <div>
-      <p className="mb-3 font-medium">Put the words in the correct order to make sentences:</p>
-      
       <div className="space-y-3">
         {sentences.map((sentence, sIndex) => (
           <div key={sIndex} className="border-b pb-2">

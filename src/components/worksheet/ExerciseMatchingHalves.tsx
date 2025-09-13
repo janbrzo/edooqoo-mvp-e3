@@ -24,60 +24,44 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
 
   return (
     <div>
-      <p className="mb-3 font-medium">Match each sentence beginning with its correct ending:</p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* First halves column with A, B, C... */}
-        <div>
-          <h4 className="font-medium text-gray-700 mb-3">Sentence beginnings:</h4>
-          <div className="space-y-2">
-            {sentence_halves.map((item, hIndex) => (
-              <div key={`first-${hIndex}`} className="flex items-center gap-2">
-                <span className="font-medium text-sm w-6">{String.fromCharCode(65 + hIndex)})</span>
-                <div className="flex-grow">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={item.first_half}
-                      onChange={e => handleFirstHalfChange(hIndex, e.target.value)}
-                      className="w-full border p-1 editable-content"
-                    />
-                  ) : (
-                    <span>{item.first_half}</span>
-                  )}
-                </div>
-                {viewMode === 'teacher' && !isEditing && (
-                  <div className="text-green-600 italic text-sm">
-                    <span>({item.correct_match})</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">
+        <div className="md:col-span-5 space-y-2">
+          <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence beginnings</h4>
+          {sentence_halves.map((item, hIndex) => (
+            <div key={hIndex} className="p-2 border rounded-md bg-white">
+              <span className="text-worksheet-purple font-medium mr-2">{hIndex + 1}.</span>
+              {viewMode === 'teacher' ? (
+                <span className="teacher-answer">{String.fromCharCode(65 + hIndex)}</span>
+              ) : (
+                <span className="student-answer-blank"></span>
+              )}
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={item.first_half}
+                  onChange={e => handleFirstHalfChange(hIndex, e.target.value)}
+                  className="border p-1 editable-content w-full"
+                />
+              ) : item.first_half}
+            </div>
+          ))}
         </div>
 
-        {/* Second halves column with 1, 2, 3... */}
-        <div>
-          <h4 className="font-medium text-gray-700 mb-3">Sentence endings:</h4>
-          <div className="space-y-2">
-            {sentence_halves.map((item, hIndex) => (
-              <div key={`second-${hIndex}`} className="flex items-center gap-2">
-                <span className="font-medium text-sm w-6">{hIndex + 1})</span>
-                <div className="flex-grow">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={item.second_half}
-                      onChange={e => handleSecondHalfChange(hIndex, e.target.value)}
-                      className="w-full border p-1 editable-content"
-                    />
-                  ) : (
-                    <span>{item.second_half}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="md:col-span-7 space-y-2">
+          <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence endings</h4>
+          {sentence_halves.map((item, hIndex) => (
+            <div key={hIndex} className="p-2 border rounded-md bg-white">
+              <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + hIndex)}.</span>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={item.second_half}
+                  onChange={e => handleSecondHalfChange(hIndex, e.target.value)}
+                  className="border p-1 editable-content w-full"
+                />
+              ) : item.second_half}
+            </div>
+          ))}
         </div>
       </div>
 
