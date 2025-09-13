@@ -487,11 +487,11 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
                     {isEditing ? (
                       <input
                         type="text"
-                        value={question}
+                        value={typeof question === 'string' ? question : question?.question || question?.text || ''}
                         onChange={e => {
                           const updatedExercises = [...editableWorksheet.exercises];
                           const newQuestions = [...exercise.questions];
-                          newQuestions[qIndex] = e.target.value;
+                          newQuestions[qIndex] = typeof question === 'string' ? e.target.value : { ...question, question: e.target.value };
                           updatedExercises[index] = {
                             ...updatedExercises[index],
                             questions: newQuestions
@@ -504,7 +504,7 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
                         className="flex-grow border p-1 editable-content"
                       />
                     ) : (
-                      <span>{question}</span>
+                      <span>{typeof question === 'string' ? question : question?.question || question?.text || JSON.stringify(question)}</span>
                     )}
                   </div>
                 ))}
@@ -596,58 +596,46 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
         )}
 
         {exercise.type === 'fill_in_the_blanks' && exercise.sentences && (
-          <div>
-            {exercise.word_bank && (
-              <div className="mb-4 p-3 bg-gray-50 rounded">
-                <h4 className="font-medium mb-2">Word Bank:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {exercise.word_bank.map((word: string, wIndex: number) => (
-                    <span key={wIndex} className="bg-blue-100 px-2 py-1 rounded text-sm">
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={word}
-                          onChange={e => {
-                            const updatedExercises = [...editableWorksheet.exercises];
-                            const newWordBank = [...exercise.word_bank];
-                            newWordBank[wIndex] = e.target.value;
-                            updatedExercises[index] = {
-                              ...updatedExercises[index],
-                              word_bank: newWordBank
-                            };
-                            setEditableWorksheet({
-                              ...editableWorksheet,
-                              exercises: updatedExercises
-                            });
-                          }}
-                          className="border p-1 editable-content w-16"
-                        />
-                      ) : (
-                        word
-                      )}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="space-y-2">
-              {exercise.sentences.map((sentence: any, sIndex: number) => (
-                <div key={sIndex} className="flex items-center gap-2">
-                  <span>{sIndex + 1}.</span>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={sentence}
-                      onChange={e => handleSentenceChangeLocal(sIndex, 'text', e.target.value)}
-                      className="flex-grow border p-1 editable-content"
-                    />
-                  ) : (
-                    <span className="flex-grow">{sentence}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          <ExerciseFillInBlanks
+            sentences={exercise.sentences}
+            word_bank={exercise.word_bank}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onSentenceChange={(sIndex, field, value) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newSentences = [...exercise.sentences];
+              if (typeof newSentences[sIndex] === 'string') {
+                // Convert string to object format
+                newSentences[sIndex] = { text: value, answer: '' };
+              } else {
+                newSentences[sIndex] = {
+                  ...newSentences[sIndex],
+                  [field]: value
+                };
+              }
+              updatedExercises[index] = {
+                ...updatedExercises[index],
+                sentences: newSentences
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
+            onWordBankChange={(wordIndex, value) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newWordBank = [...exercise.word_bank];
+              newWordBank[wordIndex] = value;
+              updatedExercises[index] = {
+                ...updatedExercises[index],
+                word_bank: newWordBank
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
+          />
         )}
 
         {exercise.type === 'multiple_choice' && exercise.questions && (

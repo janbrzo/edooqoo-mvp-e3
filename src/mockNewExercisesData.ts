@@ -472,16 +472,16 @@ export const mockNewExercisesData = {
       "instructions": "Complete the sentences with the most appropriate words from the word bank.",
       "word_bank": ["although", "because", "however", "therefore", "meanwhile", "furthermore", "nevertheless", "consequently"],
       "sentences": [
-        "The weather was terrible; _____, we decided to go on our hike anyway.",
-        "She studied very hard for the exam. _____, she felt confident about her performance.",
-        "The project was challenging _____ it required advanced technical skills.",
-        "The restaurant was expensive. _____, the food quality was exceptional.",
-        "He arrived late to the meeting _____ his flight was delayed.",
-        "The new policy has many benefits. _____, it will reduce operational costs.",
-        "The team worked overtime to finish the project. _____, the client was not satisfied.",
-        "She was preparing dinner _____ her husband was helping the children with homework."
+        { "text": "The weather was terrible; _____, we decided to go on our hike anyway.", "answer": "nevertheless" },
+        { "text": "She studied very hard for the exam. _____, she felt confident about her performance.", "answer": "Therefore" },
+        { "text": "The project was challenging _____ it required advanced technical skills.", "answer": "because" },
+        { "text": "The restaurant was expensive. _____, the food quality was exceptional.", "answer": "However" },
+        { "text": "He arrived late to the meeting _____ his flight was delayed.", "answer": "because" },
+        { "text": "The new policy has many benefits. _____, it will reduce operational costs.", "answer": "Furthermore" },
+        { "text": "The team worked overtime to finish the project. _____, the client was not satisfied.", "answer": "Nevertheless" },
+        { "text": "She was preparing dinner _____ her husband was helping the children with homework.", "answer": "meanwhile" }
       ],
-      "answers": ["nevertheless", "Therefore", "because", "However", "because", "Furthermore", "Nevertheless", "meanwhile"],
+      
       "teacher_tip": "Focus on the logical relationships between ideas and how different conjunctions affect meaning."
     },
     {
