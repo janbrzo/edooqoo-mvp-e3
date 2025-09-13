@@ -472,43 +472,79 @@ export const mockNewExercisesData = {
       "type": "multiple-choice",
       "title": "Multiple Choice",
       "icon": "List",
-      "time": 10,
+      "time": 12,
       "instructions": "Choose the best answer for each question.",
       "questions": [
         {
           "text": "What is the capital of Japan?",
           "options": [
-            { "text": "Seoul", "is_correct": false },
-            { "text": "Tokyo", "is_correct": true },
-            { "text": "Beijing", "is_correct": false },
-            { "text": "Bangkok", "is_correct": false }
+            { "label": "A", "text": "Seoul", "correct": false },
+            { "label": "B", "text": "Tokyo", "correct": true },
+            { "label": "C", "text": "Beijing", "correct": false },
+            { "label": "D", "text": "Bangkok", "correct": false }
           ]
         },
         {
           "text": "Which planet is closest to the Sun?",
           "options": [
-            { "text": "Venus", "is_correct": false },
-            { "text": "Earth", "is_correct": false },
-            { "text": "Mercury", "is_correct": true },
-            { "text": "Mars", "is_correct": false }
+            { "label": "A", "text": "Venus", "correct": false },
+            { "label": "B", "text": "Earth", "correct": false },
+            { "label": "C", "text": "Mercury", "correct": true },
+            { "label": "D", "text": "Mars", "correct": false }
           ]
         },
         {
           "text": "What does 'ubiquitous' mean?",
           "options": [
-            { "text": "Rare", "is_correct": false },
-            { "text": "Present everywhere", "is_correct": true },
-            { "text": "Ancient", "is_correct": false },
-            { "text": "Expensive", "is_correct": false }
+            { "label": "A", "text": "Rare", "correct": false },
+            { "label": "B", "text": "Present everywhere", "correct": true },
+            { "label": "C", "text": "Ancient", "correct": false },
+            { "label": "D", "text": "Expensive", "correct": false }
           ]
         },
         {
           "text": "Who painted the Mona Lisa?",
           "options": [
-            { "text": "Pablo Picasso", "is_correct": false },
-            { "text": "Vincent van Gogh", "is_correct": false },
-            { "text": "Leonardo da Vinci", "is_correct": true },
-            { "text": "Claude Monet", "is_correct": false }
+            { "label": "A", "text": "Pablo Picasso", "correct": false },
+            { "label": "B", "text": "Vincent van Gogh", "correct": false },
+            { "label": "C", "text": "Leonardo da Vinci", "correct": true },
+            { "label": "D", "text": "Claude Monet", "correct": false }
+          ]
+        },
+        {
+          "text": "Which grammar structure is correct?",
+          "options": [
+            { "label": "A", "text": "I am living here since 2020", "correct": false },
+            { "label": "B", "text": "I have been living here since 2020", "correct": true },
+            { "label": "C", "text": "I live here since 2020", "correct": false },
+            { "label": "D", "text": "I lived here since 2020", "correct": false }
+          ]
+        },
+        {
+          "text": "What is the past participle of 'to write'?",
+          "options": [
+            { "label": "A", "text": "wrote", "correct": false },
+            { "label": "B", "text": "writing", "correct": false },
+            { "label": "C", "text": "written", "correct": true },
+            { "label": "D", "text": "writes", "correct": false }
+          ]
+        },
+        {
+          "text": "Choose the correct preposition: 'I'm good ___ mathematics.'",
+          "options": [
+            { "label": "A", "text": "in", "correct": false },
+            { "label": "B", "text": "on", "correct": false },
+            { "label": "C", "text": "at", "correct": true },
+            { "label": "D", "text": "with", "correct": false }
+          ]
+        },
+        {
+          "text": "Which sentence uses the conditional correctly?",
+          "options": [
+            { "label": "A", "text": "If I was you, I would study more", "correct": false },
+            { "label": "B", "text": "If I were you, I would study more", "correct": true },
+            { "label": "C", "text": "If I am you, I would study more", "correct": false },
+            { "label": "D", "text": "If I be you, I would study more", "correct": false }
           ]
         }
       ],
@@ -564,16 +600,34 @@ export const mockNewExercisesData = {
       "time": 10,
       "instructions": "Find and correct the errors in these sentences.",
       "sentences": [
-        { "incorrect": "I am living in London since 2010.", "correct": "I have been living in London since 2010." },
-        { "incorrect": "She don't like coffee very much.", "correct": "She doesn't like coffee very much." },
-        { "incorrect": "Can you borrow me your pen?", "correct": "Can you lend me your pen?" },
-        { "incorrect": "I'm looking forward to see you.", "correct": "I'm looking forward to seeing you." },
-        { "incorrect": "He told me that he will come tomorrow.", "correct": "He told me that he would come tomorrow." },
-        { "incorrect": "This is the most better solution.", "correct": "This is the best solution." },
-        { "incorrect": "I have visited London last year.", "correct": "I visited London last year." },
-        { "incorrect": "She is more tall than her sister.", "correct": "She is taller than her sister." }
+        { "text": "I am living in London since 2010.", "correction": "I have been living in London since 2010." },
+        { "text": "She don't like coffee very much.", "correction": "She doesn't like coffee very much." },
+        { "text": "Can you borrow me your pen?", "correction": "Can you lend me your pen?" },
+        { "text": "I'm looking forward to see you.", "correction": "I'm looking forward to seeing you." },
+        { "text": "He told me that he will come tomorrow.", "correction": "He told me that he would come tomorrow." },
+        { "text": "This is the most better solution.", "correction": "This is the best solution." },
+        { "text": "I have visited London last year.", "correction": "I visited London last year." },
+        { "text": "She is more tall than her sister.", "correction": "She is taller than her sister." }
       ],
       "teacher_tip": "Help students identify error patterns and understand why the corrections are needed. Focus on common mistakes."
+    },
+    {
+      "type": "true-false",
+      "title": "True or False",
+      "icon": "CheckSquare",
+      "time": 8,
+      "instructions": "Read each statement and decide if it is true or false.",
+      "statements": [
+        { "text": "English is the most spoken language in the world by native speakers.", "isTrue": false },
+        { "text": "The past tense of 'go' is 'went'.", "isTrue": true },
+        { "text": "Shakespeare wrote 'Romeo and Juliet'.", "isTrue": true },
+        { "text": "The plural of 'child' is 'childs'.", "isTrue": false },
+        { "text": "Present perfect is formed with 'have/has + past participle'.", "isTrue": true },
+        { "text": "Australia is the smallest continent.", "isTrue": true },
+        { "text": "There are 26 letters in the English alphabet.", "isTrue": true },
+        { "text": "The word 'run' can only be used as a verb.", "isTrue": false }
+      ],
+      "teacher_tip": "Encourage students to explain their reasoning. This helps identify areas where they need more clarification."
     }
   ],
   "vocabulary_sheet": [
