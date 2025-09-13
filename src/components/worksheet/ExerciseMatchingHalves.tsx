@@ -24,16 +24,16 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
 
   return (
     <div>
-      <p className="mb-3 font-medium">Match the sentence halves:</p>
+      <p className="mb-3 font-medium">Match each sentence beginning with its correct ending:</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* First halves column */}
+        {/* First halves column with A, B, C... */}
         <div>
           <h4 className="font-medium text-gray-700 mb-3">Sentence beginnings:</h4>
           <div className="space-y-2">
             {sentence_halves.map((item, hIndex) => (
-              <div key={`first-${hIndex}`} className="flex items-start gap-2">
-                <span className="font-medium text-sm mt-1">{String.fromCharCode(65 + hIndex)})</span>
+              <div key={`first-${hIndex}`} className="flex items-center gap-2">
+                <span className="font-medium text-sm w-6">{String.fromCharCode(65 + hIndex)})</span>
                 <div className="flex-grow">
                   {isEditing ? (
                     <input
@@ -46,18 +46,23 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
                     <span>{item.first_half}</span>
                   )}
                 </div>
+                {viewMode === 'teacher' && !isEditing && (
+                  <div className="text-green-600 italic text-sm">
+                    <span>({item.correct_match})</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Second halves column */}
+        {/* Second halves column with 1, 2, 3... */}
         <div>
           <h4 className="font-medium text-gray-700 mb-3">Sentence endings:</h4>
           <div className="space-y-2">
             {sentence_halves.map((item, hIndex) => (
-              <div key={`second-${hIndex}`} className="flex items-start gap-2">
-                <span className="font-medium text-sm mt-1">{hIndex + 1})</span>
+              <div key={`second-${hIndex}`} className="flex items-center gap-2">
+                <span className="font-medium text-sm w-6">{hIndex + 1})</span>
                 <div className="flex-grow">
                   {isEditing ? (
                     <input
@@ -76,33 +81,23 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
         </div>
       </div>
 
-      {/* Teacher answers */}
-      {viewMode === 'teacher' && (
+      {/* Teacher answers in editing mode */}
+      {viewMode === 'teacher' && isEditing && (
         <div className="mt-4 p-3 bg-green-50 rounded-lg">
           <h4 className="font-medium text-green-800 mb-2">Correct matches:</h4>
-          <div className="text-green-600 italic text-sm">
-            {isEditing ? (
-              <div className="space-y-1">
-                {sentence_halves.map((item, hIndex) => (
-                  <div key={`match-${hIndex}`} className="flex items-center gap-2">
-                    <span>{String.fromCharCode(65 + hIndex)} →</span>
-                    <input
-                      type="text"
-                      value={item.correct_match || ''}
-                      onChange={e => handleCorrectMatchChange(hIndex, e.target.value)}
-                      className="border p-1 editable-content w-16"
-                      placeholder="1"
-                    />
-                  </div>
-                ))}
+          <div className="space-y-1">
+            {sentence_halves.map((item, hIndex) => (
+              <div key={`match-${hIndex}`} className="flex items-center gap-2">
+                <span className="text-sm">{String.fromCharCode(65 + hIndex)} →</span>
+                <input
+                  type="text"
+                  value={item.correct_match || ''}
+                  onChange={e => handleCorrectMatchChange(hIndex, e.target.value)}
+                  className="border p-1 editable-content w-16 text-sm"
+                  placeholder="1"
+                />
               </div>
-            ) : (
-              <span>
-                {sentence_halves.map((item, hIndex) => 
-                  `${String.fromCharCode(65 + hIndex)}-${item.correct_match || (hIndex + 1)}`
-                ).join(', ')}
-              </span>
-            )}
+            ))}
           </div>
         </div>
       )}

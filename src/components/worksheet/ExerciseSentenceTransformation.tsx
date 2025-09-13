@@ -12,56 +12,46 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
 }) => {
   return (
     <div>
-      <p className="mb-3 font-medium">Transform these sentences using the words given:</p>
+      <p className="mb-3 font-medium">Transform these sentences using the instructions:</p>
       
       <div className="space-y-3">
         {sentences.map((sentence, sIndex) => (
           <div key={sIndex} className="border-b pb-2">
-            <div className="flex flex-row items-start gap-4">
-              <div className="flex-grow">
-                <p className="leading-snug mb-1">
-                  <span className="font-medium">{sIndex + 1}. </span>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={sentence.original}
-                      onChange={e => onSentenceChange(sIndex, 'original', e.target.value)}
-                      className="w-full border p-1 editable-content"
-                    />
-                  ) : (
-                    <span>{sentence.original}</span>
-                  )}
-                </p>
-                
-                {sentence.instruction && (
-                  <p className="text-sm text-gray-600 mb-1">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={sentence.instruction}
-                        onChange={e => onSentenceChange(sIndex, 'instruction', e.target.value)}
-                        className="w-full border p-1 editable-content text-sm"
-                      />
-                    ) : (
-                      <span>({sentence.instruction})</span>
-                    )}
-                  </p>
-                )}
-                
-                {/* Student answer line */}
-                <div className="mt-2">
-                  <span>→ ___________________________</span>
-                </div>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{sIndex + 1}.</span>
+              
+              {isEditing ? (
+                <>
+                  <input
+                    type="text"
+                    value={sentence.original}
+                    onChange={e => onSentenceChange(sIndex, 'original', e.target.value)}
+                    className="flex-grow border p-1 editable-content"
+                  />
+                  <input
+                    type="text"
+                    value={sentence.instruction}
+                    onChange={e => onSentenceChange(sIndex, 'instruction', e.target.value)}
+                    className="w-48 border p-1 editable-content text-sm"
+                  />
+                </>
+              ) : (
+                <>
+                  <span className="flex-grow">{sentence.original}</span>
+                  <span className="text-sm text-gray-600">({sentence.instruction})</span>
+                </>
+              )}
+              
+              <span>→ ___________________________</span>
               
               {viewMode === 'teacher' && (
-                <div className="text-green-600 italic text-sm min-w-0 flex-shrink-0">
+                <div className="text-green-600 italic text-sm">
                   {isEditing ? (
                     <input
                       type="text"
                       value={sentence.transformed}
                       onChange={e => onSentenceChange(sIndex, 'transformed', e.target.value)}
-                      className="border p-1 editable-content w-full"
+                      className="border p-1 editable-content w-48"
                     />
                   ) : (
                     <span>({sentence.transformed})</span>

@@ -25,40 +25,37 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
     <div>
       <p className="mb-3 font-medium">In each group, identify the word that doesn't belong:</p>
       
-      <div className="space-y-4">
+      <div className="space-y-3">
         {questions.map((question, qIndex) => (
-          <div key={qIndex} className="border-b pb-1">
-            <div className="flex flex-row items-start">
-              <div className="flex-grow">
-                <p className="leading-snug font-medium mb-2">
-                  {qIndex + 1}.
-                </p>
-                
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-2">
-                  {question.options?.map((option: string, oIndex: number) => (
-                    <div key={oIndex} className="border rounded p-2 text-center bg-gray-50">
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={option}
-                          onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)}
-                          className="w-full border-0 bg-transparent text-center editable-content"
-                        />
-                      ) : (
-                        <span>{option}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
+          <div key={qIndex} className="border-b pb-2">
+            <div className="flex items-center gap-3">
+              <span className="font-medium">{qIndex + 1}.</span>
+              
+              <div className="flex flex-wrap gap-2 flex-grow">
+                {question.options?.map((option: string, oIndex: number) => (
+                  <div key={oIndex} className="border rounded px-3 py-1 text-center bg-gray-50">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={option}
+                        onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)}
+                        className="w-16 border-0 bg-transparent text-center editable-content"
+                      />
+                    ) : (
+                      <span>{option}</span>
+                    )}
+                  </div>
+                ))}
               </div>
+
               {viewMode === 'teacher' && (
-                <div className="text-green-600 italic ml-3 text-sm">
+                <div className="text-green-600 italic text-sm">
                   {isEditing ? (
                     <input
                       type="text"
                       value={question.correct_answer || ''}
                       onChange={e => handleCorrectAnswerChange(qIndex, e.target.value)}
-                      className="border p-1 editable-content w-full"
+                      className="border p-1 editable-content w-20"
                     />
                   ) : (
                     <span>({question.correct_answer})</span>

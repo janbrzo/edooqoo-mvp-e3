@@ -13,7 +13,7 @@ export const mockNewExercisesData = {
       "title": "Odd One Out",
       "icon": "Target",
       "time": 8,
-      "instructions": "In each group, identify the word that doesn't belong and explain why.",
+      "instructions": "In each group, identify the word that doesn't belong:",
       "questions": [
         {
           "options": ["happy", "joyful", "elated", "angry", "cheerful"],
@@ -73,46 +73,46 @@ export const mockNewExercisesData = {
       "title": "Sentence Transformation",
       "icon": "RotateCcw",
       "time": 12,
-      "instructions": "Transform these sentences using the words given.",
+      "instructions": "Transform these sentences using the instructions:",
       "sentences": [
         {
-          "original": "I can't afford this car.",
-          "instruction": "Use: too",
-          "transformed": "This car is too expensive for me."
+          "original": "They built this house in 2005.",
+          "instruction": "Rewrite in passive voice",
+          "transformed": "This house was built in 2005."
         },
         {
           "original": "She started working here five years ago.",
-          "instruction": "Use: has been",
+          "instruction": "Use present perfect continuous",
           "transformed": "She has been working here for five years."
         },
         {
           "original": "They will probably arrive late.",
-          "instruction": "Use: likely",
+          "instruction": "Use 'likely to'",
           "transformed": "They are likely to arrive late."
         },
         {
           "original": "I suggest that you call him.",
-          "instruction": "Use: should",
+          "instruction": "Use modal verb",
           "transformed": "You should call him."
         },
         {
           "original": "It's possible that it will rain.",
-          "instruction": "Use: might",
+          "instruction": "Use 'might'",
           "transformed": "It might rain."
         },
         {
           "original": "He couldn't solve the problem.",
-          "instruction": "Use: unable",
+          "instruction": "Use 'was unable to'",
           "transformed": "He was unable to solve the problem."
         },
         {
           "original": "The meeting was postponed because of the rain.",
-          "instruction": "Use: due to",
+          "instruction": "Use 'due to'",
           "transformed": "The meeting was postponed due to the rain."
         },
         {
           "original": "She is very good at playing piano.",
-          "instruction": "Use: talented",
+          "instruction": "Use adjective 'talented'",
           "transformed": "She is very talented at playing piano."
         }
       ],
@@ -165,16 +165,16 @@ export const mockNewExercisesData = {
       "title": "Gap Text (Cloze Test)",
       "icon": "Square",
       "time": 10,
-      "instructions": "Complete the text by filling in the missing words.",
+      "instructions": "Fill in the gaps with the correct form of the verbs in brackets:",
       "sentences": [
-        { "text": "Yesterday I ______ to the supermarket to buy some groceries.", "answer": "went" },
-        { "text": "The weather ______ beautiful, so we decided to go for a walk.", "answer": "was" },
-        { "text": "She has ______ living in Paris for five years now.", "answer": "been" },
-        { "text": "If I ______ you, I would accept the job offer.", "answer": "were" },
-        { "text": "The movie was so ______ that I fell asleep.", "answer": "boring" },
-        { "text": "Can you ______ me a favor and help me move this table?", "answer": "do" },
-        { "text": "I'm looking ______ to seeing you again soon.", "answer": "forward" },
-        { "text": "The train ______ arrive at 3:30 PM according to the schedule.", "answer": "should" }
+        { "text": "Yesterday I ______ (go) to the supermarket to buy some groceries.", "answer": "went" },
+        { "text": "The weather ______ (be) beautiful, so we decided to go for a walk.", "answer": "was" },
+        { "text": "She has ______ (live) in Paris for five years now.", "answer": "been living" },
+        { "text": "If I ______ (be) you, I would accept the job offer.", "answer": "were" },
+        { "text": "The movie was so ______ (bore) that I fell asleep.", "answer": "boring" },
+        { "text": "Can you ______ (do) me a favor and help me move this table?", "answer": "do" },
+        { "text": "I'm looking ______ (forward) to seeing you again soon.", "answer": "forward" },
+        { "text": "The train ______ (arrive) at 3:30 PM according to the schedule.", "answer": "should arrive" }
       ],
       "teacher_tip": "This exercise tests students' understanding of context and grammar. Discuss why certain words fit better than others in each gap."
     },
@@ -205,12 +205,13 @@ export const mockNewExercisesData = {
       "words": [
         "apple", "car", "shirt", "banana", "bus", "dress", "orange", "train", 
         "jacket", "grape", "bicycle", "trousers", "pear", "truck", "sweater", 
-        "strawberry", "motorcycle", "skirt", "peach", "taxi"
+        "strawberry", "motorcycle", "skirt", "peach", "taxi", "laptop", "phone", "tablet", "computer"
       ],
       "categories": [
         { "name": "Fruits", "words": ["apple", "banana", "orange", "grape", "pear", "strawberry", "peach"] },
         { "name": "Transportation", "words": ["car", "bus", "train", "bicycle", "truck", "motorcycle", "taxi"] },
-        { "name": "Clothing", "words": ["shirt", "dress", "jacket", "trousers", "sweater", "skirt"] }
+        { "name": "Clothing", "words": ["shirt", "dress", "jacket", "trousers", "sweater", "skirt"] },
+        { "name": "Electronics", "words": ["laptop", "phone", "tablet", "computer"] }
       ],
       "teacher_tip": "This exercise helps students organize vocabulary thematically. Discuss borderline cases and different possible categorizations."
     },
