@@ -46,6 +46,14 @@ export const mockNewExercisesData = {
         {
           "options": ["Monday", "Tuesday", "Wednesday", "weekend", "Thursday"],
           "correct_answer": "weekend"
+        },
+        {
+          "options": ["river", "lake", "ocean", "mountain", "sea"],
+          "correct_answer": "mountain"
+        },
+        {
+          "options": ["knife", "fork", "spoon", "plate", "chair"],
+          "correct_answer": "chair"
         }
       ],
       "teacher_tip": "Encourage students to explain their reasoning. There may be multiple valid answers depending on the categorization logic."
@@ -64,7 +72,9 @@ export const mockNewExercisesData = {
         { "term": "Difficult", "definition": "Hard", "letter": "E" },
         { "term": "Beautiful", "definition": "Attractive", "letter": "F" },
         { "term": "Smart", "definition": "Intelligent", "letter": "G" },
-        { "term": "Angry", "definition": "Furious", "letter": "H" }
+        { "term": "Angry", "definition": "Furious", "letter": "H" },
+        { "term": "Small", "definition": "Tiny", "letter": "I" },
+        { "term": "Loud", "definition": "Noisy", "letter": "J" }
       ],
       "teacher_tip": "Review the difference between synonyms and antonyms. Discuss context in which different synonyms might be more appropriate."
     },
@@ -114,6 +124,16 @@ export const mockNewExercisesData = {
           "original": "She is very good at playing piano.",
           "instruction": "Use adjective 'talented'",
           "transformed": "She is very talented at playing piano."
+        },
+        {
+          "original": "We must finish this project today.",
+          "instruction": "Use 'have to'",
+          "transformed": "We have to finish this project today."
+        },
+        {
+          "original": "I regret buying that expensive car.",
+          "instruction": "Use 'wish'",
+          "transformed": "I wish I hadn't bought that expensive car."
         }
       ],
       "teacher_tip": "Focus on maintaining the original meaning while changing the grammatical structure. Discuss different ways to express the same idea."
@@ -156,6 +176,14 @@ export const mockNewExercisesData = {
         {
           "scrambled_words": "might / rain / it / afternoon / this",
           "correct_order": "It might rain this afternoon."
+        },
+        {
+          "scrambled_words": "should / doctor / see / you / a",
+          "correct_order": "You should see a doctor."
+        },
+        {
+          "scrambled_words": "often / cinema / go / we / to / the",
+          "correct_order": "We often go to the cinema."
         }
       ],
       "teacher_tip": "Review word order rules, especially adverb placement and auxiliary verb positions. Encourage students to read sentences aloud to check if they sound natural."
@@ -174,7 +202,9 @@ export const mockNewExercisesData = {
         { "text": "The movie was so ______ (bore) that I fell asleep.", "answer": "boring" },
         { "text": "Can you ______ (do) me a favor and help me move this table?", "answer": "do" },
         { "text": "I'm looking ______ (forward) to seeing you again soon.", "answer": "forward" },
-        { "text": "The train ______ (arrive) at 3:30 PM according to the schedule.", "answer": "should arrive" }
+        { "text": "The train ______ (arrive) at 3:30 PM according to the schedule.", "answer": "should arrive" },
+        { "text": "By next year, she ______ (finish) her degree.", "answer": "will have finished" },
+        { "text": "They ______ (study) English for three hours yesterday.", "answer": "studied" }
       ],
       "teacher_tip": "This exercise tests students' understanding of context and grammar. Discuss why certain words fit better than others in each gap."
     },
@@ -192,7 +222,9 @@ export const mockNewExercisesData = {
         { "word": "legal", "answer": "illegal" },
         { "word": "complete", "answer": "incomplete" },
         { "word": "correct", "answer": "incorrect" },
-        { "word": "polite", "answer": "impolite" }
+        { "word": "polite", "answer": "impolite" },
+        { "word": "mature", "answer": "immature" },
+        { "word": "loyal", "answer": "disloyal" }
       ],
       "teacher_tip": "Explain the different negative prefixes (un-, in-, dis-, im-, ir-, il-) and their usage patterns. Point out that the choice often depends on the first letter of the word."
     },
@@ -261,6 +293,16 @@ export const mockNewExercisesData = {
           "original": "The movie was not interesting at all.",
           "word_to_use": "boring",
           "answer": "The movie was very boring."
+        },
+        {
+          "original": "He studies a lot every day.",
+          "word_to_use": "dedicated",
+          "answer": "He is very dedicated to his studies."
+        },
+        {
+          "original": "The exam was not difficult.",
+          "word_to_use": "easy",
+          "answer": "The exam was easy."
         }
       ],
       "teacher_tip": "Focus on how the same meaning can be expressed using different grammatical structures and vocabulary choices."
@@ -311,6 +353,16 @@ export const mockNewExercisesData = {
           "incomplete_word": "C_MP_TER",
           "definition": "an electronic device for processing data",
           "complete_word": "COMPUTER"
+        },
+        {
+          "incomplete_word": "L_BRARY",
+          "definition": "a building containing books for reading",
+          "complete_word": "LIBRARY"
+        },
+        {
+          "incomplete_word": "H_SP_TAL",
+          "definition": "a place where sick people receive treatment",
+          "complete_word": "HOSPITAL"
         }
       ],
       "teacher_tip": "This exercise combines spelling practice with vocabulary recognition. Encourage students to use context clues from the definitions."
@@ -361,6 +413,16 @@ export const mockNewExercisesData = {
           "first_half": "The cake tastes",
           "second_half": "better than it looks.",
           "correct_match": "8"
+        },
+        {
+          "first_half": "Before you leave,",
+          "second_half": "please turn off the lights.",
+          "correct_match": "9"
+        },
+        {
+          "first_half": "The more you practice,",
+          "second_half": "the better you become.",
+          "correct_match": "10"
         }
       ],
       "teacher_tip": "This exercise helps students understand sentence structure and logical connections. Discuss the different types of clauses and their relationships."
@@ -427,7 +489,9 @@ export const mockNewExercisesData = {
         { "text": "The capital of Australia is Sydney.", "is_true": false },
         { "text": "Shakespeare wrote 'Romeo and Juliet'.", "is_true": true },
         { "text": "Humans have five senses.", "is_true": true },
-        { "text": "The Atlantic Ocean is the largest ocean.", "is_true": false }
+        { "text": "The Atlantic Ocean is the largest ocean.", "is_true": false },
+        { "text": "London is the capital of England.", "is_true": true },
+        { "text": "Penguins can fly.", "is_true": false }
       ],
       "teacher_tip": "Encourage students to explain their reasoning for each answer. This helps develop critical thinking and fact-checking skills."
     },
@@ -445,7 +509,9 @@ export const mockNewExercisesData = {
         { "term": "Portugal", "definition": "Lisbon", "letter": "E" },
         { "term": "Greece", "definition": "Athens", "letter": "F" },
         { "term": "Netherlands", "definition": "Amsterdam", "letter": "G" },
-        { "term": "Poland", "definition": "Warsaw", "letter": "H" }
+        { "term": "Poland", "definition": "Warsaw", "letter": "H" },
+        { "term": "Sweden", "definition": "Stockholm", "letter": "I" },
+        { "term": "Norway", "definition": "Oslo", "letter": "J" }
       ],
       "teacher_tip": "This exercise helps students connect related concepts. Consider adding a brief geography discussion after completion."
     },
@@ -464,7 +530,9 @@ export const mockNewExercisesData = {
         { "text": "That designer handbag is quite _______ for most people.", "answer": "expensive" },
         { "text": "The train moved _______ through the countryside.", "answer": "quickly" },
         { "text": "The hotel bed was very _______ after the long journey.", "answer": "comfortable" },
-        { "text": "The lake reflected the trees _______ in the morning light.", "answer": "peacefully" }
+        { "text": "The lake reflected the trees _______ in the morning light.", "answer": "peacefully" },
+        { "text": "The children played _______ in the garden all afternoon.", "answer": "happily" },
+        { "text": "She spoke _______ to avoid waking the baby.", "answer": "softly" }
       ],
       "teacher_tip": "Focus on context clues and word forms. Discuss why certain words fit better than others in each context."
     },
@@ -546,33 +614,47 @@ export const mockNewExercisesData = {
             { "label": "C", "text": "If I am you, I would study more", "correct": false },
             { "label": "D", "text": "If I be you, I would study more", "correct": false }
           ]
+        },
+        {
+          "text": "What is the superlative form of 'good'?",
+          "options": [
+            { "label": "A", "text": "gooder", "correct": false },
+            { "label": "B", "text": "better", "correct": false },
+            { "label": "C", "text": "best", "correct": true },
+            { "label": "D", "text": "goodest", "correct": false }
+          ]
+        },
+        {
+          "text": "Which auxiliary verb is used with present perfect?",
+          "options": [
+            { "label": "A", "text": "do/does", "correct": false },
+            { "label": "B", "text": "have/has", "correct": true },
+            { "label": "C", "text": "will", "correct": false },
+            { "label": "D", "text": "be", "correct": false }
+          ]
         }
       ],
       "teacher_tip": "Encourage students to eliminate obviously wrong answers first. Discuss test-taking strategies and reasoning processes."
     },
     {
       "type": "dialogue",
-      "title": "Complete the Dialogue",
+      "title": "Dialogue",
       "icon": "MessageSquare",
-      "time": 12,
-      "instructions": "Complete the dialogue using appropriate expressions from the box.",
-      "dialogue": [
-        { "speaker": "Customer", "text": "Excuse me, I'm looking for a good restaurant nearby." },
-        { "speaker": "Local", "text": "_______ What kind of food do you prefer?" },
-        { "speaker": "Customer", "text": "I'd like something Italian, preferably not too expensive." },
-        { "speaker": "Local", "text": "_______ There's a great pizzeria just around the corner." },
-        { "speaker": "Customer", "text": "That sounds perfect! How do I get there?" },
-        { "speaker": "Local", "text": "_______ Go straight for two blocks, then turn right." },
-        { "speaker": "Customer", "text": "Thank you so much for your help!" },
-        { "speaker": "Local", "text": "_______" }
-      ],
+      "time": 8,
+      "instructions": "Read the dialogue and practice with your teacher. Then, try to use the useful expressions in your own role-play.",
+      "content": "Julia: Hi everyone, thanks for joining the call. Before we start, can everyone hear me clearly?\nTom (US partner): Yes, Julia, we can hear you. Thanks for organizing this.\nJulia: Great. Just to confirm, is everyone able to see the agenda on their screen?\nAgnieszka (Polish colleague): Yes, it's visible. But could you clarify the second point about the new policy?\nJulia: Of course. The new policy means that employees can work remotely two days a week. Does that answer your question?\nAgnieszka: Yes, thank you. And who will present the benefits package today?\nJulia: Actually, Anna is unavailable, so I'll be presenting that section.\nTom: Sounds good. If anyone needs clarification, should we use the chat or just speak up?\nJulia: Either is fine. You can also use the 'raise hand' feature if you prefer.\nAgnieszka: Thanks, Julia. That makes things clear.\nJulia: No problem. Let's get started with the first topic.\n\nPractice using these expressions in your own meeting scenarios.",
       "expressions": [
-        "Sure, I can help!",
-        "I'd recommend...",
-        "It's very simple.",
-        "You're welcome!"
+        "Can everyone hear me clearly?",
+        "Just to confirm, ...",
+        "Could you clarify that point?",
+        "Does that answer your question?",
+        "Let me summarize what we discussed.",
+        "If anyone needs clarification, please let me know.",
+        "You can use the chat if you have questions.",
+        "Is everyone able to see the agenda?",
+        "Who will be presenting this section?",
+        "Let's get started with the first topic."
       ],
-      "expression_instruction": "Use these expressions to complete the dialogue naturally.",
       "teacher_tip": "Focus on natural conversation flow and appropriate expressions for different situations. Practice pronunciation and intonation."
     },
     {
@@ -589,7 +671,9 @@ export const mockNewExercisesData = {
         "What makes a good leader in today's world?",
         "How important is cultural diversity in the workplace?",
         "What impact does climate change have on daily life?",
-        "How can we balance work and personal life effectively?"
+        "How can we balance work and personal life effectively?",
+        "What is the most important skill for future careers?",
+        "How do you think artificial intelligence will change our daily lives?"
       ],
       "teacher_tip": "Encourage students to share personal experiences and different perspectives. Focus on fluency over accuracy in discussion activities."
     },
@@ -607,27 +691,11 @@ export const mockNewExercisesData = {
         { "text": "He told me that he will come tomorrow.", "correction": "He told me that he would come tomorrow." },
         { "text": "This is the most better solution.", "correction": "This is the best solution." },
         { "text": "I have visited London last year.", "correction": "I visited London last year." },
-        { "text": "She is more tall than her sister.", "correction": "She is taller than her sister." }
+        { "text": "She is more tall than her sister.", "correction": "She is taller than her sister." },
+        { "text": "I have been to Paris last week.", "correction": "I went to Paris last week." },
+        { "text": "Do you can help me with this?", "correction": "Can you help me with this?" }
       ],
       "teacher_tip": "Help students identify error patterns and understand why the corrections are needed. Focus on common mistakes."
-    },
-    {
-      "type": "true-false",
-      "title": "True or False",
-      "icon": "CheckSquare",
-      "time": 8,
-      "instructions": "Read each statement and decide if it is true or false.",
-      "statements": [
-        { "text": "English is the most spoken language in the world by native speakers.", "isTrue": false },
-        { "text": "The past tense of 'go' is 'went'.", "isTrue": true },
-        { "text": "Shakespeare wrote 'Romeo and Juliet'.", "isTrue": true },
-        { "text": "The plural of 'child' is 'childs'.", "isTrue": false },
-        { "text": "Present perfect is formed with 'have/has + past participle'.", "isTrue": true },
-        { "text": "Australia is the smallest continent.", "isTrue": true },
-        { "text": "There are 26 letters in the English alphabet.", "isTrue": true },
-        { "text": "The word 'run' can only be used as a verb.", "isTrue": false }
-      ],
-      "teacher_tip": "Encourage students to explain their reasoning. This helps identify areas where they need more clarification."
     }
   ],
   "vocabulary_sheet": [
