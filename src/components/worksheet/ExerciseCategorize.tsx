@@ -24,8 +24,6 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
 
   return (
     <div>
-      <p className="mb-3 font-medium">Sort the words into the correct categories:</p>
-      
       {/* Words section */}
       <div className="mb-4">
         <h4 className="font-medium text-gray-700 mb-2">Words:</h4>

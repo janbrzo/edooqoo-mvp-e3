@@ -12,8 +12,6 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
 }) => {
   return (
     <div>
-      <p className="mb-3 font-medium">Complete the words using the definitions:</p>
-      
       <div className="space-y-2">
         {words.map((wordItem, wIndex) => (
           <div key={wIndex} className="border-b pb-1">
