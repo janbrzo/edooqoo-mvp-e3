@@ -19,6 +19,9 @@ import ExerciseCategorize from "./ExerciseCategorize";
 import ExerciseParaphrasing from "./ExerciseParaphrasing";
 import ExerciseCompleteWord from "./ExerciseCompleteWord";
 import ExerciseMatchingHalves from "./ExerciseMatchingHalves";
+// New additional exercise components
+import ExerciseDescribe from "./ExerciseDescribe";
+import ExerciseAnswerQuestions from "./ExerciseAnswerQuestions";
 import {
   handleExerciseChange,
   handleQuestionChange,
@@ -413,6 +416,31 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
                 exercises: updatedExercises
               });
             }}
+          />
+        )}
+
+        {/* New additional exercise types */}
+        {exercise.type === 'describe' && (
+          <ExerciseDescribe
+            image_url={exercise.image_url}
+            questions={exercise.questions}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onQuestionChange={handleQuestionChangeLocal}
+            onImageUrlChange={(url) => handleExerciseChangeLocal('image_url', url)}
+          />
+        )}
+
+        {exercise.type === 'answer-questions' && exercise.questions && (
+          <ExerciseAnswerQuestions
+            media_url={exercise.media_url}
+            media_type={exercise.media_type}
+            questions={exercise.questions}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onQuestionChange={handleQuestionChangeLocal}
+            onMediaUrlChange={(url) => handleExerciseChangeLocal('media_url', url)}
+            onMediaTypeChange={(type) => handleExerciseChangeLocal('media_type', type)}
           />
         )}
 

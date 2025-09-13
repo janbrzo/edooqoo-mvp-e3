@@ -1,7 +1,7 @@
 export const mockNewExercisesData = {
-  "title": "New Exercise Types - Complete Test Worksheet",
-  "subtitle": "Testing all 10 exercise types: Advanced English Practice",
-  "introduction": "This comprehensive worksheet showcases all the new exercise types. Use this to test and preview each format's functionality.",
+  "title": "Complete Exercise Types - Full Test Worksheet",
+  "subtitle": "Testing all 20 exercise types: Comprehensive English Practice",
+  "introduction": "This comprehensive worksheet showcases all exercise types available in the system. Use this to test and preview each format's functionality including basic exercises and advanced new types.",
   "warmup_questions": [
     "How do you feel about trying new types of English exercises?",
     "What learning methods work best for you?",
@@ -364,6 +364,216 @@ export const mockNewExercisesData = {
         }
       ],
       "teacher_tip": "This exercise helps students understand sentence structure and logical connections. Discuss the different types of clauses and their relationships."
+    },
+    // New additional exercise types
+    {
+      "type": "describe",
+      "title": "Describe the Picture",
+      "icon": "Camera",
+      "time": 15,
+      "instructions": "Look carefully at the picture and describe what you see. Include details about people, objects, actions, colors, and setting.",
+      "image_url": "/lovable-uploads/2d55c1e0-547e-45aa-a55c-e71479adb602.png",
+      "questions": [
+        { "text": "What can you see in the foreground?" },
+        { "text": "What colors are predominant in the image?" },
+        { "text": "What is happening in the picture?" },
+        { "text": "How would you describe the mood or atmosphere?" }
+      ],
+      "teacher_tip": "Encourage students to use descriptive vocabulary and varied sentence structures. This exercise develops observation skills and expands vocabulary."
+    },
+    {
+      "type": "answer-questions",
+      "title": "Answer the Questions",
+      "icon": "PlayCircle",
+      "time": 12,
+      "instructions": "Listen to the audio/watch the video/examine the image and answer the questions below.",
+      "media_url": "/lovable-uploads/2d55c1e0-547e-45aa-a55c-e71479adb602.png",
+      "media_type": "image",
+      "questions": [
+        { "text": "What is the main topic discussed?", "answer": "Sample answer based on content" },
+        { "text": "What are the key details mentioned?", "answer": "Key details from the media" },
+        { "text": "What conclusion can you draw?", "answer": "Student's inference from the content" },
+        { "text": "How does this relate to your experience?", "answer": "Personal connection answer" }
+      ],
+      "teacher_tip": "This exercise develops listening/viewing comprehension and critical thinking skills. Encourage students to support their answers with evidence from the material."
+    },
+    // Basic exercise types
+    {
+      "type": "reading",
+      "title": "Reading Comprehension",
+      "icon": "BookOpen",
+      "time": 15,
+      "instructions": "Read the text carefully and answer the questions below.",
+      "content": "The Benefits of Learning a Second Language\n\nLearning a second language has numerous advantages that extend far beyond simple communication. Research shows that bilingual individuals often demonstrate enhanced cognitive abilities, including improved problem-solving skills, better multitasking capabilities, and increased creativity.\n\nMoreover, speaking multiple languages can significantly boost career prospects. In today's globalized world, employers highly value multilingual employees who can communicate with international clients and navigate diverse cultural contexts. Studies indicate that bilingual professionals earn, on average, 5-20% more than their monolingual counterparts.\n\nFrom a personal development perspective, learning a new language opens doors to different cultures, literature, and ways of thinking. It allows individuals to form deeper connections with people from various backgrounds and gain a more nuanced understanding of the world.\n\nFurthermore, recent neuroscientific research suggests that bilingualism may help delay the onset of age-related cognitive decline, including conditions like dementia and Alzheimer's disease.",
+      "questions": [
+        { "text": "What cognitive benefits does bilingualism provide?", "answer": "Enhanced problem-solving, better multitasking, increased creativity" },
+        { "text": "How much more do bilingual professionals typically earn?", "answer": "5-20% more than monolingual counterparts" },
+        { "text": "What personal development benefits are mentioned?", "answer": "Cultural understanding, deeper connections, access to literature" },
+        { "text": "What health benefits might bilingualism provide?", "answer": "May delay cognitive decline and dementia" }
+      ],
+      "teacher_tip": "Focus on reading strategies like skimming, scanning, and inference. Discuss how students arrived at their answers."
+    },
+    {
+      "type": "true-false",
+      "title": "True or False",
+      "icon": "CheckCircle",
+      "time": 8,
+      "instructions": "Read each statement and decide if it is true (T) or false (F).",
+      "statements": [
+        { "text": "The Earth revolves around the Moon.", "is_true": false },
+        { "text": "Water boils at 100 degrees Celsius at sea level.", "is_true": true },
+        { "text": "There are 24 hours in a day.", "is_true": true },
+        { "text": "Fish are mammals.", "is_true": false },
+        { "text": "The capital of Australia is Sydney.", "is_true": false },
+        { "text": "Shakespeare wrote 'Romeo and Juliet'.", "is_true": true },
+        { "text": "Humans have five senses.", "is_true": true },
+        { "text": "The Atlantic Ocean is the largest ocean.", "is_true": false }
+      ],
+      "teacher_tip": "Encourage students to explain their reasoning for each answer. This helps develop critical thinking and fact-checking skills."
+    },
+    {
+      "type": "matching",
+      "title": "Matching Exercise",
+      "icon": "Link",
+      "time": 10,
+      "instructions": "Match each item in Column A with the correct item in Column B.",
+      "items": [
+        { "term": "Spain", "definition": "Madrid", "letter": "A" },
+        { "term": "France", "definition": "Paris", "letter": "B" },
+        { "term": "Italy", "definition": "Rome", "letter": "C" },
+        { "term": "Germany", "definition": "Berlin", "letter": "D" },
+        { "term": "Portugal", "definition": "Lisbon", "letter": "E" },
+        { "term": "Greece", "definition": "Athens", "letter": "F" },
+        { "term": "Netherlands", "definition": "Amsterdam", "letter": "G" },
+        { "term": "Poland", "definition": "Warsaw", "letter": "H" }
+      ],
+      "teacher_tip": "This exercise helps students connect related concepts. Consider adding a brief geography discussion after completion."
+    },
+    {
+      "type": "fill-in-blanks",
+      "title": "Fill in the Blanks",
+      "icon": "Edit",
+      "time": 12,
+      "instructions": "Complete the sentences using the words from the word bank.",
+      "word_bank": ["beautiful", "quickly", "delicious", "carefully", "expensive", "quietly", "comfortable", "peacefully"],
+      "sentences": [
+        { "text": "The sunset looked absolutely _______ from the mountaintop.", "answer": "beautiful" },
+        { "text": "She walked _______ through the library so as not to disturb others.", "answer": "quietly" },
+        { "text": "The chef prepared a _______ meal for the special occasion.", "answer": "delicious" },
+        { "text": "He drove _______ through the busy city streets.", "answer": "carefully" },
+        { "text": "That designer handbag is quite _______ for most people.", "answer": "expensive" },
+        { "text": "The train moved _______ through the countryside.", "answer": "quickly" },
+        { "text": "The hotel bed was very _______ after the long journey.", "answer": "comfortable" },
+        { "text": "The lake reflected the trees _______ in the morning light.", "answer": "peacefully" }
+      ],
+      "teacher_tip": "Focus on context clues and word forms. Discuss why certain words fit better than others in each context."
+    },
+    {
+      "type": "multiple-choice",
+      "title": "Multiple Choice",
+      "icon": "List",
+      "time": 10,
+      "instructions": "Choose the best answer for each question.",
+      "questions": [
+        {
+          "text": "What is the capital of Japan?",
+          "options": [
+            { "text": "Seoul", "is_correct": false },
+            { "text": "Tokyo", "is_correct": true },
+            { "text": "Beijing", "is_correct": false },
+            { "text": "Bangkok", "is_correct": false }
+          ]
+        },
+        {
+          "text": "Which planet is closest to the Sun?",
+          "options": [
+            { "text": "Venus", "is_correct": false },
+            { "text": "Earth", "is_correct": false },
+            { "text": "Mercury", "is_correct": true },
+            { "text": "Mars", "is_correct": false }
+          ]
+        },
+        {
+          "text": "What does 'ubiquitous' mean?",
+          "options": [
+            { "text": "Rare", "is_correct": false },
+            { "text": "Present everywhere", "is_correct": true },
+            { "text": "Ancient", "is_correct": false },
+            { "text": "Expensive", "is_correct": false }
+          ]
+        },
+        {
+          "text": "Who painted the Mona Lisa?",
+          "options": [
+            { "text": "Pablo Picasso", "is_correct": false },
+            { "text": "Vincent van Gogh", "is_correct": false },
+            { "text": "Leonardo da Vinci", "is_correct": true },
+            { "text": "Claude Monet", "is_correct": false }
+          ]
+        }
+      ],
+      "teacher_tip": "Encourage students to eliminate obviously wrong answers first. Discuss test-taking strategies and reasoning processes."
+    },
+    {
+      "type": "dialogue",
+      "title": "Complete the Dialogue",
+      "icon": "MessageSquare",
+      "time": 12,
+      "instructions": "Complete the dialogue using appropriate expressions from the box.",
+      "dialogue": [
+        { "speaker": "Customer", "text": "Excuse me, I'm looking for a good restaurant nearby." },
+        { "speaker": "Local", "text": "_______ What kind of food do you prefer?" },
+        { "speaker": "Customer", "text": "I'd like something Italian, preferably not too expensive." },
+        { "speaker": "Local", "text": "_______ There's a great pizzeria just around the corner." },
+        { "speaker": "Customer", "text": "That sounds perfect! How do I get there?" },
+        { "speaker": "Local", "text": "_______ Go straight for two blocks, then turn right." },
+        { "speaker": "Customer", "text": "Thank you so much for your help!" },
+        { "speaker": "Local", "text": "_______" }
+      ],
+      "expressions": [
+        "Sure, I can help!",
+        "I'd recommend...",
+        "It's very simple.",
+        "You're welcome!"
+      ],
+      "expression_instruction": "Use these expressions to complete the dialogue naturally.",
+      "teacher_tip": "Focus on natural conversation flow and appropriate expressions for different situations. Practice pronunciation and intonation."
+    },
+    {
+      "type": "discussion",
+      "title": "Discussion Questions",
+      "icon": "Users",
+      "time": 20,
+      "instructions": "Discuss these questions with your partner or in small groups.",
+      "questions": [
+        "What role does technology play in modern education?",
+        "How has social media changed the way we communicate?",
+        "What are the advantages and disadvantages of remote work?",
+        "How can we encourage more sustainable living practices?",
+        "What makes a good leader in today's world?",
+        "How important is cultural diversity in the workplace?",
+        "What impact does climate change have on daily life?",
+        "How can we balance work and personal life effectively?"
+      ],
+      "teacher_tip": "Encourage students to share personal experiences and different perspectives. Focus on fluency over accuracy in discussion activities."
+    },
+    {
+      "type": "error-correction",
+      "title": "Error Correction",
+      "icon": "AlertCircle",
+      "time": 10,
+      "instructions": "Find and correct the errors in these sentences.",
+      "sentences": [
+        { "incorrect": "I am living in London since 2010.", "correct": "I have been living in London since 2010." },
+        { "incorrect": "She don't like coffee very much.", "correct": "She doesn't like coffee very much." },
+        { "incorrect": "Can you borrow me your pen?", "correct": "Can you lend me your pen?" },
+        { "incorrect": "I'm looking forward to see you.", "correct": "I'm looking forward to seeing you." },
+        { "incorrect": "He told me that he will come tomorrow.", "correct": "He told me that he would come tomorrow." },
+        { "incorrect": "This is the most better solution.", "correct": "This is the best solution." },
+        { "incorrect": "I have visited London last year.", "correct": "I visited London last year." },
+        { "incorrect": "She is more tall than her sister.", "correct": "She is taller than her sister." }
+      ],
+      "teacher_tip": "Help students identify error patterns and understand why the corrections are needed. Focus on common mistakes."
     }
   ],
   "vocabulary_sheet": [

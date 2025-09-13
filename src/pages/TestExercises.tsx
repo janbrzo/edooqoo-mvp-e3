@@ -85,29 +85,74 @@ const TestExercises = () => {
               🧪 Test Environment - New Exercise Types
             </CardTitle>
             <CardDescription className="text-blue-700">
-              This page displays all 6 newly implemented exercise types for testing and preview purposes. 
+              This page displays all 20 exercise types available in the system for testing and preview purposes. 
               You can switch between student and teacher views, and test editing functionality.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              <Badge variant="outline" className="justify-center py-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+              {/* Advanced Exercise Types */}
+              <Badge variant="outline" className="justify-center py-2 bg-blue-50">
                 Odd One Out
               </Badge>
-              <Badge variant="outline" className="justify-center py-2">
+              <Badge variant="outline" className="justify-center py-2 bg-blue-50">
                 Synonyms/Antonyms
               </Badge>
-              <Badge variant="outline" className="justify-center py-2">
+              <Badge variant="outline" className="justify-center py-2 bg-blue-50">
                 Sentence Transform
               </Badge>
-              <Badge variant="outline" className="justify-center py-2">
+              <Badge variant="outline" className="justify-center py-2 bg-blue-50">
                 Word Order
               </Badge>
-              <Badge variant="outline" className="justify-center py-2">
+              <Badge variant="outline" className="justify-center py-2 bg-blue-50">
                 Gap Text
               </Badge>
-              <Badge variant="outline" className="justify-center py-2">
+              <Badge variant="outline" className="justify-center py-2 bg-blue-50">
                 Negative Prefixes
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-blue-50">
+                Categorize
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-blue-50">
+                Paraphrasing
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-blue-50">
+                Complete Word
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-blue-50">
+                Matching Halves
+              </Badge>
+              {/* New Additional Types */}
+              <Badge variant="outline" className="justify-center py-2 bg-green-50">
+                Describe Picture
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-green-50">
+                Answer Questions
+              </Badge>
+              {/* Basic Exercise Types */}
+              <Badge variant="outline" className="justify-center py-2 bg-gray-50">
+                Reading
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-gray-50">
+                True/False
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-gray-50">
+                Matching
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-gray-50">
+                Fill in Blanks
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-gray-50">
+                Multiple Choice
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-gray-50">
+                Dialogue
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-gray-50">
+                Discussion
+              </Badge>
+              <Badge variant="outline" className="justify-center py-2 bg-gray-50">
+                Error Correction
               </Badge>
             </div>
           </CardContent>
