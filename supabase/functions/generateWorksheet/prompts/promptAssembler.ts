@@ -13,15 +13,22 @@ import { getValidationRules } from './validationRules.ts';
  * @returns Number of exercises to generate
  */
 function determineExerciseCount(prompt: string): number {
-  console.log(`🔍 Analyzing prompt for duration. Contains '45 min': ${prompt.includes('45 min')}, Contains '30 min': ${prompt.includes('30 min')}`);
+  const contains45Min = prompt.includes('45 min') || prompt.includes('lessonTime: 45');
+  const contains30Min = prompt.includes('30 min') || prompt.includes('lessonTime: 30');
   
-  if (prompt.includes('45 min') || prompt.includes('30 min')) {
-    console.log(`✅ Detected shorter lesson - selecting 6 exercises`);
-    return 6; // 45min and 30min lessons get 6 exercises
+  console.log(`🔍 IMPROVED: Analyzing prompt for duration. Contains '45 min': ${contains45Min}, Contains '30 min': ${contains30Min}`);
+  console.log(`📋 Prompt content check: "${prompt.substring(0, 300)}..."`);
+  
+  if (contains45Min) {
+    console.log('⏰ DETECTED: 45-minute lesson - selecting 6 exercises');
+    return 6;
+  } else if (contains30Min) {
+    console.log('⏰ DETECTED: 30-minute lesson - selecting 4 exercises');
+    return 4;
+  } else {
+    console.log('✅ DEFAULT: Standard lesson - selecting 8 exercises');
+    return 8;
   }
-  
-  console.log(`✅ Detected standard lesson - selecting 8 exercises`);
-  return 8; // 60min lessons get 8 exercises
 }
 
 /**
