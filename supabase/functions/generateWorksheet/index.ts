@@ -7,6 +7,7 @@ import { validateExercise } from './validators.ts';
 import { isValidUUID, sanitizeInput, validatePrompt } from './security.ts';
 import { RateLimiter } from './rateLimiter.ts';
 import { getGeolocation } from './geolocation.ts';
+import { assembleSystemPrompt } from './prompts/promptAssembler.ts';
 
 const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY')! });
 
@@ -107,9 +108,6 @@ serve(async (req) => {
     console.log(`Generating 8 exercises, will trim to ${finalExerciseCount} if needed`);
     
     // CREATE SYSTEM MESSAGE with Golden Prompt content - UPDATED EXERCISE ORDER
-    // Import the modular prompt system
-    import { assembleSystemPrompt } from './prompts/promptAssembler.ts';
-    
     // Generate the system message using the modular approach
     const systemMessage = assembleSystemPrompt(hasGrammarFocus, grammarFocus, formData);
 
