@@ -93,23 +93,11 @@ serve(async (req) => {
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
 
-    // Determine exercise count - always generate 8, then trim if needed
-    let finalExerciseCount = 8; // Always generate 8 exercises
-    if (sanitizedPrompt.includes('45 min')) {
-      finalExerciseCount = 6; // Will trim to 6 after generation
-    } else if (sanitizedPrompt.includes('30 min')) {
-      // Convert 30 min to 45 min (remove 30 min option)
-      finalExerciseCount = 6;
-    }
+    console.log(`🎯 Grammar focus detected: ${hasGrammarFocus ? grammarFocus : 'None'}`);
     
-    // Always use the full 8-exercise set for generation
-    const exerciseTypes = getExerciseTypesForCount(8);
-    
-    console.log(`Generating 8 exercises, will trim to ${finalExerciseCount} if needed`);
-    
-    // CREATE SYSTEM MESSAGE with Golden Prompt content - UPDATED EXERCISE ORDER
-    // Generate the system message using the modular approach
-    const systemMessage = assembleSystemPrompt(hasGrammarFocus, grammarFocus, formData);
+    // CREATE SYSTEM MESSAGE with Golden Prompt content - MODULAR APPROACH
+    // Generate the system message using the modular approach with intelligent exercise selection
+    const systemMessage = assembleSystemPrompt(hasGrammarFocus, grammarFocus, formData, sanitizedPrompt);
 
 
     // Generate worksheet using OpenAI with complete prompt structure
@@ -143,20 +131,9 @@ serve(async (req) => {
       }
       
       // Validate we got exactly 8 exercises
-      if (worksheetData.exercises.length !== 8) {
-        console.warn(`Expected 8 exercises but got ${worksheetData.exercises.length}`);
-        throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required 8`);
-      }
-      
       // Enhanced validation for exercise requirements
       for (const exercise of worksheetData.exercises) {
         validateExercise(exercise);
-      }
-      
-      // Trim exercises if needed for 45 min lessons
-      if (finalExerciseCount === 6) {
-        worksheetData.exercises = worksheetData.exercises.slice(0, 6);
-        console.log(`Trimmed exercises to ${worksheetData.exercises.length} for 45 min lesson`);
       }
       
       // Make sure exercise titles have correct sequential numbering
@@ -166,8 +143,8 @@ serve(async (req) => {
         exercise.title = `Exercise ${exerciseNumber}: ${exerciseType}`;
       });
       
-      console.log(`Final exercise count: ${worksheetData.exercises.length} (target: ${finalExerciseCount})`);
-      console.log(`Grammar Rules included: ${!!worksheetData.grammar_rules}`);
+      console.log(`✅ Generated ${worksheetData.exercises.length} exercises as requested`);
+      console.log(`📖 Grammar Rules included: ${!!worksheetData.grammar_rules}`);
       
       const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);
       worksheetData.sourceCount = sourceCount;

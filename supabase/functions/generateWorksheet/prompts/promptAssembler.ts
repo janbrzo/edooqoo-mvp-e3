@@ -4,29 +4,60 @@
  */
 
 import { getSystemPromptCore } from './systemPrompt.ts';
-import { getExerciseExamples } from './exerciseExamples.ts';
+import { getExerciseExamples, getSelectedExercises } from './exerciseExamples.ts';
 import { getValidationRules } from './validationRules.ts';
+
+/**
+ * Determines exercise count based on lesson duration
+ * @param prompt - The user prompt to analyze
+ * @returns Number of exercises to generate
+ */
+function determineExerciseCount(prompt: string): number {
+  if (prompt.includes('45 min') || prompt.includes('30 min')) {
+    return 6; // 45min and 30min lessons get 6 exercises
+  }
+  return 8; // 60min lessons get 8 exercises
+}
+
+/**
+ * Selects exercise numbers based on count
+ * @param count - Number of exercises to select
+ * @returns Array of exercise numbers
+ */
+function selectExercisesForCount(count: number): number[] {
+  // Always select the first N exercises in order
+  return Array.from({ length: count }, (_, i) => i + 1);
+}
 
 /**
  * Assembles the complete system prompt from modular parts
  * @param hasGrammarFocus - Whether grammar focus is specified
  * @param grammarFocus - The grammar focus topic
  * @param formData - Form data containing lesson details
+ * @param userPrompt - User prompt to analyze for lesson duration
  * @returns Complete system prompt exactly matching the original
  */
 export function assembleSystemPrompt(
   hasGrammarFocus: boolean, 
   grammarFocus: string = '', 
-  formData: any = {}
+  formData: any = {},
+  userPrompt: string = ''
 ): string {
   
-  const corePrompt = getSystemPromptCore(hasGrammarFocus, grammarFocus, formData);
+  // Determine exercise count from user prompt
+  const exerciseCount = determineExerciseCount(userPrompt);
+  const selectedExercises = selectExercisesForCount(exerciseCount);
+  
+  console.log(`📝 Assembling prompt: ${exerciseCount} exercises for lesson duration detected in prompt`);
+  console.log(`🎯 Selected exercises: ${selectedExercises.join(', ')}`);
+  
+  const corePrompt = getSystemPromptCore(hasGrammarFocus, grammarFocus, formData, exerciseCount);
   
   const structureInstruction = `
 
 20. Generate a structured JSON worksheet with this EXACT format:`;
   
-  const examples = getExerciseExamples(hasGrammarFocus, grammarFocus);
+  const examples = getSelectedExercises(selectedExercises, hasGrammarFocus, grammarFocus);
   
   const validationRules = getValidationRules();
   
