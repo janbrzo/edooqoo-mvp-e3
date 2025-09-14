@@ -1,9 +1,34 @@
 
 # English Worksheet Generator - Technical Documentation
 
-## System Overview - ETAP 2
+## System Overview - ETAP 2 + Prompt Modularization
 
-The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2, the application provides comprehensive account management, student organization, and subscription-based worksheet generation for English teachers.
+The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and implementing prompt modularization, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and a modular AI prompt system for English teachers.
+
+## Latest Changes - Prompt Modularization (Phase 1A)
+
+### Modular Prompt System
+The AI prompt system has been refactored from a single monolithic prompt into four modular components:
+
+1. **`systemPrompt.ts`** - Core system guidelines and rules
+2. **`exerciseExamples.ts`** - JSON structure examples for all exercise types  
+3. **`validationRules.ts`** - Technical requirements and validation criteria
+4. **`promptAssembler.ts`** - Dynamic prompt composition engine
+
+### Benefits of Modularization
+- **Maintainability:** Each prompt component can be updated independently
+- **Scalability:** Easy to add new exercise types and requirements
+- **Flexibility:** Dynamic prompt assembly based on user selections
+- **Consistency:** Centralized prompt logic eliminates duplication
+- **Future-Ready:** Foundation for exercise selection UI and media-enhanced features
+
+### Technical Implementation
+```typescript
+// New modular approach in generateWorksheet/index.ts
+import { assembleSystemPrompt } from './prompts/promptAssembler.ts';
+
+const systemMessage = assembleSystemPrompt(hasGrammarFocus, grammarFocus, formData);
+```
 
 ## Architecture Stack
 
@@ -274,7 +299,18 @@ src/
 
 ## API Architecture
 
-### Edge Functions
+### Edge Functions - Enhanced with Modular Prompts
+
+#### generateWorksheet Function
+- **Purpose:** AI-powered worksheet generation using modular prompt system
+- **Input:** Form data, user preferences, student assignment
+- **Processing:** 
+  - Dynamic prompt assembly based on requirements
+  - Grammar focus integration
+  - Exercise type selection (currently 8 standard types)
+  - OpenAI API integration with optimized parameters
+- **Output:** Structured JSON worksheet with exercises, grammar rules, vocabulary
+- **New Architecture:** Modular prompt components for better maintainability
 ```
 supabase/functions/
 ├── generateWorksheet/        # AI worksheet generation
