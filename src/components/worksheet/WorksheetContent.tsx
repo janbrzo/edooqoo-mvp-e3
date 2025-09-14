@@ -8,6 +8,7 @@ import GrammarRules from "./GrammarRules";
 import DemoWatermark from "./DemoWatermark";
 import WarmupSection from "./WarmupSection";
 import { useWorksheetTimes } from "@/hooks/useWorksheetTimes";
+import { deepFixTextObjects } from "@/utils/textObjectFixer";
 
 interface WorksheetContentProps {
   editableWorksheet: any;
@@ -194,7 +195,7 @@ export default function WorksheetContent({
         <div className="relative">
           {!isDownloadUnlocked && <DemoWatermark />}
           <VocabularySheet
-            vocabularySheet={editableWorksheet.vocabulary_sheet}
+            vocabularySheet={deepFixTextObjects(editableWorksheet.vocabulary_sheet, 'vocabulary_sheet')}
             isEditing={isEditing}
             viewMode={viewMode}
             editableWorksheet={editableWorksheet}

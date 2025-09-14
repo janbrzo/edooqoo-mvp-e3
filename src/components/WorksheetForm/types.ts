@@ -7,6 +7,15 @@ export type Tile = {
   title: string;
 };
 
+export interface VocabularyItem {
+  term?: string;
+  meaning?: string;
+  word?: string;
+  phrase?: string;
+  definition?: string;
+  example?: string;
+}
+
 export interface FormData {
   lessonTime: LessonTime;
   lessonTopic: string;
@@ -26,10 +35,7 @@ export interface WorksheetData {
   introduction: string;
   warmup_questions?: string[];
   exercises: any[];
-  vocabulary_sheet: {
-    term: string;
-    meaning: string;
-  }[];
+  vocabulary_sheet: VocabularyItem[];
 }
 
 export interface WorksheetFormProps {
