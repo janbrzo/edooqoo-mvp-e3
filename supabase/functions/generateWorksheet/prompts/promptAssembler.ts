@@ -13,9 +13,14 @@ import { getValidationRules } from './validationRules.ts';
  * @returns Number of exercises to generate
  */
 function determineExerciseCount(prompt: string): number {
+  console.log(`🔍 Analyzing prompt for duration. Contains '45 min': ${prompt.includes('45 min')}, Contains '30 min': ${prompt.includes('30 min')}`);
+  
   if (prompt.includes('45 min') || prompt.includes('30 min')) {
+    console.log(`✅ Detected shorter lesson - selecting 6 exercises`);
     return 6; // 45min and 30min lessons get 6 exercises
   }
+  
+  console.log(`✅ Detected standard lesson - selecting 8 exercises`);
   return 8; // 60min lessons get 8 exercises
 }
 
@@ -50,6 +55,7 @@ export function assembleSystemPrompt(
   
   console.log(`📝 Assembling prompt: ${exerciseCount} exercises for lesson duration detected in prompt`);
   console.log(`🎯 Selected exercises: ${selectedExercises.join(', ')}`);
+  console.log(`📋 User prompt analysis: "${userPrompt.substring(0, 200)}..."`);
   
   const corePrompt = getSystemPromptCore(hasGrammarFocus, grammarFocus, formData, exerciseCount);
   

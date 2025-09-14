@@ -329,12 +329,24 @@ export function getExerciseExamples(hasGrammarFocus: boolean, grammarFocus: stri
  * Dynamic exercise selection function
  */
 export function getSelectedExercises(exerciseNumbers: number[], hasGrammarFocus: boolean, grammarFocus: string = ''): string {
+  console.log(`🎯 Building exercises: ${exerciseNumbers.length} exercises (${exerciseNumbers.join(', ')})`);
+  
   const grammarSection = getGrammarRulesSection(hasGrammarFocus, grammarFocus);
   
   const exercisesList = exerciseNumbers
-    .map(num => EXERCISE_MAP[num as keyof typeof EXERCISE_MAP]?.func())
+    .map(num => {
+      const exercise = EXERCISE_MAP[num as keyof typeof EXERCISE_MAP];
+      if (!exercise) {
+        console.error(`❌ Exercise ${num} not found in EXERCISE_MAP`);
+        return null;
+      }
+      console.log(`✅ Adding exercise ${num}: ${exercise.name}`);
+      return exercise.func();
+    })
     .filter(Boolean)
     .join(',\n');
+
+  console.log(`📝 Generated exercises JSON length: ${exercisesList.length} characters`);
 
   return `
 EXAMPLE OUTPUT (IGNORE CONTENT, FOCUS ON STRUCTURE):

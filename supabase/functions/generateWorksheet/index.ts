@@ -97,13 +97,16 @@ serve(async (req) => {
     
     // CREATE SYSTEM MESSAGE with Golden Prompt content - MODULAR APPROACH
     // Generate the system message using the modular approach with intelligent exercise selection
+    console.log(`🚀 Starting prompt assembly with parameters: hasGrammarFocus=${hasGrammarFocus}, grammarFocus="${grammarFocus || 'none'}", prompt="${sanitizedPrompt.substring(0, 100)}..."`);
+    
     const systemMessage = assembleSystemPrompt(hasGrammarFocus, grammarFocus, formData, sanitizedPrompt);
-
+    
+    console.log(`📏 System message length: ${systemMessage.length} characters`);
+    console.log(`🎯 System message includes exercise count instruction: ${systemMessage.includes('exercises')}`);
 
     // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({
-      model: "gpt-4.1-2025-04-14", // Changed back to gpt-4o i można gpt-4.1-2025-04-14
-      temperature: 0.2, // 
+      model: "gpt-4.1-2025-04-14", 
       messages: [
         {
           role: "system",
@@ -114,7 +117,7 @@ serve(async (req) => {
           content: sanitizedPrompt
         }
       ],
-       max_tokens: 7000 // nowa nazwa parametru  max_completion_tokens: 7500
+       max_completion_tokens: 9000 // Increased for longer prompts with 6-8 exercises
     });
 
     const jsonContent = aiResponse.choices[0].message.content;
@@ -130,8 +133,9 @@ serve(async (req) => {
         throw new Error('Invalid worksheet structure returned from AI');
       }
       
-      // Validate we got exactly 8 exercises
-      // Enhanced validation for exercise requirements
+      // Enhanced validation for exercise requirements - Dynamic count
+      console.log(`📊 Validating ${worksheetData.exercises.length} exercises (expected: based on lesson duration)`);
+      
       for (const exercise of worksheetData.exercises) {
         validateExercise(exercise);
       }
