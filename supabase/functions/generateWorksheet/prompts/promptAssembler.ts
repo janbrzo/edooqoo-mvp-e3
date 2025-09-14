@@ -4,73 +4,29 @@
  */
 
 import { getSystemPromptCore } from './systemPrompt.ts';
-import { getExerciseExamples, getSelectedExercises } from './exerciseExamples.ts';
+import { getExerciseExamples } from './exerciseExamples.ts';
 import { getValidationRules } from './validationRules.ts';
-
-/**
- * Determines exercise count based on lesson duration
- * @param prompt - The user prompt to analyze
- * @returns Number of exercises to generate
- */
-function determineExerciseCount(prompt: string): number {
-  const contains45Min = prompt.includes('45 min') || prompt.includes('lessonTime: 45');
-  const contains30Min = prompt.includes('30 min') || prompt.includes('lessonTime: 30');
-  
-  console.log(`🔍 IMPROVED: Analyzing prompt for duration. Contains '45 min': ${contains45Min}, Contains '30 min': ${contains30Min}`);
-  console.log(`📋 Prompt content check: "${prompt.substring(0, 300)}..."`);
-  
-  if (contains45Min) {
-    console.log('⏰ DETECTED: 45-minute lesson - selecting 6 exercises');
-    return 6;
-  } else if (contains30Min) {
-    console.log('⏰ DETECTED: 30-minute lesson - selecting 4 exercises');
-    return 4;
-  } else {
-    console.log('✅ DEFAULT: Standard lesson - selecting 8 exercises');
-    return 8;
-  }
-}
-
-/**
- * Selects exercise numbers based on count
- * @param count - Number of exercises to select
- * @returns Array of exercise numbers
- */
-function selectExercisesForCount(count: number): number[] {
-  // Always select the first N exercises in order
-  return Array.from({ length: count }, (_, i) => i + 1);
-}
 
 /**
  * Assembles the complete system prompt from modular parts
  * @param hasGrammarFocus - Whether grammar focus is specified
  * @param grammarFocus - The grammar focus topic
  * @param formData - Form data containing lesson details
- * @param userPrompt - User prompt to analyze for lesson duration
  * @returns Complete system prompt exactly matching the original
  */
 export function assembleSystemPrompt(
   hasGrammarFocus: boolean, 
   grammarFocus: string = '', 
-  formData: any = {},
-  userPrompt: string = ''
+  formData: any = {}
 ): string {
   
-  // Determine exercise count from user prompt
-  const exerciseCount = determineExerciseCount(userPrompt);
-  const selectedExercises = selectExercisesForCount(exerciseCount);
-  
-  console.log(`📝 Assembling prompt: ${exerciseCount} exercises for lesson duration detected in prompt`);
-  console.log(`🎯 Selected exercises: ${selectedExercises.join(', ')}`);
-  console.log(`📋 User prompt analysis: "${userPrompt.substring(0, 200)}..."`);
-  
-  const corePrompt = getSystemPromptCore(hasGrammarFocus, grammarFocus, formData, exerciseCount);
+  const corePrompt = getSystemPromptCore(hasGrammarFocus, grammarFocus, formData);
   
   const structureInstruction = `
 
 20. Generate a structured JSON worksheet with this EXACT format:`;
   
-  const examples = getSelectedExercises(selectedExercises, hasGrammarFocus, grammarFocus);
+  const examples = getExerciseExamples(hasGrammarFocus, grammarFocus);
   
   const validationRules = getValidationRules();
   

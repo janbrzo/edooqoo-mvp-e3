@@ -118,23 +118,6 @@ const Index = () => {
   }
 
   const bothWorksheetsReady = worksheetState.generatedWorksheet && worksheetState.editableWorksheet;
-  
-  console.log('🎯 Index: Render decision logic:', {
-    bothWorksheetsReady,
-    hasGeneratedWorksheet: !!worksheetState.generatedWorksheet,
-    hasEditableWorksheet: !!worksheetState.editableWorksheet,
-    hasInputParams: !!worksheetState.inputParams,
-    generatedWorksheetType: typeof worksheetState.generatedWorksheet,
-    editableWorksheetType: typeof worksheetState.editableWorksheet,
-    generatedWorksheetStructure: worksheetState.generatedWorksheet ? {
-      title: worksheetState.generatedWorksheet.title,
-      exerciseCount: worksheetState.generatedWorksheet.exercises?.length || 0
-    } : null,
-    editableWorksheetStructure: worksheetState.editableWorksheet ? {
-      title: worksheetState.editableWorksheet.title,
-      exerciseCount: worksheetState.editableWorksheet.exercises?.length || 0
-    } : null
-  });
 
   const handleGenerateWorksheet = (data: any) => {
     console.log('🔍 POPUP DECISION DEBUG:', {

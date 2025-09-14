@@ -8,7 +8,6 @@ import GrammarRules from "./GrammarRules";
 import DemoWatermark from "./DemoWatermark";
 import WarmupSection from "./WarmupSection";
 import { useWorksheetTimes } from "@/hooks/useWorksheetTimes";
-import { deepFixTextObjects } from "@/utils/textObjectFixer";
 
 interface WorksheetContentProps {
   editableWorksheet: any;
@@ -35,9 +34,9 @@ export default function WorksheetContent({
   const hasGrammar = Boolean(editableWorksheet?.grammar_rules);
   const worksheetTimes = useWorksheetTimes(inputParams?.lessonTime, hasGrammar);
   
-  // CRITICAL FIX: Add comprehensive safety checks
+  // CRITICAL FIX: Add safety check to prevent rendering with null worksheet
   if (!editableWorksheet) {
-    console.log('❌ WorksheetContent: editableWorksheet is null, showing loading...');
+    console.log('WorksheetContent: editableWorksheet is null, showing loading...');
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="animate-spin h-8 w-8 border-4 border-worksheet-purple border-t-transparent rounded-full"></div>
@@ -45,40 +44,9 @@ export default function WorksheetContent({
     );
   }
 
-  if (!editableWorksheet.exercises || !Array.isArray(editableWorksheet.exercises)) {
-    console.error('❌ WorksheetContent: No exercises array found:', editableWorksheet);
-    return (
-      <div className="flex items-center justify-center min-h-64 bg-red-50 border border-red-200 rounded p-4">
-        <div className="text-center">
-          <p className="text-red-700 font-medium">Worksheet Error</p>
-          <p className="text-red-600 text-sm">No exercises found in worksheet data</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (editableWorksheet.exercises.length === 0) {
-    console.error('❌ WorksheetContent: Empty exercises array:', editableWorksheet);
-    return (
-      <div className="flex items-center justify-center min-h-64 bg-yellow-50 border border-yellow-200 rounded p-4">
-        <div className="text-center">
-          <p className="text-yellow-700 font-medium">Worksheet Warning</p>
-          <p className="text-yellow-600 text-sm">Worksheet contains no exercises</p>
-        </div>
-      </div>
-    );
-  }
-
-  console.log('✅ WorksheetContent: Rendering worksheet successfully');
-  console.log('📋 WorksheetContent: editableWorksheet structure:', {
-    title: editableWorksheet.title,
-    subtitle: editableWorksheet.subtitle,
-    exerciseCount: editableWorksheet.exercises?.length || 0,
-    hasVocabulary: editableWorksheet.vocabulary_sheet?.length || 0,
-    hasGrammar: Boolean(editableWorksheet.grammar_rules)
-  });
-  console.log('⏱️ WorksheetContent: Calculated times:', worksheetTimes);
-  console.log('📚 WorksheetContent: Has grammar:', hasGrammar);
+  console.log('WorksheetContent: Rendering with editableWorksheet:', editableWorksheet);
+  console.log('WorksheetContent: Calculated times:', worksheetTimes);
+  console.log('WorksheetContent: Has grammar:', hasGrammar);
 
   return (
     <div className="worksheet-content mb-8" id="worksheet-content">
@@ -195,7 +163,7 @@ export default function WorksheetContent({
         <div className="relative">
           {!isDownloadUnlocked && <DemoWatermark />}
           <VocabularySheet
-            vocabularySheet={deepFixTextObjects(editableWorksheet.vocabulary_sheet, 'vocabulary_sheet')}
+            vocabularySheet={editableWorksheet.vocabulary_sheet}
             isEditing={isEditing}
             viewMode={viewMode}
             editableWorksheet={editableWorksheet}

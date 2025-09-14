@@ -1,19 +1,18 @@
 /**
- * Individual exercise definitions - modular prompt system
- * CRITICAL: Each exercise maintains exact content as original prompt
+ * Exercise examples for the JSON structure
+ * CRITICAL: This content must match exactly with the original prompt examples
  */
 
-/**
- * Grammar rules section generator
- */
-function getGrammarRulesSection(hasGrammarFocus: boolean, grammarFocus: string = ''): string {
-  if (!hasGrammarFocus) {
-    return '';
-  }
-  
-  return `"grammar_rules": {
+export function getExerciseExamples(hasGrammarFocus: boolean, grammarFocus: string = ''): string {
+  return `
+EXAMPLE OUTPUT (IGNORE CONTENT, FOCUS ON STRUCTURE):
+{
+  "title": "In a restaurant",
+  "subtitle": "Making a complaint about your dish in a restaurant: adjectives practice",
+  "introduction": "In this lesson, you'll practice a restaurant role-play, learn how to order food, and make a complaint about an incorrect order. You'll also review grammar related to adjectives in their comparative and superlative forms.",
+  ${hasGrammarFocus ? `"grammar_rules": {
     "title": "Grammar Focus: ${grammarFocus}",
-    "introduction": "Adjectives are words that describe or modify nouns, providing information about qualities such as size, color, shape, age, and many others. When we want to compare people, objects, or ideas, we use adjectives in their comparative or superlative forms.\\n\\nComparatives are used to compare two things or people, showing that one has a higher or lower degree of a particular quality than the other. For example, when saying \\"John is taller than Mike,\\" the adjective \\"taller\\" is in the comparative form, indicating a comparison between two individuals. Comparatives are often followed by the word \\"than\\" to introduce the second element of comparison.\\n\\nSuperlatives, on the other hand, are used to describe the extreme or highest degree of a quality among three or more things or people. For example, \\"Anna is the tallest in her class\\" uses the superlative form \\"tallest\\" to indicate that Anna has the greatest height compared to all others in the group. Superlatives are usually preceded by the definite article \\"the\\".\\n\\nThe formation of comparatives and superlatives depends largely on the length and ending of the adjective. One-syllable adjectives usually form comparatives and superlatives by adding the suffixes \\"-er\\" and \\"-est\\". For adjectives with two syllables or more, especially those with three or more syllables, the words \\"more\\" and \\"most\\" are used before the adjectives instead of adding suffixes.\\n\\nSome adjectives have irregular comparative and superlative forms that must be memorized as they do not follow standard patterns. For instance, \\"good\\" becomes \\"better\\" (comparative) and \\"best\\" (superlative).\\n\\nIn addition to indicating comparisons of difference, adjectives can also be used to express equality, using the structure \\"as + adjective + as\\" to show that two things share the same degree of a quality.\\n\\nUnderstanding and correctly using comparatives and superlatives is essential for effective communication, enabling speakers and writers to accurately compare qualities and express degrees of difference or similarity.",
+    "introduction": "Adjectives are words that describe or modify nouns, providing information about qualities such as size, color, shape, age, and many others. When we want to compare people, objects, or ideas, we use adjectives in their comparative or superlative forms.\\n\\nComparatives are used to compare two things or people, showing that one has a higher or lower degree of a particular quality than the other. For example, when saying \\"John is taller than Mike,\\" the adjective \\"taller\\" is in the comparative form, indicating a comparison between two individuals. Comparatives are often followed by the word \\"than\\" to introduce the second element of comparison.\\n\\nSuperlatives, on the other hand, are used to describe the extreme or highest degree of a quality among three or more things or people. For example, \\"Anna is the tallest in her class\\" uses the superlative form \\"tallest\\" to indicate that Anna has the greatest height compared to all others in the group. Superlatives are usually preceded by the definite article \\"the\\".\\n\\nThe formation of comparatives and superlatives depends largely on the length and ending of the adjective. One-syllable adjectives usually form comparatives and superlatives by adding the suffixes \\"-er\\" and \\"-est\\". For adjectives with two syllables or more, especially those with three or more syllables, the words \\"more\\" and \\"most\\" are used before the adjective instead of adding suffixes.\\n\\nSome adjectives have irregular comparative and superlative forms that must be memorized as they do not follow standard patterns. For instance, \\"good\\" becomes \\"better\\" (comparative) and \\"best\\" (superlative).\\n\\nIn addition to indicating comparisons of difference, adjectives can also be used to express equality, using the structure \\"as + adjective + as\\" to show that two things share the same degree of a quality.\\n\\nUnderstanding and correctly using comparatives and superlatives is essential for effective communication, enabling speakers and writers to accurately compare qualities and express degrees of difference or similarity.",
     "rules": [
       {
         "title": "Forming Comparatives for One-Syllable Adjectives",
@@ -51,14 +50,9 @@ function getGrammarRulesSection(hasGrammarFocus: boolean, grammarFocus: string =
         "examples": ["This dish is not as hot as I expected.", "The new waiter is as friendly as the old one."]
       }
     ]
-  },`;
-}
-
-/**
- * Exercise 1: Reading
- */
-export function getExercise1_Reading(): string {
-  return `    {
+  },` : ''}
+  "exercises": [
+    {
       "type": "reading",
       "title": "Exercise 1: Reading Comprehension",
       "icon": "fa-book-open",
@@ -73,14 +67,8 @@ export function getExercise1_Reading(): string {
         {"text": "What are some common complaints that customers make in New York restaurants?", "answer": "The food is cold, This is not what I ordered, The portion is too small, I waited too long for my food, and The bill is incorrect."}
       ],
       "teacher_tip": "Use the comprehension questions as a starting point to ask more personal questions related to your student's life and experiences. Encourage them to share their opinions on the topics and situations mentioned in the text."
-    }`;
-}
-
-/**
- * Exercise 2: True/False
- */
-export function getExercise2_TrueFalse(): string {
-  return `    {
+    },
+    {
       "type": "true-false",
       "title": "Exercise 2: True or False",
       "icon": "fa-balance-scale",
@@ -99,14 +87,8 @@ export function getExercise2_TrueFalse(): string {
         {"text": "Main dishes in New York restaurants never include vegetarian options.", "isTrue": false}
       ],
       "teacher_tip": "Use this exercise to check reading comprehension and ensure students understood the key details from the text."
-    }`;
-}
-
-/**
- * Exercise 3: Matching
- */
-export function getExercise3_Matching(): string {
-  return `    {
+    },
+    {
       "type": "matching",
       "title": "Exercise 3: Vocabulary Matching",
       "icon": "fa-link",
@@ -125,14 +107,8 @@ export function getExercise3_Matching(): string {
         {"term": "Customer service", "definition": "The assistance and advice provided by a restaurant or business to people who use its services."}
       ],
       "teacher_tip": "Before the matching activity, introduce and pronounce each term to ensure students feel confident recognizing and understanding them. If needed, translate the most difficult or abstract vocabulary terms into the student's native language. After the exercise, assign students a follow-up task to write 10 original sentences using the new vocabulary."
-    }`;
-}
-
-/**
- * Exercise 4: Fill in Blanks
- */
-export function getExercise4_FillInBlanks(): string {
-  return `    {
+    },
+    {
       "type": "fill-in-blanks",
       "title": "Exercise 4: Fill in the Blanks",
       "icon": "fa-pencil-alt",
@@ -152,14 +128,8 @@ export function getExercise4_FillInBlanks(): string {
         {"text": "It is _____ to leave a tip in American restaurants.", "answer": "common"}
       ],
       "teacher_tip": "You can use this exercise in the next class as a sentence translation activity—provide the sentences in the student's native language and ask them to translate them into English to practice the new vocabulary."
-    }`;
-}
-
-/**
- * Exercise 5: Multiple Choice
- */
-export function getExercise5_MultipleChoice(): string {
-  return `    {
+    },
+    {
       "type": "multiple-choice",
       "title": "Exercise 5: Multiple Choice",
       "icon": "fa-check-square",
@@ -213,14 +183,8 @@ export function getExercise5_MultipleChoice(): string {
         }
       ],
       "teacher_tip": "Focus on discussing why the incorrect options are wrong. This helps reinforce the grammar rules and prevents common mistakes."
-    }`;
-}
-
-/**
- * Exercise 6: Dialogue
- */
-export function getExercise6_Dialogue(): string {
-  return `    {
+    },
+    {
       "type": "dialogue",
       "title": "Exercise 6: Role-play Dialogue",
       "icon": "fa-comments",
@@ -252,151 +216,63 @@ export function getExercise6_Dialogue(): string {
         {"phrase": "I appreciate it", "meaning": "A polite way to say thank you"}
       ],
       "teacher_tip": "After practicing the dialogue, encourage the student to create their own restaurant scenario. You can role-play different situations like ordering dessert, asking for the check, or making a reservation over the phone."
-    }`;
-}
-
-/**
- * Exercise 7: Discussion
- */
-export function getExercise7_Discussion(): string {
-  return `    {
+    },
+    {
       "type": "discussion",
       "title": "Exercise 7: Discussion Questions",
       "icon": "fa-users",
-      "time": 10,
-      "instructions": "Discuss these questions with your teacher. Give detailed answers and examples from your own experience.",
+      "time": 12,
+      "instructions": "Discuss these questions with your teacher. Give detailed answers and share your personal experiences.",
       "questions": [
-        {"text": "What is the most popular type of cuisine in your country? Why do you think it's so popular?"},
-        {"text": "Describe the worst restaurant experience you've ever had. What went wrong, and how did you handle the situation?"},
-        {"text": "Do you prefer eating at expensive restaurants or simple, casual places? Explain your preference."},
-        {"text": "What would you do if you received the wrong order at a restaurant? How would you complain politely?"},
-        {"text": "Are food trucks popular in your city? What kind of food do they typically serve?"},
-        {"text": "How important is it for restaurants to offer vegetarian or vegan options? Why?"},
-        {"text": "Describe your ideal restaurant. What kind of atmosphere, service, and food would it have?"},
-        {"text": "Have you ever worked in the food service industry? What was it like dealing with customer complaints?"}
+        {"text": "What's your favorite type of international cuisine? Why do you prefer it over others?"},
+        {"text": "Have you ever had to make a complaint in a restaurant? How did you handle the situation?"},
+        {"text": "Do you prefer eating at expensive fine dining restaurants or casual places? Explain your preference."},
+        {"text": "What's the most unusual or exotic food you've ever tried? Would you eat it again?"},
+        {"text": "How important is good customer service to you when dining out? Can bad service ruin a good meal?"},
+        {"text": "Do you think it's better to make a reservation or just walk into a restaurant? Why?"},
+        {"text": "What would you do if you received the wrong order at a restaurant? How would you politely complain?"},
+        {"text": "Have you ever worked in customer service? What advice would you give to restaurant staff?"}
       ],
-      "teacher_tip": "Encourage the student to give personal examples and detailed explanations. Follow up on interesting points they mention to keep the conversation flowing naturally."
-    }`;
-}
-
-/**
- * Exercise 8: Error Correction
- */
-export function getExercise8_ErrorCorrection(): string {
-  return `    {
+      "teacher_tip": "Use these discussion questions to encourage natural conversation. Ask follow-up questions based on the student's answers to keep the dialogue flowing and practice real-life communication skills."
+    },
+    {
       "type": "error-correction",
       "title": "Exercise 8: Error Correction",
-      "icon": "fa-edit",
-      "time": 8,
-      "instructions": "Each sentence contains one grammatical error. Find and correct the mistake.",
+      "icon": "fa-exclamation-triangle",
+      "time": 6,
+      "instructions": "Find and correct the mistakes in these sentences. Each sentence has one error.",
       "sentences": [
-        {"incorrect": "This restaurant is more good than the previous one we visited.", "correct": "This restaurant is better than the previous one we visited.", "explanation": "Use 'better' (irregular comparative) instead of 'more good' for the adjective 'good'."},
-        {"incorrect": "The pizza here is the most delicious than anywhere else in the city.", "correct": "The pizza here is more delicious than anywhere else in the city.", "explanation": "Use 'more delicious than' (comparative) when comparing two things, not superlative 'most delicious'."},
-        {"incorrect": "My soup is not so hot as yours.", "correct": "My soup is not as hot as yours.", "explanation": "Use 'as...as' structure for equality comparisons, not 'so...as' in negative contexts."},
-        {"incorrect": "This is the better meal I have ever had in my life.", "correct": "This is the best meal I have ever had in my life.", "explanation": "Use superlative 'best' when comparing among three or more items, not comparative 'better'."},
-        {"incorrect": "The service was more slow than I expected.", "correct": "The service was slower than I expected.", "explanation": "One-syllable adjectives like 'slow' form comparatives with '-er', not 'more'."},
-        {"incorrect": "This restaurant is expensiver than the one downtown.", "correct": "This restaurant is more expensive than the one downtown.", "explanation": "Multi-syllable adjectives like 'expensive' use 'more' for comparatives, not '-er' endings."},
-        {"incorrect": "The waitress was the most friendliest person in the restaurant.", "correct": "The waitress was the friendliest person in the restaurant.", "explanation": "Don't use 'most' with superlatives that already end in '-est'. Use either 'most friendly' or 'friendliest'."},
-        {"incorrect": "Today's special is as expensive than the regular menu items.", "correct": "Today's special is as expensive as the regular menu items.", "explanation": "Use 'as...as' for equality comparisons, not 'as...than'."}
+        {"text": "This restaurant is more better than the one downtown.", "correction": "This restaurant is better than the one downtown."},
+        {"text": "The pizza here is the most good I've ever tasted.", "correction": "The pizza here is the best I've ever tasted."},
+        {"text": "My meal was not so hot as I expected it to be.", "correction": "My meal was not as hot as I expected it to be."},
+        {"text": "The service at this place is more slow than usual.", "correction": "The service at this place is slower than usual."},
+        {"text": "I think this is the most expensive restaurant of the city.", "correction": "I think this is the most expensive restaurant in the city."},
+        {"text": "The waiter was more friendly that the hostess.", "correction": "The waiter was more friendly than the hostess."},
+        {"text": "This dish is as delicious than the one I had yesterday.", "correction": "This dish is as delicious as the one I had yesterday."},
+        {"text": "The portions here are most bigger than at other places.", "correction": "The portions here are bigger than at other places."}
       ],
-      "teacher_tip": "After correcting each sentence, ask the student to explain why the original sentence was wrong. This reinforces their understanding of comparative and superlative rules."
-    }`;
-}
-
-/**
- * Exercise map for easy selection
- */
-export const EXERCISE_MAP = {
-  1: { name: 'reading', func: getExercise1_Reading },
-  2: { name: 'true-false', func: getExercise2_TrueFalse },
-  3: { name: 'matching', func: getExercise3_Matching },
-  4: { name: 'fill-in-blanks', func: getExercise4_FillInBlanks },
-  5: { name: 'multiple-choice', func: getExercise5_MultipleChoice },
-  6: { name: 'dialogue', func: getExercise6_Dialogue },
-  7: { name: 'discussion', func: getExercise7_Discussion },
-  8: { name: 'error-correction', func: getExercise8_ErrorCorrection }
-};
-
-/**
- * Legacy function for backward compatibility
- * @deprecated Use getSelectedExercises instead
- */
-export function getExerciseExamples(hasGrammarFocus: boolean, grammarFocus: string = ''): string {
-  return getSelectedExercises([1, 2, 3, 4, 5, 6, 7, 8], hasGrammarFocus, grammarFocus);
-}
-
-/**
- * Dynamic exercise selection function
- */
-export function getSelectedExercises(exerciseNumbers: number[], hasGrammarFocus: boolean, grammarFocus: string = ''): string {
-  console.log(`🎯 Building exercises: ${exerciseNumbers.length} exercises (${exerciseNumbers.join(', ')})`);
-  
-  const grammarSection = getGrammarRulesSection(hasGrammarFocus, grammarFocus);
-  
-  const exercisesList = exerciseNumbers
-    .map(num => {
-      const exercise = EXERCISE_MAP[num as keyof typeof EXERCISE_MAP];
-      if (!exercise) {
-        console.error(`❌ Exercise ${num} not found in EXERCISE_MAP`);
-        return null;
-      }
-      console.log(`✅ Adding exercise ${num}: ${exercise.name}`);
-      return exercise.func();
-    })
-    .filter(Boolean)
-    .join(',\n');
-
-  console.log(`📝 Generated exercises JSON length: ${exercisesList.length} characters`);
-
-  return `
-EXAMPLE OUTPUT (IGNORE CONTENT, FOCUS ON STRUCTURE):
-{
-  "title": "In a restaurant",
-  "subtitle": "Making a complaint about your dish in a restaurant: adjectives practice",
-  "introduction": "In this lesson, you'll practice a restaurant role-play, learn how to order food, and make a complaint about an incorrect order. You'll also review grammar related to adjectives in their comparative and superlative forms.",
-  ${grammarSection}
-  "exercises": [
-${exercisesList}
+      "teacher_tip": "After correcting the errors, ask students to explain why each correction is necessary. This helps reinforce the grammar rules and improves their understanding of comparative and superlative forms."
+    }
   ],
-  ${getWarmupQuestions()}
-  ${getVocabularySheet()}
-  ${getTeacherNotes()}
-}
-END OF EXAMPLE`;
-}
-
-/**
- * Warmup questions section
- */
-function getWarmupQuestions(): string {
-  return `"warmup_questions": [
+  "warmup_questions": [
     {"question": "Do you enjoy trying new restaurants? What's your favorite type of food?"},
     {"question": "When was the last time you ate at a restaurant? What did you order?"},
     {"question": "Have you ever had any problems with food or service at a restaurant?"}
-  ],`;
-}
-
-/**
- * Vocabulary sheet section
- */
-function getVocabularySheet(): string {
-  return `"vocabulary_sheet": [
-    {"term": "appetizer", "meaning": "A small dish served before the main course"},
-    {"term": "reservation", "meaning": "A table booked in advance at a restaurant"},
-    {"term": "complaint", "meaning": "An expression of dissatisfaction about service or food"},
-    {"term": "portion", "meaning": "The amount of food served to one person"},
-    {"term": "cuisine", "meaning": "A style of cooking from a particular country or region"},
-    {"term": "bill/check", "meaning": "The amount of money you need to pay for your meal"},
-    {"term": "tip", "meaning": "Extra money given to restaurant staff for good service"},
-    {"term": "menu", "meaning": "A list of food and drinks available at a restaurant"}
-  ],`;
-}
-
-/**
- * Teacher notes section
- */
-function getTeacherNotes(): string {
-  return `"teacher_notes": {
+  ],
+  "vocabulary_sheet": {
+    "title": "Restaurant Vocabulary",
+    "words": [
+      {"word": "appetizer", "definition": "A small dish served before the main course", "example": "We shared a cheese appetizer before our main meals."},
+      {"word": "reservation", "definition": "A table booked in advance at a restaurant", "example": "I made a reservation for 7 PM at the Italian restaurant."},
+      {"word": "complaint", "definition": "An expression of dissatisfaction about service or food", "example": "The manager handled our complaint about the cold soup very professionally."},
+      {"word": "portion", "definition": "The amount of food served to one person", "example": "The portion was so large that I couldn't finish it all."},
+      {"word": "cuisine", "definition": "A style of cooking from a particular country or region", "example": "Thai cuisine is known for its spicy flavors and fresh ingredients."},
+      {"word": "bill/check", "definition": "The amount of money you need to pay for your meal", "example": "Could we have the bill, please? We'd like to pay now."},
+      {"word": "tip", "definition": "Extra money given to restaurant staff for good service", "example": "In the US, it's customary to leave a 15-20% tip."},
+      {"word": "menu", "definition": "A list of food and drinks available at a restaurant", "example": "The menu had so many options that it was hard to choose."}
+    ]
+  },
+  "teacher_notes": {
     "lesson_focus": "This lesson combines restaurant vocabulary, complaint expressions, and comparative/superlative adjective practice in real-world contexts.",
     "key_points": [
       "Students practice making polite complaints using comparative structures",
@@ -414,5 +290,7 @@ function getTeacherNotes(): string {
       "Forgetting 'the' before superlatives",
       "Mixing up 'than' and 'as' in comparisons"
     ]
-  }`;
+  }
+}
+END OF EXAMPLE`;
 }

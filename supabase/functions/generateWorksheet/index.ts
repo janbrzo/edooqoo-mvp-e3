@@ -93,20 +93,29 @@ serve(async (req) => {
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
 
-    console.log(`🎯 Grammar focus detected: ${hasGrammarFocus ? grammarFocus : 'None'}`);
+    // Determine exercise count - always generate 8, then trim if needed
+    let finalExerciseCount = 8; // Always generate 8 exercises
+    if (sanitizedPrompt.includes('45 min')) {
+      finalExerciseCount = 6; // Will trim to 6 after generation
+    } else if (sanitizedPrompt.includes('30 min')) {
+      // Convert 30 min to 45 min (remove 30 min option)
+      finalExerciseCount = 6;
+    }
     
-    // CREATE SYSTEM MESSAGE with Golden Prompt content - MODULAR APPROACH
-    // Generate the system message using the modular approach with intelligent exercise selection
-    console.log(`🚀 Starting prompt assembly with parameters: hasGrammarFocus=${hasGrammarFocus}, grammarFocus="${grammarFocus || 'none'}", prompt="${sanitizedPrompt.substring(0, 100)}..."`);
+    // Always use the full 8-exercise set for generation
+    const exerciseTypes = getExerciseTypesForCount(8);
     
-    const systemMessage = assembleSystemPrompt(hasGrammarFocus, grammarFocus, formData, sanitizedPrompt);
+    console.log(`Generating 8 exercises, will trim to ${finalExerciseCount} if needed`);
     
-    console.log(`📏 System message length: ${systemMessage.length} characters`);
-    console.log(`🎯 System message includes exercise count instruction: ${systemMessage.includes('exercises')}`);
+    // CREATE SYSTEM MESSAGE with Golden Prompt content - UPDATED EXERCISE ORDER
+    // Generate the system message using the modular approach
+    const systemMessage = assembleSystemPrompt(hasGrammarFocus, grammarFocus, formData);
+
 
     // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({
-      model: "gpt-4.1-2025-04-14", 
+      model: "gpt-4.1-2025-04-14", // Changed back to gpt-4o i można gpt-4.1-2025-04-14
+      temperature: 0.2, // 
       messages: [
         {
           role: "system",
@@ -117,7 +126,7 @@ serve(async (req) => {
           content: sanitizedPrompt
         }
       ],
-       max_completion_tokens: 9000 // Increased for longer prompts with 6-8 exercises
+       max_tokens: 7000 // nowa nazwa parametru  max_completion_tokens: 7500
     });
 
     const jsonContent = aiResponse.choices[0].message.content;
@@ -133,11 +142,21 @@ serve(async (req) => {
         throw new Error('Invalid worksheet structure returned from AI');
       }
       
-      // Enhanced validation for exercise requirements - Dynamic count
-      console.log(`📊 Validating ${worksheetData.exercises.length} exercises (expected: based on lesson duration)`);
+      // Validate we got exactly 8 exercises
+      if (worksheetData.exercises.length !== 8) {
+        console.warn(`Expected 8 exercises but got ${worksheetData.exercises.length}`);
+        throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required 8`);
+      }
       
+      // Enhanced validation for exercise requirements
       for (const exercise of worksheetData.exercises) {
         validateExercise(exercise);
+      }
+      
+      // Trim exercises if needed for 45 min lessons
+      if (finalExerciseCount === 6) {
+        worksheetData.exercises = worksheetData.exercises.slice(0, 6);
+        console.log(`Trimmed exercises to ${worksheetData.exercises.length} for 45 min lesson`);
       }
       
       // Make sure exercise titles have correct sequential numbering
@@ -147,8 +166,8 @@ serve(async (req) => {
         exercise.title = `Exercise ${exerciseNumber}: ${exerciseType}`;
       });
       
-      console.log(`✅ Generated ${worksheetData.exercises.length} exercises as requested`);
-      console.log(`📖 Grammar Rules included: ${!!worksheetData.grammar_rules}`);
+      console.log(`Final exercise count: ${worksheetData.exercises.length} (target: ${finalExerciseCount})`);
+      console.log(`Grammar Rules included: ${!!worksheetData.grammar_rules}`);
       
       const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);
       worksheetData.sourceCount = sourceCount;
