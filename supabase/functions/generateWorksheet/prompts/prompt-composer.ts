@@ -36,7 +36,7 @@ export const composeWorksheetPrompt = (formData: FormData, hasGrammarFocus: bool
   // Get exercise templates based on duration
   const exerciseTemplates = getSelectedExerciseTemplates(exerciseCount);
   
-  // Build the complete system message
+  // Build the complete system message with EXACT original content
   const systemMessage = `${getCoreInstructions()}
 
 ${hasGrammarFocus ? getGrammarSection(grammarFocus!, formData.englishLevel) : getNoGrammarSection()}
@@ -59,9 +59,11 @@ ${getCriticalVerification(hasGrammarFocus)}`;
 
   // Update the exercise count instruction dynamically
   const finalSystemMessage = systemMessage.replace(
+    '1. Create EXACTLY 8 exercises. No fewer, no more. Number them Exercise 1 through Exercise 8.',
+    `1. Create EXACTLY ${exerciseCount} exercises. No fewer, no more. Number them Exercise 1 through Exercise ${exerciseCount}.`
+  ).replace(
     '2. Use EXACTLY these exercise types in this EXACT ORDER: reading, true-false, matching, fill-in-blanks, multiple-choice, dialogue, discussion, error-correction',
-    `1. Create EXACTLY ${exerciseCount} exercises. No fewer, no more. Number them Exercise 1 through Exercise ${exerciseCount}.
-2. Use EXACTLY these exercise types in this EXACT ORDER: ${getExerciseTypesList(exerciseCount)}`
+    `2. Use EXACTLY these exercise types in this EXACT ORDER: ${getExerciseTypesList(exerciseCount)}`
   );
 
   return finalSystemMessage;
