@@ -8,7 +8,7 @@ import {
   getGrammarSection, 
   getNoGrammarSection, 
   getCriticalVerification 
-} from './core-instructions';
+} from './core-instructions.ts';
 
 import {
   getReadingExerciseTemplate,
@@ -21,7 +21,7 @@ import {
   getErrorCorrectionExerciseTemplate,
   getVocabularySheetTemplate,
   getGrammarRulesTemplate
-} from './exercise-templates';
+} from './exercise-templates.ts';
 
 interface FormData {
   englishLevel: string;
