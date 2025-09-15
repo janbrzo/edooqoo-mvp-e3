@@ -66,7 +66,13 @@ export const deepFixTextObjects = (obj: any, path: string = 'root'): any => {
       
       // Case 2: vocabulary_sheet is already array but with wrong structure
       if (Array.isArray(value)) {
-        fixed[key] = value.map((item: any) => {
+        fixed[key] = value.map((item: any, index: number) => {
+          // Ensure item is an object
+          if (!item || typeof item !== 'object') {
+            return { term: `Term ${index + 1}`, meaning: 'Definition' };
+          }
+          
+          // Convert various structures to {term, meaning}
           if (item.word && item.definition) {
             return { term: item.word, meaning: item.definition };
           }
@@ -76,7 +82,16 @@ export const deepFixTextObjects = (obj: any, path: string = 'root'): any => {
           if (item.term && item.meaning) {
             return { term: item.term, meaning: item.meaning };
           }
-          return deepFixTextObjects(item, `${path}.${key}[item]`);
+          
+          // Fallback for any other structure - extract any meaningful values
+          const term = item.term || item.word || item.phrase || `Term ${index + 1}`;
+          const meaning = item.meaning || item.definition || 'Definition';
+          
+          // Ensure term and meaning are strings
+          return { 
+            term: typeof term === 'string' ? term : `Term ${index + 1}`,
+            meaning: typeof meaning === 'string' ? meaning : 'Definition'
+          };
         });
         continue;
       }
