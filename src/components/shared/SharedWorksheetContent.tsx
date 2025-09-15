@@ -252,10 +252,10 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
 
               {exercise.type === 'matching' && exercise.items && (
                 <ExerciseMatching
-                  items={exercise.items}
+                  items={deepFixTextObjects(exercise.items, 'matching_items')}
                   isEditing={false}
                   viewMode="student"
-                  getMatchedItems={() => exercise.items}
+                  getMatchedItems={() => deepFixTextObjects(exercise.items, 'matching_items')}
                   onItemChange={() => {}} // No-op for shared view
                 />
               )}
