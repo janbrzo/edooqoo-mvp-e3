@@ -11,6 +11,12 @@ export const formatPromptForAI = (data: FormData): string => {
   promptLines.push(`lessonTopic: ${data.lessonTopic}`);
   promptLines.push(`lessonGoal: ${data.lessonGoal}`);
   promptLines.push(`englishLevel: ${data.englishLevel}`);
+  
+  // CRITICAL FIX: Add lesson time to prompt so AI can detect duration
+  if (data.lessonTime) {
+    promptLines.push(`lessonTime: ${data.lessonTime} min`);
+    console.log(`📅 Added lesson time to prompt: ${data.lessonTime} min`);
+  }
 
   // Add language style parameter
   const languageStyle = data.languageStyle || 3;

@@ -152,7 +152,12 @@ export default function WorksheetDisplay({
   }, [userId, worksheetId, checkTokenGeneratedWorksheet]);
   
   const validateWorksheetStructure = () => {
+    console.log('🔍 WorksheetDisplay: Validating worksheet structure...');
+    console.log('📋 WorksheetDisplay: worksheet data:', worksheet);
+    console.log('📋 WorksheetDisplay: editableWorksheet data:', editableWorksheet);
+    
     if (!worksheet) {
+      console.error('❌ WorksheetDisplay: Worksheet is null/undefined');
       toast({
         title: "Invalid worksheet data",
         description: "The worksheet data is missing or invalid.",
@@ -162,6 +167,7 @@ export default function WorksheetDisplay({
     }
     
     if (!Array.isArray(worksheet.exercises) || worksheet.exercises.length === 0) {
+      console.error('❌ WorksheetDisplay: No exercises found:', worksheet.exercises);
       toast({
         title: "Missing exercises",
         description: "The worksheet doesn't contain any exercises.",
@@ -169,6 +175,8 @@ export default function WorksheetDisplay({
       });
       return;
     }
+    
+    console.log('✅ WorksheetDisplay: Worksheet structure valid with', worksheet.exercises.length, 'exercises');
   };
   
   const handleEdit = () => {

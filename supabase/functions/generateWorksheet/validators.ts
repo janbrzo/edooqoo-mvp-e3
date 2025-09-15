@@ -151,8 +151,12 @@ function validateErrorCorrectionExercise(exercise: any): void {
   }
   
   for (const sentence of exercise.sentences) {
-    if (!sentence.text || !sentence.correction) {
-      throw new Error('Each error correction sentence must have both text and correction');
+    // Check for both old format (text/correction) and new format (incorrect/correct)
+    const hasOldFormat = sentence.text && sentence.correction;
+    const hasNewFormat = sentence.incorrect && sentence.correct;
+    
+    if (!hasOldFormat && !hasNewFormat) {
+      throw new Error('Each error correction sentence must have both incorrect and correct properties (or text and correction)');
     }
   }
 }
