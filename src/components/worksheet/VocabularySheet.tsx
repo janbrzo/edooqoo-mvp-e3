@@ -39,17 +39,37 @@ const VocabularySheet = ({
       return { term: `Term ${index + 1}`, meaning: 'Definition' };
     }
     
-    // Convert various structures to {term, meaning}
-    const safeTerm = typeof item.term === 'string' ? item.term : 
-                     typeof item.word === 'string' ? item.word :
-                     typeof item.phrase === 'string' ? item.phrase :
-                     `Term ${index + 1}`;
+    // Convert various structures to {term, meaning} with strict type checking
+    let safeTerm: string;
+    let safeMeaning: string;
     
-    const safeMeaning = typeof item.meaning === 'string' ? item.meaning :
-                        typeof item.definition === 'string' ? item.definition :
-                        'Definition';
+    // Extract term with multiple fallbacks
+    if (typeof item.term === 'string') {
+      safeTerm = item.term;
+    } else if (typeof item.word === 'string') {
+      safeTerm = item.word;
+    } else if (typeof item.phrase === 'string') {
+      safeTerm = item.phrase;
+    } else {
+      console.warn(`🔧 VocabularySheet: No valid term found at index ${index}:`, item);
+      safeTerm = `Term ${index + 1}`;
+    }
     
-    return { term: safeTerm, meaning: safeMeaning };
+    // Extract meaning with multiple fallbacks
+    if (typeof item.meaning === 'string') {
+      safeMeaning = item.meaning;
+    } else if (typeof item.definition === 'string') {
+      safeMeaning = item.definition;
+    } else {
+      console.warn(`🔧 VocabularySheet: No valid meaning found at index ${index}:`, item);
+      safeMeaning = 'Definition';
+    }
+    
+    // Return only string properties to prevent any object rendering
+    return { 
+      term: String(safeTerm).trim() || `Term ${index + 1}`, 
+      meaning: String(safeMeaning).trim() || 'Definition' 
+    };
   });
 
   return (
