@@ -252,10 +252,10 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
 
               {exercise.type === 'matching' && exercise.items && (
                 <ExerciseMatching
-                  items={deepFixTextObjects(exercise.items, 'matching_items')}
+                  items={exercise.items}
                   isEditing={false}
                   viewMode="student"
-                  getMatchedItems={() => deepFixTextObjects(exercise.items, 'matching_items')}
+                  getMatchedItems={() => exercise.items}
                   onItemChange={() => {}} // No-op for shared view
                 />
               )}
@@ -375,23 +375,15 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {deepFixTextObjects(worksheetData.vocabulary_sheet, 'vocabulary_sheet').map((item: any, index: number) => {
-                // Ensure safe rendering of vocabulary items
-                const safeTerm = typeof item?.term === 'string' ? item.term : 
-                                typeof item?.word === 'string' ? item.word :
-                                typeof item?.phrase === 'string' ? item.phrase : 
-                                `Term ${index + 1}`;
-                
-                return (
-                  <div key={index} className="border rounded-md p-4 vocabulary-card">
-                    <p className="font-semibold text-worksheet-purple">
-                      {safeTerm}
-                    </p>
-                    <span className="vocabulary-definition-label">Definition or translation:</span>
-                    <span className="text-sm text-gray-500">_____________________</span>
-                  </div>
-                );
-              })}
+              {worksheetData.vocabulary_sheet.map((item: any, index: number) => (
+                <div key={index} className="border rounded-md p-4 vocabulary-card">
+                  <p className="font-semibold text-worksheet-purple">
+                    {item.term || ''}
+                  </p>
+                  <span className="vocabulary-definition-label">Definition or translation:</span>
+                  <span className="text-sm text-gray-500">_____________________</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

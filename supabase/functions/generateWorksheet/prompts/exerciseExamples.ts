@@ -380,16 +380,19 @@ function getWarmupQuestions(): string {
  * Vocabulary sheet section
  */
 function getVocabularySheet(): string {
-  return `"vocabulary_sheet": [
-    {"term": "appetizer", "meaning": "A small dish served before the main course"},
-    {"term": "reservation", "meaning": "A table booked in advance at a restaurant"},
-    {"term": "complaint", "meaning": "An expression of dissatisfaction about service or food"},
-    {"term": "portion", "meaning": "The amount of food served to one person"},
-    {"term": "cuisine", "meaning": "A style of cooking from a particular country or region"},
-    {"term": "bill/check", "meaning": "The amount of money you need to pay for your meal"},
-    {"term": "tip", "meaning": "Extra money given to restaurant staff for good service"},
-    {"term": "menu", "meaning": "A list of food and drinks available at a restaurant"}
-  ],`;
+  return `"vocabulary_sheet": {
+    "title": "Restaurant Vocabulary",
+    "words": [
+      {"word": "appetizer", "definition": "A small dish served before the main course", "example": "We shared a cheese appetizer before our main meals."},
+      {"word": "reservation", "definition": "A table booked in advance at a restaurant", "example": "I made a reservation for 7 PM at the Italian restaurant."},
+      {"word": "complaint", "definition": "An expression of dissatisfaction about service or food", "example": "The manager handled our complaint about the cold soup very professionally."},
+      {"word": "portion", "definition": "The amount of food served to one person", "example": "The portion was so large that I couldn't finish it all."},
+      {"word": "cuisine", "definition": "A style of cooking from a particular country or region", "example": "Thai cuisine is known for its spicy flavors and fresh ingredients."},
+      {"word": "bill/check", "definition": "The amount of money you need to pay for your meal", "example": "Could we have the bill, please? We'd like to pay now."},
+      {"word": "tip", "definition": "Extra money given to restaurant staff for good service", "example": "In the US, it's customary to leave a 15-20% tip."},
+      {"word": "menu", "definition": "A list of food and drinks available at a restaurant", "example": "The menu had so many options that it was hard to choose."}
+    ]
+  },`;
 }
 
 /**
