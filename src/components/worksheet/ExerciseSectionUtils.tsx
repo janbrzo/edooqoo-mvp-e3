@@ -1,4 +1,5 @@
 
+import { deepFixTextObjects } from "@/utils/textObjectFixer";
 
 // This file contains utility functions for the ExerciseSection component
 
@@ -171,10 +172,14 @@ export const renderOtherExerciseTypes = (
   isEditing: boolean, 
   viewMode: 'student' | 'teacher',
   handleSentenceChange: (sentenceIndex: number, field: string, value: string) => void
-) => (
-  <div>
-    <div className="space-y-0.5">
-      {exercise.sentences.map((sentence: any, sIndex: number) => (
+) => {
+  // Apply text object fixer to prevent {phrase, meaning} rendering errors
+  const fixedExercise = deepFixTextObjects(exercise, 'renderOtherExerciseTypes.exercise');
+  
+  return (
+    <div>
+      <div className="space-y-0.5">
+        {fixedExercise.sentences.map((sentence: any, sIndex: number) => (
         <div key={sIndex} className="border-b pb-1">
           <div className="flex flex-row items-start">
             <div className="flex-grow">
@@ -186,63 +191,68 @@ export const renderOtherExerciseTypes = (
                     onChange={e => handleSentenceChange(sIndex, 'text', e.target.value)}
                     className="w-full border p-1 editable-content"
                   />
-                ) : (
-                  <>{sIndex + 1}. {
-                    exercise.type === 'word-formation' 
-                      ? sentence.text.replace(/_+/g, "_______________") 
-                      : sentence.text
-                  }</>
-                )}
+                 ) : (
+                   <>{sIndex + 1}. {
+                     fixedExercise.type === 'word-formation' 
+                       ? String(sentence.text || '').replace(/_+/g, "_______________") 
+                       : String(sentence.text || '')
+                   }</>
+                 )}
               </p>
             </div>
             {viewMode === 'teacher' && (
               <div className="text-green-600 italic ml-3 text-sm">
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={sentence.answer || sentence.correction}
-                    onChange={e => handleSentenceChange(
-                      sIndex, 
-                      exercise.type === 'error-correction' ? 'correction' : 'answer', 
-                      e.target.value
-                    )}
-                    className="border p-1 editable-content w-full"
-                  />
-                ) : (
-                  <span>({sentence.answer || sentence.correction})</span>
-                )}
+                   <input
+                     type="text"
+                     value={String(sentence.answer || sentence.correction || '')}
+                     onChange={e => handleSentenceChange(
+                       sIndex, 
+                       fixedExercise.type === 'error-correction' ? 'correction' : 'answer', 
+                       e.target.value
+                     )}
+                     className="border p-1 editable-content w-full"
+                   />
+                 ) : (
+                   <span>({String(sentence.answer || sentence.correction || '')})</span>
+                 )}
               </div>
             )}
           </div>
         </div>
-      ))}
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const renderTrueFalseExercise = (
   exercise: any, 
   isEditing: boolean, 
   viewMode: 'student' | 'teacher',
   handleStatementChange: (statementIndex: number, field: string, value: string | boolean) => void
-) => (
-  <div>
-    <div className="space-y-2">
-      {exercise.statements.map((statement: any, sIndex: number) => (
+) => {
+  // Apply text object fixer to prevent {phrase, meaning} rendering errors
+  const fixedExercise = deepFixTextObjects(exercise, 'renderTrueFalseExercise.exercise');
+  
+  return (
+    <div>
+      <div className="space-y-2">
+        {fixedExercise.statements.map((statement: any, sIndex: number) => (
         <div key={sIndex} className="border-b pb-2">
           <div className="flex flex-row items-start">
             <div className="flex-grow">
               <p className="leading-snug">
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={statement.text}
-                    onChange={e => handleStatementChange(sIndex, 'text', e.target.value)}
-                    className="w-full border p-1 editable-content"
-                  />
-                ) : (
-                  <>{sIndex + 1}. {statement.text}</>
-                )}
+                   <input
+                     type="text"
+                     value={String(statement.text || '')}
+                     onChange={e => handleStatementChange(sIndex, 'text', e.target.value)}
+                     className="w-full border p-1 editable-content"
+                   />
+                 ) : (
+                   <>{sIndex + 1}. {String(statement.text || '')}</>
+                 )}
               </p>
             </div>
             <div className="ml-4 flex space-x-4">
@@ -280,4 +290,5 @@ export const renderTrueFalseExercise = (
     </div>
   </div>
 );
+}
 
