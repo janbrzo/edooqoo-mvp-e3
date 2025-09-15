@@ -8,6 +8,7 @@ import GrammarRules from "./GrammarRules";
 import DemoWatermark from "./DemoWatermark";
 import WarmupSection from "./WarmupSection";
 import { useWorksheetTimes } from "@/hooks/useWorksheetTimes";
+import { deepFixTextObjects } from "@/utils/textObjectFixer";
 
 interface WorksheetContentProps {
   editableWorksheet: any;
@@ -34,7 +35,7 @@ export default function WorksheetContent({
   const hasGrammar = Boolean(editableWorksheet?.grammar_rules);
   const worksheetTimes = useWorksheetTimes(inputParams?.lessonTime, hasGrammar);
   
-  // CRITICAL FIX: Add comprehensive safety checks
+  // CRITICAL FIX: Add comprehensive safety checks and object fixing
   if (!editableWorksheet) {
     console.log('❌ WorksheetContent: editableWorksheet is null, showing loading...');
     return (
@@ -44,8 +45,11 @@ export default function WorksheetContent({
     );
   }
 
-  if (!editableWorksheet.exercises || !Array.isArray(editableWorksheet.exercises)) {
-    console.error('❌ WorksheetContent: No exercises array found:', editableWorksheet);
+  // Apply deep fix to prevent {phrase, meaning} and similar objects from being rendered as React children
+  const fixedWorksheet = deepFixTextObjects(editableWorksheet, 'editableWorksheet');
+
+  if (!fixedWorksheet.exercises || !Array.isArray(fixedWorksheet.exercises)) {
+    console.error('❌ WorksheetContent: No exercises array found:', fixedWorksheet);
     return (
       <div className="flex items-center justify-center min-h-64 bg-red-50 border border-red-200 rounded p-4">
         <div className="text-center">
@@ -56,8 +60,8 @@ export default function WorksheetContent({
     );
   }
 
-  if (editableWorksheet.exercises.length === 0) {
-    console.error('❌ WorksheetContent: Empty exercises array:', editableWorksheet);
+  if (fixedWorksheet.exercises.length === 0) {
+    console.error('❌ WorksheetContent: Empty exercises array:', fixedWorksheet);
     return (
       <div className="flex items-center justify-center min-h-64 bg-yellow-50 border border-yellow-200 rounded p-4">
         <div className="text-center">
@@ -70,11 +74,11 @@ export default function WorksheetContent({
 
   console.log('✅ WorksheetContent: Rendering worksheet successfully');
   console.log('📋 WorksheetContent: editableWorksheet structure:', {
-    title: editableWorksheet.title,
-    subtitle: editableWorksheet.subtitle,
-    exerciseCount: editableWorksheet.exercises?.length || 0,
-    hasVocabulary: editableWorksheet.vocabulary_sheet?.length || 0,
-    hasGrammar: Boolean(editableWorksheet.grammar_rules)
+    title: fixedWorksheet.title,
+    subtitle: fixedWorksheet.subtitle,
+    exerciseCount: fixedWorksheet.exercises?.length || 0,
+    hasVocabulary: fixedWorksheet.vocabulary_sheet?.length || 0,
+    hasGrammar: Boolean(fixedWorksheet.grammar_rules)
   });
   console.log('⏱️ WorksheetContent: Calculated times:', worksheetTimes);
   console.log('📚 WorksheetContent: Has grammar:', hasGrammar);
@@ -109,7 +113,7 @@ export default function WorksheetContent({
               })} 
               className="w-full border p-2 editable-content" 
             />
-          ) : (editableWorksheet.title || 'Untitled Worksheet')}
+          ) : (fixedWorksheet.title || 'Untitled Worksheet')}
         </h1>
         
         <h2 className="text-xl text-worksheet-purple mb-3 leading-tight pr-24">
@@ -123,7 +127,7 @@ export default function WorksheetContent({
               })} 
               className="w-full border p-2 editable-content" 
             />
-          ) : (editableWorksheet.subtitle || '')}
+          ) : (fixedWorksheet.subtitle || '')}
         </h2>
 
         <div className="mb-4 p-4 bg-amber-50 border-l-4 border-amber-400 rounded-md">
@@ -137,7 +141,7 @@ export default function WorksheetContent({
               className="w-full h-20 border p-2 editable-content" 
             />
           ) : (
-            <p className="leading-snug">{editableWorksheet.introduction || ''}</p>
+            <p className="leading-snug">{fixedWorksheet.introduction || ''}</p>
           )}
         </div>
 
@@ -163,11 +167,11 @@ export default function WorksheetContent({
         />
       )}
 
-      {editableWorksheet.grammar_rules && (
+      {fixedWorksheet.grammar_rules && (
         <div className="relative">
           {!isDownloadUnlocked && <DemoWatermark />}
           <GrammarRules
-            grammarRules={editableWorksheet.grammar_rules}
+            grammarRules={fixedWorksheet.grammar_rules}
             isEditing={isEditing}
             editableWorksheet={editableWorksheet}
             setEditableWorksheet={setEditableWorksheet}
@@ -176,7 +180,7 @@ export default function WorksheetContent({
         </div>
       )}
 
-      {editableWorksheet.exercises && editableWorksheet.exercises.map((exercise: any, index: number) => (
+      {fixedWorksheet.exercises && fixedWorksheet.exercises.map((exercise: any, index: number) => (
         <div key={index} className="relative">
           {!isDownloadUnlocked && <DemoWatermark />}
           <ExerciseSection
@@ -190,11 +194,11 @@ export default function WorksheetContent({
         </div>
       ))}
 
-      {editableWorksheet.vocabulary_sheet && editableWorksheet.vocabulary_sheet.length > 0 && (
+      {fixedWorksheet.vocabulary_sheet && fixedWorksheet.vocabulary_sheet.length > 0 && (
         <div className="relative">
           {!isDownloadUnlocked && <DemoWatermark />}
           <VocabularySheet
-            vocabularySheet={editableWorksheet.vocabulary_sheet}
+            vocabularySheet={fixedWorksheet.vocabulary_sheet}
             isEditing={isEditing}
             viewMode={viewMode}
             editableWorksheet={editableWorksheet}

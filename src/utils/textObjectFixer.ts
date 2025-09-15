@@ -17,6 +17,18 @@ export const deepFixTextObjects = (obj: any, path: string = 'root'): any => {
     console.log(`🔧 FIXED {text} object at ${path}:`, obj, '→', obj.text);
     return obj.text;
   }
+
+  // Special case: {phrase: "something", meaning: "something"} object
+  if (typeof obj === 'object' && obj.hasOwnProperty('phrase') && obj.hasOwnProperty('meaning')) {
+    console.log(`🔧 FIXED {phrase, meaning} object at ${path}:`, obj, '→', obj.phrase);
+    return obj.phrase;
+  }
+
+  // Special case: {term: "something", meaning: "something"} object
+  if (typeof obj === 'object' && obj.hasOwnProperty('term') && obj.hasOwnProperty('meaning')) {
+    console.log(`🔧 FIXED {term, meaning} object at ${path}:`, obj, '→', obj.term);
+    return obj.term;
+  }
   
   // Handle arrays
   if (Array.isArray(obj)) {
