@@ -1,16 +1,11 @@
 
 # Development Roadmap - English Worksheet Generator
 
-## Current Status: MVP v1.3 + Phase 1A Complete ✅
+## Current Status: MVP v1.3 (Complete)
 
-### Latest Achievement: Prompt Modularization (Phase 1A) ✅
-- ✅ **Modular Prompt System:** Split monolithic prompt into 4 logical modules
-- ✅ **Preserved Compatibility:** Zero breaking changes, identical output
-- ✅ **Future-Ready Architecture:** Foundation for exercise selection and media features
-- ✅ **Enhanced Maintainability:** Independent module updates and scaling
-
-### Previously Achieved Features ✅
-- AI-powered worksheet generation (8 exercise types)
+### Achieved Features ✅
+- AI-powered worksheet generation
+- 8 different exercise types
 - Student/Teacher dual views
 - Real-time editing capability
 - Stripe payment integration ($1/download)
@@ -22,34 +17,8 @@
 
 ---
 
-## Stage 1: Exercise System Enhancement (Weeks 1-6)
-*Goal: Implement new exercise types and dynamic selection system*
-
-### Phase 1B: New Exercise Types Implementation (Weeks 1-2) 🔄
-- [ ] **Extend Exercise Generation**
-  - Add 12 new exercise types to prompt system
-  - Update exerciseExamples.ts with new type examples
-  - Enhance validation rules for new exercises
-  - Complete missing validators (6 remaining types)
-
-- [ ] **Exercise Type Management**  
-  - Extend getExerciseTypesForCount() to support 20 exercise types
-  - Update helpers.ts with new exercise icons
-  - Add comprehensive validation for all new types
-  - Test each new exercise type individually
-
-### Phase 1C: Dynamic Exercise Selection UI (Weeks 3-4)
-- [ ] **FormData Enhancement**
-  - Add selectedExercises array to FormData interface
-  - Create ExerciseSelector component for WorksheetForm
-  - Implement preset buttons (Grammar Focus, Conversation, Mixed)
-  - Add validation logic (6 for 45min, 8 for 60min)
-
-- [ ] **User Experience**
-  - Responsive design for ExerciseSelector
-  - Exercise type descriptions and recommendations  
-  - Real-time exercise count feedback
-  - Integration with existing WorksheetForm workflow
+## Stage 1: MVP Optimization (Weeks 1-4)
+*Goal: Refine current functionality and improve user experience*
 
 ### Week 1: Performance & Reliability
 - [ ] **AI Response Optimization**

@@ -218,13 +218,13 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
         {exercise.type === 'discussion' && exercise.questions && (
           <div className="space-y-0.5">
             <h3 className="font-medium text-gray-700 mb-2">Discussion Questions:</h3>
-            {exercise.questions.map((question: any, qIndex: number) => (
+            {exercise.questions.map((question: string, qIndex: number) => (
               <div key={qIndex} className="p-1 border-b">
                 <p className="leading-snug">
                   {isEditing ? (
                     <input
                       type="text"
-                      value={typeof question === 'string' ? question : String(question.text || question || '')}
+                      value={question}
                       onChange={e => {
                         const updatedExercises = [...editableWorksheet.exercises];
                         const newQuestions = [...exercise.questions!];
@@ -241,7 +241,7 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
                       className="w-full border p-1 editable-content"
                     />
                   ) : (
-                    <>{qIndex + 1}. {typeof question === 'string' ? question : String(question.text || question || '')}</>
+                    <>{qIndex + 1}. {question}</>
                   )}
                 </p>
               </div>
