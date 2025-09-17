@@ -2,22 +2,25 @@
 
 /**
  * Gets exercise types based on count of exercises needed
- * Returns appropriate exercise types for the requested count
+ * Now uses constant sets for consistent generation
+ * UPDATED: Moved true-false to position 2 (after reading)
  */
 export function getExerciseTypesForCount(count: number): string[] {
+  // Standard 8-exercise set (60 min lessons) - NEW ORDER with true-false as Exercise 2
   const fullSet = [
     'reading',           // Exercise 1
-    'true-false',        // Exercise 2 
-    'matching',          // Exercise 3 
-    'fill-in-blanks',    // Exercise 4 
-    'multiple-choice',   // Exercise 5 
-    'dialogue',          // Exercise 6 
-    'discussion',        // Exercise 7 
-    'error-correction'   // Exercise 8 
+    'true-false',        // Exercise 2 - Now directly after reading
+    'matching',          // Exercise 3 - Was 2
+    'fill-in-blanks',    // Exercise 4 - Was 3
+    'multiple-choice',   // Exercise 5 - Was 4
+    'dialogue',          // Exercise 6 - Was 5
+    'discussion',        // Exercise 7 - Was 7 (unchanged)
+    'error-correction'   // Exercise 8 - Was 8 (unchanged)
   ];
   
-  // Return appropriate count based on lesson duration
-  return count === 6 ? fullSet.slice(0, 6) : fullSet;
+  // Always return the full 8-exercise set
+  // The main function will trim to 6 if needed for 45 min lessons
+  return fullSet;
 }
 
 /**

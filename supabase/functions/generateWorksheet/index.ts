@@ -2,8 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import OpenAI from "https://esm.sh/openai@4.28.0";
-import { parseAIResponse } from './helpers.ts';
-import { composeWorksheetPrompt } from './prompts/prompt-composer.ts';
+import { getExerciseTypesForCount, parseAIResponse } from './helpers.ts';
 import { validateExercise } from './validators.ts';
 import { isValidUUID, sanitizeInput, validatePrompt } from './security.ts';
 import { RateLimiter } from './rateLimiter.ts';
@@ -93,14 +92,27 @@ serve(async (req) => {
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
 
-    // Determine lesson time from form data for proper exercise count
-    const lessonTime = formData.lessonTime || '60';
-    const exerciseCount = lessonTime === '45' ? 6 : 8;
+    // Determine exercise count - always generate 8, then trim if needed
+    let finalExerciseCount = 8; // Always generate 8 exercises
+    if (sanitizedPrompt.includes('45 min')) {
+      finalExerciseCount = 6; // Will trim to 6 after generation
+    } else if (sanitizedPrompt.includes('30 min')) {
+      // Convert 30 min to 45 min (remove 30 min option)
+      finalExerciseCount = 6;
+    }
     
-    console.log(`Generating ${exerciseCount} exercises for ${lessonTime}-minute lesson`);
+    // Always use the full 8-exercise set for generation
+    const exerciseTypes = getExerciseTypesForCount(8);
     
-    // CREATE SYSTEM MESSAGE using modular prompt composer
-    const systemMessage = composeWorksheetPrompt(formData, hasGrammarFocus, grammarFocus);
+    console.log(`Generating 8 exercises, will trim to ${finalExerciseCount} if needed`);
+    
+    // CREATE SYSTEM MESSAGE with Golden Prompt content - UPDATED EXERCISE ORDER
+    // Import the modular prompt system
+    import { assembleSystemPrompt } from './prompts/promptAssembler.ts';
+    
+    // Generate the system message using the modular approach
+    const systemMessage = assembleSystemPrompt(hasGrammarFocus, grammarFocus, formData);
+
 
     // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({
@@ -132,15 +144,21 @@ serve(async (req) => {
         throw new Error('Invalid worksheet structure returned from AI');
       }
       
-      // Validate we got the expected number of exercises
-      if (worksheetData.exercises.length !== exerciseCount) {
-        console.warn(`Expected ${exerciseCount} exercises but got ${worksheetData.exercises.length}`);
-        throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required ${exerciseCount}`);
+      // Validate we got exactly 8 exercises
+      if (worksheetData.exercises.length !== 8) {
+        console.warn(`Expected 8 exercises but got ${worksheetData.exercises.length}`);
+        throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required 8`);
       }
       
       // Enhanced validation for exercise requirements
       for (const exercise of worksheetData.exercises) {
         validateExercise(exercise);
+      }
+      
+      // Trim exercises if needed for 45 min lessons
+      if (finalExerciseCount === 6) {
+        worksheetData.exercises = worksheetData.exercises.slice(0, 6);
+        console.log(`Trimmed exercises to ${worksheetData.exercises.length} for 45 min lesson`);
       }
       
       // Make sure exercise titles have correct sequential numbering
