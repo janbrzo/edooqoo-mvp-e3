@@ -95,16 +95,14 @@ serve(async (req) => {
     console.log(`Grammar focus detected: ${hasGrammarFocus ? grammarFocus : 'none'}`);
 
     // Determine exercise count based on lesson duration
-    let exerciseCount = 8; // Default for 60 min
-    if (sanitizedPrompt.includes('45 min')) {
-      exerciseCount = 6;
-    } else if (sanitizedPrompt.includes('30 min')) {
-      // Convert 30 min to 45 min (remove 30 min option)
-      exerciseCount = 6;
-    }
+    const lessonDurationMatch = sanitizedPrompt.match(/lessonDuration:\s*([0-9]+)\s*minutes/);
+    const lessonDuration = lessonDurationMatch ? parseInt(lessonDurationMatch[1]) : 60;
+    console.log(`🔧 [MAIN] Lesson duration detected: ${lessonDuration} minutes`);
     
-    console.log(`Lesson duration detected: ${sanitizedPrompt.includes('45 min') ? '45' : sanitizedPrompt.includes('30 min') ? '30 (converted to 45)' : '60'} minutes`);
-    console.log(`Exercise count set to: ${exerciseCount} exercises`);
+    // Set exercise count based on lesson duration
+    const exerciseCount = lessonDuration <= 45 ? 6 : 8;
+    console.log(`🔧 [MAIN] Exercise count set to: ${exerciseCount} exercises (based on ${lessonDuration} minutes)`);
+    console.log(`🔧 [MAIN] Logic: ${lessonDuration} <= 45 ? 6 : 8 = ${exerciseCount}`);
     
     // Get exercise types for the determined count
     const exerciseTypes = getExerciseTypesForCount(exerciseCount);

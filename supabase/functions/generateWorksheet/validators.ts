@@ -151,8 +151,8 @@ function validateErrorCorrectionExercise(exercise: any): void {
   }
   
   for (const sentence of exercise.sentences) {
-    if (!sentence.text || !sentence.correction) {
-      throw new Error('Each error correction sentence must have both text and correction');
+    if (!sentence.incorrect || !sentence.correct) {
+      throw new Error('Each error correction sentence must have both incorrect and correct');
     }
   }
 }

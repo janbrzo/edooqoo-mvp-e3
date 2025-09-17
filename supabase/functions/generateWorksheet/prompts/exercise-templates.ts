@@ -15,7 +15,8 @@ import {
 } from './individual-exercises.ts';
 
 export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: string | null, exerciseCount: number) => {
-  console.log(`Building exercise templates with ${exerciseCount} exercises`);
+  console.log(`🔧 [EXERCISE-TEMPLATES] Building exercise templates with ${exerciseCount} exercises`);
+  console.log(`🔧 [EXERCISE-TEMPLATES] Available exercises: ${allExercises.length}, selecting first ${exerciseCount}`);
   
   // Define all available exercises with their functions
   const allExercises = [
@@ -31,7 +32,8 @@ export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: str
 
   // Select only the needed number of exercises
   const selectedExercises = allExercises.slice(0, exerciseCount);
-  console.log(`Selected ${selectedExercises.length} exercises for template`);
+  console.log(`🔧 [EXERCISE-TEMPLATES] Selected ${selectedExercises.length} exercises for template`);
+  console.log(`🔧 [EXERCISE-TEMPLATES] Exercise types selected: ${selectedExercises.map((_, index) => ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction'][index]).join(', ')}`);
 
   // Build the exercises array
   const exercisesArray = selectedExercises.map(exercise => exercise()).join(',\n');
