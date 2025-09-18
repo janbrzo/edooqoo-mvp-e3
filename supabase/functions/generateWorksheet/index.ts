@@ -169,8 +169,8 @@ serve(async (req) => {
         exercise.title = `Exercise ${exerciseNumber}: ${exerciseType}`;
       });
       
-      console.log('Final exercise count:', parsedData.exercises?.length || 0, `(target: ${exerciseCount})`);
-      console.log('Grammar Rules included:', !!parsedData.grammar_rules);
+      console.log('Final exercise count:', worksheetData.exercises?.length || 0, `(target: ${exerciseCount})`);
+      console.log('Grammar Rules included:', !!worksheetData.grammar_rules);
       
       const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);
       worksheetData.sourceCount = sourceCount;
