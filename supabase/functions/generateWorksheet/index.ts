@@ -112,8 +112,9 @@ serve(async (req) => {
     console.log(`🔧 [MAIN] Logic: ${lessonDuration} <= 45 ? 6 : 8 = ${exerciseCount}`);
     console.log(`🔧 [MAIN] Exercise count set to: ${exerciseCount} exercises (based on ${lessonDuration} minutes)`);
     
-    // Always use the full 8-exercise set for generation (for backward compatibility)
-    const exerciseTypes = getExerciseTypesForCount(8);
+    // FIXED: Now correctly using calculated exerciseCount instead of hardcoded 8
+    const exerciseTypes = getExerciseTypesForCount(exerciseCount);
+    console.log(`🔧 [MAIN] Selected exercise types for ${exerciseCount} exercises:`, exerciseTypes);
     
     console.log(`Generating ${exerciseCount} exercises in prompt`);
     console.log('Composing system message with modular prompt structure...');

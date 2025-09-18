@@ -18,9 +18,13 @@ export function getExerciseTypesForCount(count: number): string[] {
     'error-correction'   // Exercise 8 - Was 8 (unchanged)
   ];
   
-  // Always return the full 8-exercise set
-  // The main function will trim to 6 if needed for 45 min lessons
-  return fullSet;
+  // FIXED: Now correctly returns first N exercises based on count parameter
+  // For 45 min lessons: first 6 exercises, for 60 min: all 8 exercises
+  // Ready for future expansion to 20 exercises
+  const selectedExercises = fullSet.slice(0, count);
+  console.log(`🔧 [HELPERS] getExerciseTypesForCount(${count}) returning:`, selectedExercises);
+  
+  return selectedExercises;
 }
 
 /**
