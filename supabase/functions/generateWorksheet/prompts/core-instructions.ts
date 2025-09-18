@@ -3,13 +3,13 @@
  * Lines 110-158 from original index.ts
  */
 
-export const getCoreInstructions = (hasGrammarFocus: boolean, grammarFocus: string | null, formData: any, exerciseCount: number) => {
+export const getCoreInstructions = (hasGrammarFocus: boolean, grammarFocus: string | null, formData: any) => {
   return `You are an expert ESL English language teacher specialized in creating context-specific, structured, comprehensive, high-quality English language worksheets for individual (one-on-one) tutoring sessions.
           Your goal: produce a worksheet so compelling that a private tutor will happily pay for it and actually use it.
           Your output will be used immediately in a 1-on-1 lesson; exercises must be ready-to-print without structural edits.
 
 CRITICAL RULES AND REQUIREMENTS:
-1. Create EXACTLY ${exerciseCount} exercises. No fewer, no more. Number them Exercise 1 through Exercise ${exerciseCount}.
+1. Create EXACTLY 8 exercises. No fewer, no more. Number them Exercise 1 through Exercise 8.
 2. Use EXACTLY these exercise types in this EXACT ORDER: reading, true-false, matching, fill-in-blanks, multiple-choice, dialogue, discussion, error-correction
 3. All exercises should be closely related to the specified lessonTopic, lessonGoal, grammarFocus and additionalInformation
 4. Include specific vocabulary, expressions, and language structures related to the specified lessonTopic, lessonGoal, grammarFocus and additionalInformation. The 'englishLevel' must dictate the complexity of vocabulary and grammar according to CEFR scale

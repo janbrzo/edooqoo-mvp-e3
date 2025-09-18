@@ -92,26 +92,23 @@ serve(async (req) => {
     const hasGrammarFocus = sanitizedPrompt.includes('grammarFocus:');
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
-    console.log(`Grammar focus detected: ${hasGrammarFocus ? grammarFocus : 'none'}`);
 
-    // Determine exercise count based on lesson duration
-    const lessonDurationMatch = sanitizedPrompt.match(/lessonDuration:\s*([0-9]+)\s*minutes/);
-    const lessonDuration = lessonDurationMatch ? parseInt(lessonDurationMatch[1]) : 60;
-    console.log(`🔧 [MAIN] Lesson duration detected: ${lessonDuration} minutes`);
+    // Determine exercise count - always generate 8, then trim if needed
+    let finalExerciseCount = 8; // Always generate 8 exercises
+    if (sanitizedPrompt.includes('45 min')) {
+      finalExerciseCount = 6; // Will trim to 6 after generation
+    } else if (sanitizedPrompt.includes('30 min')) {
+      // Convert 30 min to 45 min (remove 30 min option)
+      finalExerciseCount = 6;
+    }
     
-    // Set exercise count based on lesson duration
-    const exerciseCount = lessonDuration <= 45 ? 6 : 8;
-    console.log(`🔧 [MAIN] Exercise count set to: ${exerciseCount} exercises (based on ${lessonDuration} minutes)`);
-    console.log(`🔧 [MAIN] Logic: ${lessonDuration} <= 45 ? 6 : 8 = ${exerciseCount}`);
+    // Always use the full 8-exercise set for generation
+    const exerciseTypes = getExerciseTypesForCount(8);
     
-    // Get exercise types for the determined count
-    const exerciseTypes = getExerciseTypesForCount(exerciseCount);
-    console.log(`Exercise types selected: ${exerciseTypes.join(', ')}`);
+    console.log(`Generating 8 exercises, will trim to ${finalExerciseCount} if needed`);
     
     // CREATE SYSTEM MESSAGE using modular prompt structure
-    console.log('Composing system message with modular prompt structure...');
-    const systemMessage = composeSystemMessage(hasGrammarFocus, grammarFocus, formData, exerciseCount);
-    console.log(`System message composed - length: ${systemMessage.length} characters`);
+    const systemMessage = composeSystemMessage(hasGrammarFocus, grammarFocus, formData);
 
     // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({
@@ -143,17 +140,21 @@ serve(async (req) => {
         throw new Error('Invalid worksheet structure returned from AI');
       }
       
-      // Validate we got exactly the requested number of exercises
-      if (worksheetData.exercises.length !== exerciseCount) {
-        console.warn(`Expected ${exerciseCount} exercises but got ${worksheetData.exercises.length}`);
-        throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required ${exerciseCount}`);
+      // Validate we got exactly 8 exercises
+      if (worksheetData.exercises.length !== 8) {
+        console.warn(`Expected 8 exercises but got ${worksheetData.exercises.length}`);
+        throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required 8`);
       }
-      
-      console.log(`Successfully generated ${exerciseCount} exercises as requested`);
       
       // Enhanced validation for exercise requirements
       for (const exercise of worksheetData.exercises) {
         validateExercise(exercise);
+      }
+      
+      // Trim exercises if needed for 45 min lessons
+      if (finalExerciseCount === 6) {
+        worksheetData.exercises = worksheetData.exercises.slice(0, 6);
+        console.log(`Trimmed exercises to ${worksheetData.exercises.length} for 45 min lesson`);
       }
       
       // Make sure exercise titles have correct sequential numbering
@@ -163,7 +164,7 @@ serve(async (req) => {
         exercise.title = `Exercise ${exerciseNumber}: ${exerciseType}`;
       });
       
-      console.log(`Final exercise count: ${worksheetData.exercises.length} (target: ${exerciseCount})`);
+      console.log(`Final exercise count: ${worksheetData.exercises.length} (target: ${finalExerciseCount})`);
       console.log(`Grammar Rules included: ${!!worksheetData.grammar_rules}`);
       
       const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);
