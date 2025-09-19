@@ -93,34 +93,49 @@ serve(async (req) => {
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
 
-    // Determine exercise count from lesson duration
+    // Determine exercise count from lesson duration  
     let exerciseCount = 8; // Default for 60+ minutes
     
-    // Parse lesson duration from prompt
-    const durationMatch = sanitizedPrompt.match(/(\d+)\s*min/);
-    const lessonDuration = durationMatch ? parseInt(durationMatch[1]) : 60;
-    
-    console.log(`🔧 [MAIN] Lesson duration detected: ${lessonDuration} minutes`);
-    
-    // Set exercise count based on duration
-    if (lessonDuration <= 45) {
-      exerciseCount = 6;
+    // Check if formData has lessonTime, otherwise parse from prompt
+    if (formData?.lessonTime) {
+      exerciseCount = formData.lessonTime === '45min' ? 6 : 8;
+      console.log(`🔧 [MAIN] Exercise count from formData: ${exerciseCount} (${formData.lessonTime})`);
     } else {
-      exerciseCount = 8;
+      // Fallback: Parse lesson duration from prompt
+      const durationMatch = sanitizedPrompt.match(/(\d+)\s*min/);
+      const lessonDuration = durationMatch ? parseInt(durationMatch[1]) : 60;
+      
+      console.log(`🔧 [MAIN] Lesson duration detected from prompt: ${lessonDuration} minutes`);
+      
+      // Set exercise count based on duration
+      if (lessonDuration <= 45) {
+        exerciseCount = 6;
+      } else {
+        exerciseCount = 8;
+      }
+      
+      console.log(`🔧 [MAIN] Logic: ${lessonDuration} <= 45 ? 6 : 8 = ${exerciseCount}`);
     }
     
-    console.log(`🔧 [MAIN] Logic: ${lessonDuration} <= 45 ? 6 : 8 = ${exerciseCount}`);
-    console.log(`🔧 [MAIN] Exercise count set to: ${exerciseCount} exercises (based on ${lessonDuration} minutes)`);
+    console.log(`🔧 [MAIN] Exercise count set to: ${exerciseCount} exercises`);
     
-    // FIXED: Now correctly using calculated exerciseCount instead of hardcoded 8
-    const exerciseTypes = getExerciseTypesForCount(exerciseCount);
+    // Handle custom selected exercises if provided
+    const selectedExercises = formData?.selectedExercises;
+    if (selectedExercises) {
+      console.log(`🔧 [MAIN] Custom exercises selected:`, selectedExercises);
+    } else {
+      console.log(`🔧 [MAIN] Using default exercise selection`);
+    }
+    
+    // FIXED: Now correctly using calculated exerciseCount and selectedExercises
+    const exerciseTypes = getExerciseTypesForCount(exerciseCount, selectedExercises);
     console.log(`🔧 [MAIN] Selected exercise types for ${exerciseCount} exercises:`, exerciseTypes);
     
     console.log(`Generating ${exerciseCount} exercises in prompt`);
     console.log('Composing system message with modular prompt structure...');
     
-    // CREATE SYSTEM MESSAGE using modular prompt structure with correct exerciseCount
-    const systemMessage = composeSystemMessage(hasGrammarFocus, grammarFocus, formData, exerciseCount);
+    // CREATE SYSTEM MESSAGE using modular prompt structure with correct exerciseCount and selectedExercises
+    const systemMessage = composeSystemMessage(hasGrammarFocus, grammarFocus, formData, exerciseCount, selectedExercises);
 
     // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({

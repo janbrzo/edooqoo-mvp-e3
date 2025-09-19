@@ -7,6 +7,7 @@ import { getRandomPlaceholderSet, PlaceholderSet } from './placeholderSets';
 import { getRandomSuggestionSets, getSuggestionSetMatchingPlaceholder, SuggestionSet } from './suggestionSets';
 import FormField from './FormField';
 import AdvancedOptions from './AdvancedOptions';
+import ExerciseSelector from './ExerciseSelector';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEventTracking } from "@/hooks/useEventTracking";
 import { useAnonymousAuth } from "@/hooks/useAnonymousAuth";
@@ -30,6 +31,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const [englishLevel, setEnglishLevel] = useState<EnglishLevel>("B1/B2");
   const [languageStyle, setLanguageStyle] = useState<number>(3); // Default neutral style
   const [selectedStudentId, setSelectedStudentId] = useState<string>("no-student");
+  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
 
   const [currentPlaceholders, setCurrentPlaceholders] = useState<PlaceholderSet>(getRandomPlaceholderSet());
   const [currentSuggestions, setCurrentSuggestions] = useState<SuggestionSet[]>([]);
@@ -119,7 +121,8 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       additionalInformation,
       englishLevel,
       languageStyle,
-      studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined
+      studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined,
+      selectedExercises: selectedExercises.length > 0 ? selectedExercises : undefined
     };
 
     // ENHANCED: Immediate onboarding refresh after successful worksheet generation
@@ -281,6 +284,13 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                   </div>
                 </div>
               )}
+
+              {/* Exercise Selection Section */}
+              <ExerciseSelector 
+                lessonTime={lessonTime}
+                selectedExercises={selectedExercises}
+                onChange={setSelectedExercises}
+              />
 
               {/* Advanced Options Section */}
               <AdvancedOptions 

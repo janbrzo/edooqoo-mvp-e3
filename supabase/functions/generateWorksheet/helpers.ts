@@ -4,8 +4,14 @@
  * Gets exercise types based on count of exercises needed
  * Now uses constant sets for consistent generation
  * UPDATED: Moved true-false to position 2 (after reading)
+ * ENHANCED: Supports custom selected exercises from form
  */
-export function getExerciseTypesForCount(count: number): string[] {
+export function getExerciseTypesForCount(count: number, selectedExercises?: string[]): string[] {
+  // If custom exercises are selected, validate and use them
+  if (selectedExercises && selectedExercises.length > 0) {
+    return validateAndFilterExercises(selectedExercises, count);
+  }
+  
   // Standard 8-exercise set (60 min lessons) - NEW ORDER with true-false as Exercise 2
   const fullSet = [
     'reading',           // Exercise 1
@@ -21,10 +27,43 @@ export function getExerciseTypesForCount(count: number): string[] {
   // FIXED: Now correctly returns first N exercises based on count parameter
   // For 45 min lessons: first 6 exercises, for 60 min: all 8 exercises
   // Ready for future expansion to 20 exercises
-  const selectedExercises = fullSet.slice(0, count);
-  console.log(`🔧 [HELPERS] getExerciseTypesForCount(${count}) returning:`, selectedExercises);
+  const selectedExercisesFinal = fullSet.slice(0, count);
+  console.log(`🔧 [HELPERS] getExerciseTypesForCount(${count}) returning default:`, selectedExercisesFinal);
   
-  return selectedExercises;
+  return selectedExercisesFinal;
+}
+
+/**
+ * Validates and filters selected exercises from the form
+ * Ensures exercises exist and respects count limit
+ */
+export function validateAndFilterExercises(selectedExercises: string[], maxCount: number): string[] {
+  // All available exercise types (matching individual-exercises.ts)
+  const availableTypes = [
+    'reading', 'true-false', 'matching', 'fill-in-blanks', 
+    'multiple-choice', 'dialogue', 'discussion', 'error-correction',
+    'odd-one-out', 'synonyms-antonyms', 'sentence-transformation', 
+    'word-order', 'gap-text', 'negative-prefixes', 'categorize',
+    'paraphrasing', 'complete-word', 'matching-halves', 
+    'describe-picture', 'answer-questions'
+  ];
+  
+  // Filter out invalid exercise types
+  const validExercises = selectedExercises.filter(type => {
+    const isValid = availableTypes.includes(type);
+    if (!isValid) {
+      console.warn(`🔧 [HELPERS] Invalid exercise type removed: ${type}`);
+    }
+    return isValid;
+  });
+  
+  // Respect the count limit
+  const finalExercises = validExercises.slice(0, maxCount);
+  
+  console.log(`🔧 [HELPERS] validateAndFilterExercises: ${selectedExercises.length} selected -> ${validExercises.length} valid -> ${finalExercises.length} final`);
+  console.log(`🔧 [HELPERS] Final exercises:`, finalExercises);
+  
+  return finalExercises;
 }
 
 /**

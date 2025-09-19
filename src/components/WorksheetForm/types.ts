@@ -18,6 +18,7 @@ export interface FormData {
   fullPrompt?: string;
   formDataForStorage?: any;
   studentId?: string;
+  selectedExercises?: string[]; // Optional array of exercise types
 }
 
 export interface WorksheetData {
