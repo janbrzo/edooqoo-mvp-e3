@@ -44,6 +44,16 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const { students } = useStudents();
   const { refreshProgress } = useOnboardingProgress();
 
+  // BACKUP INITIALIZATION: Ensure selectedExercises is never empty for too long
+  useEffect(() => {
+    if (selectedExercises.length === 0) {
+      const maxExercises = lessonTime === '45min' ? 6 : 8;
+      const defaultExercises = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction'].slice(0, maxExercises);
+      console.log(`🔧 [WORKSHEET-FORM] BACKUP initialization of selectedExercises for ${lessonTime}:`, defaultExercises);
+      setSelectedExercises(defaultExercises);
+    }
+  }, [lessonTime, selectedExercises.length]);
+
   useEffect(() => {
     if (preSelectedStudent) {
       setSelectedStudentId(preSelectedStudent.id);
@@ -113,8 +123,19 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       }
     });
 
-    // Ensure selectedExercises is always properly populated
+    // ENHANCED LOGGING: Ensure selectedExercises is always properly populated  
     console.log('🔧 [WORKSHEET-FORM] Final selectedExercises before submit:', selectedExercises);
+    console.log('🔧 [WORKSHEET-FORM] selectedExercises length:', selectedExercises.length);
+    console.log('🔧 [WORKSHEET-FORM] Lesson time:', lessonTime);
+    
+    // VALIDATION: Ensure selectedExercises is not empty
+    if (selectedExercises.length === 0) {
+      console.error('🔧 [WORKSHEET-FORM] ERROR: selectedExercises is empty at submit time!');
+      const maxExercises = lessonTime === '45min' ? 6 : 8;
+      const emergencyDefault = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction'].slice(0, maxExercises);
+      console.log('🔧 [WORKSHEET-FORM] Emergency fallback to default exercises:', emergencyDefault);
+      setSelectedExercises(emergencyDefault);
+    }
 
     const formData = {
       lessonTime,

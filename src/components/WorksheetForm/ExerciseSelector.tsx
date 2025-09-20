@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LessonTime } from './types';
@@ -35,19 +35,24 @@ interface ExerciseSelectorProps {
 export default function ExerciseSelector({ lessonTime, selectedExercises, onChange }: ExerciseSelectorProps) {
   const maxExercises = lessonTime === '45min' ? 6 : 8;
   
-  // Default to first N exercises if none selected
-  const defaultExercises = AVAILABLE_EXERCISES.slice(0, maxExercises).map(ex => ex.id);
+  // FIXED: Memoized default exercises to prevent unnecessary re-renders
+  const defaultExercises = useMemo(
+    () => AVAILABLE_EXERCISES.slice(0, maxExercises).map(ex => ex.id),
+    [maxExercises]
+  );
+  
   const currentSelection = selectedExercises.length > 0 ? selectedExercises : defaultExercises;
 
-  // Initialize parent state with default exercises if none selected
+  // FIXED: Initialize parent state with default exercises if none selected - STABLE DEPENDENCIES
   useEffect(() => {
     if (selectedExercises.length === 0) {
-      console.log(`🔧 [EXERCISE-SELECTOR] Initializing default exercises for ${lessonTime}:`, defaultExercises);
+      console.log(`🔧 [EXERCISE-SELECTOR] Initializing default exercises for ${lessonTime} (${maxExercises} exercises):`, defaultExercises);
+      console.log(`🔧 [EXERCISE-SELECTOR] About to call onChange with:`, defaultExercises);
       onChange(defaultExercises);
     }
-  }, [lessonTime, selectedExercises.length, defaultExercises.join(','), onChange]);
+  }, [lessonTime, maxExercises, selectedExercises.length, onChange, defaultExercises]);
 
-  // Also handle lesson time changes - update to appropriate default count
+  // FIXED: Handle lesson time changes - update to appropriate default count - STABLE DEPENDENCIES  
   useEffect(() => {
     if (selectedExercises.length > 0 && selectedExercises.length !== maxExercises) {
       // If user had selected exercises but lesson time changed, adjust selection

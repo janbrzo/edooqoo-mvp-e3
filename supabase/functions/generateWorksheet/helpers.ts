@@ -7,10 +7,18 @@
  * ENHANCED: Supports custom selected exercises from form
  */
 export function getExerciseTypesForCount(count: number, selectedExercises?: string[]): string[] {
+  console.log(`🔧 [HELPERS] getExerciseTypesForCount called with count: ${count}, selectedExercises:`, selectedExercises);
+  console.log(`🔧 [HELPERS] selectedExercises type:`, typeof selectedExercises);
+  console.log(`🔧 [HELPERS] selectedExercises isArray:`, Array.isArray(selectedExercises));
+  console.log(`🔧 [HELPERS] selectedExercises length:`, selectedExercises?.length);
+  
   // If custom exercises are selected, validate and use them
   if (selectedExercises && selectedExercises.length > 0) {
+    console.log(`🔧 [HELPERS] Using CUSTOM exercises path`);
     return validateAndFilterExercises(selectedExercises, count);
   }
+  
+  console.log(`🔧 [HELPERS] Using DEFAULT exercises path - selectedExercises was:`, selectedExercises);
   
   // Standard 8-exercise set (60 min lessons) - NEW ORDER with true-false as Exercise 2
   const fullSet = [

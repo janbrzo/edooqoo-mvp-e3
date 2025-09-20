@@ -121,11 +121,16 @@ serve(async (req) => {
     
     // Handle custom selected exercises if provided - ENHANCED LOGGING
     const selectedExercises = formData?.selectedExercises;
+    console.log(`🔧 [MAIN] formData.selectedExercises (raw):`, formData?.selectedExercises);
+    console.log(`🔧 [MAIN] selectedExercises variable:`, selectedExercises);
+    console.log(`🔧 [MAIN] selectedExercises type:`, typeof selectedExercises);
+    console.log(`🔧 [MAIN] selectedExercises isArray:`, Array.isArray(selectedExercises));
+    
     if (selectedExercises && selectedExercises.length > 0) {
       console.log(`🔧 [MAIN] Using CUSTOM exercise selection (${selectedExercises.length} exercises):`, selectedExercises);
     } else {
-      console.log(`🔧 [MAIN] Using DEFAULT exercise selection (no custom exercises provided)`);
-      console.log(`🔧 [MAIN] formData.selectedExercises:`, formData?.selectedExercises);
+      console.log(`🔧 [MAIN] Using DEFAULT exercise selection (no valid custom exercises provided)`);
+      console.log(`🔧 [MAIN] Reason: selectedExercises is ${selectedExercises === null ? 'null' : selectedExercises === undefined ? 'undefined' : 'empty array or falsy'}`);
     }
     
     // FIXED: Now correctly using calculated exerciseCount and selectedExercises
@@ -209,8 +214,21 @@ serve(async (req) => {
       // CREATE FULL PROMPT - this is what should be saved to database
       const fullPrompt = `SYSTEM MESSAGE:\n${systemMessage}\n\nUSER MESSAGE:\n${sanitizedPrompt}`;
       
+      // ENHANCED LOGGING: Check what formData contains before sanitization
+      console.log(`🔧 [DATABASE] Original formData:`, formData);
+      console.log(`🔧 [DATABASE] formData type:`, typeof formData);
+      console.log(`🔧 [DATABASE] formData.selectedExercises:`, formData?.selectedExercises);
+      console.log(`🔧 [DATABASE] formData.selectedExercises type:`, typeof formData?.selectedExercises);
+      console.log(`🔧 [DATABASE] formData.selectedExercises length:`, formData?.selectedExercises?.length);
+      
       // Sanitize form data
       const sanitizedFormData = formData ? JSON.parse(JSON.stringify(formData)) : {};
+      
+      // ENHANCED LOGGING: Check what sanitizedFormData contains after sanitization  
+      console.log(`🔧 [DATABASE] Sanitized formData:`, sanitizedFormData);
+      console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises:`, sanitizedFormData?.selectedExercises);
+      console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises type:`, typeof sanitizedFormData?.selectedExercises);
+      console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises length:`, sanitizedFormData?.selectedExercises?.length);
       
       const { data: worksheet, error: worksheetError } = await supabase
         .from('worksheets')
