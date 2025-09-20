@@ -44,15 +44,8 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const { students } = useStudents();
   const { refreshProgress } = useOnboardingProgress();
 
-  // BACKUP INITIALIZATION: Ensure selectedExercises is never empty for too long
-  useEffect(() => {
-    if (selectedExercises.length === 0) {
-      const maxExercises = lessonTime === '45min' ? 6 : 8;
-      const defaultExercises = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction'].slice(0, maxExercises);
-      console.log(`🔧 [WORKSHEET-FORM] BACKUP initialization of selectedExercises for ${lessonTime}:`, defaultExercises);
-      setSelectedExercises(defaultExercises);
-    }
-  }, [lessonTime, selectedExercises.length]);
+  // REMOVED: Backup initialization to avoid race condition with ExerciseSelector
+  // ExerciseSelector is now solely responsible for initialization
 
   useEffect(() => {
     if (preSelectedStudent) {
@@ -123,18 +116,23 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       }
     });
 
-    // ENHANCED LOGGING: Ensure selectedExercises is always properly populated  
-    console.log('🔧 [WORKSHEET-FORM] Final selectedExercises before submit:', selectedExercises);
-    console.log('🔧 [WORKSHEET-FORM] selectedExercises length:', selectedExercises.length);
-    console.log('🔧 [WORKSHEET-FORM] Lesson time:', lessonTime);
+    // PRE-SUBMIT VALIDATION: Critical check for selectedExercises
+    console.log('🔧 [WORKSHEET-FORM] PRE-SUBMIT VALIDATION:');
+    console.log('🔧 [WORKSHEET-FORM] selectedExercises:', selectedExercises);
+    console.log('🔧 [WORKSHEET-FORM] selectedExercises.length:', selectedExercises.length);
+    console.log('🔧 [WORKSHEET-FORM] lessonTime:', lessonTime);
     
-    // VALIDATION: Ensure selectedExercises is not empty
+    // CRITICAL: Use finalSelectedExercises to ensure we never send empty array
+    let finalSelectedExercises = selectedExercises;
     if (selectedExercises.length === 0) {
-      console.error('🔧 [WORKSHEET-FORM] ERROR: selectedExercises is empty at submit time!');
+      console.error('🔧 [WORKSHEET-FORM] ❌ CRITICAL: selectedExercises is empty at submit time!');
       const maxExercises = lessonTime === '45min' ? 6 : 8;
       const emergencyDefault = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction'].slice(0, maxExercises);
-      console.log('🔧 [WORKSHEET-FORM] Emergency fallback to default exercises:', emergencyDefault);
+      console.log('🔧 [WORKSHEET-FORM] ⚠️ Emergency fallback to default exercises:', emergencyDefault);
+      finalSelectedExercises = emergencyDefault;
       setSelectedExercises(emergencyDefault);
+    } else {
+      console.log('🔧 [WORKSHEET-FORM] ✅ selectedExercises validation passed');
     }
 
     const formData = {
@@ -146,8 +144,10 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       englishLevel,
       languageStyle,
       studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined,
-      selectedExercises: selectedExercises // Always send the array, even if initialized with defaults
+      selectedExercises: finalSelectedExercises // GUARANTEED to contain exercises
     };
+
+    console.log('🔧 [WORKSHEET-FORM] ✅ FINAL formData.selectedExercises being sent:', formData.selectedExercises);
 
     // ENHANCED: Immediate onboarding refresh after successful worksheet generation
     console.log('[WorksheetForm] Triggering onboarding refresh after worksheet generation');

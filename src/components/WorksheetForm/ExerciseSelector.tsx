@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LessonTime } from './types';
@@ -43,12 +43,24 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
   
   const currentSelection = selectedExercises.length > 0 ? selectedExercises : defaultExercises;
 
-  // FIXED: Initialize parent state with default exercises if none selected - STABLE DEPENDENCIES
+  // STRENGTHENED: Initialize parent state with default exercises if none selected
   useEffect(() => {
+    console.log(`🔧 [EXERCISE-SELECTOR] useEffect triggered - selectedExercises.length: ${selectedExercises.length}, lessonTime: ${lessonTime}`);
+    
     if (selectedExercises.length === 0) {
-      console.log(`🔧 [EXERCISE-SELECTOR] Initializing default exercises for ${lessonTime} (${maxExercises} exercises):`, defaultExercises);
-      console.log(`🔧 [EXERCISE-SELECTOR] About to call onChange with:`, defaultExercises);
+      console.log(`🔧 [EXERCISE-SELECTOR] ✅ INITIALIZING default exercises for ${lessonTime} (${maxExercises} exercises):`, defaultExercises);
+      console.log(`🔧 [EXERCISE-SELECTOR] ✅ Calling onChange with defaultExercises:`, defaultExercises);
       onChange(defaultExercises);
+      
+      // Add timeout fallback in case onChange somehow fails
+      setTimeout(() => {
+        if (selectedExercises.length === 0) {
+          console.log(`🔧 [EXERCISE-SELECTOR] ⚠️ FALLBACK: selectedExercises still empty after 100ms, trying again`);
+          onChange(defaultExercises);
+        }
+      }, 100);
+    } else {
+      console.log(`🔧 [EXERCISE-SELECTOR] ✅ selectedExercises already initialized:`, selectedExercises);
     }
   }, [lessonTime, maxExercises, selectedExercises.length, onChange, defaultExercises]);
 
@@ -64,7 +76,8 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
     }
   }, [maxExercises, selectedExercises, onChange, lessonTime]);
 
-  const handleExerciseToggle = (exerciseId: string, checked: boolean) => {
+  const handleExerciseToggle = useCallback((exerciseId: string, checked: boolean) => {
+    console.log(`🔧 [EXERCISE-SELECTOR] Toggle ${exerciseId}: ${checked}`);
     let newSelection = [...currentSelection];
     
     if (checked && !newSelection.includes(exerciseId) && newSelection.length < maxExercises) {
@@ -73,8 +86,9 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
       newSelection = newSelection.filter(id => id !== exerciseId);
     }
     
+    console.log(`🔧 [EXERCISE-SELECTOR] ✅ New selection after toggle:`, newSelection);
     onChange(newSelection);
-  };
+  }, [currentSelection, maxExercises, onChange]);
 
   return (
     <Card className="mb-6">
