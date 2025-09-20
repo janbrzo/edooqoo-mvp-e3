@@ -119,12 +119,13 @@ serve(async (req) => {
     
     console.log(`🔧 [MAIN] Exercise count set to: ${exerciseCount} exercises`);
     
-    // Handle custom selected exercises if provided
+    // Handle custom selected exercises if provided - ENHANCED LOGGING
     const selectedExercises = formData?.selectedExercises;
-    if (selectedExercises) {
-      console.log(`🔧 [MAIN] Custom exercises selected:`, selectedExercises);
+    if (selectedExercises && selectedExercises.length > 0) {
+      console.log(`🔧 [MAIN] Using CUSTOM exercise selection (${selectedExercises.length} exercises):`, selectedExercises);
     } else {
-      console.log(`🔧 [MAIN] Using default exercise selection`);
+      console.log(`🔧 [MAIN] Using DEFAULT exercise selection (no custom exercises provided)`);
+      console.log(`🔧 [MAIN] formData.selectedExercises:`, formData?.selectedExercises);
     }
     
     // FIXED: Now correctly using calculated exerciseCount and selectedExercises

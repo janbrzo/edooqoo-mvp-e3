@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LessonTime } from './types';
@@ -38,6 +38,26 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
   // Default to first N exercises if none selected
   const defaultExercises = AVAILABLE_EXERCISES.slice(0, maxExercises).map(ex => ex.id);
   const currentSelection = selectedExercises.length > 0 ? selectedExercises : defaultExercises;
+
+  // Initialize parent state with default exercises if none selected
+  useEffect(() => {
+    if (selectedExercises.length === 0) {
+      console.log(`🔧 [EXERCISE-SELECTOR] Initializing default exercises for ${lessonTime}:`, defaultExercises);
+      onChange(defaultExercises);
+    }
+  }, [lessonTime, selectedExercises.length, defaultExercises.join(','), onChange]);
+
+  // Also handle lesson time changes - update to appropriate default count
+  useEffect(() => {
+    if (selectedExercises.length > 0 && selectedExercises.length !== maxExercises) {
+      // If user had selected exercises but lesson time changed, adjust selection
+      const adjustedSelection = selectedExercises.slice(0, maxExercises);
+      if (adjustedSelection.length !== selectedExercises.length) {
+        console.log(`🔧 [EXERCISE-SELECTOR] Adjusting selection for ${lessonTime} (${maxExercises} max):`, adjustedSelection);
+        onChange(adjustedSelection);
+      }
+    }
+  }, [maxExercises, selectedExercises, onChange, lessonTime]);
 
   const handleExerciseToggle = (exerciseId: string, checked: boolean) => {
     let newSelection = [...currentSelection];

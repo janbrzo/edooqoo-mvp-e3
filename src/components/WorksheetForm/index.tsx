@@ -113,6 +113,9 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       }
     });
 
+    // Ensure selectedExercises is always properly populated
+    console.log('🔧 [WORKSHEET-FORM] Final selectedExercises before submit:', selectedExercises);
+
     const formData = {
       lessonTime,
       lessonTopic,
@@ -122,7 +125,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       englishLevel,
       languageStyle,
       studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined,
-      selectedExercises: selectedExercises.length > 0 ? selectedExercises : undefined
+      selectedExercises: selectedExercises // Always send the array, even if initialized with defaults
     };
 
     // ENHANCED: Immediate onboarding refresh after successful worksheet generation
