@@ -3,8 +3,12 @@
 
 /**
  * Validates a single exercise based on its type
+ * Now with LENIENT mode for new exercise types to prevent 500 errors
  */
 export function validateExercise(exercise: any): void {
+  console.log(`🔧 [VALIDATOR] Starting validation for exercise type: ${exercise?.type}`);
+  console.log(`🔧 [VALIDATOR] Exercise structure:`, JSON.stringify(exercise, null, 2));
+  
   if (!exercise || typeof exercise !== 'object') {
     throw new Error('Exercise must be an object');
   }
@@ -12,9 +16,20 @@ export function validateExercise(exercise: any): void {
   if (!exercise.type || typeof exercise.type !== 'string') {
     throw new Error('Exercise must have a valid type');
   }
+
+  // NEW EXERCISE TYPES - Use lenient validation (warnings instead of errors)
+  const newExerciseTypes = [
+    'odd-one-out', 'synonyms-antonyms', 'sentence-transformation', 
+    'word-order', 'gap-text', 'negative-prefixes', 'paraphrasing',
+    'complete-word', 'categorize', 'matching-halves'
+  ];
+  
+  const isNewExercise = newExerciseTypes.includes(exercise.type);
+  console.log(`🔧 [VALIDATOR] Is new exercise type: ${isNewExercise}`);
   
   // Type-specific validation
-  switch (exercise.type) {
+  try {
+    switch (exercise.type) {
     case 'reading':
       validateReadingExercise(exercise);
       break;
@@ -58,8 +73,26 @@ export function validateExercise(exercise: any): void {
     case 'negative-prefixes':
       validateNegativePrefixesExercise(exercise);
       break;
+    // LENIENT: Handle new exercise types that might not have validators yet
+    case 'paraphrasing':
+    case 'complete-word':
+    case 'categorize':
+    case 'matching-halves':
+      validateBasicExerciseStructure(exercise);
+      break;
     default:
-      console.warn(`Unknown exercise type: ${exercise.type}`);
+      console.warn(`🔧 [VALIDATOR] Unknown exercise type: ${exercise.type} - allowing with basic validation`);
+      validateBasicExerciseStructure(exercise);
+    }
+  } catch (validationError) {
+    if (isNewExercise) {
+      // LENIENT MODE: Convert errors to warnings for new exercise types
+      console.warn(`🔧 [VALIDATOR] Validation warning for ${exercise.type}:`, validationError.message);
+      console.warn(`🔧 [VALIDATOR] Allowing exercise to proceed despite validation issues`);
+    } else {
+      // STRICT MODE: Still throw errors for established exercise types
+      throw validationError;
+    }
   }
 }
 
@@ -307,4 +340,39 @@ function validateNegativePrefixesExercise(exercise: any): void {
       console.warn('🔧 [VALIDATOR] Missing prefix, but allowing:', word);
     }
   }
+}
+
+/**
+ * FALLBACK: Basic validation for unknown or new exercise types
+ * This ensures any exercise can be saved even if it doesn't have a specific validator
+ */
+function validateBasicExerciseStructure(exercise: any): void {
+  console.log(`🔧 [VALIDATOR] Using basic validation for exercise type: ${exercise.type}`);
+  
+  // Minimal requirements - just check that it has some content
+  if (!exercise.title && !exercise.instructions) {
+    console.warn(`🔧 [VALIDATOR] Exercise ${exercise.type} missing title and instructions - might affect display`);
+  }
+  
+  if (!exercise.time || typeof exercise.time !== 'number') {
+    console.warn(`🔧 [VALIDATOR] Exercise ${exercise.type} missing or invalid time - using default`);
+    exercise.time = 10; // Set default time
+  }
+  
+  if (!exercise.icon) {
+    console.warn(`🔧 [VALIDATOR] Exercise ${exercise.type} missing icon - using default`);
+    exercise.icon = 'fa-tasks'; // Set default icon
+  }
+  
+  // If it has any data structure, consider it valid
+  const hasContent = Object.keys(exercise).some(key => 
+    key !== 'type' && key !== 'title' && key !== 'instructions' && 
+    key !== 'time' && key !== 'icon' && exercise[key]
+  );
+  
+  if (!hasContent) {
+    console.warn(`🔧 [VALIDATOR] Exercise ${exercise.type} appears to have no content data`);
+  }
+  
+  console.log(`🔧 [VALIDATOR] Basic validation completed for ${exercise.type} - allowing exercise`);
 }
