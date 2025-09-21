@@ -159,82 +159,113 @@ function validateErrorCorrectionExercise(exercise: any): void {
 
 // New Phase 1 exercise validation functions
 function validateOddOneOutExercise(exercise: any): void {
-  if (!exercise.questions || !Array.isArray(exercise.questions) || exercise.questions.length < 8) {
-    throw new Error('Odd One Out exercise must have at least 8 questions');
+  console.log('🔧 [VALIDATOR] Validating odd-one-out exercise:', JSON.stringify(exercise, null, 2));
+  
+  if (!exercise.groups || !Array.isArray(exercise.groups) || exercise.groups.length < 8) {
+    console.log('🔧 [VALIDATOR] Expected groups array with 8+ items, got:', exercise.groups);
+    throw new Error('Odd One Out exercise must have at least 8 groups');
   }
   
-  for (const question of exercise.questions) {
-    if (!question.options || !Array.isArray(question.options) || question.options.length !== 5) {
-      throw new Error('Each Odd One Out question must have exactly 5 options');
+  for (const group of exercise.groups) {
+    if (!group.words || !Array.isArray(group.words) || group.words.length !== 4) {
+      console.log('🔧 [VALIDATOR] Expected 4 words in group, got:', group.words);
+      throw new Error('Each Odd One Out group must have exactly 4 words');
     }
-    if (!question.correct_answer) {
-      throw new Error('Each Odd One Out question must have a correct answer');
+    if (!group.odd_one) {
+      console.log('🔧 [VALIDATOR] Missing odd_one in group:', group);
+      throw new Error('Each Odd One Out group must have an odd_one property');
+    }
+    if (!group.reason) {
+      console.log('🔧 [VALIDATOR] Missing reason in group:', group);
+      throw new Error('Each Odd One Out group must have a reason property');
     }
   }
 }
 
 function validateSynonymsAntonymsExercise(exercise: any): void {
-  if (!exercise.items || !Array.isArray(exercise.items) || exercise.items.length < 8) {
-    throw new Error('Synonyms/Antonyms exercise must have at least 8 items');
+  console.log('🔧 [VALIDATOR] Validating synonyms-antonyms exercise:', JSON.stringify(exercise, null, 2));
+  
+  if (!exercise.pairs || !Array.isArray(exercise.pairs) || exercise.pairs.length < 10) {
+    console.log('🔧 [VALIDATOR] Expected pairs array with 10+ items, got:', exercise.pairs);
+    throw new Error('Synonyms/Antonyms exercise must have at least 10 pairs');
   }
   
-  for (const item of exercise.items) {
-    if (!item.word || !item.match) {
-      throw new Error('Each synonym/antonym item must have both word and match');
+  for (const pair of exercise.pairs) {
+    if (!pair.word || !pair.match || !pair.type) {
+      console.log('🔧 [VALIDATOR] Missing properties in pair:', pair);
+      throw new Error('Each synonym/antonym pair must have word, match, and type properties');
     }
   }
 }
 
 function validateSentenceTransformationExercise(exercise: any): void {
-  if (!exercise.sentences || !Array.isArray(exercise.sentences) || exercise.sentences.length < 8) {
-    throw new Error('Sentence Transformation exercise must have at least 8 sentences');
+  console.log('🔧 [VALIDATOR] Validating sentence-transformation exercise:', JSON.stringify(exercise, null, 2));
+  
+  if (!exercise.sentences || !Array.isArray(exercise.sentences) || exercise.sentences.length < 10) {
+    console.log('🔧 [VALIDATOR] Expected sentences array with 10+ items, got:', exercise.sentences);
+    throw new Error('Sentence Transformation exercise must have at least 10 sentences');
   }
   
   for (const sentence of exercise.sentences) {
     if (!sentence.original || !sentence.transformed || !sentence.instruction) {
+      console.log('🔧 [VALIDATOR] Missing properties in sentence:', sentence);
       throw new Error('Each transformation sentence must have original, transformed, and instruction');
     }
   }
 }
 
 function validateWordOrderExercise(exercise: any): void {
-  if (!exercise.sentences || !Array.isArray(exercise.sentences) || exercise.sentences.length < 8) {
-    throw new Error('Word Order exercise must have at least 8 sentences');
+  console.log('🔧 [VALIDATOR] Validating word-order exercise:', JSON.stringify(exercise, null, 2));
+  
+  if (!exercise.sentences || !Array.isArray(exercise.sentences) || exercise.sentences.length < 10) {
+    console.log('🔧 [VALIDATOR] Expected sentences array with 10+ items, got:', exercise.sentences);
+    throw new Error('Word Order exercise must have at least 10 sentences');
   }
   
   for (const sentence of exercise.sentences) {
     if (!sentence.scrambled_words || !sentence.correct_order) {
+      console.log('🔧 [VALIDATOR] Missing properties in sentence:', sentence);
       throw new Error('Each word order sentence must have scrambled_words and correct_order');
     }
   }
 }
 
 function validateGapTextExercise(exercise: any): void {
-  if (!exercise.sentences || !Array.isArray(exercise.sentences) || exercise.sentences.length < 8) {
-    throw new Error('Gap Text exercise must have at least 8 sentences');
+  console.log('🔧 [VALIDATOR] Validating gap-text exercise:', JSON.stringify(exercise, null, 2));
+  
+  if (!exercise.sentences || !Array.isArray(exercise.sentences) || exercise.sentences.length < 10) {
+    console.log('🔧 [VALIDATOR] Expected sentences array with 10+ items, got:', exercise.sentences);
+    throw new Error('Gap Text exercise must have at least 10 sentences');
   }
   
   for (const sentence of exercise.sentences) {
     if (!sentence.text || !sentence.answer) {
+      console.log('🔧 [VALIDATOR] Missing properties in sentence:', sentence);
       throw new Error('Each gap text sentence must have text and answer');
     }
     if (!sentence.text.includes('_____')) {
+      console.log('🔧 [VALIDATOR] Sentence missing blanks:', sentence.text);
       throw new Error('Gap text sentence must contain blank spaces (_____)');
     }
   }
   
   if (exercise.word_bank && !Array.isArray(exercise.word_bank)) {
+    console.log('🔧 [VALIDATOR] Invalid word_bank:', exercise.word_bank);
     throw new Error('Word bank must be an array if provided');
   }
 }
 
 function validateNegativePrefixesExercise(exercise: any): void {
-  if (!exercise.words || !Array.isArray(exercise.words) || exercise.words.length < 8) {
-    throw new Error('Negative Prefixes exercise must have at least 8 words');
+  console.log('🔧 [VALIDATOR] Validating negative-prefixes exercise:', JSON.stringify(exercise, null, 2));
+  
+  if (!exercise.words || !Array.isArray(exercise.words) || exercise.words.length < 10) {
+    console.log('🔧 [VALIDATOR] Expected words array with 10+ items, got:', exercise.words);
+    throw new Error('Negative Prefixes exercise must have at least 10 words');
   }
   
   for (const word of exercise.words) {
     if (!word.base_word || !word.prefix) {
+      console.log('🔧 [VALIDATOR] Missing properties in word:', word);
       throw new Error('Each negative prefix word must have base_word and prefix');
     }
   }
