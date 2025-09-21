@@ -8,7 +8,7 @@ interface ExerciseNegativePrefixesProps {
 }
 
 const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
-  words, isEditing, viewMode, onWordChange
+  words = [], isEditing, viewMode, onWordChange
 }) => {
   return (
     <div>
@@ -21,12 +21,12 @@ const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
                   {wIndex + 1}. {isEditing ? (
                     <input
                       type="text"
-                      value={wordItem.word}
+                      value={wordItem?.word || ''}
                       onChange={e => onWordChange(wIndex, 'word', e.target.value)}
                       className="border p-1 editable-content"
                     />
                   ) : (
-                    wordItem.word
+                    wordItem?.word || 'Missing word'
                   )} → ______
                 </p>
               </div>
@@ -35,12 +35,12 @@ const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={wordItem.answer}
+                      value={wordItem?.answer || ''}
                       onChange={e => onWordChange(wIndex, 'answer', e.target.value)}
                       className="border p-1 editable-content w-full"
                     />
                   ) : (
-                    <span>({wordItem.answer})</span>
+                    <span>({wordItem?.answer || 'Missing answer'})</span>
                   )}
                 </div>
               )}

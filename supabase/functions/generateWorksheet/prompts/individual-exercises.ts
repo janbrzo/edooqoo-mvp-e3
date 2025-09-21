@@ -313,14 +313,17 @@ export const getSentenceTransformationExercise = () => `    {
       "icon": "fa-sync-alt",
       "time": 8,
       "instructions": "Transform these sentences as instructed, keeping the same meaning.",
-      "transformations": [
-        {"original": "The chef prepares the meals every morning.", "instruction": "Change to passive voice", "answer": "The meals are prepared by the chef every morning."},
-        {"original": "The restaurant is more expensive than the café.", "instruction": "Use 'not as... as'", "answer": "The café is not as expensive as the restaurant."},
-        {"original": "I have never eaten such delicious pizza.", "instruction": "Use superlative", "answer": "This is the most delicious pizza I have ever eaten."},
-        {"original": "The waiter said, 'Your table is ready.'", "instruction": "Change to reported speech", "answer": "The waiter said that our table was ready."},
-        {"original": "We ordered dessert after we finished the main course.", "instruction": "Use 'having + past participle'", "answer": "Having finished the main course, we ordered dessert."},
-        {"original": "The food was so spicy that I couldn't eat it.", "instruction": "Use 'too... to'", "answer": "The food was too spicy for me to eat."},
-        {"original": "If you don't make a reservation, you won't get a table.", "instruction": "Use 'unless'", "answer": "Unless you make a reservation, you won't get a table."}
+      "sentences": [
+        {"original": "The chef prepares the meals every morning.", "instruction": "Change to passive voice", "transformed": "The meals are prepared by the chef every morning."},
+        {"original": "The restaurant is more expensive than the café.", "instruction": "Use 'not as... as'", "transformed": "The café is not as expensive as the restaurant."},
+        {"original": "I have never eaten such delicious pizza.", "instruction": "Use superlative", "transformed": "This is the most delicious pizza I have ever eaten."},
+        {"original": "The waiter said, 'Your table is ready.'", "instruction": "Change to reported speech", "transformed": "The waiter said that our table was ready."},
+        {"original": "We ordered dessert after we finished the main course.", "instruction": "Use 'having + past participle'", "transformed": "Having finished the main course, we ordered dessert."},
+        {"original": "The food was so spicy that I couldn't eat it.", "instruction": "Use 'too... to'", "transformed": "The food was too spicy for me to eat."},
+        {"original": "If you don't make a reservation, you won't get a table.", "instruction": "Use 'unless'", "transformed": "Unless you make a reservation, you won't get a table."},
+        {"original": "This restaurant serves better food than that one.", "instruction": "Use superlative", "transformed": "This restaurant serves the best food in the area."},
+        {"original": "I suggest you try the fish today.", "instruction": "Use modal verb", "transformed": "You should try the fish today."},
+        {"original": "The service was so slow that we left early.", "instruction": "Use 'too... to'", "transformed": "The service was too slow for us to stay."}
       ],
       "teacher_tip": "Focus on one transformation type at a time if students struggle. Practice with additional examples before moving to the next transformation pattern."
     }`;
@@ -332,14 +335,16 @@ export const getWordOrderExercise = () => `    {
       "time": 6,
       "instructions": "Put the words in the correct order to make meaningful sentences about restaurants.",
       "sentences": [
-        {"words": ["this", "restaurant", "the", "in", "food", "neighborhood", "best", "serves"], "answer": "This restaurant serves the best food in the neighborhood."},
-        {"words": ["always", "we", "tip", "good", "service", "for", "leave", "a"], "answer": "We always leave a tip for good service."},
-        {"words": ["menu", "has", "the", "variety", "wide", "of", "dishes", "a"], "answer": "The menu has a wide variety of dishes."},
-        {"words": ["complained", "customer", "the", "about", "cold", "the", "food"], "answer": "The customer complained about the cold food."},
-        {"words": ["book", "should", "you", "advance", "table", "in", "a"], "answer": "You should book a table in advance."},
-        {"words": ["pizza", "New York", "famous", "is", "style", "for", "its"], "answer": "New York is famous for its style pizza."},
-        {"words": ["eating", "prefer", "out", "to", "cooking", "I", "home", "at"], "answer": "I prefer eating out to cooking at home."},
-        {"words": ["been", "have", "to", "you", "restaurant", "this", "before"], "answer": "Have you been to this restaurant before?"}
+        {"scrambled_words": "this / restaurant / the / in / food / neighborhood / best / serves", "correct_order": "This restaurant serves the best food in the neighborhood."},
+        {"scrambled_words": "always / we / tip / good / service / for / leave / a", "correct_order": "We always leave a tip for good service."},
+        {"scrambled_words": "menu / has / the / variety / wide / of / dishes / a", "correct_order": "The menu has a wide variety of dishes."},
+        {"scrambled_words": "complained / customer / the / about / cold / the / food", "correct_order": "The customer complained about the cold food."},
+        {"scrambled_words": "book / should / you / advance / table / in / a", "correct_order": "You should book a table in advance."},
+        {"scrambled_words": "pizza / New York / famous / is / style / for / its", "correct_order": "New York is famous for its pizza style."},
+        {"scrambled_words": "eating / prefer / out / to / cooking / I / home / at", "correct_order": "I prefer eating out to cooking at home."},
+        {"scrambled_words": "been / have / to / you / restaurant / this / before", "correct_order": "Have you been to this restaurant before?"},
+        {"scrambled_words": "waiter / recommended / the / special / chef's / today's", "correct_order": "The waiter recommended today's chef's special."},
+        {"scrambled_words": "delicious / was / most / the / I've / meal / ever / had", "correct_order": "It was the most delicious meal I've ever had."}
       ],
       "teacher_tip": "Start with shorter sentences and gradually increase complexity. Encourage students to read their sentences aloud to check if they sound natural."
     }`;
@@ -368,16 +373,16 @@ export const getNegativePrefixesExercise = () => `    {
       "time": 6,
       "instructions": "Add the correct negative prefix (un-, in-, im-, dis-) to create the opposite meaning.",
       "words": [
-        {"base": "satisfied", "prefix": "dis", "answer": "dissatisfied", "meaning": "not happy with the service or food"},
-        {"base": "cooked", "prefix": "un", "answer": "uncooked", "meaning": "not cooked, still raw"},
-        {"base": "polite", "prefix": "im", "answer": "impolite", "meaning": "not showing good manners"},
-        {"base": "correct", "prefix": "in", "answer": "incorrect", "meaning": "wrong or not accurate"},
-        {"base": "fresh", "prefix": "un", "answer": "unfresh", "meaning": "not fresh, possibly spoiled"},
-        {"base": "expensive", "prefix": "in", "answer": "inexpensive", "meaning": "not costly, affordable"},
-        {"base": "comfortable", "prefix": "un", "answer": "uncomfortable", "meaning": "not providing comfort"},
-        {"base": "honest", "prefix": "dis", "answer": "dishonest", "meaning": "not truthful or trustworthy"},
-        {"base": "possible", "prefix": "im", "answer": "impossible", "meaning": "cannot be done or achieved"},
-        {"base": "popular", "prefix": "un", "answer": "unpopular", "meaning": "not liked by many people"}
+        {"word": "satisfied", "answer": "dissatisfied"},
+        {"word": "cooked", "answer": "uncooked"},
+        {"word": "polite", "answer": "impolite"},
+        {"word": "correct", "answer": "incorrect"},
+        {"word": "fresh", "answer": "unfresh"},
+        {"word": "expensive", "answer": "inexpensive"},
+        {"word": "comfortable", "answer": "uncomfortable"},
+        {"word": "honest", "answer": "dishonest"},
+        {"word": "possible", "answer": "impossible"},
+        {"word": "popular", "answer": "unpopular"}
       ],
       "teacher_tip": "After completing the exercise, have students create sentences using both the positive and negative forms to reinforce understanding of meaning changes."
     }`;

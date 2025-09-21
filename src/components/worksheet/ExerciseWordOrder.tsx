@@ -8,7 +8,7 @@ interface ExerciseWordOrderProps {
 }
 
 const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
-  sentences, isEditing, viewMode, onSentenceChange
+  sentences = [], isEditing, viewMode, onSentenceChange
 }) => {
   const handleScrambledWordsChange = (sIndex: number, value: string) => {
     onSentenceChange(sIndex, 'scrambled_words', value);
@@ -25,17 +25,19 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
               {isEditing ? (
                 <input
                   type="text"
-                  value={sentence.scrambled_words}
+                  value={sentence?.scrambled_words || ''}
                   onChange={e => handleScrambledWordsChange(sIndex, e.target.value)}
                   className="border p-1 editable-content flex-grow"
                   placeholder="word1 / word2 / word3"
                 />
               ) : (
                 <div className="flex flex-wrap gap-2 flex-grow">
-                  {sentence.scrambled_words.split(' / ').map((word: string, wIndex: number) => (
-                    <span key={wIndex} className="bg-blue-100 px-2 py-1 rounded-md text-sm border">
-                      {word.trim()}
-                    </span>
+                  {(sentence?.scrambled_words || '').split(' / ').map((word: string, wIndex: number) => (
+                    word.trim() && (
+                      <span key={wIndex} className="bg-blue-100 px-2 py-1 rounded-md text-sm border">
+                        {word.trim()}
+                      </span>
+                    )
                   ))}
                 </div>
               )}
@@ -45,12 +47,12 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={sentence.correct_order}
+                      value={sentence?.correct_order || ''}
                       onChange={e => onSentenceChange(sIndex, 'correct_order', e.target.value)}
                       className="border p-1 editable-content w-48"
                     />
                   ) : (
-                    <span>({sentence.correct_order})</span>
+                    <span>({sentence?.correct_order || 'Missing answer'})</span>
                   )}
                 </div>
               )}

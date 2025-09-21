@@ -23,7 +23,7 @@ export const composeSystemMessage = (hasGrammarFocus: boolean, grammarFocus: str
   const exerciseTemplates = getExerciseTemplates(hasGrammarFocus, grammarFocus, exerciseCount, selectedExercises);
   console.log(`🔧 [PROMPT-COMPOSER] Exercise count passed to getExerciseTemplates: ${exerciseCount}`);
   
-  const finalRequirements = getFinalRequirements(hasGrammarFocus, exerciseCount);
+  const finalRequirements = getFinalRequirements(hasGrammarFocus, exerciseCount, selectedExercises);
   
   return `${coreInstructions}
 

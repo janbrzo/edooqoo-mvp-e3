@@ -1,21 +1,63 @@
 /**
- * Final requirements section - EXACT content from original prompt
- * Lines 480-492 from original index.ts
+ * Final requirements section - DYNAMIC content based on selected exercises
  */
 
-export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: number = 8) => {
-  return `
-CRITICAL REQUIREMENTS VERIFICATION:
-1. Exercise 1 (reading): MUST have content more than 300 words. Analyze the lessonTopic, lessonGoal, grammarFocus and additionalInformation to determine the most appropriate text format (article, review, interview, story, email, etc.). The reading text should exemplify the format students will encounter or create based on the lesson objectives.
-2. Exercise 2 (true-false): EXACTLY 10 statements ALL directly based on the reading text from Exercise 1. NO general knowledge questions. MUST be directly based on the reading text from Exercise 1. All statements should test comprehension of specific information, details, and facts mentioned in the reading passage. DO NOT include general knowledge questions.
-3. Exercise 3 (matching): EXACTLY 10 items to match.
-4. Exercise 4 (fill-in-blanks): EXACTLY 10 sentences and 10 words in word bank.
-5. Exercise 5 (multiple-choice): EXACTLY 10 questions with 4 options each. All 4 options must be completely different from each other – no duplicates or similar variations allowed. Only one option per question is correct.${exerciseCount >= 6 ? `
-6. Exercise 6 (dialogue): AT LEAST 10 dialogue exchanges and EXACTLY 10 expressions.` : ''}${exerciseCount >= 7 ? `
-7. Exercise 7 (discussion): EXACTLY 10 discussion questions.` : ''}${exerciseCount >= 8 ? `
-8. Exercise 8 (error-correction): EXACTLY 10 sentences with errors.` : ''}
-9. Vocabulary sheet: EXACTLY 15 terms with definitions.
-${hasGrammarFocus ? `10. Grammar Rules: Must include 4-7 grammar rules with title, explanation, and 3 examples each.` : ''}
+export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: number = 8, selectedExercises?: string[]) => {
+  console.log(`🔧 [FINAL-REQUIREMENTS] Generating requirements for ${exerciseCount} exercises, selected: ${selectedExercises?.join(', ') || 'default order'}`);
+  
+  // Exercise-specific requirements mapping
+  const exerciseRequirements = {
+    'reading': 'Exercise with reading must have content more than 300 words. Analyze the lessonTopic, lessonGoal, grammarFocus and additionalInformation to determine the most appropriate text format.',
+    'true-false': 'EXACTLY 10 statements ALL directly based on the reading text from Exercise 1. NO general knowledge questions.',
+    'matching': 'EXACTLY 10 items to match with proper term-definition pairs.',
+    'fill-in-blanks': 'EXACTLY 10 sentences and 10 words in word bank.',
+    'multiple-choice': 'EXACTLY 10 questions with 4 options each. All 4 options must be completely different from each other.',
+    'dialogue': 'AT LEAST 10 dialogue exchanges and EXACTLY 10 expressions.',
+    'discussion': 'EXACTLY 10 discussion questions.',
+    'error-correction': 'EXACTLY 10 sentences with errors.',
+    'odd-one-out': 'EXACTLY 10 groups with 4-5 options each. Each group must have clear odd-one-out with logical reasoning.',
+    'synonyms-antonyms': 'EXACTLY 10 word pairs with synonym/antonym matching. Use "items" array with "term", "definition", "letter" fields.',
+    'sentence-transformation': 'EXACTLY 10 sentences with "original", "instruction", and "transformed" fields. Keep the same meaning.',
+    'word-order': 'EXACTLY 10 sentences with "scrambled_words" (separated by " / ") and "correct_order" fields.',
+    'gap-text': 'EXACTLY 10 sentences with "text" and "answer" fields for gap-fill exercise.',
+    'negative-prefixes': 'EXACTLY 10 words with "word" and "answer" fields. Use common negative prefixes: un-, in-, im-, dis-, ir-, il-.',
+    'categorize': 'EXACTLY 16 items to sort into 4 categories. Use "items" array and "categories" array with "name" and "correct_items".',
+    'paraphrasing': 'EXACTLY 10 sentences with "original", "word_to_use", and "answer" fields.',
+    'complete-word': 'EXACTLY 10 words with "partial", "complete", and "clue" fields.',
+    'matching-halves': 'EXACTLY 10 sentence halves with "first_half", "second_half", and "id" fields.',
+    'describe-picture': 'Image description and 8 guiding prompts. Include "image_description", "prompts", "useful_vocabulary", and "teacher_tip".',
+    'answer-questions': 'EXACTLY 10 questions with "question" and "focus" fields for personal response exercises.'
+  };
 
-RETURN ONLY VALID JSON. NO MARKDOWN. NO ADDITIONAL TEXT.`;
+  let requirements = '\nCRITICAL REQUIREMENTS VERIFICATION:\n';
+  
+  // Generate requirements based on selected exercises or default order
+  if (selectedExercises) {
+    selectedExercises.slice(0, exerciseCount).forEach((exerciseType, index) => {
+      const requirement = exerciseRequirements[exerciseType];
+      if (requirement) {
+        requirements += `${index + 1}. Exercise ${index + 1} (${exerciseType}): ${requirement}\n`;
+      }
+    });
+  } else {
+    // Default order requirements (first 8 basic exercises)
+    const defaultOrder = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction'];
+    defaultOrder.slice(0, exerciseCount).forEach((exerciseType, index) => {
+      const requirement = exerciseRequirements[exerciseType];
+      if (requirement) {
+        requirements += `${index + 1}. Exercise ${index + 1} (${exerciseType}): ${requirement}\n`;
+      }
+    });
+  }
+  
+  requirements += `${exerciseCount + 1}. Vocabulary sheet: EXACTLY 15 terms with definitions.\n`;
+  
+  if (hasGrammarFocus) {
+    requirements += `${exerciseCount + 2}. Grammar Rules: Must include 4-7 grammar rules with title, explanation, and 3 examples each.\n`;
+  }
+  
+  requirements += '\nRETURN ONLY VALID JSON. NO MARKDOWN. NO ADDITIONAL TEXT.';
+  
+  console.log(`🔧 [FINAL-REQUIREMENTS] Generated requirements: ${requirements.substring(0, 200)}...`);
+  return requirements;
 };

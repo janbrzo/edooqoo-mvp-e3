@@ -8,7 +8,7 @@ interface ExerciseSentenceTransformationProps {
 }
 
 const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationProps> = ({
-  sentences, isEditing, viewMode, onSentenceChange
+  sentences = [], isEditing, viewMode, onSentenceChange
 }) => {
   return (
     <div>
@@ -22,21 +22,21 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                 <>
                   <input
                     type="text"
-                    value={sentence.original}
+                    value={sentence?.original || ''}
                     onChange={e => onSentenceChange(sIndex, 'original', e.target.value)}
                     className="flex-grow border p-1 editable-content"
                   />
                   <input
                     type="text"
-                    value={sentence.instruction}
+                    value={sentence?.instruction || ''}
                     onChange={e => onSentenceChange(sIndex, 'instruction', e.target.value)}
                     className="w-48 border p-1 editable-content text-sm"
                   />
                 </>
               ) : (
                 <>
-                  <span className="flex-grow">{sentence.original}</span>
-                  <span className="text-sm text-gray-600">({sentence.instruction})</span>
+                  <span className="flex-grow">{sentence?.original || 'Missing original sentence'}</span>
+                  <span className="text-sm text-gray-600">({sentence?.instruction || 'Missing instruction'})</span>
                 </>
               )}
               
@@ -47,12 +47,12 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                   {isEditing ? (
                     <input
                       type="text"
-                      value={sentence.transformed}
+                      value={sentence?.transformed || ''}
                       onChange={e => onSentenceChange(sIndex, 'transformed', e.target.value)}
                       className="border p-1 editable-content w-48"
                     />
                   ) : (
-                    <span>({sentence.transformed})</span>
+                    <span>({sentence?.transformed || 'Missing answer'})</span>
                   )}
                 </div>
               )}
