@@ -25,6 +25,14 @@ export const formatPromptForAI = (data: FormData): string => {
     promptLines.push(`additionalInformation: ${data.additionalInformation}`);
   }
 
+  // Add selected exercises information
+  if (data.selectedExercises && data.selectedExercises.length > 0) {
+    promptLines.push(`selectedExercises: ${data.selectedExercises.join(', ')}`);
+    console.log('📝 [FORMAT-PROMPT] Adding selectedExercises to AI prompt:', data.selectedExercises);
+  } else {
+    console.log('📝 [FORMAT-PROMPT] No selectedExercises provided, AI will use defaults');
+  }
+
   // Add detailed language style instructions
   promptLines.push(`\nLANGUAGE STYLE GUIDELINES (${languageStyle}/5):`);
   if (languageStyle === 1) {
@@ -76,13 +84,23 @@ const getLanguageStyleDescription = (value: number): string => {
 };
 
 export const createFormDataForStorage = (prompt: FormData) => {
-  return {
+  console.log('🔧 [PROMPT-FORMATTER] createFormDataForStorage - input selectedExercises:', prompt.selectedExercises);
+  console.log('🔧 [PROMPT-FORMATTER] createFormDataForStorage - input selectedExercises type:', typeof prompt.selectedExercises);
+  console.log('🔧 [PROMPT-FORMATTER] createFormDataForStorage - full prompt object:', prompt);
+  
+  const formDataForStorage = {
     lessonTopic: prompt.lessonTopic,
     lessonGoal: prompt.lessonGoal,
     teachingPreferences: prompt.teachingPreferences || null,
     additionalInformation: prompt.additionalInformation || null,
     englishLevel: prompt.englishLevel || null,
     languageStyle: prompt.languageStyle || 3,
-    lessonTime: prompt.lessonTime
+    lessonTime: prompt.lessonTime,
+    selectedExercises: prompt.selectedExercises || [] // Dodane pole selectedExercises
   };
+  
+  console.log('🔧 [PROMPT-FORMATTER] createFormDataForStorage - output selectedExercises:', formDataForStorage.selectedExercises);
+  console.log('🔧 [PROMPT-FORMATTER] createFormDataForStorage - output object:', formDataForStorage);
+  
+  return formDataForStorage;
 };
