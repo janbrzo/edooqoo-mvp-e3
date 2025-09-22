@@ -28,23 +28,23 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={wordItem?.incomplete_word || ''}
-                      onChange={e => onWordChange(wIndex, 'incomplete_word', e.target.value)}
+                      value={wordItem?.partial || wordItem?.incomplete_word || ''}
+                      onChange={e => onWordChange(wIndex, 'partial', e.target.value)}
                       className="border p-1 editable-content font-mono"
                     />
                   ) : (
-                    <span className="font-mono font-bold text-lg">{wordItem?.incomplete_word || 'Missing word'}</span>
+                    <span className="font-mono font-bold text-lg">{wordItem?.partial || wordItem?.incomplete_word || 'Missing word'}</span>
                   )}
                   <span className="ml-2">–</span>
                   {isEditing ? (
                     <input
                       type="text"
-                      value={wordItem?.definition || ''}
-                      onChange={e => onWordChange(wIndex, 'definition', e.target.value)}
+                      value={wordItem?.clue || wordItem?.definition || ''}
+                      onChange={e => onWordChange(wIndex, 'clue', e.target.value)}
                       className="ml-2 border p-1 editable-content flex-grow"
                     />
                   ) : (
-                    <span className="ml-2 text-gray-600">{wordItem?.definition || 'Missing definition'}</span>
+                    <span className="ml-2 text-gray-600">{wordItem?.clue || wordItem?.definition || 'Missing definition'}</span>
                   )}
                 </p>
               </div>
@@ -54,12 +54,12 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={wordItem?.complete_word || ''}
-                      onChange={e => onWordChange(wIndex, 'complete_word', e.target.value)}
+                      value={wordItem?.complete || wordItem?.complete_word || ''}
+                      onChange={e => onWordChange(wIndex, 'complete', e.target.value)}
                       className="border p-1 editable-content w-full"
                     />
                   ) : (
-                    <span>({wordItem?.complete_word || 'No answer'})</span>
+                    <span>({wordItem?.complete || wordItem?.complete_word || 'No answer'})</span>
                   )}
                 </div>
               )}

@@ -45,12 +45,11 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
           {sentence_halves.map((item, hIndex) => (
             <div key={hIndex} className="p-2 border rounded-md bg-white">
               <span className="text-worksheet-purple font-medium mr-2">{hIndex + 1}.</span>
-              {viewMode === 'teacher' ? (
-                <span className="teacher-answer">{String.fromCharCode(65 + (item?.id || hIndex + 1) - 1)}</span>
+              {viewMode === 'student' ? (
+                <span className="inline-block w-8 h-6 border-b border-gray-400 mr-2"></span>
               ) : (
-                <span className="student-answer-blank">_____</span>
+                <span className="teacher-answer text-green-600 font-medium mr-2">({String.fromCharCode(65 + hIndex)})</span>
               )}
-              {" "}
               {isEditing ? (
                 <input
                   type="text"

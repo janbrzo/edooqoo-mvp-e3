@@ -104,10 +104,10 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
 
     // Check if all exercises are selected
     const maxExercises = lessonTime === '45min' ? 6 : 8;
-    if (selectedExercises.length > 0 && selectedExercises.length !== maxExercises) {
+    if (!selectedExercises || selectedExercises.length !== maxExercises) {
       toast({
-        title: "Incomplete exercise selection",
-        description: `Please select exactly ${maxExercises} exercises for your ${lessonTime} lesson`,
+        title: "Please select all exercises",
+        description: `You must select exactly ${maxExercises} exercises for your ${lessonTime} lesson before generating`,
         variant: "destructive"
       });
       return;
@@ -132,19 +132,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
     console.log('🔧 [WORKSHEET-FORM] selectedExercises:', selectedExercises);
     console.log('🔧 [WORKSHEET-FORM] selectedExercises.length:', selectedExercises.length);
     console.log('🔧 [WORKSHEET-FORM] lessonTime:', lessonTime);
-    
-    // CRITICAL: Use finalSelectedExercises to ensure we never send empty array
-    let finalSelectedExercises = selectedExercises;
-    if (selectedExercises.length === 0) {
-      console.error('🔧 [WORKSHEET-FORM] ❌ CRITICAL: selectedExercises is empty at submit time!');
-      const maxExercises = lessonTime === '45min' ? 6 : 8;
-      const emergencyDefault = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction'].slice(0, maxExercises);
-      console.log('🔧 [WORKSHEET-FORM] ⚠️ Emergency fallback to default exercises:', emergencyDefault);
-      finalSelectedExercises = emergencyDefault;
-      setSelectedExercises(emergencyDefault);
-    } else {
-      console.log('🔧 [WORKSHEET-FORM] ✅ selectedExercises validation passed');
-    }
+    console.log('🔧 [WORKSHEET-FORM] ✅ selectedExercises validation passed');
 
     const formData = {
       lessonTime,
@@ -155,7 +143,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       englishLevel,
       languageStyle,
       studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined,
-      selectedExercises: finalSelectedExercises // GUARANTEED to contain exercises
+      selectedExercises: selectedExercises
     };
 
     console.log('🔧 [WORKSHEET-FORM] ✅ FINAL formData.selectedExercises being sent:', formData.selectedExercises);

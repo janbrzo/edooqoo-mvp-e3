@@ -1,28 +1,34 @@
 import React from "react";
 
 interface ExerciseCategorizeProps {
-  words: string[];
+  items?: string[];
+  words?: string[];
   categories: any[];
   isEditing: boolean;
   viewMode: "student" | "teacher";
-  onWordsChange: (words: string[]) => void;
+  onWordsChange?: (words: string[]) => void;
   onCategoryChange: (cIndex: number, field: string, value: any) => void;
 }
 
 const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
-  words = [], categories = [], isEditing, viewMode, onWordsChange, onCategoryChange
+  items = [], words = [], categories = [], isEditing, viewMode, onWordsChange, onCategoryChange
 }) => {
+  // Use items if available, otherwise fall back to words
+  const actualWords = items && items.length > 0 ? items : words;
+  
   const handleWordChange = (wIndex: number, value: string) => {
-    const updatedWords = [...words];
+    const updatedWords = [...actualWords];
     updatedWords[wIndex] = value;
-    onWordsChange(updatedWords);
+    if (onWordsChange) {
+      onWordsChange(updatedWords);
+    }
   };
 
   const handleCategoryAnswerChange = (cIndex: number, value: string) => {
-    onCategoryChange(cIndex, 'words', value.split(',').map(w => w.trim()));
+    onCategoryChange(cIndex, 'correct_items', value.split(',').map(w => w.trim()));
   };
 
-  if (!words || words.length === 0) {
+  if (!actualWords || actualWords.length === 0) {
     return <div className="text-gray-500 italic">No words available for categorization.</div>;
   }
 
@@ -36,7 +42,7 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
       <div className="mb-4">
         <h4 className="font-medium text-gray-700 mb-2">Words:</h4>
         <div className="flex flex-wrap gap-2">
-          {words.map((word, wIndex) => (
+          {actualWords.map((word, wIndex) => (
             <div key={wIndex} className="bg-blue-100 px-3 py-1 rounded-md">
               {isEditing ? (
                 <input
@@ -75,13 +81,13 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={category?.words ? category.words.join(', ') : ''}
+                      value={category?.correct_items ? category.correct_items.join(', ') : (category?.words ? category.words.join(', ') : '')}
                       onChange={e => handleCategoryAnswerChange(cIndex, e.target.value)}
                       className="border p-1 editable-content w-full"
                       placeholder="word1, word2, word3"
                     />
                   ) : (
-                    <span>({category?.words ? category.words.join(', ') : 'No words'})</span>
+                    <span>({category?.correct_items ? category.correct_items.join(', ') : (category?.words ? category.words.join(', ') : 'No words')})</span>
                   )}
                 </div>
               )}

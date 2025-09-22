@@ -272,37 +272,35 @@ export const getOddOneOutExercise = () => `    {
       "time": 6,
       "instructions": "Choose the word that doesn't belong in each group.",
       "questions": [
-        {"options": ["pizza", "pasta", "sushi", "lasagna"], "correct_answer": "sushi"},
-        {"options": ["waiter", "chef", "customer", "cook"], "correct_answer": "customer"},
-        {"options": ["appetizer", "dessert", "beverage", "main course"], "correct_answer": "beverage"},
-        {"options": ["spicy", "sweet", "expensive", "salty"], "correct_answer": "expensive"},
-        {"options": ["reservation", "complaint", "compliment", "order"], "correct_answer": "compliment"},
-        {"options": ["fork", "spoon", "napkin", "knife"], "correct_answer": "napkin"},
-        {"options": ["breakfast", "lunch", "snack", "dinner"], "correct_answer": "snack"},
-        {"options": ["grilled", "fried", "boiled", "delicious"], "correct_answer": "delicious"}
+        {"options": ["pizza", "pasta", "sushi", "lasagna", "noodles"], "correct_answer": "sushi"},
+        {"options": ["waiter", "chef", "customer", "cook", "bartender"], "correct_answer": "customer"},
+        {"options": ["appetizer", "dessert", "beverage", "main course", "starter"], "correct_answer": "beverage"},
+        {"options": ["spicy", "sweet", "expensive", "salty", "bitter"], "correct_answer": "expensive"},
+        {"options": ["reservation", "complaint", "compliment", "order", "booking"], "correct_answer": "compliment"},
+        {"options": ["fork", "spoon", "napkin", "knife", "chopsticks"], "correct_answer": "napkin"},
+        {"options": ["breakfast", "lunch", "snack", "dinner", "brunch"], "correct_answer": "snack"},
+        {"options": ["grilled", "fried", "boiled", "delicious", "steamed"], "correct_answer": "delicious"}
       ],
       "teacher_tip": "After students identify the odd word, ask them to explain their reasoning. This develops critical thinking and vocabulary categorization skills."
     }`;
 
 export const getSynonymsAntonymsExercise = () => `    {
       "type": "synonyms-antonyms",
-      "title": "Exercise 10: Synonyms and Antonyms",
+      "title": "Exercise 10: Synonyms & Antonyms Matching",
       "icon": "fa-exchange-alt",
       "time": 7,
-      "instructions": "Find synonyms or antonyms for the words related to restaurant experiences.",
-      "synonym_pairs": [
-        {"word": "delicious", "synonym": "tasty", "options": ["tasty", "expensive", "cold", "small"]},
-        {"word": "expensive", "synonym": "costly", "options": ["cheap", "costly", "tasty", "fast"]},
-        {"word": "popular", "synonym": "famous", "options": ["unknown", "famous", "quiet", "slow"]},
-        {"word": "complaint", "synonym": "criticism", "options": ["praise", "criticism", "order", "tip"]},
-        {"word": "fresh", "synonym": "new", "options": ["old", "new", "cooked", "spicy"]}
-      ],
-      "antonym_pairs": [
-        {"word": "hot", "antonym": "cold", "options": ["warm", "spicy", "cold", "fresh"]},
-        {"word": "expensive", "antonym": "cheap", "options": ["costly", "cheap", "good", "bad"]},
-        {"word": "busy", "antonym": "quiet", "options": ["crowded", "noisy", "quiet", "fast"]},
-        {"word": "polite", "antonym": "rude", "options": ["kind", "nice", "rude", "helpful"]},
-        {"word": "satisfied", "antonym": "disappointed", "options": ["happy", "pleased", "disappointed", "excited"]}
+      "instructions": "Match each word with its synonym or antonym from the options provided.",
+      "items": [
+        { "term": "delicious", "definition": "tasty", "letter": "A" },
+        { "term": "expensive", "definition": "costly", "letter": "B" },
+        { "term": "popular", "definition": "famous", "letter": "C" },
+        { "term": "fresh", "definition": "new", "letter": "D" },
+        { "term": "hot", "definition": "cold", "letter": "E" },
+        { "term": "busy", "definition": "quiet", "letter": "F" },
+        { "term": "polite", "definition": "rude", "letter": "G" },
+        { "term": "satisfied", "definition": "disappointed", "letter": "H" },
+        { "term": "complaint", "definition": "criticism", "letter": "I" },
+        { "term": "quick", "definition": "fast", "letter": "J" }
       ],
       "teacher_tip": "Use these word pairs to create role-play scenarios where students practice using both positive and negative restaurant vocabulary in context."
     }`;
@@ -354,16 +352,18 @@ export const getGapTextExercise = () => `    {
       "title": "Exercise 13: Gap Text",
       "icon": "fa-puzzle-piece",
       "time": 8,
-      "instructions": "Fill in the gaps with the correct words:",
+      "instructions": "Fill in the gaps with the correct form of the verbs in brackets:",
       "sentences": [
-        {"text": "Food is an important part of every culture around the _____.", "answer": "world"},
-        {"text": "Italian families often _____ around the dinner table to share meals.", "answer": "gather"},
-        {"text": "Japanese cuisine emphasizes fresh _____ and beautiful presentation.", "answer": "ingredients"},
-        {"text": "Mexican food is known for its bold _____ and use of spices.", "answer": "flavors"},
-        {"text": "Every meal tells a story about the _____ and traditions.", "answer": "people"},
-        {"text": "Fish and rice are the _____ of many traditional Japanese meals.", "answer": "foundation"},
-        {"text": "Corn, beans, and chili peppers are _____ ingredients in Mexican recipes.", "answer": "essential"},
-        {"text": "Different countries have developed unique cooking _____ over thousands of years.", "answer": "styles"}
+        {"text": "Yesterday I _____ (go) to the restaurant to meet my friend.", "answer": "went"},
+        {"text": "The waiter _____ (be) very polite and helpful throughout the meal.", "answer": "was"},
+        {"text": "She has _____ (work) as a chef in this restaurant for five years now.", "answer": "been working"},
+        {"text": "If I _____ (be) you, I would try the seafood special today.", "answer": "were"},
+        {"text": "The food was so _____ (spice) that I had to drink three glasses of water.", "answer": "spicy"},
+        {"text": "Can you _____ (recommend) a good wine to go with this dish?", "answer": "recommend"},
+        {"text": "I'm looking _____ (forward) to trying their famous dessert menu.", "answer": "forward"},
+        {"text": "The restaurant _____ (open) at 6 PM according to their website.", "answer": "opens"},
+        {"text": "By next month, they _____ (serve) customers for ten years.", "answer": "will have been serving"},
+        {"text": "We _____ (wait) for our table for nearly an hour yesterday.", "answer": "waited"}
       ],
       "teacher_tip": "Before students fill the gaps, discuss the topic to help them understand the context and make better choices."
     }`;
@@ -397,12 +397,12 @@ export const getCategorizeExercise = () => `    {
       "icon": "fa-layer-group",
       "time": 7,
       "instructions": "Sort these food and restaurant-related items into the correct categories.",
-      "words": ["pizza", "waiter", "spoon", "breakfast", "sushi", "chef", "fork", "lunch", "pasta", "customer", "knife", "dinner", "burger", "manager", "plate", "snack"],
+      "items": ["pizza", "waiter", "spoon", "breakfast", "sushi", "chef", "fork", "lunch", "pasta", "customer", "knife", "dinner", "burger", "manager", "plate", "snack"],
       "categories": [
-        {"name": "Food Items", "words": ["pizza", "sushi", "pasta", "burger"]},
-        {"name": "Restaurant Staff", "words": ["waiter", "chef", "manager", "customer"]},
-        {"name": "Eating Utensils", "words": ["spoon", "fork", "knife", "plate"]},
-        {"name": "Meal Times", "words": ["breakfast", "lunch", "dinner", "snack"]}
+        {"name": "Food Items", "correct_items": ["pizza", "sushi", "pasta", "burger"]},
+        {"name": "Restaurant Staff", "correct_items": ["waiter", "chef", "manager", "customer"]},
+        {"name": "Eating Utensils", "correct_items": ["spoon", "fork", "knife", "plate"]},
+        {"name": "Meal Times", "correct_items": ["breakfast", "lunch", "dinner", "snack"]}
       ],
       "teacher_tip": "After categorizing, ask students to add two more items to each category to expand their vocabulary and test their understanding of the categories."
     }`;
@@ -431,16 +431,16 @@ export const getCompleteWordExercise = () => `    {
       "time": 6,
       "instructions": "Complete these restaurant and food-related words by filling in the missing letters.",
       "words": [
-        {"incomplete_word": "r_s_au_ant", "complete_word": "restaurant", "definition": "A place where people go to eat meals"},
-        {"incomplete_word": "d_lic_o_s", "complete_word": "delicious", "definition": "Having a very pleasant taste"},
-        {"incomplete_word": "a_pet_z_r", "complete_word": "appetizer", "definition": "A small dish served before the main course"},
-        {"incomplete_word": "r_ser_at_on", "complete_word": "reservation", "definition": "Booking a table in advance"},
-        {"incomplete_word": "c_st_m_r", "complete_word": "customer", "definition": "A person who buys food or service"},
-        {"incomplete_word": "v_g_tar_an", "complete_word": "vegetarian", "definition": "Someone who doesn't eat meat"},
-        {"incomplete_word": "w_it_r", "complete_word": "waiter", "definition": "A person who serves food in a restaurant"},
-        {"incomplete_word": "m_n_", "complete_word": "menu", "definition": "A list of food and drinks available"},
-        {"incomplete_word": "_xp_ns_ve", "complete_word": "expensive", "definition": "Costing a lot of money"},
-        {"incomplete_word": "c_mpl_int", "complete_word": "complaint", "definition": "An expression of dissatisfaction"}
+        {"partial": "r_st_ur_nt", "complete": "restaurant", "clue": "A place where people go to eat meals"},
+        {"partial": "d_l_c__us", "complete": "delicious", "clue": "Having a very pleasant taste"},
+        {"partial": "_pp_t_z_r", "complete": "appetizer", "clue": "A small dish served before the main course"},
+        {"partial": "r_s_rv_t__n", "complete": "reservation", "clue": "Booking a table in advance"},
+        {"partial": "c_st_m_r", "complete": "customer", "clue": "A person who buys food or service"},
+        {"partial": "v_g_t_r__n", "complete": "vegetarian", "clue": "Someone who doesn't eat meat"},
+        {"partial": "w__t_r", "complete": "waiter", "clue": "A person who serves food in a restaurant"},
+        {"partial": "m_n_", "complete": "menu", "clue": "A list of food and drinks available"},
+        {"partial": "_xp_ns_v_", "complete": "expensive", "clue": "Costing a lot of money"},
+        {"partial": "c_mpl_ _nt", "complete": "complaint", "clue": "An expression of dissatisfaction"}
       ],
       "teacher_tip": "After completing the words, ask students to use each word in a sentence about their own restaurant experiences to reinforce meaning and usage."
     }`;
