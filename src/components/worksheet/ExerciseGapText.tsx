@@ -8,11 +8,15 @@ interface ExerciseGapTextProps {
 }
 
 const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
-  sentences,
+  sentences = [],
   isEditing,
   viewMode,
   onSentenceChange
 }) => {
+  if (!sentences || sentences.length === 0) {
+    return <div className="text-gray-500 italic">No sentences available for this exercise.</div>;
+  }
+
   return (
     <div className="space-y-0.5">
       {sentences.map((sentence, sIndex) => (
@@ -23,12 +27,12 @@ const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
                 {isEditing ? (
                   <input
                     type="text"
-                    value={sentence.text}
+                    value={sentence?.text || ''}
                     onChange={e => onSentenceChange(sIndex, 'text', e.target.value)}
                     className="w-full border p-1 editable-content"
                   />
                 ) : (
-                  <>{sIndex + 1}. {sentence.text.replace(/_+/g, "_______________")}</>
+                  <>{sIndex + 1}. {(sentence?.text || 'Missing text').replace(/_+/g, "_______________")}</>
                 )}
               </p>
             </div>
@@ -37,12 +41,12 @@ const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
                 {isEditing ? (
                   <input
                     type="text"
-                    value={sentence.answer}
+                    value={sentence?.answer || ''}
                     onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
                     className="border p-1 editable-content w-full"
                   />
                 ) : (
-                  <span>({sentence.answer})</span>
+                  <span>({sentence?.answer || 'No answer'})</span>
                 )}
               </div>
             )}

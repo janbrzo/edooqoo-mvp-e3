@@ -8,8 +8,12 @@ interface ExerciseCompleteWordProps {
 }
 
 const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
-  words, isEditing, viewMode, onWordChange
+  words = [], isEditing, viewMode, onWordChange
 }) => {
+  if (!words || words.length === 0) {
+    return <div className="text-gray-500 italic">No words available for this exercise.</div>;
+  }
+
   return (
     <div>
       <p className="mb-3 font-medium">Complete the words using the definitions:</p>
@@ -24,23 +28,23 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={wordItem.incomplete_word}
+                      value={wordItem?.incomplete_word || ''}
                       onChange={e => onWordChange(wIndex, 'incomplete_word', e.target.value)}
                       className="border p-1 editable-content font-mono"
                     />
                   ) : (
-                    <span className="font-mono font-bold text-lg">{wordItem.incomplete_word}</span>
+                    <span className="font-mono font-bold text-lg">{wordItem?.incomplete_word || 'Missing word'}</span>
                   )}
                   <span className="ml-2">–</span>
                   {isEditing ? (
                     <input
                       type="text"
-                      value={wordItem.definition}
+                      value={wordItem?.definition || ''}
                       onChange={e => onWordChange(wIndex, 'definition', e.target.value)}
                       className="ml-2 border p-1 editable-content flex-grow"
                     />
                   ) : (
-                    <span className="ml-2 text-gray-600">{wordItem.definition}</span>
+                    <span className="ml-2 text-gray-600">{wordItem?.definition || 'Missing definition'}</span>
                   )}
                 </p>
               </div>
@@ -50,12 +54,12 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={wordItem.complete_word}
+                      value={wordItem?.complete_word || ''}
                       onChange={e => onWordChange(wIndex, 'complete_word', e.target.value)}
                       className="border p-1 editable-content w-full"
                     />
                   ) : (
-                    <span>({wordItem.complete_word})</span>
+                    <span>({wordItem?.complete_word || 'No answer'})</span>
                   )}
                 </div>
               )}

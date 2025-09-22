@@ -102,6 +102,17 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       return;
     }
 
+    // Check if all exercises are selected
+    const maxExercises = lessonTime === '45min' ? 6 : 8;
+    if (selectedExercises.length > 0 && selectedExercises.length !== maxExercises) {
+      toast({
+        title: "Incomplete exercise selection",
+        description: `Please select exactly ${maxExercises} exercises for your ${lessonTime} lesson`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     trackEvent({
       eventType: 'form_submit',
       eventData: {

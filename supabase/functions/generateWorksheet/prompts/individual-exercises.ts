@@ -271,15 +271,15 @@ export const getOddOneOutExercise = () => `    {
       "icon": "fa-search",
       "time": 6,
       "instructions": "Choose the word that doesn't belong in each group.",
-      "groups": [
-        {"words": ["pizza", "pasta", "sushi", "lasagna"], "odd_one": "sushi", "reason": "Sushi is Japanese food, while the others are Italian dishes."},
-        {"words": ["waiter", "chef", "customer", "cook"], "odd_one": "customer", "reason": "Customer is served by restaurant staff, while the others work in the restaurant."},
-        {"words": ["appetizer", "dessert", "beverage", "main course"], "odd_one": "beverage", "reason": "Beverage is a drink, while the others are food courses."},
-        {"words": ["spicy", "sweet", "expensive", "salty"], "odd_one": "expensive", "reason": "Expensive describes price, while the others describe taste."},
-        {"words": ["reservation", "complaint", "compliment", "order"], "odd_one": "compliment", "reason": "Compliment is positive feedback, while others are restaurant processes or problems."},
-        {"words": ["fork", "spoon", "napkin", "knife"], "odd_one": "napkin", "reason": "Napkin is for cleaning, while the others are eating utensils."},
-        {"words": ["breakfast", "lunch", "snack", "dinner"], "odd_one": "snack", "reason": "Snack is a light meal, while the others are main meals of the day."},
-        {"words": ["grilled", "fried", "boiled", "delicious"], "odd_one": "delicious", "reason": "Delicious describes taste, while the others are cooking methods."}
+      "questions": [
+        {"options": ["pizza", "pasta", "sushi", "lasagna"], "correct_answer": "sushi"},
+        {"options": ["waiter", "chef", "customer", "cook"], "correct_answer": "customer"},
+        {"options": ["appetizer", "dessert", "beverage", "main course"], "correct_answer": "beverage"},
+        {"options": ["spicy", "sweet", "expensive", "salty"], "correct_answer": "expensive"},
+        {"options": ["reservation", "complaint", "compliment", "order"], "correct_answer": "compliment"},
+        {"options": ["fork", "spoon", "napkin", "knife"], "correct_answer": "napkin"},
+        {"options": ["breakfast", "lunch", "snack", "dinner"], "correct_answer": "snack"},
+        {"options": ["grilled", "fried", "boiled", "delicious"], "correct_answer": "delicious"}
       ],
       "teacher_tip": "After students identify the odd word, ask them to explain their reasoning. This develops critical thinking and vocabulary categorization skills."
     }`;
@@ -354,16 +354,18 @@ export const getGapTextExercise = () => `    {
       "title": "Exercise 13: Gap Text",
       "icon": "fa-puzzle-piece",
       "time": 8,
-      "instructions": "Choose the correct sentence to fill each gap in the text about food cultures around the world.",
-      "text": "Food is an important part of every culture around the world. ___1___ Each country has its own traditional dishes that reflect its history and geography.\\n\\nIn Italy, pasta and pizza are not just food - they are cultural symbols. ___2___ Italian families often gather around the dinner table to share meals and stories.\\n\\nJapanese cuisine emphasizes fresh ingredients and beautiful presentation. ___3___ The art of sushi-making requires years of training and practice.\\n\\nMexican food is known for its bold flavors and use of spices. ___4___ From street tacos to elaborate mole sauces, Mexican cuisine offers incredible variety.\\n\\nIn conclusion, exploring different cuisines is one of the best ways to understand other cultures. ___5___",
-      "options": [
-        {"gap": 1, "correct": "Different countries have developed unique cooking styles over thousands of years.", "distractors": ["Restaurants are very popular in most cities.", "People enjoy eating at home with their families.", "Food trucks sell many different types of meals."]},
-        {"gap": 2, "correct": "These dishes represent centuries of culinary tradition and regional variations.", "distractors": ["Many tourists visit Italy every year to see famous landmarks.", "Italian restaurants can be found in cities around the world.", "The weather in Italy is perfect for growing tomatoes."]},
-        {"gap": 3, "correct": "Fish and rice are the foundation of many traditional Japanese meals.", "distractors": ["Japanese people work very long hours in busy cities.", "Many Japanese students study English as a foreign language.", "Technology companies in Japan make excellent products."]},
-        {"gap": 4, "correct": "Corn, beans, and chili peppers are essential ingredients in traditional recipes.", "distractors": ["Mexican music and dancing are popular around the world.", "Mexico has beautiful beaches and ancient historical sites.", "Spanish is the official language spoken throughout Mexico."]},
-        {"gap": 5, "correct": "Every meal tells a story about the people and traditions of its homeland.", "distractors": ["Cooking shows on television are becoming more popular these days.", "Many people are trying to eat healthier food and exercise more.", "Restaurant critics write reviews to help people choose good places to eat."]}
+      "instructions": "Fill in the gaps with the correct words:",
+      "sentences": [
+        {"text": "Food is an important part of every culture around the _____.", "answer": "world"},
+        {"text": "Italian families often _____ around the dinner table to share meals.", "answer": "gather"},
+        {"text": "Japanese cuisine emphasizes fresh _____ and beautiful presentation.", "answer": "ingredients"},
+        {"text": "Mexican food is known for its bold _____ and use of spices.", "answer": "flavors"},
+        {"text": "Every meal tells a story about the _____ and traditions.", "answer": "people"},
+        {"text": "Fish and rice are the _____ of many traditional Japanese meals.", "answer": "foundation"},
+        {"text": "Corn, beans, and chili peppers are _____ ingredients in Mexican recipes.", "answer": "essential"},
+        {"text": "Different countries have developed unique cooking _____ over thousands of years.", "answer": "styles"}
       ],
-      "teacher_tip": "Before students choose answers, discuss the topic of each paragraph to help them understand the context and make better choices."
+      "teacher_tip": "Before students fill the gaps, discuss the topic to help them understand the context and make better choices."
     }`;
 
 export const getNegativePrefixesExercise = () => `    {
@@ -395,12 +397,12 @@ export const getCategorizeExercise = () => `    {
       "icon": "fa-layer-group",
       "time": 7,
       "instructions": "Sort these food and restaurant-related items into the correct categories.",
-      "items": ["pizza", "waiter", "spoon", "breakfast", "sushi", "chef", "fork", "lunch", "pasta", "customer", "knife", "dinner", "burger", "manager", "plate", "snack"],
+      "words": ["pizza", "waiter", "spoon", "breakfast", "sushi", "chef", "fork", "lunch", "pasta", "customer", "knife", "dinner", "burger", "manager", "plate", "snack"],
       "categories": [
-        {"name": "Food Items", "correct_items": ["pizza", "sushi", "pasta", "burger"]},
-        {"name": "Restaurant Staff", "correct_items": ["waiter", "chef", "manager", "customer"]},
-        {"name": "Eating Utensils", "correct_items": ["spoon", "fork", "knife", "plate"]},
-        {"name": "Meal Times", "correct_items": ["breakfast", "lunch", "dinner", "snack"]}
+        {"name": "Food Items", "words": ["pizza", "sushi", "pasta", "burger"]},
+        {"name": "Restaurant Staff", "words": ["waiter", "chef", "manager", "customer"]},
+        {"name": "Eating Utensils", "words": ["spoon", "fork", "knife", "plate"]},
+        {"name": "Meal Times", "words": ["breakfast", "lunch", "dinner", "snack"]}
       ],
       "teacher_tip": "After categorizing, ask students to add two more items to each category to expand their vocabulary and test their understanding of the categories."
     }`;
@@ -429,16 +431,16 @@ export const getCompleteWordExercise = () => `    {
       "time": 6,
       "instructions": "Complete these restaurant and food-related words by filling in the missing letters.",
       "words": [
-        {"partial": "r_s_au_ant", "complete": "restaurant", "clue": "A place where people go to eat meals"},
-        {"partial": "d_lic_o_s", "complete": "delicious", "clue": "Having a very pleasant taste"},
-        {"partial": "a_pet_z_r", "complete": "appetizer", "clue": "A small dish served before the main course"},
-        {"partial": "r_ser_at_on", "complete": "reservation", "clue": "Booking a table in advance"},
-        {"partial": "c_st_m_r", "complete": "customer", "clue": "A person who buys food or service"},
-        {"partial": "v_g_tar_an", "complete": "vegetarian", "clue": "Someone who doesn't eat meat"},
-        {"partial": "w_it_r", "complete": "waiter", "clue": "A person who serves food in a restaurant"},
-        {"partial": "m_n_", "complete": "menu", "clue": "A list of food and drinks available"},
-        {"partial": "_xp_ns_ve", "complete": "expensive", "clue": "Costing a lot of money"},
-        {"partial": "c_mpl_int", "complete": "complaint", "clue": "An expression of dissatisfaction"}
+        {"incomplete_word": "r_s_au_ant", "complete_word": "restaurant", "definition": "A place where people go to eat meals"},
+        {"incomplete_word": "d_lic_o_s", "complete_word": "delicious", "definition": "Having a very pleasant taste"},
+        {"incomplete_word": "a_pet_z_r", "complete_word": "appetizer", "definition": "A small dish served before the main course"},
+        {"incomplete_word": "r_ser_at_on", "complete_word": "reservation", "definition": "Booking a table in advance"},
+        {"incomplete_word": "c_st_m_r", "complete_word": "customer", "definition": "A person who buys food or service"},
+        {"incomplete_word": "v_g_tar_an", "complete_word": "vegetarian", "definition": "Someone who doesn't eat meat"},
+        {"incomplete_word": "w_it_r", "complete_word": "waiter", "definition": "A person who serves food in a restaurant"},
+        {"incomplete_word": "m_n_", "complete_word": "menu", "definition": "A list of food and drinks available"},
+        {"incomplete_word": "_xp_ns_ve", "complete_word": "expensive", "definition": "Costing a lot of money"},
+        {"incomplete_word": "c_mpl_int", "complete_word": "complaint", "definition": "An expression of dissatisfaction"}
       ],
       "teacher_tip": "After completing the words, ask students to use each word in a sentence about their own restaurant experiences to reinforce meaning and usage."
     }`;

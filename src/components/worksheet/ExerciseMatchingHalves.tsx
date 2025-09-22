@@ -8,7 +8,7 @@ interface ExerciseMatchingHalvesProps {
 }
 
 const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
-  sentence_halves, isEditing, viewMode, onHalvesChange
+  sentence_halves = [], isEditing, viewMode, onHalvesChange
 }) => {
   const handleFirstHalfChange = (hIndex: number, value: string) => {
     onHalvesChange(hIndex, 'first_half', value);
@@ -22,6 +22,21 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
     onHalvesChange(hIndex, 'correct_match', value);
   };
 
+  // Shuffle the second halves for display (but keep original order for teacher view)
+  const shuffledIndices = React.useMemo(() => {
+    const indices = sentence_halves.map((_, index) => index);
+    // Simple shuffle algorithm
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    return indices;
+  }, [sentence_halves.length]);
+
+  if (!sentence_halves || sentence_halves.length === 0) {
+    return <div className="text-gray-500 italic">No sentence halves available for this exercise.</div>;
+  }
+
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">
@@ -31,37 +46,41 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
             <div key={hIndex} className="p-2 border rounded-md bg-white">
               <span className="text-worksheet-purple font-medium mr-2">{hIndex + 1}.</span>
               {viewMode === 'teacher' ? (
-                <span className="teacher-answer">{String.fromCharCode(65 + hIndex)}</span>
+                <span className="teacher-answer">{String.fromCharCode(65 + (item?.id || hIndex + 1) - 1)}</span>
               ) : (
-                <span className="student-answer-blank"></span>
+                <span className="student-answer-blank">_____</span>
               )}
+              {" "}
               {isEditing ? (
                 <input
                   type="text"
-                  value={item.first_half}
+                  value={item?.first_half || ''}
                   onChange={e => handleFirstHalfChange(hIndex, e.target.value)}
                   className="border p-1 editable-content w-full"
                 />
-              ) : item.first_half}
+              ) : (item?.first_half || 'Missing first half')}
             </div>
           ))}
         </div>
 
         <div className="md:col-span-7 space-y-2">
           <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence endings</h4>
-          {sentence_halves.map((item, hIndex) => (
-            <div key={hIndex} className="p-2 border rounded-md bg-white">
-              <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + hIndex)}.</span>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={item.second_half}
-                  onChange={e => handleSecondHalfChange(hIndex, e.target.value)}
-                  className="border p-1 editable-content w-full"
-                />
-              ) : item.second_half}
-            </div>
-          ))}
+          {shuffledIndices.map((originalIndex, displayIndex) => {
+            const item = sentence_halves[originalIndex];
+            return (
+              <div key={`shuffled-${displayIndex}`} className="p-2 border rounded-md bg-white">
+                <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + displayIndex)}.</span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={item?.second_half || ''}
+                    onChange={e => handleSecondHalfChange(originalIndex, e.target.value)}
+                    className="border p-1 editable-content w-full"
+                  />
+                ) : (item?.second_half || 'Missing second half')}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -72,13 +91,13 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
           <div className="space-y-1">
             {sentence_halves.map((item, hIndex) => (
               <div key={`match-${hIndex}`} className="flex items-center gap-2">
-                <span className="text-sm">{String.fromCharCode(65 + hIndex)} →</span>
+                <span className="text-sm">{hIndex + 1} →</span>
                 <input
                   type="text"
-                  value={item.correct_match || ''}
+                  value={item?.correct_match || String.fromCharCode(65 + hIndex)}
                   onChange={e => handleCorrectMatchChange(hIndex, e.target.value)}
                   className="border p-1 editable-content w-16 text-sm"
-                  placeholder="1"
+                  placeholder={String.fromCharCode(65 + hIndex)}
                 />
               </div>
             ))}

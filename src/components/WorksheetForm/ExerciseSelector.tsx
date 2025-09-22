@@ -13,7 +13,7 @@ const AVAILABLE_EXERCISES = [
   { id: 'discussion', label: 'Discussion Questions', icon: '👥' },
   { id: 'error-correction', label: 'Error Correction', icon: '⚠️' },
   { id: 'odd-one-out', label: 'Odd One Out', icon: '🔍' },
-  { id: 'synonyms-antonyms', label: 'Synonyms & Antonyms', icon: '↔️' },
+  { id: 'synonyms-antonyms', label: 'Synonyms & Antonyms Matching', icon: '↔️' },
   { id: 'sentence-transformation', label: 'Sentence Transformation', icon: '🔄' },
   { id: 'word-order', label: 'Word Order', icon: '📋' },
   { id: 'gap-text', label: 'Gap Text (Cloze)', icon: '📄' },

@@ -10,7 +10,7 @@ interface ExerciseCategorizeProps {
 }
 
 const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
-  words, categories, isEditing, viewMode, onWordsChange, onCategoryChange
+  words = [], categories = [], isEditing, viewMode, onWordsChange, onCategoryChange
 }) => {
   const handleWordChange = (wIndex: number, value: string) => {
     const updatedWords = [...words];
@@ -21,6 +21,14 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
   const handleCategoryAnswerChange = (cIndex: number, value: string) => {
     onCategoryChange(cIndex, 'words', value.split(',').map(w => w.trim()));
   };
+
+  if (!words || words.length === 0) {
+    return <div className="text-gray-500 italic">No words available for categorization.</div>;
+  }
+
+  if (!categories || categories.length === 0) {
+    return <div className="text-gray-500 italic">No categories available for this exercise.</div>;
+  }
 
   return (
     <div>
@@ -33,12 +41,12 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
               {isEditing ? (
                 <input
                   type="text"
-                  value={word}
+                  value={word || ''}
                   onChange={e => handleWordChange(wIndex, e.target.value)}
                   className="border p-1 editable-content w-20"
                 />
               ) : (
-                word
+                word || 'Word'
               )}
             </div>
           ))}
@@ -53,12 +61,12 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
               {isEditing ? (
                 <input
                   type="text"
-                  value={category.name}
+                  value={category?.name || ''}
                   onChange={e => onCategoryChange(cIndex, 'name', e.target.value)}
                   className="border p-1 editable-content w-full"
                 />
               ) : (
-                category.name
+                category?.name || 'Category'
               )}
             </h4>
             <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded p-2">
@@ -67,13 +75,13 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={category.words ? category.words.join(', ') : ''}
+                      value={category?.words ? category.words.join(', ') : ''}
                       onChange={e => handleCategoryAnswerChange(cIndex, e.target.value)}
                       className="border p-1 editable-content w-full"
                       placeholder="word1, word2, word3"
                     />
                   ) : (
-                    <span>({category.words ? category.words.join(', ') : ''})</span>
+                    <span>({category?.words ? category.words.join(', ') : 'No words'})</span>
                   )}
                 </div>
               )}

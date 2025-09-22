@@ -8,11 +8,12 @@ interface ExerciseOddOneOutProps {
 }
 
 const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
-  questions, isEditing, viewMode, onQuestionChange
+  questions = [], isEditing, viewMode, onQuestionChange
 }) => {
   const handleOptionChange = (qIndex: number, oIndex: number, value: string) => {
     const question = questions[qIndex];
-    const newOptions = [...question.options];
+    if (!question) return;
+    const newOptions = [...(question.options || [])];
     newOptions[oIndex] = value;
     onQuestionChange(qIndex, 'options', newOptions);
   };
@@ -20,6 +21,10 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
   const handleCorrectAnswerChange = (qIndex: number, value: string) => {
     onQuestionChange(qIndex, 'correct_answer', value);
   };
+
+  if (!questions || questions.length === 0) {
+    return <div className="text-gray-500 italic">No questions available for this exercise.</div>;
+  }
 
   return (
     <div>
@@ -30,17 +35,17 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
               <span className="font-medium">{qIndex + 1}.</span>
               
               <div className="flex flex-wrap gap-2 flex-grow">
-                {question.options?.map((option: string, oIndex: number) => (
+                {(question?.options || []).map((option: string, oIndex: number) => (
                   <div key={oIndex} className="border rounded px-3 py-1 text-center bg-gray-50">
                     {isEditing ? (
                       <input
                         type="text"
-                        value={option}
+                        value={option || ''}
                         onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)}
                         className="w-16 border-0 bg-transparent text-center editable-content"
                       />
                     ) : (
-                      <span>{option}</span>
+                      <span>{option || 'Option'}</span>
                     )}
                   </div>
                 ))}
@@ -51,12 +56,12 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={question.correct_answer || ''}
+                      value={question?.correct_answer || ''}
                       onChange={e => handleCorrectAnswerChange(qIndex, e.target.value)}
                       className="border p-1 editable-content w-20"
                     />
                   ) : (
-                    <span>({question.correct_answer})</span>
+                    <span>({question?.correct_answer || 'No answer'})</span>
                   )}
                 </div>
               )}
