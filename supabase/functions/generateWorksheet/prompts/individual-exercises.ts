@@ -431,13 +431,13 @@ export const getCompleteWordExercise = () => `    {
       "time": 6,
       "instructions": "Complete these restaurant and food-related words by filling in the missing letters.",
       "words": [
-        {"partial": "r_st_ur_nt", "complete": "restaurant", "clue": "A place where people go to eat meals"},
-        {"partial": "d_l_c__us", "complete": "delicious", "clue": "Having a very pleasant taste"},
+        {"partial": "r_st_ _r_nt", "complete": "restaurant", "clue": "A place where people go to eat meals"},
+        {"partial": "d_l_c_ _ _s", "complete": "delicious", "clue": "Having a very pleasant taste"},
         {"partial": "_pp_t_z_r", "complete": "appetizer", "clue": "A small dish served before the main course"},
-        {"partial": "r_s_rv_t__n", "complete": "reservation", "clue": "Booking a table in advance"},
+        {"partial": "r_s_rv_t_ _n", "complete": "reservation", "clue": "Booking a table in advance"},
         {"partial": "c_st_m_r", "complete": "customer", "clue": "A person who buys food or service"},
-        {"partial": "v_g_t_r__n", "complete": "vegetarian", "clue": "Someone who doesn't eat meat"},
-        {"partial": "w__t_r", "complete": "waiter", "clue": "A person who serves food in a restaurant"},
+        {"partial": "v_g_t_r_ _n", "complete": "vegetarian", "clue": "Someone who doesn't eat meat"},
+        {"partial": "w_ _t_r", "complete": "waiter", "clue": "A person who serves food in a restaurant"},
         {"partial": "m_n_", "complete": "menu", "clue": "A list of food and drinks available"},
         {"partial": "_xp_ns_v_", "complete": "expensive", "clue": "Costing a lot of money"},
         {"partial": "c_mpl_ _nt", "complete": "complaint", "clue": "An expression of dissatisfaction"}

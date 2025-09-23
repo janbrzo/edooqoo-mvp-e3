@@ -33,6 +33,11 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
     return indices;
   }, [sentence_halves.length]);
 
+  // Create shuffled second halves array for consistent indexing
+  const shuffledSecondHalves = React.useMemo(() => {
+    return shuffledIndices.map(originalIndex => sentence_halves[originalIndex]);
+  }, [shuffledIndices, sentence_halves]);
+
   if (!sentence_halves || sentence_halves.length === 0) {
     return <div className="text-gray-500 italic">No sentence halves available for this exercise.</div>;
   }
@@ -48,7 +53,7 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
               {viewMode === 'student' ? (
                 <span className="inline-block w-8 h-6 border-b border-gray-400 mr-2"></span>
               ) : (
-                <span className="teacher-answer text-green-600 font-medium mr-2">({String.fromCharCode(65 + hIndex)})</span>
+                <span className="teacher-answer text-green-600 font-medium mr-2">({String.fromCharCode(65 + shuffledSecondHalves.findIndex(shuffled => shuffled.second_half === item.second_half))})</span>
               )}
               {isEditing ? (
                 <input

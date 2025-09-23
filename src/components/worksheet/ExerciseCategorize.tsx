@@ -32,6 +32,8 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
     return <div className="text-gray-500 italic">No words available for categorization.</div>;
   }
 
+  console.log('[ExerciseCategorize] Debug data:', { items, words, categories });
+
   if (!categories || categories.length === 0) {
     return <div className="text-gray-500 italic">No categories available for this exercise.</div>;
   }
