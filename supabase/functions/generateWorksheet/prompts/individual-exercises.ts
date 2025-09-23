@@ -354,16 +354,16 @@ export const getGapTextExercise = () => `    {
       "time": 8,
       "instructions": "Fill in the gaps with the correct form of the verbs in brackets. The word in parentheses after each gap is the incorrect-word that needs transformation:",
       "sentences": [
-        {"text": "Yesterday I _____ (go) to the restaurant to meet my friend.", "answer": "went"},
-        {"text": "The waiter _____ (be) very polite and helpful throughout the meal.", "answer": "was"},
-        {"text": "She has _____ (work) as a chef in this restaurant for five years now.", "answer": "been working"},
-        {"text": "If I _____ (be) you, I would try the seafood special today.", "answer": "were"},
-        {"text": "The food was so _____ (spice) that I had to drink three glasses of water.", "answer": "spicy"},
-        {"text": "Can you _____ (recommend) a good wine to go with this dish?", "answer": "recommend"},
-        {"text": "I'm looking _____ (forward) to trying their famous dessert menu.", "answer": "forward"},
-        {"text": "The restaurant _____ (open) at 6 PM according to their website.", "answer": "opens"},
-        {"text": "By next month, they _____ (serve) customers for ten years.", "answer": "will have been serving"},
-        {"text": "We _____ (wait) for our table for nearly an hour yesterday.", "answer": "waited"}
+        {"text": "Yesterday I _____ (go) to the restaurant to meet my friend.", "answer": "went", "verb": "go"},
+        {"text": "The waiter _____ (be) very polite and helpful throughout the meal.", "answer": "was", "verb": "be"},
+        {"text": "She has _____ (work) as a chef in this restaurant for five years now.", "answer": "been working", "verb": "work"},
+        {"text": "If I _____ (be) you, I would try the seafood special today.", "answer": "were", "verb": "be"},
+        {"text": "The food was so _____ (spice) that I had to drink three glasses of water.", "answer": "spicy", "verb": "spice"},
+        {"text": "Can you _____ (recommend) a good wine to go with this dish?", "answer": "recommend", "verb": "recommend"},
+        {"text": "I'm looking _____ (forward) to trying their famous dessert menu.", "answer": "forward", "verb": "forward"},
+        {"text": "The restaurant _____ (open) at 6 PM according to their website.", "answer": "opens", "verb": "open"},
+        {"text": "By next month, they _____ (serve) customers for ten years.", "answer": "will have been serving", "verb": "serve"},
+        {"text": "We _____ (wait) for our table for nearly an hour yesterday.", "answer": "waited", "verb": "wait"}
       ],
       "teacher_tip": "Before students fill the gaps, discuss the topic to help them understand the context and make better choices."
     }`;
