@@ -328,6 +328,7 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
         {/* New Phase 2 exercises */}
         {exercise.type === 'categorize' && (
           <ExerciseCategorize
+            items={exercise.items}
             words={exercise.words}
             categories={exercise.categories}
             isEditing={isEditing}
@@ -336,7 +337,8 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
               const updatedExercises = [...editableWorksheet.exercises];
               updatedExercises[index] = {
                 ...updatedExercises[index],
-                words: words
+                words: words,
+                items: words
               };
               setEditableWorksheet({
                 ...editableWorksheet,
