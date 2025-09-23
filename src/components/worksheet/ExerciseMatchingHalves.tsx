@@ -53,7 +53,7 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
               {viewMode === 'student' ? (
                 <span className="inline-block w-8 h-6 border-b border-gray-400 mr-2"></span>
               ) : (
-                <span className="teacher-answer text-green-600 font-medium mr-2">({String.fromCharCode(65 + shuffledSecondHalves.findIndex(shuffled => shuffled.second_half === item.second_half))})</span>
+                <span className="teacher-answer">{String.fromCharCode(65 + shuffledSecondHalves.findIndex(shuffled => shuffled.second_half === item.second_half))}</span>
               )}
               {isEditing ? (
                 <input

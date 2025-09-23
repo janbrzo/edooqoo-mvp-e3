@@ -19,7 +19,7 @@ export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: nu
     'synonyms-antonyms': 'EXACTLY 10 word pairs with synonym/antonym matching. Use "items" array with "term", "definition", "letter" fields.',
     'sentence-transformation': 'EXACTLY 10 sentences with "original", "instruction", and "transformed" fields. Keep the same meaning.',
     'word-order': 'EXACTLY 10 sentences with "scrambled_words" (separated by " / ") and "correct_order" fields.',
-    'gap-text': 'EXACTLY 10 sentences with "text" and "answer" fields for gap-fill exercise.',
+    'gap-text': 'EXACTLY 10 sentences with "text" and "answer" fields. Each sentence must have a word in parentheses after the gap for transformation (e.g., "I _____ (go) to school yesterday").',
     'negative-prefixes': 'EXACTLY 10 words with "word" and "answer" fields. Use common negative prefixes: un-, in-, im-, dis-, ir-, il-.',
     'categorize': 'EXACTLY 16 items to sort into EXACTLY 4 categories. Use "items" array and "categories" array with "name" and "correct_items".',
     'paraphrasing': 'EXACTLY 10 sentences with "original", "word_to_use", and "answer" fields.',

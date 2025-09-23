@@ -352,7 +352,7 @@ export const getGapTextExercise = () => `    {
       "title": "Exercise 13: Gap Text",
       "icon": "fa-puzzle-piece",
       "time": 8,
-      "instructions": "Fill in the gaps with the correct form of the verbs in brackets:",
+      "instructions": "Fill in the gaps with the correct form of the verbs in brackets. The word in parentheses after each gap is the incorrect-word that needs transformation:",
       "sentences": [
         {"text": "Yesterday I _____ (go) to the restaurant to meet my friend.", "answer": "went"},
         {"text": "The waiter _____ (be) very polite and helpful throughout the meal.", "answer": "was"},
@@ -431,16 +431,16 @@ export const getCompleteWordExercise = () => `    {
       "time": 6,
       "instructions": "Complete these restaurant and food-related words by filling in the missing letters.",
       "words": [
-        {"partial": "r_st_ _r_nt", "complete": "restaurant", "clue": "A place where people go to eat meals"},
-        {"partial": "d_l_c_ _ _s", "complete": "delicious", "clue": "Having a very pleasant taste"},
-        {"partial": "_pp_t_z_r", "complete": "appetizer", "clue": "A small dish served before the main course"},
-        {"partial": "r_s_rv_t_ _n", "complete": "reservation", "clue": "Booking a table in advance"},
-        {"partial": "c_st_m_r", "complete": "customer", "clue": "A person who buys food or service"},
-        {"partial": "v_g_t_r_ _n", "complete": "vegetarian", "clue": "Someone who doesn't eat meat"},
-        {"partial": "w_ _t_r", "complete": "waiter", "clue": "A person who serves food in a restaurant"},
-        {"partial": "m_n_", "complete": "menu", "clue": "A list of food and drinks available"},
-        {"partial": "_xp_ns_v_", "complete": "expensive", "clue": "Costing a lot of money"},
-        {"partial": "c_mpl_ _nt", "complete": "complaint", "clue": "An expression of dissatisfaction"}
+        {"partial": "rest_urant", "complete": "restaurant", "clue": "A place where people go to eat meals"},
+        {"partial": "del_cious", "complete": "delicious", "clue": "Having a very pleasant taste"},
+        {"partial": "_ppetizer", "complete": "appetizer", "clue": "A small dish served before the main course"},
+        {"partial": "reserv_tion", "complete": "reservation", "clue": "Booking a table in advance"},
+        {"partial": "cust_mer", "complete": "customer", "clue": "A person who buys food or service"},
+        {"partial": "veget_rian", "complete": "vegetarian", "clue": "Someone who doesn't eat meat"},
+        {"partial": "w_iter", "complete": "waiter", "clue": "A person who serves food in a restaurant"},
+        {"partial": "men_", "complete": "menu", "clue": "A list of food and drinks available"},
+        {"partial": "_xpensive", "complete": "expensive", "clue": "Costing a lot of money"},
+        {"partial": "compl_int", "complete": "complaint", "clue": "An expression of dissatisfaction"}
       ],
       "teacher_tip": "After completing the words, ask students to use each word in a sentence about their own restaurant experiences to reinforce meaning and usage."
     }`;
