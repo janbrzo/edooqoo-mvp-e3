@@ -1,6 +1,8 @@
 
 export type LessonTime = "45min" | "60min"; // Changed from "45 min" | "60 min" to match timeCalculator
 export type EnglishLevel = "A1/A2" | "B1/B2" | "C1/C2";
+export type ExerciseSelectionMode = "manual" | "random" | "smart";
+export type MediaType = "video" | "audio" | "picture";
 
 export type Tile = {
   id: string;
@@ -19,6 +21,8 @@ export interface FormData {
   formDataForStorage?: any;
   studentId?: string;
   selectedExercises?: string[]; // Optional array of exercise types
+  selectionMode?: ExerciseSelectionMode; // New field for future use
+  selectedMediaTypes?: MediaType[]; // New field for future media integration
 }
 
 export interface WorksheetData {
