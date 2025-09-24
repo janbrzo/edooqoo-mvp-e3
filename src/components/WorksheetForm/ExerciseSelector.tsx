@@ -87,6 +87,25 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
     }
   }, [lessonTime, selectionMode, selectedExercises.length, onChange, manualDefaults, generateRandomExercises]);
 
+  // Handle lesson time changes - adjust exercise count
+  useEffect(() => {
+    if (selectedExercises.length > 0) {
+      console.log(`🔧 [EXERCISE-SELECTOR] Lesson time changed to ${lessonTime}, adjusting exercises`);
+      
+      if (selectionMode === 'manual') {
+        // For manual mode, adjust to the new count using manual defaults
+        const newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
+        console.log(`🔧 [EXERCISE-SELECTOR] Manual mode: adjusting to ${newExercises.length} exercises`);
+        onChange(newExercises);
+      } else if (selectionMode === 'random') {
+        // For random mode, generate new random selection
+        const newExercises = generateRandomExercises();
+        console.log(`🔧 [EXERCISE-SELECTOR] Random mode: generating new selection with ${newExercises.length} exercises`);
+        onChange(newExercises);
+      }
+    }
+  }, [lessonTime, selectionMode, generateRandomExercises, onChange]);
+
   // Handle mode changes
   const handleModeChange = (mode: ExerciseSelectionMode) => {
     console.log(`🔧 [EXERCISE-SELECTOR] Changing mode to: ${mode}`);

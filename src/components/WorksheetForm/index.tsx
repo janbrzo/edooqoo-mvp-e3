@@ -36,6 +36,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const [currentPlaceholders, setCurrentPlaceholders] = useState<PlaceholderSet>(getRandomPlaceholderSet());
   const [currentSuggestions, setCurrentSuggestions] = useState<SuggestionSet[]>([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [activeTab, setActiveTab] = useState<'exercises' | 'advanced' | null>('exercises');
 
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -102,15 +103,41 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       return;
     }
 
-    // Check if all exercises are selected
+    // Auto-complete exercises if not enough are selected in manual mode
     const maxExercises = lessonTime === '45min' ? 6 : 8;
-    if (!selectedExercises || selectedExercises.length !== maxExercises) {
-      toast({
-        title: "Please select all exercises",
-        description: `You must select exactly ${maxExercises} exercises for your ${lessonTime} lesson before generating`,
-        variant: "destructive"
-      });
-      return;
+    let finalExercises = [...selectedExercises];
+    
+    if (!finalExercises || finalExercises.length < maxExercises) {
+      console.log(`🔧 [WORKSHEET-FORM] Auto-completing exercises: ${finalExercises.length} < ${maxExercises}`);
+      
+      // Get available exercises (excluding coming soon ones)
+      const availableExercises = [
+        'reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 
+        'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms-antonyms',
+        'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 
+        'categorize', 'paraphrasing', 'complete-word', 'matching-halves'
+      ];
+      
+      // Add random exercises to reach the target count
+      const remainingSlots = maxExercises - finalExercises.length;
+      const unusedExercises = availableExercises.filter(ex => !finalExercises.includes(ex));
+      const shuffledUnused = [...unusedExercises].sort(() => Math.random() - 0.5);
+      const autoSelected = shuffledUnused.slice(0, remainingSlots);
+      
+      finalExercises = [...finalExercises, ...autoSelected];
+      console.log(`🔧 [WORKSHEET-FORM] Auto-completed exercises:`, finalExercises);
+      
+      // Update the form state
+      setSelectedExercises(finalExercises);
+      
+      // Notify user about auto-completion
+      if (autoSelected.length > 0) {
+        toast({
+          title: "Exercises auto-completed",
+          description: `Added ${autoSelected.length} additional exercise(s) to reach ${maxExercises} total exercises.`,
+          variant: "default"
+        });
+      }
     }
 
     trackEvent({
@@ -143,7 +170,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       englishLevel,
       languageStyle,
       studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined,
-      selectedExercises: selectedExercises
+      selectedExercises: finalExercises
     };
 
     console.log('🔧 [WORKSHEET-FORM] ✅ FINAL formData.selectedExercises being sent:', formData.selectedExercises);
@@ -308,18 +335,53 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                 </div>
               )}
 
-              {/* Exercise Selection Section */}
-              <ExerciseSelector 
-                lessonTime={lessonTime}
-                selectedExercises={selectedExercises}
-                onChange={setSelectedExercises}
-              />
+              {/* Tab-based Exercise Selection and Advanced Options */}
+              <div className="mb-6">
+                {/* Tab Header */}
+                <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-4'} mb-4`}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(activeTab === 'exercises' ? null : 'exercises')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${isMobile ? 'w-full' : 'flex-1 max-w-xs'} ${
+                      activeTab === 'exercises' 
+                        ? 'bg-worksheet-purple text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Choose Exercises ({selectedExercises.length}/{lessonTime === '45min' ? 6 : 8})
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(activeTab === 'advanced' ? null : 'advanced')}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${isMobile ? 'w-full' : 'flex-1 max-w-xs'} ${
+                      activeTab === 'advanced' 
+                        ? 'bg-worksheet-purple text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Advanced Options
+                  </button>
+                </div>
 
-              {/* Advanced Options Section */}
-              <AdvancedOptions 
-                languageStyle={languageStyle}
-                onLanguageStyleChange={setLanguageStyle}
-              />
+                {/* Tab Content */}
+                {activeTab === 'exercises' && (
+                  <ExerciseSelector 
+                    lessonTime={lessonTime}
+                    selectedExercises={selectedExercises}
+                    onChange={setSelectedExercises}
+                  />
+                )}
+
+                {activeTab === 'advanced' && (
+                  <div className="p-6 bg-white border border-gray-200 rounded-lg">
+                    <AdvancedOptions 
+                      languageStyle={languageStyle}
+                      onLanguageStyleChange={setLanguageStyle}
+                    />
+                  </div>
+                )}
+              </div>
 
               <div className={`mb-6 ${isMobile ? 'text-center' : ''}`}>
                 <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600`}>
