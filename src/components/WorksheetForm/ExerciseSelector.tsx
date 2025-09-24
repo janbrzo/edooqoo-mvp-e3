@@ -132,54 +132,31 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
   };
 
   return (
-    <div>
-      {/* Show/Hide All Exercises Toggle */}
-        <Collapsible open={showAllExercises} onOpenChange={setShowAllExercises}>
-          <CollapsibleTrigger asChild>
-            <Button
+    <div className="space-y-4">
+      {/* Media Enhanced Options */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Media Enhanced</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+          {MEDIA_ENHANCED_OPTIONS.map((media) => (
+            <button
+              key={media.id}
               type="button"
-              variant="outline"
-              className="w-full mb-4 border-worksheet-purple text-worksheet-purple hover:bg-worksheet-purpleLight"
+              disabled
+              className="p-3 rounded-lg border-2 border-gray-200 bg-gray-100 text-left opacity-60 cursor-not-allowed"
             >
-              {showAllExercises ? (
-                <>
-                  <ChevronUp className="h-4 w-4 mr-2" />
-                  Hide exercise types
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4 mr-2" />
-                  Show all 20 exercise types
-                </>
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          
-          <CollapsibleContent className="space-y-4">
-            {/* Media Enhanced Options */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Media Enhanced</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-                {MEDIA_ENHANCED_OPTIONS.map((media) => (
-                  <button
-                    key={media.id}
-                    type="button"
-                    disabled
-                    className="p-3 rounded-lg border-2 border-gray-200 bg-gray-100 text-left opacity-60 cursor-not-allowed"
-                  >
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-lg">{media.icon}</span>
-                      <span className="font-medium text-gray-500">{media.label}</span>
-                      <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
-                    </div>
-                  </button>
-                ))}
+              <div className="flex items-center space-x-2 mb-1">
+                <span className="text-lg">{media.icon}</span>
+                <span className="font-medium text-gray-500">{media.label}</span>
+                <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
               </div>
-            </div>
+            </button>
+          ))}
+        </div>
+      </div>
 
-            {/* All Exercise Types */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Exercise Types</h3>
+      {/* All Exercise Types - Always Visible */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Exercise Types</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {AVAILABLE_EXERCISES.map((exercise) => {
                   const isSelected = selectedExercises.includes(exercise.id);
@@ -221,10 +198,8 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
                     </div>
                   );
                 })}
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        </div>
+      </div>
 
         {/* Selection Info */}
         <div className="mt-4 p-3 bg-gray-50 rounded-lg">
