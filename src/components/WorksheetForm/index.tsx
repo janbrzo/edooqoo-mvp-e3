@@ -396,7 +396,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                               e.stopPropagation();
                               handleModeChange('manual');
                             }}
-                            title="Choose exercises manually"
                             className={`relative flex items-center gap-1 px-2 py-1 rounded-lg border transition-all text-center group ${
                               selectionMode === 'manual'
                                 ? 'border-worksheet-purple bg-worksheet-purple text-white'
@@ -416,7 +415,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                               e.stopPropagation();
                               handleModeChange('random');
                             }}
-                            title="Get random exercises"
                             className={`relative flex items-center gap-1 px-2 py-1 rounded-lg border transition-all text-center group ${
                               selectionMode === 'random'
                                 ? 'border-worksheet-purple bg-worksheet-purple text-white'
@@ -433,7 +431,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                           <button
                             type="button"
                             onClick={(e) => e.stopPropagation()}
-                            title="Coming soon - AI-optimized selection"
                             disabled
                             className="relative flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 bg-gray-100 text-center group cursor-not-allowed opacity-50"
                           >

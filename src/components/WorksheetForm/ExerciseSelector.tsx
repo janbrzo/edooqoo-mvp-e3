@@ -6,26 +6,26 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { LessonTime, ExerciseSelectionMode, MediaType } from './types';
 
 const AVAILABLE_EXERCISES = [
-  { id: 'reading', label: 'Reading Comprehension', icon: '📖' },
-  { id: 'true-false', label: 'True/False Questions', icon: '✓✗' },
-  { id: 'matching', label: 'Matching Exercise', icon: '🔗' },
-  { id: 'fill-in-blanks', label: 'Fill in the Blanks', icon: '✏️' },
-  { id: 'multiple-choice', label: 'Multiple Choice', icon: '📝' },
-  { id: 'dialogue', label: 'Dialogue Practice', icon: '💬' },
-  { id: 'discussion', label: 'Discussion Questions', icon: '👥' },
-  { id: 'error-correction', label: 'Error Correction', icon: '⚠️' },
-  { id: 'odd-one-out', label: 'Odd One Out', icon: '🔍' },
-  { id: 'synonyms-antonyms', label: 'Synonyms & Antonyms Matching', icon: '↔️' },
-  { id: 'sentence-transformation', label: 'Sentence Transformation', icon: '🔄' },
-  { id: 'word-order', label: 'Word Order', icon: '📋' },
-  { id: 'gap-text', label: 'Gap Text (Cloze)', icon: '📄' },
-  { id: 'negative-prefixes', label: 'Negative Prefixes', icon: '➖' },
-  { id: 'categorize', label: 'Categorization', icon: '📊' },
-  { id: 'paraphrasing', label: 'Paraphrasing', icon: '🔄' },
-  { id: 'complete-word', label: 'Complete the Word', icon: '🅰️' },
-  { id: 'matching-halves', label: 'Matching Halves', icon: '🧩' },
-  { id: 'describe-picture', label: 'Describe Picture', icon: '🖼️', comingSoon: true },
-  { id: 'answer-questions', label: 'Answer Questions', icon: '❓', comingSoon: true }
+  { id: 'reading', label: 'Reading Comprehension', icon: '📖', description: 'Students read a text passage and demonstrate understanding through comprehension questions, analyzing main ideas, details, and vocabulary in context.' },
+  { id: 'true-false', label: 'True/False Questions', icon: '✓✗', description: 'Students determine whether statements about the lesson content are true or false, helping develop critical thinking and reading comprehension skills.' },
+  { id: 'matching', label: 'Matching Exercise', icon: '🔗', description: 'Students connect related items from two columns, such as words with definitions, questions with answers, or concepts with examples.' },
+  { id: 'fill-in-blanks', label: 'Fill in the Blanks', icon: '✏️', description: 'Students complete sentences or paragraphs by filling in missing words, focusing on vocabulary, grammar structures, and contextual understanding.' },
+  { id: 'multiple-choice', label: 'Multiple Choice', icon: '📝', description: 'Students select the correct answer from several options, testing comprehension, vocabulary knowledge, and grammatical understanding.' },
+  { id: 'dialogue', label: 'Dialogue Practice', icon: '💬', description: 'Students practice conversational English through structured dialogues, improving speaking skills, natural expressions, and real-life communication patterns.' },
+  { id: 'discussion', label: 'Discussion Questions', icon: '👥', description: 'Open-ended questions that encourage students to express opinions, share experiences, and engage in meaningful conversations about the lesson topic.' },
+  { id: 'error-correction', label: 'Error Correction', icon: '⚠️', description: 'Students identify and correct grammatical, vocabulary, or structural mistakes in sentences, developing proofreading and language accuracy skills.' },
+  { id: 'odd-one-out', label: 'Odd One Out', icon: '🔍', description: 'Students identify which item in a group doesn\'t belong, focusing on categorization, vocabulary relationships, and logical thinking.' },
+  { id: 'synonyms-antonyms', label: 'Synonyms & Antonyms Matching', icon: '↔️', description: 'Students match words with their synonyms or antonyms, expanding vocabulary knowledge and understanding word relationships and nuances.' },
+  { id: 'sentence-transformation', label: 'Sentence Transformation', icon: '🔄', description: 'Students rewrite sentences using different grammatical structures while maintaining the same meaning, practicing advanced grammar and syntax.' },
+  { id: 'word-order', label: 'Word Order', icon: '📋', description: 'Students arrange scrambled words to form correct sentences, reinforcing grammar rules, sentence structure, and natural English word order.' },
+  { id: 'gap-text', label: 'Gap Text (Cloze)', icon: '📄', description: 'Students fill in missing words or phrases in a continuous text, developing contextual understanding and cohesive writing skills.' },
+  { id: 'negative-prefixes', label: 'Negative Prefixes', icon: '➖', description: 'Students practice using prefixes like un-, dis-, in- to form negative words, expanding vocabulary and understanding word formation patterns.' },
+  { id: 'categorize', label: 'Categorization', icon: '📊', description: 'Students sort words, phrases, or concepts into appropriate categories, developing organizational thinking and vocabulary classification skills.' },
+  { id: 'paraphrasing', label: 'Paraphrasing', icon: '🔄', description: 'Students rewrite sentences or passages using different words while maintaining the original meaning, improving writing flexibility and vocabulary.' },
+  { id: 'complete-word', label: 'Complete the Word', icon: '🅰️', description: 'Students complete partially written words using context clues, strengthening spelling, vocabulary recognition, and contextual understanding.' },
+  { id: 'matching-halves', label: 'Matching Halves', icon: '🧩', description: 'Students connect sentence beginnings with appropriate endings, practicing sentence structure, logical connections, and natural English flow.' },
+  { id: 'describe-picture', label: 'Describe Picture', icon: '🖼️', comingSoon: true, description: 'Students describe images using target vocabulary and structures, developing speaking and observational skills through visual prompts.' },
+  { id: 'answer-questions', label: 'Answer Questions', icon: '❓', comingSoon: true, description: 'Students provide written or spoken answers to comprehension questions, demonstrating understanding and practicing response formation.' }
 ];
 
 // Predefined exercise sets for Manual mode
@@ -166,7 +166,7 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
                   return (
                     <div 
                       key={exercise.id} 
-                      className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors ${
+                      className={`relative group flex items-center space-x-3 p-3 rounded-lg border transition-colors ${
                         exercise.comingSoon
                           ? 'bg-gray-100 border-gray-200 opacity-60'
                           : isSelected 
@@ -195,6 +195,12 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
                           <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
                         )}
                       </label>
+                      
+                      {/* Tooltip */}
+                      <div className="absolute left-1/2 bottom-full transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none max-w-xs text-center">
+                        {exercise.description}
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                      </div>
                     </div>
                   );
                 })}
@@ -205,7 +211,7 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
         <div className="mt-4 p-3 bg-gray-50 rounded-lg">
           <p className="text-sm text-gray-600">
             <span className="font-medium">Current mode:</span> {selectionMode.charAt(0).toUpperCase() + selectionMode.slice(1)}
-            {selectionMode === 'manual' && " - Click 'Show all 20 exercise types' to customize your selection"}
+            {selectionMode === 'manual' && " - Select and deselect exercises by clicking the checkboxes above"}
             {selectionMode === 'random' && " - A new random selection will be generated each time you switch to this mode"}
           </p>
           
