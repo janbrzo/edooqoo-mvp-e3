@@ -375,127 +375,104 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                 <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-4'} mb-4`}>
                   
                   {/* Exercise Types Card */}
-                  <Card className="border-2 border-gray-200">
+                  <Card 
+                    className="border-2 border-gray-200 cursor-pointer hover:border-gray-300 transition-colors"
+                    onClick={() => setActiveTab(activeTab === 'exercises' ? null : 'exercises')}
+                  >
                     <div className="p-4">
-                      {/* Card Header with Mode Selection Tiles */}
-                      <div className="mb-4">
-                        <h3 className="font-semibold text-gray-800 mb-3 text-center">Exercise Types</h3>
+                      {/* Card Header with Title and Mode Selection Tiles in Same Line */}
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-gray-800">Exercise Types</h3>
                         
-                        {/* Mode Selection Tiles - Always Visible */}
-                        <div className="grid grid-cols-3 gap-2">
+                        {/* Mode Selection Tiles - Always Visible, Beside Title */}
+                        <div className="flex gap-1">
                           <button
                             type="button"
-                            onClick={() => handleModeChange('manual')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleModeChange('manual');
+                            }}
                             title="Choose your own exercises manually"
-                            className={`relative p-2 rounded-lg border-2 transition-all text-center group ${
+                            className={`relative p-1.5 rounded-lg border-2 transition-all text-center group ${
                               selectionMode === 'manual'
                                 ? 'border-worksheet-purple bg-worksheet-purpleLight'
                                 : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                             }`}
                           >
-                            <MousePointer className="h-4 w-4 text-worksheet-purple mx-auto mb-1" />
-                            <span className="text-xs font-medium text-gray-800">Manual</span>
-                            
-                            {/* Hover Tooltip */}
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
+                            <MousePointer className="h-3 w-3 text-worksheet-purple" />
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
                               Choose exercises manually
                             </div>
                           </button>
-
+                          
                           <button
                             type="button"
-                            onClick={() => handleModeChange('random')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleModeChange('random');
+                            }}
                             title="Get a random selection of exercises"
-                            className={`relative p-2 rounded-lg border-2 transition-all text-center group ${
+                            className={`relative p-1.5 rounded-lg border-2 transition-all text-center group ${
                               selectionMode === 'random'
                                 ? 'border-worksheet-purple bg-worksheet-purpleLight'
                                 : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                             }`}
                           >
-                            <Shuffle className="h-4 w-4 text-worksheet-purple mx-auto mb-1" />
-                            <span className="text-xs font-medium text-gray-800">Random</span>
-                            
-                            {/* Hover Tooltip */}
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
+                            <Shuffle className="h-3 w-3 text-worksheet-purple" />
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
                               Random exercise selection
                             </div>
                           </button>
-
+                          
                           <button
                             type="button"
-                            onClick={() => handleModeChange('smart')}
-                            title="AI-optimized exercise selection"
-                            className={`relative p-2 rounded-lg border-2 transition-all text-center group ${
-                              selectionMode === 'smart'
-                                ? 'border-worksheet-purple bg-worksheet-purpleLight'
-                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                            title="Coming soon - AI-optimized exercise selection"
+                            disabled
+                            className="relative p-1.5 rounded-lg border-2 border-gray-200 bg-gray-100 text-center group cursor-not-allowed opacity-50"
                           >
-                            <Brain className="h-4 w-4 text-worksheet-purple mx-auto mb-1" />
-                            <span className="text-xs font-medium text-gray-800">Smart</span>
-                            
-                            {/* Hover Tooltip */}
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
-                              AI optimized selection
+                            <Brain className="h-3 w-3 text-gray-400" />
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
+                              Coming soon - AI optimized selection
                             </div>
                           </button>
                         </div>
                       </div>
-
-                      {/* Expand/Collapse Button */}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setActiveTab(activeTab === 'exercises' ? null : 'exercises')}
-                        className="w-full border-worksheet-purple text-worksheet-purple hover:bg-worksheet-purpleLight"
-                      >
-                        {activeTab === 'exercises' ? 'Hide Details' : 'Show All Exercise Types'}
-                        {selectedExercises.length > 0 && (
-                          <span className="ml-2 text-sm opacity-75">
-                            ({selectedExercises.length}/{lessonTime === '45min' ? 6 : 8})
-                          </span>
-                        )}
-                      </Button>
+                      
+                      {/* Collapsible Exercise List */}
+                      {activeTab === 'exercises' && (
+                        <div className="mt-4 border-t pt-4">
+                          <ExerciseSelector 
+                            lessonTime={lessonTime}
+                            selectedExercises={selectedExercises}
+                            onChange={setSelectedExercises}
+                            selectionMode={selectionMode}
+                          />
+                        </div>
+                      )}
                     </div>
                   </Card>
 
                   {/* Advanced Options Card */}
-                  <Card className="border-2 border-gray-200">
+                  <Card 
+                    className="border-2 border-gray-200 cursor-pointer hover:border-gray-300 transition-colors"
+                    onClick={() => setActiveTab(activeTab === 'advanced' ? null : 'advanced')}
+                  >
                     <div className="p-4">
-                      <h3 className="font-semibold text-gray-800 mb-4 text-center">Advanced Options</h3>
+                      <h3 className="font-semibold text-gray-800 mb-2">Advanced Options</h3>
                       
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setActiveTab(activeTab === 'advanced' ? null : 'advanced')}
-                        className="w-full border-worksheet-purple text-worksheet-purple hover:bg-worksheet-purpleLight"
-                      >
-                        {activeTab === 'advanced' ? 'Hide Options' : 'Show Advanced Options'}
-                      </Button>
+                      {/* Collapsible Advanced Options */}
+                      {activeTab === 'advanced' && (
+                        <div className="mt-4 border-t pt-4">
+                          <AdvancedOptions 
+                            languageStyle={languageStyle}
+                            onLanguageStyleChange={setLanguageStyle}
+                          />
+                        </div>
+                      )}
                     </div>
                   </Card>
                 </div>
-
-                {/* Tab Content */}
-                {activeTab === 'exercises' && (
-                  <div className="p-6 bg-white border border-gray-200 rounded-lg">
-                    <ExerciseSelector 
-                      lessonTime={lessonTime}
-                      selectedExercises={selectedExercises}
-                      onChange={setSelectedExercises}
-                      selectionMode={selectionMode}
-                    />
-                  </div>
-                )}
-
-                {activeTab === 'advanced' && (
-                  <div className="p-6 bg-white border border-gray-200 rounded-lg">
-                    <AdvancedOptions 
-                      languageStyle={languageStyle}
-                      onLanguageStyleChange={setLanguageStyle}
-                    />
-                  </div>
-                )}
               </div>
 
               <div className={`mb-6 ${isMobile ? 'text-center' : ''}`}>
