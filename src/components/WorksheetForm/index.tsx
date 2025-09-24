@@ -371,18 +371,22 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
 
               {/* Exercise Selection Cards */}
               <div className="mb-6">
-                {/* Two Cards in One Line */}
+                {/* Card Headers in One Line */}
                 <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-4'} mb-4`}>
                   
-                  {/* Exercise Types Card */}
+                  {/* Exercise Types Card Header */}
                   <Card 
-                    className="border-2 border-gray-200 cursor-pointer hover:border-gray-300 transition-colors"
+                    className={`border-2 cursor-pointer transition-colors ${
+                      activeTab === 'exercises' 
+                        ? 'border-worksheet-purple bg-worksheet-purpleLight' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
                     onClick={() => setActiveTab(activeTab === 'exercises' ? null : 'exercises')}
                   >
-                    <div className="p-4">
+                    <div className="p-3">
                       {/* Card Header with Title and Mode Selection Tiles in Same Line */}
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-gray-800">Exercise Types</h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-800">Exercise Types (20)</h3>
                         
                         {/* Mode Selection Tiles - Always Visible, Beside Title */}
                         <div className="flex gap-1">
@@ -392,14 +396,15 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                               e.stopPropagation();
                               handleModeChange('manual');
                             }}
-                            title="Choose your own exercises manually"
-                            className={`relative p-1.5 rounded-lg border-2 transition-all text-center group ${
+                            title="Choose exercises manually"
+                            className={`relative flex items-center gap-1 px-2 py-1 rounded-lg border transition-all text-center group ${
                               selectionMode === 'manual'
-                                ? 'border-worksheet-purple bg-worksheet-purpleLight'
+                                ? 'border-worksheet-purple bg-worksheet-purple text-white'
                                 : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                             }`}
                           >
-                            <MousePointer className="h-3 w-3 text-worksheet-purple" />
+                            <MousePointer className="h-3 w-3" />
+                            <span className="text-xs font-medium">Manual</span>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
                               Choose exercises manually
                             </div>
@@ -411,14 +416,15 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                               e.stopPropagation();
                               handleModeChange('random');
                             }}
-                            title="Get a random selection of exercises"
-                            className={`relative p-1.5 rounded-lg border-2 transition-all text-center group ${
+                            title="Get random exercises"
+                            className={`relative flex items-center gap-1 px-2 py-1 rounded-lg border transition-all text-center group ${
                               selectionMode === 'random'
-                                ? 'border-worksheet-purple bg-worksheet-purpleLight'
+                                ? 'border-worksheet-purple bg-worksheet-purple text-white'
                                 : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                             }`}
                           >
-                            <Shuffle className="h-3 w-3 text-worksheet-purple" />
+                            <Shuffle className="h-3 w-3" />
+                            <span className="text-xs font-medium">Random</span>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
                               Random exercise selection
                             </div>
@@ -427,52 +433,60 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                           <button
                             type="button"
                             onClick={(e) => e.stopPropagation()}
-                            title="Coming soon - AI-optimized exercise selection"
+                            title="Coming soon - AI-optimized selection"
                             disabled
-                            className="relative p-1.5 rounded-lg border-2 border-gray-200 bg-gray-100 text-center group cursor-not-allowed opacity-50"
+                            className="relative flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 bg-gray-100 text-center group cursor-not-allowed opacity-50"
                           >
                             <Brain className="h-3 w-3 text-gray-400" />
+                            <span className="text-xs font-medium text-gray-400">Smart</span>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
                               Coming soon - AI optimized selection
                             </div>
                           </button>
                         </div>
                       </div>
-                      
-                      {/* Collapsible Exercise List */}
-                      {activeTab === 'exercises' && (
-                        <div className="mt-4 border-t pt-4">
-                          <ExerciseSelector 
-                            lessonTime={lessonTime}
-                            selectedExercises={selectedExercises}
-                            onChange={setSelectedExercises}
-                            selectionMode={selectionMode}
-                          />
-                        </div>
-                      )}
                     </div>
                   </Card>
 
-                  {/* Advanced Options Card */}
+                  {/* Advanced Options Card Header */}
                   <Card 
-                    className="border-2 border-gray-200 cursor-pointer hover:border-gray-300 transition-colors"
+                    className={`border-2 cursor-pointer transition-colors ${
+                      activeTab === 'advanced' 
+                        ? 'border-worksheet-purple bg-worksheet-purpleLight' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
                     onClick={() => setActiveTab(activeTab === 'advanced' ? null : 'advanced')}
                   >
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-800 mb-2">Advanced Options</h3>
-                      
-                      {/* Collapsible Advanced Options */}
-                      {activeTab === 'advanced' && (
-                        <div className="mt-4 border-t pt-4">
-                          <AdvancedOptions 
-                            languageStyle={languageStyle}
-                            onLanguageStyleChange={setLanguageStyle}
-                          />
-                        </div>
-                      )}
+                    <div className="p-3">
+                      <h3 className="font-semibold text-gray-800">Advanced Options</h3>
                     </div>
                   </Card>
                 </div>
+
+                {/* Card Content - Full Width Below Headers */}
+                {activeTab === 'exercises' && (
+                  <Card className="border-2 border-worksheet-purple">
+                    <div className="p-4">
+                      <ExerciseSelector 
+                        lessonTime={lessonTime}
+                        selectedExercises={selectedExercises}
+                        onChange={setSelectedExercises}
+                        selectionMode={selectionMode}
+                      />
+                    </div>
+                  </Card>
+                )}
+
+                {activeTab === 'advanced' && (
+                  <Card className="border-2 border-worksheet-purple">
+                    <div className="p-4">
+                      <AdvancedOptions 
+                        languageStyle={languageStyle}
+                        onLanguageStyleChange={setLanguageStyle}
+                      />
+                    </div>
+                  </Card>
+                )}
               </div>
 
               <div className={`mb-6 ${isMobile ? 'text-center' : ''}`}>
