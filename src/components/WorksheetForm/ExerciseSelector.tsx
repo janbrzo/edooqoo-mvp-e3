@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, Shuffle, Brain, MousePointer } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { LessonTime, ExerciseSelectionMode, MediaType } from './types';
 
@@ -43,11 +42,11 @@ interface ExerciseSelectorProps {
   lessonTime: LessonTime;
   selectedExercises: string[];
   onChange: (exercises: string[]) => void;
+  selectionMode: ExerciseSelectionMode;
 }
 
-export default function ExerciseSelector({ lessonTime, selectedExercises, onChange }: ExerciseSelectorProps) {
+export default function ExerciseSelector({ lessonTime, selectedExercises, onChange, selectionMode }: ExerciseSelectorProps) {
   const maxExercises = lessonTime === '45min' ? 6 : 8;
-  const [selectionMode, setSelectionMode] = useState<ExerciseSelectionMode>('manual');
   const [showAllExercises, setShowAllExercises] = useState(false);
   const [selectedMediaTypes, setSelectedMediaTypes] = useState<MediaType[]>([]);
   
@@ -106,24 +105,6 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
     }
   }, [lessonTime, selectionMode, generateRandomExercises, onChange]);
 
-  // Handle mode changes
-  const handleModeChange = (mode: ExerciseSelectionMode) => {
-    console.log(`🔧 [EXERCISE-SELECTOR] Changing mode to: ${mode}`);
-    setSelectionMode(mode);
-    
-    let newExercises: string[];
-    if (mode === 'manual') {
-      newExercises = manualDefaults;
-    } else if (mode === 'random') {
-      newExercises = generateRandomExercises();
-    } else {
-      // Smart mode - use manual defaults for now
-      newExercises = manualDefaults;
-    }
-    
-    console.log(`🔧 [EXERCISE-SELECTOR] Setting exercises for ${mode} mode:`, newExercises);
-    onChange(newExercises);
-  };
 
   const handleExerciseToggle = useCallback((exerciseId: string, checked: boolean) => {
     if (selectionMode !== 'manual') return; // Only allow manual changes in manual mode
@@ -151,68 +132,8 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
   };
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold text-gray-800">
-          Choose Exercises ({selectedExercises.length}/{maxExercises})
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Selection Mode Tiles */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          <button
-            type="button"
-            onClick={() => handleModeChange('manual')}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${
-              selectionMode === 'manual'
-                ? 'border-worksheet-purple bg-worksheet-purpleLight'
-                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <div className="flex items-center space-x-2 mb-2">
-              <MousePointer className="h-5 w-5 text-worksheet-purple" />
-              <span className="font-semibold text-gray-800">Manual</span>
-            </div>
-            <p className="text-sm text-gray-600">
-              Choose your own exercise types from our selection
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleModeChange('random')}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${
-              selectionMode === 'random'
-                ? 'border-worksheet-purple bg-worksheet-purpleLight'
-                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <div className="flex items-center space-x-2 mb-2">
-              <Shuffle className="h-5 w-5 text-worksheet-purple" />
-              <span className="font-semibold text-gray-800">Random</span>
-            </div>
-            <p className="text-sm text-gray-600">
-              Let us pick a varied mix of exercises for you
-            </p>
-          </button>
-
-          <button
-            type="button"
-            disabled
-            className="p-4 rounded-lg border-2 border-gray-200 bg-gray-100 text-left opacity-60 cursor-not-allowed"
-          >
-            <div className="flex items-center space-x-2 mb-2">
-              <Brain className="h-5 w-5 text-gray-400" />
-              <span className="font-semibold text-gray-500">Smart</span>
-              <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Coming Soon</span>
-            </div>
-            <p className="text-sm text-gray-500">
-              AI will select the best exercises based on your lesson details
-            </p>
-          </button>
-        </div>
-
-        {/* Show/Hide All Exercises Toggle */}
+    <div>
+      {/* Show/Hide All Exercises Toggle */}
         <Collapsible open={showAllExercises} onOpenChange={setShowAllExercises}>
           <CollapsibleTrigger asChild>
             <Button
@@ -319,7 +240,6 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
             </p>
           )}
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

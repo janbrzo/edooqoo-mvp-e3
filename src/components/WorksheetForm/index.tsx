@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { LessonTime, EnglishLevel, FormData, WorksheetFormProps } from './types';
+import { LessonTime, EnglishLevel, FormData, WorksheetFormProps, ExerciseSelectionMode } from './types';
 import { getRandomPlaceholderSet, PlaceholderSet } from './placeholderSets';
 import { getRandomSuggestionSets, getSuggestionSetMatchingPlaceholder, SuggestionSet } from './suggestionSets';
 import FormField from './FormField';
@@ -14,6 +14,7 @@ import { useAnonymousAuth } from "@/hooks/useAnonymousAuth";
 import { useStudents } from "@/hooks/useStudents";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Shuffle, Brain, MousePointer } from "lucide-react";
 
 export type { FormData };
 
@@ -32,11 +33,12 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const [languageStyle, setLanguageStyle] = useState<number>(3); // Default neutral style
   const [selectedStudentId, setSelectedStudentId] = useState<string>("no-student");
   const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
+  const [selectionMode, setSelectionMode] = useState<ExerciseSelectionMode>('manual');
 
   const [currentPlaceholders, setCurrentPlaceholders] = useState<PlaceholderSet>(getRandomPlaceholderSet());
   const [currentSuggestions, setCurrentSuggestions] = useState<SuggestionSet[]>([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [activeTab, setActiveTab] = useState<'exercises' | 'advanced' | null>('exercises');
+  const [activeTab, setActiveTab] = useState<'exercises' | 'advanced' | null>(null);
 
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -189,6 +191,38 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
     setCurrentSuggestions(getRandomSuggestionSets(2));
   };
 
+  // Handle selection mode changes
+  const handleModeChange = (mode: ExerciseSelectionMode) => {
+    console.log(`🔧 [WORKSHEET-FORM] Changing mode to: ${mode}`);
+    setSelectionMode(mode);
+    
+    const maxExercises = lessonTime === '45min' ? 6 : 8;
+    const manualDefaults = lessonTime === '45min' 
+      ? ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out']
+      : ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
+    
+    let newExercises: string[];
+    if (mode === 'manual') {
+      newExercises = manualDefaults;
+    } else if (mode === 'random') {
+      // Generate random exercises
+      const availableExercises = [
+        'reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 
+        'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms-antonyms',
+        'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 
+        'categorize', 'paraphrasing', 'complete-word', 'matching-halves'
+      ];
+      const shuffled = [...availableExercises].sort(() => Math.random() - 0.5);
+      newExercises = shuffled.slice(0, maxExercises);
+    } else {
+      // Smart mode - use manual defaults for now
+      newExercises = manualDefaults;
+    }
+    
+    console.log(`🔧 [WORKSHEET-FORM] Setting exercises for ${mode} mode:`, newExercises);
+    setSelectedExercises(newExercises);
+  };
+
   const createSuggestionTiles = (field: 'lessonTopic' | 'lessonFocus' | 'additionalInformation' | 'grammarFocus') => {
     return currentSuggestions.map((set, index) => ({
       id: `${set.id}-${field}-${index}`,
@@ -335,42 +369,107 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                 </div>
               )}
 
-              {/* Tab-based Exercise Selection and Advanced Options */}
+              {/* Exercise Selection Mode and Options */}
               <div className="mb-6">
-                {/* Tab Header */}
-                <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-4'} mb-4`}>
+                {/* Selection Mode Tiles and Tab Header */}
+                <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-5 gap-3'} mb-4`}>
+                  {/* Manual/Random/Smart tiles */}
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('manual')}
+                    className={`${isMobile ? 'p-3' : 'p-4'} rounded-lg border-2 transition-all text-left ${
+                      selectionMode === 'manual'
+                        ? 'border-worksheet-purple bg-worksheet-purpleLight'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2 mb-1">
+                      <MousePointer className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-worksheet-purple`} />
+                      <span className={`font-semibold text-gray-800 ${isMobile ? 'text-sm' : ''}`}>Manual</span>
+                    </div>
+                    <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                      Choose your own exercise types
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('random')}
+                    className={`${isMobile ? 'p-3' : 'p-4'} rounded-lg border-2 transition-all text-left ${
+                      selectionMode === 'random'
+                        ? 'border-worksheet-purple bg-worksheet-purpleLight'
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Shuffle className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-worksheet-purple`} />
+                      <span className={`font-semibold text-gray-800 ${isMobile ? 'text-sm' : ''}`}>Random</span>
+                    </div>
+                    <p className={`text-gray-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                      Let us pick varied exercises
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled
+                    className={`${isMobile ? 'p-3' : 'p-4'} rounded-lg border-2 border-gray-200 bg-gray-100 text-left opacity-60 cursor-not-allowed`}
+                  >
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Brain className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} text-gray-400`} />
+                      <span className={`font-semibold text-gray-500 ${isMobile ? 'text-sm' : ''}`}>Smart</span>
+                      <span className={`text-xs bg-gray-200 text-gray-600 px-1 py-0.5 rounded ${isMobile ? 'text-xs' : ''}`}>Soon</span>
+                    </div>
+                    <p className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                      AI will select best exercises
+                    </p>
+                  </button>
+                  
+                  {/* Exercise Types Tab */}
                   <button
                     type="button"
                     onClick={() => setActiveTab(activeTab === 'exercises' ? null : 'exercises')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${isMobile ? 'w-full' : 'flex-1 max-w-xs'} ${
+                    className={`${isMobile ? 'p-3' : 'p-4'} rounded-lg font-medium transition-colors ${
                       activeTab === 'exercises' 
                         ? 'bg-worksheet-purple text-white' 
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    Choose Exercises ({selectedExercises.length}/{lessonTime === '45min' ? 6 : 8})
+                    <div className="text-center">
+                      <div className={`font-semibold ${isMobile ? 'text-sm' : ''}`}>Show Exercise Types</div>
+                      <div className={`${isMobile ? 'text-xs' : 'text-sm'} mt-1 opacity-75`}>
+                        ({selectedExercises.length}/{lessonTime === '45min' ? 6 : 8})
+                      </div>
+                    </div>
                   </button>
                   
+                  {/* Advanced Options Tab */}
                   <button
                     type="button"
                     onClick={() => setActiveTab(activeTab === 'advanced' ? null : 'advanced')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${isMobile ? 'w-full' : 'flex-1 max-w-xs'} ${
+                    className={`${isMobile ? 'p-3' : 'p-4'} rounded-lg font-medium transition-colors ${
                       activeTab === 'advanced' 
                         ? 'bg-worksheet-purple text-white' 
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    Advanced Options
+                    <div className="text-center">
+                      <div className={`font-semibold ${isMobile ? 'text-sm' : ''}`}>Advanced Options</div>
+                      <div className={`${isMobile ? 'text-xs' : 'text-sm'} mt-1 opacity-75`}>Language style</div>
+                    </div>
                   </button>
                 </div>
 
                 {/* Tab Content */}
                 {activeTab === 'exercises' && (
-                  <ExerciseSelector 
-                    lessonTime={lessonTime}
-                    selectedExercises={selectedExercises}
-                    onChange={setSelectedExercises}
-                  />
+                  <div className="p-6 bg-white border border-gray-200 rounded-lg">
+                    <ExerciseSelector 
+                      lessonTime={lessonTime}
+                      selectedExercises={selectedExercises}
+                      onChange={setSelectedExercises}
+                      selectionMode={selectionMode}
+                    />
+                  </div>
                 )}
 
                 {activeTab === 'advanced' && (
