@@ -177,7 +177,7 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
           isEditing={isEditing}
           time={exercise.time}
           onTitleChange={val => handleExerciseChangeLocal('title', val)}
-          canRegenerate={!!(viewMode === 'teacher' && isEditing && worksheetId && originalFormData && userId)}
+          canRegenerate={!!(worksheetId && originalFormData && userId)}
           isRegenerating={isRegenerating}
           onRegenerateClick={handleRegenerateClick}
         />
