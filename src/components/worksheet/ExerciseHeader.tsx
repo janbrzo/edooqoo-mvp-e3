@@ -63,13 +63,14 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
         {canRegenerate && (
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={onRegenerateClick}
             disabled={isRegenerating}
-            className="text-white border-white/30 hover:bg-white/10 h-8 px-2"
+            className="text-yellow-300 hover:bg-white/20 hover:text-yellow-200 h-8 px-2 gap-1 transition-colors"
           >
             <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+            <span className="text-xs">Regenerate</span>
           </Button>
         )}
       </div>
