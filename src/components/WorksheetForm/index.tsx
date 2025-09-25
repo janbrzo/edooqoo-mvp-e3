@@ -387,14 +387,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                     <div className="p-3">
                       {/* Card Header with Title and Mode Selection Tiles in Same Line */}
                       <div className="flex items-center justify-between">
-                         <h3 className="font-semibold text-gray-800">
-                           Exercise Types ({selectedExercises.length}/{lessonTime === '45min' ? 6 : 8})
-                           {selectedExercises.length < (lessonTime === '45min' ? 6 : 8) && (
-                             <span className="ml-2 text-xs text-orange-600 font-normal">
-                               Select {(lessonTime === '45min' ? 6 : 8) - selectedExercises.length} more exercises
-                             </span>
-                           )}
-                         </h3>
+                         <h3 className="font-semibold text-gray-800">Exercise Types (20)</h3>
                         
                         {/* Mode Selection Tiles - Always Visible, Beside Title */}
                         <div className="flex gap-1">

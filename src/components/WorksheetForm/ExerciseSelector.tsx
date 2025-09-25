@@ -156,8 +156,20 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
 
       {/* All Exercise Types - Always Visible */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Exercise Types</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-700">Exercise Types</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">
+              {selectedExercises.length}/{maxExercises}
+            </span>
+            {selectedExercises.length < maxExercises && (
+              <span className="text-xs text-worksheet-purple font-medium">
+                Select {maxExercises - selectedExercises.length} more exercises
+              </span>
+            )}
+          </div>
+        </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 {AVAILABLE_EXERCISES.map((exercise) => {
                   const isSelected = selectedExercises.includes(exercise.id);
                   const canSelect = selectionMode === 'manual' && (isSelected || selectedExercises.length < maxExercises) && !exercise.comingSoon;
@@ -196,8 +208,8 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
                          )}
                        </label>
                       
-                      {/* Tooltip with 2 second delay */}
-                      <div className="absolute left-1/2 bottom-full transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity delay-[2000ms] z-10 pointer-events-none max-w-xs text-center">
+                       {/* Tooltip with 2 second delay */}
+                       <div className="absolute left-1/2 bottom-full transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 delay-[2000ms] z-10 pointer-events-none max-w-xs text-center">
                         {exercise.description}
                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                       </div>
