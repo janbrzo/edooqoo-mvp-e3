@@ -7,6 +7,10 @@ import ExerciseFillInBlanks from "./ExerciseFillInBlanks";
 import ExerciseMultipleChoice from "./ExerciseMultipleChoice";
 import TeacherTipSection from "./TeacherTipSection";
 import ExerciseDialogue from "./ExerciseDialogue";
+import ExerciseRegenerateModal from "./ExerciseRegenerateModal";
+import { useExerciseRegeneration } from "@/hooks/useExerciseRegeneration";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, Loader2 } from "lucide-react";
 // New Phase 1 exercise components
 import ExerciseOddOneOut from "./ExerciseOddOneOut";
 import ExerciseSynonymsAntonyms from "./ExerciseSynonymsAntonyms";
@@ -72,6 +76,9 @@ interface ExerciseSectionProps {
   viewMode: "student" | "teacher";
   editableWorksheet: any;
   setEditableWorksheet: React.Dispatch<React.SetStateAction<any>>;
+  worksheetId?: string;
+  originalFormData?: any;
+  userId?: string;
 }
 
 const ExerciseSection: React.FC<ExerciseSectionProps> = ({
@@ -80,8 +87,44 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
   isEditing,
   viewMode,
   editableWorksheet,
-  setEditableWorksheet
+  setEditableWorksheet,
+  worksheetId,
+  originalFormData,
+  userId
 }) => {
+  const {
+    isModalOpen,
+    isLoading,
+    loadingExerciseIndex,
+    guidelines,
+    openModal,
+    closeModal,
+    setGuidelines,
+    regenerateExercise
+  } = useExerciseRegeneration();
+
+  const handleRegenerateClick = () => {
+    openModal(index);
+  };
+
+  const handleRegenerateConfirm = async () => {
+    if (!worksheetId || !originalFormData || !userId) {
+      console.error('Missing required data for regeneration');
+      return;
+    }
+
+    await regenerateExercise(
+      worksheetId,
+      index,
+      originalFormData,
+      exercise,
+      editableWorksheet,
+      setEditableWorksheet,
+      userId
+    );
+  };
+
+  const isRegenerating = isLoading && loadingExerciseIndex === index;
   // Exercise update handlers using the utility functions
   const handleExerciseChangeLocal = (field: string, value: string) => {
     handleExerciseChange(editableWorksheet, setEditableWorksheet, index, field, value);
@@ -116,16 +159,43 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
   };
 
   return (
-    <div className="mb-4 bg-white border rounded-lg overflow-hidden shadow-sm">
-      <ExerciseHeader
-        icon={exercise.icon}
-        title={exercise.title}
-        isEditing={isEditing}
-        time={exercise.time}
-        onTitleChange={val => handleExerciseChangeLocal('title', val)}
-      />
+    <>
+      <div className="mb-4 bg-white border rounded-lg overflow-hidden shadow-sm relative">
+        {/* Loading overlay for regeneration */}
+        {isRegenerating && (
+          <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10 rounded-lg">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-worksheet-purple" />
+              <p className="text-sm text-gray-600">Regenerating exercise...</p>
+            </div>
+          </div>
+        )}
 
-      <div className="p-5">
+        <ExerciseHeader
+          icon={exercise.icon}
+          title={exercise.title}
+          isEditing={isEditing}
+          time={exercise.time}
+          onTitleChange={val => handleExerciseChangeLocal('title', val)}
+        />
+
+        <div className="p-5">
+          {/* Regenerate button - only show for teachers in editing mode */}
+          {viewMode === 'teacher' && isEditing && worksheetId && originalFormData && userId && (
+            <div className="mb-4 flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRegenerateClick}
+                disabled={isLoading}
+                className="text-worksheet-purple border-worksheet-purple hover:bg-worksheet-purple/10"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Regenerate Exercise
+              </Button>
+            </div>
+          )}
         <ExerciseContent
           instructions={exercise.instructions}
           isEditing={isEditing}
@@ -453,8 +523,20 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
           onChange={handleTeacherTipChangeLocal}
           viewMode={viewMode}
         />
+        </div>
       </div>
-    </div>
+
+      {/* Regeneration Modal */}
+      <ExerciseRegenerateModal
+        isOpen={isModalOpen && loadingExerciseIndex === index}
+        onClose={closeModal}
+        onConfirm={handleRegenerateConfirm}
+        guidelines={guidelines}
+        onGuidelinesChange={setGuidelines}
+        exerciseType={exercise.type}
+        exerciseTitle={exercise.title}
+      />
+    </>
   );
 };
 

@@ -33,7 +33,7 @@ serve(async (req) => {
   const generationStartTime = Date.now();
 
   try {
-    const { prompt, formData, userId, studentId } = await req.json();
+    const { prompt, formData, userId, studentId, isRegeneration } = await req.json();
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || req.headers.get('x-real-ip') || 'unknown';
     
     // Input validation
@@ -96,25 +96,31 @@ serve(async (req) => {
     // Determine exercise count from lesson duration  
     let exerciseCount = 8; // Default for 60+ minutes
     
-    // Check if formData has lessonTime, otherwise parse from prompt
-    if (formData?.lessonTime) {
-      exerciseCount = formData.lessonTime === '45min' ? 6 : 8;
-      console.log(`🔧 [MAIN] Exercise count from formData: ${exerciseCount} (${formData.lessonTime})`);
+    // SPECIAL HANDLING FOR REGENERATION: Generate only 1 exercise
+    if (isRegeneration && formData?.regenerationMode) {
+      exerciseCount = 1;
+      console.log('🔄 [REGENERATION MODE] Setting exercise count to 1');
     } else {
-      // Fallback: Parse lesson duration from prompt
-      const durationMatch = sanitizedPrompt.match(/(\d+)\s*min/);
-      const lessonDuration = durationMatch ? parseInt(durationMatch[1]) : 60;
-      
-      console.log(`🔧 [MAIN] Lesson duration detected from prompt: ${lessonDuration} minutes`);
-      
-      // Set exercise count based on duration
-      if (lessonDuration <= 45) {
-        exerciseCount = 6;
+      // Check if formData has lessonTime, otherwise parse from prompt
+      if (formData?.lessonTime) {
+        exerciseCount = formData.lessonTime === '45min' ? 6 : 8;
+        console.log(`🔧 [MAIN] Exercise count from formData: ${exerciseCount} (${formData.lessonTime})`);
       } else {
-        exerciseCount = 8;
+        // Fallback: Parse lesson duration from prompt
+        const durationMatch = sanitizedPrompt.match(/(\d+)\s*min/);
+        const lessonDuration = durationMatch ? parseInt(durationMatch[1]) : 60;
+        
+        console.log(`🔧 [MAIN] Lesson duration detected from prompt: ${lessonDuration} minutes`);
+        
+        // Set exercise count based on duration
+        if (lessonDuration <= 45) {
+          exerciseCount = 6;
+        } else {
+          exerciseCount = 8;
+        }
+        
+        console.log(`🔧 [MAIN] Logic: ${lessonDuration} <= 45 ? 6 : 8 = ${exerciseCount}`);
       }
-      
-      console.log(`🔧 [MAIN] Logic: ${lessonDuration} <= 45 ? 6 : 8 = ${exerciseCount}`);
     }
     
     console.log(`🔧 [MAIN] Exercise count set to: ${exerciseCount} exercises`);
@@ -126,7 +132,11 @@ serve(async (req) => {
     console.log(`🔧 [MAIN] selectedExercises type:`, typeof selectedExercises);
     console.log(`🔧 [MAIN] selectedExercises isArray:`, Array.isArray(selectedExercises));
     
-    if (selectedExercises && selectedExercises.length > 0) {
+    // SPECIAL HANDLING FOR REGENERATION: Use target exercise type
+    if (isRegeneration && formData?.targetExerciseType) {
+      const targetExercise = [formData.targetExerciseType];
+      console.log(`🔄 [REGENERATION MODE] Using target exercise type:`, targetExercise);
+    } else if (selectedExercises && selectedExercises.length > 0) {
       console.log(`🔧 [MAIN] Using CUSTOM exercise selection (${selectedExercises.length} exercises):`, selectedExercises);
     } else {
       console.log(`🔧 [MAIN] Using DEFAULT exercise selection (no valid custom exercises provided)`);
@@ -134,14 +144,17 @@ serve(async (req) => {
     }
     
     // FIXED: Now correctly using calculated exerciseCount and selectedExercises
-    const exerciseTypes = getExerciseTypesForCount(exerciseCount, selectedExercises);
+    const effectiveExercises = isRegeneration && formData?.targetExerciseType 
+      ? [formData.targetExerciseType] 
+      : selectedExercises;
+    const exerciseTypes = getExerciseTypesForCount(exerciseCount, effectiveExercises);
     console.log(`🔧 [MAIN] Selected exercise types for ${exerciseCount} exercises:`, exerciseTypes);
     
     console.log(`Generating ${exerciseCount} exercises in prompt`);
     console.log('Composing system message with modular prompt structure...');
     
     // CREATE SYSTEM MESSAGE using modular prompt structure with correct exerciseCount and selectedExercises
-    const systemMessage = composeSystemMessage(hasGrammarFocus, grammarFocus, formData, exerciseCount, selectedExercises);
+    const systemMessage = composeSystemMessage(hasGrammarFocus, grammarFocus, formData, exerciseCount, effectiveExercises);
 
     // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({
@@ -176,7 +189,10 @@ serve(async (req) => {
       // Validate we got the expected number of exercises  
       if (worksheetData.exercises.length !== exerciseCount) {
         console.warn(`Expected ${exerciseCount} exercises but got ${worksheetData.exercises.length}`);
-        throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required ${exerciseCount}`);
+        // For regeneration mode, this is acceptable as we only want 1 exercise
+        if (!isRegeneration) {
+          throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required ${exerciseCount}`);
+        }
       }
       
       // Enhanced validation for exercise requirements (now with lenient mode)
@@ -231,62 +247,66 @@ serve(async (req) => {
     const generationEndTime = Date.now();
     const generationTimeSeconds = Math.round((generationEndTime - generationStartTime) / 1000);
 
-    // Save worksheet to database with FULL PROMPT (SYSTEM + USER)
-    try {
-      // CREATE FULL PROMPT - this is what should be saved to database
-      const fullPrompt = `SYSTEM MESSAGE:\n${systemMessage}\n\nUSER MESSAGE:\n${sanitizedPrompt}`;
-      
-      // ENHANCED LOGGING: Check what formData contains before sanitization
-      console.log(`🔧 [DATABASE] Original formData:`, formData);
-      console.log(`🔧 [DATABASE] formData type:`, typeof formData);
-      console.log(`🔧 [DATABASE] formData.selectedExercises:`, formData?.selectedExercises);
-      console.log(`🔧 [DATABASE] formData.selectedExercises type:`, typeof formData?.selectedExercises);
-      console.log(`🔧 [DATABASE] formData.selectedExercises length:`, formData?.selectedExercises?.length);
-      
-      // Sanitize form data
-      const sanitizedFormData = formData ? JSON.parse(JSON.stringify(formData)) : {};
-      
-      // ENHANCED LOGGING: Check what sanitizedFormData contains after sanitization  
-      console.log(`🔧 [DATABASE] Sanitized formData:`, sanitizedFormData);
-      console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises:`, sanitizedFormData?.selectedExercises);
-      console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises type:`, typeof sanitizedFormData?.selectedExercises);
-      console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises length:`, sanitizedFormData?.selectedExercises?.length);
-      
-      const { data: worksheet, error: worksheetError } = await supabase
-        .from('worksheets')
-        .insert({
-          prompt: fullPrompt, // NOW SAVING FULL PROMPT (SYSTEM + USER)
-          form_data: sanitizedFormData,
-          ai_response: jsonContent?.substring(0, 50000) || '', // Limit response size
-          html_content: JSON.stringify(worksheetData),
-          user_id: userId || null,
-          teacher_id: userId || null, // Add teacher_id for authenticated users
-          teacher_email: teacherEmail, // Add teacher_email
-          student_id: studentId || null, // Add student_id if provided
-          ip_address: ip,
-          status: 'created',
-          title: worksheetData.title?.substring(0, 255) || 'Generated Worksheet', // Limit title length
-          generation_time_seconds: generationTimeSeconds,
-          country: geoData.country || null,
-          city: geoData.city || null
-        })
-        .select('id, created_at, title');
+    // Save worksheet to database with FULL PROMPT (SYSTEM + USER) - SKIP FOR REGENERATION
+    if (!isRegeneration) {
+      try {
+        // CREATE FULL PROMPT - this is what should be saved to database
+        const fullPrompt = `SYSTEM MESSAGE:\n${systemMessage}\n\nUSER MESSAGE:\n${sanitizedPrompt}`;
+        
+        // ENHANCED LOGGING: Check what formData contains before sanitization
+        console.log(`🔧 [DATABASE] Original formData:`, formData);
+        console.log(`🔧 [DATABASE] formData type:`, typeof formData);
+        console.log(`🔧 [DATABASE] formData.selectedExercises:`, formData?.selectedExercises);
+        console.log(`🔧 [DATABASE] formData.selectedExercises type:`, typeof formData?.selectedExercises);
+        console.log(`🔧 [DATABASE] formData.selectedExercises length:`, formData?.selectedExercises?.length);
+        
+        // Sanitize form data
+        const sanitizedFormData = formData ? JSON.parse(JSON.stringify(formData)) : {};
+        
+        // ENHANCED LOGGING: Check what sanitizedFormData contains after sanitization  
+        console.log(`🔧 [DATABASE] Sanitized formData:`, sanitizedFormData);
+        console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises:`, sanitizedFormData?.selectedExercises);
+        console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises type:`, typeof sanitizedFormData?.selectedExercises);
+        console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises length:`, sanitizedFormData?.selectedExercises?.length);
+        
+        const { data: worksheet, error: worksheetError } = await supabase
+          .from('worksheets')
+          .insert({
+            prompt: fullPrompt, // NOW SAVING FULL PROMPT (SYSTEM + USER)
+            form_data: sanitizedFormData,
+            ai_response: jsonContent?.substring(0, 50000) || '', // Limit response size
+            html_content: JSON.stringify(worksheetData),
+            user_id: userId || null,
+            teacher_id: userId || null, // Add teacher_id for authenticated users
+            teacher_email: teacherEmail, // Add teacher_email
+            student_id: studentId || null, // Add student_id if provided
+            ip_address: ip,
+            status: 'created',
+            title: worksheetData.title?.substring(0, 255) || 'Generated Worksheet', // Limit title length
+            generation_time_seconds: generationTimeSeconds,
+            country: geoData.country || null,
+            city: geoData.city || null
+          })
+          .select('id, created_at, title');
 
-      if (worksheetError) {
-        console.error('Error saving worksheet to database:', worksheetError);
-      }
+        if (worksheetError) {
+          console.error('Error saving worksheet to database:', worksheetError);
+        }
 
-      // Track generation event if we have a worksheet ID
-      if (worksheet && worksheet.length > 0 && worksheet[0].id) {
-        const worksheetId = worksheet[0].id;
-        worksheetData.id = worksheetId;
-        console.log('Worksheet generated and saved successfully with ID:', worksheetId);
-        console.log(`Generation time: ${generationTimeSeconds} seconds`);
-        console.log(`Geo data: ${geoData.country || 'unknown'}, ${geoData.city || 'unknown'}`);
-        console.log(`Teacher email saved: ${teacherEmail || 'no email'}`);
+        // Track generation event if we have a worksheet ID
+        if (worksheet && worksheet.length > 0 && worksheet[0].id) {
+          const worksheetId = worksheet[0].id;
+          worksheetData.id = worksheetId;
+          console.log('Worksheet generated and saved successfully with ID:', worksheetId);
+          console.log(`Generation time: ${generationTimeSeconds} seconds`);
+          console.log(`Geo data: ${geoData.country || 'unknown'}, ${geoData.city || 'unknown'}`);
+          console.log(`Teacher email saved: ${teacherEmail || 'no email'}`);
+        }
+      } catch (dbError) {
+        console.error('Database operation failed:', dbError);
       }
-    } catch (dbError) {
-      console.error('Database operation failed:', dbError);
+    } else {
+      console.log('🔄 [REGENERATION MODE] Skipping database save - returning exercise data only');
     }
 
     return new Response(JSON.stringify(worksheetData), {

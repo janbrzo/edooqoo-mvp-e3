@@ -18,6 +18,7 @@ interface WorksheetContentProps {
   onFeedbackSubmit?: (rating: number, feedback: string) => void;
   isDownloadUnlocked: boolean;
   inputParams?: any;
+  userId?: string;
 }
 
 export default function WorksheetContent({
@@ -28,7 +29,8 @@ export default function WorksheetContent({
   worksheetId,
   onFeedbackSubmit,
   isDownloadUnlocked,
-  inputParams
+  inputParams,
+  userId
 }: WorksheetContentProps) {
   // Check if worksheet has grammar rules
   const hasGrammar = Boolean(editableWorksheet?.grammar_rules);
@@ -155,6 +157,9 @@ export default function WorksheetContent({
             viewMode={viewMode}
             editableWorksheet={editableWorksheet}
             setEditableWorksheet={setEditableWorksheet}
+            worksheetId={worksheetId}
+            originalFormData={inputParams}
+            userId={userId}
           />
         </div>
       ))}

@@ -209,7 +209,10 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
                        </label>
                       
                        {/* Tooltip with 2 second delay */}
-                       <div className="absolute left-1/2 bottom-full transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 delay-[2000ms] z-10 pointer-events-none max-w-xs text-center">
+                       <div 
+                         className="absolute left-1/2 bottom-full transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-10 pointer-events-none max-w-xs text-center"
+                         style={{ transitionDelay: '2s' }}
+                       >
                         {exercise.description}
                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                       </div>
