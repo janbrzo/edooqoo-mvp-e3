@@ -1,7 +1,35 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Info, Clock, Database, Star, Edit, GraduationCap, BookOpen } from "lucide-react";
+import { Info, Clock, Database, Star, Edit, GraduationCap, BookOpen, FileText } from "lucide-react";
+
+// Exercise types mapping
+const EXERCISE_TYPES_MAP: Record<string, string> = {
+  'warmup': 'Warmup',
+  'vocabulary': 'Vocabulary',
+  'grammar': 'Grammar',
+  'reading': 'Reading',
+  'listening': 'Listening',
+  'speaking': 'Speaking',
+  'writing': 'Writing',
+  'gaptext': 'Gap Text',
+  'fillinblanks': 'Fill in Blanks',
+  'multiplechoice': 'Multiple Choice',
+  'matching': 'Matching',
+  'truefalse': 'True/False',
+  'wordorder': 'Word Order',
+  'dialogue': 'Dialogue',
+  'describe': 'Describe',
+  'answerquestions': 'Answer Questions',
+  'paraphrasing': 'Paraphrasing',
+  'sentencetransformation': 'Sentence Transformation',
+  'oddoneout': 'Odd One Out',
+  'synonymsantonyms': 'Synonyms & Antonyms',
+  'matchinghalves': 'Matching Halves',
+  'completeword': 'Complete Word',
+  'categorize': 'Categorize',
+  'negativeprefixes': 'Negative Prefixes'
+};
 
 interface InputParamsCardProps {
   inputParams: {
@@ -12,9 +40,10 @@ interface InputParamsCardProps {
     teachingPreferences?: string;
     additionalInformation?: string;
   };
+  selectedExercises?: string[];
 }
 
-const InputParamsCard = ({ inputParams }: InputParamsCardProps) => (
+const InputParamsCard = ({ inputParams, selectedExercises }: InputParamsCardProps) => (
   <Card className="mb-6">
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
@@ -90,6 +119,32 @@ const InputParamsCard = ({ inputParams }: InputParamsCardProps) => (
             <div>
               <p className="text-sm text-gray-500">Additional Information</p>
               <p className="font-medium text-sm">{inputParams.additionalInformation}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Selected Exercise Types */}
+        {selectedExercises && selectedExercises.length > 0 && (
+          <div className="flex items-start gap-3 col-span-1 md:col-span-3">
+            <div className="bg-worksheet-purpleLight rounded-full p-2">
+              <FileText className="h-4 w-4 text-worksheet-purple" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-gray-500">Selected Exercise Types</p>
+              <div className="font-medium text-sm">
+                {selectedExercises.map((exerciseId, index) => {
+                  const exerciseName = EXERCISE_TYPES_MAP[exerciseId] || exerciseId;
+                  const isLast = index === selectedExercises.length - 1;
+                  const needsNewLine = (index + 1) % 8 === 0 && !isLast;
+                  
+                  return (
+                    <span key={exerciseId}>
+                      {exerciseName}
+                      {!isLast && (needsNewLine ? <br /> : ', ')}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

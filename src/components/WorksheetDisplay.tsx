@@ -261,7 +261,10 @@ export default function WorksheetDisplay({
             worksheetId={worksheetId}
             onStudentChange={onStudentChange}
           />
-          <InputParamsCard inputParams={inputParams} />
+          <InputParamsCard 
+            inputParams={inputParams} 
+            selectedExercises={inputParams.selectedExercises}
+          />
           <WorksheetToolbar
             viewMode={viewMode}
             setViewMode={setViewMode}

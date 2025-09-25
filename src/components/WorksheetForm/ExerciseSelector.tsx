@@ -138,18 +138,18 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Media Enhanced</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
           {MEDIA_ENHANCED_OPTIONS.map((media) => (
-            <button
-              key={media.id}
-              type="button"
-              disabled
-              className="p-3 rounded-lg border-2 border-gray-200 bg-gray-100 text-left opacity-60 cursor-not-allowed"
-            >
-              <div className="flex items-center space-x-2 mb-1">
-                <span className="text-lg">{media.icon}</span>
-                <span className="font-medium text-gray-500">{media.label}</span>
-                <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
-              </div>
-            </button>
+             <button
+               key={media.id}
+               type="button"
+               disabled
+               className="p-2 rounded-lg border-2 border-gray-200 bg-gray-100 text-left opacity-60 cursor-not-allowed"
+             >
+               <div className="flex items-center space-x-2 mb-1">
+                 <span className="text-lg">{media.icon}</span>
+                 <span className="font-medium text-xs text-gray-500">{media.label}</span>
+                 <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
+               </div>
+             </button>
           ))}
         </div>
       </div>
@@ -164,18 +164,18 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
                   const isDisabled = selectionMode !== 'manual' || exercise.comingSoon;
                   
                   return (
-                    <div 
-                      key={exercise.id} 
-                      className={`relative group flex items-center space-x-3 p-3 rounded-lg border transition-colors ${
-                        exercise.comingSoon
-                          ? 'bg-gray-100 border-gray-200 opacity-60'
-                          : isSelected 
-                            ? 'bg-worksheet-purpleLight border-worksheet-purple' 
-                            : canSelect 
-                              ? 'bg-gray-50 border-gray-200 hover:bg-gray-100' 
-                              : 'bg-gray-100 border-gray-200 opacity-50'
-                      }`}
-                    >
+                     <div 
+                       key={exercise.id} 
+                       className={`relative group flex items-center space-x-2 p-2 rounded-lg border transition-colors ${
+                         exercise.comingSoon
+                           ? 'bg-gray-100 border-gray-200 opacity-60'
+                           : isSelected 
+                             ? 'bg-worksheet-purpleLight border-worksheet-purple' 
+                             : canSelect 
+                               ? 'bg-gray-50 border-gray-200 hover:bg-gray-100' 
+                               : 'bg-gray-100 border-gray-200 opacity-50'
+                       }`}
+                     >
                       <Checkbox
                         id={exercise.id}
                         checked={isSelected}
@@ -183,21 +183,21 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
                         disabled={isDisabled}
                         className="data-[state=checked]:bg-worksheet-purple data-[state=checked]:border-worksheet-purple"
                       />
-                      <label 
-                        htmlFor={exercise.id} 
-                        className={`flex items-center space-x-2 text-sm font-medium cursor-pointer ${
-                          exercise.comingSoon ? 'text-gray-400' : canSelect ? 'text-gray-700' : 'text-gray-400'
-                        }`}
-                      >
-                        <span className="text-lg">{exercise.icon}</span>
-                        <span>{exercise.label}</span>
-                        {exercise.comingSoon && (
-                          <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
-                        )}
-                      </label>
+                       <label 
+                         htmlFor={exercise.id} 
+                         className={`flex items-center space-x-2 text-xs font-medium cursor-pointer ${
+                           exercise.comingSoon ? 'text-gray-400' : canSelect ? 'text-gray-700' : 'text-gray-400'
+                         }`}
+                       >
+                         <span className="text-lg">{exercise.icon}</span>
+                         <span>{exercise.label}</span>
+                         {exercise.comingSoon && (
+                           <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
+                         )}
+                       </label>
                       
-                      {/* Tooltip */}
-                      <div className="absolute left-1/2 bottom-full transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none max-w-xs text-center">
+                      {/* Tooltip with 2 second delay */}
+                      <div className="absolute left-1/2 bottom-full transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity delay-[2000ms] z-10 pointer-events-none max-w-xs text-center">
                         {exercise.description}
                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                       </div>
