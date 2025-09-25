@@ -177,25 +177,12 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
           isEditing={isEditing}
           time={exercise.time}
           onTitleChange={val => handleExerciseChangeLocal('title', val)}
+          canRegenerate={!!(viewMode === 'teacher' && isEditing && worksheetId && originalFormData && userId)}
+          isRegenerating={isRegenerating}
+          onRegenerateClick={handleRegenerateClick}
         />
 
         <div className="p-5">
-          {/* Regenerate button - only show for teachers in editing mode */}
-          {viewMode === 'teacher' && isEditing && worksheetId && originalFormData && userId && (
-            <div className="mb-4 flex justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleRegenerateClick}
-                disabled={isLoading}
-                className="text-worksheet-purple border-worksheet-purple hover:bg-worksheet-purple/10"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Regenerate Exercise
-              </Button>
-            </div>
-          )}
         <ExerciseContent
           instructions={exercise.instructions}
           isEditing={isEditing}

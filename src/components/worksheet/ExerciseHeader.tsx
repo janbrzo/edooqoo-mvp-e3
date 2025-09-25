@@ -1,6 +1,7 @@
 
 import React from "react";
-import { Eye, Database, Pencil, Star, User, Lightbulb, Clock } from "lucide-react";
+import { Eye, Database, Pencil, Star, User, Lightbulb, Clock, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ExerciseHeaderProps {
   icon: string;
@@ -8,6 +9,10 @@ interface ExerciseHeaderProps {
   isEditing: boolean;
   time: number;
   onTitleChange: (value: string) => void;
+  // Regeneration props
+  canRegenerate?: boolean;
+  isRegenerating?: boolean;
+  onRegenerateClick?: () => void;
 }
 
 const getIconComponent = (iconName: string) => {
@@ -34,23 +39,40 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
   title,
   isEditing,
   time,
-  onTitleChange
+  onTitleChange,
+  canRegenerate = false,
+  isRegenerating = false,
+  onRegenerateClick
 }) => (
   <div className="bg-worksheet-purple text-white p-2 flex justify-between items-center exercise-header">
     <div className="flex items-center">
       <div className="p-2 bg-white/20 rounded-full mr-3">
         {getIconComponent(icon)}
       </div>
-      <h3 className="text-lg font-semibold">
-        {isEditing ? (
-          <input
-            type="text"
-            value={title}
-            onChange={e => onTitleChange(e.target.value)}
-            className="bg-transparent border-b border-white/30 text-white w-full p-1"
-          />
-        ) : title}
-      </h3>
+      <div className="flex items-center gap-2">
+        <h3 className="text-lg font-semibold">
+          {isEditing ? (
+            <input
+              type="text"
+              value={title}
+              onChange={e => onTitleChange(e.target.value)}
+              className="bg-transparent border-b border-white/30 text-white w-full p-1"
+            />
+          ) : title}
+        </h3>
+        {canRegenerate && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onRegenerateClick}
+            disabled={isRegenerating}
+            className="text-white border-white/30 hover:bg-white/10 h-8 px-2"
+          >
+            <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+          </Button>
+        )}
+      </div>
     </div>
     <div className="flex items-center bg-white/20 px-3 py-1 rounded-md">
       <Clock className="h-4 w-4 mr-1" />
