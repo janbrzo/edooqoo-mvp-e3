@@ -30,7 +30,6 @@ export const useExerciseRegeneration = () => {
     setState(prev => ({
       ...prev,
       isModalOpen: false,
-      loadingExerciseIndex: null,
       guidelines: ''
     }));
   };
@@ -95,8 +94,7 @@ export const useExerciseRegeneration = () => {
       setState(prev => ({ 
         ...prev, 
         isLoading: false,
-        loadingExerciseIndex: null,
-        guidelines: ''
+        loadingExerciseIndex: null
       }));
     }
   };

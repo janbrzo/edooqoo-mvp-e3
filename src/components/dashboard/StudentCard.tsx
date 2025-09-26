@@ -66,35 +66,7 @@ export const StudentCard = ({ student, onViewHistory, onOpenWorksheet, onDeleteS
               </CardTitle>
             </Link>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{student.english_level}</Badge>
-            {onDeleteStudent && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Student</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete "{student.name}"? This action will hide the student from your list but preserve all associated worksheets.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={() => onDeleteStudent(student.id)}
-                      className="bg-red-500 hover:bg-red-600"
-                    >
-                      Delete Student
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
+          <Badge variant="secondary">{student.english_level}</Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-1 pt-1 pb-3">

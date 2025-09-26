@@ -9,14 +9,25 @@ import { useWorksheetHistory } from '@/hooks/useWorksheetHistory';
 import { StudentEditDialog } from '@/components/StudentEditDialog';
 import { DeleteWorksheetButton } from '@/components/DeleteWorksheetButton';
 import { StudentSelector } from '@/components/StudentSelector';
-import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { deepFixTextObjects } from '@/utils/textObjectFixer';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const StudentPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { students, updateStudent } = useStudents();
+  const { students, updateStudent, deleteStudent } = useStudents();
   const { worksheets, loading, deleteWorksheet, refetch: refetchWorksheets } = useWorksheetHistory(id || '');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
@@ -82,6 +93,17 @@ const StudentPage = () => {
     return goalMap[goal] || goal;
   };
 
+  const handleDeleteStudent = async () => {
+    try {
+      const result = await deleteStudent(student.id);
+      if (result) {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error deleting student:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
       <div className="max-w-6xl mx-auto">
@@ -117,13 +139,39 @@ const StudentPage = () => {
                     <User className="h-5 w-5 mr-2" />
                     Student Details
                   </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsEditDialogOpen(true)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditDialogOpen(true)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{student.name}"? This action will hide the student from your list but preserve all associated worksheets. You will be redirected to the Dashboard.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={handleDeleteStudent}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            Delete Student
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">

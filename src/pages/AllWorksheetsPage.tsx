@@ -152,8 +152,23 @@ const AllWorksheetsPage = () => {
   };
 
   const handleWorksheetOpen = (worksheet: WorksheetHistoryItem) => {
-    const studentId = worksheet.student_id;
-    navigate(`/student/${studentId || 'unassigned'}`);
+    try {
+      // Parse the AI response to get the worksheet data
+      const worksheetData = JSON.parse(worksheet.ai_response);
+      
+      // Store worksheet data in sessionStorage for restoration
+      const restoredWorksheet = {
+        ...worksheet,
+        ai_response: JSON.stringify(worksheetData)
+      };
+      
+      sessionStorage.setItem('restoredWorksheet', JSON.stringify(restoredWorksheet));
+      
+      // Navigate to the main worksheet view
+      navigate('/');
+    } catch (error) {
+      console.error('Error opening worksheet:', error);
+    }
   };
 
   if (authLoading || loading) {
