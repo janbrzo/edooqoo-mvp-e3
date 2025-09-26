@@ -34,40 +34,40 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
   const timeMap = {
     '45min': {
       withGrammar: { // 45min total: 5 warmup + 10 grammar + 30 exercises = 45min
-        'reading': 7,
-        'multiple-choice': 5,
+        'reading': 6,
+        'multiple-choice': 4,
         'fill-in-blanks': 4,
+        'matching': 4,
+        'dialogue': 5,
+        'discussion': 2, // Fixed: minimum 2 minutes
+        'error-correction': 2, // Fixed: minimum 2 minutes
+        'word-formation': 3,
+        'word-order': 3,
+        'true-false': 2,
+        // New Phase 1 exercises
+        'odd-one-out': 3,
+        'synonyms-antonyms': 4,
+        'sentence-transformation': 5,
+        'gap-text': 3,
+        'negative-prefixes': 2
+      },
+      withoutGrammar: { // 45min total: 5 warmup + 0 grammar + 40 exercises = 45min
+        'reading': 8,
+        'multiple-choice': 6,
+        'fill-in-blanks': 5,
         'matching': 5,
-        'dialogue': 6,
-        'discussion': 0, // Obcięte w 45min
-        'error-correction': 0, // Obcięte w 45min
+        'dialogue': 7,
+        'discussion': 3, // Fixed: minimum 3 minutes
+        'error-correction': 3, // Fixed: minimum 3 minutes
         'word-formation': 4,
         'word-order': 4,
         'true-false': 3,
         // New Phase 1 exercises
         'odd-one-out': 4,
         'synonyms-antonyms': 5,
-        'sentence-transformation': 6,
+        'sentence-transformation': 7,
         'gap-text': 4,
         'negative-prefixes': 3
-      },
-      withoutGrammar: { // 45min total: 5 warmup + 0 grammar + 40 exercises = 45min
-        'reading': 9,
-        'multiple-choice': 7,
-        'fill-in-blanks': 5,
-        'matching': 6,
-        'dialogue': 8,
-        'discussion': 0, // Obcięte w 45min
-        'error-correction': 0, // Obcięte w 45min
-        'word-formation': 5,
-        'word-order': 5,
-        'true-false': 5,
-        // New Phase 1 exercises
-        'odd-one-out': 5,
-        'synonyms-antonyms': 6,
-        'sentence-transformation': 8,
-        'gap-text': 5,
-        'negative-prefixes': 4
       }
     },
     '60min': {
@@ -77,8 +77,8 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'fill-in-blanks': 4,
         'matching': 5,
         'dialogue': 6,
-        'discussion': 6,
-        'error-correction': 4,
+        'discussion': 5,
+        'error-correction': 3,
         'word-formation': 4,
         'word-order': 4,
         'true-false': 3,
@@ -90,19 +90,19 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'negative-prefixes': 3
       },
       withoutGrammar: { // 60min total: 5 warmup + 0 grammar + 55 exercises = 60min
-        'reading': 9,
+        'reading': 10,
         'multiple-choice': 7,
-        'fill-in-blanks': 5,
+        'fill-in-blanks': 6,
         'matching': 6,
         'dialogue': 8,
-        'discussion': 9,
-        'error-correction': 6,
+        'discussion': 8,
+        'error-correction': 5,
         'word-formation': 6,
         'word-order': 6,
-        'true-false': 5,
+        'true-false': 4,
         // New Phase 1 exercises
         'odd-one-out': 5,
-        'synonyms-antonyms': 6,
+        'synonyms-antonyms': 7,
         'sentence-transformation': 8,
         'gap-text': 5,
         'negative-prefixes': 4
@@ -119,13 +119,13 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
     console.warn(`🔧 No lesson config found for "${normalizedLessonTime}", falling back to 45min`);
     const fallbackConfig = timeMap['45min'];
     const grammarConfig = hasGrammar ? fallbackConfig.withGrammar : fallbackConfig.withoutGrammar;
-    const result = grammarConfig[exerciseType as keyof typeof grammarConfig] || 0;
+    const result = grammarConfig[exerciseType as keyof typeof grammarConfig] || 2; // Fallback: minimum 2 minutes
     console.log(`🔧 Fallback result for ${exerciseType}: ${result} minutes`);
     return result;
   }
   
   const grammarConfig = hasGrammar ? lessonConfig.withGrammar : lessonConfig.withoutGrammar;
-  const result = grammarConfig[exerciseType as keyof typeof grammarConfig] || 0;
+  const result = grammarConfig[exerciseType as keyof typeof grammarConfig] || 2; // Fallback: minimum 2 minutes
   
   console.log(`🔧 Found time for ${exerciseType} in ${normalizedLessonTime} ${hasGrammar ? 'with' : 'without'} grammar: ${result} minutes`);
   
