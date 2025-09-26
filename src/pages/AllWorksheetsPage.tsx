@@ -50,7 +50,7 @@ const AllWorksheetsPage = () => {
 
   // State for filtering and sorting
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState<string>('');
+  const [selectedStudent, setSelectedStudent] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'student' | 'rating'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedWorksheets, setSelectedWorksheets] = useState<string[]>([]);
@@ -89,7 +89,9 @@ const AllWorksheetsPage = () => {
         formatWorksheetTitle(worksheet).toLowerCase().includes(searchQuery.toLowerCase()) ||
         getStudentName(worksheet.student_id).toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesStudent = selectedStudent === '' || worksheet.student_id === selectedStudent;
+      const matchesStudent = selectedStudent === 'all' || 
+        (selectedStudent === 'unassigned' && !worksheet.student_id) ||
+        worksheet.student_id === selectedStudent;
       
       return matchesSearch && matchesStudent;
     })
@@ -235,7 +237,7 @@ const AllWorksheetsPage = () => {
                   <SelectValue placeholder="All Students" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Students</SelectItem>
+                  <SelectItem value="all">All Students</SelectItem>
                   {students.map(student => (
                     <SelectItem key={student.id} value={student.id}>
                       {student.name}
