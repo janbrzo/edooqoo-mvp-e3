@@ -32,7 +32,7 @@ import { DeleteWorksheetButton } from "@/components/DeleteWorksheetButton";
 const Dashboard = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
   const { tokenLeft, profile } = useTokenSystem(user?.id);
-  const { students, loading: studentsLoading, refetch: refetchStudents } = useStudents();
+  const { students, loading: studentsLoading, refetch: refetchStudents, deleteStudent } = useStudents();
   const { worksheets, loading: historyLoading, refetch: refetchWorksheets } = useWorksheetHistory();
   const { thisMonthCount, loading: statsLoading } = useWorksheetStats();
   const { profile: userProfile } = useProfile();
@@ -232,6 +232,7 @@ const Dashboard = () => {
                       key={student.id} 
                       student={student}
                       onOpenWorksheet={handleWorksheetOpen}
+                      onDeleteStudent={deleteStudent}
                     />
                   ))}
                 </div>
@@ -247,14 +248,25 @@ const Dashboard = () => {
                   <FileText className="h-5 w-5" />
                   Recent Worksheets
                 </CardTitle>
-                <Button 
-                  size="sm" 
-                  onClick={handleGenerateWorksheet}
-                  className="gap-1"
-                >
-                  <Plus className="h-4 w-4" />
-                  Generate
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    asChild
+                  >
+                    <Link to="/worksheets">
+                      View All
+                    </Link>
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    onClick={handleGenerateWorksheet}
+                    className="gap-1"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Generate
+                  </Button>
+                </div>
               </div>
               <CardDescription>
                 Your recently generated worksheets

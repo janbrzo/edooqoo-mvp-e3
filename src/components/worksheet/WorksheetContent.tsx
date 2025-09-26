@@ -8,6 +8,8 @@ import GrammarRules from "./GrammarRules";
 import DemoWatermark from "./DemoWatermark";
 import WarmupSection from "./WarmupSection";
 import { useWorksheetTimes } from "@/hooks/useWorksheetTimes";
+import { useExerciseRegeneration } from "@/hooks/useExerciseRegeneration";
+import { Loader2 } from "lucide-react";
 
 interface WorksheetContentProps {
   editableWorksheet: any;
@@ -36,6 +38,9 @@ export default function WorksheetContent({
   const hasGrammar = Boolean(editableWorksheet?.grammar_rules);
   const worksheetTimes = useWorksheetTimes(inputParams?.lessonTime, hasGrammar);
   
+  // Get regeneration status for global notification
+  const { isLoading, loadingExerciseIndex } = useExerciseRegeneration();
+  
   // CRITICAL FIX: Add safety check to prevent rendering with null worksheet
   if (!editableWorksheet) {
     console.log('WorksheetContent: editableWorksheet is null, showing loading...');
@@ -49,6 +54,13 @@ export default function WorksheetContent({
   console.log('WorksheetContent: Rendering with editableWorksheet:', editableWorksheet);
   console.log('WorksheetContent: Calculated times:', worksheetTimes);
   console.log('WorksheetContent: Has grammar:', hasGrammar);
+
+  const getExerciseName = (index: number) => {
+    if (editableWorksheet?.exercises?.[index]) {
+      return editableWorksheet.exercises[index].title || `Exercise ${index + 1}`;
+    }
+    return `Exercise ${index + 1}`;
+  };
 
   return (
     <div className="worksheet-content mb-8" id="worksheet-content">
@@ -183,6 +195,16 @@ export default function WorksheetContent({
       />
       
       <TeacherNotes />
+      
+      {/* Global regeneration notification */}
+      {isLoading && loadingExerciseIndex !== null && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-worksheet-purple text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm font-medium">
+            {getExerciseName(loadingExerciseIndex)} is being regenerated...
+          </span>
+        </div>
+      )}
     </div>
   );
 }

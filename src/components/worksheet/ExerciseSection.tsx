@@ -161,16 +161,6 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
   return (
     <>
       <div className="mb-4 bg-white border rounded-lg overflow-hidden shadow-sm relative">
-        {/* Loading overlay for regeneration */}
-        {isRegenerating && (
-          <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10 rounded-lg">
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-8 w-8 animate-spin text-worksheet-purple" />
-              <p className="text-sm text-gray-600">Regenerating exercise...</p>
-            </div>
-          </div>
-        )}
-
         <ExerciseHeader
           icon={exercise.icon}
           title={exercise.title}

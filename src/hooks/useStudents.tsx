@@ -24,6 +24,7 @@ export const useStudents = () => {
         .from('students')
         .select('*')
         .eq('teacher_id', user.id)
+        .is('deleted_at', null) // Only fetch non-deleted students
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
@@ -144,6 +145,7 @@ export const useStudents = () => {
           teacher_email: userEmail // Ensure teacher_email is always up to date
         })
         .eq('id', studentId)
+        .is('deleted_at', null) // Only update non-deleted students
         .select()
         .single();
 
@@ -164,6 +166,40 @@ export const useStudents = () => {
       throw error;
     }
   }, [fetchStudents]);
+
+  const deleteStudent = async (studentId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase.rpc('soft_delete_student', {
+        p_student_id: studentId,
+        p_teacher_id: user.id
+      });
+
+      if (error) throw error;
+
+      // Remove from local state
+      setStudents(prevStudents => 
+        prevStudents.filter(student => student.id !== studentId)
+      );
+
+      toast({
+        title: "Success",
+        description: "Student deleted successfully",
+      });
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error deleting student:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+      return { success: false, error: error.message };
+    }
+  };
 
   useEffect(() => {
     fetchStudents();
@@ -192,6 +228,7 @@ export const useStudents = () => {
     addStudent,
     updateStudent,
     updateStudentActivity,
+    deleteStudent,
     refetch: fetchStudents
   };
 };

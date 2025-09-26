@@ -5,9 +5,20 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tables } from '@/integrations/supabase/types';
-import { User, BookOpen, ChevronDown, ChevronRight, FileText, Calendar, ExternalLink } from 'lucide-react';
+import { User, BookOpen, ChevronDown, ChevronRight, FileText, Calendar, ExternalLink, Trash2 } from 'lucide-react';
 import { useWorksheetHistory } from '@/hooks/useWorksheetHistory';
 import { DeleteWorksheetButton } from '@/components/DeleteWorksheetButton';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 
@@ -17,9 +28,10 @@ interface StudentCardProps {
   student: Student;
   onViewHistory?: (studentId: string) => void;
   onOpenWorksheet?: (worksheet: any) => void;
+  onDeleteStudent?: (studentId: string) => void;
 }
 
-export const StudentCard = ({ student, onViewHistory, onOpenWorksheet }: StudentCardProps) => {
+export const StudentCard = ({ student, onViewHistory, onOpenWorksheet, onDeleteStudent }: StudentCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { worksheets, loading, getRecentWorksheets, deleteWorksheet } = useWorksheetHistory(student.id);
   const recentWorksheets = getRecentWorksheets(3);
@@ -54,7 +66,35 @@ export const StudentCard = ({ student, onViewHistory, onOpenWorksheet }: Student
               </CardTitle>
             </Link>
           </div>
-          <Badge variant="secondary">{student.english_level}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{student.english_level}</Badge>
+            {onDeleteStudent && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{student.name}"? This action will hide the student from your list but preserve all associated worksheets.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => onDeleteStudent(student.id)}
+                      className="bg-red-500 hover:bg-red-600"
+                    >
+                      Delete Student
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-1 pt-1 pb-3">

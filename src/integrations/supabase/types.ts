@@ -227,6 +227,7 @@ export type Database = {
       students: {
         Row: {
           created_at: string
+          deleted_at: string | null
           english_level: string
           id: string
           main_goal: string
@@ -237,6 +238,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           english_level: string
           id?: string
           main_goal: string
@@ -247,6 +249,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           english_level?: string
           id?: string
           main_goal?: string
@@ -641,6 +644,10 @@ export type Database = {
       }
       should_show_onboarding: {
         Args: { user_id: string }
+        Returns: boolean
+      }
+      soft_delete_student: {
+        Args: { p_student_id: string; p_teacher_id: string }
         Returns: boolean
       }
       soft_delete_user_account: {
