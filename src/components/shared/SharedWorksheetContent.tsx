@@ -311,21 +311,44 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
               )}
 
               {exercise.type === 'word-order' && exercise.sentences && (
-                <ExerciseWordOrder
-                  sentences={exercise.sentences}
-                  isEditing={false}
-                  viewMode="student"
-                  onSentenceChange={() => {}} // No-op for shared view
-                />
+                <div className="space-y-3">
+                  {exercise.sentences.map((sentence: any, sIndex: number) => (
+                    <div key={sIndex} className="border-b pb-2">
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">{sIndex + 1}.</span>
+                        <div className="flex flex-wrap gap-2 flex-grow">
+                          {/* Handle both scrambled_words format and text format */}
+                          {(sentence?.scrambled_words 
+                            ? sentence.scrambled_words.split(' / ')
+                            : sentence?.text?.split(' ') || []
+                          ).map((word: string, wIndex: number) => (
+                            word.trim() && (
+                              <span key={wIndex} className="bg-blue-100 px-2 py-1 rounded-md text-sm border">
+                                {word.trim()}
+                              </span>
+                            )
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
 
               {exercise.type === 'negative-prefixes' && exercise.words && (
-                <ExerciseNegativePrefixes
-                  words={exercise.words}
-                  isEditing={false}
-                  viewMode="student"
-                  onWordChange={() => {}} // No-op for shared view
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {exercise.words.map((wordItem: any, wIndex: number) => (
+                    <div key={wIndex} className="border-b pb-1">
+                      <div className="flex flex-row items-start">
+                        <div className="flex-grow">
+                          <p className="leading-snug">
+                            {wIndex + 1}. {wordItem?.word || wordItem?.text || 'Missing word'} → ______
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
 
               {/* Other exercise types - use existing simple rendering */}

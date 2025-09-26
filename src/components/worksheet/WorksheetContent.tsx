@@ -294,13 +294,56 @@ export default function WorksheetContent({
         </div>
       )}
 
+      {/* Deleted exercises section - moved here and always visible */}
+      {deletedExercises.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-between hover:bg-red-100 text-red-700"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Deleted Exercises ({deletedExercises.length})</span>
+                </div>
+                <ChevronUp className="h-4 w-4 transition-transform [&[data-state=open]]:rotate-180" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4 space-y-3">
+              {deletedExercises.map((exercise: any, index: number) => {
+                const originalIndex = editableWorksheet.exercises.findIndex((ex: any) => ex === exercise);
+                return (
+                  <div key={originalIndex} className="bg-white border border-red-300 rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{exercise.title || `Exercise ${originalIndex + 1}`}</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Deleted on {new Date(exercise.deletedAt).toLocaleDateString()} at {new Date(exercise.deletedAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => restoreExercise(originalIndex)}
+                      variant="outline"
+                      size="sm"
+                      className="ml-4 border-green-300 text-green-700 hover:bg-green-50"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Restore
+                    </Button>
+                  </div>
+                );
+              })}
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      )}
+
       <WorksheetRating 
         worksheetId={worksheetId}
         onSubmitRating={onFeedbackSubmit} 
       />
       
-      {/* Deleted exercises section */}
-      {isEditing && deletedExercises.length > 0 && (
+      {/* Deleted exercises section - moved here and always visible */}
+      {deletedExercises.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <Collapsible>
             <CollapsibleTrigger asChild>
