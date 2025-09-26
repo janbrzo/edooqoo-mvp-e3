@@ -56,6 +56,10 @@ interface Exercise {
   expressions?: string[];
   expression_instruction?: string;
   teacher_tip: string;
+  // Soft delete support
+  deleted?: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
 }
 
 export interface Worksheet {
@@ -79,6 +83,11 @@ interface ExerciseSectionProps {
   worksheetId?: string;
   originalFormData?: any;
   userId?: string;
+  // Exercise management props
+  totalExercises?: number;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  onDeleteExercise?: () => void;
 }
 
 const ExerciseSection: React.FC<ExerciseSectionProps> = ({
@@ -90,7 +99,11 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
   setEditableWorksheet,
   worksheetId,
   originalFormData,
-  userId
+  userId,
+  totalExercises = 0,
+  onMoveUp,
+  onMoveDown,
+  onDeleteExercise
 }) => {
   const {
     isModalOpen,
@@ -170,6 +183,11 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
           canRegenerate={!!(worksheetId && originalFormData && userId)}
           isRegenerating={isRegenerating}
           onRegenerateClick={handleRegenerateClick}
+          canMoveUp={index > 0}
+          canMoveDown={index < totalExercises - 1}
+          onMoveUp={onMoveUp}
+          onMoveDown={onMoveDown}
+          onDelete={onDeleteExercise}
         />
 
         <div className="p-5">

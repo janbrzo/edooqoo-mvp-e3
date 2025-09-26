@@ -1,9 +1,9 @@
 
 # English Worksheet Generator - Technical Documentation
 
-## System Overview - ETAP 2
+## System Overview - ETAP 2+
 
-The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2, the application provides comprehensive account management, student organization, and subscription-based worksheet generation for English teachers.
+The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
 ## Architecture Stack
 
@@ -452,7 +452,94 @@ STRIPE_SECRET_KEY=your_stripe_secret_key
 
 ---
 
-**Current Version**: ETAP 2 - MVP Konta i Subskrypcje
-**Last Updated**: ETAP 2 Completion
-**Next Major Release**: ETAP 3 - Advanced Features
+## ✨ NEW: Advanced Exercise Management System
+
+### Overview
+Comprehensive exercise management system allowing teachers to customize worksheet structure in real-time with immediate database persistence.
+
+### Core Features
+
+#### Exercise Reordering
+```typescript
+// Move exercise up/down with immediate save
+const moveExerciseUp = (index: number) => {
+  if (index <= 0) return;
+  
+  const newExercises = [...editableWorksheet.exercises];
+  [newExercises[index - 1], newExercises[index]] = [newExercises[index], newExercises[index - 1]];
+  
+  const updatedWorksheet = { ...editableWorksheet, exercises: newExercises };
+  setEditableWorksheet(updatedWorksheet);
+  saveWorksheetChanges(updatedWorksheet);
+};
+```
+
+#### Soft Delete System
+```typescript
+interface Exercise {
+  type: string;
+  title: string;
+  // ... other fields
+  // Soft delete support
+  deleted?: boolean;
+  deletedAt?: string; 
+  deletedBy?: string;
+}
+
+// Soft delete with metadata
+const softDeleteExercise = (index: number) => {
+  const updatedExercises = [...editableWorksheet.exercises];
+  updatedExercises[index] = {
+    ...updatedExercises[index],
+    deleted: true,
+    deletedAt: new Date().toISOString(),
+    deletedBy: userId
+  };
+  // Immediate database save
+  saveWorksheetChanges(updatedWorksheet);
+};
+```
+
+### UI Components
+
+#### ExerciseHeader Enhancement
+- **Move Up/Down buttons**: ChevronUp/ChevronDown icons
+- **Delete button**: Trash2 icon with confirmation
+- **Smart disabling**: First/last exercise buttons disabled appropriately
+- **Visual feedback**: Hover states and transitions
+
+#### Deleted Exercises Section
+- **Collapsible UI**: Expandable section at bottom of worksheet
+- **Restore functionality**: One-click exercise restoration
+- **Metadata display**: Deletion timestamp and user info
+- **Visual distinction**: Red-themed styling for deleted items
+
+### Database Integration
+```typescript
+// Automatic saving on all operations
+const saveWorksheetChanges = async (updatedWorksheet: any) => {
+  if (!worksheetId || !userId) return;
+  
+  try {
+    await updateWorksheet(worksheetId, updatedWorksheet, userId);
+    console.log('✅ Worksheet saved successfully');
+  } catch (error) {
+    console.error('❌ Failed to save worksheet:', error);
+    toast.error('Failed to save changes');
+  }
+};
+```
+
+### User Experience
+- **Immediate feedback**: Toast notifications for all operations
+- **No data loss**: All changes saved instantly to database  
+- **Undo capability**: Deleted exercises can be restored
+- **Mode awareness**: Management buttons only visible in edit mode
+- **Responsive design**: Works on all device sizes
+
+---
+
+**Current Version**: ETAP 2+ - Exercise Management System  
+**Last Updated**: Exercise Management Implementation  
+**Next Major Release**: ETAP 3 - Advanced Features  
 **Maintenance Schedule**: Continuous deployment with weekly reviews

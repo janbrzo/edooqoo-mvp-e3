@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Eye, Database, Pencil, Star, User, Lightbulb, Clock, RefreshCw } from "lucide-react";
+import { Eye, Database, Pencil, Star, User, Lightbulb, Clock, RefreshCw, ChevronUp, ChevronDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ExerciseHeaderProps {
@@ -13,6 +13,12 @@ interface ExerciseHeaderProps {
   canRegenerate?: boolean;
   isRegenerating?: boolean;
   onRegenerateClick?: () => void;
+  // Exercise management props
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  onDelete?: () => void;
 }
 
 const getIconComponent = (iconName: string) => {
@@ -42,7 +48,12 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
   onTitleChange,
   canRegenerate = false,
   isRegenerating = false,
-  onRegenerateClick
+  onRegenerateClick,
+  canMoveUp = false,
+  canMoveDown = false,
+  onMoveUp,
+  onMoveDown,
+  onDelete
 }) => (
   <div className="bg-worksheet-purple text-white p-2 flex justify-between items-center exercise-header">
     <div className="flex items-center">
@@ -75,9 +86,54 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
         )}
       </div>
     </div>
-    <div className="flex items-center bg-white/20 px-3 py-1 rounded-md">
-      <Clock className="h-4 w-4 mr-1" />
-      <span className="text-sm">{time} min</span>
+    <div className="flex items-center gap-1">
+      {/* Exercise management buttons - only visible in editing mode */}
+      {isEditing && (
+        <>
+          {onMoveUp && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onMoveUp}
+              disabled={!canMoveUp}
+              className="text-white hover:bg-white/20 h-8 w-8 p-0 transition-colors"
+              title="Move up"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </Button>
+          )}
+          {onMoveDown && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onMoveDown}
+              disabled={!canMoveDown}
+              className="text-white hover:bg-white/20 h-8 w-8 p-0 transition-colors"
+              title="Move down"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onDelete}
+              className="text-red-300 hover:bg-red-500/20 hover:text-red-200 h-8 w-8 p-0 transition-colors"
+              title="Delete exercise"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </>
+      )}
+      <div className="flex items-center bg-white/20 px-3 py-1 rounded-md ml-2">
+        <Clock className="h-4 w-4 mr-1" />
+        <span className="text-sm">{time} min</span>
+      </div>
     </div>
   </div>
 );

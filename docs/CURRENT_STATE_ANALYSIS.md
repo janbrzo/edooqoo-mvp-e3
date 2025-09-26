@@ -1,11 +1,11 @@
 
-# Current State Analysis - MVP (Etap 1)
+# Current State Analysis - MVP+ (After Exercise Management Implementation)
 
 ## Przegląd Aplikacji
 
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
-**Status:** MVP (Minimum Viable Product) - Etap 1 ukończony  
+**Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
 
 ## Wygląd i Interface
 
@@ -56,6 +56,16 @@
   - Matching (dopasowywanie)
 - **Edytowalność:** Wszystkie teksty można edytować in-place
 
+### ✨ NOWE: Zaawansowane Zarządzanie Zadaniami
+- **Zmiana kolejności:** Przyciski ↑/↓ w nagłówku każdego zadania do przesuwania w górę/dół
+- **Soft Delete:** Przycisk kosza do bezpiecznego usuwania zadań z możliwością przywrócenia
+- **Sekcja usuniętych:** Rozwijana sekcja "Deleted Exercises" na dole strony
+- **Natychmiastowe zapisy:** Wszystkie zmiany są automatycznie zapisywane w bazie danych
+- **Inteligentne przyciski:** Strzałki wyłączane dla pierwszego/ostatniego elementu
+- **Visual feedback:** Toast notyfikacje o pomyślnych operacjach
+- **Przywracanie:** Każde usunięte zadanie można przywrócić jednym kliknięciem
+- **Widoczność w trybie edycji:** Wszystkie funkcje zarządzania dostępne tylko podczas edytowania
+
 ### System Płatności
 - **Darmowy podgląd:** Pełne przeglądanie worksheetów
 - **Płatne pobieranie:** $1 USD za nielimitowane pobieranie w sesji
@@ -83,6 +93,7 @@
 - `useAnonymousAuth`: Zarządzanie anonimowymi sesjami użytkowników
 - `useWorksheetState`: Stan worksheetów i ich zarządzanie
 - `useWorksheetGeneration`: Logika generowania worksheetów
+- `useExerciseRegeneration`: Regenerowanie pojedynczych zadań
 - `useIsMobile`: Detekcja urządzeń mobilnych
 
 ### Struktura Danych
@@ -94,6 +105,18 @@ interface FormData {
   teachingPreferences: string; // Grammar focus
   additionalInformation: string;
   englishLevel: "A1/A2" | "B1/B2" | "C1/C2";
+}
+
+interface Exercise {
+  type: string;
+  title: string;
+  icon: string;
+  time: number;
+  instructions: string;
+  // Soft delete support
+  deleted?: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
 }
 ```
 

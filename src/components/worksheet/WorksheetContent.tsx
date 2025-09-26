@@ -9,7 +9,11 @@ import DemoWatermark from "./DemoWatermark";
 import WarmupSection from "./WarmupSection";
 import { useWorksheetTimes } from "@/hooks/useWorksheetTimes";
 import { useExerciseRegeneration } from "@/hooks/useExerciseRegeneration";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronUp, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { updateWorksheet } from "@/services/worksheetService";
+import { toast } from "sonner";
 
 interface WorksheetContentProps {
   editableWorksheet: any;
@@ -61,6 +65,97 @@ export default function WorksheetContent({
     }
     return `Exercise ${index + 1}`;
   };
+
+  // Function to save worksheet changes to database
+  const saveWorksheetChanges = async (updatedWorksheet: any) => {
+    if (!worksheetId || !userId) {
+      console.log('Cannot save - missing worksheetId or userId');
+      return;
+    }
+    
+    try {
+      console.log('💾 Saving worksheet changes to database...');
+      await updateWorksheet(worksheetId, updatedWorksheet, userId);
+      console.log('✅ Worksheet saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save worksheet:', error);
+      toast.error('Failed to save changes');
+    }
+  };
+
+  // Move exercise up
+  const moveExerciseUp = (index: number) => {
+    if (index <= 0) return;
+    
+    const newExercises = [...editableWorksheet.exercises];
+    [newExercises[index - 1], newExercises[index]] = [newExercises[index], newExercises[index - 1]];
+    
+    const updatedWorksheet = {
+      ...editableWorksheet,
+      exercises: newExercises
+    };
+    
+    setEditableWorksheet(updatedWorksheet);
+    saveWorksheetChanges(updatedWorksheet);
+    toast.success('Exercise moved up');
+  };
+
+  // Move exercise down
+  const moveExerciseDown = (index: number) => {
+    if (index >= editableWorksheet.exercises.length - 1) return;
+    
+    const newExercises = [...editableWorksheet.exercises];
+    [newExercises[index], newExercises[index + 1]] = [newExercises[index + 1], newExercises[index]];
+    
+    const updatedWorksheet = {
+      ...editableWorksheet,
+      exercises: newExercises
+    };
+    
+    setEditableWorksheet(updatedWorksheet);
+    saveWorksheetChanges(updatedWorksheet);
+    toast.success('Exercise moved down');
+  };
+
+  // Soft delete exercise
+  const softDeleteExercise = (index: number) => {
+    const updatedExercises = [...editableWorksheet.exercises];
+    updatedExercises[index] = {
+      ...updatedExercises[index],
+      deleted: true,
+      deletedAt: new Date().toISOString(),
+      deletedBy: userId
+    };
+    
+    const updatedWorksheet = {
+      ...editableWorksheet,
+      exercises: updatedExercises
+    };
+    
+    setEditableWorksheet(updatedWorksheet);
+    saveWorksheetChanges(updatedWorksheet);
+    toast.success('Exercise deleted. You can restore it from the deleted section below.');
+  };
+
+  // Restore deleted exercise
+  const restoreExercise = (index: number) => {
+    const updatedExercises = [...editableWorksheet.exercises];
+    const { deleted, deletedAt, deletedBy, ...cleanExercise } = updatedExercises[index];
+    updatedExercises[index] = cleanExercise;
+    
+    const updatedWorksheet = {
+      ...editableWorksheet,
+      exercises: updatedExercises
+    };
+    
+    setEditableWorksheet(updatedWorksheet);
+    saveWorksheetChanges(updatedWorksheet);
+    toast.success('Exercise restored successfully');
+  };
+
+  // Filter active and deleted exercises
+  const activeExercises = editableWorksheet.exercises?.filter((ex: any) => !ex.deleted) || [];
+  const deletedExercises = editableWorksheet.exercises?.filter((ex: any) => ex.deleted) || [];
 
   return (
     <div className="worksheet-content mb-8" id="worksheet-content">
@@ -159,22 +254,32 @@ export default function WorksheetContent({
         </div>
       )}
 
-      {editableWorksheet.exercises && editableWorksheet.exercises.map((exercise: any, index: number) => (
-        <div key={index} className="relative">
-          {!isDownloadUnlocked && <DemoWatermark />}
-          <ExerciseSection
-            exercise={exercise}
-            index={index}
-            isEditing={isEditing}
-            viewMode={viewMode}
-            editableWorksheet={editableWorksheet}
-            setEditableWorksheet={setEditableWorksheet}
-            worksheetId={worksheetId}
-            originalFormData={inputParams}
-            userId={userId}
-          />
-        </div>
-      ))}
+      {/* Active exercises */}
+      {activeExercises.map((exercise: any, activeIndex: number) => {
+        // Find the original index in the full exercises array
+        const originalIndex = editableWorksheet.exercises.findIndex((ex: any) => ex === exercise);
+        
+        return (
+          <div key={originalIndex} className="relative">
+            {!isDownloadUnlocked && <DemoWatermark />}
+            <ExerciseSection
+              exercise={exercise}
+              index={originalIndex}
+              isEditing={isEditing}
+              viewMode={viewMode}
+              editableWorksheet={editableWorksheet}
+              setEditableWorksheet={setEditableWorksheet}
+              worksheetId={worksheetId}
+              originalFormData={inputParams}
+              userId={userId}
+              totalExercises={activeExercises.length}
+              onMoveUp={() => moveExerciseUp(originalIndex)}
+              onMoveDown={() => moveExerciseDown(originalIndex)}
+              onDeleteExercise={() => softDeleteExercise(originalIndex)}
+            />
+          </div>
+        );
+      })}
 
       {editableWorksheet.vocabulary_sheet && editableWorksheet.vocabulary_sheet.length > 0 && (
         <div className="relative">
@@ -194,6 +299,49 @@ export default function WorksheetContent({
         onSubmitRating={onFeedbackSubmit} 
       />
       
+      {/* Deleted exercises section */}
+      {isEditing && deletedExercises.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-between hover:bg-red-100 text-red-700"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Deleted Exercises ({deletedExercises.length})</span>
+                </div>
+                <ChevronUp className="h-4 w-4 transition-transform [&[data-state=open]]:rotate-180" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4 space-y-3">
+              {deletedExercises.map((exercise: any, index: number) => {
+                const originalIndex = editableWorksheet.exercises.findIndex((ex: any) => ex === exercise);
+                return (
+                  <div key={originalIndex} className="bg-white border border-red-300 rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{exercise.title || `Exercise ${originalIndex + 1}`}</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Deleted on {new Date(exercise.deletedAt).toLocaleDateString()} at {new Date(exercise.deletedAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => restoreExercise(originalIndex)}
+                      variant="outline"
+                      size="sm"
+                      className="ml-4 border-green-300 text-green-700 hover:bg-green-50"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Restore
+                    </Button>
+                  </div>
+                );
+              })}
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      )}
+
       <TeacherNotes />
       
       {/* Global regeneration notification */}

@@ -10,7 +10,8 @@ AI-powered tool that creates personalized English worksheets for teachers workin
 3. **Fill the form** - Enter lesson topic, student level, and goals
 4. **Generate** - AI creates a complete worksheet in 30-60 seconds
 5. **Review & Edit** - Switch between Student and Teacher views, make modifications
-6. **Download** - Export as HTML or PDF files
+6. **✨ NEW: Manage exercises** - Reorder with ↑/↓ buttons, delete/restore exercises
+7. **Download** - Export as HTML or PDF files
 
 ## Key Features
 - ✅ **Account required** - Sign up to start generating worksheets
@@ -21,6 +22,7 @@ AI-powered tool that creates personalized English worksheets for teachers workin
 - ✅ **Instant generation** - Ready in under a minute
 - ✅ **Professional quality** - Print-ready, offline-capable HTML files
 - ✅ **Fully editable** - Modify any content before downloading
+- ✅ **✨ Exercise management** - Reorder, delete, and restore exercises easily
 - ✅ **Auto-download unlock** - No payment required for registered users
 
 ## Account Plans
