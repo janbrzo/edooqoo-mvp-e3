@@ -87,48 +87,44 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
       </div>
     </div>
     <div className="flex items-center gap-1">
-      {/* Exercise management buttons - only visible in editing mode */}
-      {isEditing && (
-        <>
-          {onMoveUp && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onMoveUp}
-              disabled={!canMoveUp}
-              className="text-white hover:bg-white/20 h-8 w-8 p-0 transition-colors"
-              title="Move up"
-            >
-              <ChevronUp className="h-4 w-4" />
-            </Button>
-          )}
-          {onMoveDown && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onMoveDown}
-              disabled={!canMoveDown}
-              className="text-white hover:bg-white/20 h-8 w-8 p-0 transition-colors"
-              title="Move down"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onDelete}
-              className="text-red-300 hover:bg-red-500/20 hover:text-red-200 h-8 w-8 p-0 transition-colors"
-              title="Delete exercise"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </>
+      {/* Exercise management buttons - always visible */}
+      {onMoveUp && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onMoveUp}
+          disabled={!canMoveUp}
+          className="text-white hover:bg-white/20 h-8 w-8 p-0 transition-colors"
+          title="Move up"
+        >
+          <ChevronUp className="h-4 w-4" />
+        </Button>
+      )}
+      {onMoveDown && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onMoveDown}
+          disabled={!canMoveDown}
+          className="text-white hover:bg-white/20 h-8 w-8 p-0 transition-colors"
+          title="Move down"
+        >
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      )}
+      {onDelete && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onDelete}
+          className="text-red-300 hover:bg-red-500/20 hover:text-red-200 h-8 w-8 p-0 transition-colors"
+          title="Delete exercise"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       )}
       <div className="flex items-center bg-white/20 px-3 py-1 rounded-md ml-2">
         <Clock className="h-4 w-4 mr-1" />

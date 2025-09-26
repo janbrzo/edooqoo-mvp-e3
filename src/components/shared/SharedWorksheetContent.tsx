@@ -6,6 +6,8 @@ import ExerciseFillInBlanks from '../worksheet/ExerciseFillInBlanks';
 import ExerciseMultipleChoice from '../worksheet/ExerciseMultipleChoice';
 import ExerciseReading from '../worksheet/ExerciseReading';
 import ExerciseDialogue from '../worksheet/ExerciseDialogue';
+import ExerciseWordOrder from '../worksheet/ExerciseWordOrder';
+import ExerciseNegativePrefixes from '../worksheet/ExerciseNegativePrefixes';
 import { deepFixTextObjects } from '../../utils/textObjectFixer';
 import { getIconComponent } from '../../utils/iconUtils';
 
@@ -308,8 +310,26 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
                 </div>
               )}
 
+              {exercise.type === 'word-order' && exercise.sentences && (
+                <ExerciseWordOrder
+                  sentences={exercise.sentences}
+                  isEditing={false}
+                  viewMode="student"
+                  onSentenceChange={() => {}} // No-op for shared view
+                />
+              )}
+
+              {exercise.type === 'negative-prefixes' && exercise.words && (
+                <ExerciseNegativePrefixes
+                  words={exercise.words}
+                  isEditing={false}
+                  viewMode="student"
+                  onWordChange={() => {}} // No-op for shared view
+                />
+              )}
+
               {/* Other exercise types - use existing simple rendering */}
-              {(exercise.type === 'error-correction' || exercise.type === 'word-formation' || exercise.type === 'word-order') && 
+              {(exercise.type === 'error-correction' || exercise.type === 'word-formation') && 
                 exercise.sentences && (
                   <div className="space-y-0.5">
                     {exercise.sentences.map((sentence: any, sIndex: number) => (
