@@ -75,36 +75,11 @@ export const useWorksheetHistory = (studentId?: string) => {
     return worksheets.slice(0, limit);
   };
 
-  const restoreWorksheet = async (worksheetId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Use direct update to restore worksheet (set deleted_at to null)
-      const { error } = await supabase
-        .from('worksheets')
-        .update({ deleted_at: null })
-        .eq('id', worksheetId)
-        .eq('teacher_id', user.id);
-
-      if (error) throw error;
-
-      // Refresh the worksheets list
-      await fetchWorksheets();
-      
-      return { success: true };
-    } catch (error: any) {
-      console.error('Error restoring worksheet:', error);
-      return { success: false, error: error.message };
-    }
-  };
-
   return {
     worksheets,
     loading,
     getRecentWorksheets,
     refetch: fetchWorksheets,
-    deleteWorksheet,
-    restoreWorksheet
+    deleteWorksheet
   };
 };
