@@ -1,31 +1,32 @@
-import React from "react";
+import React, { useEffect, useCallback, forwardRef } from "react";
+import { toast } from "@/hooks/use-toast";
+import { updateWorksheet } from "@/services/worksheetService";
+import { useExerciseRegeneration } from "@/hooks/useExerciseRegeneration";
+import TeacherTipSection from "./TeacherTipSection";
+import ExerciseRegenerateModal from "./ExerciseRegenerateModal";
 import ExerciseHeader from "./ExerciseHeader";
 import ExerciseContent from "./ExerciseContent";
 import ExerciseReading from "./ExerciseReading";
 import ExerciseMatching from "./ExerciseMatching";
 import ExerciseFillInBlanks from "./ExerciseFillInBlanks";
 import ExerciseMultipleChoice from "./ExerciseMultipleChoice";
-import TeacherTipSection from "./TeacherTipSection";
-import ExerciseDialogue from "./ExerciseDialogue";
-import ExerciseRegenerateModal from "./ExerciseRegenerateModal";
-import { useExerciseRegeneration } from "@/hooks/useExerciseRegeneration";
-import { Button } from "@/components/ui/button";
-import { RefreshCw, Loader2 } from "lucide-react";
-// New Phase 1 exercise components
 import ExerciseOddOneOut from "./ExerciseOddOneOut";
-import ExerciseSynonymsAntonyms from "./ExerciseSynonymsAntonyms";
-import ExerciseSentenceTransformation from "./ExerciseSentenceTransformation";
-import ExerciseWordOrder from "./ExerciseWordOrder";
-import ExerciseGapText from "./ExerciseGapText";
-import ExerciseNegativePrefixes from "./ExerciseNegativePrefixes";
-// New Phase 2 exercise components
-import ExerciseCategorize from "./ExerciseCategorize";
-import ExerciseParaphrasing from "./ExerciseParaphrasing";
-import ExerciseCompleteWord from "./ExerciseCompleteWord";
-import ExerciseMatchingHalves from "./ExerciseMatchingHalves";
-// New additional exercise components
+import ExerciseDialogue from "./ExerciseDialogue";
 import ExerciseDescribe from "./ExerciseDescribe";
 import ExerciseAnswerQuestions from "./ExerciseAnswerQuestions";
+import ExerciseGapText from "./ExerciseGapText";
+import ExerciseMatchingHalves from "./ExerciseMatchingHalves";
+import ExerciseCompleteWord from "./ExerciseCompleteWord";
+import ExerciseCategorize from "./ExerciseCategorize";
+import ExerciseParaphrasing from "./ExerciseParaphrasing";
+import ExerciseSentenceTransformation from "./ExerciseSentenceTransformation";
+import ExerciseNegativePrefixes from "./ExerciseNegativePrefixes";
+import ExerciseWordOrder from "./ExerciseWordOrder";
+import ExerciseSynonymsAntonyms from "./ExerciseSynonymsAntonyms";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, Loader2, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 import {
   handleExerciseChange,
   handleQuestionChange,
@@ -88,9 +89,12 @@ interface ExerciseSectionProps {
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   onDeleteExercise?: () => void;
+  // New collapse functionality
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-const ExerciseSection: React.FC<ExerciseSectionProps> = ({
+const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   exercise,
   index,
   isEditing,
@@ -103,8 +107,10 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
   totalExercises = 0,
   onMoveUp,
   onMoveDown,
-  onDeleteExercise
-}) => {
+  onDeleteExercise,
+  isCollapsed = false,
+  onToggleCollapse,
+}, ref) => {
   const {
     isModalOpen,
     isLoading,
@@ -173,7 +179,7 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
 
   return (
     <>
-      <div className="mb-4 bg-white border rounded-lg overflow-hidden shadow-sm relative">
+      <div ref={ref} className="mb-4 bg-white border rounded-lg overflow-hidden shadow-sm relative">
         <ExerciseHeader
           icon={exercise.icon}
           title={exercise.title}
@@ -190,7 +196,16 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
           onDelete={onDeleteExercise}
         />
 
-        <div className="p-5">
+        <Collapsible open={!isCollapsed} onOpenChange={() => onToggleCollapse?.()}>
+          <CollapsibleTrigger asChild>
+            <div className="px-5 pb-2 cursor-pointer flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <ChevronDown className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")} />
+              <span>{isCollapsed ? 'Expand exercise content' : 'Collapse exercise content'}</span>
+            </div>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent className="animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <div className="p-5 pt-0">
         <ExerciseContent
           instructions={exercise.instructions}
           isEditing={isEditing}
@@ -518,7 +533,9 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
           onChange={handleTeacherTipChangeLocal}
           viewMode={viewMode}
         />
-        </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Regeneration Modal */}
@@ -533,6 +550,8 @@ const ExerciseSection: React.FC<ExerciseSectionProps> = ({
       />
     </>
   );
-};
+});
+
+ExerciseSection.displayName = "ExerciseSection";
 
 export default ExerciseSection;

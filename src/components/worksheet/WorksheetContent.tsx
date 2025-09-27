@@ -1,19 +1,22 @@
 
-import React from "react";
+import React, { useState } from "react";
+import { toast } from "sonner";
+import { updateWorksheet } from "@/services/worksheetService";
+import { useWorksheetTimes } from "@/hooks/useWorksheetTimes";
+import { useExerciseRegeneration } from "@/hooks/useExerciseRegeneration";
+import { useWorksheetNavigation } from "@/hooks/useWorksheetNavigation";
 import ExerciseSection from "./ExerciseSection";
+import WarmupSection from "./WarmupSection";
+import GrammarRules from "./GrammarRules";
 import VocabularySheet from "./VocabularySheet";
 import WorksheetRating from "@/components/WorksheetRating";
 import TeacherNotes from "./TeacherNotes";
-import GrammarRules from "./GrammarRules";
 import DemoWatermark from "./DemoWatermark";
-import WarmupSection from "./WarmupSection";
-import { useWorksheetTimes } from "@/hooks/useWorksheetTimes";
-import { useExerciseRegeneration } from "@/hooks/useExerciseRegeneration";
-import { Loader2, ChevronUp, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ExerciseNavSidebar } from "./ExerciseNavSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { updateWorksheet } from "@/services/worksheetService";
-import { toast } from "sonner";
+import { ChevronDown, ChevronUp, RotateCcw, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface WorksheetContentProps {
   editableWorksheet: any;
@@ -45,6 +48,15 @@ export default function WorksheetContent({
   // Get regeneration status for global notification
   const { isLoading, loadingExerciseIndex } = useExerciseRegeneration();
   
+  // Filter active and deleted exercises
+  const activeExercises = editableWorksheet?.exercises?.filter((ex: any) => !ex.deleted) || [];
+  const deletedExercises = editableWorksheet?.exercises?.filter((ex: any) => ex.deleted) || [];
+
+  // Initialize navigation hook
+  const navigation = useWorksheetNavigation({
+    exercises: activeExercises || []
+  });
+
   // CRITICAL FIX: Add safety check to prevent rendering with null worksheet
   if (!editableWorksheet) {
     console.log('WorksheetContent: editableWorksheet is null, showing loading...');
@@ -153,13 +165,33 @@ export default function WorksheetContent({
     toast.success('Exercise restored successfully');
   };
 
-  // Filter active and deleted exercises
-  const activeExercises = editableWorksheet.exercises?.filter((ex: any) => !ex.deleted) || [];
-  const deletedExercises = editableWorksheet.exercises?.filter((ex: any) => ex.deleted) || [];
+  // Filter active and deleted exercises - moved above navigation hook
+  // const activeExercises = editableWorksheet.exercises?.filter((ex: any) => !ex.deleted) || [];
+  // const deletedExercises = editableWorksheet.exercises?.filter((ex: any) => ex.deleted) || [];
 
   return (
-    <div className="worksheet-content mb-8" id="worksheet-content">
-      <div className="page-number"></div>
+    <SidebarProvider>
+      <div className="worksheet-content mb-8 relative w-full" id="worksheet-content">
+        {/* Exercise Navigation Sidebar */}
+        {activeExercises.length > 0 && (
+          <ExerciseNavSidebar
+            exercises={activeExercises.map((exercise, index) => ({
+              title: exercise.title,
+              icon: exercise.icon,
+              estimated_time: exercise.estimated_time
+            }))}
+            activeExercise={navigation.activeExercise}
+            collapsedExercises={navigation.collapsedExercises}
+            onScrollToExercise={navigation.scrollToExercise}
+            onToggleExercise={navigation.toggleExercise}
+            onCollapseAll={navigation.collapseAll}
+            onExpandAll={navigation.expandAll}
+            isAllCollapsed={navigation.isAllCollapsed}
+            isAllExpanded={navigation.isAllExpanded}
+          />
+        )}
+
+        <div className="page-number"></div>
       
       <div className="bg-white p-6 border rounded-lg shadow-sm mb-6 relative">
         {!isDownloadUnlocked && <DemoWatermark />}
@@ -255,31 +287,34 @@ export default function WorksheetContent({
       )}
 
       {/* Active exercises */}
-      {activeExercises.map((exercise: any, activeIndex: number) => {
-        // Find the original index in the full exercises array
-        const originalIndex = editableWorksheet.exercises.findIndex((ex: any) => ex === exercise);
-        
-        return (
-          <div key={originalIndex} className="relative">
-            {!isDownloadUnlocked && <DemoWatermark />}
-            <ExerciseSection
-              exercise={exercise}
-              index={originalIndex}
-              isEditing={isEditing}
-              viewMode={viewMode}
-              editableWorksheet={editableWorksheet}
-              setEditableWorksheet={setEditableWorksheet}
-              worksheetId={worksheetId}
-              originalFormData={inputParams}
-              userId={userId}
-              totalExercises={activeExercises.length}
-              onMoveUp={() => moveExerciseUp(originalIndex)}
-              onMoveDown={() => moveExerciseDown(originalIndex)}
-              onDeleteExercise={() => softDeleteExercise(originalIndex)}
-            />
-          </div>
-        );
-      })}
+        {activeExercises.map((exercise: any, activeIndex: number) => {
+          // Find the original index in the full exercises array
+          const originalIndex = editableWorksheet.exercises.findIndex((ex: any) => ex === exercise);
+          
+          return (
+            <div key={originalIndex} className="relative">
+              {!isDownloadUnlocked && <DemoWatermark />}
+              <ExerciseSection
+                ref={(el) => (navigation.exerciseRefs.current[activeIndex] = el)}
+                exercise={exercise}
+                index={originalIndex}
+                isEditing={isEditing}
+                viewMode={viewMode}
+                editableWorksheet={editableWorksheet}
+                setEditableWorksheet={setEditableWorksheet}
+                worksheetId={worksheetId}
+                originalFormData={inputParams}
+                userId={userId}
+                totalExercises={activeExercises.length}
+                onMoveUp={() => moveExerciseUp(originalIndex)}
+                onMoveDown={() => moveExerciseDown(originalIndex)}
+                onDeleteExercise={() => softDeleteExercise(originalIndex)}
+                isCollapsed={navigation.collapsedExercises.get(activeIndex)}
+                onToggleCollapse={() => navigation.toggleExercise(activeIndex)}
+              />
+            </div>
+          );
+        })}
 
       {editableWorksheet.vocabulary_sheet && editableWorksheet.vocabulary_sheet.length > 0 && (
         <div className="relative">
@@ -344,15 +379,16 @@ export default function WorksheetContent({
 
       <TeacherNotes />
       
-      {/* Global regeneration notification */}
-      {isLoading && loadingExerciseIndex !== null && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-worksheet-purple text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-sm font-medium">
-            {getExerciseName(loadingExerciseIndex)} is being regenerated...
-          </span>
-        </div>
-      )}
-    </div>
+        {/* Global regeneration notification */}
+        {isLoading && loadingExerciseIndex !== null && (
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-worksheet-purple text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="text-sm font-medium">
+              {getExerciseName(loadingExerciseIndex)} is being regenerated...
+            </span>
+          </div>
+        )}
+      </div>
+    </SidebarProvider>
   );
 }
