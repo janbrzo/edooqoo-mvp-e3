@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, Clock, Eye, EyeOff, BookOpen } from 'lucide-react';
+import { Menu, Clock, Eye, EyeOff } from 'lucide-react';
 import { getIconComponent } from '@/utils/iconUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
@@ -70,24 +70,6 @@ const ExerciseNavContent: React.FC<ExerciseNavSidebarProps> = ({
               </>
             )}
           </Button>
-
-          {/* Grammar section scroll button */}
-          {exercises.some(ex => ex.title.toLowerCase().includes('grammar')) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const grammarSection = document.querySelector('#grammar-rules-section, [data-section="grammar"]');
-                if (grammarSection) {
-                  grammarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }}
-              className="flex items-center gap-2 text-xs h-8"
-            >
-              <BookOpen className="h-3 w-3" />
-              Grammar
-            </Button>
-          )}
         </div>
       </div>
 
@@ -150,72 +132,43 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
   }, [isOpen, isMobile, setIsOpen]);
 
   // Eye icon + Numbered scroll buttons - always visible above menu (vertical layout)
-  const NumberedScrollButtons = () => {
-    // Check if grammar section exists in exercises
-    const hasGrammar = props.exercises.some(exercise => 
-      exercise.title.toLowerCase().includes('grammar') ||
-      exercise.title.toLowerCase().includes('grammar rules')
-    );
-
-    return (
-      <div className="fixed top-16 left-4 z-50 flex flex-col gap-1">
-        {/* Eye icon for Expand/Collapse All */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={props.isAllExpanded ? props.onCollapseAll : props.onExpandAll}
-          className={cn(
-            "w-8 h-8 p-0 shadow-lg bg-background/95 backdrop-blur-sm",
-            "hover:bg-worksheet-purple hover:text-white"
-          )}
-          title={props.isAllExpanded ? "Collapse All" : "Expand All"}
-        >
-          {props.isAllExpanded ? (
-            <EyeOff className="h-4 w-4" />
-          ) : (
-            <Eye className="h-4 w-4" />
-          )}
-        </Button>
-
-        {/* Grammar button - shows only if grammar section exists */}
-        {hasGrammar && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const grammarSection = document.querySelector('#grammar-rules-section, [data-section="grammar"]');
-              if (grammarSection) {
-                grammarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
-            }}
-            className={cn(
-              "w-8 h-8 p-0 text-xs font-bold shadow-lg bg-background/95 backdrop-blur-sm",
-              "hover:bg-worksheet-purple hover:text-white"
-            )}
-            title="Scroll to Grammar Section"
-          >
-            G
-          </Button>
+  const NumberedScrollButtons = () => (
+    <div className="fixed top-16 left-4 z-50 flex flex-col gap-1">
+      {/* Eye icon for Expand/Collapse All */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={props.isAllExpanded ? props.onCollapseAll : props.onExpandAll}
+        className={cn(
+          "w-8 h-8 p-0 shadow-lg bg-background/95 backdrop-blur-sm",
+          "hover:bg-worksheet-purple hover:text-white"
         )}
-        
-        {/* Numbered buttons for each exercise */}
-        {props.exercises.map((_, index) => (
-          <Button
-            key={index}
-            variant={props.activeExercise === index ? "default" : "outline"}
-            size="sm"
-            onClick={() => props.onScrollToExercise(index)}
-            className={cn(
-              "w-8 h-8 p-0 text-xs font-medium shadow-lg bg-background/95 backdrop-blur-sm",
-              props.activeExercise === index && "bg-worksheet-purple hover:bg-worksheet-purpleDark text-white"
-            )}
-          >
-            {index + 1}
-          </Button>
-        ))}
-      </div>
-    );
-  };
+        title={props.isAllExpanded ? "Collapse All" : "Expand All"}
+      >
+        {props.isAllExpanded ? (
+          <EyeOff className="h-4 w-4" />
+        ) : (
+          <Eye className="h-4 w-4" />
+        )}
+      </Button>
+      
+      {/* Numbered buttons for each exercise */}
+      {props.exercises.map((_, index) => (
+        <Button
+          key={index}
+          variant={props.activeExercise === index ? "default" : "outline"}
+          size="sm"
+          onClick={() => props.onScrollToExercise(index)}
+          className={cn(
+            "w-8 h-8 p-0 text-xs font-medium shadow-lg bg-background/95 backdrop-blur-sm",
+            props.activeExercise === index && "bg-worksheet-purple hover:bg-worksheet-purpleDark text-white"
+          )}
+        >
+          {index + 1}
+        </Button>
+      ))}
+    </div>
+  );
 
   if (isMobile) {
     // Mobile: Use Sheet/Drawer + numbered buttons

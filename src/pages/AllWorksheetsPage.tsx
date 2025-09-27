@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { useWorksheetHistory } from '@/hooks/useWorksheetHistory';
 import { useStudents } from '@/hooks/useStudents';
-import { useDeletedWorksheets } from '@/hooks/useDeletedWorksheets';
 import { DeleteWorksheetButton } from '@/components/DeleteWorksheetButton';
 import { format } from 'date-fns';
 import { 
@@ -45,9 +44,8 @@ type Student = Tables<'students'>;
 
 const AllWorksheetsPage = () => {
   const { user, loading: authLoading, isRegisteredUser } = useAuthFlow();
-  const { worksheets, loading, deleteWorksheet, restoreWorksheet } = useWorksheetHistory();
+  const { worksheets, loading, deleteWorksheet } = useWorksheetHistory();
   const { students } = useStudents();
-  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted } = useDeletedWorksheets();
   const navigate = useNavigate();
 
   // State for filtering and sorting
