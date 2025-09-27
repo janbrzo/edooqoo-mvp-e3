@@ -33,7 +33,7 @@ const Dashboard = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
   const { tokenLeft, profile } = useTokenSystem(user?.id);
   const { students, loading: studentsLoading, refetch: refetchStudents, deleteStudent } = useStudents();
-  const { worksheets, loading: historyLoading, refetch: refetchWorksheets } = useWorksheetHistory();
+  const { worksheets, loading: historyLoading, refetch: refetchWorksheets, deleteWorksheet } = useWorksheetHistory();
   const { thisMonthCount, loading: statsLoading } = useWorksheetStats();
   const { profile: userProfile } = useProfile();
   const navigate = useNavigate();
@@ -83,7 +83,7 @@ const Dashboard = () => {
   const handleDeleteWorksheet = async (worksheetId: string) => {
     console.log('Dashboard: Deleting worksheet', worksheetId);
     try {
-      const result = await worksheets.deleteWorksheet(worksheetId);
+      const result = await deleteWorksheet(worksheetId);
       if (result.success) {
         await refetchWorksheets(); // Refresh the worksheets list
         return { success: true };
