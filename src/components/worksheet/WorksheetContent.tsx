@@ -27,6 +27,7 @@ interface WorksheetContentProps {
   isDownloadUnlocked: boolean;
   inputParams?: any;
   userId?: string;
+  onExpandAll?: (expandAllFn: () => void) => void;
 }
 
 export default function WorksheetContent({
@@ -38,7 +39,8 @@ export default function WorksheetContent({
   onFeedbackSubmit,
   isDownloadUnlocked,
   inputParams,
-  userId
+  userId,
+  onExpandAll
 }: WorksheetContentProps) {
   // Check if worksheet has grammar rules
   const hasGrammar = Boolean(editableWorksheet?.grammar_rules);
@@ -55,6 +57,13 @@ export default function WorksheetContent({
   const navigation = useWorksheetNavigation({
     exercises: activeExercises || []
   });
+
+  // Pass expandAll function to parent for toolbar usage
+  React.useEffect(() => {
+    if (onExpandAll) {
+      onExpandAll(navigation.expandAll);
+    }
+  }, [onExpandAll, navigation.expandAll]);
 
   // CRITICAL FIX: Add safety check to prevent rendering with null worksheet
   if (!editableWorksheet) {
@@ -94,6 +103,26 @@ export default function WorksheetContent({
     }
   };
 
+  // Function to update exercise numbers in titles
+  const updateExerciseNumbers = (exercises: any[]) => {
+    return exercises.map((exercise, index) => {
+      if (exercise.title && exercise.title.match(/^Exercise \d+:/)) {
+        // Update the exercise number while keeping the rest of the title
+        const titleParts = exercise.title.split(': ');
+        if (titleParts.length > 1) {
+          return {
+            ...exercise,
+            title: `Exercise ${index + 1}: ${titleParts.slice(1).join(': ')}`
+          };
+        }
+      }
+      return {
+        ...exercise,
+        title: exercise.title || `Exercise ${index + 1}`
+      };
+    });
+  };
+
   // Move exercise up
   const moveExerciseUp = (index: number) => {
     if (index <= 0) return;
@@ -101,9 +130,12 @@ export default function WorksheetContent({
     const newExercises = [...editableWorksheet.exercises];
     [newExercises[index - 1], newExercises[index]] = [newExercises[index], newExercises[index - 1]];
     
+    // Update exercise numbers
+    const updatedExercises = updateExerciseNumbers(newExercises);
+    
     const updatedWorksheet = {
       ...editableWorksheet,
-      exercises: newExercises
+      exercises: updatedExercises
     };
     
     setEditableWorksheet(updatedWorksheet);
@@ -118,9 +150,12 @@ export default function WorksheetContent({
     const newExercises = [...editableWorksheet.exercises];
     [newExercises[index], newExercises[index + 1]] = [newExercises[index + 1], newExercises[index]];
     
+    // Update exercise numbers
+    const updatedExercises = updateExerciseNumbers(newExercises);
+    
     const updatedWorksheet = {
       ...editableWorksheet,
-      exercises: newExercises
+      exercises: updatedExercises
     };
     
     setEditableWorksheet(updatedWorksheet);

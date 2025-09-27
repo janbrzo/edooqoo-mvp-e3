@@ -30,6 +30,7 @@ interface WorksheetToolbarProps {
   showPdfButton?: boolean;
   editableWorksheet: any;
   userId?: string;
+  onExpandAll?: () => void;
 }
 
 const WorksheetToolbar = ({
@@ -47,6 +48,7 @@ const WorksheetToolbar = ({
   showPdfButton = false,
   editableWorksheet,
   userId,
+  onExpandAll,
 }: WorksheetToolbarProps) => {
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -59,6 +61,13 @@ const WorksheetToolbar = ({
     const originalViewMode = viewMode;
 
     const performExport = async () => {
+      // Expand all exercises before export to ensure full content is captured
+      if (onExpandAll) {
+        onExpandAll();
+        // Wait for expansion to complete
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
       // Get the actual worksheet title from editableWorksheet
       const title = editableWorksheet?.title || 'English Worksheet';
       

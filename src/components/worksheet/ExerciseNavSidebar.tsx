@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Menu, Clock, Eye, EyeOff } from 'lucide-react';
+import { Menu, Clock, Eye, EyeOff } from 'lucide-react';
 import { getIconComponent } from '@/utils/iconUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
@@ -75,52 +75,29 @@ const ExerciseNavContent: React.FC<ExerciseNavSidebarProps> = ({
         <div className="space-y-2">
           {exercises.map((exercise, index) => {
             const isActive = activeExercise === index;
-            const isCollapsed = collapsedExercises.get(index);
             
             return (
-              <div key={index} className="space-y-1">
-                {/* Exercise item with scroll functionality */}
-                <Button
-                  variant={isActive ? "secondary" : "ghost"}
-                  onClick={() => onScrollToExercise(index)}
-                  className="w-full justify-start p-2 h-auto"
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {getIconComponent(exercise.icon)}
-                    <div className="flex-1 min-w-0 text-left">
-                      <p className="text-sm truncate">
-                        {exercise.title || `Exercise ${index + 1}`}
-                      </p>
-                      {exercise.estimated_time && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          <span>{exercise.estimated_time}</span>
-                        </div>
-                      )}
-                    </div>
+              <Button
+                key={index}
+                variant={isActive ? "secondary" : "ghost"}
+                onClick={() => onScrollToExercise(index)}
+                className="w-full justify-start p-2 h-auto"
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {getIconComponent(exercise.icon)}
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm truncate">
+                      {exercise.title || `Exercise ${index + 1}`}
+                    </p>
+                    {exercise.estimated_time && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>{exercise.estimated_time}</span>
+                      </div>
+                    )}
                   </div>
-                </Button>
-                
-                {/* Collapse toggle button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onToggleExercise(index)}
-                  className="w-full h-6 justify-center text-xs text-muted-foreground hover:text-foreground"
-                >
-                  {isCollapsed ? (
-                    <>
-                      <ChevronDown className="h-3 w-3 mr-1" />
-                      Expand
-                    </>
-                  ) : (
-                    <>
-                      <ChevronUp className="h-3 w-3 mr-1" />
-                      Collapse
-                    </>
-                  )}
-                </Button>
-              </div>
+                </div>
+              </Button>
             );
           })}
         </div>
@@ -133,32 +110,57 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
 
+  // Numbered scroll buttons - always visible above menu
+  const NumberedScrollButtons = () => (
+    <div className="fixed top-4 left-20 z-50 flex gap-1">
+      {props.exercises.map((_, index) => (
+        <Button
+          key={index}
+          variant={props.activeExercise === index ? "default" : "outline"}
+          size="sm"
+          onClick={() => props.onScrollToExercise(index)}
+          className={cn(
+            "w-8 h-8 p-0 text-xs font-medium shadow-lg bg-background/95 backdrop-blur-sm",
+            props.activeExercise === index && "bg-worksheet-purple hover:bg-worksheet-purpleDark text-white"
+          )}
+        >
+          {index + 1}
+        </Button>
+      ))}
+    </div>
+  );
+
   if (isMobile) {
-    // Mobile: Use Sheet/Drawer
+    // Mobile: Use Sheet/Drawer + numbered buttons
     return (
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="fixed top-4 right-4 z-50 shadow-lg"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-80 p-0">
-          <SheetHeader className="p-4 pb-0">
-            <SheetTitle>Exercise Navigation</SheetTitle>
-          </SheetHeader>
-          <ExerciseNavContent {...props} />
-        </SheetContent>
-      </Sheet>
+      <>
+        <NumberedScrollButtons />
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="fixed top-4 left-4 z-50 shadow-lg"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-80 p-0">
+            <SheetHeader className="p-4 pb-0">
+              <SheetTitle>Exercise Navigation</SheetTitle>
+            </SheetHeader>
+            <ExerciseNavContent {...props} />
+          </SheetContent>
+        </Sheet>
+      </>
     );
   }
 
-  // Desktop: Use floating div with manual state
+  // Desktop: Use floating div with manual state + numbered buttons
   return (
     <>
+      <NumberedScrollButtons />
+      
       {/* Floating trigger button */}
       <Button
         variant="outline"

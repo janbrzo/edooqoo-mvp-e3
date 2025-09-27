@@ -15,7 +15,7 @@ async function fetchCSSContent(url: string): Promise<string> {
 }
 
 /**
- * Exports the current view as a standalone HTML file with all styles inlined
+ * Exports the current view as a standalone HTML file with all styles inlined and functional navigation
  */
 export async function exportAsHTML(elementId: string, filename: string, exportViewMode: 'student' | 'teacher' = 'student', title: string = 'English Worksheet'): Promise<boolean> {
   try {
@@ -92,7 +92,7 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
       console.warn('[HTML EXPORT] Error accessing document.styleSheets:', error);
     }
 
-    // Add additional styles including scroll up button
+    // Add additional styles including functional navigation
     const additionalCSS = `
       /* Additional styles for standalone HTML */
       body {
@@ -141,6 +141,124 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
         background-color: #2d1b7b;
       }
       
+      /* Floating Navigation Styles */
+      .nav-menu-button {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background-color: #3d348b;
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        z-index: 1001;
+      }
+      
+      .nav-numbered-buttons {
+        position: fixed;
+        top: 20px;
+        left: 75px;
+        display: flex;
+        gap: 4px;
+        z-index: 1001;
+      }
+      
+      .nav-number-btn {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #3d348b;
+        background: white;
+        color: #3d348b;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      .nav-number-btn:hover, .nav-number-btn.active {
+        background-color: #3d348b;
+        color: white;
+      }
+      
+      .nav-sidebar {
+        position: fixed;
+        top: 70px;
+        left: 20px;
+        width: 300px;
+        max-height: calc(100vh - 90px);
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        z-index: 1000;
+        overflow-y: auto;
+        display: none;
+      }
+      
+      .nav-sidebar.open {
+        display: block;
+      }
+      
+      .nav-header {
+        padding: 16px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      
+      .nav-controls {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      
+      .nav-control-btn {
+        flex: 1;
+        padding: 6px 12px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      
+      .nav-control-btn:hover {
+        background: #f8f9fa;
+      }
+      
+      .nav-exercises {
+        padding: 16px;
+      }
+      
+      .nav-exercise-item {
+        padding: 8px 12px;
+        margin-bottom: 8px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .nav-exercise-item:hover {
+        background: #f8f9fa;
+        border-color: #e2e8f0;
+      }
+      
+      .nav-exercise-item.active {
+        background: #f0f4ff;
+        border-color: #3d348b;
+      }
+      
       /* Scroll up button styles */
       .scroll-up-button {
         position: fixed;
@@ -175,6 +293,15 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
         display: none !important;
       }
       
+      /* Exercise collapsible styles */
+      .exercise-content {
+        transition: all 0.3s ease;
+      }
+      
+      .exercise-content.collapsed {
+        display: none;
+      }
+      
       /* Print styles */
       @media print {
         @page {
@@ -193,7 +320,7 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
           @bottom-right { content: none !important; }
         }
         
-        .print-button, .scroll-up-button {
+        .print-button, .scroll-up-button, .nav-menu-button, .nav-numbered-buttons, .nav-sidebar {
           display: none !important;
         }
         
@@ -207,6 +334,10 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
         * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
+        }
+        
+        .exercise-content.collapsed {
+          display: block !important;
         }
       }
       
@@ -260,6 +391,48 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
     console.log(`[HTML EXPORT] Removing ${elementsToRemove.length} non-exportable elements (e.g., rating section).`);
     elementsToRemove.forEach(el => el.remove());
 
+    // Create navigation elements
+    const navMenuButton = docClone.createElement('button');
+    navMenuButton.className = 'nav-menu-button';
+    navMenuButton.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    `;
+
+    // Create numbered navigation buttons
+    const numberedButtonsContainer = docClone.createElement('div');
+    numberedButtonsContainer.className = 'nav-numbered-buttons';
+    
+    // Find exercises in the cloned content
+    const exerciseSections = clonedElement.querySelectorAll('[data-exercise-index]');
+    
+    for (let i = 0; i < exerciseSections.length; i++) {
+      const numberBtn = docClone.createElement('button');
+      numberBtn.className = 'nav-number-btn';
+      numberBtn.textContent = (i + 1).toString();
+      numberBtn.setAttribute('data-scroll-to', i.toString());
+      numberedButtonsContainer.appendChild(numberBtn);
+    }
+
+    // Create navigation sidebar
+    const navSidebar = docClone.createElement('div');
+    navSidebar.className = 'nav-sidebar';
+    navSidebar.innerHTML = `
+      <div class="nav-header">
+        <h3 style="margin: 0; font-size: 14px; font-weight: 600;">Exercise Navigation</h3>
+        <div class="nav-controls">
+          <button class="nav-control-btn" onclick="expandAllExercises()">Expand All</button>
+          <button class="nav-control-btn" onclick="collapseAllExercises()">Collapse All</button>
+        </div>
+      </div>
+      <div class="nav-exercises" id="nav-exercises-list">
+        <!-- Exercise list will be populated by JavaScript -->
+      </div>
+    `;
+
     // Create header with actual worksheet title
     const versionHeader = docClone.createElement('div');
     versionHeader.style.textAlign = 'center';
@@ -294,17 +467,124 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
     `;
     scrollUpButton.setAttribute('onclick', 'window.scrollTo({top: 0, behavior: "smooth"})');
 
-    // Add scroll event listener script
-    const scrollScript = docClone.createElement('script');
-    scrollScript.textContent = `
-      window.addEventListener('scroll', function() {
-        const scrollUpBtn = document.querySelector('.scroll-up-button');
-        if (window.scrollY > 300) {
-          scrollUpBtn.classList.add('visible');
-        } else {
-          scrollUpBtn.classList.remove('visible');
-        }
+    // Create comprehensive navigation script
+    const navigationScript = docClone.createElement('script');
+    navigationScript.textContent = `
+      let isNavOpen = false;
+      let exerciseCollapsed = {};
+      
+      // Initialize navigation
+      document.addEventListener('DOMContentLoaded', function() {
+        initializeNavigation();
+        setupScrollTracking();
+        populateExerciseList();
       });
+      
+      function initializeNavigation() {
+        const menuButton = document.querySelector('.nav-menu-button');
+        const sidebar = document.querySelector('.nav-sidebar');
+        const numberButtons = document.querySelectorAll('.nav-number-btn');
+        
+        // Menu button click
+        menuButton.addEventListener('click', function() {
+          isNavOpen = !isNavOpen;
+          sidebar.classList.toggle('open', isNavOpen);
+        });
+        
+        // Numbered button clicks
+        numberButtons.forEach((btn, index) => {
+          btn.addEventListener('click', function() {
+            scrollToExercise(index);
+            updateActiveButton(index);
+          });
+        });
+        
+        // Close sidebar when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!sidebar.contains(e.target) && !menuButton.contains(e.target) && isNavOpen) {
+            isNavOpen = false;
+            sidebar.classList.remove('open');
+          }
+        });
+      }
+      
+      function populateExerciseList() {
+        const container = document.getElementById('nav-exercises-list');
+        const exercises = document.querySelectorAll('[data-exercise-index]');
+        
+        exercises.forEach((exercise, index) => {
+          const title = exercise.querySelector('h3, h2, .exercise-title')?.textContent || 'Exercise ' + (index + 1);
+          
+          const item = document.createElement('div');
+          item.className = 'nav-exercise-item';
+          item.innerHTML = '📝 ' + title;
+          item.addEventListener('click', function() {
+            scrollToExercise(index);
+            updateActiveButton(index);
+          });
+          
+          container.appendChild(item);
+        });
+      }
+      
+      function scrollToExercise(index) {
+        const exercises = document.querySelectorAll('[data-exercise-index]');
+        if (exercises[index]) {
+          exercises[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+      
+      function updateActiveButton(index) {
+        document.querySelectorAll('.nav-number-btn').forEach((btn, i) => {
+          btn.classList.toggle('active', i === index);
+        });
+        
+        document.querySelectorAll('.nav-exercise-item').forEach((item, i) => {
+          item.classList.toggle('active', i === index);
+        });
+      }
+      
+      function expandAllExercises() {
+        const collapsedContents = document.querySelectorAll('.exercise-content.collapsed');
+        collapsedContents.forEach(content => {
+          content.classList.remove('collapsed');
+        });
+        exerciseCollapsed = {};
+      }
+      
+      function collapseAllExercises() {
+        const exerciseContents = document.querySelectorAll('.exercise-content');
+        exerciseContents.forEach((content, index) => {
+          content.classList.add('collapsed');
+          exerciseCollapsed[index] = true;
+        });
+      }
+      
+      function setupScrollTracking() {
+        const scrollUpBtn = document.querySelector('.scroll-up-button');
+        
+        window.addEventListener('scroll', function() {
+          // Show/hide scroll up button
+          if (window.scrollY > 300) {
+            scrollUpBtn.classList.add('visible');
+          } else {
+            scrollUpBtn.classList.remove('visible');
+          }
+          
+          // Track active exercise
+          const exercises = document.querySelectorAll('[data-exercise-index]');
+          let activeIndex = 0;
+          
+          exercises.forEach((exercise, index) => {
+            const rect = exercise.getBoundingClientRect();
+            if (rect.top <= window.innerHeight * 0.3 && rect.bottom >= 0) {
+              activeIndex = index;
+            }
+          });
+          
+          updateActiveButton(activeIndex);
+        });
+      }
     `;
 
     // Create a minimal HTML structure with only the necessary content
@@ -322,11 +602,14 @@ ${finalCSS}
 <body>
     ${printButton.outerHTML}
     ${scrollUpButton.outerHTML}
+    ${navMenuButton.outerHTML}
+    ${numberedButtonsContainer.outerHTML}
+    ${navSidebar.outerHTML}
     <div class="container">
         ${versionHeader.outerHTML}
         ${clonedElement.outerHTML}
     </div>
-    ${scrollScript.outerHTML}
+    ${navigationScript.outerHTML}
 </body>
 </html>`;
 

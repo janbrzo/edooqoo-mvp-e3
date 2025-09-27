@@ -76,6 +76,7 @@ export default function WorksheetDisplay({
   const [viewMode, setViewMode] = useState<'student' | 'teacher'>('student');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [expandAllRef, setExpandAllRef] = useState<(() => void) | null>(null);
   const { toast } = useToast();
   const { isDownloadUnlocked, userIp, handleDownloadUnlock, trackDownload, checkTokenGeneratedWorksheet } = useDownloadStatus();
   const isMobile = useIsMobile();
@@ -280,6 +281,7 @@ export default function WorksheetDisplay({
             showPdfButton={false}
             editableWorksheet={editableWorksheet}
             userId={userId}
+            onExpandAll={expandAllRef || (() => {})}
           />
 
           <WorksheetContent
@@ -292,6 +294,7 @@ export default function WorksheetDisplay({
             isDownloadUnlocked={isDownloadUnlocked}
             inputParams={inputParams}
             userId={userId}
+            onExpandAll={(expandFn: () => void) => setExpandAllRef(() => expandFn)}
           />
         </div>
       </WorksheetContainer>
