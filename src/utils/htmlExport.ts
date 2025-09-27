@@ -391,64 +391,47 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
     console.log(`[HTML EXPORT] Removing ${elementsToRemove.length} non-exportable elements (e.g., rating section).`);
     elementsToRemove.forEach(el => el.remove());
 
-    // Copy existing navigation elements from the current DOM
-    const existingMenuButton = document.querySelector('.nav-menu-button');
-    const existingNumberedButtons = document.querySelector('.fixed.top-16.left-4.z-50.flex.flex-col.gap-1');
-    const existingSidebar = document.querySelector('.nav-sidebar');
+    // Create navigation elements
+    const navMenuButton = docClone.createElement('button');
+    navMenuButton.className = 'nav-menu-button';
+    navMenuButton.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    `;
+
+    // Create numbered navigation buttons
+    const numberedButtonsContainer = docClone.createElement('div');
+    numberedButtonsContainer.className = 'nav-numbered-buttons';
     
-    let navMenuButton, numberedButtonsContainer, navSidebar;
+    // Find exercises in the cloned content
+    const exerciseSections = clonedElement.querySelectorAll('[data-exercise-index]');
     
-    if (existingMenuButton) {
-      navMenuButton = existingMenuButton.cloneNode(true);
-    } else {
-      // Fallback: create basic menu button
-      navMenuButton = docClone.createElement('button');
-      navMenuButton.className = 'nav-menu-button';
-      navMenuButton.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-      `;
+    for (let i = 0; i < exerciseSections.length; i++) {
+      const numberBtn = docClone.createElement('button');
+      numberBtn.className = 'nav-number-btn';
+      numberBtn.textContent = (i + 1).toString();
+      numberBtn.setAttribute('data-scroll-to', i.toString());
+      numberedButtonsContainer.appendChild(numberBtn);
     }
 
-    if (existingNumberedButtons) {
-      numberedButtonsContainer = existingNumberedButtons.cloneNode(true);
-    } else {
-      // Fallback: create numbered buttons
-      numberedButtonsContainer = docClone.createElement('div');
-      numberedButtonsContainer.className = 'nav-numbered-buttons';
-      
-      const exerciseSections = clonedElement.querySelectorAll('[data-exercise-index]');
-      for (let i = 0; i < exerciseSections.length; i++) {
-        const numberBtn = docClone.createElement('button');
-        numberBtn.className = 'nav-number-btn';
-        numberBtn.textContent = (i + 1).toString();
-        numberBtn.setAttribute('data-scroll-to', i.toString());
-        numberedButtonsContainer.appendChild(numberBtn);
-      }
-    }
-
-    if (existingSidebar) {
-      navSidebar = existingSidebar.cloneNode(true);
-    } else {
-      // Fallback: create basic sidebar
-      navSidebar = docClone.createElement('div');
-      navSidebar.className = 'nav-sidebar';
-      navSidebar.innerHTML = `
-        <div class="nav-header">
-          <h3 style="margin: 0; font-size: 14px; font-weight: 600;">Exercise Navigation</h3>
-          <div class="nav-controls">
-            <button class="nav-control-btn" onclick="expandAllExercises()">Expand All</button>
-            <button class="nav-control-btn" onclick="collapseAllExercises()">Collapse All</button>
-          </div>
+    // Create navigation sidebar
+    const navSidebar = docClone.createElement('div');
+    navSidebar.className = 'nav-sidebar';
+    navSidebar.innerHTML = `
+      <div class="nav-header">
+        <h3 style="margin: 0; font-size: 14px; font-weight: 600;">Exercise Navigation</h3>
+        <div class="nav-controls">
+          <button class="nav-control-btn" onclick="expandAllExercises()">Expand All</button>
+          <button class="nav-control-btn" onclick="collapseAllExercises()">Collapse All</button>
         </div>
-        <div class="nav-exercises" id="nav-exercises-list">
-          <!-- Exercise list will be populated by JavaScript -->
-        </div>
-      `;
-    }
+      </div>
+      <div class="nav-exercises" id="nav-exercises-list">
+        <!-- Exercise list will be populated by JavaScript -->
+      </div>
+    `;
 
     // Create header with actual worksheet title
     const versionHeader = docClone.createElement('div');
