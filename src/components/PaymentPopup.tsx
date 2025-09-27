@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, CreditCard, Lock } from "lucide-react";
+import { Download, CreditCard, Lock, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaymentTracking } from "@/hooks/usePaymentTracking";
+import { isFreeCustomDemoWeek, getFreeWeekEndDateString, isLastDayOfFreeWeek } from "@/utils/promoUtils";
 
 interface PaymentPopupProps {
   isOpen: boolean;
@@ -19,6 +20,9 @@ const PaymentPopup = ({ isOpen, onClose, onPaymentSuccess, worksheetId, userIp }
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { trackPaymentButtonClick } = usePaymentTracking();
+  
+  // Check if FREE DEMO WEEK is active
+  const isFreeWeek = isFreeCustomDemoWeek();
 
   // Check for existing valid token when popup opens
   useEffect(() => {
@@ -104,6 +108,24 @@ const PaymentPopup = ({ isOpen, onClose, onPaymentSuccess, worksheetId, userIp }
     }
   };
 
+  const handleFreeDownload = () => {
+    // Generate session token for FREE DEMO WEEK
+    const freeToken = `free_week_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Store in sessionStorage for FREE DEMO WEEK
+    sessionStorage.setItem('downloadToken', freeToken);
+    sessionStorage.setItem('downloadTokenExpiry', (Date.now() + 24 * 60 * 60 * 1000).toString());
+    
+    toast({
+      title: "🎁 FREE DOWNLOAD WEEK!",
+      description: "Downloads unlocked for free during our special promotion!",
+      className: "bg-green-50 border-green-200"
+    });
+    
+    onPaymentSuccess(freeToken);
+    onClose();
+  };
+
   const handleSkipPayment = () => {
     // Generate temporary session token for testing
     const tempToken = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -127,27 +149,65 @@ const PaymentPopup = ({ isOpen, onClose, onPaymentSuccess, worksheetId, userIp }
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5 text-worksheet-purple" />
-            Unlock Downloads
+            {isFreeWeek ? (
+              <>
+                <Gift className="h-5 w-5 text-green-600" />
+                FREE DOWNLOAD WEEK! 🎁
+              </>
+            ) : (
+              <>
+                <Lock className="h-5 w-5 text-worksheet-purple" />
+                Unlock Downloads
+              </>
+            )}
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <p className="text-sm text-amber-800 mb-2">
-              <strong>One-time payment of $1 USD</strong> unlocks unlimited downloads of both Student and Teacher versions during your current session.
-            </p>
-            <div className="flex items-center gap-2 text-sm text-amber-700 mb-2">
-              <Download className="h-4 w-4" />
-              <span>Student and Teacher HTML versions included</span>
+          {isFreeWeek ? (
+            <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Gift className="h-5 w-5 text-green-600" />
+                <p className="text-lg font-bold text-green-800">
+                  🎉 FREE DOWNLOAD WEEK!
+                </p>
+              </div>
+              <p className="text-sm text-green-800 mb-2">
+                <strong>Download both Student and Teacher versions completely FREE</strong> during our special promotion week!
+              </p>
+              <div className="flex items-center gap-2 text-sm text-green-700 mb-2">
+                <Download className="h-4 w-4" />
+                <span>Student and Teacher HTML versions included</span>
+              </div>
+              <p className="text-xs text-green-600 mb-1">
+                HTML file: Best quality, works offline. Double-click to open
+              </p>
+              <div className="bg-green-100 border border-green-200 rounded p-2 mt-3">
+                <p className="text-xs text-green-700 font-medium">
+                  ⏰ Promotion ends: {getFreeWeekEndDateString()}
+                  {isLastDayOfFreeWeek() && (
+                    <span className="ml-1 text-red-600 font-bold">(LAST DAY!)</span>
+                  )}
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-amber-600 mb-1">
-              HTML file: Best quality, works offline. Double-click to open
-            </p>
-            <p className="text-xs text-amber-600">
-              ⚠️ Note: Closing the page will end your session and require a new payment.
-            </p>
-          </div>
+          ) : (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-sm text-amber-800 mb-2">
+                <strong>One-time payment of $1 USD</strong> unlocks unlimited downloads of both Student and Teacher versions during your current session.
+              </p>
+              <div className="flex items-center gap-2 text-sm text-amber-700 mb-2">
+                <Download className="h-4 w-4" />
+                <span>Student and Teacher HTML versions included</span>
+              </div>
+              <p className="text-xs text-amber-600 mb-1">
+                HTML file: Best quality, works offline. Double-click to open
+              </p>
+              <p className="text-xs text-amber-600">
+                ⚠️ Note: Closing the page will end your session and require a new payment.
+              </p>
+            </div>
+          )}
 
           {isProcessing && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -158,14 +218,25 @@ const PaymentPopup = ({ isOpen, onClose, onPaymentSuccess, worksheetId, userIp }
           )}
 
           <div className="space-y-3">
-            <Button 
-              onClick={handlePayment}
-              disabled={isProcessing}
-              className="w-full bg-worksheet-purple hover:bg-worksheet-purpleDark"
-            >
-              <CreditCard className="mr-2 h-4 w-4" />
-              {isProcessing ? "Redirecting to Payment..." : "Pay $1 with Stripe"}
-            </Button>
+            {isFreeWeek ? (
+              <Button 
+                onClick={handleFreeDownload}
+                disabled={isProcessing}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Gift className="mr-2 h-4 w-4" />
+                Download Free Now! 🎁
+              </Button>
+            ) : (
+              <Button 
+                onClick={handlePayment}
+                disabled={isProcessing}
+                className="w-full bg-worksheet-purple hover:bg-worksheet-purpleDark"
+              >
+                <CreditCard className="mr-2 h-4 w-4" />
+                {isProcessing ? "Redirecting to Payment..." : "Pay $1 with Stripe"}
+              </Button>
+            )}
 
             {/* Skip payment button - hidden but kept in code */}
             {false && (
@@ -189,9 +260,11 @@ const PaymentPopup = ({ isOpen, onClose, onPaymentSuccess, worksheetId, userIp }
             </Button>
           </div>
 
-          <p className="text-xs text-gray-500 text-center">
-            Secure payment via Stripe. After payment, you'll return to your worksheet with downloads unlocked.
-          </p>
+          {!isFreeWeek && (
+            <p className="text-xs text-gray-500 text-center">
+              Secure payment via Stripe. After payment, you'll return to your worksheet with downloads unlocked.
+            </p>
+          )}
         </div>
       </DialogContent>
     </Dialog>

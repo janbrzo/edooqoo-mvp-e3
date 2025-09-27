@@ -149,86 +149,10 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
     }
   }, [isOpen, isMobile, setIsOpen]);
 
-  // Working floating navigation buttons using Shadcn Button components
-  const WorkingFloatingButtons = () => {
-    // Check if grammar section exists in exercises
-    const hasGrammar = props.exercises.some(exercise => 
-      exercise.title.toLowerCase().includes('grammar') ||
-      exercise.title.toLowerCase().includes('grammar rules')
-    );
-
-    return (
-      <div className="fixed top-16 left-4 z-50 flex flex-col gap-1">
-        {/* Eye icon for Expand/Collapse All */}
-        <Button
-          variant="outline"
-          onClick={() => {
-            if (props.isAllExpanded) {
-              props.onCollapseAll();
-            } else {
-              props.onExpandAll();
-            }
-          }}
-          className="w-8 h-8 p-0 text-xs font-medium shadow-lg bg-background/95 backdrop-blur-sm"
-          title={props.isAllExpanded ? "Collapse All" : "Expand All"}
-        >
-          {props.isAllExpanded ? (
-            <EyeOff className="h-4 w-4" />
-          ) : (
-            <Eye className="h-4 w-4" />
-          )}
-        </Button>
-
-        {/* Grammar button - shows only if grammar section exists */}
-        {hasGrammar && (
-          <Button
-            variant="outline"
-            onClick={() => {
-              const grammarSection = document.querySelector('[data-section="grammar"], .bg-worksheet-purple, #grammar-rules-section');
-              if (grammarSection) {
-                grammarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              } else {
-                // Alternative approach - look for any element with "Grammar" in text
-                const allElements = document.querySelectorAll('*');
-                for (let element of allElements) {
-                  if (element.textContent?.toLowerCase().includes('grammar rules')) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    break;
-                  }
-                }
-              }
-            }}
-            className="w-8 h-8 p-0 text-xs font-bold shadow-lg bg-background/95 backdrop-blur-sm"
-            title="Scroll to Grammar Section"
-          >
-            G
-          </Button>
-        )}
-        
-        {/* Numbered buttons for each exercise */}
-        {props.exercises.map((_, index) => (
-          <Button
-            key={index}
-            variant="outline"
-            onClick={() => props.onScrollToExercise(index)}
-            className={cn(
-              "w-8 h-8 p-0 text-xs font-medium shadow-lg bg-background/95 backdrop-blur-sm",
-              props.activeExercise === index && "bg-primary text-primary-foreground"
-            )}
-            title={`Scroll to Exercise ${index + 1}`}
-          >
-            {index + 1}
-          </Button>
-        ))}
-      </div>
-    );
-  };
 
   if (isMobile) {
-    // Mobile: Use Sheet/Drawer + numbered buttons
+    // Mobile: Use Sheet/Drawer only
     return (
-    <>
-      <WorkingFloatingButtons />
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <Button
@@ -246,15 +170,12 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
           <ExerciseNavContent {...props} />
         </SheetContent>
       </Sheet>
-    </>
-  );
-}
+    );
+  }
 
-// Desktop: Use floating div with manual state + numbered buttons
-return (
-  <>
-    <WorkingFloatingButtons />
-      
+  // Desktop: Use floating div with manual state only
+  return (
+    <>
       {/* Floating trigger button */}
       <Button
         variant="outline"

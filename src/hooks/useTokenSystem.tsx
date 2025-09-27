@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { isFreeCustomDemoWeek } from '@/utils/promoUtils';
 
 export const useTokenSystem = (userId?: string | null) => {
   const [tokenLeft, setTokenLeft] = useState<number>(0);
@@ -103,6 +104,14 @@ export const useTokenSystem = (userId?: string | null) => {
   const consumeToken = async (worksheetId: string): Promise<boolean> => {
     if (!userId || isAnonymousUser) return false;
     
+    // FREE DEMO WEEK: Don't consume tokens, just return success
+    if (isFreeCustomDemoWeek()) {
+      console.log('🎁 FREE DEMO WEEK: Token consumption bypassed for authenticated user');
+      // Still refresh balance to show current state
+      await fetchTokenBalance();
+      return true;
+    }
+    
     try {
       const { data, error } = await supabase
         .rpc('consume_token', { 
@@ -132,9 +141,15 @@ export const useTokenSystem = (userId?: string | null) => {
       return true; // Anonymous users can always generate (demo worksheets)
     }
     
-    // Authenticated users need tokens and not frozen
+    // FREE DEMO WEEK: Authenticated users can always generate
+    if (isFreeCustomDemoWeek()) {
+      console.log('🎁 FREE DEMO WEEK: hasTokens() - Authenticated user gets free access');
+      return true;
+    }
+    
+    // Normal operation: Authenticated users need tokens and not frozen
     const result = tokenLeft > 0 && !(profile?.is_tokens_frozen);
-    console.log('🔍 hasTokens() - Authenticated user:', {
+    console.log('🔍 hasTokens() - Authenticated user (normal mode):', {
       tokenLeft,
       is_tokens_frozen: profile?.is_tokens_frozen,
       result
