@@ -31,6 +31,7 @@ interface WorksheetToolbarProps {
   editableWorksheet: any;
   userId?: string;
   onExpandAll?: () => void;
+  onCloseSidebar?: () => void;
 }
 
 const WorksheetToolbar = ({
@@ -49,6 +50,7 @@ const WorksheetToolbar = ({
   editableWorksheet,
   userId,
   onExpandAll,
+  onCloseSidebar,
 }: WorksheetToolbarProps) => {
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -61,6 +63,13 @@ const WorksheetToolbar = ({
     const originalViewMode = viewMode;
 
     const performExport = async () => {
+      // Close sidebar before export to prevent overlay
+      if (onCloseSidebar) {
+        onCloseSidebar();
+        // Wait for sidebar close to complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
       // Expand all exercises before export to ensure full content is captured
       if (onExpandAll) {
         onExpandAll();

@@ -77,6 +77,7 @@ export default function WorksheetDisplay({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [expandAllRef, setExpandAllRef] = useState<(() => void) | null>(null);
+  const [closeSidebarRef, setCloseSidebarRef] = useState<(() => void) | null>(null);
   const { toast } = useToast();
   const { isDownloadUnlocked, userIp, handleDownloadUnlock, trackDownload, checkTokenGeneratedWorksheet } = useDownloadStatus();
   const isMobile = useIsMobile();
@@ -282,6 +283,7 @@ export default function WorksheetDisplay({
             editableWorksheet={editableWorksheet}
             userId={userId}
             onExpandAll={expandAllRef || (() => {})}
+            onCloseSidebar={closeSidebarRef || (() => {})}
           />
 
           <WorksheetContent
@@ -295,6 +297,7 @@ export default function WorksheetDisplay({
             inputParams={inputParams}
             userId={userId}
             onExpandAll={(expandFn: () => void) => setExpandAllRef(() => expandFn)}
+            onCloseSidebar={(closeFn: () => void) => setCloseSidebarRef(() => closeFn)}
           />
         </div>
       </WorksheetContainer>

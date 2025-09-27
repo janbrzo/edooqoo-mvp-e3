@@ -11,6 +11,10 @@ import ExerciseNegativePrefixes from '../worksheet/ExerciseNegativePrefixes';
 import ExerciseCategorize from '../worksheet/ExerciseCategorize';
 import ExerciseParaphrasing from '../worksheet/ExerciseParaphrasing';
 import ExerciseCompleteWord from '../worksheet/ExerciseCompleteWord';
+import ExerciseOddOneOut from '../worksheet/ExerciseOddOneOut';
+import ExerciseGapText from '../worksheet/ExerciseGapText';
+import ExerciseSentenceTransformation from '../worksheet/ExerciseSentenceTransformation';
+import ExerciseMatchingHalves from '../worksheet/ExerciseMatchingHalves';
 import { deepFixTextObjects } from '../../utils/textObjectFixer';
 import { getIconComponent } from '../../utils/iconUtils';
 
@@ -381,6 +385,43 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
                   isEditing={false}
                   viewMode="student"
                   onWordChange={() => {}} // No-op for shared view
+                />
+              )}
+
+              {/* NEWLY ADDED: Missing exercise types */}
+              {exercise.type === 'odd-one-out' && exercise.questions && (
+                <ExerciseOddOneOut
+                  questions={exercise.questions}
+                  isEditing={false}
+                  viewMode="student"
+                  onQuestionChange={() => {}} // No-op for shared view
+                />
+              )}
+
+              {exercise.type === 'gap-text' && exercise.sentences && (
+                <ExerciseGapText
+                  sentences={exercise.sentences}
+                  isEditing={false}
+                  viewMode="student"
+                  onSentenceChange={() => {}} // No-op for shared view
+                />
+              )}
+
+              {exercise.type === 'sentence-transformation' && exercise.sentences && (
+                <ExerciseSentenceTransformation
+                  sentences={exercise.sentences}
+                  isEditing={false}
+                  viewMode="student"
+                  onSentenceChange={() => {}} // No-op for shared view
+                />
+              )}
+
+              {exercise.type === 'matching-halves' && exercise.sentence_halves && (
+                <ExerciseMatchingHalves
+                  sentence_halves={exercise.sentence_halves}
+                  isEditing={false}
+                  viewMode="student"
+                  onHalvesChange={() => {}} // No-op for shared view
                 />
               )}
 
