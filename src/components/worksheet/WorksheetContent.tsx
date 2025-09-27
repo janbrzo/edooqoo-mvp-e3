@@ -28,6 +28,7 @@ interface WorksheetContentProps {
   inputParams?: any;
   userId?: string;
   onExpandAll?: (expandAllFn: () => void) => void;
+  onCloseSidebar?: (closeSidebarFn: () => void) => void;
 }
 
 export default function WorksheetContent({
@@ -40,8 +41,18 @@ export default function WorksheetContent({
   isDownloadUnlocked,
   inputParams,
   userId,
-  onExpandAll
+  onExpandAll,
+  onCloseSidebar
 }: WorksheetContentProps) {
+  // State for controlling sidebar visibility
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Pass closeSidebar function to parent for toolbar usage
+  React.useEffect(() => {
+    if (onCloseSidebar) {
+      onCloseSidebar(() => setSidebarOpen(false));
+    }
+  }, [onCloseSidebar]);
   // Check if worksheet has grammar rules
   const hasGrammar = Boolean(editableWorksheet?.grammar_rules);
   const worksheetTimes = useWorksheetTimes(inputParams?.lessonTime, hasGrammar);
@@ -221,6 +232,8 @@ export default function WorksheetContent({
           onExpandAll={navigation.expandAll}
           isAllCollapsed={navigation.isAllCollapsed}
           isAllExpanded={navigation.isAllExpanded}
+          isOpen={sidebarOpen}
+          setIsOpen={setSidebarOpen}
         />
       )}
 

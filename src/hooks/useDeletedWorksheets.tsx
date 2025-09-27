@@ -1,11 +1,11 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface WorksheetHistoryItem {
+interface DeletedWorksheetItem {
   id: string;
   title: string;
   created_at: string;
+  deleted_at: string;
   form_data: any;
   ai_response: string;
   html_content: string;
@@ -13,25 +13,25 @@ interface WorksheetHistoryItem {
   generation_time_seconds?: number;
 }
 
-export const useWorksheetHistory = (studentId?: string) => {
-  const [worksheets, setWorksheets] = useState<WorksheetHistoryItem[]>([]);
+export const useDeletedWorksheets = (studentId?: string) => {
+  const [deletedWorksheets, setDeletedWorksheets] = useState<DeletedWorksheetItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchWorksheets();
+    fetchDeletedWorksheets();
   }, [studentId]);
 
-  const fetchWorksheets = async () => {
+  const fetchDeletedWorksheets = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       let query = supabase
         .from('worksheets')
-        .select('id, title, created_at, form_data, ai_response, html_content, student_id, generation_time_seconds')
+        .select('id, title, created_at, deleted_at, form_data, ai_response, html_content, student_id, generation_time_seconds')
         .eq('teacher_id', user.id)
-        .is('deleted_at', null) // Only fetch non-deleted worksheets
-        .order('created_at', { ascending: false });
+        .not('deleted_at', 'is', null) // Only fetch deleted worksheets
+        .order('deleted_at', { ascending: false });
 
       if (studentId) {
         query = query.eq('student_id', studentId);
@@ -40,39 +40,12 @@ export const useWorksheetHistory = (studentId?: string) => {
       const { data, error } = await query;
 
       if (error) throw error;
-      setWorksheets(data || []);
+      setDeletedWorksheets(data || []);
     } catch (error: any) {
-      console.error('Error fetching worksheets:', error);
+      console.error('Error fetching deleted worksheets:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const deleteWorksheet = async (worksheetId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Use direct RPC call with proper typing
-      const { error } = await supabase.rpc('soft_delete_worksheet' as any, {
-        p_worksheet_id: worksheetId,
-        p_teacher_id: user.id
-      });
-
-      if (error) throw error;
-
-      // Refresh the worksheets list
-      await fetchWorksheets();
-      
-      return { success: true };
-    } catch (error: any) {
-      console.error('Error deleting worksheet:', error);
-      return { success: false, error: error.message };
-    }
-  };
-
-  const getRecentWorksheets = (limit: number = 3) => {
-    return worksheets.slice(0, limit);
   };
 
   const restoreWorksheet = async (worksheetId: string) => {
@@ -89,8 +62,8 @@ export const useWorksheetHistory = (studentId?: string) => {
 
       if (error) throw error;
 
-      // Refresh the worksheets list
-      await fetchWorksheets();
+      // Refresh the deleted worksheets list
+      await fetchDeletedWorksheets();
       
       return { success: true };
     } catch (error: any) {
@@ -100,11 +73,9 @@ export const useWorksheetHistory = (studentId?: string) => {
   };
 
   return {
-    worksheets,
+    deletedWorksheets,
     loading,
-    getRecentWorksheets,
-    refetch: fetchWorksheets,
-    deleteWorksheet,
+    refetch: fetchDeletedWorksheets,
     restoreWorksheet
   };
 };
