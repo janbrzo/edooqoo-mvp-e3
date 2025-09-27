@@ -28,6 +28,8 @@ interface ExerciseNavSidebarProps {
   onExpandAll: () => void;
   isAllCollapsed: boolean;
   isAllExpanded: boolean;
+  isOpen?: boolean;
+  setIsOpen?: (open: boolean) => void;
 }
 
 const ExerciseNavContent: React.FC<ExerciseNavSidebarProps> = ({
@@ -108,11 +110,49 @@ const ExerciseNavContent: React.FC<ExerciseNavSidebarProps> = ({
 
 export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => {
   const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState(false);
+  const [localIsOpen, setLocalIsOpen] = useState(false);
+  
+  // Use controlled state if provided, otherwise use local state
+  const isOpen = props.isOpen !== undefined ? props.isOpen : localIsOpen;
+  const setIsOpen = props.setIsOpen || setLocalIsOpen;
 
-  // Numbered scroll buttons - always visible above menu
+  // Close sidebar when clicking outside (desktop only)
+  React.useEffect(() => {
+    if (!isMobile && isOpen) {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as Element;
+        if (target && !target.closest('.nav-sidebar') && !target.closest('.nav-menu-button')) {
+          setIsOpen(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen, isMobile, setIsOpen]);
+
+  // Eye icon + Numbered scroll buttons - always visible above menu (vertical layout)
   const NumberedScrollButtons = () => (
-    <div className="fixed top-4 left-20 z-50 flex gap-1">
+    <div className="fixed top-16 left-4 z-50 flex flex-col gap-1">
+      {/* Eye icon for Expand/Collapse All */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={props.isAllExpanded ? props.onCollapseAll : props.onExpandAll}
+        className={cn(
+          "w-8 h-8 p-0 shadow-lg bg-background/95 backdrop-blur-sm",
+          "hover:bg-worksheet-purple hover:text-white"
+        )}
+        title={props.isAllExpanded ? "Collapse All" : "Expand All"}
+      >
+        {props.isAllExpanded ? (
+          <EyeOff className="h-4 w-4" />
+        ) : (
+          <Eye className="h-4 w-4" />
+        )}
+      </Button>
+      
+      {/* Numbered buttons for each exercise */}
       {props.exercises.map((_, index) => (
         <Button
           key={index}
@@ -166,14 +206,14 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
         variant="outline"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 shadow-lg bg-background/95 backdrop-blur-sm"
+        className="fixed top-4 left-4 z-50 shadow-lg bg-background/95 backdrop-blur-sm nav-menu-button"
       >
         <Menu className="h-4 w-4" />
       </Button>
 
       {/* Floating sidebar */}
       {isOpen && (
-        <div className="fixed left-4 top-16 h-[calc(100vh-5rem)] w-80 z-40 shadow-lg border bg-background/95 backdrop-blur-sm rounded-lg">
+        <div className="fixed left-4 top-16 h-[calc(100vh-5rem)] w-80 z-40 shadow-lg border bg-background/95 backdrop-blur-sm rounded-lg nav-sidebar">
           <ExerciseNavContent {...props} />
         </div>
       )}
