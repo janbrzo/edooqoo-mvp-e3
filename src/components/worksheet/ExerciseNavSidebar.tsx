@@ -163,10 +163,19 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
         <Button
           variant="outline"
           size="sm"
-          onClick={props.isAllExpanded ? props.onCollapseAll : props.onExpandAll}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Eye button clicked - isAllExpanded:', props.isAllExpanded);
+            if (props.isAllExpanded) {
+              props.onCollapseAll();
+            } else {
+              props.onExpandAll();
+            }
+          }}
           className={cn(
-            "w-8 h-8 p-0 shadow-lg bg-background/95 backdrop-blur-sm",
-            "hover:bg-worksheet-purple hover:text-white"
+            "w-8 h-8 p-0 shadow-lg bg-background/95 backdrop-blur-sm border-2",
+            "hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple"
           )}
           title={props.isAllExpanded ? "Collapse All" : "Expand All"}
         >
@@ -182,15 +191,19 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              const grammarSection = document.querySelector('#grammar-rules-section, [data-section="grammar"]');
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Grammar button clicked');
+              const grammarSection = document.querySelector('[data-section="grammar"], .bg-worksheet-purple');
+              console.log('Grammar section found:', grammarSection);
               if (grammarSection) {
                 grammarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }
             }}
             className={cn(
-              "w-8 h-8 p-0 text-xs font-bold shadow-lg bg-background/95 backdrop-blur-sm",
-              "hover:bg-worksheet-purple hover:text-white"
+              "w-8 h-8 p-0 text-xs font-bold shadow-lg bg-background/95 backdrop-blur-sm border-2",
+              "hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple"
             )}
             title="Scroll to Grammar Section"
           >
@@ -204,11 +217,19 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
             key={index}
             variant={props.activeExercise === index ? "default" : "outline"}
             size="sm"
-            onClick={() => props.onScrollToExercise(index)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log(`Exercise ${index + 1} button clicked`);
+              props.onScrollToExercise(index);
+            }}
             className={cn(
-              "w-8 h-8 p-0 text-xs font-medium shadow-lg bg-background/95 backdrop-blur-sm",
-              props.activeExercise === index && "bg-worksheet-purple hover:bg-worksheet-purpleDark text-white"
+              "w-8 h-8 p-0 text-xs font-medium shadow-lg bg-background/95 backdrop-blur-sm border-2",
+              props.activeExercise === index 
+                ? "bg-worksheet-purple hover:bg-worksheet-purpleDark text-white border-worksheet-purple" 
+                : "hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple"
             )}
+            title={`Scroll to Exercise ${index + 1}`}
           >
             {index + 1}
           </Button>

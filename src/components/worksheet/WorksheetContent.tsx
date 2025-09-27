@@ -320,7 +320,7 @@ export default function WorksheetContent({
       )}
 
       {editableWorksheet.grammar_rules && (
-        <div className="relative">
+        <div className="relative" data-section="grammar" id="grammar-rules-section">
           {!isDownloadUnlocked && <DemoWatermark />}
           <GrammarRules
             grammarRules={editableWorksheet.grammar_rules}
