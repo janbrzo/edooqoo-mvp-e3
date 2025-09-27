@@ -13,7 +13,6 @@ import WorksheetRating from "@/components/WorksheetRating";
 import TeacherNotes from "./TeacherNotes";
 import DemoWatermark from "./DemoWatermark";
 import { ExerciseNavSidebar } from "./ExerciseNavSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp, RotateCcw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -170,28 +169,27 @@ export default function WorksheetContent({
   // const deletedExercises = editableWorksheet.exercises?.filter((ex: any) => ex.deleted) || [];
 
   return (
-    <SidebarProvider>
-      <div className="worksheet-content mb-8 relative w-full" id="worksheet-content">
-        {/* Exercise Navigation Sidebar */}
-        {activeExercises.length > 0 && (
-          <ExerciseNavSidebar
-            exercises={activeExercises.map((exercise, index) => ({
-              title: exercise.title,
-              icon: exercise.icon,
-              estimated_time: exercise.estimated_time
-            }))}
-            activeExercise={navigation.activeExercise}
-            collapsedExercises={navigation.collapsedExercises}
-            onScrollToExercise={navigation.scrollToExercise}
-            onToggleExercise={navigation.toggleExercise}
-            onCollapseAll={navigation.collapseAll}
-            onExpandAll={navigation.expandAll}
-            isAllCollapsed={navigation.isAllCollapsed}
-            isAllExpanded={navigation.isAllExpanded}
-          />
-        )}
+    <div className="worksheet-content mb-8 relative w-full" id="worksheet-content">
+      {/* Exercise Navigation Sidebar */}
+      {activeExercises.length > 0 && (
+        <ExerciseNavSidebar
+          exercises={activeExercises.map((exercise, index) => ({
+            title: exercise.title,
+            icon: exercise.icon,
+            estimated_time: exercise.estimated_time
+          }))}
+          activeExercise={navigation.activeExercise}
+          collapsedExercises={navigation.collapsedExercises}
+          onScrollToExercise={navigation.scrollToExercise}
+          onToggleExercise={navigation.toggleExercise}
+          onCollapseAll={navigation.collapseAll}
+          onExpandAll={navigation.expandAll}
+          isAllCollapsed={navigation.isAllCollapsed}
+          isAllExpanded={navigation.isAllExpanded}
+        />
+      )}
 
-        <div className="page-number"></div>
+      <div className="page-number"></div>
       
       <div className="bg-white p-6 border rounded-lg shadow-sm mb-6 relative">
         {!isDownloadUnlocked && <DemoWatermark />}
@@ -379,16 +377,15 @@ export default function WorksheetContent({
 
       <TeacherNotes />
       
-        {/* Global regeneration notification */}
-        {isLoading && loadingExerciseIndex !== null && (
-          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-worksheet-purple text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm font-medium">
-              {getExerciseName(loadingExerciseIndex)} is being regenerated...
-            </span>
-          </div>
-        )}
-      </div>
-    </SidebarProvider>
+      {/* Global regeneration notification */}
+      {isLoading && loadingExerciseIndex !== null && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-worksheet-purple text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm font-medium">
+            {getExerciseName(loadingExerciseIndex)} is being regenerated...
+          </span>
+        </div>
+      )}
+    </div>
   );
 }

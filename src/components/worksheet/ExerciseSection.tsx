@@ -198,10 +198,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 
         <Collapsible open={!isCollapsed} onOpenChange={() => onToggleCollapse?.()}>
           <CollapsibleTrigger asChild>
-            <div className="px-5 pb-2 cursor-pointer flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <ChevronDown className={cn("h-4 w-4 transition-transform", isCollapsed && "rotate-180")} />
-              <span>{isCollapsed ? 'Expand exercise content' : 'Collapse exercise content'}</span>
-            </div>
+            <Button
+              variant="ghost"
+              className="w-full justify-start px-5 pb-2 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ChevronDown className={cn("h-4 w-4 mr-2 transition-transform", isCollapsed && "rotate-180")} />
+              {isCollapsed ? 'Expand exercise content' : 'Collapse exercise content'}
+            </Button>
           </CollapsibleTrigger>
           
           <CollapsibleContent className="animate-accordion-down data-[state=closed]:animate-accordion-up">
