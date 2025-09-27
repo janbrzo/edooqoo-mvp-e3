@@ -158,7 +158,7 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
     );
 
     return (
-      <div className="fixed top-16 left-4 z-50 flex flex-col gap-1">
+      <div className="fixed top-16 left-4 z-[9999] flex flex-col gap-1 pointer-events-auto">
         {/* Eye icon for Expand/Collapse All */}
         <Button
           variant="outline"
@@ -178,8 +178,9 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
             }
           }}
           className={cn(
-            "w-8 h-8 p-0 shadow-lg bg-background/95 backdrop-blur-sm border-2",
-            "hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple"
+            "w-8 h-8 p-0 shadow-lg bg-background border-2 pointer-events-auto",
+            "hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple",
+            "transition-all duration-200 cursor-pointer"
           )}
           title={props.isAllExpanded ? "Collapse All" : "Expand All"}
         >
@@ -216,8 +217,9 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
               }
             }}
             className={cn(
-              "w-8 h-8 p-0 text-xs font-bold shadow-lg bg-background/95 backdrop-blur-sm border-2",
-              "hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple"
+              "w-8 h-8 p-0 text-xs font-bold shadow-lg bg-background border-2 pointer-events-auto",
+              "hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple",
+              "transition-all duration-200 cursor-pointer"
             )}
             title="Scroll to Grammar Section"
           >
@@ -240,10 +242,11 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
               props.onScrollToExercise(index);
             }}
             className={cn(
-              "w-8 h-8 p-0 text-xs font-medium shadow-lg bg-background/95 backdrop-blur-sm border-2",
+              "w-8 h-8 p-0 text-xs font-medium shadow-lg bg-background border-2 pointer-events-auto",
               props.activeExercise === index 
                 ? "bg-worksheet-purple hover:bg-worksheet-purpleDark text-white border-worksheet-purple" 
-                : "hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple"
+                : "hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple",
+              "transition-all duration-200 cursor-pointer"
             )}
             title={`Scroll to Exercise ${index + 1}`}
           >
