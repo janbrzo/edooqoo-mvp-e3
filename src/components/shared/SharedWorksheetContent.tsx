@@ -8,6 +8,9 @@ import ExerciseReading from '../worksheet/ExerciseReading';
 import ExerciseDialogue from '../worksheet/ExerciseDialogue';
 import ExerciseWordOrder from '../worksheet/ExerciseWordOrder';
 import ExerciseNegativePrefixes from '../worksheet/ExerciseNegativePrefixes';
+import ExerciseCategorize from '../worksheet/ExerciseCategorize';
+import ExerciseParaphrasing from '../worksheet/ExerciseParaphrasing';
+import ExerciseCompleteWord from '../worksheet/ExerciseCompleteWord';
 import { deepFixTextObjects } from '../../utils/textObjectFixer';
 import { getIconComponent } from '../../utils/iconUtils';
 
@@ -349,6 +352,36 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
                     </div>
                   ))}
                 </div>
+              )}
+
+              {exercise.type === 'categorize' && (exercise.items || exercise.words) && exercise.categories && (
+                <ExerciseCategorize
+                  items={exercise.items}
+                  words={exercise.words}
+                  categories={exercise.categories}
+                  isEditing={false}
+                  viewMode="student"
+                  onWordsChange={() => {}} // No-op for shared view
+                  onCategoryChange={() => {}} // No-op for shared view
+                />
+              )}
+
+              {exercise.type === 'paraphrasing' && exercise.sentences && (
+                <ExerciseParaphrasing
+                  sentences={exercise.sentences}
+                  isEditing={false}
+                  viewMode="student"
+                  onSentenceChange={() => {}} // No-op for shared view
+                />
+              )}
+
+              {exercise.type === 'complete-word' && exercise.words && (
+                <ExerciseCompleteWord
+                  words={exercise.words}
+                  isEditing={false}
+                  viewMode="student"
+                  onWordChange={() => {}} // No-op for shared view
+                />
               )}
 
               {/* Other exercise types - use existing simple rendering */}

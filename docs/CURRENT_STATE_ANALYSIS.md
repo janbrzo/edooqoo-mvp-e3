@@ -6,6 +6,7 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
+**Ostatnia naprawa:** Naprawiono wyświetlanie udostępnianych worksheetów - wszystkie nowe typy ćwiczeń działają poprawnie
 
 ## Wygląd i Interface
 

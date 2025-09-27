@@ -5,6 +5,8 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
+**Latest Update (January 2025):** Fixed shared worksheet display issues - all new exercise types (categorize, paraphrasing, complete-word) now properly display content instead of appearing empty. Removed duplicate "Deleted Exercises" section for better UX.
+
 ## Architecture Stack
 
 ### Frontend

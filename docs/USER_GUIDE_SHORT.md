@@ -4,6 +4,8 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
+**Latest Fix:** All exercise types now work perfectly in shared worksheets, including new types like Categorize, Paraphrasing, and Complete Word.
+
 ## How it works?
 1. **Create account** - Sign up and get 2 free tokens
 2. **Add students** - Manage your student list
