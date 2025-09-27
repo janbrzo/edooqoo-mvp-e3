@@ -28,7 +28,16 @@ const EXERCISE_TYPES_MAP: Record<string, string> = {
   'matchinghalves': 'Matching Halves',
   'completeword': 'Complete Word',
   'categorize': 'Categorize',
-  'negativeprefixes': 'Negative Prefixes'
+  'negativeprefixes': 'Negative Prefixes',
+  // Add hyphenated versions for backward compatibility
+  'matching-halves': 'Matching Halves',
+  'true-false': 'True/False',
+  'gap-text': 'Gap Text',
+  'fill-in-blanks': 'Fill in the Blanks',
+  'synonyms-antonyms': 'Synonyms & Antonyms',
+  'word-order': 'Word Order',
+  'odd-one-out': 'Odd One Out',
+  'negative-prefixes': 'Negative Prefixes'
 };
 
 interface InputParamsCardProps {

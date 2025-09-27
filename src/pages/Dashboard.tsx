@@ -81,8 +81,19 @@ const Dashboard = () => {
   };
 
   const handleDeleteWorksheet = async (worksheetId: string) => {
-    await refetchWorksheets();
-    return { success: true };
+    console.log('Dashboard: Deleting worksheet', worksheetId);
+    try {
+      const result = await worksheets.deleteWorksheet(worksheetId);
+      if (result.success) {
+        await refetchWorksheets(); // Refresh the worksheets list
+        return { success: true };
+      } else {
+        return { success: false, error: result.error || 'Failed to delete worksheet' };
+      }
+    } catch (error) {
+      console.error('Error deleting worksheet:', error);
+      return { success: false, error: 'Failed to delete worksheet' };
+    }
   };
 
   const formatWorksheetTitle = (worksheet: any) => {

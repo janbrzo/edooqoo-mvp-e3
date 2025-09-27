@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useStudents } from '@/hooks/useStudents';
 import { useWorksheetHistory } from '@/hooks/useWorksheetHistory';
+import { useDeletedWorksheets } from '@/hooks/useDeletedWorksheets';
 import { StudentEditDialog } from '@/components/StudentEditDialog';
 import { DeleteWorksheetButton } from '@/components/DeleteWorksheetButton';
 import { StudentSelector } from '@/components/StudentSelector';
@@ -28,7 +29,8 @@ const StudentPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { students, updateStudent, deleteStudent } = useStudents();
-  const { worksheets, loading, deleteWorksheet, refetch: refetchWorksheets } = useWorksheetHistory(id || '');
+  const { worksheets, loading, deleteWorksheet, refetch: refetchWorksheets, restoreWorksheet } = useWorksheetHistory(id || '');
+  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted } = useDeletedWorksheets(id || '');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const student = students.find(s => s.id === id);
