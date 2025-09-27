@@ -167,9 +167,13 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
             e.preventDefault();
             e.stopPropagation();
             console.log('Eye button clicked - isAllExpanded:', props.isAllExpanded);
+            console.log('collapseAll function:', typeof props.onCollapseAll);
+            console.log('expandAll function:', typeof props.onExpandAll);
             if (props.isAllExpanded) {
+              console.log('Calling onCollapseAll...');
               props.onCollapseAll();
             } else {
+              console.log('Calling onExpandAll...');
               props.onExpandAll();
             }
           }}
@@ -195,10 +199,20 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
               e.preventDefault();
               e.stopPropagation();
               console.log('Grammar button clicked');
-              const grammarSection = document.querySelector('[data-section="grammar"], .bg-worksheet-purple');
+              const grammarSection = document.querySelector('[data-section="grammar"], .bg-worksheet-purple, #grammar-rules-section');
               console.log('Grammar section found:', grammarSection);
               if (grammarSection) {
                 grammarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              } else {
+                // Alternative approach - look for any element with "Grammar" in text
+                const allElements = document.querySelectorAll('*');
+                for (let element of allElements) {
+                  if (element.textContent?.toLowerCase().includes('grammar rules')) {
+                    console.log('Found grammar element by text:', element);
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    break;
+                  }
+                }
               }
             }}
             className={cn(
@@ -221,6 +235,8 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
               e.preventDefault();
               e.stopPropagation();
               console.log(`Exercise ${index + 1} button clicked`);
+              console.log('onScrollToExercise function:', typeof props.onScrollToExercise);
+              console.log('Available exercises:', props.exercises.length);
               props.onScrollToExercise(index);
             }}
             className={cn(

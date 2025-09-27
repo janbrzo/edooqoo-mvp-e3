@@ -14,6 +14,7 @@ import ExerciseCompleteWord from '../worksheet/ExerciseCompleteWord';
 import ExerciseOddOneOut from '../worksheet/ExerciseOddOneOut';
 import ExerciseGapText from '../worksheet/ExerciseGapText';
 import ExerciseSentenceTransformation from '../worksheet/ExerciseSentenceTransformation';
+import ExerciseMatchingHalves from '../worksheet/ExerciseMatchingHalves';
 import { deepFixTextObjects } from '../../utils/textObjectFixer';
 import { getIconComponent } from '../../utils/iconUtils';
 
@@ -412,6 +413,15 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
                   isEditing={false}
                   viewMode="student"
                   onSentenceChange={() => {}} // No-op for shared view
+                />
+              )}
+
+              {exercise.type === 'matching-halves' && exercise.sentence_halves && (
+                <ExerciseMatchingHalves
+                  sentence_halves={exercise.sentence_halves}
+                  isEditing={false}
+                  viewMode="student"
+                  onHalvesChange={() => {}} // No-op for shared view
                 />
               )}
 
