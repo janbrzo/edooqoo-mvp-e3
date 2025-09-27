@@ -149,8 +149,8 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
     }
   }, [isOpen, isMobile, setIsOpen]);
 
-  // Floating navigation buttons - completely independent and always on top
-  const FloatingNavButtons = () => {
+  // Working floating navigation buttons using Shadcn Button components
+  const WorkingFloatingButtons = () => {
     // Check if grammar section exists in exercises
     const hasGrammar = props.exercises.some(exercise => 
       exercise.title.toLowerCase().includes('grammar') ||
@@ -158,50 +158,33 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
     );
 
     return (
-      <div 
-        className="fixed top-16 left-4 flex flex-col gap-1"
-        style={{ 
-          zIndex: 99999,
-          pointerEvents: 'auto',
-          position: 'fixed'
-        }}
-      >
+      <div className="fixed top-16 left-4 z-50 flex flex-col gap-1">
         {/* Eye icon for Expand/Collapse All */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Eye button clicked - isAllExpanded:', props.isAllExpanded);
+        <Button
+          variant="outline"
+          onClick={() => {
             if (props.isAllExpanded) {
-              console.log('Calling onCollapseAll...');
               props.onCollapseAll();
             } else {
-              console.log('Calling onExpandAll...');
               props.onExpandAll();
             }
           }}
-          className="w-8 h-8 rounded border-2 border-input bg-background shadow-lg hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple transition-all duration-200 flex items-center justify-center"
+          className="w-8 h-8 p-0 text-xs font-medium shadow-lg bg-background/95 backdrop-blur-sm"
           title={props.isAllExpanded ? "Collapse All" : "Expand All"}
-          style={{ pointerEvents: 'auto', zIndex: 99999 }}
         >
           {props.isAllExpanded ? (
             <EyeOff className="h-4 w-4" />
           ) : (
             <Eye className="h-4 w-4" />
           )}
-        </button>
+        </Button>
 
         {/* Grammar button - shows only if grammar section exists */}
         {hasGrammar && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('Grammar button clicked');
+          <Button
+            variant="outline"
+            onClick={() => {
               const grammarSection = document.querySelector('[data-section="grammar"], .bg-worksheet-purple, #grammar-rules-section');
-              console.log('Grammar section found:', grammarSection);
               if (grammarSection) {
                 grammarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
               } else {
@@ -209,42 +192,33 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
                 const allElements = document.querySelectorAll('*');
                 for (let element of allElements) {
                   if (element.textContent?.toLowerCase().includes('grammar rules')) {
-                    console.log('Found grammar element by text:', element);
                     element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     break;
                   }
                 }
               }
             }}
-            className="w-8 h-8 rounded border-2 border-input bg-background shadow-lg hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple transition-all duration-200 flex items-center justify-center text-xs font-bold"
+            className="w-8 h-8 p-0 text-xs font-bold shadow-lg bg-background/95 backdrop-blur-sm"
             title="Scroll to Grammar Section"
-            style={{ pointerEvents: 'auto', zIndex: 99999 }}
           >
             G
-          </button>
+          </Button>
         )}
         
         {/* Numbered buttons for each exercise */}
         {props.exercises.map((_, index) => (
-          <button
+          <Button
             key={index}
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log(`Exercise ${index + 1} button clicked`);
-              props.onScrollToExercise(index);
-            }}
-            className={`w-8 h-8 rounded border-2 shadow-lg transition-all duration-200 flex items-center justify-center text-xs font-medium ${
-              props.activeExercise === index 
-                ? "bg-worksheet-purple text-white border-worksheet-purple hover:bg-worksheet-purpleDark" 
-                : "border-input bg-background hover:bg-worksheet-purple hover:text-white hover:border-worksheet-purple"
-            }`}
+            variant="outline"
+            onClick={() => props.onScrollToExercise(index)}
+            className={cn(
+              "w-8 h-8 p-0 text-xs font-medium shadow-lg bg-background/95 backdrop-blur-sm",
+              props.activeExercise === index && "bg-primary text-primary-foreground"
+            )}
             title={`Scroll to Exercise ${index + 1}`}
-            style={{ pointerEvents: 'auto', zIndex: 99999 }}
           >
             {index + 1}
-          </button>
+          </Button>
         ))}
       </div>
     );
@@ -254,7 +228,7 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
     // Mobile: Use Sheet/Drawer + numbered buttons
     return (
     <>
-      <FloatingNavButtons />
+      <WorkingFloatingButtons />
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <Button
@@ -279,7 +253,7 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
 // Desktop: Use floating div with manual state + numbered buttons
 return (
   <>
-    <FloatingNavButtons />
+    <WorkingFloatingButtons />
       
       {/* Floating trigger button */}
       <Button
