@@ -395,8 +395,12 @@ async function createMissingSubscriptionEvents(supabaseService: any, user: any, 
         });
     }
 
-    // If subscription is marked for cancellation, add subscription.updated event
-    if (subscription.cancel_at_period_end && !eventTypes.includes('customer.subscription.updated')) {
+    // Check for state changes requiring events
+    const hasUpdatedEvent = eventTypes.includes('customer.subscription.updated');
+    const hasDeletedEvent = eventTypes.includes('customer.subscription.deleted');
+    
+    // ENHANCED: Handle cancellation and renewal operations with proper _cancelled suffix
+    if (subscription.cancel_at_period_end && !hasUpdatedEvent) {
       console.log('[CHECK-SUBSCRIPTION] Adding missing subscription.updated (cancellation) event');
       await supabaseService
         .from('subscription_events')
@@ -404,8 +408,8 @@ async function createMissingSubscriptionEvents(supabaseService: any, user: any, 
           teacher_id: user.id,
           email: user.email,
           event_type: 'customer.subscription.updated',
-          old_plan_type: finalSubscriptionType,
-          new_plan_type: finalSubscriptionType, // Same type, but status changes
+          old_plan_type: finalSubscriptionType, // Original plan type
+          new_plan_type: finalSubscriptionType + '_cancelled', // Add _cancelled suffix
           tokens_added: 0,
           stripe_event_id: `sync_updated_${subscription.id}_${Date.now()}`,
           event_data: {
@@ -416,14 +420,51 @@ async function createMissingSubscriptionEvents(supabaseService: any, user: any, 
             current_period_start: subscription.current_period_start,
             current_period_end: subscription.current_period_end,
             amount: amount,
-            plan_name: finalSubscriptionType,
+            plan_name: finalSubscriptionType + '_cancelled',
             sync_generated: true
           }
         });
     }
+    
+    // ENHANCED: Detect renewal operations (when cancel_at_period_end changes from true to false)
+    // This requires checking stored subscription state vs current state
+    if (!subscription.cancel_at_period_end && subscription.status === 'active') {
+      // Check if we have a stored subscription that was previously marked for cancellation
+      const { data: storedSub } = await supabaseService
+        .from('subscriptions')
+        .select('subscription_status')
+        .eq('teacher_id', user.id)
+        .single();
+        
+      if (storedSub?.subscription_status === 'active_cancelled') {
+        console.log('[CHECK-SUBSCRIPTION] Adding missing subscription.updated (renewal) event');
+        await supabaseService
+          .from('subscription_events')
+          .insert({
+            teacher_id: user.id,
+            email: user.email,
+            event_type: 'customer.subscription.updated',
+            old_plan_type: finalSubscriptionType + '_cancelled', // Previous cancelled state
+            new_plan_type: finalSubscriptionType, // Renewed plan
+            tokens_added: 0,
+            stripe_event_id: `sync_renewed_${subscription.id}_${Date.now()}`,
+            event_data: {
+              subscription_id: subscription.id,
+              customer_id: customerId,
+              status: subscription.status,
+              cancel_at_period_end: subscription.cancel_at_period_end,
+              current_period_start: subscription.current_period_start,
+              current_period_end: subscription.current_period_end,
+              amount: amount,
+              plan_name: finalSubscriptionType,
+              sync_generated: true
+            }
+          });
+      }
+    }
 
     // If subscription is cancelled, add subscription.deleted event
-    if (subscription.status === 'canceled' && !eventTypes.includes('customer.subscription.deleted')) {
+    if (subscription.status === 'canceled' && !hasDeletedEvent) {
       console.log('[CHECK-SUBSCRIPTION] Adding missing subscription.deleted event');
       await supabaseService
         .from('subscription_events')
@@ -431,7 +472,7 @@ async function createMissingSubscriptionEvents(supabaseService: any, user: any, 
           teacher_id: user.id,
           email: user.email,
           event_type: 'customer.subscription.deleted',
-          old_plan_type: finalSubscriptionType,
+          old_plan_type: finalSubscriptionType + '_cancelled', // Was cancelled before deletion
           new_plan_type: 'Inactive',
           tokens_added: 0,
           stripe_event_id: `sync_deleted_${subscription.id}_${Date.now()}`,
