@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@12.18.0'
@@ -127,23 +126,24 @@ serve(async (req) => {
       shouldUpdateStoredId = true; // No stored ID, need to find and store one
     }
 
-    // If no active stored subscription, get all active subscriptions and pick the best one
+    // Get ALL subscriptions (active, canceled, past_due, etc.) and pick the best one
     if (!subscription) {
-      const subscriptions = await stripe.subscriptions.list({
+      const allSubscriptions = await stripe.subscriptions.list({
         customer: customerId,
-        status: 'active',
-        limit: 10,
+        limit: 20, // Increased to get more history
       });
 
-      if (subscriptions.data.length === 0) {
-        console.log('[CHECK-SUBSCRIPTION] No active subscriptions');
+      console.log('[CHECK-SUBSCRIPTION] Found subscriptions:', allSubscriptions.data.length);
+      
+      if (allSubscriptions.data.length === 0) {
+        console.log('[CHECK-SUBSCRIPTION] No subscriptions found at all');
         
         // FIXED: Determine subscription type based on subscription history
         const subscriptionType = userHasSubscriptionHistory ? 'Inactive' : 'Free Demo';
         const subscriptionStatus = userHasSubscriptionHistory ? 'cancelled' : 'active';
-        const isTokensFrozen = userHasSubscriptionHistory; // Only freeze if they had subscription before
+        const isTokensFrozen = userHasSubscriptionHistory;
         
-        console.log('[CHECK-SUBSCRIPTION] Setting subscription type to:', subscriptionType, 'status:', subscriptionStatus, 'frozen:', isTokensFrozen, 'based on history:', userHasSubscriptionHistory);
+        console.log('[CHECK-SUBSCRIPTION] Setting subscription type to:', subscriptionType, 'status:', subscriptionStatus, 'frozen:', isTokensFrozen);
 
         await supabaseService
           .from('profiles')
@@ -160,24 +160,55 @@ serve(async (req) => {
             subscribed: false, 
             subscription_type: subscriptionType,
             subscription_status: subscriptionStatus,
-            message: 'No active subscription found' 
+            message: 'No subscriptions found' 
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      // Priority: cancel_at_period_end = true first, then latest current_period_end
-      const cancelledSubs = subscriptions.data.filter(sub => sub.cancel_at_period_end);
-      if (cancelledSubs.length > 0) {
-        subscription = cancelledSubs.sort((a, b) => b.current_period_end - a.current_period_end)[0];
+      // ENHANCED PRIORITY LOGIC: Find the most relevant subscription
+      // 1. Active subscriptions with cancel_at_period_end (being cancelled)
+      // 2. Active subscriptions without cancel
+      // 3. Recently cancelled subscriptions (within last 30 days)
+      // 4. Any other subscription by most recent period end
+      
+      const activeSubs = allSubscriptions.data.filter((sub: any) => sub.status === 'active');
+      const cancelledSubs = allSubscriptions.data.filter((sub: any) => sub.status === 'canceled');
+      const recentlyCancelledSubs = cancelledSubs.filter((sub: any) => {
+        const endDate = new Date(sub.current_period_end * 1000);
+        const now = new Date();
+        const daysDiff = (now.getTime() - endDate.getTime()) / (1000 * 3600 * 24);
+        return daysDiff <= 30; // Within last 30 days
+      });
+      
+      console.log('[CHECK-SUBSCRIPTION] Subscription breakdown:', {
+        active: activeSubs.length,
+        cancelled: cancelledSubs.length,
+        recentlyCancelled: recentlyCancelledSubs.length
+      });
+
+      if (activeSubs.length > 0) {
+        // Priority to active with cancel_at_period_end
+        const activeCancelledSubs = activeSubs.filter((sub: any) => sub.cancel_at_period_end);
+        if (activeCancelledSubs.length > 0) {
+          subscription = activeCancelledSubs.sort((a: any, b: any) => b.current_period_end - a.current_period_end)[0];
+          console.log('[CHECK-SUBSCRIPTION] Using active subscription marked for cancellation');
+        } else {
+          subscription = activeSubs.sort((a: any, b: any) => b.current_period_end - a.current_period_end)[0];
+          console.log('[CHECK-SUBSCRIPTION] Using most recent active subscription');
+        }
+      } else if (recentlyCancelledSubs.length > 0) {
+        subscription = recentlyCancelledSubs.sort((a: any, b: any) => b.current_period_end - a.current_period_end)[0];
+        console.log('[CHECK-SUBSCRIPTION] Using recently cancelled subscription');
       } else {
-        subscription = subscriptions.data.sort((a, b) => b.current_period_end - a.current_period_end)[0];
+        subscription = allSubscriptions.data.sort((a: any, b: any) => b.current_period_end - a.current_period_end)[0];
+        console.log('[CHECK-SUBSCRIPTION] Using most recent subscription of any status');
       }
       
       shouldUpdateStoredId = true; // Always update since we selected a different subscription
     }
 
-    console.log('[CHECK-SUBSCRIPTION] Using subscription:', subscription.id, 'cancel_at_period_end:', subscription.cancel_at_period_end);
+    console.log('[CHECK-SUBSCRIPTION] Using subscription:', subscription.id, 'status:', subscription.status, 'cancel_at_period_end:', subscription.cancel_at_period_end);
 
     // Get subscription details
     const amount = subscription.items.data[0].price.unit_amount || 0;
@@ -210,22 +241,34 @@ serve(async (req) => {
       }
     }
 
-    // Determine normalized subscription status with consistent "cancelled" spelling
+    // ENHANCED: Determine normalized subscription status with consistent "cancelled" spelling
     let newSubscriptionStatus: string;
+    let finalSubscriptionType = subscriptionType; // Default to computed type
+    
     if (subscription.status === 'active') {
       newSubscriptionStatus = subscription.cancel_at_period_end ? 'active_cancelled' : 'active';
     } else if (subscription.status === 'canceled') {
       // Convert Stripe's "canceled" to our "cancelled" for consistency
       newSubscriptionStatus = 'cancelled';
+      finalSubscriptionType = 'Inactive'; // Override type for cancelled subscriptions
+    } else if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
+      newSubscriptionStatus = 'past_due';
     } else {
       newSubscriptionStatus = subscription.status;
+      if (['incomplete', 'incomplete_expired', 'trialing'].includes(subscription.status)) {
+        finalSubscriptionType = 'Inactive';
+      }
     }
     
     console.log('[CHECK-SUBSCRIPTION] Computed status:', { 
       stripeStatus: subscription.status, 
       cancelAtPeriodEnd: subscription.cancel_at_period_end, 
-      newSubscriptionStatus 
+      newSubscriptionStatus,
+      finalSubscriptionType
     });
+
+    // CREATE OR UPDATE MISSING SUBSCRIPTION EVENTS
+    await createMissingSubscriptionEvents(supabaseService, user, subscription, customerId, finalSubscriptionType, userHasSubscriptionHistory || false);
 
     // Always update subscription record, and update stored ID if needed
     const subscriptionUpsertData = {
@@ -233,9 +276,9 @@ serve(async (req) => {
       email: user.email,
       stripe_subscription_id: subscription.id,
       stripe_customer_id: customerId,
-      subscription_status: newSubscriptionStatus, // Use the same status logic as profiles
-      subscription_type: subscriptionType,              
-      monthly_limit: monthlyLimit,
+      subscription_status: newSubscriptionStatus,
+      subscription_type: finalSubscriptionType, // Use finalSubscriptionType which handles cancelled case             
+      monthly_limit: newSubscriptionStatus === 'cancelled' ? 0 : monthlyLimit, // Zero limit for cancelled
       current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
       current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
       updated_at: new Date().toISOString()
@@ -251,21 +294,24 @@ serve(async (req) => {
     if (subError) {
       console.error('[CHECK-SUBSCRIPTION] Error updating subscription:', subError);
     } else {
-      console.log('[CHECK-SUBSCRIPTION] Subscriptions table updated with status:', newSubscriptionStatus, 'and type:', subscriptionType);
+      console.log('[CHECK-SUBSCRIPTION] Subscriptions table updated with status:', newSubscriptionStatus, 'and type:', finalSubscriptionType);
       if (shouldUpdateStoredId) {
         console.log('[CHECK-SUBSCRIPTION] Updated stored stripe_subscription_id from', storedSubscription?.stripe_subscription_id, 'to', subscription.id);
       }
     }
 
-    // Update profile - synchronize subscription data and unfreeze tokens
+    // Update profile - synchronize subscription data with proper token freezing logic
+    const shouldFreezeTokens = ['cancelled', 'past_due', 'unpaid'].includes(newSubscriptionStatus);
+    const effectiveMonthlyLimit = shouldFreezeTokens ? 0 : monthlyLimit;
+    
     const { error: profileError } = await supabaseService
       .from('profiles')
       .update({
-        subscription_type: subscriptionType,
+        subscription_type: finalSubscriptionType,
         subscription_status: newSubscriptionStatus, 
         subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
-        monthly_worksheet_limit: monthlyLimit,
-        is_tokens_frozen: false,
+        monthly_worksheet_limit: effectiveMonthlyLimit,
+        is_tokens_frozen: shouldFreezeTokens,
         updated_at: new Date().toISOString()
       })
       .eq('id', user.id);
@@ -276,55 +322,15 @@ serve(async (req) => {
 
     console.log('[CHECK-SUBSCRIPTION] Successfully synced subscription data');
 
-    // FALLBACK: Check if subscription events are missing and add them if needed
-    const { data: eventCount } = await supabaseService
-      .from('subscription_events')
-      .select('id', { count: 'exact' })
-      .eq('teacher_id', user.id);
-
-    const hasEvents = eventCount && eventCount.length > 0;
+    const isActiveSubscription = ['active', 'active_cancelled'].includes(newSubscriptionStatus);
     
-    if (!hasEvents && subscription.status === 'active') {
-      console.log('[CHECK-SUBSCRIPTION] FALLBACK: Adding missing subscription_events for active subscription');
-      
-      // Add a fallback subscription event to maintain data consistency
-      const { error: fallbackEventError } = await supabaseService
-        .from('subscription_events')
-        .insert({
-          teacher_id: user.id,
-          email: user.email,
-          event_type: 'customer.subscription.created',
-          old_plan_type: 'Free Demo',
-          new_plan_type: subscriptionType,
-          tokens_added: 0,
-          stripe_event_id: `fallback_${subscription.id}_${Date.now()}`,
-          event_data: {
-            subscription_id: subscription.id,
-            customer_id: customerId,
-            status: subscription.status,
-            cancel_at_period_end: subscription.cancel_at_period_end,
-            current_period_start: subscription.current_period_start,
-            current_period_end: subscription.current_period_end,
-            amount: amount,
-            plan_name: subscriptionType,
-            fallback_sync: true
-          }
-        });
-
-      if (fallbackEventError) {
-        console.error('[CHECK-SUBSCRIPTION] FALLBACK: Error adding subscription event:', fallbackEventError);
-      } else {
-        console.log('[CHECK-SUBSCRIPTION] FALLBACK: Added missing subscription event');
-      }
-    }
-
     return new Response(
       JSON.stringify({
-        subscribed: true,
-        subscription_type: subscriptionType,
+        subscribed: isActiveSubscription,
+        subscription_type: finalSubscriptionType,
         subscription_status: newSubscriptionStatus,
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-        monthly_limit: monthlyLimit,
+        monthly_limit: effectiveMonthlyLimit,
         message: 'Subscription status synchronized'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -340,4 +346,112 @@ serve(async (req) => {
       }
     );
   }
-});
+})
+
+// HELPER FUNCTION: Create missing subscription events based on current Stripe state
+async function createMissingSubscriptionEvents(supabaseService: any, user: any, subscription: any, customerId: string, finalSubscriptionType: string, userHasSubscriptionHistory: boolean) {
+  console.log('[CHECK-SUBSCRIPTION] Creating missing subscription events...');
+  
+  try {
+    // Check existing events for this subscription
+    const { data: existingEvents } = await supabaseService
+      .from('subscription_events')
+      .select('event_type, stripe_event_id')
+      .eq('teacher_id', user.id)
+      .eq('event_data->>subscription_id', subscription.id);
+
+    const eventTypes = existingEvents?.map((e: any) => e.event_type) || [];
+    console.log('[CHECK-SUBSCRIPTION] Existing events:', eventTypes);
+
+    const amount = subscription.items.data[0].price.unit_amount || 0;
+    
+    // Always ensure there's a subscription.created event
+    const hasCreatedEvent = eventTypes.includes('customer.subscription.created') || 
+                           existingEvents?.some((e: any) => e.stripe_event_id?.includes('fallback_'));
+    
+    if (!hasCreatedEvent) {
+      console.log('[CHECK-SUBSCRIPTION] Adding missing subscription.created event');
+      await supabaseService
+        .from('subscription_events')
+        .insert({
+          teacher_id: user.id,
+          email: user.email,
+          event_type: 'customer.subscription.created',
+          old_plan_type: userHasSubscriptionHistory ? 'Free Demo' : 'Free Demo',
+          new_plan_type: finalSubscriptionType,
+          tokens_added: 0,
+          stripe_event_id: `sync_created_${subscription.id}_${Date.now()}`,
+          event_data: {
+            subscription_id: subscription.id,
+            customer_id: customerId,
+            status: subscription.status,
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: subscription.current_period_start,
+            current_period_end: subscription.current_period_end,
+            amount: amount,
+            plan_name: finalSubscriptionType,
+            sync_generated: true
+          }
+        });
+    }
+
+    // If subscription is marked for cancellation, add subscription.updated event
+    if (subscription.cancel_at_period_end && !eventTypes.includes('customer.subscription.updated')) {
+      console.log('[CHECK-SUBSCRIPTION] Adding missing subscription.updated (cancellation) event');
+      await supabaseService
+        .from('subscription_events')
+        .insert({
+          teacher_id: user.id,
+          email: user.email,
+          event_type: 'customer.subscription.updated',
+          old_plan_type: finalSubscriptionType,
+          new_plan_type: finalSubscriptionType, // Same type, but status changes
+          tokens_added: 0,
+          stripe_event_id: `sync_updated_${subscription.id}_${Date.now()}`,
+          event_data: {
+            subscription_id: subscription.id,
+            customer_id: customerId,
+            status: subscription.status,
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: subscription.current_period_start,
+            current_period_end: subscription.current_period_end,
+            amount: amount,
+            plan_name: finalSubscriptionType,
+            sync_generated: true
+          }
+        });
+    }
+
+    // If subscription is cancelled, add subscription.deleted event
+    if (subscription.status === 'canceled' && !eventTypes.includes('customer.subscription.deleted')) {
+      console.log('[CHECK-SUBSCRIPTION] Adding missing subscription.deleted event');
+      await supabaseService
+        .from('subscription_events')
+        .insert({
+          teacher_id: user.id,
+          email: user.email,
+          event_type: 'customer.subscription.deleted',
+          old_plan_type: finalSubscriptionType,
+          new_plan_type: 'Inactive',
+          tokens_added: 0,
+          stripe_event_id: `sync_deleted_${subscription.id}_${Date.now()}`,
+          event_data: {
+            subscription_id: subscription.id,
+            customer_id: customerId,
+            status: subscription.status,
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: subscription.current_period_start,
+            current_period_end: subscription.current_period_end,
+            amount: amount,
+            plan_name: 'Inactive',
+            sync_generated: true
+          }
+        });
+    }
+
+    console.log('[CHECK-SUBSCRIPTION] Finished creating missing subscription events');
+    
+  } catch (error) {
+    console.error('[CHECK-SUBSCRIPTION] Error creating missing events:', error);
+  }
+}
