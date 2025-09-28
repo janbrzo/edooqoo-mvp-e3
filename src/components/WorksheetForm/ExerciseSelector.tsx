@@ -16,7 +16,6 @@ const AVAILABLE_EXERCISES = [
   { id: 'error-correction', label: 'Error Correction', icon: '⚠️', description: 'Students identify and correct grammatical, vocabulary, or structural mistakes in sentences, developing proofreading and language accuracy skills.' },
   { id: 'odd-one-out', label: 'Odd One Out', icon: '🔍', description: 'Students identify which item in a group doesn\'t belong, focusing on categorization, vocabulary relationships, and logical thinking.' },
   { id: 'synonyms-antonyms', label: 'Synonyms & Antonyms Matching', icon: '↔️', description: 'Students match words with their synonyms or antonyms, expanding vocabulary knowledge and understanding word relationships and nuances.' },
-  { id: 'sentence-transformation', label: 'Sentence Transformation', icon: '🔄', description: 'Students rewrite sentences using different grammatical structures while maintaining the same meaning, practicing advanced grammar and syntax.' },
   { id: 'word-order', label: 'Word Order', icon: '📋', description: 'Students arrange scrambled words to form correct sentences, reinforcing grammar rules, sentence structure, and natural English word order.' },
   { id: 'gap-text', label: 'Gap Text (Cloze)', icon: '📄', description: 'Students fill in missing words or phrases in a continuous text, developing contextual understanding and cohesive writing skills.' },
   { id: 'negative-prefixes', label: 'Negative Prefixes', icon: '➖', description: 'Students practice using prefixes like un-, dis-, in- to form negative words, expanding vocabulary and understanding word formation patterns.' },
@@ -24,6 +23,7 @@ const AVAILABLE_EXERCISES = [
   { id: 'paraphrasing', label: 'Paraphrasing', icon: '🔄', description: 'Students rewrite sentences or passages using different words while maintaining the original meaning, improving writing flexibility and vocabulary.' },
   { id: 'complete-word', label: 'Complete the Word', icon: '🅰️', description: 'Students complete partially written words using context clues, strengthening spelling, vocabulary recognition, and contextual understanding.' },
   { id: 'matching-halves', label: 'Matching Halves', icon: '🧩', description: 'Students connect sentence beginnings with appropriate endings, practicing sentence structure, logical connections, and natural English flow.' },
+  { id: 'sentence-transformation', label: 'Sentence Transformation', icon: '🔄', comingSoon: true, description: 'Students rewrite sentences using different grammatical structures while maintaining the same meaning, practicing advanced grammar and syntax.' },
   { id: 'describe-picture', label: 'Describe Picture', icon: '🖼️', comingSoon: true, description: 'Students describe images using target vocabulary and structures, developing speaking and observational skills through visual prompts.' },
   { id: 'answer-questions', label: 'Answer Questions', icon: '❓', comingSoon: true, description: 'Students provide written or spoken answers to comprehension questions, demonstrating understanding and practicing response formation.' }
 ];
