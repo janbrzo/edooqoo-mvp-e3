@@ -241,11 +241,31 @@ serve(async (req) => {
       }
     }
 
+    // CRITICAL ADDITION: Detect expired subscriptions (active with cancel_at_period_end past current_period_end)
+    const currentTime = new Date();
+    const subscriptionEndTime = new Date(subscription.current_period_end * 1000);
+    const isExpired = subscription.status === 'active' && 
+                     subscription.cancel_at_period_end && 
+                     currentTime > subscriptionEndTime;
+
+    console.log('[CHECK-SUBSCRIPTION] Expiry check:', {
+      status: subscription.status,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      current_time: currentTime.toISOString(),
+      period_end: subscriptionEndTime.toISOString(),
+      is_expired: isExpired
+    });
+
     // ENHANCED: Determine normalized subscription status with consistent "cancelled" spelling
     let newSubscriptionStatus: string;
     let finalSubscriptionType = subscriptionType; // Default to computed type
     
-    if (subscription.status === 'active') {
+    if (isExpired) {
+      // CRITICAL: Treat expired subscriptions as cancelled
+      newSubscriptionStatus = 'cancelled';
+      finalSubscriptionType = 'Inactive';
+      console.log('[CHECK-SUBSCRIPTION] Subscription detected as EXPIRED - treating as cancelled');
+    } else if (subscription.status === 'active') {
       newSubscriptionStatus = subscription.cancel_at_period_end ? 'active_cancelled' : 'active';
     } else if (subscription.status === 'canceled') {
       // Convert Stripe's "canceled" to our "cancelled" for consistency
@@ -353,6 +373,13 @@ async function createMissingSubscriptionEvents(supabaseService: any, user: any, 
   console.log('[CHECK-SUBSCRIPTION] Creating missing subscription events...');
   
   try {
+    // CRITICAL: Check if subscription is expired (active with cancel_at_period_end past current_period_end)
+    const currentTime = new Date();
+    const subscriptionEndTime = new Date(subscription.current_period_end * 1000);
+    const isExpired = subscription.status === 'active' && 
+                     subscription.cancel_at_period_end && 
+                     currentTime > subscriptionEndTime;
+
     // Check existing events for this subscription
     const { data: existingEvents } = await supabaseService
       .from('subscription_events')
@@ -399,8 +426,37 @@ async function createMissingSubscriptionEvents(supabaseService: any, user: any, 
     const hasUpdatedEvent = eventTypes.includes('customer.subscription.updated');
     const hasDeletedEvent = eventTypes.includes('customer.subscription.deleted');
     
+    // CRITICAL: Handle expired subscriptions - create deleted event if missing
+    if (isExpired && !hasDeletedEvent) {
+      console.log('[CHECK-SUBSCRIPTION] EXPIRED SUBSCRIPTION DETECTED - Adding missing subscription.deleted event');
+      await supabaseService
+        .from('subscription_events')
+        .insert({
+          teacher_id: user.id,
+          email: user.email,
+          event_type: 'customer.subscription.deleted',
+          old_plan_type: finalSubscriptionType + '_cancelled', // Was cancelled before expiry
+          new_plan_type: 'Inactive',
+          tokens_added: 0,
+          stripe_event_id: `sync_expired_${subscription.id}_${Date.now()}`,
+          event_data: {
+            subscription_id: subscription.id,
+            customer_id: customerId,
+            status: 'canceled', // Treat as canceled after expiry
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: subscription.current_period_start,
+            current_period_end: subscription.current_period_end,
+            amount: amount,
+            plan_name: 'Inactive',
+            sync_generated: true,
+            auto_expired: true
+          }
+        });
+      console.log('[CHECK-SUBSCRIPTION] Created subscription.deleted event for expired subscription');
+    }
+    
     // ENHANCED: Handle cancellation and renewal operations with proper _cancelled suffix
-    if (subscription.cancel_at_period_end && !hasUpdatedEvent) {
+    if (subscription.cancel_at_period_end && !hasUpdatedEvent && !isExpired) {
       console.log('[CHECK-SUBSCRIPTION] Adding missing subscription.updated (cancellation) event');
       await supabaseService
         .from('subscription_events')

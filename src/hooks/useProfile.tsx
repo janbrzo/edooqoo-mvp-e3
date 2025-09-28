@@ -16,25 +16,49 @@ export const useProfile = () => {
     // Listen for URL changes that might indicate return from payment
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Delay to ensure any webhook has time to process
-        setTimeout(fetchProfile, 2000);
+        // CRITICAL ADDITION: Automatically sync subscription status when app becomes visible
+        // This ensures expired subscriptions are detected when user returns to app
+        setTimeout(async () => {
+          try {
+            await supabase.functions.invoke('check-subscription-status');
+            console.log('[useProfile] Auto subscription sync completed on visibility change');
+          } catch (error) {
+            console.error('[useProfile] Auto subscription sync failed:', error);
+          } finally {
+            // Always fetch profile after sync attempt
+            await fetchProfile();
+          }
+        }, 1000);
       }
     };
 
-    // REMOVED: finalize-upgrade handling from window focus - now handled in Profile.tsx
+    // ENHANCED: Auto-sync subscription status on window focus
     const handleWindowFocus = () => {
-      // Check if we're returning from successful payment (but don't call finalize-upgrade here)
       const urlParams = new URLSearchParams(window.location.search);
+      
       if (urlParams.get('success') === 'true') {
-        // Only sync subscription status, finalize-upgrade is handled in Profile.tsx
+        // Payment success - sync with longer delay to ensure webhook processing
         setTimeout(async () => {
           try {
             await supabase.functions.invoke('check-subscription-status');
             await fetchProfile();
           } catch (error) {
-            console.error('[useProfile] Error syncing subscription:', error);
+            console.error('[useProfile] Error syncing subscription after payment:', error);
           }
         }, 3000);
+      } else {
+        // Regular focus - quick subscription sync to detect any status changes
+        setTimeout(async () => {
+          try {
+            await supabase.functions.invoke('check-subscription-status');
+            console.log('[useProfile] Auto subscription sync completed on focus');
+            await fetchProfile();
+          } catch (error) {
+            console.error('[useProfile] Auto subscription sync failed on focus:', error);
+            // Still fetch profile even if sync fails
+            await fetchProfile();
+          }
+        }, 500);
       }
     };
     

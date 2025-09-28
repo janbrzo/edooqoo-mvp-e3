@@ -10,6 +10,7 @@ import { getExpectedExerciseCount, validateWorksheet, createSampleVocabulary } f
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { useEventTracking } from "@/hooks/useEventTracking";
 import { useTokenSystem } from "@/hooks/useTokenSystem";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useWorksheetGeneration = (
   userId: string | null,
@@ -30,6 +31,19 @@ export const useWorksheetGeneration = (
       hasGrammar: !!(data.teachingPreferences && data.teachingPreferences.trim()),
       studentId
     });
+
+    // CRITICAL ADDITION: Sync subscription status before generation
+    // This ensures expired subscriptions are detected before allowing worksheet generation
+    if (userId) {
+      try {
+        console.log('🔄 Syncing subscription status before worksheet generation...');
+        await supabase.functions.invoke('check-subscription-status');
+        console.log('✅ Subscription status synchronized');
+      } catch (error) {
+        console.error('⚠️ Warning: Subscription sync failed before generation:', error);
+        // Continue with generation - sync failure shouldn't block generation
+      }
+    }
 
     // Check token requirements for authenticated users
     if (!isDemo && !hasTokens) {
