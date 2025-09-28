@@ -15,6 +15,7 @@ import ExerciseOddOneOut from '../worksheet/ExerciseOddOneOut';
 import ExerciseGapText from '../worksheet/ExerciseGapText';
 import ExerciseSentenceTransformation from '../worksheet/ExerciseSentenceTransformation';
 import ExerciseMatchingHalves from '../worksheet/ExerciseMatchingHalves';
+import ExerciseSynonymsAntonyms from '../worksheet/ExerciseSynonymsAntonyms';
 import { deepFixTextObjects } from '../../utils/textObjectFixer';
 import { getIconComponent } from '../../utils/iconUtils';
 
@@ -422,6 +423,15 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
                   isEditing={false}
                   viewMode="student"
                   onHalvesChange={() => {}} // No-op for shared view
+                />
+              )}
+
+              {(exercise.type === 'synonyms-antonyms' || exercise.type === 'matching-synonyms' || exercise.type === 'matching-antonyms') && exercise.items && (
+                <ExerciseSynonymsAntonyms
+                  items={exercise.items}
+                  isEditing={false}
+                  viewMode="student"
+                  onItemChange={() => {}} // No-op for shared view
                 />
               )}
 
