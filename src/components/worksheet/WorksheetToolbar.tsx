@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2 } from "lucide-react";
+import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift } from "lucide-react";
+import { isFreeCustomDemoWeek } from "@/utils/promoUtils";
 import PaymentPopup from "@/components/PaymentPopup";
 import ShareWorksheetModal from "@/components/ShareWorksheetModal";
 import { exportAsHTML } from "@/utils/htmlExport";
@@ -175,6 +176,10 @@ const WorksheetToolbar = ({
 
   // Check if user can share worksheets (registered user with valid worksheetId)
   const canShareWorksheet = isRegisteredUser && worksheetId && !user?.is_anonymous;
+  
+  // Check if FREE DEMO WEEK is active to show gift icon instead of lock
+  const isFreeWeek = isFreeCustomDemoWeek();
+  const shouldShowGiftIcon = isFreeWeek && !isDownloadUnlocked;
 
   return (
     <TooltipProvider>
@@ -253,6 +258,8 @@ const WorksheetToolbar = ({
                   >
                     {isDownloadUnlocked ? (
                       <Download className="mr-2 h-4 w-4" />
+                    ) : shouldShowGiftIcon ? (
+                      <Gift className="mr-2 h-4 w-4" />
                     ) : (
                       <Lock className="mr-2 h-4 w-4" />
                     )}
@@ -274,6 +281,8 @@ const WorksheetToolbar = ({
                   >
                     {isDownloadUnlocked ? (
                       <Download className="mr-2 h-4 w-4" />
+                    ) : shouldShowGiftIcon ? (
+                      <Gift className="mr-2 h-4 w-4" />
                     ) : (
                       <Lock className="mr-2 h-4 w-4" />
                     )}

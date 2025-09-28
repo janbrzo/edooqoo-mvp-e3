@@ -5,8 +5,7 @@
 
 // FREE DEMO WEEK dates (UTC+0)
 const FREE_DEMO_WEEK_START = new Date('2025-09-23T00:00:00.000Z'); // Start: 23.09.2025 00:00 UTC+0
-const FREE_DEMO_WEEK_END = new Date('2025-09-27T10:59:59.999Z');   // End: 28.09.2025 23:59 UTC+0 (TEST DATE)
-// After testing, change to: new Date('2025-10-05T23:59:59.999Z'); // Final: 5.10.2025 23:59 UTC+0
+const FREE_DEMO_WEEK_END = new Date('2025-10-05T23:59:59.999Z');   // End: 5.10.2025 23:59 UTC+0
 
 /**
  * Check if FREE DEMO WEEK promotion is currently active

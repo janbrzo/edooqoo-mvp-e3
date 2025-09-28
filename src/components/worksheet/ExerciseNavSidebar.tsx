@@ -126,6 +126,69 @@ const ExerciseNavContent: React.FC<ExerciseNavSidebarProps> = ({
   );
 };
 
+// Floating Exercise Buttons Component for desktop
+const FloatingExerciseButtons: React.FC<{
+  exercises: Exercise[];
+  onScrollToExercise: (index: number) => void;
+  onCollapseAll: () => void;
+  onExpandAll: () => void;
+  isAllExpanded: boolean;
+}> = ({ exercises, onScrollToExercise, onCollapseAll, onExpandAll, isAllExpanded }) => {
+  
+  const handleGrammarScroll = () => {
+    const grammarSection = document.querySelector('#grammar-rules-section, [data-section="grammar"]');
+    if (grammarSection) {
+      grammarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  return (
+    <div className="fixed left-4 top-20 z-40 flex flex-col gap-1">
+      {/* Eye button for expand/collapse all */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={isAllExpanded ? onCollapseAll : onExpandAll}
+        className="w-10 h-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm"
+        title={isAllExpanded ? "Collapse All" : "Expand All"}
+      >
+        {isAllExpanded ? (
+          <EyeOff className="h-4 w-4" />
+        ) : (
+          <Eye className="h-4 w-4" />
+        )}
+      </Button>
+
+      {/* Grammar button */}
+      {exercises.some(ex => ex.title.toLowerCase().includes('grammar')) && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleGrammarScroll}
+          className="w-10 h-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm"
+          title="Scroll to Grammar"
+        >
+          <span className="font-bold text-sm">G</span>
+        </Button>
+      )}
+
+      {/* Numbered exercise buttons */}
+      {exercises.map((exercise, index) => (
+        <Button
+          key={index}
+          variant="outline"
+          size="sm"
+          onClick={() => onScrollToExercise(index)}
+          className="w-10 h-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm"
+          title={`Scroll to ${exercise.title || `Exercise ${index + 1}`}`}
+        >
+          <span className="font-bold text-sm">{index + 1}</span>
+        </Button>
+      ))}
+    </div>
+  );
+};
+
 export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => {
   const isMobile = useIsMobile();
   const [localIsOpen, setLocalIsOpen] = useState(false);
@@ -173,7 +236,7 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
     );
   }
 
-  // Desktop: Use floating div with manual state only
+  // Desktop: Use floating div with manual state and floating buttons
   return (
     <>
       {/* Floating trigger button */}
@@ -185,6 +248,15 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
       >
         <Menu className="h-4 w-4" />
       </Button>
+
+      {/* Floating exercise buttons */}
+      <FloatingExerciseButtons
+        exercises={props.exercises}
+        onScrollToExercise={props.onScrollToExercise}
+        onCollapseAll={props.onCollapseAll}
+        onExpandAll={props.onExpandAll}
+        isAllExpanded={props.isAllExpanded}
+      />
 
       {/* Floating sidebar */}
       {isOpen && (

@@ -11,6 +11,7 @@ import FormView from "@/components/worksheet/FormView";
 import GenerationView from "@/components/worksheet/GenerationView";
 import { TokenPaywallModal } from "@/components/TokenPaywallModal";
 import { PricingSection } from "@/components/PricingSection";
+import { FreeWeekBanner } from "@/components/FreeWeekBanner";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { User, GraduationCap, DollarSign } from "lucide-react";
 
@@ -192,6 +193,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 relative">
+      {/* FREE DEMO WEEK Banner */}
+      <FreeWeekBanner />
+      
       {/* Navigation based on auth status */}
       {isRegisteredUser ? <AuthenticatedNav /> : <AnonymousNav />}
       

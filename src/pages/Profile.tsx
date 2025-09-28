@@ -13,6 +13,7 @@ import { EditableProfileField } from '@/components/profile/EditableProfileField'
 import { ConfirmDowngradeDialog } from '@/components/ConfirmDowngradeDialog';
 import { toast } from '@/hooks/use-toast';
 import { User, Coins, CreditCard, Calendar, Zap, GraduationCap, Users, Mail } from 'lucide-react';
+import { FreeWeekBanner } from '@/components/FreeWeekBanner';
 
 const Profile = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
@@ -603,8 +604,12 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+      {/* FREE DEMO WEEK Banner */}
+      <FreeWeekBanner />
+      
+      <div className="p-4">
+        <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold flex items-center">
@@ -878,6 +883,7 @@ const Profile = () => {
         onConfirm={handleDowngradeConfirm}
         isLoading={isLoading !== null}
       />
+      </div>
     </div>
   );
 };
