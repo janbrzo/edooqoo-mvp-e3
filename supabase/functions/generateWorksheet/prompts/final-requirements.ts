@@ -21,9 +21,9 @@ export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: nu
     'word-order': 'EXACTLY 10 sentences with "scrambled_words" (separated by " / ") and "correct_order" fields.',
     'gap-text': 'EXACTLY 10 sentences with "text", "answer", and "verb" fields. Each sentence must have a word in parentheses after the gap for transformation. The "verb" field contains the base form of the verb in parentheses (e.g., "I _____ (go) to school yesterday" with "verb": "go").',
     'negative-prefixes': 'EXACTLY 10 words with "word" and "answer" fields. Use common negative prefixes: un-, in-, im-, dis-, ir-, il-.',
-    'categorize': 'EXACTLY 16 items to sort into EXACTLY 4 categories. MUST include "items" array with 16 strings AND "categories" array with 4 objects containing "name" and "correct_items" fields. Example structure: "items": ["word1", "word2", ...], "categories": [{"name": "Category1", "correct_items": ["word1", "word2"]}].',
+    'categorize': 'EXACTLY 16 items to sort into EXACTLY 4 categories. MUST include "items" array with 16 strings AND "categories" array with 4 objects containing "name" and "correct_items" fields. Excluding propare names and names od cities. Example structure: "items": ["word1", "word2", ...], "categories": [{"name": "Category1", "correct_items": ["word1", "word2"]}].',
     'paraphrasing': 'EXACTLY 10 sentences with "original", "word_to_use", and "answer" fields.',
-    'complete-word': 'EXACTLY 10 words with "partial", "complete", and "clue" fields.',
+    'complete-word': 'EXACTLY 10 words with "partial", "complete", and "clue" fields. Missing letters use always all the vowels: a, e, i, o, u, y. For missing letters dont use any consonants.',
     'matching-halves': 'EXACTLY 10 sentence halves with "first_half", "second_half", and "id" fields.',
     'describe-picture': 'Image description and 8 guiding prompts. Include "image_description", "prompts", "useful_vocabulary", and "teacher_tip".',
     'answer-questions': 'EXACTLY 10 questions with "question" and "focus" fields for personal response exercises.'
