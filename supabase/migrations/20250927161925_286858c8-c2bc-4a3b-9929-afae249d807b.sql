@@ -19,7 +19,7 @@ DECLARE
   
   -- FREE DEMO WEEK dates (UTC+0) - TEST DATES
   free_week_start TIMESTAMP WITH TIME ZONE := '2025-09-23 00:00:00+00'::timestamptz;
-  free_week_end TIMESTAMP WITH TIME ZONE := '2025-09-28 23:59:59+00'::timestamptz;
+  free_week_end TIMESTAMP WITH TIME ZONE := '2025-09-28 12:59:59+00'::timestamptz;
   -- After testing, change to: '2025-10-05 23:59:59+00'::timestamptz
   
   current_time TIMESTAMP WITH TIME ZONE := NOW() AT TIME ZONE 'UTC';
