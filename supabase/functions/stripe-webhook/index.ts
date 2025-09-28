@@ -57,8 +57,9 @@ serve(async (req) => {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
       logStep('Event verified successfully', { type: event.type, id: event.id });
     } catch (err) {
-      logStep('ERROR: Webhook signature verification failed', { error: err.message });
-      throw new Error(`Webhook signature verification failed: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logStep('ERROR: Webhook signature verification failed', { error: errorMessage });
+      throw new Error(`Webhook signature verification failed: ${errorMessage}`);
     }
 
     // SIMPLIFIED: Only process subscription events

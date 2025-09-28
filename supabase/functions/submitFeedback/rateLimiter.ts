@@ -199,7 +199,7 @@ const cleanupInterval = setInterval(() => {
     console.error('Rate limiter cleanup failed:', error);
     securityMonitor.logSecurityEvent('validation_failed', {
       reason: 'Rate limiter cleanup error',
-      error: error.message
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }, 300000);

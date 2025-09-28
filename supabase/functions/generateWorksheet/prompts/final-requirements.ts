@@ -34,7 +34,7 @@ export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: nu
   // Generate requirements based on selected exercises or default order
   if (selectedExercises) {
     selectedExercises.slice(0, exerciseCount).forEach((exerciseType, index) => {
-      const requirement = exerciseRequirements[exerciseType];
+      const requirement = exerciseRequirements[exerciseType as keyof typeof exerciseRequirements];
       if (requirement) {
         requirements += `${index + 1}. Exercise ${index + 1} (${exerciseType}): ${requirement}\n`;
       }
@@ -43,7 +43,7 @@ export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: nu
     // Default order requirements (first 8 basic exercises)
     const defaultOrder = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction'];
     defaultOrder.slice(0, exerciseCount).forEach((exerciseType, index) => {
-      const requirement = exerciseRequirements[exerciseType];
+      const requirement = exerciseRequirements[exerciseType as keyof typeof exerciseRequirements];
       if (requirement) {
         requirements += `${index + 1}. Exercise ${index + 1} (${exerciseType}): ${requirement}\n`;
       }

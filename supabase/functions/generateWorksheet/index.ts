@@ -180,6 +180,9 @@ serve(async (req) => {
     // Parse the JSON response with error handling
     let worksheetData;
     try {
+      if (!jsonContent) {
+        throw new Error('No JSON content received from AI');
+      }
       worksheetData = parseAIResponse(jsonContent);
       
       if (!worksheetData.title || !worksheetData.exercises || !Array.isArray(worksheetData.exercises)) {
@@ -208,7 +211,8 @@ serve(async (req) => {
           console.log(`🔧 [MAIN] ✅ Exercise ${i + 1} (${exercise.type}) validation passed`);
         } catch (validationError) {
           validationErrors++;
-          console.error(`🔧 [MAIN] ❌ Exercise ${i + 1} (${exercise.type}) validation failed:`, validationError.message);
+          const errorMessage = validationError instanceof Error ? validationError.message : 'Unknown validation error';
+          console.error(`🔧 [MAIN] ❌ Exercise ${i + 1} (${exercise.type}) validation failed:`, errorMessage);
           
           // LENIENT MODE: Don't fail the entire worksheet for validation errors
           // Just log the error and continue
@@ -325,7 +329,7 @@ serve(async (req) => {
         error: sanitizedError
       }),
       { 
-        status: error.status || 500,
+        status: (error as any)?.status || 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );

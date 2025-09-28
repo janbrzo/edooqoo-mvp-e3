@@ -385,7 +385,7 @@ serve(async (req) => {
       type: 'recurring'
     });
     
-    const existingPrice = prices.data.find(price => 
+    const existingPrice = prices.data.find((price: any) => 
       price.unit_amount === targetPlanPrice * 100 && 
       price.currency === 'usd' &&
       price.recurring?.interval === 'month'

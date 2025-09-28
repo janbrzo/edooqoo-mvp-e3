@@ -87,7 +87,8 @@ export function validateExercise(exercise: any): void {
   } catch (validationError) {
     if (isNewExercise) {
       // LENIENT MODE: Convert errors to warnings for new exercise types
-      console.warn(`🔧 [VALIDATOR] Validation warning for ${exercise.type}:`, validationError.message);
+      const errorMessage = validationError instanceof Error ? validationError.message : 'Unknown validation error';
+      console.warn(`🔧 [VALIDATOR] Validation warning for ${exercise.type}:`, errorMessage);
       console.warn(`🔧 [VALIDATOR] Allowing exercise to proceed despite validation issues`);
     } else {
       // STRICT MODE: Still throw errors for established exercise types

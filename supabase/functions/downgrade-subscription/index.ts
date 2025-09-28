@@ -104,7 +104,7 @@ serve(async (req) => {
       limit: 10
     });
 
-    const matchingPrice = existingPrices.data.find(p => 
+    const matchingPrice = existingPrices.data.find((p: any) => 
       p.unit_amount === priceAmount && 
       p.recurring?.interval === 'month' &&
       p.active
