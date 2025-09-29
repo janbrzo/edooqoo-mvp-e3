@@ -69,8 +69,6 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
   // Initialize exercises based on mode
   useEffect(() => {
     if (selectedExercises.length === 0) {
-      console.log(`🔧 [EXERCISE-SELECTOR] Initializing with ${selectionMode} mode for ${lessonTime}`);
-      
       let initialExercises: string[];
       if (selectionMode === 'manual') {
         initialExercises = manualDefaults;
@@ -81,7 +79,6 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
         initialExercises = manualDefaults;
       }
       
-      console.log(`🔧 [EXERCISE-SELECTOR] Setting initial exercises:`, initialExercises);
       onChange(initialExercises);
     }
   }, [lessonTime, selectionMode, selectedExercises.length, onChange, manualDefaults, generateRandomExercises]);
@@ -89,17 +86,13 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
   // Handle lesson time changes - adjust exercise count
   useEffect(() => {
     if (selectedExercises.length > 0) {
-      console.log(`🔧 [EXERCISE-SELECTOR] Lesson time changed to ${lessonTime}, adjusting exercises`);
-      
       if (selectionMode === 'manual') {
         // For manual mode, adjust to the new count using manual defaults
         const newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
-        console.log(`🔧 [EXERCISE-SELECTOR] Manual mode: adjusting to ${newExercises.length} exercises`);
         onChange(newExercises);
       } else if (selectionMode === 'random') {
         // For random mode, generate new random selection
         const newExercises = generateRandomExercises();
-        console.log(`🔧 [EXERCISE-SELECTOR] Random mode: generating new selection with ${newExercises.length} exercises`);
         onChange(newExercises);
       }
     }
@@ -109,7 +102,6 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
   const handleExerciseToggle = useCallback((exerciseId: string, checked: boolean) => {
     if (selectionMode !== 'manual') return; // Only allow manual changes in manual mode
     
-    console.log(`🔧 [EXERCISE-SELECTOR] Toggle ${exerciseId}: ${checked}`);
     let newSelection = [...selectedExercises];
     
     if (checked && !newSelection.includes(exerciseId) && newSelection.length < maxExercises) {
@@ -118,7 +110,6 @@ export default function ExerciseSelector({ lessonTime, selectedExercises, onChan
       newSelection = newSelection.filter(id => id !== exerciseId);
     }
     
-    console.log(`🔧 [EXERCISE-SELECTOR] New selection after toggle:`, newSelection);
     onChange(newSelection);
   }, [selectedExercises, maxExercises, onChange, selectionMode]);
 

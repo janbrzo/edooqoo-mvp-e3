@@ -7,18 +7,10 @@
  * ENHANCED: Supports custom selected exercises from form
  */
 export function getExerciseTypesForCount(count: number, selectedExercises?: string[]): string[] {
-  console.log(`🔧 [HELPERS] getExerciseTypesForCount called with count: ${count}, selectedExercises:`, selectedExercises);
-  console.log(`🔧 [HELPERS] selectedExercises type:`, typeof selectedExercises);
-  console.log(`🔧 [HELPERS] selectedExercises isArray:`, Array.isArray(selectedExercises));
-  console.log(`🔧 [HELPERS] selectedExercises length:`, selectedExercises?.length);
-  
   // If custom exercises are selected, validate and use them
   if (selectedExercises && selectedExercises.length > 0) {
-    console.log(`🔧 [HELPERS] Using CUSTOM exercises path`);
     return validateAndFilterExercises(selectedExercises, count);
   }
-  
-  console.log(`🔧 [HELPERS] Using DEFAULT exercises path - selectedExercises was:`, selectedExercises);
   
   // Standard 8-exercise set (60 min lessons) - NEW ORDER with true-false as Exercise 2
   const fullSet = [
@@ -32,13 +24,7 @@ export function getExerciseTypesForCount(count: number, selectedExercises?: stri
     'error-correction'   // Exercise 8 - Was 8 (unchanged)
   ];
   
-  // FIXED: Now correctly returns first N exercises based on count parameter
-  // For 45 min lessons: first 6 exercises, for 60 min: all 8 exercises
-  // Ready for future expansion to 20 exercises
-  const selectedExercisesFinal = fullSet.slice(0, count);
-  console.log(`🔧 [HELPERS] getExerciseTypesForCount(${count}) returning default:`, selectedExercisesFinal);
-  
-  return selectedExercisesFinal;
+  return fullSet.slice(0, count);
 }
 
 /**
@@ -57,21 +43,10 @@ export function validateAndFilterExercises(selectedExercises: string[], maxCount
   ];
   
   // Filter out invalid exercise types
-  const validExercises = selectedExercises.filter(type => {
-    const isValid = availableTypes.includes(type);
-    if (!isValid) {
-      console.warn(`🔧 [HELPERS] Invalid exercise type removed: ${type}`);
-    }
-    return isValid;
-  });
+  const validExercises = selectedExercises.filter(type => availableTypes.includes(type));
   
   // Respect the count limit
-  const finalExercises = validExercises.slice(0, maxCount);
-  
-  console.log(`🔧 [HELPERS] validateAndFilterExercises: ${selectedExercises.length} selected -> ${validExercises.length} valid -> ${finalExercises.length} final`);
-  console.log(`🔧 [HELPERS] Final exercises:`, finalExercises);
-  
-  return finalExercises;
+  return validExercises.slice(0, maxCount);
 }
 
 /**

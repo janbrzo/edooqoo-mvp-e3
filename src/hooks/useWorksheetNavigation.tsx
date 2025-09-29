@@ -71,33 +71,41 @@ export const useWorksheetNavigation = ({ exercises }: UseWorksheetNavigationProp
 
   // Intersection Observer for tracking active exercise
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const index = exerciseRefs.current.findIndex(ref => ref === entry.target);
-            if (index !== -1) {
-              setActiveExercise(index);
+    // Delay observer setup to ensure all refs are populated
+    const timeoutId = setTimeout(() => {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const index = exerciseRefs.current.findIndex(ref => ref === entry.target);
+              if (index !== -1) {
+                setActiveExercise(index);
+              }
             }
-          }
-        });
-      },
-      {
-        rootMargin: '-20% 0px -60% 0px',
-        threshold: 0.1
-      }
-    );
+          });
+        },
+        {
+          rootMargin: '-20% 0px -60% 0px',
+          threshold: 0.1
+        }
+      );
 
-    exerciseRefs.current.forEach((ref) => {
-      if (ref) {
-        observer.observe(ref);
-      }
-    });
+      // Observe all current refs
+      exerciseRefs.current.forEach((ref) => {
+        if (ref) {
+          observer.observe(ref);
+        }
+      });
+
+      return () => {
+        observer.disconnect();
+      };
+    }, 100); // Small delay to ensure DOM is ready
 
     return () => {
-      observer.disconnect();
+      clearTimeout(timeoutId);
     };
-  }, [exercises.length]);
+  }, [exercises.length, exerciseRefs.current]);
 
   // Helper computed values
   const isAllCollapsed = exercises.every((_, index) => collapsedExercises.get(index) === true);

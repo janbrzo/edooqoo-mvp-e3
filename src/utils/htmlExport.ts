@@ -288,13 +288,19 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
         opacity: 1;
       }
       
-      /* Hide navigation elements in exported HTML (not just print) */
+      /* Hide floating navigation elements in exported HTML */
       .nav-menu-button,
       .nav-numbered-buttons, 
       .nav-sidebar,
-      .scroll-up-button {
+      .fixed.left-4.top-20 {
         display: none !important;
         visibility: hidden !important;
+      }
+      
+      /* Keep scroll-up button visible */
+      .scroll-up-button {
+        display: block !important;
+        visibility: visible !important;
       }
       
       /* Hide elements not meant for export, like the rating section */

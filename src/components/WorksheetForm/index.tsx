@@ -32,7 +32,15 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const [englishLevel, setEnglishLevel] = useState<EnglishLevel>("B1/B2");
   const [languageStyle, setLanguageStyle] = useState<number>(3); // Default neutral style
   const [selectedStudentId, setSelectedStudentId] = useState<string>("no-student");
-  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
+  
+  // Initialize selectedExercises based on lessonTime and selectionMode
+  const getInitialExercises = (): string[] => {
+    const MANUAL_EXERCISES_60MIN = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
+    const MANUAL_EXERCISES_45MIN = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out'];
+    return lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
+  };
+  
+  const [selectedExercises, setSelectedExercises] = useState<string[]>(getInitialExercises());
   const [selectionMode, setSelectionMode] = useState<ExerciseSelectionMode>('manual');
 
   const [currentPlaceholders, setCurrentPlaceholders] = useState<PlaceholderSet>(getRandomPlaceholderSet());
@@ -156,13 +164,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       }
     });
 
-    // PRE-SUBMIT VALIDATION: Critical check for selectedExercises
-    console.log('🔧 [WORKSHEET-FORM] PRE-SUBMIT VALIDATION:');
-    console.log('🔧 [WORKSHEET-FORM] selectedExercises:', selectedExercises);
-    console.log('🔧 [WORKSHEET-FORM] selectedExercises.length:', selectedExercises.length);
-    console.log('🔧 [WORKSHEET-FORM] lessonTime:', lessonTime);
-    console.log('🔧 [WORKSHEET-FORM] ✅ selectedExercises validation passed');
-
     const formData = {
       lessonTime,
       lessonTopic,
@@ -175,13 +176,11 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       selectedExercises: finalExercises
     };
 
-    console.log('🔧 [WORKSHEET-FORM] ✅ FINAL formData.selectedExercises being sent:', formData.selectedExercises);
-
-    // ENHANCED: Immediate onboarding refresh after successful worksheet generation
+    // Refresh onboarding progress after successful worksheet generation
     console.log('[WorksheetForm] Triggering onboarding refresh after worksheet generation');
     refreshProgress();
-    setTimeout(refreshProgress, 1000);  // Additional refresh after 1s
-    setTimeout(refreshProgress, 2000);  // Another refresh after 2s
+    setTimeout(refreshProgress, 1000);
+    setTimeout(refreshProgress, 2000);
     
     onSubmit(formData);
   };
