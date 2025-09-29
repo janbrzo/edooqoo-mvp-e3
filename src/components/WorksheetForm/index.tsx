@@ -248,25 +248,30 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                 </div>
                 
                 <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-14'}`}>
-                  <div className={`flex gap-2 ${isMobile ? 'justify-center' : 'w-32'}`}>
-                    <Button 
-                      type="button"
-                      variant={lessonTime === "45min" ? "default" : "outline"} 
-                      onClick={() => setLessonTime("45min")} 
-                      className={lessonTime === "45min" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""}
-                      size={isMobile ? "sm" : "sm"}
-                    >
-                      45 min
-                    </Button>
-                    <Button 
-                      type="button"
-                      variant={lessonTime === "60min" ? "default" : "outline"} 
-                      onClick={() => setLessonTime("60min")} 
-                      className={lessonTime === "60min" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""}
-                      size={isMobile ? "sm" : "sm"}
-                    >
-                      60 min
-                    </Button>
+                  <div className={`flex flex-col ${isMobile ? 'items-center' : 'items-start'}`}>
+                    <div className={`flex gap-2 ${isMobile ? 'justify-center' : 'w-32'}`}>
+                      <Button 
+                        type="button"
+                        variant={lessonTime === "45min" ? "default" : "outline"} 
+                        onClick={() => setLessonTime("45min")} 
+                        className={lessonTime === "45min" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""}
+                        size={isMobile ? "sm" : "sm"}
+                      >
+                        45 min
+                      </Button>
+                      <Button 
+                        type="button"
+                        variant={lessonTime === "60min" ? "default" : "outline"} 
+                        onClick={() => setLessonTime("60min")} 
+                        className={lessonTime === "60min" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""}
+                        size={isMobile ? "sm" : "sm"}
+                      >
+                        60 min
+                      </Button>
+                    </div>
+                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 mt-2 ${isMobile ? 'text-center' : ''}`}>
+                      Duration: {lessonTime === '45min' ? '6 exercises' : '8 exercises'}
+                    </p>
                   </div>
                   
                   <div className={`flex flex-col ${isMobile ? 'items-center' : 'items-end w-80'}`}>

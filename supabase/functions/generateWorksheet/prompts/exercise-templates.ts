@@ -41,10 +41,19 @@ export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: str
   console.log(`🔧 [EXERCISE-TEMPLATES] Generated ${exerciseFragments.length} exercise fragments`);
   return `20. Generate a structured JSON worksheet with this EXACT format:
 EXAMPLE OUTPUT (IGNORE CONTENT, FOCUS ON STRUCTURE):
+
+IMPORTANT: Include a "warmup_questions" array with exactly 4 conversation starter questions that are personal and opinion-based, directly related to the lesson topic. Make questions 1-2 generic and questions 3-4 specific to engage students at the beginning of the lesson.
+
 {
   "title": "In a restaurant",
   "subtitle": "Making a complaint about your dish in a restaurant: adjectives practice",
   "introduction": "In this lesson, you'll practice a restaurant role-play, learn how to order food, and make a complaint about an incorrect order. You'll also review grammar related to adjectives in their comparative and superlative forms.",
+  "warmup_questions": [
+    "Generic question 1 related to the lesson topic",
+    "Generic question 2 related to the lesson topic",
+    "Specific question 3 directly about the lesson context",
+    "Specific question 4 directly about the lesson context"
+  ],
   ${hasGrammarFocus ? `"grammar_rules": {
     "title": "Grammar Focus: ${grammarFocus}",
     "introduction": "Adjectives are words that describe or modify nouns, providing information about qualities such as size, color, shape, age, and many others. When we want to compare people, objects, or ideas, we use adjectives in their comparative or superlative forms.\\n\\nComparatives are used to compare two things or people, showing that one has a higher or lower degree of a particular quality than the other. For example, when saying \\"John is taller than Mike,\\" the adjective \\"taller\\" is in the comparative form, indicating a comparison between two individuals. Comparatives are often followed by the word \\"than\\" to introduce the second element of comparison.\\n\\nSuperlatives, on the other hand, are used to describe the extreme or highest degree of a quality among three or more things or people. For example, \\"Anna is the tallest in her class\\" uses the superlative form \\"tallest\\" to indicate that Anna has the greatest height compared to all others in the group. Superlatives are usually preceded by the definite article \\"the\\".\\n\\nThe formation of comparatives and superlatives depends largely on the length and ending of the adjective. One-syllable adjectives usually form comparatives and superlatives by adding the suffixes \\"-er\\" and \\"-est\\". For adjectives with two syllables or more, especially those with three or more syllables, the words \\"more\\" and \\"most\\" are used before the adjective instead of adding suffixes.\\n\\nSome adjectives have irregular comparative and superlative forms that must be memorized as they do not follow standard patterns. For instance, \\"good\\" becomes \\"better\\" (comparative) and \\"best\\" (superlative).\\n\\nIn addition to indicating comparisons of difference, adjectives can also be used to express equality, using the structure \\"as + adjective + as\\" to show that two things share the same degree of a quality.\\n\\nUnderstanding and correctly using comparatives and superlatives is essential for effective communication, enabling speakers and writers to accurately compare qualities and express degrees of difference or similarity.",

@@ -129,11 +129,12 @@ const ExerciseNavContent: React.FC<ExerciseNavSidebarProps> = ({
 // Floating Exercise Buttons Component for desktop
 const FloatingExerciseButtons: React.FC<{
   exercises: Exercise[];
+  activeExercise: number | null;
   onScrollToExercise: (index: number) => void;
   onCollapseAll: () => void;
   onExpandAll: () => void;
   isAllExpanded: boolean;
-}> = ({ exercises, onScrollToExercise, onCollapseAll, onExpandAll, isAllExpanded }) => {
+}> = ({ exercises, activeExercise, onScrollToExercise, onCollapseAll, onExpandAll, isAllExpanded }) => {
   
   const handleGrammarScroll = () => {
     const grammarSection = document.querySelector('#grammar-rules-section, [data-section="grammar"]');
@@ -173,18 +174,25 @@ const FloatingExerciseButtons: React.FC<{
       )}
 
       {/* Numbered exercise buttons */}
-      {exercises.map((exercise, index) => (
-        <Button
-          key={index}
-          variant="outline"
-          size="sm"
-          onClick={() => onScrollToExercise(index)}
-          className="w-10 h-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm"
-          title={`Scroll to ${exercise.title || `Exercise ${index + 1}`}`}
-        >
-          <span className="font-bold text-sm">{index + 1}</span>
-        </Button>
-      ))}
+      {exercises.map((exercise, index) => {
+        const isActive = activeExercise === index;
+        
+        return (
+          <Button
+            key={index}
+            variant="outline"
+            size="sm"
+            onClick={() => onScrollToExercise(index)}
+            className={cn(
+              "w-10 h-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm",
+              isActive && "bg-primary text-primary-foreground border-primary"
+            )}
+            title={`Scroll to ${exercise.title || `Exercise ${index + 1}`}`}
+          >
+            <span className="font-bold text-sm">{index + 1}</span>
+          </Button>
+        );
+      })}
     </div>
   );
 };
@@ -252,6 +260,7 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
       {/* Floating exercise buttons */}
       <FloatingExerciseButtons
         exercises={props.exercises}
+        activeExercise={props.activeExercise}
         onScrollToExercise={props.onScrollToExercise}
         onCollapseAll={props.onCollapseAll}
         onExpandAll={props.onExpandAll}

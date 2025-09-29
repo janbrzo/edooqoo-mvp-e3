@@ -75,5 +75,7 @@ ${hasGrammarFocus ? `
 19. NO GRAMMAR FOCUS: The user has not specified a grammar focus, so create a general worksheet focused on the topic and goal without emphasizing any particular grammar point.
 `}
 
-20. WARMUP QUESTIONS: Include a "warmup_questions" section with exactly 4 conversation starter questions that are personal and opinion-based, directly related to the lesson topic. These should help students think about the topic and engage them at the beginning of the lesson. Make question number 1 and 2 generic and question number 3 and 4 specific.`;
+  18. ENSURE ALL INSTRUCTIONS ARE STRICTLY ADHERED TO AND THAT THE JSON IS COMPLETE AND VALID.
+  19. Check your work again before finalizing. Every part of the JSON must be intentional and correct.
+  `;
 };

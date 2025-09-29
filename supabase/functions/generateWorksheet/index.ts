@@ -81,9 +81,7 @@ serve(async (req) => {
           .single();
         
         teacherEmail = profile?.email || null;
-        console.log('Teacher email fetched:', teacherEmail);
       } catch (error) {
-        console.warn('Could not fetch teacher email:', error);
         // Continue without email - not critical for worksheet generation
       }
     }
@@ -96,62 +94,23 @@ serve(async (req) => {
     // Determine exercise count from lesson duration  
     let exerciseCount = 8; // Default for 60+ minutes
     
-    // SPECIAL HANDLING FOR REGENERATION: Generate only 1 exercise
     if (isRegeneration && formData?.regenerationMode) {
       exerciseCount = 1;
-      console.log('🔄 [REGENERATION MODE] Setting exercise count to 1');
     } else {
-      // Check if formData has lessonTime, otherwise parse from prompt
       if (formData?.lessonTime) {
         exerciseCount = formData.lessonTime === '45min' ? 6 : 8;
-        console.log(`🔧 [MAIN] Exercise count from formData: ${exerciseCount} (${formData.lessonTime})`);
       } else {
-        // Fallback: Parse lesson duration from prompt
         const durationMatch = sanitizedPrompt.match(/(\d+)\s*min/);
         const lessonDuration = durationMatch ? parseInt(durationMatch[1]) : 60;
-        
-        console.log(`🔧 [MAIN] Lesson duration detected from prompt: ${lessonDuration} minutes`);
-        
-        // Set exercise count based on duration
-        if (lessonDuration <= 45) {
-          exerciseCount = 6;
-        } else {
-          exerciseCount = 8;
-        }
-        
-        console.log(`🔧 [MAIN] Logic: ${lessonDuration} <= 45 ? 6 : 8 = ${exerciseCount}`);
+        exerciseCount = lessonDuration <= 45 ? 6 : 8;
       }
     }
     
-    console.log(`🔧 [MAIN] Exercise count set to: ${exerciseCount} exercises`);
-    
-    // Handle custom selected exercises if provided - ENHANCED LOGGING
     const selectedExercises = formData?.selectedExercises;
-    console.log(`🔧 [MAIN] formData.selectedExercises (raw):`, formData?.selectedExercises);
-    console.log(`🔧 [MAIN] selectedExercises variable:`, selectedExercises);
-    console.log(`🔧 [MAIN] selectedExercises type:`, typeof selectedExercises);
-    console.log(`🔧 [MAIN] selectedExercises isArray:`, Array.isArray(selectedExercises));
-    
-    // SPECIAL HANDLING FOR REGENERATION: Use target exercise type
-    if (isRegeneration && formData?.targetExerciseType) {
-      const targetExercise = [formData.targetExerciseType];
-      console.log(`🔄 [REGENERATION MODE] Using target exercise type:`, targetExercise);
-    } else if (selectedExercises && selectedExercises.length > 0) {
-      console.log(`🔧 [MAIN] Using CUSTOM exercise selection (${selectedExercises.length} exercises):`, selectedExercises);
-    } else {
-      console.log(`🔧 [MAIN] Using DEFAULT exercise selection (no valid custom exercises provided)`);
-      console.log(`🔧 [MAIN] Reason: selectedExercises is ${selectedExercises === null ? 'null' : selectedExercises === undefined ? 'undefined' : 'empty array or falsy'}`);
-    }
-    
-    // FIXED: Now correctly using calculated exerciseCount and selectedExercises
     const effectiveExercises = isRegeneration && formData?.targetExerciseType 
       ? [formData.targetExerciseType] 
       : selectedExercises;
     const exerciseTypes = getExerciseTypesForCount(exerciseCount, effectiveExercises);
-    console.log(`🔧 [MAIN] Selected exercise types for ${exerciseCount} exercises:`, exerciseTypes);
-    
-    console.log(`Generating ${exerciseCount} exercises in prompt`);
-    console.log('Composing system message with modular prompt structure...');
     
     // CREATE SYSTEM MESSAGE using modular prompt structure with correct exerciseCount and selectedExercises
     const systemMessage = composeSystemMessage(hasGrammarFocus, grammarFocus, formData, exerciseCount, effectiveExercises);
@@ -175,8 +134,6 @@ serve(async (req) => {
 
     const jsonContent = aiResponse.choices[0].message.content;
     
-    console.log('AI response received, processing...');
-    
     // Parse the JSON response with error handling
     let worksheetData;
     try {
@@ -189,41 +146,18 @@ serve(async (req) => {
         throw new Error('Invalid worksheet structure returned from AI');
       }
       
-      // Validate we got the expected number of exercises  
-      if (worksheetData.exercises.length !== exerciseCount) {
-        console.warn(`Expected ${exerciseCount} exercises but got ${worksheetData.exercises.length}`);
-        // For regeneration mode, this is acceptable as we only want 1 exercise
-        if (!isRegeneration) {
-          throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required ${exerciseCount}`);
-        }
+      if (worksheetData.exercises.length !== exerciseCount && !isRegeneration) {
+        throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required ${exerciseCount}`);
       }
       
-      // Enhanced validation for exercise requirements (now with lenient mode)
-      console.log(`🔧 [MAIN] Starting validation for ${worksheetData.exercises.length} exercises`);
-      
-      let validationErrors = 0;
+      // Validate exercises
       for (let i = 0; i < worksheetData.exercises.length; i++) {
         const exercise = worksheetData.exercises[i];
-        console.log(`🔧 [MAIN] Validating exercise ${i + 1}/${worksheetData.exercises.length}: ${exercise.type}`);
-        
         try {
           validateExercise(exercise);
-          console.log(`🔧 [MAIN] ✅ Exercise ${i + 1} (${exercise.type}) validation passed`);
         } catch (validationError) {
-          validationErrors++;
-          const errorMessage = validationError instanceof Error ? validationError.message : 'Unknown validation error';
-          console.error(`🔧 [MAIN] ❌ Exercise ${i + 1} (${exercise.type}) validation failed:`, errorMessage);
-          
-          // LENIENT MODE: Don't fail the entire worksheet for validation errors
-          // Just log the error and continue
-          console.warn(`🔧 [MAIN] Continuing with worksheet generation despite validation error`);
+          // Continue with lenient mode
         }
-      }
-      
-      if (validationErrors > 0) {
-        console.warn(`🔧 [MAIN] Generated worksheet with ${validationErrors} validation warnings`);
-      } else {
-        console.log(`🔧 [MAIN] All exercises passed validation successfully`);
       }
       
       // Make sure exercise titles have correct sequential numbering
@@ -232,9 +166,6 @@ serve(async (req) => {
         const exerciseType = exercise.type.charAt(0).toUpperCase() + exercise.type.slice(1).replace(/-/g, ' ');
         exercise.title = `Exercise ${exerciseNumber}: ${exerciseType}`;
       });
-      
-      console.log('Final exercise count:', worksheetData.exercises?.length || 0, `(target: ${exerciseCount})`);
-      console.log('Grammar Rules included:', !!worksheetData.grammar_rules);
       
       const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);
       worksheetData.sourceCount = sourceCount;
@@ -251,27 +182,11 @@ serve(async (req) => {
     const generationEndTime = Date.now();
     const generationTimeSeconds = Math.round((generationEndTime - generationStartTime) / 1000);
 
-    // Save worksheet to database with FULL PROMPT (SYSTEM + USER) - SKIP FOR REGENERATION
+    // Save worksheet to database - SKIP FOR REGENERATION
     if (!isRegeneration) {
       try {
-        // CREATE FULL PROMPT - this is what should be saved to database
         const fullPrompt = `SYSTEM MESSAGE:\n${systemMessage}\n\nUSER MESSAGE:\n${sanitizedPrompt}`;
-        
-        // ENHANCED LOGGING: Check what formData contains before sanitization
-        console.log(`🔧 [DATABASE] Original formData:`, formData);
-        console.log(`🔧 [DATABASE] formData type:`, typeof formData);
-        console.log(`🔧 [DATABASE] formData.selectedExercises:`, formData?.selectedExercises);
-        console.log(`🔧 [DATABASE] formData.selectedExercises type:`, typeof formData?.selectedExercises);
-        console.log(`🔧 [DATABASE] formData.selectedExercises length:`, formData?.selectedExercises?.length);
-        
-        // Sanitize form data
         const sanitizedFormData = formData ? JSON.parse(JSON.stringify(formData)) : {};
-        
-        // ENHANCED LOGGING: Check what sanitizedFormData contains after sanitization  
-        console.log(`🔧 [DATABASE] Sanitized formData:`, sanitizedFormData);
-        console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises:`, sanitizedFormData?.selectedExercises);
-        console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises type:`, typeof sanitizedFormData?.selectedExercises);
-        console.log(`🔧 [DATABASE] sanitizedFormData.selectedExercises length:`, sanitizedFormData?.selectedExercises?.length);
         
         const { data: worksheet, error: worksheetError } = await supabase
           .from('worksheets')
@@ -297,20 +212,18 @@ serve(async (req) => {
           console.error('Error saving worksheet to database:', worksheetError);
         }
 
-        // Track generation event if we have a worksheet ID
         if (worksheet && worksheet.length > 0 && worksheet[0].id) {
           const worksheetId = worksheet[0].id;
           worksheetData.id = worksheetId;
-          console.log('Worksheet generated and saved successfully with ID:', worksheetId);
-          console.log(`Generation time: ${generationTimeSeconds} seconds`);
-          console.log(`Geo data: ${geoData.country || 'unknown'}, ${geoData.city || 'unknown'}`);
-          console.log(`Teacher email saved: ${teacherEmail || 'no email'}`);
+          console.log('Worksheet ID:', worksheetId);
+          console.log('Generation time:', generationTimeSeconds, 'seconds');
+          console.log('Location:', geoData.country || 'unknown', geoData.city || 'unknown');
+          console.log('Teacher:', teacherEmail || 'anonymous');
+          console.log('IP:', ip);
         }
       } catch (dbError) {
-        console.error('Database operation failed:', dbError);
+        console.error('Database error:', dbError);
       }
-    } else {
-      console.log('🔄 [REGENERATION MODE] Skipping database save - returning exercise data only');
     }
 
     return new Response(JSON.stringify(worksheetData), {

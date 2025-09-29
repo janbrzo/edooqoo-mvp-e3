@@ -288,6 +288,15 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
         opacity: 1;
       }
       
+      /* Hide navigation elements in exported HTML (not just print) */
+      .nav-menu-button,
+      .nav-numbered-buttons, 
+      .nav-sidebar,
+      .scroll-up-button {
+        display: none !important;
+        visibility: hidden !important;
+      }
+      
       /* Hide elements not meant for export, like the rating section */
       [data-no-pdf="true"]:not([data-teacher-tip="true"]) {
         display: none !important;
