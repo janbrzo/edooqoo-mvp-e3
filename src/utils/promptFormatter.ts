@@ -64,8 +64,27 @@ export const formatPromptForAI = (data: FormData): string => {
     promptLines.push(`- Examples: "How do you do?", "That is most exceptional!", "I would be most honored to", "Shall we schedule a formal appointment?", "It is extraordinarily fascinating"`);
   }
 
-  // Add instructions for warmup questions
-  promptLines.push(`\nIMPORTANT: Include a "warmup_questions" section with exactly 4 conversation starter questions that are personal and opinion-based, directly related to the lesson topic "${data.lessonTopic}". These should help students think about the topic and engage them at the beginning of the lesson. Make question number 1 and 2 generic and question number 3 and 4 specific.`);
+  // Add detailed CEFR level instructions
+  promptLines.push(`\nCEFR LEVEL GUIDELINES (${data.englishLevel}):`);
+  if (data.englishLevel === 'A1/A2') {
+    promptLines.push(`- Use simple, basic vocabulary and elementary grammatical structures appropriate for beginners`);
+    promptLines.push(`- Focus on everyday topics, common situations, and concrete subjects (family, food, weather, hobbies)`);
+    promptLines.push(`- Keep sentences short and straightforward with present simple, present continuous, and basic past tense`);
+    promptLines.push(`- Avoid complex clauses, abstract concepts, and advanced vocabulary`);
+    promptLines.push(`- Examples: "I like pizza", "She is working now", "We went to the park yesterday"`);
+  } else if (data.englishLevel === 'B1/B2') {
+    promptLines.push(`- Use intermediate vocabulary with more varied grammatical structures including conditionals and perfect tenses`);
+    promptLines.push(`- Include topics related to work, travel, personal experiences, opinions, and abstract ideas`);
+    promptLines.push(`- Use compound and some complex sentences with relative clauses and linking words`);
+    promptLines.push(`- Introduce phrasal verbs, idiomatic expressions, and more nuanced vocabulary`);
+    promptLines.push(`- Examples: "If I had known, I would have come earlier", "I've been learning English for five years", "Although it was raining, we decided to go out"`);
+  } else if (data.englishLevel === 'C1/C2') {
+    promptLines.push(`- Use advanced, sophisticated vocabulary with complex grammatical structures and subtle nuances`);
+    promptLines.push(`- Include abstract topics, professional contexts, academic discussions, and complex social issues`);
+    promptLines.push(`- Employ complex sentence structures with multiple clauses, inversion, and advanced discourse markers`);
+    promptLines.push(`- Use idiomatic language, collocations, and precise terminology appropriate to the context`);
+    promptLines.push(`- Examples: "Had I known the implications, I would have reconsidered my decision", "Not only did she excel academically, but she also demonstrated exceptional leadership qualities"`);
+  }
 
   // Join lines with newlines for clean key-value format
   const formattedPrompt = promptLines.join('\n');
