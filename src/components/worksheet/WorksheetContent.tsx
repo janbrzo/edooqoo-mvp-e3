@@ -13,6 +13,7 @@ import WorksheetRating from "@/components/WorksheetRating";
 import TeacherNotes from "./TeacherNotes";
 import DemoWatermark from "./DemoWatermark";
 import { ExerciseNavSidebar } from "./ExerciseNavSidebar";
+import ExerciseRegenerateModal from "./ExerciseRegenerateModal";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp, RotateCcw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -57,8 +58,19 @@ export default function WorksheetContent({
   const hasGrammar = Boolean(editableWorksheet?.grammar_rules);
   const worksheetTimes = useWorksheetTimes(inputParams?.lessonTime, hasGrammar);
   
-  // Get regeneration status for global notification
-  const { isLoading, loadingExerciseIndex } = useExerciseRegeneration();
+  // Get regeneration hook with all functions
+  const regenerationHook = useExerciseRegeneration();
+  const { 
+    isLoading, 
+    loadingExerciseIndex, 
+    openModal, 
+    closeModal,
+    isModalOpen,
+    guidelines,
+    setGuidelines,
+    regenerateSection,
+    sectionType: modalSectionType
+  } = regenerationHook;
   
   // Filter active and deleted exercises
   const activeExercises = editableWorksheet?.exercises?.filter((ex: any) => !ex.deleted) || [];
@@ -316,6 +328,9 @@ export default function WorksheetContent({
           editableWorksheet={editableWorksheet}
           setEditableWorksheet={setEditableWorksheet}
           isDownloadUnlocked={isDownloadUnlocked}
+          canRegenerate={Boolean(worksheetId && userId)}
+          isRegenerating={isLoading && modalSectionType === 'warmup'}
+          onRegenerateClick={() => openModal(-1, 'warmup', 'Warmup Questions')}
         />
       )}
 
@@ -328,6 +343,9 @@ export default function WorksheetContent({
             editableWorksheet={editableWorksheet}
             setEditableWorksheet={setEditableWorksheet}
             inputParams={inputParams}
+            canRegenerate={Boolean(worksheetId && userId)}
+            isRegenerating={isLoading && modalSectionType === 'grammar'}
+            onRegenerateClick={() => openModal(-1, 'grammar', 'Grammar Rules')}
           />
         </div>
       )}
@@ -426,14 +444,50 @@ export default function WorksheetContent({
       <TeacherNotes />
       
       {/* Global regeneration notification */}
-      {isLoading && loadingExerciseIndex !== null && (
+      {isLoading && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-worksheet-purple text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span className="text-sm font-medium">
-            {getExerciseName(loadingExerciseIndex)} is being regenerated...
+            {modalSectionType === 'warmup' && 'Warmup Questions are being regenerated...'}
+            {modalSectionType === 'grammar' && 'Grammar Rules are being regenerated...'}
+            {modalSectionType === 'exercise' && loadingExerciseIndex !== null && `${getExerciseName(loadingExerciseIndex)} is being regenerated...`}
           </span>
         </div>
       )}
+
+      {/* Regeneration Modal */}
+      <ExerciseRegenerateModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onConfirm={() => {
+          if (modalSectionType === 'warmup') {
+            regenerateSection(
+              worksheetId!,
+              'warmup',
+              inputParams,
+              editableWorksheet.warmup_questions,
+              editableWorksheet,
+              setEditableWorksheet,
+              userId!
+            );
+          } else if (modalSectionType === 'grammar') {
+            regenerateSection(
+              worksheetId!,
+              'grammar',
+              inputParams,
+              editableWorksheet.grammar_rules,
+              editableWorksheet,
+              setEditableWorksheet,
+              userId!
+            );
+          }
+        }}
+        guidelines={guidelines}
+        onGuidelinesChange={setGuidelines}
+        exerciseType={modalSectionType === 'warmup' ? 'Warmup Questions' : modalSectionType === 'grammar' ? 'Grammar Rules' : ''}
+        exerciseTitle={modalSectionType === 'warmup' ? 'Warmup Questions' : modalSectionType === 'grammar' ? 'Grammar Rules' : ''}
+        sectionType={modalSectionType}
+      />
     </div>
   );
 }

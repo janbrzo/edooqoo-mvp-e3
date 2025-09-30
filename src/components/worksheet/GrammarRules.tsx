@@ -1,5 +1,6 @@
 import React from "react";
-import { BookOpen, Clock } from "lucide-react";
+import { BookOpen, Clock, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface GrammarRule {
@@ -20,6 +21,9 @@ interface GrammarRulesProps {
   editableWorksheet: any;
   setEditableWorksheet: (worksheet: any) => void;
   inputParams?: any;
+  canRegenerate?: boolean;
+  isRegenerating?: boolean;
+  onRegenerateClick?: () => void;
 }
 
 export default function GrammarRules({
@@ -27,7 +31,10 @@ export default function GrammarRules({
   isEditing,
   editableWorksheet,
   setEditableWorksheet,
-  inputParams
+  inputParams,
+  canRegenerate = false,
+  isRegenerating = false,
+  onRegenerateClick
 }: GrammarRulesProps) {
   const isMobile = useIsMobile();
 
@@ -66,7 +73,22 @@ export default function GrammarRules({
           <div className="p-2 bg-white/20 rounded-full mr-3">
             <BookOpen className="h-5 w-5" />
           </div>
-          <h3 className="text-lg font-semibold">Grammar Rules</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold">Grammar Rules</h3>
+            {canRegenerate && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onRegenerateClick}
+                disabled={isRegenerating}
+                className="text-yellow-300 hover:bg-white/20 hover:text-yellow-200 h-8 px-2 gap-1 transition-colors"
+              >
+                <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+                <span className="text-xs">Regenerate</span>
+              </Button>
+            )}
+          </div>
         </div>
         <div className="flex items-center bg-white/20 px-3 py-1 rounded-md">
           <Clock className="h-4 w-4 mr-1" />

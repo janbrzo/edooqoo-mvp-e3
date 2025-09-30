@@ -353,7 +353,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
               {/* Exercise Selection Cards with Student Selector */}
               <div className="mb-6">
                 {/* Card Headers in One Line */}
-                <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-3 gap-4'} mb-4`}>
+                <div className={`${isMobile ? 'flex flex-col gap-3' : 'grid grid-cols-[0.7fr_1fr_0.7fr] gap-4'} mb-4`}>
                   
                   {/* Student Selector - only for authenticated users */}
                   {userId && students.length > 0 && (
