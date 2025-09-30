@@ -7,8 +7,6 @@ interface RegenerationState {
   isLoading: boolean;
   loadingExerciseIndex: number | null;
   guidelines: string;
-  sectionType: 'exercise' | 'warmup' | 'grammar';
-  sectionTitle: string;
 }
 
 export const useExerciseRegeneration = () => {
@@ -16,19 +14,15 @@ export const useExerciseRegeneration = () => {
     isModalOpen: false,
     isLoading: false,
     loadingExerciseIndex: null,
-    guidelines: '',
-    sectionType: 'exercise',
-    sectionTitle: ''
+    guidelines: ''
   });
 
-  const openModal = (exerciseIndex: number, sectionType: 'exercise' | 'warmup' | 'grammar' = 'exercise', sectionTitle: string = '') => {
+  const openModal = (exerciseIndex: number) => {
     setState(prev => ({
       ...prev,
       isModalOpen: true,
       loadingExerciseIndex: exerciseIndex,
-      guidelines: '',
-      sectionType,
-      sectionTitle
+      guidelines: ''
     }));
   };
 
@@ -36,71 +30,12 @@ export const useExerciseRegeneration = () => {
     setState(prev => ({
       ...prev,
       isModalOpen: false,
-      guidelines: '',
-      sectionType: 'exercise',
-      sectionTitle: ''
+      guidelines: ''
     }));
   };
 
   const setGuidelines = (guidelines: string) => {
     setState(prev => ({ ...prev, guidelines }));
-  };
-
-  const regenerateSection = async (
-    worksheetId: string,
-    sectionType: 'warmup' | 'grammar',
-    originalFormData: any,
-    currentSection: any,
-    editableWorksheet: any,
-    setEditableWorksheet: React.Dispatch<React.SetStateAction<any>>,
-    userId: string
-  ) => {
-    try {
-      setState(prev => ({ ...prev, isLoading: true }));
-      closeModal();
-
-      console.log(`🔄 Starting ${sectionType} regeneration:`, {
-        worksheetId,
-        sectionType,
-        guidelines: state.guidelines
-      });
-
-      const newSection = await exerciseRegenerationService.regenerateSection(
-        worksheetId,
-        sectionType,
-        originalFormData,
-        currentSection,
-        state.guidelines,
-        userId
-      );
-
-      // Update the specific section in the worksheet
-      const updatedWorksheet = {
-        ...editableWorksheet,
-        [sectionType === 'warmup' ? 'warmup_questions' : 'grammar_rules']: newSection
-      };
-
-      setEditableWorksheet(updatedWorksheet);
-
-      // Update the worksheet in the database
-      await exerciseRegenerationService.updateWorksheetInDatabase(
-        worksheetId,
-        updatedWorksheet,
-        userId
-      );
-
-      toast.success(`${sectionType === 'warmup' ? 'Warmup Questions' : 'Grammar Rules'} regenerated successfully!`);
-      
-    } catch (error) {
-      console.error(`Error regenerating ${sectionType}:`, error);
-      toast.error(error instanceof Error ? error.message : `Failed to regenerate ${sectionType}`);
-    } finally {
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false,
-        loadingExerciseIndex: null
-      }));
-    }
   };
 
   const regenerateExercise = async (
@@ -169,7 +104,6 @@ export const useExerciseRegeneration = () => {
     openModal,
     closeModal,
     setGuidelines,
-    regenerateExercise,
-    regenerateSection
+    regenerateExercise
   };
 };

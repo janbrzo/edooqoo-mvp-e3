@@ -3,6 +3,8 @@
  */
 
 export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: number = 8, selectedExercises?: string[], englishLevel?: string) => {
+  console.log(`🔧 [FINAL-REQUIREMENTS] Generating requirements for ${exerciseCount} exercises, selected: ${selectedExercises?.join(', ') || 'default order'}`);
+  
   // Exercise-specific requirements mapping
   const exerciseRequirements = {
     'reading': `Exercise with reading must have content more than 300 words. Analyze the lessonTopic, lessonGoal, grammarFocus and additionalInformation to determine the most appropriate text format. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
@@ -56,5 +58,6 @@ export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: nu
   
   requirements += '\nRETURN ONLY VALID JSON. NO MARKDOWN. NO ADDITIONAL TEXT.';
   
+  console.log(`🔧 [FINAL-REQUIREMENTS] Generated requirements: ${requirements.substring(0, 200)}...`);
   return requirements;
 };

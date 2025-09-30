@@ -9,11 +9,11 @@ interface ExerciseMultipleChoiceProps {
   onOptionTextChange: (qIndex: number, oIndex: number, value: string) => void;
 }
 
-const ExerciseMultipleChoice = React.forwardRef<HTMLDivElement, ExerciseMultipleChoiceProps>(({
+const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
   questions, isEditing, viewMode, onQuestionTextChange, onOptionTextChange
-}, ref) => {
+}) => {
   return (
-    <div ref={ref} className="space-y-2">
+    <div className="space-y-2">
       {questions.map((question, qIndex) => (
         <div key={qIndex} className="border-b pb-2 multiple-choice-question">
           <p className="font-medium mb-1 leading-snug">
@@ -64,8 +64,6 @@ const ExerciseMultipleChoice = React.forwardRef<HTMLDivElement, ExerciseMultiple
       ))}
     </div>
   );
-});
-
-ExerciseMultipleChoice.displayName = 'ExerciseMultipleChoice';
+};
 
 export default ExerciseMultipleChoice;

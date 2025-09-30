@@ -14,66 +14,6 @@ interface RegenerateExerciseRequest {
 }
 
 class ExerciseRegenerationService {
-  async regenerateSection(
-    worksheetId: string,
-    sectionType: 'warmup' | 'grammar',
-    originalFormData: any,
-    currentSection: any,
-    additionalGuidelines: string,
-    userId: string
-  ) {
-    try {
-      console.log(`📤 Sending ${sectionType} regeneration request to Edge Function`);
-
-      const regenerationPrompt = this.createSectionRegenerationPrompt(
-        originalFormData,
-        sectionType,
-        currentSection,
-        additionalGuidelines
-      );
-
-      console.log(`🔄 ${sectionType} regeneration prompt:`, regenerationPrompt);
-
-      const response = await fetch(REGENERATE_EXERCISE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: regenerationPrompt,
-          formData: {
-            ...originalFormData,
-            regenerationMode: true,
-            regenerationType: sectionType
-          },
-          userId,
-          isRegeneration: true
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || `Failed to regenerate ${sectionType}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      
-      if (sectionType === 'warmup' && result.warmup_questions) {
-        console.log('✅ Warmup questions regenerated successfully');
-        return result.warmup_questions;
-      } else if (sectionType === 'grammar' && result.grammar_rules) {
-        console.log('✅ Grammar rules regenerated successfully');
-        return result.grammar_rules;
-      } else {
-        throw new Error(`No ${sectionType} data returned from regeneration`);
-      }
-
-    } catch (error) {
-      console.error(`❌ Error in ${sectionType} regeneration:`, error);
-      throw error;
-    }
-  }
-
   async regenerateExercise(
     worksheetId: string,
     exerciseIndex: number,
@@ -151,64 +91,6 @@ class ExerciseRegenerationService {
       console.error('❌ Error updating worksheet in database:', error);
       throw error;
     }
-  }
-
-  private createSectionRegenerationPrompt(
-    originalFormData: any,
-    sectionType: 'warmup' | 'grammar',
-    currentSection: any,
-    additionalGuidelines: string
-  ): string {
-    const baseInfo = `
-Lesson Topic: ${originalFormData.lessonTopic || 'Not specified'}
-Lesson Goal: ${originalFormData.lessonGoal || 'Not specified'}
-English Level: ${originalFormData.englishLevel || 'Not specified'}
-Lesson Duration: ${originalFormData.lessonTime || '60min'}
-`;
-
-    let sectionInfo = '';
-    if (sectionType === 'warmup') {
-      sectionInfo = `
-REGENERATE WARMUP QUESTIONS:
-- Current Questions: ${JSON.stringify(currentSection || [])}
-- Generate 4 new warmup questions that are engaging and relevant to the lesson topic.
-- Return warmup_questions array with 4 question strings.
-`;
-    } else if (sectionType === 'grammar') {
-      sectionInfo = `
-REGENERATE GRAMMAR RULES:
-- Current Grammar: ${JSON.stringify(currentSection || {})}
-- Generate new grammar explanation with clear structure.
-- CRITICAL: Return grammar_rules object with this EXACT structure:
-{
-  "grammar_rules": {
-    "title": "Grammar Title (e.g., 'Present Perfect Tense')",
-    "introduction": "Brief introduction paragraph",
-    "rules": [
-      {
-        "title": "Rule title",
-        "explanation": "Clear explanation",
-        "examples": ["Example 1", "Example 2", "Example 3"]
-      }
-    ]
-  }
-}
-- The grammar_rules object MUST have: title (string), introduction (string), rules (array of objects)
-- Each rule MUST have: title (string), explanation (string), examples (array of strings with at least 2 examples)
-`;
-    }
-
-    const guidelines = additionalGuidelines 
-      ? `\nADDITIONAL GUIDELINES:\n${additionalGuidelines}`
-      : '';
-
-    const regenerationInstructions = `
-IMPORTANT: Generate ONLY the ${sectionType} section. 
-The content should be completely new and different from the current one, but maintain quality standards.
-Return the full worksheet JSON format but only regenerate the ${sectionType} section.
-`;
-
-    return baseInfo + sectionInfo + guidelines + regenerationInstructions;
   }
 
   private createRegenerationPrompt(

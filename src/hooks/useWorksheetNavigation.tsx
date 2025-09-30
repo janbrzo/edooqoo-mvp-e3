@@ -79,14 +79,13 @@ export const useWorksheetNavigation = ({ exercises }: UseWorksheetNavigationProp
             if (entry.isIntersecting) {
               const index = exerciseRefs.current.findIndex(ref => ref === entry.target);
               if (index !== -1) {
-                console.log('[WorksheetNavigation] Setting active exercise:', index, entry.target);
                 setActiveExercise(index);
               }
             }
           });
         },
         {
-          rootMargin: '-10% 0px -70% 0px', // Less restrictive for better Multiple Choice tracking
+          rootMargin: '-20% 0px -60% 0px',
           threshold: 0.1
         }
       );

@@ -1,7 +1,6 @@
 
 import React from "react";
-import { MessageCircle, Clock, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { MessageCircle, Clock } from "lucide-react";
 import DemoWatermark from "./DemoWatermark";
 
 interface WarmupSectionProps {
@@ -10,9 +9,6 @@ interface WarmupSectionProps {
   editableWorksheet: any;
   setEditableWorksheet: (worksheet: any) => void;
   isDownloadUnlocked: boolean;
-  canRegenerate?: boolean;
-  isRegenerating?: boolean;
-  onRegenerateClick?: () => void;
 }
 
 const generateWarmupQuestions = (inputParams: any): string[] => {
@@ -113,10 +109,7 @@ const WarmupSection: React.FC<WarmupSectionProps> = ({
   isEditing,
   editableWorksheet,
   setEditableWorksheet,
-  isDownloadUnlocked,
-  canRegenerate = false,
-  isRegenerating = false,
-  onRegenerateClick
+  isDownloadUnlocked
 }) => {
   // Initialize warmup questions if not present
   if (!editableWorksheet.warmup_questions) {
@@ -147,22 +140,7 @@ const WarmupSection: React.FC<WarmupSectionProps> = ({
           <div className="p-2 bg-white/20 rounded-full mr-3">
             <MessageCircle className="h-5 w-5" />
           </div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold">Warmup Questions</h3>
-            {canRegenerate && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onRegenerateClick}
-                disabled={isRegenerating}
-                className="text-yellow-300 hover:bg-white/20 hover:text-yellow-200 h-8 px-2 gap-1 transition-colors"
-              >
-                <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
-                <span className="text-xs">Regenerate</span>
-              </Button>
-            )}
-          </div>
+          <h3 className="text-lg font-semibold">Warmup Questions</h3>
         </div>
         <div className="flex items-center bg-white/20 px-3 py-1 rounded-md">
           <Clock className="h-4 w-4 mr-1" />
