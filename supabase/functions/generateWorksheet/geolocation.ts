@@ -3,12 +3,10 @@
 
 export async function getGeolocation(ip: string): Promise<{ country?: string; city?: string }> {
   try {
-    // Parse IP from complex string like "46.227.241.106,46.227.241.106, 13.248.113.208"
+    // Parse IP from complex string
     const cleanIP = parseIP(ip);
-    console.log(`Geolocation: Original IP string: "${ip}", Parsed IP: "${cleanIP}"`);
     
     if (!cleanIP) {
-      console.warn('No valid IP found to geolocate');
       return {};
     }
 
@@ -16,29 +14,28 @@ export async function getGeolocation(ip: string): Promise<{ country?: string; ci
     try {
       const result = await tryIPAPIService(cleanIP);
       if (result.country || result.city) {
-        console.log(`Geolocation success with ipapi.co: ${result.country}, ${result.city}`);
+        console.log(`Geolocation success: ${result.country}, ${result.city}`);
         return result;
       }
     } catch (error) {
-      console.warn('Primary geolocation service failed:', error);
+      // Silently try backup service
     }
 
     // Try backup service
     try {
       const result = await tryFreeGeoIPService(cleanIP);
       if (result.country || result.city) {
-        console.log(`Geolocation success with freegeoip.app: ${result.country}, ${result.city}`);
+        console.log(`Geolocation success: ${result.country}, ${result.city}`);
         return result;
       }
     } catch (error) {
-      console.warn('Backup geolocation service failed:', error);
+      // No geolocation available
     }
 
   } catch (error) {
-    console.warn('Failed to get geolocation:', error);
+    // Continue without geolocation
   }
   
-  console.log('Geolocation: No data available, returning empty object');
   return {};
 }
 

@@ -13,6 +13,7 @@ interface ExerciseRegenerateModalProps {
   onGuidelinesChange: (value: string) => void;
   exerciseType: string;
   exerciseTitle: string;
+  sectionType?: 'exercise' | 'warmup' | 'grammar';
 }
 
 const ExerciseRegenerateModal: React.FC<ExerciseRegenerateModalProps> = ({
@@ -22,11 +23,45 @@ const ExerciseRegenerateModal: React.FC<ExerciseRegenerateModalProps> = ({
   guidelines,
   onGuidelinesChange,
   exerciseType,
-  exerciseTitle
+  exerciseTitle,
+  sectionType = 'exercise'
 }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onConfirm();
+  };
+
+  const getSectionLabel = () => {
+    switch (sectionType) {
+      case 'warmup':
+        return 'Warmup Questions';
+      case 'grammar':
+        return 'Grammar Rules';
+      default:
+        return 'Exercise';
+    }
+  };
+
+  const getPlaceholder = () => {
+    switch (sectionType) {
+      case 'warmup':
+        return 'Add specific requirements for the warmup questions...';
+      case 'grammar':
+        return 'Add specific requirements for the grammar explanation...';
+      default:
+        return 'Add any specific requirements for the new exercise version...';
+    }
+  };
+
+  const getExamples = () => {
+    switch (sectionType) {
+      case 'warmup':
+        return 'Examples: "Make questions more personal", "Focus on past experiences", "Add hypothetical scenarios"';
+      case 'grammar':
+        return 'Examples: "Add more examples", "Simplify the explanation", "Include common mistakes"';
+      default:
+        return 'Examples: "Make it more challenging", "Focus on present perfect tense", "Use business vocabulary"';
+    }
   };
 
   return (
@@ -35,18 +70,20 @@ const ExerciseRegenerateModal: React.FC<ExerciseRegenerateModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <RefreshCw className="h-5 w-5 text-worksheet-purple" />
-            Regenerate Exercise
+            Regenerate {getSectionLabel()}
           </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="bg-gray-50 p-3 rounded-lg">
             <p className="text-sm text-gray-600">
-              <strong>Exercise:</strong> {exerciseTitle}
+              <strong>{getSectionLabel()}:</strong> {exerciseTitle}
             </p>
-            <p className="text-sm text-gray-600 mt-1">
-              <strong>Type:</strong> {exerciseType.charAt(0).toUpperCase() + exerciseType.slice(1).replace(/-/g, ' ')}
-            </p>
+            {sectionType === 'exercise' && (
+              <p className="text-sm text-gray-600 mt-1">
+                <strong>Type:</strong> {exerciseType.charAt(0).toUpperCase() + exerciseType.slice(1).replace(/-/g, ' ')}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -55,14 +92,14 @@ const ExerciseRegenerateModal: React.FC<ExerciseRegenerateModalProps> = ({
             </Label>
             <Textarea
               id="guidelines"
-              placeholder="Add any specific requirements for the new exercise version..."
+              placeholder={getPlaceholder()}
               value={guidelines}
               onChange={(e) => onGuidelinesChange(e.target.value)}
               rows={4}
               className="resize-none"
             />
             <p className="text-xs text-gray-500">
-              Examples: "Make it more challenging", "Focus on present perfect tense", "Use business vocabulary"
+              {getExamples()}
             </p>
           </div>
 
@@ -79,7 +116,7 @@ const ExerciseRegenerateModal: React.FC<ExerciseRegenerateModalProps> = ({
               className="bg-worksheet-purple hover:bg-worksheet-purple/90"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
-              Regenerate Exercise
+              Regenerate {getSectionLabel()}
             </Button>
           </DialogFooter>
         </form>

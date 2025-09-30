@@ -99,6 +99,5 @@ export function parseAIResponse(jsonContent: string): any {
     cleanJsonContent = cleanJsonContent.substring(firstBrace, lastBrace + 1);
   }
   
-  console.log('Attempting to parse cleaned JSON content');
   return JSON.parse(cleanJsonContent);
 }

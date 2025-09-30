@@ -350,34 +350,32 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                 />
               </div>
 
-              {/* Student Selection - only for authenticated users */}
-              {userId && students.length > 0 && (
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Student (optional):
-                  </label>
-                  <div className={`${isMobile ? 'w-full' : 'w-1/2'}`}>
-                    <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choose a student or leave empty for general worksheet" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="no-student">No specific student</SelectItem>
-                        {students.map((student) => (
-                          <SelectItem key={student.id} value={student.id}>
-                            {student.name} ({student.english_level})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {/* Exercise Selection Cards */}
+              {/* Exercise Selection Cards with Student Selector */}
               <div className="mb-6">
                 {/* Card Headers in One Line */}
-                <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-4'} mb-4`}>
+                <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-3 gap-4'} mb-4`}>
+                  
+                  {/* Student Selector - only for authenticated users */}
+                  {userId && students.length > 0 && (
+                    <div className="flex flex-col">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Student (optional):
+                      </label>
+                      <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="No specific student" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="no-student">No specific student</SelectItem>
+                          {students.map((student) => (
+                            <SelectItem key={student.id} value={student.id}>
+                              {student.name} ({student.english_level})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   
                   {/* Exercise Types Card Header */}
                   <Card 

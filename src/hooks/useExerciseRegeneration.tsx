@@ -7,6 +7,8 @@ interface RegenerationState {
   isLoading: boolean;
   loadingExerciseIndex: number | null;
   guidelines: string;
+  sectionType: 'exercise' | 'warmup' | 'grammar';
+  sectionTitle: string;
 }
 
 export const useExerciseRegeneration = () => {
@@ -14,15 +16,19 @@ export const useExerciseRegeneration = () => {
     isModalOpen: false,
     isLoading: false,
     loadingExerciseIndex: null,
-    guidelines: ''
+    guidelines: '',
+    sectionType: 'exercise',
+    sectionTitle: ''
   });
 
-  const openModal = (exerciseIndex: number) => {
+  const openModal = (exerciseIndex: number, sectionType: 'exercise' | 'warmup' | 'grammar' = 'exercise', sectionTitle: string = '') => {
     setState(prev => ({
       ...prev,
       isModalOpen: true,
       loadingExerciseIndex: exerciseIndex,
-      guidelines: ''
+      guidelines: '',
+      sectionType,
+      sectionTitle
     }));
   };
 
@@ -30,7 +36,9 @@ export const useExerciseRegeneration = () => {
     setState(prev => ({
       ...prev,
       isModalOpen: false,
-      guidelines: ''
+      guidelines: '',
+      sectionType: 'exercise',
+      sectionTitle: ''
     }));
   };
 
