@@ -94,8 +94,15 @@ serve(async (req) => {
     // Determine exercise count from lesson duration  
     let exerciseCount = 8; // Default for 60+ minutes
     
+    // Special handling for section regeneration (warmup, grammar)
+    const isWarmupRegeneration = isRegeneration && formData?.regenerationType === 'warmup';
+    const isGrammarRegeneration = isRegeneration && formData?.regenerationType === 'grammar';
+    
     if (isRegeneration && formData?.regenerationMode) {
       exerciseCount = 1;
+    } else if (isWarmupRegeneration || isGrammarRegeneration) {
+      // Skip normal exercise generation for section regeneration
+      exerciseCount = 0;
     } else {
       if (formData?.lessonTime) {
         exerciseCount = formData.lessonTime === '45min' ? 6 : 8;
@@ -142,11 +149,29 @@ serve(async (req) => {
       }
       worksheetData = parseAIResponse(jsonContent);
       
-      if (!worksheetData.title || !worksheetData.exercises || !Array.isArray(worksheetData.exercises)) {
+      // Special handling for section regeneration
+      const isWarmupRegeneration = isRegeneration && formData?.regenerationType === 'warmup';
+      const isGrammarRegeneration = isRegeneration && formData?.regenerationType === 'grammar';
+      
+      if (isWarmupRegeneration) {
+        // For warmup regeneration, we expect warmup_questions array
+        if (!worksheetData.warmup_questions || !Array.isArray(worksheetData.warmup_questions)) {
+          console.error('Invalid warmup structure:', worksheetData);
+          throw new Error('Invalid warmup structure returned from AI');
+        }
+        console.log('✅ Warmup regeneration successful:', worksheetData.warmup_questions.length, 'questions');
+      } else if (isGrammarRegeneration) {
+        // For grammar regeneration, we expect grammar_rules object
+        if (!worksheetData.grammar_rules || !worksheetData.grammar_rules.title || !worksheetData.grammar_rules.rules) {
+          console.error('Invalid grammar structure:', worksheetData);
+          throw new Error('Invalid grammar structure returned from AI. Expected: {title, introduction, rules[]}');
+        }
+        console.log('✅ Grammar regeneration successful:', worksheetData.grammar_rules.title);
+      } else if (!worksheetData.title || !worksheetData.exercises || !Array.isArray(worksheetData.exercises)) {
         throw new Error('Invalid worksheet structure returned from AI');
       }
       
-      if (worksheetData.exercises.length !== exerciseCount && !isRegeneration) {
+      if (worksheetData.exercises && worksheetData.exercises.length !== exerciseCount && !isRegeneration) {
         throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required ${exerciseCount}`);
       }
       

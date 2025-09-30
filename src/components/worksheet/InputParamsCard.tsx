@@ -37,7 +37,12 @@ const EXERCISE_TYPES_MAP: Record<string, string> = {
   'synonyms-antonyms': 'Synonyms & Antonyms',
   'word-order': 'Word Order',
   'odd-one-out': 'Odd One Out',
-  'negative-prefixes': 'Negative Prefixes'
+  'negative-prefixes': 'Negative Prefixes',
+  'multiple-choice': 'Multiple Choice',
+  'discussion': 'Discussion',
+  'error-correction': 'Error Correction',
+  'sentence-transformation': 'Sentence Transformation',
+  'complete-word': 'Complete Word'
 };
 
 interface InputParamsCardProps {

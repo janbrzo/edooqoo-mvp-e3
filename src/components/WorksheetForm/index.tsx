@@ -358,9 +358,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                   {/* Student Selector - only for authenticated users */}
                   {userId && students.length > 0 && (
                     <div className="flex flex-col">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select Student (optional):
-                      </label>
                       <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="No specific student" />

@@ -172,12 +172,29 @@ Lesson Duration: ${originalFormData.lessonTime || '60min'}
 REGENERATE WARMUP QUESTIONS:
 - Current Questions: ${JSON.stringify(currentSection || [])}
 - Generate 4 new warmup questions that are engaging and relevant to the lesson topic.
+- Return warmup_questions array with 4 question strings.
 `;
     } else if (sectionType === 'grammar') {
       sectionInfo = `
 REGENERATE GRAMMAR RULES:
 - Current Grammar: ${JSON.stringify(currentSection || {})}
-- Generate new grammar explanation with rules and examples.
+- Generate new grammar explanation with clear structure.
+- CRITICAL: Return grammar_rules object with this EXACT structure:
+{
+  "grammar_rules": {
+    "title": "Grammar Title (e.g., 'Present Perfect Tense')",
+    "introduction": "Brief introduction paragraph",
+    "rules": [
+      {
+        "title": "Rule title",
+        "explanation": "Clear explanation",
+        "examples": ["Example 1", "Example 2", "Example 3"]
+      }
+    ]
+  }
+}
+- The grammar_rules object MUST have: title (string), introduction (string), rules (array of objects)
+- Each rule MUST have: title (string), explanation (string), examples (array of strings with at least 2 examples)
 `;
     }
 
