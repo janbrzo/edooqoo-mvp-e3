@@ -341,7 +341,7 @@ export default function WorksheetContent({
             <div key={originalIndex} className="relative">
               {!isDownloadUnlocked && <DemoWatermark />}
               <ExerciseSection
-                ref={(el) => (navigation.exerciseRefs.current[activeIndex] = el)}
+                ref={(el) => (navigation.exerciseRefs.current[originalIndex] = el)}
                 exercise={exercise}
                 index={originalIndex}
                 isEditing={isEditing}
