@@ -299,7 +299,7 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
       
       /* Keep scroll-up button visible */
       .scroll-up-button {
-        display: block !important;
+        display: flex !important;
         visibility: visible !important;
       }
       

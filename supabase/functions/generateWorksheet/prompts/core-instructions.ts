@@ -19,13 +19,6 @@ const generateExerciseListInstruction = (selectedExercises?: string[], exerciseC
 };
 
 export const getCoreInstructions = (hasGrammarFocus: boolean, grammarFocus: string | null, formData: any, exerciseCount: number = 8, selectedExercises?: string[]) => {
-  console.log(`🔧 [CORE-INSTRUCTIONS] Received exerciseCount: ${exerciseCount}`);
-  if (selectedExercises && selectedExercises.length > 0) {
-    console.log(`🔧 [CORE-INSTRUCTIONS] Using selected exercises: ${selectedExercises.slice(0, exerciseCount).join(', ')}`);
-  } else {
-    console.log(`🔧 [CORE-INSTRUCTIONS] Using default exercise order`);
-  }
-  
   return `You are an expert ESL English language teacher specialized in creating context-specific, structured, comprehensive, high-quality English language worksheets for individual (one-on-one) tutoring sessions.
           Your goal: produce a worksheet so compelling that a private tutor will happily pay for it and actually use it.
           Your output will be used immediately in a 1-on-1 lesson; exercises must be ready-to-print without structural edits.

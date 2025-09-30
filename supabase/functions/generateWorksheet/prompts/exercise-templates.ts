@@ -10,8 +10,6 @@ import {
 } from './individual-exercises.ts';
 
 export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: string | null, exerciseCount: number = 8, selectedExercises?: string[]) => {
-  console.log(`🔧 [EXERCISE-TEMPLATES] Building exercise templates with ${exerciseCount} exercises`);
-  
   let finalExercises: string[];
   
   // Use custom selected exercises if provided, otherwise use default order
@@ -19,17 +17,11 @@ export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: str
     // Validate selected exercises exist in our functions
     finalExercises = selectedExercises.filter(type => {
       const hasFunction = type in exerciseFunctions;
-      if (!hasFunction) {
-        console.warn(`🔧 [EXERCISE-TEMPLATES] Invalid exercise type: ${type}`);
-      }
       return hasFunction;
     }).slice(0, exerciseCount);
-    
-    console.log(`🔧 [EXERCISE-TEMPLATES] Using custom selected exercises: ${finalExercises.join(', ')}`);
   } else {
     // Select the first N exercises from the default order
     finalExercises = exerciseOrder.slice(0, exerciseCount);
-    console.log(`🔧 [EXERCISE-TEMPLATES] Using default exercise order: ${finalExercises.join(', ')}`);
   }
   
   // Generate exercise JSON fragments
@@ -37,8 +29,6 @@ export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: str
     const exerciseFunction = exerciseFunctions[type as keyof typeof exerciseFunctions];
     return exerciseFunction();
   });
-  
-  console.log(`🔧 [EXERCISE-TEMPLATES] Generated ${exerciseFragments.length} exercise fragments`);
   return `20. Generate a structured JSON worksheet with this EXACT format:
 EXAMPLE OUTPUT (IGNORE CONTENT, FOCUS ON STRUCTURE):
 
