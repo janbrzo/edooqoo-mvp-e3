@@ -338,36 +338,23 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
               {/* Show More Link with Preview - button UNDER the blurred preview */}
               {!showMoreFields && (
                 <div className="mb-6">
-                  {/* Preview with light blur effect showing field names */}
-                  <div className="relative overflow-hidden rounded-lg mb-4">
-                    <div className="space-y-4">
-                      {/* First row - Lesson Focus preview */}
+                  {/* Preview with light blur effect showing only field names */}
+                  <div className="relative overflow-hidden mb-4 py-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium mb-2 text-foreground/70">
-                          Lesson focus: What should your student achieve by the end of the lesson?
+                        <label className="block text-sm font-medium text-foreground/60">
+                          Additional Information: Extra context & personal or situational details
                         </label>
-                        <div className="h-10 bg-muted/40 rounded-md border border-border/50" />
                       </div>
-                      
-                      {/* Second row - Additional Info and Grammar Focus */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium mb-2 text-foreground/70">
-                            Additional Information: Extra context & personal or situational details
-                          </label>
-                          <div className="h-10 bg-muted/40 rounded-md border border-border/50" />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2 text-foreground/70">
-                            Grammar focus (optional):
-                          </label>
-                          <div className="h-10 bg-muted/40 rounded-md border border-border/50" />
-                        </div>
+                      <div>
+                        <label className="block text-sm font-medium text-foreground/60">
+                          Grammar focus
+                        </label>
                       </div>
                     </div>
                     
-                    {/* Light blur overlay */}
-                    <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px]" />
+                    {/* Very light blur overlay */}
+                    <div className="absolute inset-0 bg-background/30 backdrop-blur-[0.5px]" />
                   </div>
                   
                   {/* Button under the preview */}
@@ -396,7 +383,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                   />
 
                   <FormField 
-                    label="Grammar focus (optional):"
+                    label="Grammar focus"
                     placeholder={currentPlaceholders.grammarFocus}
                     value={grammarFocus}
                     onChange={setGrammarFocus}
