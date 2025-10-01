@@ -115,6 +115,16 @@ serve(async (req) => {
     // CREATE SYSTEM MESSAGE using modular prompt structure with correct exerciseCount and selectedExercises
     const systemMessage = composeSystemMessage(hasGrammarFocus, grammarFocus, formData, exerciseCount, effectiveExercises);
 
+    // HEARTBEAT LOG: Before OpenAI API call
+    const openaiStartTime = Date.now();
+    console.log('🔵 HEARTBEAT: Starting OpenAI API call', {
+      timestamp: new Date().toISOString(),
+      elapsedSinceStart: Math.round((openaiStartTime - generationStartTime) / 1000) + 's',
+      model: 'gpt-4.1-2025-04-14',
+      exerciseCount,
+      promptLength: sanitizedPrompt.length
+    });
+
     // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4.1-2025-04-14", // Changed back to gpt-4o i można gpt-4.1-2025-04-14
@@ -132,15 +142,37 @@ serve(async (req) => {
        max_tokens: 7000 // nowa nazwa parametru  max_completion_tokens: 7500
     });
 
+    // HEARTBEAT LOG: After OpenAI API call
+    const openaiEndTime = Date.now();
+    const openaiDuration = Math.round((openaiEndTime - openaiStartTime) / 1000);
+    console.log('🟢 HEARTBEAT: OpenAI API call completed', {
+      timestamp: new Date().toISOString(),
+      openaiDuration: openaiDuration + 's',
+      totalElapsed: Math.round((openaiEndTime - generationStartTime) / 1000) + 's',
+      responseLength: aiResponse.choices[0].message.content?.length || 0
+    });
+
     const jsonContent = aiResponse.choices[0].message.content;
     
     // Parse the JSON response with error handling
     let worksheetData;
     try {
+      // HEARTBEAT LOG: Starting JSON parsing
+      console.log('🔵 HEARTBEAT: Starting JSON parsing', {
+        timestamp: new Date().toISOString(),
+        contentLength: jsonContent?.length || 0
+      });
+
       if (!jsonContent) {
         throw new Error('No JSON content received from AI');
       }
       worksheetData = parseAIResponse(jsonContent);
+      
+      // HEARTBEAT LOG: JSON parsing completed
+      console.log('🟢 HEARTBEAT: JSON parsing completed', {
+        timestamp: new Date().toISOString(),
+        exercisesCount: worksheetData.exercises?.length || 0
+      });
       
       if (!worksheetData.title || !worksheetData.exercises || !Array.isArray(worksheetData.exercises)) {
         throw new Error('Invalid worksheet structure returned from AI');
@@ -185,6 +217,13 @@ serve(async (req) => {
     // Save worksheet to database - SKIP FOR REGENERATION
     if (!isRegeneration) {
       try {
+        // HEARTBEAT LOG: Starting database save
+        console.log('🔵 HEARTBEAT: Starting database save', {
+          timestamp: new Date().toISOString(),
+          userId: userId || 'anonymous',
+          studentId: studentId || 'none'
+        });
+
         const fullPrompt = `SYSTEM MESSAGE:\n${systemMessage}\n\nUSER MESSAGE:\n${sanitizedPrompt}`;
         const sanitizedFormData = formData ? JSON.parse(JSON.stringify(formData)) : {};
         
@@ -215,6 +254,16 @@ serve(async (req) => {
         if (worksheet && worksheet.length > 0 && worksheet[0].id) {
           const worksheetId = worksheet[0].id;
           worksheetData.id = worksheetId;
+          
+          // HEARTBEAT LOG: Database save completed
+          console.log('🟢 HEARTBEAT: Database save completed', {
+            timestamp: new Date().toISOString(),
+            worksheetId,
+            generationTimeSeconds: generationTimeSeconds + 's',
+            location: `${geoData.country || 'unknown'} ${geoData.city || 'unknown'}`,
+            teacher: teacherEmail || 'anonymous'
+          });
+          
           console.log('Worksheet ID:', worksheetId);
           console.log('Generation time:', generationTimeSeconds, 'seconds');
           console.log('Location:', geoData.country || 'unknown', geoData.city || 'unknown');
@@ -225,6 +274,12 @@ serve(async (req) => {
         console.error('Database error:', dbError);
       }
     }
+
+    // HEARTBEAT LOG: Returning successful response
+    console.log('🟢 HEARTBEAT: Returning successful response to client', {
+      timestamp: new Date().toISOString(),
+      totalDuration: Math.round((Date.now() - generationStartTime) / 1000) + 's'
+    });
 
     return new Response(JSON.stringify(worksheetData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
