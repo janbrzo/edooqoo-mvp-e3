@@ -85,7 +85,7 @@ export const useWorksheetNavigation = ({ exercises }: UseWorksheetNavigationProp
           });
         },
         {
-          rootMargin: '-20% 0px -60% 0px',
+          rootMargin: '-10% 0px -70% 0px',
           threshold: 0.1
         }
       );

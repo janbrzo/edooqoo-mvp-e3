@@ -47,6 +47,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const [currentSuggestions, setCurrentSuggestions] = useState<SuggestionSet[]>([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [activeTab, setActiveTab] = useState<'exercises' | 'advanced' | null>(null);
+  const [showMoreFields, setShowMoreFields] = useState(false);
 
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -104,10 +105,10 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!lessonTopic || !lessonGoal || !additionalInformation) {
+    if (!lessonTopic) {
       toast({
         title: "Missing information",
-        description: "Please fill in all required fields (Topic, Focus, Additional Information)",
+        description: "Please fill in the lesson topic",
         variant: "destructive"
       });
       return;
@@ -310,7 +311,8 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                 </div>
               </div>
 
-              <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'md:grid-cols-2 gap-6'} mb-6`}>
+              {/* Lesson Topic - Always Visible */}
+              <div className="mb-6">
                 <FormField 
                   label="Lesson topic: General theme or real‑life scenario"
                   placeholder={currentPlaceholders.lessonTopic}
@@ -319,76 +321,92 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                   suggestions={createSuggestionTiles('lessonTopic')}
                   isRequired={true}
                 />
-
-                <FormField 
-                  label="Lesson focus: What should your student achieve by the end of the lesson?"
-                  placeholder={currentPlaceholders.lessonFocus}
-                  value={lessonGoal}
-                  onChange={setLessonGoal}
-                  suggestions={createSuggestionTiles('lessonFocus')}
-                  isRequired={true}
-                />
               </div>
 
-              <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'md:grid-cols-2 gap-6'} mb-6`}>
-                <FormField 
-                  label="Additional Information: Extra context & personal or situational details"
-                  placeholder={currentPlaceholders.additionalInformation}
-                  value={additionalInformation}
-                  onChange={setAdditionalInformation}
-                  suggestions={createSuggestionTiles('additionalInformation')}
-                  isRequired={true}
-                />
-                
-                <FormField 
-                  label="Grammar focus (optional):"
-                  placeholder={currentPlaceholders.grammarFocus}
-                  value={grammarFocus}
-                  onChange={setGrammarFocus}
-                  suggestions={createSuggestionTiles('grammarFocus')}
-                  isOptional={true}
-                />
-              </div>
-
-              {/* Student Selection - only for authenticated users */}
-              {userId && students.length > 0 && (
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Student (optional):
-                  </label>
-                  <div className={`${isMobile ? 'w-full' : 'w-1/2'}`}>
-                    <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choose a student or leave empty for general worksheet" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="no-student">No specific student</SelectItem>
-                        {students.map((student) => (
-                          <SelectItem key={student.id} value={student.id}>
-                            {student.name} ({student.english_level})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              {/* Show More Button */}
+              {!showMoreFields && (
+                <div className="mb-6 flex justify-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowMoreFields(true)}
+                    className="text-sm px-6 py-2"
+                  >
+                    Fill more info - get more accurate
+                  </Button>
                 </div>
+              )}
+
+              {/* Additional Fields - Conditionally Visible */}
+              {showMoreFields && (
+                <>
+                  <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'md:grid-cols-2 gap-6'} mb-6`}>
+                    <FormField 
+                      label="Lesson focus: What should your student achieve by the end of the lesson?"
+                      placeholder={currentPlaceholders.lessonFocus}
+                      value={lessonGoal}
+                      onChange={setLessonGoal}
+                      suggestions={createSuggestionTiles('lessonFocus')}
+                      isOptional={true}
+                    />
+
+                    <FormField 
+                      label="Grammar focus (optional):"
+                      placeholder={currentPlaceholders.grammarFocus}
+                      value={grammarFocus}
+                      onChange={setGrammarFocus}
+                      suggestions={createSuggestionTiles('grammarFocus')}
+                      isOptional={true}
+                    />
+                  </div>
+
+                  <div className="mb-6">
+                    <FormField 
+                      label="Additional Information: Extra context & personal or situational details"
+                      placeholder={currentPlaceholders.additionalInformation}
+                      value={additionalInformation}
+                      onChange={setAdditionalInformation}
+                      suggestions={createSuggestionTiles('additionalInformation')}
+                      isOptional={true}
+                    />
+                  </div>
+                </>
               )}
 
               {/* Exercise Selection Cards */}
               <div className="mb-6">
-                {/* Card Headers in One Line */}
-                <div className={`grid ${isMobile ? 'grid-cols-1 gap-3' : 'grid-cols-2 gap-4'} mb-4`}>
+                {/* Card Headers in One Line with Student Selector */}
+                <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-3'} mb-4 items-stretch`}>
+                  
+                  {/* Student Selection Dropdown - only for authenticated users */}
+                  {userId && students.length > 0 && (
+                    <div className={`${isMobile ? 'w-full' : 'w-[23%]'} flex items-center`}>
+                      <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                        <SelectTrigger className="w-full h-full">
+                          <SelectValue placeholder="No specific student" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="no-student">No specific student</SelectItem>
+                          {students.map((student) => (
+                            <SelectItem key={student.id} value={student.id}>
+                              {student.name} ({student.english_level})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   
                   {/* Exercise Types Card Header */}
                   <Card 
-                    className={`border-2 cursor-pointer transition-colors ${
+                    className={`border-2 cursor-pointer transition-colors ${isMobile ? 'w-full' : 'flex-1'} ${
                       activeTab === 'exercises' 
                         ? 'border-worksheet-purple bg-worksheet-purpleLight' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setActiveTab(activeTab === 'exercises' ? null : 'exercises')}
                   >
-                    <div className="p-3">
+                    <div className="p-2.5">
                       {/* Card Header with Title and Mode Selection Tiles in Same Line */}
                       <div className="flex items-center justify-between">
                          <h3 className="font-semibold text-gray-800">Exercise Types (20)</h3>
@@ -452,14 +470,14 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
 
                   {/* Advanced Options Card Header */}
                   <Card 
-                    className={`border-2 cursor-pointer transition-colors ${
+                    className={`border-2 cursor-pointer transition-colors ${isMobile ? 'w-full' : 'w-[23%]'} ${
                       activeTab === 'advanced' 
                         ? 'border-worksheet-purple bg-worksheet-purpleLight' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setActiveTab(activeTab === 'advanced' ? null : 'advanced')}
                   >
-                    <div className="p-3">
+                    <div className="p-2.5">
                       <h3 className="font-semibold text-gray-800">Advanced Options</h3>
                     </div>
                   </Card>
