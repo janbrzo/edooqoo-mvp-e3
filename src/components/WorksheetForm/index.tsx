@@ -311,8 +311,8 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                 </div>
               </div>
 
-              {/* Lesson Topic - Always Visible */}
-              <div className="mb-6">
+              {/* Lesson Topic - Always Visible, with Lesson Focus appearing next to it */}
+              <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : showMoreFields ? 'md:grid-cols-2 gap-6' : ''} mb-6`}>
                 <FormField 
                   label="Lesson topic: General theme or real‑life scenario"
                   placeholder={currentPlaceholders.lessonTopic}
@@ -321,87 +321,89 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                   suggestions={createSuggestionTiles('lessonTopic')}
                   isRequired={true}
                 />
+                
+                {/* Lesson Focus appears next to Lesson Topic when expanded */}
+                {showMoreFields && (
+                  <FormField 
+                    label="Lesson focus: What should your student achieve by the end of the lesson?"
+                    placeholder={currentPlaceholders.lessonFocus}
+                    value={lessonGoal}
+                    onChange={setLessonGoal}
+                    suggestions={createSuggestionTiles('lessonFocus')}
+                    isOptional={true}
+                  />
+                )}
               </div>
 
-              {/* Show More Link with Preview */}
+              {/* Show More Link with Preview - button UNDER the blurred preview */}
               {!showMoreFields && (
                 <div className="mb-6">
+                  {/* Preview with light blur effect showing field names */}
+                  <div className="relative overflow-hidden rounded-lg mb-4">
+                    <div className="space-y-4">
+                      {/* First row - Lesson Focus preview */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-foreground/70">
+                          Lesson focus: What should your student achieve by the end of the lesson?
+                        </label>
+                        <div className="h-10 bg-muted/40 rounded-md border border-border/50" />
+                      </div>
+                      
+                      {/* Second row - Additional Info and Grammar Focus */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium mb-2 text-foreground/70">
+                            Additional Information: Extra context & personal or situational details
+                          </label>
+                          <div className="h-10 bg-muted/40 rounded-md border border-border/50" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2 text-foreground/70">
+                            Grammar focus (optional):
+                          </label>
+                          <div className="h-10 bg-muted/40 rounded-md border border-border/50" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Light blur overlay */}
+                    <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px]" />
+                  </div>
+                  
+                  {/* Button under the preview */}
                   <button
                     type="button"
                     onClick={() => setShowMoreFields(true)}
-                    className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 underline decoration-2 underline-offset-4 transition-colors flex items-center justify-center gap-2 mb-4"
+                    className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 underline decoration-2 underline-offset-4 transition-colors flex items-center justify-center gap-2"
                   >
                     <ChevronDown className="h-4 w-4" />
                     Fill more info - get more accurate
                     <ChevronDown className="h-4 w-4" />
                   </button>
-                  
-                  {/* Preview with paywall effect */}
-                  <div className="relative overflow-hidden rounded-lg pointer-events-none">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium mb-2 text-muted-foreground">
-                          Additional Information: Extra context & personal or situational details
-                        </label>
-                        <div className="h-12 bg-muted/30 rounded-md" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2 text-muted-foreground">
-                          Grammar focus (optional):
-                        </label>
-                        <div className="h-12 bg-muted/30 rounded-md" />
-                      </div>
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background backdrop-blur-[2px]" />
-                  </div>
                 </div>
               )}
 
-              {/* Additional Fields - Conditionally Visible */}
+              {/* Additional Fields - Second Row when expanded */}
               {showMoreFields && (
-                <>
-                  <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'md:grid-cols-2 gap-6'} mb-6`}>
-                    <FormField 
-                      label="Lesson focus: What should your student achieve by the end of the lesson?"
-                      placeholder={currentPlaceholders.lessonFocus}
-                      value={lessonGoal}
-                      onChange={setLessonGoal}
-                      suggestions={createSuggestionTiles('lessonFocus')}
-                      isOptional={true}
-                    />
-                  </div>
+                <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'md:grid-cols-2 gap-6'} mb-6`}>
+                  <FormField 
+                    label="Additional Information: Extra context & personal or situational details"
+                    placeholder={currentPlaceholders.additionalInformation}
+                    value={additionalInformation}
+                    onChange={setAdditionalInformation}
+                    suggestions={createSuggestionTiles('additionalInformation')}
+                    isOptional={true}
+                  />
 
-                  <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'md:grid-cols-2 gap-6'} mb-6`}>
-                    <FormField 
-                      label="Additional Information: Extra context & personal or situational details"
-                      placeholder={currentPlaceholders.additionalInformation}
-                      value={additionalInformation}
-                      onChange={setAdditionalInformation}
-                      suggestions={createSuggestionTiles('additionalInformation')}
-                      isOptional={true}
-                    />
-
-                    <FormField 
-                      label="Grammar focus (optional):"
-                      placeholder={currentPlaceholders.grammarFocus}
-                      value={grammarFocus}
-                      onChange={setGrammarFocus}
-                      suggestions={createSuggestionTiles('grammarFocus')}
-                      isOptional={true}
-                    />
-                  </div>
-
-                  <div className="mb-6">
-                    <FormField 
-                      label="Additional Information: Extra context & personal or situational details"
-                      placeholder={currentPlaceholders.additionalInformation}
-                      value={additionalInformation}
-                      onChange={setAdditionalInformation}
-                      suggestions={createSuggestionTiles('additionalInformation')}
-                      isOptional={true}
-                    />
-                  </div>
-                </>
+                  <FormField 
+                    label="Grammar focus (optional):"
+                    placeholder={currentPlaceholders.grammarFocus}
+                    value={grammarFocus}
+                    onChange={setGrammarFocus}
+                    suggestions={createSuggestionTiles('grammarFocus')}
+                    isOptional={true}
+                  />
+                </div>
               )}
 
               {/* Exercise Selection Cards */}
