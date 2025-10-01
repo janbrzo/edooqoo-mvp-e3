@@ -226,14 +226,34 @@ export const useWorksheetGeneration = (
         }
       });
       
-      // REMOVED: Fallback worksheet logic - now just show error and stay on form
-      toast({
-        title: "Worksheet generation failed",
-        description: error instanceof Error 
-          ? `Error: ${error.message}. Please try again with different parameters.` 
-          : "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
+      // ENHANCED: Detect network errors (CORS, Failed to fetch)
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isNetworkError = errorMessage.includes('Failed to fetch') || 
+                            errorMessage.includes('CORS') || 
+                            errorMessage.includes('NetworkError') ||
+                            errorMessage.includes('net::ERR');
+      
+      if (isNetworkError) {
+        console.warn('🌐 Network error detected - showing external issue message');
+        
+        // Special toast for external issues - stays for 3 seconds
+        toast({
+          title: "Generation failed due to external issues",
+          description: "No tokens consumed. Your data is preserved. Please click 'Generate Custom Worksheet' again.",
+          variant: "default",
+          className: "bg-yellow-50 border-l-4 border-l-yellow-500 shadow-lg",
+          duration: 3000
+        });
+      } else {
+        // Regular error handling for API errors
+        toast({
+          title: "Worksheet generation failed",
+          description: error instanceof Error 
+            ? `Error: ${error.message}. Please try again with different parameters.` 
+            : "An unexpected error occurred. Please try again.",
+          variant: "destructive"
+        });
+      }
       
       // Don't clear the form data - user stays on form with preserved data
     } finally {

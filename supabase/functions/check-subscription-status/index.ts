@@ -23,14 +23,50 @@ serve(async (req) => {
 
     // Get authenticated user
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error('No authorization header');
+    if (!authHeader) {
+      console.log('[CHECK-SUBSCRIPTION] No authorization header - user not authenticated');
+      return new Response(
+        JSON.stringify({ 
+          subscribed: false, 
+          subscription_type: 'Free Demo',
+          subscription_status: 'active',
+          message: 'No authorization provided' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw userError;
+    
+    if (userError || !userData?.user) {
+      console.log('[CHECK-SUBSCRIPTION] Failed to get user:', userError?.message);
+      return new Response(
+        JSON.stringify({ 
+          subscribed: false, 
+          subscription_type: 'Free Demo',
+          subscription_status: 'active',
+          message: 'User authentication failed' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
 
     const user = userData.user;
-    if (!user?.email) throw new Error('User not authenticated');
+    
+    // FIXED: Handle anonymous users gracefully - don't throw error
+    if (!user?.email) {
+      console.log('[CHECK-SUBSCRIPTION] Anonymous user detected - returning Free Demo status');
+      return new Response(
+        JSON.stringify({ 
+          subscribed: false, 
+          subscription_type: 'Free Demo',
+          subscription_status: 'active',
+          message: 'Anonymous user - Free Demo access' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
 
     console.log('[CHECK-SUBSCRIPTION] User:', user.email);
 
