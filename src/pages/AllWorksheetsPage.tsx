@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { useWorksheetHistory } from '@/hooks/useWorksheetHistory';
 import { useStudents } from '@/hooks/useStudents';
@@ -26,7 +27,8 @@ import {
   Share,
   Trash2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  RotateCcw
 } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 
@@ -56,6 +58,7 @@ const AllWorksheetsPage = () => {
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'student' | 'rating'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedWorksheets, setSelectedWorksheets] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'active' | 'deleted'>('active');
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -84,8 +87,9 @@ const AllWorksheetsPage = () => {
     }
   };
 
-  // Filter and sort worksheets
-  const filteredAndSortedWorksheets = worksheets
+  // Filter and sort worksheets based on active tab
+  const currentWorksheets = activeTab === 'active' ? worksheets : deletedWorksheets;
+  const filteredAndSortedWorksheets = currentWorksheets
     .filter(worksheet => {
       const matchesSearch = searchQuery === '' || 
         formatWorksheetTitle(worksheet).toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -211,6 +215,18 @@ const AllWorksheetsPage = () => {
             </Button>
           </div>
         </div>
+
+        {/* Tabs for Active/Deleted */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'active' | 'deleted')} className="mb-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="active">
+              Active ({worksheets.length})
+            </TabsTrigger>
+            <TabsTrigger value="deleted">
+              Deleted ({deletedWorksheets.length})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Filters and Search */}
         <Card className="mb-6">
@@ -387,20 +403,40 @@ const AllWorksheetsPage = () => {
                       {/* Actions */}
                       <div className="col-span-2">
                         <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleWorksheetOpen(worksheet)}
-                            className="text-gray-600 hover:text-primary"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <DeleteWorksheetButton
-                            worksheetId={worksheet.id}
-                            worksheetTitle={formatWorksheetTitle(worksheet)}
-                            onDelete={deleteWorksheet}
-                            size="sm"
-                          />
+                          {activeTab === 'active' ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleWorksheetOpen(worksheet)}
+                                className="text-gray-600 hover:text-primary"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <DeleteWorksheetButton
+                                worksheetId={worksheet.id}
+                                worksheetTitle={formatWorksheetTitle(worksheet)}
+                                onDelete={deleteWorksheet}
+                                size="sm"
+                              />
+                            </>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                const result = await restoreDeleted(worksheet.id);
+                                if (result.success) {
+                                  // Refresh both lists
+                                  window.location.reload();
+                                }
+                              }}
+                              className="border-green-500 text-green-700 hover:bg-green-50"
+                            >
+                              <RotateCcw className="h-4 w-4 mr-1" />
+                              Restore
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>

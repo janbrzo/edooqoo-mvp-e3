@@ -14,7 +14,7 @@ import { useAnonymousAuth } from "@/hooks/useAnonymousAuth";
 import { useStudents } from "@/hooks/useStudents";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shuffle, Brain, MousePointer } from "lucide-react";
+import { Shuffle, Brain, MousePointer, ChevronDown } from "lucide-react";
 
 export type { FormData };
 
@@ -323,17 +323,37 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                 />
               </div>
 
-              {/* Show More Button */}
+              {/* Show More Link with Preview */}
               {!showMoreFields && (
-                <div className="mb-6 flex justify-center">
-                  <Button
+                <div className="mb-6">
+                  <button
                     type="button"
-                    variant="outline"
                     onClick={() => setShowMoreFields(true)}
-                    className="text-sm px-6 py-2"
+                    className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 underline decoration-2 underline-offset-4 transition-colors flex items-center justify-center gap-2 mb-4"
                   >
+                    <ChevronDown className="h-4 w-4" />
                     Fill more info - get more accurate
-                  </Button>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  
+                  {/* Preview with paywall effect */}
+                  <div className="relative overflow-hidden rounded-lg pointer-events-none">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-muted-foreground">
+                          Additional Information: Extra context & personal or situational details
+                        </label>
+                        <div className="h-12 bg-muted/30 rounded-md" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-muted-foreground">
+                          Grammar focus (optional):
+                        </label>
+                        <div className="h-12 bg-muted/30 rounded-md" />
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background backdrop-blur-[2px]" />
+                  </div>
                 </div>
               )}
 
@@ -347,6 +367,17 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                       value={lessonGoal}
                       onChange={setLessonGoal}
                       suggestions={createSuggestionTiles('lessonFocus')}
+                      isOptional={true}
+                    />
+                  </div>
+
+                  <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'md:grid-cols-2 gap-6'} mb-6`}>
+                    <FormField 
+                      label="Additional Information: Extra context & personal or situational details"
+                      placeholder={currentPlaceholders.additionalInformation}
+                      value={additionalInformation}
+                      onChange={setAdditionalInformation}
+                      suggestions={createSuggestionTiles('additionalInformation')}
                       isOptional={true}
                     />
 

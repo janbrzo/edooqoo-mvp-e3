@@ -207,7 +207,8 @@ const StudentPage = () => {
           </div>
 
           {/* Worksheets List */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-6">
+            {/* Active Worksheets */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -288,6 +289,59 @@ const StudentPage = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Deleted Worksheets */}
+            {deletedWorksheets.length > 0 && (
+              <Card className="border-red-200 bg-red-50/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-red-700">
+                    <Trash2 className="h-5 w-5 mr-2" />
+                    Deleted Worksheets ({deletedWorksheets.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {deletedLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto"></div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {deletedWorksheets.map((worksheet) => (
+                        <div
+                          key={worksheet.id}
+                          className="flex items-center justify-between p-4 bg-white rounded-lg border border-red-200"
+                        >
+                          <div className="flex items-center space-x-3 flex-1">
+                            <FileText className="h-5 w-5 text-red-400" />
+                            <div>
+                              <h3 className="font-medium text-gray-700">
+                                {worksheet.title || 'Untitled Worksheet'}
+                              </h3>
+                              <p className="text-sm text-red-600">
+                                Deleted: {format(new Date(worksheet.deleted_at), 'MMM dd, yyyy HH:mm')}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              const result = await restoreDeleted(worksheet.id);
+                              if (result.success) {
+                                refetchWorksheets();
+                              }
+                            }}
+                            className="border-green-500 text-green-700 hover:bg-green-50"
+                          >
+                            Restore
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 
