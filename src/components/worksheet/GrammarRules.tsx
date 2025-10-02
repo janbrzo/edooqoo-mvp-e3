@@ -1,8 +1,6 @@
 import React from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ExerciseHeader from "./ExerciseHeader";
-import SectionRegenerateModal from "./SectionRegenerateModal";
-import { useSectionRegeneration } from "@/hooks/useSectionRegeneration";
 
 interface GrammarRule {
   title: string;
@@ -37,17 +35,6 @@ export default function GrammarRules({
 }: GrammarRulesProps) {
   const isMobile = useIsMobile();
 
-  // Initialize section regeneration hook
-  const {
-    isModalOpen,
-    isLoading,
-    guidelines,
-    openModal,
-    closeModal,
-    setGuidelines,
-    regenerateSection
-  } = useSectionRegeneration();
-
   // Calculate grammar time based on lesson duration
   const getGrammarTime = () => {
     if (!inputParams?.lessonTime) return 10;
@@ -73,27 +60,6 @@ export default function GrammarRules({
     updateGrammarRules('rules', updatedRules);
   };
 
-  const handleRegenerateClick = () => {
-    openModal('grammar');
-  };
-
-  const handleRegenerateConfirm = async () => {
-    if (!worksheetId || !userId) {
-      console.error('Cannot regenerate - missing worksheetId or userId');
-      return;
-    }
-
-    await regenerateSection(
-      worksheetId,
-      'grammar',
-      inputParams,
-      grammarRules,
-      editableWorksheet,
-      setEditableWorksheet,
-      userId
-    );
-  };
-
   if (!grammarRules) return null;
 
   return (
@@ -105,9 +71,6 @@ export default function GrammarRules({
         isEditing={false}
         time={getGrammarTime()}
         onTitleChange={() => {}}
-        canRegenerate={!!worksheetId && !!userId}
-        isRegenerating={isLoading}
-        onRegenerateClick={handleRegenerateClick}
       />
 
       <div className="p-6">
@@ -190,17 +153,6 @@ export default function GrammarRules({
           ))}
         </div>
       </div>
-
-      {/* Regeneration Modal */}
-      <SectionRegenerateModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        onConfirm={handleRegenerateConfirm}
-        guidelines={guidelines}
-        onGuidelinesChange={setGuidelines}
-        sectionType="grammar"
-        sectionTitle={grammarRules.title}
-      />
     </div>
   );
 }

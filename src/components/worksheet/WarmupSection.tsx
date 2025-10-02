@@ -3,8 +3,6 @@ import React from "react";
 import { MessageCircle } from "lucide-react";
 import DemoWatermark from "./DemoWatermark";
 import ExerciseHeader from "./ExerciseHeader";
-import SectionRegenerateModal from "./SectionRegenerateModal";
-import { useSectionRegeneration } from "@/hooks/useSectionRegeneration";
 
 interface WarmupSectionProps {
   inputParams: any;
@@ -118,16 +116,6 @@ const WarmupSection: React.FC<WarmupSectionProps> = ({
   worksheetId,
   userId
 }) => {
-  // Initialize section regeneration hook
-  const {
-    isModalOpen,
-    isLoading,
-    guidelines,
-    openModal,
-    closeModal,
-    setGuidelines,
-    regenerateSection
-  } = useSectionRegeneration();
   // Initialize warmup questions if not present
   if (!editableWorksheet.warmup_questions) {
     const generatedQuestions = generateWarmupQuestions(inputParams);
@@ -148,27 +136,6 @@ const WarmupSection: React.FC<WarmupSectionProps> = ({
 
   const questions = editableWorksheet.warmup_questions || generateWarmupQuestions(inputParams);
 
-  const handleRegenerateClick = () => {
-    openModal('warmup');
-  };
-
-  const handleRegenerateConfirm = async () => {
-    if (!worksheetId || !userId) {
-      console.error('Cannot regenerate - missing worksheetId or userId');
-      return;
-    }
-
-    await regenerateSection(
-      worksheetId,
-      'warmup',
-      inputParams,
-      questions,
-      editableWorksheet,
-      setEditableWorksheet,
-      userId
-    );
-  };
-
   return (
     <div className="bg-white border rounded-lg shadow-sm mb-6 relative">
       {!isDownloadUnlocked && <DemoWatermark />}
@@ -179,9 +146,6 @@ const WarmupSection: React.FC<WarmupSectionProps> = ({
         isEditing={false}
         time={5}
         onTitleChange={() => {}}
-        canRegenerate={!!worksheetId && !!userId}
-        isRegenerating={isLoading}
-        onRegenerateClick={handleRegenerateClick}
       />
 
       <div className="p-6">
@@ -209,17 +173,6 @@ const WarmupSection: React.FC<WarmupSectionProps> = ({
           ))}
         </div>
       </div>
-
-      {/* Regeneration Modal */}
-      <SectionRegenerateModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        onConfirm={handleRegenerateConfirm}
-        guidelines={guidelines}
-        onGuidelinesChange={setGuidelines}
-        sectionType="warmup"
-        sectionTitle="Warmup Questions"
-      />
     </div>
   );
 };
