@@ -35,6 +35,10 @@ const getIconComponent = (iconName: string) => {
       return <User className="h-5 w-5" />;
     case "fa-question-circle":
       return <Lightbulb className="h-5 w-5" />;
+    case "warmup":
+      return <User className="h-5 w-5" />;
+    case "grammar":
+      return <Eye className="h-5 w-5" />;
     default:
       return <Eye className="h-5 w-5" />;
   }

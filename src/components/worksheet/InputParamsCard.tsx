@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Info, Clock, Database, Star, Edit, GraduationCap, BookOpen, FileText } from "lucide-react";
+import { Info, Clock, Database, Star, Edit, GraduationCap, BookOpen, FileText, MessageSquare } from "lucide-react";
 
 // Exercise types mapping
 const EXERCISE_TYPES_MAP: Record<string, string> = {
@@ -54,9 +54,19 @@ interface InputParamsCardProps {
     lessonGoal: string;
     teachingPreferences?: string;
     additionalInformation?: string;
+    languageStyle?: number;
   };
   selectedExercises?: string[];
 }
+
+// Function to convert language style number to descriptive text
+const getLanguageStyleDescription = (value: number): string => {
+  if (value === 1) return "Very casual (slang, contractions)";
+  if (value === 2) return "Casual (relaxed, friendly)";
+  if (value === 3) return "Neutral (balanced style)";
+  if (value === 4) return "Formal (professional tone)";
+  return "Very formal (academic style)";
+};
 
 const InputParamsCard = ({ inputParams, selectedExercises }: InputParamsCardProps) => (
   <Card className="mb-6">
@@ -134,6 +144,21 @@ const InputParamsCard = ({ inputParams, selectedExercises }: InputParamsCardProp
             <div>
               <p className="text-sm text-gray-500">Additional Information</p>
               <p className="font-medium text-sm">{inputParams.additionalInformation}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Language Style (conditionally rendered) */}
+        {inputParams.languageStyle && (
+          <div className="flex items-center gap-3">
+            <div className="bg-worksheet-purpleLight rounded-full p-2">
+              <MessageSquare className="h-4 w-4 text-worksheet-purple" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Language Style</p>
+              <p className="font-medium text-sm">
+                {getLanguageStyleDescription(inputParams.languageStyle)} ({inputParams.languageStyle}/5)
+              </p>
             </div>
           </div>
         )}

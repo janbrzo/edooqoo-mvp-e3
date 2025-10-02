@@ -1,7 +1,10 @@
 
 import React from "react";
-import { MessageCircle, Clock } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import DemoWatermark from "./DemoWatermark";
+import ExerciseHeader from "./ExerciseHeader";
+import SectionRegenerateModal from "./SectionRegenerateModal";
+import { useSectionRegeneration } from "@/hooks/useSectionRegeneration";
 
 interface WarmupSectionProps {
   inputParams: any;
@@ -9,6 +12,8 @@ interface WarmupSectionProps {
   editableWorksheet: any;
   setEditableWorksheet: (worksheet: any) => void;
   isDownloadUnlocked: boolean;
+  worksheetId?: string | null;
+  userId?: string;
 }
 
 const generateWarmupQuestions = (inputParams: any): string[] => {
@@ -109,8 +114,20 @@ const WarmupSection: React.FC<WarmupSectionProps> = ({
   isEditing,
   editableWorksheet,
   setEditableWorksheet,
-  isDownloadUnlocked
+  isDownloadUnlocked,
+  worksheetId,
+  userId
 }) => {
+  // Initialize section regeneration hook
+  const {
+    isModalOpen,
+    isLoading,
+    guidelines,
+    openModal,
+    closeModal,
+    setGuidelines,
+    regenerateSection
+  } = useSectionRegeneration();
   // Initialize warmup questions if not present
   if (!editableWorksheet.warmup_questions) {
     const generatedQuestions = generateWarmupQuestions(inputParams);
@@ -131,22 +148,41 @@ const WarmupSection: React.FC<WarmupSectionProps> = ({
 
   const questions = editableWorksheet.warmup_questions || generateWarmupQuestions(inputParams);
 
+  const handleRegenerateClick = () => {
+    openModal('warmup');
+  };
+
+  const handleRegenerateConfirm = async () => {
+    if (!worksheetId || !userId) {
+      console.error('Cannot regenerate - missing worksheetId or userId');
+      return;
+    }
+
+    await regenerateSection(
+      worksheetId,
+      'warmup',
+      inputParams,
+      questions,
+      editableWorksheet,
+      setEditableWorksheet,
+      userId
+    );
+  };
+
   return (
     <div className="bg-white border rounded-lg shadow-sm mb-6 relative">
       {!isDownloadUnlocked && <DemoWatermark />}
       
-      <div className="bg-worksheet-purple text-white p-2 flex justify-between items-center rounded-t-lg">
-        <div className="flex items-center">
-          <div className="p-2 bg-white/20 rounded-full mr-3">
-            <MessageCircle className="h-5 w-5" />
-          </div>
-          <h3 className="text-lg font-semibold">Warmup Questions</h3>
-        </div>
-        <div className="flex items-center bg-white/20 px-3 py-1 rounded-md">
-          <Clock className="h-4 w-4 mr-1" />
-          <span className="text-sm">5 min</span>
-        </div>
-      </div>
+      <ExerciseHeader
+        icon="warmup"
+        title="Warmup Questions"
+        isEditing={false}
+        time={5}
+        onTitleChange={() => {}}
+        canRegenerate={!!worksheetId && !!userId}
+        isRegenerating={isLoading}
+        onRegenerateClick={handleRegenerateClick}
+      />
 
       <div className="p-6">
         <p className="font-medium mb-4 leading-snug">
@@ -173,6 +209,17 @@ const WarmupSection: React.FC<WarmupSectionProps> = ({
           ))}
         </div>
       </div>
+
+      {/* Regeneration Modal */}
+      <SectionRegenerateModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onConfirm={handleRegenerateConfirm}
+        guidelines={guidelines}
+        onGuidelinesChange={setGuidelines}
+        sectionType="warmup"
+        sectionTitle="Warmup Questions"
+      />
     </div>
   );
 };

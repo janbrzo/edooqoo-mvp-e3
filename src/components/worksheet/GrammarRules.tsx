@@ -1,6 +1,8 @@
 import React from "react";
-import { BookOpen, Clock } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ExerciseHeader from "./ExerciseHeader";
+import SectionRegenerateModal from "./SectionRegenerateModal";
+import { useSectionRegeneration } from "@/hooks/useSectionRegeneration";
 
 interface GrammarRule {
   title: string;
@@ -20,6 +22,8 @@ interface GrammarRulesProps {
   editableWorksheet: any;
   setEditableWorksheet: (worksheet: any) => void;
   inputParams?: any;
+  worksheetId?: string | null;
+  userId?: string;
 }
 
 export default function GrammarRules({
@@ -27,9 +31,22 @@ export default function GrammarRules({
   isEditing,
   editableWorksheet,
   setEditableWorksheet,
-  inputParams
+  inputParams,
+  worksheetId,
+  userId
 }: GrammarRulesProps) {
   const isMobile = useIsMobile();
+
+  // Initialize section regeneration hook
+  const {
+    isModalOpen,
+    isLoading,
+    guidelines,
+    openModal,
+    closeModal,
+    setGuidelines,
+    regenerateSection
+  } = useSectionRegeneration();
 
   // Calculate grammar time based on lesson duration
   const getGrammarTime = () => {
@@ -56,23 +73,42 @@ export default function GrammarRules({
     updateGrammarRules('rules', updatedRules);
   };
 
+  const handleRegenerateClick = () => {
+    openModal('grammar');
+  };
+
+  const handleRegenerateConfirm = async () => {
+    if (!worksheetId || !userId) {
+      console.error('Cannot regenerate - missing worksheetId or userId');
+      return;
+    }
+
+    await regenerateSection(
+      worksheetId,
+      'grammar',
+      inputParams,
+      grammarRules,
+      editableWorksheet,
+      setEditableWorksheet,
+      userId
+    );
+  };
+
   if (!grammarRules) return null;
 
   return (
     <div className="bg-white border rounded-lg shadow-sm mb-6 overflow-hidden">
       {/* Grammar Rules Header */}
-      <div className="bg-worksheet-purple text-white p-2 flex justify-between items-center">
-        <div className="flex items-center">
-          <div className="p-2 bg-white/20 rounded-full mr-3">
-            <BookOpen className="h-5 w-5" />
-          </div>
-          <h3 className="text-lg font-semibold">Grammar Rules</h3>
-        </div>
-        <div className="flex items-center bg-white/20 px-3 py-1 rounded-md">
-          <Clock className="h-4 w-4 mr-1" />
-          <span className="text-sm">{getGrammarTime()} min</span>
-        </div>
-      </div>
+      <ExerciseHeader
+        icon="grammar"
+        title="Grammar Rules"
+        isEditing={false}
+        time={getGrammarTime()}
+        onTitleChange={() => {}}
+        canRegenerate={!!worksheetId && !!userId}
+        isRegenerating={isLoading}
+        onRegenerateClick={handleRegenerateClick}
+      />
 
       <div className="p-6">
         <div className="flex items-center gap-3 mb-4">
@@ -154,6 +190,17 @@ export default function GrammarRules({
           ))}
         </div>
       </div>
+
+      {/* Regeneration Modal */}
+      <SectionRegenerateModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onConfirm={handleRegenerateConfirm}
+        guidelines={guidelines}
+        onGuidelinesChange={setGuidelines}
+        sectionType="grammar"
+        sectionTitle={grammarRules.title}
+      />
     </div>
   );
 }

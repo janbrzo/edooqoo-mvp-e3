@@ -316,6 +316,8 @@ export default function WorksheetContent({
           editableWorksheet={editableWorksheet}
           setEditableWorksheet={setEditableWorksheet}
           isDownloadUnlocked={isDownloadUnlocked}
+          worksheetId={worksheetId}
+          userId={userId}
         />
       )}
 
@@ -328,6 +330,8 @@ export default function WorksheetContent({
             editableWorksheet={editableWorksheet}
             setEditableWorksheet={setEditableWorksheet}
             inputParams={inputParams}
+            worksheetId={worksheetId}
+            userId={userId}
           />
         </div>
       )}
