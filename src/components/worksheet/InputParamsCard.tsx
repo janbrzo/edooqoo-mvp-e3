@@ -165,7 +165,7 @@ const InputParamsCard = ({ inputParams, selectedExercises }: InputParamsCardProp
 
         {/* Selected Exercise Types */}
         {selectedExercises && selectedExercises.length > 0 && (
-          <div className="flex items-start gap-3 col-span-1 md:col-span-3">
+          <div className="flex items-start gap-3 col-span-1">
             <div className="bg-worksheet-purpleLight rounded-full p-2">
               <FileText className="h-4 w-4 text-worksheet-purple" />
             </div>

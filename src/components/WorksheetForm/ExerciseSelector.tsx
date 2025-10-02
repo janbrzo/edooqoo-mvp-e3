@@ -50,10 +50,10 @@ const AVAILABLE_EXERCISES = [{
   icon: '🔍',
   description: 'Students identify which item in a group doesn\'t belong, focusing on categorization, vocabulary relationships, and logical thinking.'
 }, {
-  id: 'synonyms-antonyms',
-  label: 'Synonyms & Antonyms Matching',
-  icon: '↔️',
-  description: 'Students match words with their synonyms or antonyms, expanding vocabulary knowledge and understanding word relationships and nuances.'
+  id: 'matching-halves',
+  label: 'Matching Halves',
+  icon: '🧩',
+  description: 'Students connect sentence beginnings with appropriate endings, practicing sentence structure, logical connections, and natural English flow.'
 }, {
   id: 'word-order',
   label: 'Word Order',
@@ -85,10 +85,10 @@ const AVAILABLE_EXERCISES = [{
   icon: '🅰️',
   description: 'Students complete partially written words using context clues, strengthening spelling, vocabulary recognition, and contextual understanding.'
 }, {
-  id: 'matching-halves',
-  label: 'Matching Halves',
-  icon: '🧩',
-  description: 'Students connect sentence beginnings with appropriate endings, practicing sentence structure, logical connections, and natural English flow.'
+  id: 'synonyms-antonyms',
+  label: 'Synonyms & Antonyms Matching',
+  icon: '↔️',
+  description: 'Students match words with their synonyms or antonyms, expanding vocabulary knowledge and understanding word relationships and nuances.'
 }, {
   id: 'sentence-transformation',
   label: 'Sentence Transformation',

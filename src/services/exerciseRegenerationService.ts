@@ -247,21 +247,28 @@ Lesson Topic: ${originalFormData.lessonTopic || 'Not specified'}
 Lesson Goal: ${originalFormData.lessonGoal || 'Not specified'}
 English Level: ${originalFormData.englishLevel || 'Not specified'}
 Lesson Duration: ${originalFormData.lessonTime || '60min'}
+Language Style: ${originalFormData.languageStyle || '3'}
 `;
 
     const warmupInfo = `
-REGENERATE WARMUP QUESTIONS:
-- Current Warmup Questions: ${currentWarmupQuestions.join(', ')}
+REGENERATE WARMUP SECTION:
+Current warmup questions (as JSON for reference):
+${JSON.stringify(currentWarmupQuestions, null, 2)}
 `;
 
     const guidelines = additionalGuidelines 
-      ? `\nADDITIONAL GUIDELINES:\n${additionalGuidelines}`
+      ? `\nADDITIONAL GUIDELINES FROM TEACHER:\n${additionalGuidelines}\n`
       : '';
 
     const regenerationInstructions = `
-IMPORTANT: Generate NEW warmup questions that are completely different from the current ones.
-The questions should be engaging, relevant to the lesson topic and level.
-Return the response with warmup_questions array containing 4 questions.
+CRITICAL INSTRUCTIONS FOR WARMUP REGENERATION:
+1. Generate COMPLETELY NEW warmup questions that are different from the current ones shown above
+2. Questions should be engaging, relevant to the lesson topic, goal, and appropriate for the English level
+3. Create exactly 4 warmup questions
+4. Return ONLY a JSON object with this structure: {"warmup_questions": ["question1", "question2", "question3", "question4"]}
+5. DO NOT include any other fields or data in the response - ONLY warmup_questions
+
+IMPORTANT: The entire response must be a valid JSON object containing only the warmup_questions field.
 `;
 
     return baseInfo + warmupInfo + guidelines + regenerationInstructions;
@@ -278,22 +285,41 @@ Lesson Goal: ${originalFormData.lessonGoal || 'Not specified'}
 English Level: ${originalFormData.englishLevel || 'Not specified'}
 Lesson Duration: ${originalFormData.lessonTime || '60min'}
 Grammar Focus: ${originalFormData.teachingPreferences || 'Not specified'}
+Language Style: ${originalFormData.languageStyle || '3'}
 `;
 
     const grammarInfo = `
-REGENERATE GRAMMAR RULES:
-- Current Grammar Title: ${currentGrammarRules.title}
-- Current Grammar Introduction: ${currentGrammarRules.introduction}
+REGENERATE GRAMMAR RULES SECTION:
+Current grammar rules (complete structure as JSON for reference):
+${JSON.stringify(currentGrammarRules, null, 2)}
 `;
 
     const guidelines = additionalGuidelines 
-      ? `\nADDITIONAL GUIDELINES:\n${additionalGuidelines}`
+      ? `\nADDITIONAL GUIDELINES FROM TEACHER:\n${additionalGuidelines}\n`
       : '';
 
     const regenerationInstructions = `
-IMPORTANT: Generate NEW grammar rules that are completely different from the current ones.
-The grammar rules should be clear, well-structured with explanations and examples.
-Return the response with grammar_rules object containing title, introduction, and rules array.
+CRITICAL INSTRUCTIONS FOR GRAMMAR REGENERATION:
+1. Generate COMPLETELY NEW grammar rules that are different from the current ones shown above
+2. Grammar rules should be clear, well-structured with explanations and examples
+3. Appropriate for the English level (${originalFormData.englishLevel || 'Not specified'})
+4. Related to the lesson topic and goals
+5. Return ONLY a JSON object with this exact structure:
+{
+  "grammar_rules": {
+    "title": "Grammar focus title",
+    "introduction": "Brief introduction text",
+    "rules": [
+      {
+        "rule_title": "Rule name",
+        "explanation": "Clear explanation",
+        "examples": ["example 1", "example 2", "example 3"]
+      }
+    ]
+  }
+}
+
+IMPORTANT: The entire response must be a valid JSON object containing only the grammar_rules field. Do not include exercises, warmup, or any other worksheet components.
 `;
 
     return baseInfo + grammarInfo + guidelines + regenerationInstructions;

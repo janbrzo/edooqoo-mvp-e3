@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -37,6 +37,9 @@ const SectionRegenerateModal: React.FC<SectionRegenerateModalProps> = ({
             <RefreshCw className="h-5 w-5 text-worksheet-purple" />
             Regenerate {sectionType === 'warmup' ? 'Warmup Questions' : 'Grammar Rules'}
           </DialogTitle>
+          <DialogDescription>
+            Provide optional guidelines to customize the regenerated {sectionType === 'warmup' ? 'warmup questions' : 'grammar rules'}. The AI will create completely new content based on your lesson parameters.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
