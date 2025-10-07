@@ -224,9 +224,22 @@ export const renderTrueFalseExercise = (
   exercise: any, 
   isEditing: boolean, 
   viewMode: 'student' | 'teacher',
-  handleStatementChange: (statementIndex: number, field: string, value: string | boolean) => void
+  handleStatementChange: (statementIndex: number, field: string, value: string | boolean) => void,
+  MediaDisplay?: React.ComponentType<any>
 ) => (
   <div>
+    {/* Display media if present */}
+    {MediaDisplay && (exercise.media_url || exercise.pending_media_selection) && (
+      <MediaDisplay
+        mediaUrl={exercise.media_url}
+        mediaDescription={exercise.media_description}
+        mediaPhotographer={exercise.media_photographer}
+        mediaPhotographerUrl={exercise.media_photographer_url}
+        isPending={exercise.pending_media_selection}
+        className="mb-4"
+      />
+    )}
+    
     <div className="space-y-2">
       {exercise.statements.map((statement: any, sIndex: number) => (
         <div key={sIndex} className="border-b pb-2">

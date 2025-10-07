@@ -1,5 +1,6 @@
 
 import React from "react";
+import MediaDisplay from "./MediaDisplay";
 
 interface ExerciseMultipleChoiceProps {
   questions: any[];
@@ -7,13 +8,31 @@ interface ExerciseMultipleChoiceProps {
   viewMode: "student" | "teacher";
   onQuestionTextChange: (qIndex: number, value: string) => void;
   onOptionTextChange: (qIndex: number, oIndex: number, value: string) => void;
+  mediaUrl?: string;
+  mediaDescription?: string;
+  mediaPhotographer?: string;
+  mediaPhotographerUrl?: string;
+  isPendingMedia?: boolean;
 }
 
 const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
-  questions, isEditing, viewMode, onQuestionTextChange, onOptionTextChange
+  questions, isEditing, viewMode, onQuestionTextChange, onOptionTextChange,
+  mediaUrl, mediaDescription, mediaPhotographer, mediaPhotographerUrl, isPendingMedia
 }) => {
   return (
     <div className="space-y-2">
+      {/* Display media if present */}
+      {(mediaUrl || isPendingMedia) && (
+        <MediaDisplay
+          mediaUrl={mediaUrl}
+          mediaDescription={mediaDescription}
+          mediaPhotographer={mediaPhotographer}
+          mediaPhotographerUrl={mediaPhotographerUrl}
+          isPending={isPendingMedia}
+          className="mb-4"
+        />
+      )}
+      
       {questions.map((question, qIndex) => (
         <div key={qIndex} className="border-b pb-2 multiple-choice-question">
           <p className="font-medium mb-1 leading-snug">
