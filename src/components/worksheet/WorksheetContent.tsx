@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { updateWorksheet } from "@/services/worksheetService";
 import { useWorksheetTimes } from "@/hooks/useWorksheetTimes";
@@ -13,9 +13,11 @@ import WorksheetRating from "@/components/WorksheetRating";
 import TeacherNotes from "./TeacherNotes";
 import DemoWatermark from "./DemoWatermark";
 import { ExerciseNavSidebar } from "./ExerciseNavSidebar";
+import MediaSelectionModal from "./MediaSelectionModal";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp, RotateCcw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WorksheetContentProps {
   editableWorksheet: any;
@@ -47,12 +49,32 @@ export default function WorksheetContent({
   // State for controlling sidebar visibility
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
+  // State for media selection modal
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [pendingMediaExercise, setPendingMediaExercise] = useState<any>(null);
+  const [isRegeneratingMedia, setIsRegeneratingMedia] = useState(false);
+  
   // Pass closeSidebar function to parent for toolbar usage
   React.useEffect(() => {
     if (onCloseSidebar) {
       onCloseSidebar(() => setSidebarOpen(false));
     }
   }, [onCloseSidebar]);
+  
+  // Check for pending media exercises on worksheet load
+  useEffect(() => {
+    if (editableWorksheet?.exercises) {
+      const pendingExercise = editableWorksheet.exercises.find(
+        (ex: any) => ex.pending_media_selection === true && !ex.media_url
+      );
+      
+      if (pendingExercise) {
+        console.log('📸 Found pending media exercise:', pendingExercise);
+        setPendingMediaExercise(pendingExercise);
+        setMediaModalOpen(true);
+      }
+    }
+  }, [editableWorksheet]);
   // Check if worksheet has grammar rules
   const hasGrammar = Boolean(editableWorksheet?.grammar_rules);
   const worksheetTimes = useWorksheetTimes(inputParams?.lessonTime, hasGrammar);
@@ -208,6 +230,64 @@ export default function WorksheetContent({
     setEditableWorksheet(updatedWorksheet);
     saveWorksheetChanges(updatedWorksheet);
     toast.success('Exercise restored successfully');
+  };
+  
+  // Handle media selection
+  const handleMediaSelect = async (selectedImage: any) => {
+    if (!worksheetId || !userId || !pendingMediaExercise) {
+      console.error('Missing required data for media regeneration');
+      return;
+    }
+    
+    console.log('📸 User selected image:', selectedImage);
+    setMediaModalOpen(false);
+    setIsRegeneratingMedia(true);
+    
+    try {
+      // Find all exercises that need media content regeneration
+      const exercisesToRegenerate = editableWorksheet.exercises
+        .map((ex: any, index: number) => ({ exercise: ex, index }))
+        .filter(({ exercise }: any) => exercise.pending_media_selection === true);
+      
+      console.log('🔄 Regenerating content for exercises:', exercisesToRegenerate);
+      
+      // Call the generate-media-exercises edge function
+      const { data, error } = await supabase.functions.invoke('generate-media-exercises', {
+        body: {
+          worksheetId,
+          exercisesToRegenerate: exercisesToRegenerate.map(({ exercise, index }: any) => ({
+            exerciseIndex: index,
+            exerciseType: exercise.type,
+            exerciseTitle: exercise.title
+          })),
+          selectedImage: {
+            url: selectedImage.url,
+            description: selectedImage.description,
+            photographer: selectedImage.photographer,
+            photographerUrl: selectedImage.photographerUrl,
+            downloadLocation: selectedImage.downloadLocation
+          },
+          inputParams,
+          userId
+        }
+      });
+      
+      if (error) throw error;
+      
+      console.log('✅ Media exercises regenerated:', data);
+      
+      // Update the worksheet with the regenerated exercises
+      if (data.updatedWorksheet) {
+        setEditableWorksheet(data.updatedWorksheet);
+        toast.success('Media exercises updated successfully!');
+      }
+    } catch (error) {
+      console.error('❌ Failed to regenerate media exercises:', error);
+      toast.error('Failed to update exercises with selected image');
+    } finally {
+      setIsRegeneratingMedia(false);
+      setPendingMediaExercise(null);
+    }
   };
 
   // Filter active and deleted exercises - moved above navigation hook
@@ -437,6 +517,27 @@ export default function WorksheetContent({
             {getExerciseName(loadingExerciseIndex)} is being regenerated...
           </span>
         </div>
+      )}
+      
+      {/* Media regeneration notification */}
+      {isRegeneratingMedia && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-worksheet-purple text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm font-medium">
+            Generating content for selected image...
+          </span>
+        </div>
+      )}
+      
+      {/* Media Selection Modal */}
+      {pendingMediaExercise && (
+        <MediaSelectionModal
+          isOpen={mediaModalOpen}
+          onClose={() => setMediaModalOpen(false)}
+          onSelect={handleMediaSelect}
+          mediaType={pendingMediaExercise.media_type || 'picture'}
+          searchQuery={pendingMediaExercise.media_search_query || inputParams?.lessonTopic || 'nature'}
+        />
       )}
     </div>
   );
