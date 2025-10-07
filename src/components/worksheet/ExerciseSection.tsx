@@ -524,14 +524,15 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 
         {exercise.type === 'answer-questions' && exercise.questions && (
           <ExerciseAnswerQuestions
-            media_url={exercise.media_url}
-            media_type={exercise.media_type}
             questions={exercise.questions}
             isEditing={isEditing}
             viewMode={viewMode}
             onQuestionChange={handleQuestionChangeLocal}
-            onMediaUrlChange={(url) => handleExerciseChangeLocal('media_url', url)}
-            onMediaTypeChange={(type) => handleExerciseChangeLocal('media_type', type)}
+            mediaUrl={exercise.media_url}
+            mediaDescription={exercise.media_description}
+            mediaPhotographer={exercise.media_photographer}
+            mediaPhotographerUrl={exercise.media_photographer_url}
+            isPendingMedia={exercise.pending_media_selection}
           />
         )}
 
