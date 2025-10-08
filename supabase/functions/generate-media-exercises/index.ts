@@ -2,7 +2,133 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import OpenAI from "npm:openai@4.77.0";
-import { getMediaRegenerationInstructions } from '../generateWorksheet/prompts/media-instructions.ts';
+
+// Helper functions for media regeneration instructions
+const getExerciseSpecificRequirements = (exerciseType: string, englishLevel?: string): string => {
+  const levelNote = englishLevel ? `All content must match CEFR level ${englishLevel}.` : '';
+  
+  switch (exerciseType) {
+    case 'multiple-choice':
+      return `- EXACTLY 10 questions about the image
+- Each question must have 4 different options (A, B, C, D)
+- Questions should focus on: what you can see, people's actions, objects, setting, atmosphere
+- Mark the correct option with "correct": true
+- ${levelNote}`;
+    
+    case 'true-false':
+      return `- EXACTLY 10 statements about the image
+- Mix of true and false statements (not all true or all false)
+- Statements should describe: visible elements, people's actions, objects, colors, positions
+- Mark each with "isTrue": true or false
+- ${levelNote}`;
+    
+    case 'answer-questions':
+      return `- EXACTLY 10 open-ended questions about the image
+- Questions should encourage description and interpretation
+- Include "question" and "focus" fields for each
+- Focus areas: description, inference, personal opinion, comparison
+- ${levelNote}`;
+    
+    case 'describe-picture':
+      return `- 8 guiding prompts for picture description
+- Include "image_description", "prompts" array, "useful_vocabulary" array, "teacher_tip"
+- Prompts should guide students to describe different aspects of the image
+- Vocabulary should be relevant to what's visible in the image
+- ${levelNote}`;
+    
+    default:
+      return `Generate appropriate content for ${exerciseType} based on the image. ${levelNote}`;
+  }
+};
+
+const getExerciseContentExample = (exerciseType: string): string => {
+  switch (exerciseType) {
+    case 'multiple-choice':
+      return `{
+  "questions": [
+    {
+      "text": "What are the people in the image doing?",
+      "options": [
+        {"label": "A", "text": "Working on computers", "correct": true},
+        {"label": "B", "text": "Having a meeting", "correct": false},
+        {"label": "C", "text": "Eating lunch", "correct": false},
+        {"label": "D", "text": "Playing games", "correct": false}
+      ]
+    },
+    // ... 9 more questions
+  ],
+  "teacher_tip": "Encourage students to look carefully at details in the image before answering."
+}`;
+    
+    case 'true-false':
+      return `{
+  "statements": [
+    {"text": "There are at least three people visible in the image.", "isTrue": true},
+    {"text": "Everyone in the image is wearing formal business attire.", "isTrue": false},
+    // ... 8 more statements
+  ],
+  "teacher_tip": "Ask students to explain their answers by pointing to specific details in the image."
+}`;
+    
+    case 'answer-questions':
+      return `{
+  "questions": [
+    {"question": "What can you see in this image?", "focus": "description"},
+    {"question": "What do you think the people are doing?", "focus": "inference"},
+    // ... 8 more questions
+  ],
+  "teacher_tip": "Encourage full sentences and descriptive language."
+}`;
+    
+    case 'describe-picture':
+      return `{
+  "image_description": "A modern office space with people working",
+  "prompts": [
+    "Describe the general setting and atmosphere of the image",
+    "What objects can you see in the foreground?",
+    // ... 6 more prompts
+  ],
+  "useful_vocabulary": ["office", "computer", "desk", "colleagues", "workspace"],
+  "teacher_tip": "Have students describe the image in increasing detail."
+}`;
+    
+    default:
+      return `{ /* appropriate fields for ${exerciseType} */ }`;
+  }
+};
+
+const getMediaRegenerationInstructions = (
+  exerciseType: string,
+  imageDescription: string,
+  imageUrl: string,
+  lessonTopic: string,
+  englishLevel?: string
+): string => {
+  return `=== MEDIA EXERCISE REGENERATION ===
+
+You are regenerating content for a ${exerciseType} exercise that will be paired with an image.
+
+IMAGE DETAILS:
+- URL: ${imageUrl}
+- Description: ${imageDescription}
+
+LESSON CONTEXT:
+- Topic: ${lessonTopic}
+- Level: ${englishLevel || 'Not specified'}
+
+YOUR TASK:
+Generate ONLY the exercise content (questions, options, statements, etc.) based on the image and lesson context.
+The content must be directly related to what's visible in the image.
+
+REQUIREMENTS FOR ${exerciseType.toUpperCase()}:
+
+${getExerciseSpecificRequirements(exerciseType, englishLevel)}
+
+Return ONLY the exercise content fields as valid JSON. Do not include type, title, icon, time, or media fields.
+
+EXAMPLE RESPONSE FORMAT:
+${getExerciseContentExample(exerciseType)}`;
+};
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
