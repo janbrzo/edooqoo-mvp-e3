@@ -52,3 +52,9 @@ verify_jwt = false
 
 [functions.check-subscription-status]
 verify_jwt = true
+
+[functions.fetch-media]
+verify_jwt = false
+
+[functions.generate-media-exercises]
+verify_jwt = false

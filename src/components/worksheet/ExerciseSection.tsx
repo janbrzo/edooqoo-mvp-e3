@@ -6,6 +6,7 @@ import TeacherTipSection from "./TeacherTipSection";
 import ExerciseRegenerateModal from "./ExerciseRegenerateModal";
 import ExerciseHeader from "./ExerciseHeader";
 import ExerciseContent from "./ExerciseContent";
+import MediaDisplay from "./MediaDisplay";
 import ExerciseReading from "./ExerciseReading";
 import ExerciseMatching from "./ExerciseMatching";
 import ExerciseFillInBlanks from "./ExerciseFillInBlanks";
@@ -209,6 +210,16 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           
           <CollapsibleContent className="animate-accordion-down data-[state=closed]:animate-accordion-up">
             <div className="p-5 pt-0">
+        {/* Media Display for picture exercises */}
+        {exercise.media?.type === 'picture' && exercise.media.url && (
+          <MediaDisplay
+            imageUrl={exercise.media.url}
+            photographer={exercise.media.photographer}
+            photographerUrl={exercise.media.photographerUrl}
+            description={exercise.media.description}
+          />
+        )}
+        
         <ExerciseContent
           instructions={exercise.instructions}
           isEditing={isEditing}
