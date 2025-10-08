@@ -15,7 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const useWorksheetGeneration = (
   userId: string | null,
   worksheetState: any,
-  studentId?: string | null
+  studentId?: string | null,
+  onMediaSelectionNeeded?: (mediaSearchQuery: string, worksheetId: string) => void
 ) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [startGenerationTime, setStartGenerationTime] = useState<number>(0);
@@ -184,12 +185,37 @@ export const useWorksheetGeneration = (
         // This ensures that when WorksheetDisplay tries to save, it has the correct ID
         worksheetState.setWorksheetId(finalWorksheetId);
         
-        // CRITICAL FIX: Add small delay to ensure state is updated
-        setTimeout(() => {
-          console.log('💾 Now setting both worksheets in state with final ID:', finalWorksheetId);
+        // NEW ETAP 1: Check if there are media exercises pending selection
+        const mediaExercises = deepFixedWorksheet.exercises.filter(
+          (ex: any) => ex.pending_media_selection === true && ex.media_search_query
+        );
+        
+        if (mediaExercises.length > 0) {
+          console.log('🖼️ MEDIA EXERCISES DETECTED:', mediaExercises.length);
+          console.log('🖼️ First media search query:', mediaExercises[0].media_search_query);
+          
+          // Set worksheets in state immediately (with pending media exercises)
           worksheetState.setGeneratedWorksheet(deepFixedWorksheet);
           worksheetState.setEditableWorksheet(deepFixedWorksheet);
-        }, 100);
+          
+          // Trigger media selection modal through callback
+          if (onMediaSelectionNeeded) {
+            console.log('🖼️ Triggering MediaSelectionModal...');
+            onMediaSelectionNeeded(mediaExercises[0].media_search_query, finalWorksheetId);
+          } else {
+            console.warn('⚠️ onMediaSelectionNeeded callback not provided!');
+          }
+        } else {
+          // Normal flow: no media exercises
+          console.log('✅ No media exercises pending - normal worksheet generation');
+          
+          // CRITICAL FIX: Add small delay to ensure state is updated
+          setTimeout(() => {
+            console.log('💾 Now setting both worksheets in state with final ID:', finalWorksheetId);
+            worksheetState.setGeneratedWorksheet(deepFixedWorksheet);
+            worksheetState.setEditableWorksheet(deepFixedWorksheet);
+          }, 100);
+        }
         
         // Track successful worksheet generation
         trackEvent({

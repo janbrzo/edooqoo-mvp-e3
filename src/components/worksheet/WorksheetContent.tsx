@@ -62,16 +62,24 @@ export default function WorksheetContent({
   }, [onCloseSidebar]);
   
   // Check for pending media exercises on worksheet load
+  // ETAP 1: Improved detection - check for pending_media_selection without requiring missing media_url
   useEffect(() => {
     if (editableWorksheet?.exercises) {
       const pendingExercise = editableWorksheet.exercises.find(
-        (ex: any) => ex.pending_media_selection === true && !ex.media_url
+        (ex: any) => ex.pending_media_selection === true && ex.media_search_query && !ex.media_url
       );
       
       if (pendingExercise) {
-        console.log('📸 Found pending media exercise:', pendingExercise);
+        console.log('🖼️ ETAP 1: Found pending media exercise with search query:', {
+          type: pendingExercise.type,
+          searchQuery: pendingExercise.media_search_query,
+          hasPendingFlag: pendingExercise.pending_media_selection,
+          hasMediaUrl: !!pendingExercise.media_url
+        });
         setPendingMediaExercise(pendingExercise);
         setMediaModalOpen(true);
+      } else {
+        console.log('✅ No pending media exercises found');
       }
     }
   }, [editableWorksheet]);

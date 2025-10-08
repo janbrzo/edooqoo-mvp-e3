@@ -15,11 +15,13 @@ export const getMediaInstructions = (selectedMediaTypes?: string[]): string => {
   let instructions = '\n\n=== MEDIA INTEGRATION INSTRUCTIONS ===\n\n';
 
   if (mediaType === 'picture') {
-    instructions += `CRITICAL: This worksheet includes PICTURE-ENHANCED exercises.
+    instructions += `🔴 CRITICAL: This worksheet includes PICTURE-ENHANCED exercises.
 
-PHASE 1 GENERATION (Current):
+⚠️⚠️⚠️ PHASE 1 GENERATION (Current) - STRICT RULES ⚠️⚠️⚠️
+
 For exercises that are picture-compatible (multiple-choice, true-false, answer-questions, describe-picture):
-1. Include ONLY these fields in the exercise JSON:
+
+✅ YOU MUST INCLUDE ONLY these fields in the exercise JSON:
    - "type": "multiple-choice" (or appropriate type)
    - "title": "Exercise X: [Title]"
    - "icon": "[icon]"
@@ -29,34 +31,67 @@ For exercises that are picture-compatible (multiple-choice, true-false, answer-q
    - "pending_media_selection": true
    - "instructions": "Look at the picture and [complete the exercise]"
 
-2. DO NOT INCLUDE actual exercise content (questions, options, statements, etc.) in Phase 1
-3. The "media_search_query" must be:
-   - Descriptive and specific (not generic terms)
+❌ YOU MUST NOT INCLUDE these fields in Phase 1:
+   - "questions" - DO NOT GENERATE
+   - "options" - DO NOT GENERATE
+   - "statements" - DO NOT GENERATE
+   - "prompts" - DO NOT GENERATE
+   - "useful_vocabulary" - DO NOT GENERATE
+   - Any other exercise content fields - DO NOT GENERATE
+
+🚫 ABSOLUTELY DO NOT GENERATE:
+   - Questions for multiple-choice exercises
+   - Answer options for multiple-choice exercises
+   - Statements for true-false exercises
+   - Questions for answer-questions exercises
+   - Prompts for describe-picture exercises
+   - Any exercise content whatsoever
+
+WHY? Because the teacher will select an image first, and then we'll regenerate content based on that specific image in Phase 2.
+
+📋 The "media_search_query" REQUIREMENTS:
+   - Descriptive and specific (NOT generic terms like "office" or "restaurant")
    - Related to the lesson topic
    - Suitable for finding appropriate, educational images
    - In English
    - Safe for educational context
+   - Example GOOD queries: "modern restaurant interior with people dining and waiter serving", "busy office workspace with professionals working on computers and collaborating"
+   - Example BAD queries: "restaurant", "office", "people"
 
 PHASE 2 GENERATION (After image selection):
 This will happen in a separate AI call after the teacher selects an image. The system will regenerate ONLY the content for media-enhanced exercises with the actual selected image description.
 
-EXAMPLE Phase 1 output for picture-enhanced exercise:
+✅ CORRECT Phase 1 output for picture-enhanced exercise:
 {
   "type": "multiple-choice",
   "title": "Exercise 5: Multiple Choice About the Image",
   "icon": "fa-check-square",
   "time": 8,
   "media_type": "picture",
-  "media_search_query": "diverse group of students studying together in modern library",
+  "media_search_query": "diverse group of students studying together in modern library with books and laptops",
   "pending_media_selection": true,
   "instructions": "Look at the picture carefully and choose the best answer for each question."
 }
 
-IMPORTANT: 
+❌ INCORRECT Phase 1 output (DO NOT DO THIS):
+{
+  "type": "multiple-choice",
+  "title": "Exercise 5: Multiple Choice About the Image",
+  "icon": "fa-check-square",
+  "time": 8,
+  "media_type": "picture",
+  "media_search_query": "students in library",
+  "pending_media_selection": true,
+  "instructions": "Look at the picture carefully and choose the best answer for each question.",
+  "questions": [...] // ❌ DO NOT INCLUDE THIS IN PHASE 1!
+}
+
+📌 REMEMBER:
 - Only picture-compatible exercises should have media fields
-- Other exercises in the worksheet should be generated normally with full content
+- Other exercises in the worksheet should be generated normally with FULL content
 - Keep the total exercise count as specified
-- Ensure media_search_query is detailed enough to find relevant images`;
+- Ensure media_search_query is detailed and specific enough to find relevant images
+- DO NOT generate any exercise content (questions/options/statements) for media exercises in Phase 1`;
   }
 
   return instructions;
