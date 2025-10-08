@@ -141,9 +141,6 @@ export default function ExerciseSelector({
   const [showAllExercises, setShowAllExercises] = useState(false);
   const [selectedMediaTypes, setSelectedMediaTypes] = useState<MediaType[]>([]);
 
-  // Picture-compatible exercises
-  const PICTURE_COMPATIBLE_EXERCISES = ['multiple-choice', 'true-false', 'answer-questions', 'describe-picture'];
-
   // Get default exercises for manual mode
   const manualDefaults = useMemo(() => lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN, [lessonTime]);
 
@@ -196,78 +193,23 @@ export default function ExerciseSelector({
     onChange(newSelection);
   }, [selectedExercises, maxExercises, onChange, selectionMode]);
   const handleMediaToggle = (mediaType: MediaType) => {
-    // Limit to 1 media type
-    const newMediaTypes = selectedMediaTypes.includes(mediaType) ? [] : [mediaType];
+    const newMediaTypes = selectedMediaTypes.includes(mediaType) ? selectedMediaTypes.filter(type => type !== mediaType) : [...selectedMediaTypes, mediaType];
     setSelectedMediaTypes(newMediaTypes);
-    
-    // Auto-select compatible exercises
-    if (mediaType === 'picture' && !selectedMediaTypes.includes(mediaType)) {
-      if (selectionMode === 'random') {
-        // Random: select 2+ picture-compatible exercises randomly
-        const compatible = PICTURE_COMPATIBLE_EXERCISES.filter(ex => 
-          AVAILABLE_EXERCISES.find(e => e.id === ex && !e.comingSoon)
-        );
-        const shuffled = compatible.sort(() => Math.random() - 0.5);
-        const selected = shuffled.slice(0, Math.min(3, maxExercises));
-        
-        // Fill remaining with other exercises
-        const remaining = maxExercises - selected.length;
-        const otherExercises = AVAILABLE_EXERCISES
-          .filter(ex => !ex.comingSoon && !selected.includes(ex.id))
-          .map(ex => ex.id)
-          .sort(() => Math.random() - 0.5)
-          .slice(0, remaining);
-        
-        onChange([...selected, ...otherExercises]);
-      } else if (selectionMode === 'manual') {
-        // Manual: set defaults
-        onChange(['true-false', 'multiple-choice', 'describe-picture', 'reading', 'matching', 'fill-in-blanks'].slice(0, maxExercises));
-      }
-    }
+    // TODO: This will be used for media-enhanced exercises in the future
   };
   return <div className="space-y-4">
       {/* Media Enhanced Options */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Media Enhanced (Select 1 max)</h3>
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Media Enhanced</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          {MEDIA_ENHANCED_OPTIONS.map(media => {
-            const isActive = media.id === 'picture';
-            const isSelected = selectedMediaTypes.includes(media.id as MediaType);
-            
-            return (
-              <button
-                key={media.id}
-                type="button"
-                disabled={!isActive}
-                onClick={() => isActive && handleMediaToggle(media.id as MediaType)}
-                className={`p-2 rounded-lg border-2 text-left transition-all ${
-                  isActive
-                    ? isSelected
-                      ? 'border-worksheet-purple bg-worksheet-purpleLight'
-                      : 'border-gray-300 bg-white hover:border-worksheet-purple'
-                    : 'border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed'
-                }`}
-              >
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="text-lg">{media.icon}</span>
-                  <span className={`font-medium text-xs ${isActive ? 'text-gray-700' : 'text-gray-500'}`}>
-                    {media.label}
-                  </span>
-                  {!isActive && (
-                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">
-                      Coming Soon
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+          {MEDIA_ENHANCED_OPTIONS.map(media => <button key={media.id} type="button" disabled className="p-2 rounded-lg border-2 border-gray-200 bg-gray-100 text-left opacity-60 cursor-not-allowed">
+               <div className="flex items-center space-x-2 mb-1">
+                 <span className="text-lg">{media.icon}</span>
+                 <span className="font-medium text-xs text-gray-500">{media.label}</span>
+                 <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
+               </div>
+             </button>)}
         </div>
-        {selectedMediaTypes.includes('picture') && selectionMode === 'manual' && (
-          <p className="text-sm text-worksheet-purple font-medium mb-4">
-            ℹ️ Wybierz minimum 1 zadanie kompatybilne z obrazkiem (Multiple Choice, True/False, Answer Questions, Describe Picture)
-          </p>
-        )}
       </div>
 
       {/* All Exercise Types - Always Visible */}

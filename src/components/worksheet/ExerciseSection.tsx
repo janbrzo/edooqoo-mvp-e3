@@ -23,7 +23,6 @@ import ExerciseSentenceTransformation from "./ExerciseSentenceTransformation";
 import ExerciseNegativePrefixes from "./ExerciseNegativePrefixes";
 import ExerciseWordOrder from "./ExerciseWordOrder";
 import ExerciseSynonymsAntonyms from "./ExerciseSynonymsAntonyms";
-import MediaDisplay from "./MediaDisplay";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Loader2, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -266,11 +265,6 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isEditing={isEditing}
             viewMode={viewMode}
             onQuestionTextChange={(qIndex, value) => handleQuestionChangeLocal(qIndex, 'text', value)}
-            mediaUrl={exercise.media_url}
-            mediaDescription={exercise.media_description}
-            mediaPhotographer={exercise.media_photographer}
-            mediaPhotographerUrl={exercise.media_photographer_url}
-            isPendingMedia={exercise.pending_media_selection}
             onOptionTextChange={(qIndex, oIndex, value) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const question = updatedExercises[index].questions[qIndex];
@@ -342,7 +336,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           exercise.sentences && renderOtherExerciseTypes(exercise, isEditing, viewMode, handleSentenceChangeLocal)}
         
         {exercise.type === 'true-false' && exercise.statements && 
-          renderTrueFalseExercise(exercise, isEditing, viewMode, handleStatementChangeLocal, MediaDisplay)}
+          renderTrueFalseExercise(exercise, isEditing, viewMode, handleStatementChangeLocal)}
 
         {/* New Phase 1 exercises */}
         {exercise.type === 'odd-one-out' && exercise.questions && (
@@ -524,15 +518,14 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 
         {exercise.type === 'answer-questions' && exercise.questions && (
           <ExerciseAnswerQuestions
+            media_url={exercise.media_url}
+            media_type={exercise.media_type}
             questions={exercise.questions}
             isEditing={isEditing}
             viewMode={viewMode}
             onQuestionChange={handleQuestionChangeLocal}
-            mediaUrl={exercise.media_url}
-            mediaDescription={exercise.media_description}
-            mediaPhotographer={exercise.media_photographer}
-            mediaPhotographerUrl={exercise.media_photographer_url}
-            isPendingMedia={exercise.pending_media_selection}
+            onMediaUrlChange={(url) => handleExerciseChangeLocal('media_url', url)}
+            onMediaTypeChange={(type) => handleExerciseChangeLocal('media_type', type)}
           />
         )}
 

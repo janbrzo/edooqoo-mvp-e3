@@ -1,42 +1,86 @@
 import React from "react";
-import MediaDisplay from "./MediaDisplay";
 
 interface ExerciseAnswerQuestionsProps {
+  media_url?: string;
+  media_type?: "video" | "audio" | "image";
   questions: any[];
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
-  mediaUrl?: string;
-  mediaDescription?: string;
-  mediaPhotographer?: string;
-  mediaPhotographerUrl?: string;
-  isPendingMedia?: boolean;
+  onMediaUrlChange?: (url: string) => void;
+  onMediaTypeChange?: (type: "video" | "audio" | "image") => void;
 }
 
 const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
+  media_url,
+  media_type = "image",
   questions,
   isEditing,
   viewMode,
   onQuestionChange,
-  mediaUrl,
-  mediaDescription,
-  mediaPhotographer,
-  mediaPhotographerUrl,
-  isPendingMedia
+  onMediaUrlChange,
+  onMediaTypeChange
 }) => {
   return (
     <div className="space-y-4">
-      {/* Display media if present */}
-      {(mediaUrl || isPendingMedia) && (
-        <MediaDisplay
-          mediaUrl={mediaUrl}
-          mediaDescription={mediaDescription}
-          mediaPhotographer={mediaPhotographer}
-          mediaPhotographerUrl={mediaPhotographerUrl}
-          isPending={isPendingMedia}
-          className="mb-4"
-        />
-      )}
+      {/* Media section */}
+      <div className="flex justify-center">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
+          {isEditing && onMediaUrlChange && onMediaTypeChange ? (
+            <div className="space-y-3">
+              <select
+                value={media_type}
+                onChange={e => onMediaTypeChange(e.target.value as "video" | "audio" | "image")}
+                className="border p-2 rounded"
+              >
+                <option value="image">Image</option>
+                <option value="video">Video</option>
+                <option value="audio">Audio</option>
+              </select>
+              <input
+                type="text"
+                value={media_url || ""}
+                onChange={e => onMediaUrlChange(e.target.value)}
+                placeholder={`Enter ${media_type} URL`}
+                className="w-full border p-2 editable-content"
+              />
+              <p className="text-xs text-gray-500">
+                Enter {media_type} URL for students to {media_type === "audio" ? "listen to" : "watch/view"}
+              </p>
+            </div>
+          ) : (
+            <>
+              {media_url ? (
+                <div className="max-w-full">
+                  {media_type === "image" && (
+                    <img src={media_url} alt="Exercise media" className="max-w-full max-h-64 mx-auto rounded" />
+                  )}
+                  {media_type === "video" && (
+                    <video controls className="max-w-full max-h-64 mx-auto rounded">
+                      <source src={media_url} />
+                      Your browser does not support video.
+                    </video>
+                  )}
+                  {media_type === "audio" && (
+                    <audio controls className="w-full max-w-md">
+                      <source src={media_url} />
+                      Your browser does not support audio.
+                    </audio>
+                  )}
+                </div>
+              ) : (
+                <div className="w-64 h-48 bg-gray-200 rounded flex items-center justify-center">
+                  <p className="text-gray-500">
+                    {media_type === "video" && "🎥 Video content"}
+                    {media_type === "audio" && "🎵 Audio content"}
+                    {media_type === "image" && "📷 Image content"}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
       {/* Questions */}
       <div className="space-y-2">

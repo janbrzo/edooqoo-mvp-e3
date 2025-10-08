@@ -448,7 +448,6 @@ export type Database = {
           id: string
           ip_address: string | null
           last_modified_at: string
-          media_metadata: Json | null
           prompt: string
           referrer_url: string | null
           sequence_number: number
@@ -476,7 +475,6 @@ export type Database = {
           id?: string
           ip_address?: string | null
           last_modified_at?: string
-          media_metadata?: Json | null
           prompt: string
           referrer_url?: string | null
           sequence_number?: number
@@ -504,7 +502,6 @@ export type Database = {
           id?: string
           ip_address?: string | null
           last_modified_at?: string
-          media_metadata?: Json | null
           prompt?: string
           referrer_url?: string | null
           sequence_number?: number

@@ -1,87 +1,53 @@
 import React from "react";
-import MediaDisplay from "./MediaDisplay";
 
 interface ExerciseDescribeProps {
   image_url?: string;
   questions?: any[];
-  prompts?: string[];
-  useful_vocabulary?: string[];
-  image_description?: string;
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
   onImageUrlChange?: (url: string) => void;
-  // Media props
-  mediaUrl?: string;
-  mediaDescription?: string;
-  mediaPhotographer?: string;
-  mediaPhotographerUrl?: string;
-  isPendingMedia?: boolean;
 }
 
 const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
   image_url,
   questions,
-  prompts,
-  useful_vocabulary,
-  image_description,
   isEditing,
   viewMode,
   onQuestionChange,
-  onImageUrlChange,
-  mediaUrl,
-  mediaDescription,
-  mediaPhotographer,
-  mediaPhotographerUrl,
-  isPendingMedia
+  onImageUrlChange
 }) => {
-  // Use media if available, otherwise fall back to image_url
-  const displayImageUrl = mediaUrl || image_url;
-  const displayDescription = mediaDescription || image_description;
-  
   return (
     <div className="space-y-4">
-      {/* Display media if present */}
-      {(displayImageUrl || isPendingMedia) && (
-        <MediaDisplay
-          mediaUrl={displayImageUrl}
-          mediaDescription={displayDescription}
-          mediaPhotographer={mediaPhotographer}
-          mediaPhotographerUrl={mediaPhotographerUrl}
-          isPending={isPendingMedia}
-          className="mb-4"
-        />
-      )}
-
-      {/* Useful vocabulary if present */}
-      {useful_vocabulary && useful_vocabulary.length > 0 && (
-        <div className="bg-blue-50 p-3 rounded-md">
-          <h4 className="font-medium text-gray-700 mb-2">Useful Vocabulary:</h4>
-          <div className="flex flex-wrap gap-2">
-            {useful_vocabulary.map((word, idx) => (
-              <span key={idx} className="bg-white px-3 py-1 rounded-full text-sm border border-blue-200">
-                {word}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Guiding prompts if present */}
-      {prompts && prompts.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="font-medium text-gray-700">Guiding prompts:</h4>
-          {prompts.map((prompt, pIndex) => (
-            <div key={pIndex} className="border-b pb-1">
-              <p className="leading-snug text-sm text-gray-700">
-                {pIndex + 1}. {prompt}
-              </p>
+      {/* Image section */}
+      <div className="flex justify-center">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
+          {isEditing && onImageUrlChange ? (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={image_url || ""}
+                onChange={e => onImageUrlChange(e.target.value)}
+                placeholder="Enter image URL"
+                className="w-full border p-2 editable-content"
+              />
+              <p className="text-xs text-gray-500">Enter image URL for the picture description exercise</p>
             </div>
-          ))}
+          ) : (
+            <>
+              {image_url ? (
+                <img src={image_url} alt="Description exercise" className="max-w-full max-h-64 mx-auto rounded" />
+              ) : (
+                <div className="w-64 h-48 bg-gray-200 rounded flex items-center justify-center">
+                  <p className="text-gray-500">📷 Picture for description</p>
+                </div>
+              )}
+            </>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Optional guiding questions (legacy) */}
+      {/* Optional guiding questions */}
       {questions && questions.length > 0 && (
         <div className="space-y-2">
           <h4 className="font-medium text-gray-700">Guiding questions:</h4>

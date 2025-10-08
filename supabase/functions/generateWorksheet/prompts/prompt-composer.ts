@@ -5,19 +5,15 @@
 import { getCoreInstructions } from './core-instructions.ts';
 import { getExerciseTemplates } from './exercise-templates.ts';
 import { getFinalRequirements } from './final-requirements.ts';
-import { getMediaInstructions } from './media-instructions.ts';
 
 export const composeSystemMessage = (hasGrammarFocus: boolean, grammarFocus: string | null, formData: any, exerciseCount: number = 8, selectedExercises?: string[]): string => {
   const coreInstructions = getCoreInstructions(hasGrammarFocus, grammarFocus, formData, exerciseCount, selectedExercises);
   const exerciseTemplates = getExerciseTemplates(hasGrammarFocus, grammarFocus, exerciseCount, selectedExercises);
   const finalRequirements = getFinalRequirements(hasGrammarFocus, exerciseCount, selectedExercises, formData.englishLevel);
-  const mediaInstructions = getMediaInstructions(formData.selectedMediaTypes);
   
   return `${coreInstructions}
 
 ${exerciseTemplates}
 
-${finalRequirements}
-
-${mediaInstructions}`;
+${finalRequirements}`;
 };
