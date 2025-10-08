@@ -2,7 +2,7 @@
  * Final requirements section - DYNAMIC content based on selected exercises
  */
 
-export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: number = 8, selectedExercises?: string[], englishLevel?: string) => {
+export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: number = 8, selectedExercises?: string[], englishLevel?: string, hasPictureMedia?: boolean) => {
   // Exercise-specific requirements mapping
   const exerciseRequirements = {
     'reading': `Exercise with reading must have content more than 300 words. Analyze the lessonTopic, lessonGoal, grammarFocus and additionalInformation to determine the most appropriate text format. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
@@ -23,8 +23,14 @@ export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: nu
     'paraphrasing': `EXACTLY 10 sentences with "original", "word_to_use", and "answer" fields. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'complete-word': `EXACTLY 10 words with "partial", "complete", and "clue" fields. Missing letters use always all the vowels: a, e, i, o, u, y. For missing letters dont use any consonants. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'matching-halves': `EXACTLY 10 sentence halves with "first_half", "second_half", and "id" fields. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
-    'describe-picture': `Image description and 8 guiding prompts. Include "image_description", "prompts", "useful_vocabulary", and "teacher_tip". Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
-    'answer-questions': `EXACTLY 10 questions with "question" and "focus" fields for personal response exercises. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
+    'describe-picture': hasPictureMedia 
+      ? `PHASE 1 (METADATA ONLY): Generate only framework with "pending_media": true, "media_type": "picture", placeholder text for "prompts", "image_description", "useful_vocabulary". Include title, instructions, time (10 min), icon. DO NOT generate actual prompts or content yet - this will be done in Phase 2 after image selection. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
+      : `Image description and 8 guiding prompts. Include "image_description", "prompts", "useful_vocabulary", and "teacher_tip". Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'answer-questions': hasPictureMedia
+      ? `PHASE 1 (METADATA ONLY): Generate only framework with "pending_media": true, "media_type": "picture", placeholder text for "questions". Include title, instructions (about the picture), time (8 min), icon. DO NOT generate actual questions yet - this will be done in Phase 2 after image selection based on lesson context. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
+      : `EXACTLY 10 questions with "question" and "focus" fields for personal response exercises. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'multiple-choice-picture': `PHASE 1 (METADATA ONLY): Generate only framework with "pending_media": true, "media_type": "picture", placeholder text for "questions". Include title ("Multiple Choice - Picture Analysis"), instructions (analyze the image), time (8 min), icon. DO NOT generate actual questions yet - this will be done in Phase 2 after image selection. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'true-false-picture': `PHASE 1 (METADATA ONLY): Generate only framework with "pending_media": true, "media_type": "picture", placeholder text for "statements". Include title ("True or False - Picture Analysis"), instructions (based on image), time (5 min), icon. DO NOT generate actual statements yet - this will be done in Phase 2 after image selection. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
   };
 
   let requirements = '\nCRITICAL REQUIREMENTS VERIFICATION:\n';

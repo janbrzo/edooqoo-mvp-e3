@@ -14,7 +14,7 @@ export const composeSystemMessage = (hasGrammarFocus: boolean, grammarFocus: str
   const coreInstructions = getCoreInstructions(hasGrammarFocus, grammarFocus, formData, exerciseCount, selectedExercises);
   const mediaInstructions = getMediaInstructions(hasPictureMedia);
   const exerciseTemplates = getExerciseTemplates(hasGrammarFocus, grammarFocus, exerciseCount, selectedExercises);
-  const finalRequirements = getFinalRequirements(hasGrammarFocus, exerciseCount, selectedExercises, formData.englishLevel);
+  const finalRequirements = getFinalRequirements(hasGrammarFocus, exerciseCount, selectedExercises, formData.englishLevel, hasPictureMedia);
   
   return `${coreInstructions}
 

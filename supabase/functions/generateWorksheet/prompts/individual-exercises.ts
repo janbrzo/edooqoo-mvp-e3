@@ -506,6 +506,151 @@ export const getAnswerQuestionsExercise = () => `    {
       "teacher_tip": "Focus on encouraging full answers rather than just yes/no responses. Ask follow-up questions to help students elaborate and use more complex sentence structures."
     }`;
 
+// =============== PICTURE-BASED EXERCISE VERSIONS (for Phase 2 - after image selection) ===============
+
+export const getMultipleChoicePictureExercise = () => `    {
+      "type": "multiple-choice",
+      "title": "Exercise X: Multiple Choice - Picture Analysis",
+      "icon": "fa-check-square",
+      "time": 8,
+      "instructions": "Look at the image carefully and choose the best answer to each question.",
+      "questions": [
+        {
+          "text": "What is the main focus of this picture?",
+          "options": [
+            {"label": "A", "text": "A person eating alone", "correct": false},
+            {"label": "B", "text": "A busy restaurant scene", "correct": true},
+            {"label": "C", "text": "A kitchen interior", "correct": false},
+            {"label": "D", "text": "A food delivery", "correct": false}
+          ]
+        },
+        {
+          "text": "How would you describe the atmosphere in this image?",
+          "options": [
+            {"label": "A", "text": "Quiet and empty", "correct": false},
+            {"label": "B", "text": "Crowded and lively", "correct": true},
+            {"label": "C", "text": "Formal and elegant", "correct": false},
+            {"label": "D", "text": "Dark and gloomy", "correct": false}
+          ]
+        },
+        {
+          "text": "What type of food can you see in the picture?",
+          "options": [
+            {"label": "A", "text": "Only desserts", "correct": false},
+            {"label": "B", "text": "Various international dishes", "correct": true},
+            {"label": "C", "text": "Only breakfast items", "correct": false},
+            {"label": "D", "text": "Only beverages", "correct": false}
+          ]
+        },
+        {
+          "text": "How many people are visible in this restaurant scene?",
+          "options": [
+            {"label": "A", "text": "None", "correct": false},
+            {"label": "B", "text": "One or two", "correct": false},
+            {"label": "C", "text": "Several people", "correct": true},
+            {"label": "D", "text": "Only staff members", "correct": false}
+          ]
+        },
+        {
+          "text": "What can you infer about the service style from the image?",
+          "options": [
+            {"label": "A", "text": "Self-service only", "correct": false},
+            {"label": "B", "text": "Table service by waiters", "correct": true},
+            {"label": "C", "text": "Takeaway only", "correct": false},
+            {"label": "D", "text": "Food truck style", "correct": false}
+          ]
+        },
+        {
+          "text": "Which best describes the restaurant's style?",
+          "options": [
+            {"label": "A", "text": "Fast food chain", "correct": false},
+            {"label": "B", "text": "Casual dining establishment", "correct": true},
+            {"label": "C", "text": "Fine dining restaurant", "correct": false},
+            {"label": "D", "text": "Street food vendor", "correct": false}
+          ]
+        },
+        {
+          "text": "What time of day does this picture suggest?",
+          "options": [
+            {"label": "A", "text": "Early morning", "correct": false},
+            {"label": "B", "text": "Lunch or dinner time", "correct": true},
+            {"label": "C", "text": "Late night", "correct": false},
+            {"label": "D", "text": "Breakfast time", "correct": false}
+          ]
+        },
+        {
+          "text": "What emotion do the customers seem to be showing?",
+          "options": [
+            {"label": "A", "text": "Anger and frustration", "correct": false},
+            {"label": "B", "text": "Enjoyment and satisfaction", "correct": true},
+            {"label": "C", "text": "Boredom and disinterest", "correct": false},
+            {"label": "D", "text": "Confusion and worry", "correct": false}
+          ]
+        },
+        {
+          "text": "Based on the image, which statement is most accurate?",
+          "options": [
+            {"label": "A", "text": "The restaurant appears to be closing", "correct": false},
+            {"label": "B", "text": "The restaurant is popular and busy", "correct": true},
+            {"label": "C", "text": "The restaurant has poor service", "correct": false},
+            {"label": "D", "text": "The restaurant serves only one type of cuisine", "correct": false}
+          ]
+        },
+        {
+          "text": "What can you see on the tables in this picture?",
+          "options": [
+            {"label": "A", "text": "Only empty plates", "correct": false},
+            {"label": "B", "text": "Food dishes and beverages", "correct": true},
+            {"label": "C", "text": "Only menus", "correct": false},
+            {"label": "D", "text": "Nothing at all", "correct": false}
+          ]
+        }
+      ],
+      "teacher_tip": "After choosing answers, ask students to explain WHY they selected each answer by referencing specific details they can see in the image. This develops critical thinking and descriptive language skills."
+    }`;
+
+export const getTrueFalsePictureExercise = () => `    {
+      "type": "true-false",
+      "title": "Exercise X: True or False - Picture Analysis",
+      "icon": "fa-balance-scale",
+      "time": 5,
+      "instructions": "Look at the image carefully and decide if each statement is true or false based on what you can see.",
+      "statements": [
+        {"text": "The restaurant in the picture appears to be busy with customers.", "isTrue": true},
+        {"text": "There is no food visible on any of the tables.", "isTrue": false},
+        {"text": "You can see staff members working in this restaurant.", "isTrue": true},
+        {"text": "The restaurant looks completely empty with no people.", "isTrue": false},
+        {"text": "There are multiple tables with customers in the image.", "isTrue": true},
+        {"text": "The picture shows only the kitchen area of a restaurant.", "isTrue": false},
+        {"text": "People in the image appear to be enjoying their meals.", "isTrue": true},
+        {"text": "The restaurant appears to be closed and dark.", "isTrue": false},
+        {"text": "You can see different types of dishes on the tables.", "isTrue": true},
+        {"text": "The image shows a very formal, expensive fine dining restaurant.", "isTrue": false}
+      ],
+      "teacher_tip": "After completing the exercise, ask students to provide evidence from the image to support their true/false answers. This helps them practice giving detailed descriptions and justifications."
+    }`;
+
+export const getAnswerQuestionsPictureExercise = () => `    {
+      "type": "answer-questions",
+      "title": "Exercise X: Answer Questions About the Picture",
+      "icon": "fa-question-circle",
+      "time": 8,
+      "instructions": "Look at the image and answer these questions based on what you can see and your personal opinions.",
+      "questions": [
+        {"question": "Describe the atmosphere of the restaurant you see in the picture. Use at least 3 adjectives.", "focus": "Descriptive vocabulary and observation"},
+        {"question": "What types of food can you identify in the image? Compare them to food you enjoy eating.", "focus": "Food vocabulary and comparisons"},
+        {"question": "How many people can you see in the restaurant? What do you think they are doing?", "focus": "Present continuous and speculation"},
+        {"question": "Would you like to eat at this restaurant? Why or why not? Give specific reasons.", "focus": "Expressing preferences and justification"},
+        {"question": "Compare this restaurant to your favorite restaurant. What's similar and what's different?", "focus": "Comparatives and contrasts"},
+        {"question": "What can you say about the service style based on what you see in the picture?", "focus": "Inference and deduction"},
+        {"question": "Imagine you are eating at this restaurant. What would you order and why?", "focus": "Hypothetical situations and food vocabulary"},
+        {"question": "What time of day do you think this picture was taken? What details make you think that?", "focus": "Evidence-based reasoning"},
+        {"question": "How does the restaurant in the picture compare to typical restaurants in your country?", "focus": "Cultural comparison and description"},
+        {"question": "If you were the manager of this restaurant, what would you improve and what would you keep the same?", "focus": "Conditional and critical thinking"}
+      ],
+      "teacher_tip": "Encourage students to refer directly to specific visual details in the picture when answering. This develops their ability to provide evidence and detailed descriptions in English."
+    }`;
+
 export const getVocabularySheet = () => `  "vocabulary_sheet": [
     {"term": "Appetizer", "meaning": "A small dish served before the main meal to stimulate the appetite."},
     {"term": "Main course", "meaning": "The primary or largest dish in a meal."},
@@ -524,7 +669,7 @@ export const getVocabularySheet = () => `  "vocabulary_sheet": [
     {"term": "Tip", "meaning": "An extra amount of money given to the waiter as a thank you for good service."}
   ]`;
 
-// Exercise type to function mapping for easy selection - UPDATED WITH 12 NEW EXERCISES
+// Exercise type to function mapping for easy selection - UPDATED WITH 12 NEW EXERCISES + PICTURE VERSIONS
 export const exerciseFunctions = {
   reading: getReadingExercise,
   'true-false': getTrueFalseExercise,
@@ -546,7 +691,11 @@ export const exerciseFunctions = {
   'complete-word': getCompleteWordExercise,
   'matching-halves': getMatchingHalvesExercise,
   'describe-picture': getDescribePictureExercise,
-  'answer-questions': getAnswerQuestionsExercise
+  'answer-questions': getAnswerQuestionsExercise,
+  // PICTURE-BASED VERSIONS:
+  'multiple-choice-picture': getMultipleChoicePictureExercise,
+  'true-false-picture': getTrueFalsePictureExercise,
+  'answer-questions-picture': getAnswerQuestionsPictureExercise
 };
 
 export const exerciseOrder = [
