@@ -5,7 +5,6 @@ import { updateWorksheet } from "@/services/worksheetService";
 import { useWorksheetTimes } from "@/hooks/useWorksheetTimes";
 import { useExerciseRegeneration } from "@/hooks/useExerciseRegeneration";
 import { useWorksheetNavigation } from "@/hooks/useWorksheetNavigation";
-import { supabase } from "@/integrations/supabase/client";
 import ExerciseSection from "./ExerciseSection";
 import WarmupSection from "./WarmupSection";
 import GrammarRules from "./GrammarRules";
@@ -13,7 +12,6 @@ import VocabularySheet from "./VocabularySheet";
 import WorksheetRating from "@/components/WorksheetRating";
 import TeacherNotes from "./TeacherNotes";
 import DemoWatermark from "./DemoWatermark";
-import MediaSelectionModal from "@/components/MediaSelectionModal";
 import { ExerciseNavSidebar } from "./ExerciseNavSidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp, RotateCcw, Loader2 } from "lucide-react";
@@ -46,57 +44,7 @@ export default function WorksheetContent({
   onExpandAll,
   onCloseSidebar
 }: WorksheetContentProps) {
-  // State for controlling sidebar visibility
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showMediaModal, setShowMediaModal] = useState(false);
-  const [pendingExerciseIndex, setPendingExerciseIndex] = useState<number | null>(null);
-  const [isProcessingMedia, setIsProcessingMedia] = useState(false);
-  
-  // Check for pending media exercises on mount
-  useEffect(() => {
-    if (editableWorksheet?.exercises) {
-      const pendingIndex = editableWorksheet.exercises.findIndex((ex: any) => ex.pending_media);
-      if (pendingIndex !== -1 && !isProcessingMedia) {
-        setPendingExerciseIndex(pendingIndex);
-        setShowMediaModal(true);
-      }
-    }
-  }, [editableWorksheet, isProcessingMedia]);
-  
-  const handleImageSelect = async (image: any) => {
-    if (pendingExerciseIndex === null || !worksheetId || !userId) return;
-    
-    setIsProcessingMedia(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-media-exercises', {
-        body: {
-          worksheetId,
-          exerciseIndex: pendingExerciseIndex,
-          imageData: image,
-          originalFormData: inputParams,
-          userId
-        }
-      });
-      
-      if (error) throw error;
-      
-      const updatedExercises = [...editableWorksheet.exercises];
-      updatedExercises[pendingExerciseIndex] = data.exercise;
-      
-      setEditableWorksheet({
-        ...editableWorksheet,
-        exercises: updatedExercises
-      });
-      
-      toast.success('Picture exercise generated successfully!');
-    } catch (error) {
-      console.error('Error generating media exercise:', error);
-      toast.error('Failed to generate picture exercise');
-    } finally {
-      setIsProcessingMedia(false);
-      setPendingExerciseIndex(null);
-    }
-  };
   
   // Pass closeSidebar function to parent for toolbar usage
   React.useEffect(() => {
@@ -267,14 +215,6 @@ export default function WorksheetContent({
 
   return (
     <div className="worksheet-content mb-8 relative w-full" id="worksheet-content">
-      {/* Media Selection Modal */}
-      <MediaSelectionModal
-        isOpen={showMediaModal}
-        onClose={() => setShowMediaModal(false)}
-        onImageSelect={handleImageSelect}
-        searchQuery={inputParams?.lessonTopic || 'education'}
-      />
-      
       {/* Exercise Navigation Sidebar */}
       {activeExercises.length > 0 && (
         <ExerciseNavSidebar

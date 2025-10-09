@@ -140,16 +140,19 @@ interface ExerciseSelectorProps {
   selectedExercises: string[];
   onChange: (exercises: string[]) => void;
   selectionMode: ExerciseSelectionMode;
+  selectedMediaTypes: MediaType[];
+  onMediaTypesChange: (mediaTypes: MediaType[]) => void;
 }
 export default function ExerciseSelector({
   lessonTime,
   selectedExercises,
   onChange,
-  selectionMode
+  selectionMode,
+  selectedMediaTypes,
+  onMediaTypesChange
 }: ExerciseSelectorProps) {
   const maxExercises = lessonTime === '45min' ? 6 : 8;
   const [showAllExercises, setShowAllExercises] = useState(false);
-  const [selectedMediaTypes, setSelectedMediaTypes] = useState<MediaType[]>([]);
 
   // Get default exercises for manual mode
   const manualDefaults = useMemo(() => {
@@ -234,7 +237,7 @@ export default function ExerciseSelector({
   }, [selectedExercises, maxExercises, onChange, selectionMode]);
   const handleMediaToggle = (mediaType: MediaType) => {
     const newMediaTypes = selectedMediaTypes.includes(mediaType) ? selectedMediaTypes.filter(type => type !== mediaType) : [...selectedMediaTypes, mediaType];
-    setSelectedMediaTypes(newMediaTypes);
+    onMediaTypesChange(newMediaTypes);
     
     // Update exercises based on media selection
     if (mediaType === 'picture') {

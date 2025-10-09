@@ -91,6 +91,16 @@ serve(async (req) => {
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
 
+    // Get selected image from formData if available
+    const selectedImage = formData?.selectedImage || null;
+    const hasPictureMedia = selectedImage !== null;
+    
+    console.log('📸 Picture mode check:', { 
+      hasPictureMedia, 
+      hasImageUrl: !!selectedImage?.url,
+      imageDescription: selectedImage?.description?.substring(0, 50) 
+    });
+
     // Determine exercise count from lesson duration  
     let exerciseCount = 8; // Default for 60+ minutes
     
@@ -112,8 +122,15 @@ serve(async (req) => {
       : selectedExercises;
     const exerciseTypes = getExerciseTypesForCount(exerciseCount, effectiveExercises);
     
-    // CREATE SYSTEM MESSAGE using modular prompt structure with correct exerciseCount and selectedExercises
-    const systemMessage = composeSystemMessage(hasGrammarFocus, grammarFocus, formData, exerciseCount, effectiveExercises);
+    // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage
+    const systemMessage = composeSystemMessage(
+      hasGrammarFocus, 
+      grammarFocus, 
+      formData, 
+      exerciseCount, 
+      effectiveExercises,
+      selectedImage
+    );
 
     // HEARTBEAT LOG: Before OpenAI API call
     const openaiStartTime = Date.now();
@@ -238,6 +255,7 @@ serve(async (req) => {
             teacher_id: userId || null, // Add teacher_id for authenticated users
             teacher_email: teacherEmail, // Add teacher_email
             student_id: studentId || null, // Add student_id if provided
+            selected_image: selectedImage ? JSON.stringify(selectedImage) : null, // Store selected image
             ip_address: ip,
             status: 'created',
             title: worksheetData.title?.substring(0, 255) || 'Generated Worksheet', // Limit title length

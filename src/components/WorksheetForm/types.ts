@@ -23,6 +23,14 @@ export interface FormData {
   selectedExercises?: string[]; // Optional array of exercise types
   selectionMode?: ExerciseSelectionMode; // New field for future use
   selectedMediaTypes?: MediaType[]; // New field for future media integration
+  selectedImage?: {
+    id: string;
+    url: string;
+    thumbnail: string;
+    description: string;
+    photographer: string;
+    photographerUrl: string;
+  };
 }
 
 export interface WorksheetData {

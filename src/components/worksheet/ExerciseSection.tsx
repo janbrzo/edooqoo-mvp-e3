@@ -210,13 +210,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           
           <CollapsibleContent className="animate-accordion-down data-[state=closed]:animate-accordion-up">
             <div className="p-5 pt-0">
-        {/* Media Display for picture exercises */}
-        {exercise.media?.type === 'picture' && exercise.media.url && (
+        {/* Media Display for picture exercises - using direct image_url */}
+        {exercise.image_url && (
           <MediaDisplay
-            imageUrl={exercise.media.url}
-            photographer={exercise.media.photographer}
-            photographerUrl={exercise.media.photographerUrl}
-            description={exercise.media.description}
+            imageUrl={exercise.image_url}
+            photographer={exercise.photographer}
+            photographerUrl={exercise.photographer_url}
+            description={exercise.image_description || 'Lesson image'}
           />
         )}
         
