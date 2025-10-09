@@ -28,7 +28,7 @@ export default function MediaSelectionModal({
 }: MediaSelectionModalProps) {
   const [images, setImages] = useState<ImageSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(30);
   const [selectedImage, setSelectedImage] = useState<ImageSuggestion | null>(null);
 
   // Fetch images when modal opens
@@ -68,7 +68,7 @@ export default function MediaSelectionModal({
 
       if (data?.images) {
         setImages(data.images);
-        setCountdown(10); // Reset countdown
+        setCountdown(30); // Reset countdown
       }
     } catch (error) {
       console.error('Error fetching images:', error);
@@ -135,7 +135,7 @@ export default function MediaSelectionModal({
             <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-worksheet-purple transition-all duration-1000 ease-linear"
-                style={{ width: `${(countdown / 10) * 100}%` }}
+                style={{ width: `${(countdown / 30) * 100}%` }}
               />
             </div>
             <span className="whitespace-nowrap font-medium">{countdown}s</span>

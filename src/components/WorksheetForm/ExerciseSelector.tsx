@@ -342,7 +342,7 @@ export default function ExerciseSelector({
                          <span className="text-lg">{exercise.icon}</span>
                          <span>{exercise.label}</span>
                          {exercise.comingSoon && <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Soon</span>}
-                         {isPictureMode && isPictureExercise && isSelected && (
+                         {isPictureMode && isPictureExercise && (
                            <span className="text-xs bg-worksheet-purple text-white px-2 py-1 rounded ml-auto">Picture</span>
                          )}
                        </label>
