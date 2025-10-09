@@ -470,21 +470,21 @@ export const getDescribePictureExercise = () => `    {
       "type": "describe-picture",
       "title": "Exercise 19: Describe the Picture",
       "icon": "fa-image",
-      "time": 8,
-      "instructions": "Look at the restaurant scene and describe what you see using the vocabulary from this lesson.",
-      "image_description": "A busy New York restaurant interior with customers seated at tables, waiters serving food, and a chef visible in the open kitchen. There are plates of various dishes including pizza, pasta, and salads on the tables.",
+      "time": 10,
+      "instructions": "Look at the image and describe what you see using the vocabulary from this lesson.",
+      "image_description": "Based on the provided image, create a detailed description of what is visible in the scene.",
       "prompts": [
-        "Describe the restaurant's atmosphere (busy, quiet, elegant, casual).",
-        "What types of food can you see on the tables?",
-        "How many people are working in the restaurant?",
-        "What are the customers doing?",
-        "Compare this restaurant to your favorite restaurant.",
-        "What would you order if you were eating here?",
-        "Describe the uniforms or clothes the staff are wearing.",
-        "What emotions do the customers seem to be showing?"
+        "Describe the overall scene and atmosphere you observe in the image.",
+        "What specific objects, people, or elements can you identify?",
+        "What colors, textures, or visual details stand out to you?",
+        "What activity or situation is taking place in this image?",
+        "How would you describe the mood or feeling this image conveys?",
+        "What details in the image are most interesting or unusual?",
+        "If you were in this scene, what would you notice first?",
+        "What story could you tell based on what you see in the image?"
       ],
-      "useful_vocabulary": ["crowded", "busy", "elegant", "casual", "appetizing", "professional", "satisfied", "enjoying", "chatting", "dining", "serving", "preparing"],
-      "teacher_tip": "Encourage students to use comparative and superlative forms when describing. Ask follow-up questions to extend their descriptions and practice new vocabulary."
+      "useful_vocabulary": ["visible", "prominent", "background", "foreground", "detailed", "noticeable", "apparent", "striking", "distinctive", "characteristic"],
+      "teacher_tip": "Encourage students to use descriptive adjectives and specific details from the image. Ask follow-up questions to extend their descriptions and practice new vocabulary. NOTE: If an image URL is provided in the exercise data, reference that specific image in your instructions and prompts."
     }`;
 
 export const getAnswerQuestionsExercise = () => `    {
