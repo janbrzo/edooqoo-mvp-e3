@@ -91,21 +91,6 @@ serve(async (req) => {
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
 
-    // Get selected image from formData if available
-    const selectedImage = formData?.selectedImage || null;
-    const hasPictureMedia = selectedImage !== null;
-    
-    // ETAP 5: Enhanced logging for picture mode
-    console.log('📸 Picture mode detailed check:', { 
-      hasPictureMedia, 
-      hasImageUrl: !!selectedImage?.url,
-      imageDescription: selectedImage?.description?.substring(0, 50),
-      imageId: selectedImage?.id,
-      photographer: selectedImage?.photographer,
-      photographerUrl: selectedImage?.photographerUrl,
-      fullImageObject: selectedImage ? 'present' : 'missing'
-    });
-
     // Determine exercise count from lesson duration  
     let exerciseCount = 8; // Default for 60+ minutes
     
@@ -127,15 +112,8 @@ serve(async (req) => {
       : selectedExercises;
     const exerciseTypes = getExerciseTypesForCount(exerciseCount, effectiveExercises);
     
-    // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage
-    const systemMessage = composeSystemMessage(
-      hasGrammarFocus, 
-      grammarFocus, 
-      formData, 
-      exerciseCount, 
-      effectiveExercises,
-      selectedImage
-    );
+    // CREATE SYSTEM MESSAGE using modular prompt structure with correct exerciseCount and selectedExercises
+    const systemMessage = composeSystemMessage(hasGrammarFocus, grammarFocus, formData, exerciseCount, effectiveExercises);
 
     // HEARTBEAT LOG: Before OpenAI API call
     const openaiStartTime = Date.now();
@@ -260,7 +238,6 @@ serve(async (req) => {
             teacher_id: userId || null, // Add teacher_id for authenticated users
             teacher_email: teacherEmail, // Add teacher_email
             student_id: studentId || null, // Add student_id if provided
-            selected_image: selectedImage || null, // ETAP 1: Store as JSONB directly (no JSON.stringify)
             ip_address: ip,
             status: 'created',
             title: worksheetData.title?.substring(0, 255) || 'Generated Worksheet', // Limit title length

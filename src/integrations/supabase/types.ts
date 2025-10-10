@@ -448,10 +448,8 @@ export type Database = {
           id: string
           ip_address: string | null
           last_modified_at: string
-          media_metadata: Json | null
           prompt: string
           referrer_url: string | null
-          selected_image: Json | null
           sequence_number: number
           session_id: string | null
           share_expires_at: string | null
@@ -477,10 +475,8 @@ export type Database = {
           id?: string
           ip_address?: string | null
           last_modified_at?: string
-          media_metadata?: Json | null
           prompt: string
           referrer_url?: string | null
-          selected_image?: Json | null
           sequence_number?: number
           session_id?: string | null
           share_expires_at?: string | null
@@ -506,10 +502,8 @@ export type Database = {
           id?: string
           ip_address?: string | null
           last_modified_at?: string
-          media_metadata?: Json | null
           prompt?: string
           referrer_url?: string | null
-          selected_image?: Json | null
           sequence_number?: number
           session_id?: string | null
           share_expires_at?: string | null

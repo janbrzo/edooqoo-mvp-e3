@@ -76,12 +76,6 @@ export function validateExercise(exercise: any): void {
     case 'matching-halves':
       validateBasicExerciseStructure(exercise);
       break;
-    case 'describe-picture':
-      validateDescribePictureExercise(exercise);
-      break;
-    case 'answer-questions':
-      validateAnswerQuestionsExercise(exercise);
-      break;
     default:
       console.warn(`🔧 [VALIDATOR] Unknown exercise type: ${exercise.type} - allowing with basic validation`);
       validateBasicExerciseStructure(exercise);
@@ -265,29 +259,6 @@ function validateNegativePrefixesExercise(exercise: any): void {
   for (const word of exercise.words) {
     if (!word.base_word) {
       throw new Error('Each negative prefix word must have base_word');
-    }
-  }
-}
-
-function validateDescribePictureExercise(exercise: any): void {
-  if (!exercise.instructions && !exercise.description) {
-    throw new Error('Describe Picture exercise must have instructions or description');
-  }
-  
-  // Optional: Check for image_url (but might not be present in all cases)
-  if (!exercise.image_url) {
-    console.warn('Describe Picture exercise missing image_url');
-  }
-}
-
-function validateAnswerQuestionsExercise(exercise: any): void {
-  if (!exercise.questions || !Array.isArray(exercise.questions) || exercise.questions.length < 3) {
-    throw new Error('Answer Questions exercise must have at least 3 questions');
-  }
-  
-  for (const question of exercise.questions) {
-    if (!question.question && !question.text) {
-      throw new Error('Each question must have question or text property');
     }
   }
 }

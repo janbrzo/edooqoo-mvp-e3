@@ -13,8 +13,7 @@ const AVAILABLE_EXERCISES = [{
   id: 'true-false',
   label: 'True/False Questions',
   icon: '✓✗',
-  description: 'Students determine whether statements about the lesson content are true or false, helping develop critical thinking and reading comprehension skills.',
-  pictureVersion: true
+  description: 'Students determine whether statements about the lesson content are true or false, helping develop critical thinking and reading comprehension skills.'
 }, {
   id: 'matching',
   label: 'Matching Exercise',
@@ -29,8 +28,7 @@ const AVAILABLE_EXERCISES = [{
   id: 'multiple-choice',
   label: 'Multiple Choice',
   icon: '📝',
-  description: 'Students select the correct answer from several options, testing comprehension, vocabulary knowledge, and grammatical understanding.',
-  pictureVersion: true
+  description: 'Students select the correct answer from several options, testing comprehension, vocabulary knowledge, and grammatical understanding.'
 }, {
   id: 'dialogue',
   label: 'Dialogue Practice',
@@ -101,27 +99,19 @@ const AVAILABLE_EXERCISES = [{
   id: 'describe-picture',
   label: 'Describe Picture',
   icon: '🖼️',
-  description: 'Students describe images using target vocabulary and structures, developing speaking and observational skills through visual prompts.',
-  pictureRequired: true
+  comingSoon: true,
+  description: 'Students describe images using target vocabulary and structures, developing speaking and observational skills through visual prompts.'
 }, {
   id: 'answer-questions',
   label: 'Answer Questions',
   icon: '❓',
-  description: 'Students provide written or spoken answers to comprehension questions, demonstrating understanding and practicing response formation.',
-  pictureVersion: true
+  comingSoon: true,
+  description: 'Students provide written or spoken answers to comprehension questions, demonstrating understanding and practicing response formation.'
 }];
-
-// Picture-compatible exercises for automatic selection
-const PICTURE_COMPATIBLE_EXERCISES = ['multiple-choice', 'true-false', 'answer-questions', 'describe-picture'];
 
 // Predefined exercise sets for Manual mode
 const MANUAL_EXERCISES_60MIN = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
 const MANUAL_EXERCISES_45MIN = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out'];
-
-// Picture mode defaults (with picture-compatible exercises)
-const MANUAL_EXERCISES_60MIN_PICTURE = ['describe-picture', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'categorize', 'answer-questions', 'discussion'];
-const MANUAL_EXERCISES_45MIN_PICTURE = ['describe-picture', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'answer-questions'];
-
 const MEDIA_ENHANCED_OPTIONS = [{
   id: 'video',
   label: 'Video',
@@ -140,59 +130,26 @@ interface ExerciseSelectorProps {
   selectedExercises: string[];
   onChange: (exercises: string[]) => void;
   selectionMode: ExerciseSelectionMode;
-  selectedMediaTypes: MediaType[];
-  onMediaTypesChange: (mediaTypes: MediaType[]) => void;
 }
 export default function ExerciseSelector({
   lessonTime,
   selectedExercises,
   onChange,
-  selectionMode,
-  selectedMediaTypes,
-  onMediaTypesChange
+  selectionMode
 }: ExerciseSelectorProps) {
   const maxExercises = lessonTime === '45min' ? 6 : 8;
   const [showAllExercises, setShowAllExercises] = useState(false);
+  const [selectedMediaTypes, setSelectedMediaTypes] = useState<MediaType[]>([]);
 
   // Get default exercises for manual mode
-  const manualDefaults = useMemo(() => {
-    const isPictureMode = selectedMediaTypes.includes('picture');
-    if (isPictureMode) {
-      return lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_PICTURE : MANUAL_EXERCISES_60MIN_PICTURE;
-    }
-    return lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
-  }, [lessonTime, selectedMediaTypes]);
+  const manualDefaults = useMemo(() => lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN, [lessonTime]);
 
   // Generate random exercises for random mode
   const generateRandomExercises = useCallback(() => {
-    const isPictureMode = selectedMediaTypes.includes('picture');
-    
-    if (isPictureMode) {
-      // Picture mode: Always select 2 picture-compatible exercises, never Reading
-      const availablePictureExercises = AVAILABLE_EXERCISES
-        .filter(ex => !ex.comingSoon && PICTURE_COMPATIBLE_EXERCISES.includes(ex.id))
-        .map(ex => ex.id);
-      
-      const availableOtherExercises = AVAILABLE_EXERCISES
-        .filter(ex => !ex.comingSoon && !PICTURE_COMPATIBLE_EXERCISES.includes(ex.id) && ex.id !== 'reading')
-        .map(ex => ex.id);
-      
-      // Select 2 random picture exercises
-      const shuffledPicture = [...availablePictureExercises].sort(() => Math.random() - 0.5);
-      const selectedPicture = shuffledPicture.slice(0, 2);
-      
-      // Select remaining exercises from other types
-      const shuffledOther = [...availableOtherExercises].sort(() => Math.random() - 0.5);
-      const selectedOther = shuffledOther.slice(0, maxExercises - 2);
-      
-      return [...selectedPicture, ...selectedOther];
-    } else {
-      // Normal mode: random selection from all available
-      const availableExercises = AVAILABLE_EXERCISES.filter(ex => !ex.comingSoon).map(ex => ex.id);
-      const shuffled = [...availableExercises].sort(() => Math.random() - 0.5);
-      return shuffled.slice(0, maxExercises);
-    }
-  }, [maxExercises, selectedMediaTypes]);
+    const availableExercises = AVAILABLE_EXERCISES.filter(ex => !ex.comingSoon).map(ex => ex.id);
+    const shuffled = [...availableExercises].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, maxExercises);
+  }, [maxExercises]);
 
   // Initialize exercises based on mode
   useEffect(() => {
@@ -237,71 +194,21 @@ export default function ExerciseSelector({
   }, [selectedExercises, maxExercises, onChange, selectionMode]);
   const handleMediaToggle = (mediaType: MediaType) => {
     const newMediaTypes = selectedMediaTypes.includes(mediaType) ? selectedMediaTypes.filter(type => type !== mediaType) : [...selectedMediaTypes, mediaType];
-    onMediaTypesChange(newMediaTypes);
-    
-    // Update exercises based on media selection
-    if (mediaType === 'picture') {
-      const isPictureActive = !selectedMediaTypes.includes('picture');
-      let newExercises: string[];
-      
-      if (isPictureActive) {
-        // Picture activated
-        if (selectionMode === 'manual') {
-          newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_PICTURE : MANUAL_EXERCISES_60MIN_PICTURE;
-        } else {
-          newExercises = generateRandomExercises();
-        }
-      } else {
-        // Picture deactivated
-        if (selectionMode === 'manual') {
-          newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
-        } else {
-          newExercises = generateRandomExercises();
-        }
-      }
-      
-      onChange(newExercises);
-    }
+    setSelectedMediaTypes(newMediaTypes);
+    // TODO: This will be used for media-enhanced exercises in the future
   };
   return <div className="space-y-4">
       {/* Media Enhanced Options */}
       <div>
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Media Enhanced</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          {MEDIA_ENHANCED_OPTIONS.map(media => {
-            const isSelected = selectedMediaTypes.includes(media.id as MediaType);
-            const isPicture = media.id === 'picture';
-            const isDisabled = !isPicture;
-            
-            return (
-              <button 
-                key={media.id} 
-                type="button" 
-                disabled={isDisabled}
-                onClick={() => !isDisabled && handleMediaToggle(media.id as MediaType)}
-                className={`p-3 rounded-lg border-2 text-left transition-all ${
-                  isDisabled
-                    ? 'border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed'
-                    : isSelected
-                    ? 'border-worksheet-purple bg-gradient-to-br from-blue-50 via-purple-50 to-blue-50 shadow-md'
-                    : 'border-gray-200 bg-white hover:border-worksheet-purple hover:shadow-sm cursor-pointer'
-                }`}
-              >
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="text-lg">{media.icon}</span>
-                  <span className={`font-medium text-sm ${isSelected ? 'text-worksheet-purple' : isDisabled ? 'text-gray-500' : 'text-gray-700'}`}>
-                    {media.label}
-                  </span>
-                  {isDisabled && (
-                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
-                  )}
-                  {isSelected && !isDisabled && (
-                    <span className="text-xs bg-worksheet-purple text-white px-2 py-1 rounded ml-auto">Active</span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+          {MEDIA_ENHANCED_OPTIONS.map(media => <button key={media.id} type="button" disabled className="p-2 rounded-lg border-2 border-gray-200 bg-gray-100 text-left opacity-60 cursor-not-allowed">
+               <div className="flex items-center space-x-2 mb-1">
+                 <span className="text-lg">{media.icon}</span>
+                 <span className="font-medium text-xs text-gray-500">{media.label}</span>
+                 <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
+               </div>
+             </button>)}
         </div>
       </div>
 
@@ -321,30 +228,14 @@ export default function ExerciseSelector({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 {AVAILABLE_EXERCISES.map(exercise => {
           const isSelected = selectedExercises.includes(exercise.id);
-          const isPictureMode = selectedMediaTypes.includes('picture');
-          const isPictureExercise = PICTURE_COMPATIBLE_EXERCISES.includes(exercise.id);
           const canSelect = selectionMode === 'manual' && (isSelected || selectedExercises.length < maxExercises) && !exercise.comingSoon;
           const isDisabled = selectionMode !== 'manual' || exercise.comingSoon;
-          
-          return <div key={exercise.id} className={`relative group flex items-center space-x-2 p-2 rounded-lg border transition-colors ${
-            exercise.comingSoon 
-              ? 'bg-gray-100 border-gray-200 opacity-60' 
-              : isSelected
-              ? isPictureMode && isPictureExercise
-                ? 'bg-gradient-to-br from-blue-50 via-purple-50 to-blue-50 border-worksheet-purple shadow-sm'
-                : 'bg-worksheet-purpleLight border-worksheet-purple'
-              : canSelect 
-              ? 'bg-gray-50 border-gray-200 hover:bg-gray-100' 
-              : 'bg-gray-100 border-gray-200 opacity-50'
-          }`}>
+          return <div key={exercise.id} className={`relative group flex items-center space-x-2 p-2 rounded-lg border transition-colors ${exercise.comingSoon ? 'bg-gray-100 border-gray-200 opacity-60' : isSelected ? 'bg-worksheet-purpleLight border-worksheet-purple' : canSelect ? 'bg-gray-50 border-gray-200 hover:bg-gray-100' : 'bg-gray-100 border-gray-200 opacity-50'}`}>
                       <Checkbox id={exercise.id} checked={isSelected} onCheckedChange={checked => handleExerciseToggle(exercise.id, !!checked)} disabled={isDisabled} className="data-[state=checked]:bg-worksheet-purple data-[state=checked]:border-worksheet-purple" />
                        <label htmlFor={exercise.id} className={`flex items-center space-x-2 text-xs font-medium cursor-pointer ${exercise.comingSoon ? 'text-gray-400' : canSelect ? 'text-gray-700' : 'text-gray-400'}`}>
                          <span className="text-lg">{exercise.icon}</span>
                          <span>{exercise.label}</span>
                          {exercise.comingSoon && <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Soon</span>}
-                         {isPictureMode && isPictureExercise && (
-                           <span className="text-xs bg-worksheet-purple text-white px-2 py-1 rounded ml-auto">Picture</span>
-                         )}
                        </label>
                       
                         {/* Tooltip with 1 second delay */}
@@ -366,12 +257,6 @@ export default function ExerciseSelector({
             {selectionMode === 'manual' && " - Select and deselect exercises by clicking the checkboxes above"}
             {selectionMode === 'random' && " - A new random selection will be generated each time you switch to this mode"}
           </p>
-          
-          {selectedMediaTypes.includes('picture') && selectionMode === 'manual' && (
-            <p className="mt-2 text-sm text-blue-700 font-medium bg-blue-50 p-2 rounded">
-              📸 Picture Mode Active: Please select at least one picture-based exercise (marked with "Picture" badge)
-            </p>
-          )}
           
           {selectedExercises.length === maxExercises && <p className="mt-2 text-sm text-worksheet-purple font-medium">
               Perfect! You have selected all {maxExercises} exercises for your {lessonTime} lesson.
