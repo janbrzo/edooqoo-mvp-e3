@@ -9,7 +9,13 @@ import {
   getVocabularySheet 
 } from './individual-exercises.ts';
 
-export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: string | null, exerciseCount: number = 8, selectedExercises?: string[]) => {
+export const getExerciseTemplates = (
+  hasGrammarFocus: boolean, 
+  grammarFocus: string | null, 
+  exerciseCount: number = 8, 
+  selectedExercises?: string[],
+  hasSelectedImage: boolean = false // ETAP 2: Add hasSelectedImage parameter
+) => {
   let finalExercises: string[];
   
   // Use custom selected exercises if provided, otherwise use default order
@@ -24,9 +30,64 @@ export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: str
     finalExercises = exerciseOrder.slice(0, exerciseCount);
   }
   
-  // Generate exercise JSON fragments
-  const exerciseFragments = finalExercises.map(type => {
+  // ETAP 2: Generate exercise JSON fragments dynamically based on picture mode
+  const exerciseFragments = finalExercises.map((type, index) => {
     const exerciseFunction = exerciseFunctions[type as keyof typeof exerciseFunctions];
+    
+    // For picture exercises, use placeholder versions when image is selected
+    if (hasSelectedImage && (type === 'describe-picture' || type === 'answer-questions')) {
+      if (type === 'describe-picture') {
+        return `    {
+      "type": "describe-picture",
+      "title": "Exercise ${index + 1}: Describe the Picture",
+      "icon": "fa-image",
+      "time": 10,
+      "instructions": "[Generate instructions that reference the provided image and encourage students to describe what they see]",
+      "image_url": "[USE THE IMAGE URL FROM IMAGE CONTEXT SECTION]",
+      "image_description": "[Describe what you see in the provided image from IMAGE CONTEXT]",
+      "prompts": [
+        "[Generate 8 prompts based on specific visible elements in the image]",
+        "[Each prompt should reference concrete details from the image]",
+        "[Use lesson vocabulary where applicable]",
+        "[Encourage description of colors, objects, people, atmosphere]",
+        "[Ask about spatial relationships in the image]",
+        "[Question about the story or context the image suggests]",
+        "[Prompt about emotional tone or mood of the image]",
+        "[Ask students to compare elements within the image]"
+      ],
+      "useful_vocabulary": ["[Generate vocabulary relevant to what's visible in the image]"],
+      "photographer": "[USE PHOTOGRAPHER NAME FROM IMAGE CONTEXT]",
+      "photographer_url": "[USE PHOTOGRAPHER URL FROM IMAGE CONTEXT]",
+      "teacher_tip": "[Generate a tip about encouraging descriptive language and referencing the provided image]"
+    }`;
+      } else if (type === 'answer-questions') {
+        return `    {
+      "type": "answer-questions",
+      "title": "Exercise ${index + 1}: Answer Questions About the Picture",
+      "icon": "fa-question-circle",
+      "time": 8,
+      "instructions": "[Generate instructions that ask students to answer questions based on what they see in the provided image]",
+      "image_url": "[USE THE IMAGE URL FROM IMAGE CONTEXT SECTION]",
+      "questions": [
+        {"question": "[Generate question about visible elements in the image]", "focus": "[focus area]"},
+        {"question": "[Generate question about colors, objects, or people in the image]", "focus": "[focus area]"},
+        {"question": "[Generate question about the setting or location shown]", "focus": "[focus area]"},
+        {"question": "[Generate question about actions or activities visible]", "focus": "[focus area]"},
+        {"question": "[Generate question about the atmosphere or mood]", "focus": "[focus area]"},
+        {"question": "[Generate question comparing elements in the image]", "focus": "[focus area]"},
+        {"question": "[Generate question about what might happen next]", "focus": "[focus area]"},
+        {"question": "[Generate question about student's personal reaction to the image]", "focus": "[focus area]"},
+        {"question": "[Generate question using lesson vocabulary related to image]", "focus": "[focus area]"},
+        {"question": "[Generate question about details students might notice]", "focus": "[focus area]"}
+      ],
+      "photographer": "[USE PHOTOGRAPHER NAME FROM IMAGE CONTEXT]",
+      "photographer_url": "[USE PHOTOGRAPHER URL FROM IMAGE CONTEXT]",
+      "teacher_tip": "[Generate a tip about encouraging students to reference specific visual details]"
+    }`;
+      }
+    }
+    
+    // For non-picture exercises, use standard function
     return exerciseFunction();
   });
   return `20. Generate a structured JSON worksheet with this EXACT format:

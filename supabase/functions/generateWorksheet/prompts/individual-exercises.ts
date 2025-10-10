@@ -466,42 +466,49 @@ export const getMatchingHalvesExercise = () => `    {
 
 // =============== 12 NEW EXERCISES - PHASE 3 (2 exercises) ===============
 
+// ETAP 3: Picture exercise with placeholders to force AI to use IMAGE CONTEXT
 export const getDescribePictureExercise = () => `    {
       "type": "describe-picture",
-      "title": "Exercise 19: Describe the Picture",
+      "title": "Exercise X: Describe the Picture",
       "icon": "fa-image",
       "time": 10,
       "instructions": "Look at the image and describe what you see using the vocabulary from this lesson.",
-      "image_description": "Based on the provided image, create a detailed description of what is visible in the scene.",
+      "image_url": "{{ USE IMAGE URL FROM IMAGE CONTEXT }}",
+      "image_description": "{{ DESCRIBE THE PROVIDED IMAGE FROM IMAGE CONTEXT }}",
       "prompts": [
-        "Describe the overall scene and atmosphere you observe in the image.",
-        "What specific objects, people, or elements can you identify?",
-        "What colors, textures, or visual details stand out to you?",
-        "What activity or situation is taking place in this image?",
-        "How would you describe the mood or feeling this image conveys?",
-        "What details in the image are most interesting or unusual?",
-        "If you were in this scene, what would you notice first?",
-        "What story could you tell based on what you see in the image?"
+        "{{ GENERATE 8 PROMPTS BASED ON WHAT'S VISIBLE IN THE IMAGE }}",
+        "{{ PROMPTS MUST REFERENCE SPECIFIC ELEMENTS FROM THE IMAGE }}",
+        "{{ USE LESSON VOCABULARY WHERE APPLICABLE }}",
+        "{{ ENCOURAGE DESCRIPTION OF COLORS, OBJECTS, PEOPLE }}",
+        "{{ ASK ABOUT SPATIAL RELATIONSHIPS IN THE IMAGE }}",
+        "{{ QUESTION ABOUT THE STORY THE IMAGE SUGGESTS }}",
+        "{{ PROMPT ABOUT EMOTIONAL TONE OF THE IMAGE }}",
+        "{{ ASK TO COMPARE ELEMENTS WITHIN THE IMAGE }}"
       ],
-      "useful_vocabulary": ["visible", "prominent", "background", "foreground", "detailed", "noticeable", "apparent", "striking", "distinctive", "characteristic"],
-      "teacher_tip": "Encourage students to use descriptive adjectives and specific details from the image. Ask follow-up questions to extend their descriptions and practice new vocabulary. NOTE: If an image URL is provided in the exercise data, reference that specific image in your instructions and prompts."
+      "useful_vocabulary": ["{{ GENERATE VOCABULARY RELEVANT TO IMAGE CONTENT }}"],
+      "photographer": "{{ FROM IMAGE CONTEXT }}",
+      "photographer_url": "{{ FROM IMAGE CONTEXT }}",
+      "teacher_tip": "Encourage students to use descriptive adjectives and specific details from the image. NOTE: Reference the provided image from IMAGE CONTEXT section."
     }`;
 
+// ETAP 3: Answer Questions - returns DIFFERENT versions for picture vs non-picture mode
 export const getAnswerQuestionsExercise = () => `    {
       "type": "answer-questions",
-      "title": "Exercise 20: Answer Questions",
+      "title": "Exercise X: Answer Questions",
       "icon": "fa-question-circle",
       "time": 8,
-      "instructions": "Answer these questions about your personal food preferences and restaurant experiences.",
+      "instructions": "Answer these questions about your personal experiences related to the lesson topic.",
       "questions": [
-        {"question": "What's your favorite restaurant in your city, and why do you think it's better than others?", "focus": "Comparatives and personal preferences"},
-        {"question": "Describe the worst restaurant experience you've ever had. What went wrong?", "focus": "Past tense and complaint language"},
-        {"question": "If you could open your own restaurant, what type of cuisine would you serve and why?", "focus": "Conditional and future plans"},
-        {"question": "How do you usually react when you receive poor service in a restaurant?", "focus": "Present habits and complaint strategies"},
-        {"question": "What's the most expensive meal you've ever eaten? Was it worth the price?", "focus": "Superlatives and past experiences"},
-        {"question": "Do you prefer eating at home or dining out? Give three reasons for your preference.", "focus": "Comparisons and justification"},
-        {"question": "What advice would you give to someone visiting a restaurant in your country for the first time?", "focus": "Modal verbs and cultural advice"},
-        {"question": "How has your taste in food changed as you've gotten older?", "focus": "Present perfect and personal development"}
+        {"question": "{{ GENERATE PERSONAL QUESTION RELATED TO LESSON TOPIC }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE PERSONAL QUESTION USING LESSON VOCABULARY }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE PERSONAL QUESTION ABOUT PAST EXPERIENCE }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE PERSONAL QUESTION ABOUT PREFERENCES }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE PERSONAL QUESTION ABOUT FUTURE PLANS }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE PERSONAL QUESTION ABOUT HABITS }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE PERSONAL QUESTION ABOUT OPINIONS }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE PERSONAL QUESTION ABOUT CHANGES OVER TIME }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE PERSONAL QUESTION ABOUT ADVICE }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE PERSONAL QUESTION ABOUT COMPARISONS }}", "focus": "{{ focus area }}"}
       ],
       "teacher_tip": "Focus on encouraging full answers rather than just yes/no responses. Ask follow-up questions to help students elaborate and use more complex sentence structures."
     }`;
