@@ -466,7 +466,35 @@ export const getMatchingHalvesExercise = () => `    {
 
 // =============== 12 NEW EXERCISES - PHASE 3 (2 exercises) ===============
 
-export const getDescribePictureExercise = () => `    {
+export const getDescribePictureExercise = (hasPictureMode: boolean = false) => {
+  if (hasPictureMode) {
+    // Picture mode - use placeholders for AI to fill from IMAGE CONTEXT
+    return `    {
+      "type": "describe-picture",
+      "title": "Exercise X: Describe the Picture",
+      "icon": "fa-image",
+      "time": 10,
+      "instructions": "Look at the image and describe what you see. Use the vocabulary from this lesson to describe specific details visible in the provided image.",
+      "image_url": "{{ USE IMAGE URL FROM IMAGE CONTEXT }}",
+      "image_description": "{{ DESCRIBE WHAT IS VISIBLE IN THE PROVIDED IMAGE }}",
+      "prompts": [
+        "{{ GENERATE PROMPT 1 BASED ON VISIBLE ELEMENTS IN IMAGE }}",
+        "{{ GENERATE PROMPT 2 BASED ON VISIBLE ELEMENTS IN IMAGE }}",
+        "{{ GENERATE PROMPT 3 BASED ON VISIBLE ELEMENTS IN IMAGE }}",
+        "{{ GENERATE PROMPT 4 BASED ON VISIBLE ELEMENTS IN IMAGE }}",
+        "{{ GENERATE PROMPT 5 BASED ON VISIBLE ELEMENTS IN IMAGE }}",
+        "{{ GENERATE PROMPT 6 BASED ON VISIBLE ELEMENTS IN IMAGE }}",
+        "{{ GENERATE PROMPT 7 BASED ON VISIBLE ELEMENTS IN IMAGE }}",
+        "{{ GENERATE PROMPT 8 BASED ON VISIBLE ELEMENTS IN IMAGE }}"
+      ],
+      "useful_vocabulary": ["{{ VOCABULARY RELEVANT TO IMAGE CONTENT }}"],
+      "photographer": "{{ FROM IMAGE CONTEXT }}",
+      "photographer_url": "{{ FROM IMAGE CONTEXT }}",
+      "teacher_tip": "Encourage students to use descriptive adjectives and refer to specific details from the provided image. NOTE: All content must reference the actual image from IMAGE CONTEXT section."
+    }`;
+  } else {
+    // Non-picture mode - generic example
+    return `    {
       "type": "describe-picture",
       "title": "Exercise 19: Describe the Picture",
       "icon": "fa-image",
@@ -486,8 +514,38 @@ export const getDescribePictureExercise = () => `    {
       "useful_vocabulary": ["crowded", "busy", "elegant", "casual", "appetizing", "professional", "satisfied", "enjoying", "chatting", "dining", "serving", "preparing"],
       "teacher_tip": "Encourage students to use comparative and superlative forms when describing. Ask follow-up questions to extend their descriptions and practice new vocabulary."
     }`;
+  }
+};
 
-export const getAnswerQuestionsExercise = () => `    {
+export const getAnswerQuestionsExercise = (hasPictureMode: boolean = false) => {
+  if (hasPictureMode) {
+    // Picture mode - use placeholders for AI to fill from IMAGE CONTEXT
+    return `    {
+      "type": "answer-questions",
+      "title": "Exercise X: Answer Questions About the Picture",
+      "icon": "fa-question-circle",
+      "time": 8,
+      "instructions": "Look at the image and answer these questions. Reference what you can see in the picture.",
+      "image_url": "{{ USE IMAGE URL FROM IMAGE CONTEXT }}",
+      "questions": [
+        {"question": "{{ GENERATE QUESTION 1 ABOUT VISIBLE ELEMENTS IN IMAGE }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE QUESTION 2 ABOUT VISIBLE ELEMENTS IN IMAGE }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE QUESTION 3 ABOUT VISIBLE ELEMENTS IN IMAGE }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE QUESTION 4 ABOUT VISIBLE ELEMENTS IN IMAGE }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE QUESTION 5 ABOUT VISIBLE ELEMENTS IN IMAGE }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE QUESTION 6 ABOUT VISIBLE ELEMENTS IN IMAGE }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE QUESTION 7 ABOUT VISIBLE ELEMENTS IN IMAGE }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE QUESTION 8 ABOUT VISIBLE ELEMENTS IN IMAGE }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE QUESTION 9 ABOUT VISIBLE ELEMENTS IN IMAGE }}", "focus": "{{ focus area }}"},
+        {"question": "{{ GENERATE QUESTION 10 ABOUT VISIBLE ELEMENTS IN IMAGE }}", "focus": "{{ focus area }}"} 
+      ],
+      "photographer": "{{ FROM IMAGE CONTEXT }}",
+      "photographer_url": "{{ FROM IMAGE CONTEXT }}",
+      "teacher_tip": "Encourage students to refer directly to specific visual details in the picture. All questions should be about what is visible in the provided image."
+    }`;
+  } else {
+    // Non-picture mode - generic personal questions
+    return `    {
       "type": "answer-questions",
       "title": "Exercise 20: Answer Questions",
       "icon": "fa-question-circle",
@@ -505,6 +563,8 @@ export const getAnswerQuestionsExercise = () => `    {
       ],
       "teacher_tip": "Focus on encouraging full answers rather than just yes/no responses. Ask follow-up questions to help students elaborate and use more complex sentence structures."
     }`;
+  }
+};
 
 export const getVocabularySheet = () => `  "vocabulary_sheet": [
     {"term": "Appetizer", "meaning": "A small dish served before the main meal to stimulate the appetite."},

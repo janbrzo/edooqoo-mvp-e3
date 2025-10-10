@@ -130,16 +130,19 @@ interface ExerciseSelectorProps {
   selectedExercises: string[];
   onChange: (exercises: string[]) => void;
   selectionMode: ExerciseSelectionMode;
+  selectedMediaTypes?: string[];
+  onMediaTypesChange?: (mediaTypes: string[]) => void;
 }
 export default function ExerciseSelector({
   lessonTime,
   selectedExercises,
   onChange,
-  selectionMode
+  selectionMode,
+  selectedMediaTypes: externalSelectedMediaTypes = [],
+  onMediaTypesChange
 }: ExerciseSelectorProps) {
   const maxExercises = lessonTime === '45min' ? 6 : 8;
   const [showAllExercises, setShowAllExercises] = useState(false);
-  const [selectedMediaTypes, setSelectedMediaTypes] = useState<MediaType[]>([]);
 
   // Get default exercises for manual mode
   const manualDefaults = useMemo(() => lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN, [lessonTime]);
@@ -193,22 +196,55 @@ export default function ExerciseSelector({
     onChange(newSelection);
   }, [selectedExercises, maxExercises, onChange, selectionMode]);
   const handleMediaToggle = (mediaType: MediaType) => {
-    const newMediaTypes = selectedMediaTypes.includes(mediaType) ? selectedMediaTypes.filter(type => type !== mediaType) : [...selectedMediaTypes, mediaType];
-    setSelectedMediaTypes(newMediaTypes);
-    // TODO: This will be used for media-enhanced exercises in the future
+    const newMediaTypes = externalSelectedMediaTypes.includes(mediaType) 
+      ? externalSelectedMediaTypes.filter(type => type !== mediaType) 
+      : [...externalSelectedMediaTypes, mediaType];
+    
+    if (onMediaTypesChange) {
+      onMediaTypesChange(newMediaTypes);
+    }
+    
+    console.log('📸 [EXERCISE-SELECTOR] Media types changed:', newMediaTypes);
   };
   return <div className="space-y-4">
       {/* Media Enhanced Options */}
       <div>
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Media Enhanced</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          {MEDIA_ENHANCED_OPTIONS.map(media => <button key={media.id} type="button" disabled className="p-2 rounded-lg border-2 border-gray-200 bg-gray-100 text-left opacity-60 cursor-not-allowed">
-               <div className="flex items-center space-x-2 mb-1">
-                 <span className="text-lg">{media.icon}</span>
-                 <span className="font-medium text-xs text-gray-500">{media.label}</span>
-                 <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
-               </div>
-             </button>)}
+          {MEDIA_ENHANCED_OPTIONS.map(media => {
+            const isSelected = externalSelectedMediaTypes.includes(media.id);
+            const isPictureEnabled = media.id === 'picture';
+            const isDisabled = !isPictureEnabled;
+            
+            return (
+              <button 
+                key={media.id} 
+                type="button" 
+                disabled={isDisabled}
+                onClick={() => !isDisabled && handleMediaToggle(media.id as MediaType)}
+                className={`p-2 rounded-lg border-2 transition-all ${
+                  isDisabled
+                    ? 'border-gray-200 bg-gray-100 opacity-60 cursor-not-allowed'
+                    : isSelected
+                    ? 'border-worksheet-purple bg-worksheet-purpleLight cursor-pointer hover:bg-worksheet-purple hover:text-white'
+                    : 'border-gray-200 bg-white cursor-pointer hover:border-worksheet-purple hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-lg">{media.icon}</span>
+                  <span className={`font-medium text-xs ${isDisabled ? 'text-gray-500' : isSelected ? 'text-worksheet-purple' : 'text-gray-700'}`}>
+                    {media.label}
+                  </span>
+                  {isDisabled && (
+                    <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Coming Soon</span>
+                  )}
+                  {isSelected && !isDisabled && (
+                    <span className="text-xs bg-worksheet-purple text-white px-2 py-1 rounded ml-auto">Selected</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 

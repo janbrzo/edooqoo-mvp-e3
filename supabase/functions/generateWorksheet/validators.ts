@@ -76,6 +76,13 @@ export function validateExercise(exercise: any): void {
     case 'matching-halves':
       validateBasicExerciseStructure(exercise);
       break;
+    // Picture exercises
+    case 'describe-picture':
+      validateDescribePictureExercise(exercise);
+      break;
+    case 'answer-questions':
+      validateAnswerQuestionsExercise(exercise);
+      break;
     default:
       console.warn(`🔧 [VALIDATOR] Unknown exercise type: ${exercise.type} - allowing with basic validation`);
       validateBasicExerciseStructure(exercise);
@@ -274,5 +281,34 @@ function validateBasicExerciseStructure(exercise: any): void {
   
   if (!exercise.icon) {
     exercise.icon = 'fa-tasks'; // Set default icon
+  }
+}
+
+// Picture exercise validators
+function validateDescribePictureExercise(exercise: any): void {
+  // Lenient validation for picture exercises
+  if (!exercise.prompts || !Array.isArray(exercise.prompts) || exercise.prompts.length < 5) {
+    console.warn('Describe-picture exercise should have at least 5 prompts');
+  }
+  
+  // Check for image_url (may contain placeholder for AI)
+  if (!exercise.image_url && !exercise.image_description) {
+    console.warn('Describe-picture exercise missing image_url or image_description');
+  }
+}
+
+function validateAnswerQuestionsExercise(exercise: any): void {
+  // Check if it's picture mode or personal questions mode
+  const isPictureMode = !!exercise.image_url;
+  
+  if (!exercise.questions || !Array.isArray(exercise.questions) || exercise.questions.length < 5) {
+    throw new Error('Answer-questions exercise must have at least 5 questions');
+  }
+  
+  if (isPictureMode) {
+    // Picture mode - check for image_url
+    if (!exercise.image_url) {
+      console.warn('Picture-mode answer-questions exercise missing image_url');
+    }
   }
 }

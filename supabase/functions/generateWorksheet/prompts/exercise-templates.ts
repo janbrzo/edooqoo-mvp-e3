@@ -9,7 +9,13 @@ import {
   getVocabularySheet 
 } from './individual-exercises.ts';
 
-export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: string | null, exerciseCount: number = 8, selectedExercises?: string[]) => {
+export const getExerciseTemplates = (
+  hasGrammarFocus: boolean, 
+  grammarFocus: string | null, 
+  exerciseCount: number = 8, 
+  selectedExercises?: string[],
+  hasSelectedImage: boolean = false
+) => {
   let finalExercises: string[];
   
   // Use custom selected exercises if provided, otherwise use default order
@@ -27,6 +33,10 @@ export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: str
   // Generate exercise JSON fragments
   const exerciseFragments = finalExercises.map(type => {
     const exerciseFunction = exerciseFunctions[type as keyof typeof exerciseFunctions];
+    // Pass hasSelectedImage for picture exercises
+    if (type === 'describe-picture' || type === 'answer-questions') {
+      return (exerciseFunction as any)(hasSelectedImage);
+    }
     return exerciseFunction();
   });
   return `20. Generate a structured JSON worksheet with this EXACT format:

@@ -23,6 +23,7 @@ import ExerciseSentenceTransformation from "./ExerciseSentenceTransformation";
 import ExerciseNegativePrefixes from "./ExerciseNegativePrefixes";
 import ExerciseWordOrder from "./ExerciseWordOrder";
 import ExerciseSynonymsAntonyms from "./ExerciseSynonymsAntonyms";
+import { MediaDisplay } from "./MediaDisplay";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Loader2, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -209,6 +210,12 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           
           <CollapsibleContent className="animate-accordion-down data-[state=closed]:animate-accordion-up">
             <div className="p-5 pt-0">
+        
+        {/* Media Display - Show image for picture exercises */}
+        {(exercise.type === 'describe-picture' || (exercise.type === 'answer-questions' && exercise.image_url)) && (
+          <MediaDisplay exercise={exercise} />
+        )}
+        
         <ExerciseContent
           instructions={exercise.instructions}
           isEditing={isEditing}

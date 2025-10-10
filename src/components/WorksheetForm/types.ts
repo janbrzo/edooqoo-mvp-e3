@@ -9,6 +9,14 @@ export type Tile = {
   title: string;
 };
 
+export interface SelectedImage {
+  id: string;
+  url: string;
+  description: string;
+  photographer: string;
+  photographerUrl: string;
+}
+
 export interface FormData {
   lessonTime: LessonTime;
   lessonTopic: string;
@@ -23,6 +31,7 @@ export interface FormData {
   selectedExercises?: string[]; // Optional array of exercise types
   selectionMode?: ExerciseSelectionMode; // New field for future use
   selectedMediaTypes?: MediaType[]; // New field for future media integration
+  selectedImage?: SelectedImage; // Selected image for picture exercises
 }
 
 export interface WorksheetData {

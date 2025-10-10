@@ -33,8 +33,18 @@ serve(async (req) => {
   const generationStartTime = Date.now();
 
   try {
-    const { prompt, formData, userId, studentId, isRegeneration } = await req.json();
+    const { prompt, formData, userId, studentId, isRegeneration, selectedImage } = await req.json();
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || req.headers.get('x-real-ip') || 'unknown';
+    
+    console.log('📸 [GENERATE-WORKSHEET] Received selectedImage:', selectedImage ? 'YES' : 'NO');
+    if (selectedImage) {
+      console.log('📸 [GENERATE-WORKSHEET] Image details:', {
+        hasId: !!selectedImage.id,
+        hasUrl: !!selectedImage.url,
+        hasDescription: !!selectedImage.description,
+        hasPhotographer: !!selectedImage.photographer
+      });
+    }
     
     // Input validation
     const promptValidation = validatePrompt(prompt);
@@ -112,8 +122,15 @@ serve(async (req) => {
       : selectedExercises;
     const exerciseTypes = getExerciseTypesForCount(exerciseCount, effectiveExercises);
     
-    // CREATE SYSTEM MESSAGE using modular prompt structure with correct exerciseCount and selectedExercises
-    const systemMessage = composeSystemMessage(hasGrammarFocus, grammarFocus, formData, exerciseCount, effectiveExercises);
+    // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage
+    const systemMessage = composeSystemMessage(
+      hasGrammarFocus, 
+      grammarFocus, 
+      formData, 
+      exerciseCount, 
+      effectiveExercises,
+      selectedImage || null
+    );
 
     // HEARTBEAT LOG: Before OpenAI API call
     const openaiStartTime = Date.now();
@@ -243,7 +260,8 @@ serve(async (req) => {
             title: worksheetData.title?.substring(0, 255) || 'Generated Worksheet', // Limit title length
             generation_time_seconds: generationTimeSeconds,
             country: geoData.country || null,
-            city: geoData.city || null
+            city: geoData.city || null,
+            selected_image: selectedImage || null  // CRITICAL: Store as JSONB directly, NO JSON.stringify()
           })
           .select('id, created_at, title');
 
