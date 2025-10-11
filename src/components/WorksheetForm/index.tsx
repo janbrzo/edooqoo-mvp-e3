@@ -139,7 +139,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
     submitForm();
   };
 
-  const submitForm = () => {
+  const submitForm = (imageToSubmit?: any) => {
 
     // Auto-complete exercises if not enough are selected in manual mode
     const maxExercises = lessonTime === '45min' ? 6 : 8;
@@ -203,7 +203,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined,
       selectedExercises: finalExercises,
       selectedMediaTypes,
-      selectedImage
+      selectedImage: imageToSubmit || selectedImage
     };
 
     // Refresh onboarding progress after successful worksheet generation
@@ -269,8 +269,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
         onImageSelect={(image) => {
           setSelectedImage(image);
           setShowMediaModal(false);
-          // After image is selected, submit the form
-          setTimeout(() => submitForm(), 100);
+          submitForm(image);
         }}
         searchQuery={lessonTopic || 'education'}
       />
