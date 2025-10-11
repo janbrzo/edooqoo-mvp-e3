@@ -95,10 +95,14 @@ serve(async (req) => {
     const selectedImage = formData?.selectedImage || null;
     const hasPictureMedia = selectedImage !== null;
     
-    console.log('📸 Picture mode check:', { 
+    // ETAP 5: Enhanced logging for picture mode debugging
+    console.log('📸 Picture mode detailed check:', { 
       hasPictureMedia, 
       hasImageUrl: !!selectedImage?.url,
-      imageDescription: selectedImage?.description?.substring(0, 50) 
+      imageId: selectedImage?.id,
+      photographer: selectedImage?.photographer,
+      imageDescription: selectedImage?.description?.substring(0, 100),
+      selectedImageFullObject: selectedImage ? JSON.stringify(selectedImage).substring(0, 200) : null
     });
 
     // Determine exercise count from lesson duration  
@@ -255,7 +259,7 @@ serve(async (req) => {
             teacher_id: userId || null, // Add teacher_id for authenticated users
             teacher_email: teacherEmail, // Add teacher_email
             student_id: studentId || null, // Add student_id if provided
-            selected_image: selectedImage ? JSON.stringify(selectedImage) : null, // Store selected image
+            selected_image: selectedImage || null, // ETAP 4: Store selected image directly as JSONB (no JSON.stringify)
             ip_address: ip,
             status: 'created',
             title: worksheetData.title?.substring(0, 255) || 'Generated Worksheet', // Limit title length

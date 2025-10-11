@@ -9,7 +9,7 @@ import {
   getVocabularySheet 
 } from './individual-exercises.ts';
 
-export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: string | null, exerciseCount: number = 8, selectedExercises?: string[]) => {
+export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: string | null, exerciseCount: number = 8, selectedExercises?: string[], hasSelectedImage?: boolean) => {
   let finalExercises: string[];
   
   // Use custom selected exercises if provided, otherwise use default order
@@ -24,9 +24,22 @@ export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: str
     finalExercises = exerciseOrder.slice(0, exerciseCount);
   }
   
-  // Generate exercise JSON fragments
+  // ETAP 2: Generate exercise JSON fragments with picture mode support
   const exerciseFragments = finalExercises.map(type => {
-    const exerciseFunction = exerciseFunctions[type as keyof typeof exerciseFunctions];
+    // Picture-compatible exercises that have -picture versions
+    const pictureCompatible = ['multiple-choice', 'true-false', 'answer-questions'];
+    
+    // If picture mode is active and exercise is compatible, use picture version
+    let actualType = type;
+    if (hasSelectedImage && pictureCompatible.includes(type)) {
+      actualType = `${type}-picture`;
+    }
+    
+    const exerciseFunction = exerciseFunctions[actualType as keyof typeof exerciseFunctions];
+    if (!exerciseFunction) {
+      // Fallback to standard version if picture version doesn't exist
+      return exerciseFunctions[type as keyof typeof exerciseFunctions]();
+    }
     return exerciseFunction();
   });
   return `20. Generate a structured JSON worksheet with this EXACT format:

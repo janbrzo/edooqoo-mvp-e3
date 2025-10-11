@@ -21,7 +21,8 @@ export async function generateWorksheetAPI(prompt: WorksheetFormData & { fullPro
       lessonGoal: prompt.lessonGoal,
       teachingPreferences: prompt.teachingPreferences,
       englishLevel: prompt.englishLevel || null,
-      lessonTime: prompt.lessonTime
+      lessonTime: prompt.lessonTime,
+      selectedImage: prompt.selectedImage || null  // ETAP 1: Przekazujemy selectedImage do backendu
     };
     
     console.log('Sending formatted prompt to API:', formattedPrompt);
