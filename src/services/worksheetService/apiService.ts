@@ -11,7 +11,6 @@ const GENERATE_WORKSHEET_URL = 'https://bvfrkzdlklyvnhlpleck.supabase.co/functio
 export async function generateWorksheetAPI(prompt: WorksheetFormData & { fullPrompt?: string, formDataForStorage?: any, studentId?: string }, userId: string) {
   try {
     console.log('Generating worksheet with prompt:', prompt);
-    console.log('Selected image:', prompt.selectedImage);
     
     // Use the full prompt if provided, otherwise create legacy format
     const formattedPrompt = prompt.fullPrompt || `${prompt.lessonTopic} - ${prompt.lessonGoal}. Teaching preferences: ${prompt.teachingPreferences}${prompt.englishLevel ? `. English level: ${prompt.englishLevel}` : ''}. Lesson duration: ${prompt.lessonTime}.`;
@@ -37,8 +36,7 @@ export async function generateWorksheetAPI(prompt: WorksheetFormData & { fullPro
         prompt: formattedPrompt,  // This will be saved as the full prompt in database
         formData: formData,
         userId,
-        studentId: prompt.studentId,  // Add studentId to the request
-        selectedImage: prompt.selectedImage || null  // Add selectedImage to payload
+        studentId: prompt.studentId  // Add studentId to the request
       })
     });
 

@@ -76,7 +76,6 @@ export function validateExercise(exercise: any): void {
     case 'matching-halves':
       validateBasicExerciseStructure(exercise);
       break;
-    // Picture exercises
     case 'describe-picture':
       validateDescribePictureExercise(exercise);
       break;
@@ -270,6 +269,29 @@ function validateNegativePrefixesExercise(exercise: any): void {
   }
 }
 
+function validateDescribePictureExercise(exercise: any): void {
+  if (!exercise.instructions && !exercise.description) {
+    throw new Error('Describe Picture exercise must have instructions or description');
+  }
+  
+  // Optional: Check for image_url (but might not be present in all cases)
+  if (!exercise.image_url) {
+    console.warn('Describe Picture exercise missing image_url');
+  }
+}
+
+function validateAnswerQuestionsExercise(exercise: any): void {
+  if (!exercise.questions || !Array.isArray(exercise.questions) || exercise.questions.length < 3) {
+    throw new Error('Answer Questions exercise must have at least 3 questions');
+  }
+  
+  for (const question of exercise.questions) {
+    if (!question.question && !question.text) {
+      throw new Error('Each question must have question or text property');
+    }
+  }
+}
+
 /**
  * FALLBACK: Basic validation for unknown or new exercise types
  * This ensures any exercise can be saved even if it doesn't have a specific validator
@@ -281,34 +303,5 @@ function validateBasicExerciseStructure(exercise: any): void {
   
   if (!exercise.icon) {
     exercise.icon = 'fa-tasks'; // Set default icon
-  }
-}
-
-// Picture exercise validators
-function validateDescribePictureExercise(exercise: any): void {
-  // Lenient validation for picture exercises
-  if (!exercise.prompts || !Array.isArray(exercise.prompts) || exercise.prompts.length < 5) {
-    console.warn('Describe-picture exercise should have at least 5 prompts');
-  }
-  
-  // Check for image_url (may contain placeholder for AI)
-  if (!exercise.image_url && !exercise.image_description) {
-    console.warn('Describe-picture exercise missing image_url or image_description');
-  }
-}
-
-function validateAnswerQuestionsExercise(exercise: any): void {
-  // Check if it's picture mode or personal questions mode
-  const isPictureMode = !!exercise.image_url;
-  
-  if (!exercise.questions || !Array.isArray(exercise.questions) || exercise.questions.length < 5) {
-    throw new Error('Answer-questions exercise must have at least 5 questions');
-  }
-  
-  if (isPictureMode) {
-    // Picture mode - check for image_url
-    if (!exercise.image_url) {
-      console.warn('Picture-mode answer-questions exercise missing image_url');
-    }
   }
 }

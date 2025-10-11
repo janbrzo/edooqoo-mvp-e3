@@ -33,18 +33,8 @@ serve(async (req) => {
   const generationStartTime = Date.now();
 
   try {
-    const { prompt, formData, userId, studentId, isRegeneration, selectedImage } = await req.json();
+    const { prompt, formData, userId, studentId, isRegeneration } = await req.json();
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || req.headers.get('x-real-ip') || 'unknown';
-    
-    console.log('📸 [GENERATE-WORKSHEET] Received selectedImage:', selectedImage ? 'YES' : 'NO');
-    if (selectedImage) {
-      console.log('📸 [GENERATE-WORKSHEET] Image details:', {
-        hasId: !!selectedImage.id,
-        hasUrl: !!selectedImage.url,
-        hasDescription: !!selectedImage.description,
-        hasPhotographer: !!selectedImage.photographer
-      });
-    }
     
     // Input validation
     const promptValidation = validatePrompt(prompt);
@@ -101,6 +91,21 @@ serve(async (req) => {
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
 
+    // Get selected image from formData if available
+    const selectedImage = formData?.selectedImage || null;
+    const hasPictureMedia = selectedImage !== null;
+    
+    // ETAP 5: Enhanced logging for picture mode
+    console.log('📸 Picture mode detailed check:', { 
+      hasPictureMedia, 
+      hasImageUrl: !!selectedImage?.url,
+      imageDescription: selectedImage?.description?.substring(0, 50),
+      imageId: selectedImage?.id,
+      photographer: selectedImage?.photographer,
+      photographerUrl: selectedImage?.photographerUrl,
+      fullImageObject: selectedImage ? 'present' : 'missing'
+    });
+
     // Determine exercise count from lesson duration  
     let exerciseCount = 8; // Default for 60+ minutes
     
@@ -129,7 +134,7 @@ serve(async (req) => {
       formData, 
       exerciseCount, 
       effectiveExercises,
-      selectedImage || null
+      selectedImage
     );
 
     // HEARTBEAT LOG: Before OpenAI API call
@@ -255,13 +260,13 @@ serve(async (req) => {
             teacher_id: userId || null, // Add teacher_id for authenticated users
             teacher_email: teacherEmail, // Add teacher_email
             student_id: studentId || null, // Add student_id if provided
+            selected_image: selectedImage || null, // ETAP 1: Store as JSONB directly (no JSON.stringify)
             ip_address: ip,
             status: 'created',
             title: worksheetData.title?.substring(0, 255) || 'Generated Worksheet', // Limit title length
             generation_time_seconds: generationTimeSeconds,
             country: geoData.country || null,
-            city: geoData.city || null,
-            selected_image: selectedImage || null  // CRITICAL: Store as JSONB directly, NO JSON.stringify()
+            city: geoData.city || null
           })
           .select('id, created_at, title');
 

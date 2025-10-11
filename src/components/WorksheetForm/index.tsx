@@ -15,9 +15,19 @@ import { useStudents } from "@/hooks/useStudents";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shuffle, Brain, MousePointer, ChevronDown } from "lucide-react";
-import { MediaSelectionModal, SelectedImage } from "@/components/MediaSelectionModal";
+import MediaSelectionModal from "@/components/MediaSelectionModal";
+import type { MediaType } from './types';
 
 export type { FormData };
+
+interface ImageSuggestion {
+  id: string;
+  url: string;
+  thumbnail: string;
+  description: string;
+  photographer: string;
+  photographerUrl: string;
+}
 
 interface ExtendedWorksheetFormProps extends WorksheetFormProps {
   onStudentChange?: (studentId: string | null) => void;
@@ -43,18 +53,15 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   
   const [selectedExercises, setSelectedExercises] = useState<string[]>(getInitialExercises());
   const [selectionMode, setSelectionMode] = useState<ExerciseSelectionMode>('manual');
-  const [selectedMediaTypes, setSelectedMediaTypes] = useState<string[]>([]);
+  const [selectedMediaTypes, setSelectedMediaTypes] = useState<MediaType[]>([]);
+  const [selectedImage, setSelectedImage] = useState<any>(null);
+  const [showMediaModal, setShowMediaModal] = useState(false);
 
   const [currentPlaceholders, setCurrentPlaceholders] = useState<PlaceholderSet>(getRandomPlaceholderSet());
   const [currentSuggestions, setCurrentSuggestions] = useState<SuggestionSet[]>([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [activeTab, setActiveTab] = useState<'exercises' | 'advanced' | null>(null);
   const [showMoreFields, setShowMoreFields] = useState(false);
-
-  // Media Selection Modal state
-  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
-  const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
 
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -121,6 +128,19 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       return;
     }
 
+    // Check if Picture mode is enabled and no image is selected
+    if (selectedMediaTypes.includes('picture') && !selectedImage) {
+      // Open media selection modal
+      setShowMediaModal(true);
+      return;
+    }
+
+    // Proceed with normal form submission
+    submitForm();
+  };
+
+  const submitForm = () => {
+
     // Auto-complete exercises if not enough are selected in manual mode
     const maxExercises = lessonTime === '45min' ? 6 : 8;
     let finalExercises = [...selectedExercises];
@@ -172,7 +192,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       }
     });
 
-    const formData: FormData = {
+    const formData = {
       lessonTime,
       lessonTopic,
       lessonGoal,
@@ -182,19 +202,9 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       languageStyle,
       studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined,
       selectedExercises: finalExercises,
-      selectedImage: selectedImage || undefined
+      selectedMediaTypes,
+      selectedImage
     };
-
-    // Check if Picture media type is selected
-    if (selectedMediaTypes.includes('picture')) {
-      // If Picture is selected and no image chosen yet, open modal
-      if (!selectedImage) {
-        console.log('📸 [WORKSHEET-FORM] Picture selected - opening MediaSelectionModal');
-        setPendingFormData(formData);
-        setIsMediaModalOpen(true);
-        return; // Stop here, don't submit yet
-      }
-    }
 
     // Refresh onboarding progress after successful worksheet generation
     console.log('[WorksheetForm] Triggering onboarding refresh after worksheet generation');
@@ -203,29 +213,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
     setTimeout(refreshProgress, 2000);
     
     onSubmit(formData);
-  };
-
-  const handleImageSelect = (image: SelectedImage) => {
-    console.log('📸 [WORKSHEET-FORM] Image selected:', image);
-    setSelectedImage(image);
-    
-    // If we have pending form data, submit it now with the selected image
-    if (pendingFormData) {
-      const formDataWithImage: FormData = {
-        ...pendingFormData,
-        selectedImage: image
-      };
-      
-      console.log('📸 [WORKSHEET-FORM] Submitting with image:', formDataWithImage);
-      
-      // Refresh onboarding progress
-      refreshProgress();
-      setTimeout(refreshProgress, 1000);
-      setTimeout(refreshProgress, 2000);
-      
-      onSubmit(formDataWithImage);
-      setPendingFormData(null);
-    }
   };
 
   const refreshSuggestions = () => {
@@ -275,6 +262,19 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
 
   return (
     <div className={`w-full ${isMobile ? 'py-2' : 'py-[24px]'}`}>
+      {/* Media Selection Modal */}
+      <MediaSelectionModal
+        isOpen={showMediaModal}
+        onClose={() => setShowMediaModal(false)}
+        onImageSelect={(image) => {
+          setSelectedImage(image);
+          setShowMediaModal(false);
+          // After image is selected, submit the form
+          setTimeout(() => submitForm(), 100);
+        }}
+        searchQuery={lessonTopic || 'education'}
+      />
+      
       <Card className="bg-white shadow-sm">
         <CardContent className={`${isMobile ? 'p-3' : 'p-8'}`}>
           <form onSubmit={handleSubmit}>
@@ -601,17 +601,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
           </form>
         </CardContent>
       </Card>
-
-      {/* Media Selection Modal */}
-      <MediaSelectionModal
-        isOpen={isMediaModalOpen}
-        onClose={() => {
-          setIsMediaModalOpen(false);
-          setPendingFormData(null);
-        }}
-        onSelectImage={handleImageSelect}
-        lessonTopic={lessonTopic}
-      />
     </div>
   );
 }

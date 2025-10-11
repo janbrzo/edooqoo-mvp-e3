@@ -1,53 +1,67 @@
 import React from 'react';
+import { ExternalLink } from 'lucide-react';
 
 interface MediaDisplayProps {
-  exercise: any;
+  imageUrl: string;
+  photographer?: string;
+  photographerUrl?: string;
+  description?: string;
 }
 
-export const MediaDisplay: React.FC<MediaDisplayProps> = ({ exercise }) => {
-  const imageUrl = exercise.image_url || exercise.imageUrl;
-  const photographer = exercise.photographer;
-  const photographerUrl = exercise.photographer_url || exercise.photographerUrl;
-
-  // Don't render if no image URL
+export default function MediaDisplay({
+  imageUrl,
+  photographer,
+  photographerUrl,
+  description
+}: MediaDisplayProps) {
+  // ETAP 6: Don't render anything if no image URL
   if (!imageUrl) {
     return null;
   }
-
+  
   return (
-    <div className="my-4 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-      <img 
-        src={imageUrl} 
-        alt={exercise.image_description || exercise.imageDescription || 'Exercise image'} 
-        className="w-full h-auto"
-        onError={(e) => {
-          // Hide image if fails to load
-          e.currentTarget.style.display = 'none';
-          // Also hide the parent container
-          const parent = e.currentTarget.closest('.my-4');
-          if (parent) {
-            (parent as HTMLElement).style.display = 'none';
-          }
-        }}
-      />
+    <div className="my-6 space-y-3">
+      <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm">
+        <img
+          src={imageUrl}
+          alt={description || 'Lesson image'}
+          className="w-full h-auto object-cover"
+          onError={(e) => {
+            // Hide image if it fails to load
+            e.currentTarget.style.display = 'none';
+          }}
+        />
+      </div>
+      
+      {/* Unsplash attribution */}
       {photographer && (
-        <div className="bg-gray-50 px-3 py-2 text-sm text-gray-600">
-          Photo by{' '}
+        <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+          <span>Photo by</span>
           {photographerUrl ? (
-            <a 
-              href={photographerUrl} 
-              target="_blank" 
+            <a
+              href={photographerUrl}
+              target="_blank"
               rel="noopener noreferrer"
-              className="text-worksheet-purple hover:underline font-medium"
+              className="font-medium text-worksheet-purple hover:underline inline-flex items-center gap-1"
             >
               {photographer}
+              <ExternalLink className="h-3 w-3" />
             </a>
           ) : (
             <span className="font-medium">{photographer}</span>
-          )}{' '}
-          on Unsplash
+          )}
+          <span>on</span>
+          <a
+            href="https://unsplash.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-worksheet-purple hover:underline inline-flex items-center gap-1"
+          >
+            Unsplash
+            <ExternalLink className="h-3 w-3" />
+          </a>
         </div>
       )}
     </div>
   );
-};
+}

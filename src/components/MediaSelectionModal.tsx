@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, Image as ImageIcon } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { supabase } from '@/integrations/supabase/client';
 
-export interface SelectedImage {
+interface ImageSuggestion {
   id: string;
   url: string;
+  thumbnail: string;
   description: string;
   photographer: string;
   photographerUrl: string;
@@ -15,82 +16,38 @@ export interface SelectedImage {
 interface MediaSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectImage: (image: SelectedImage) => void;
-  lessonTopic: string;
+  onImageSelect: (image: ImageSuggestion) => void;
+  searchQuery: string;
 }
 
-export const MediaSelectionModal: React.FC<MediaSelectionModalProps> = ({
+export default function MediaSelectionModal({
   isOpen,
   onClose,
-  onSelectImage,
-  lessonTopic
-}) => {
-  const [images, setImages] = useState<SelectedImage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  onImageSelect,
+  searchQuery
+}: MediaSelectionModalProps) {
+  const [images, setImages] = useState<ImageSuggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState(30);
-  const [error, setError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<ImageSuggestion | null>(null);
 
-  // Fetch images from Unsplash when modal opens
+  // Fetch images when modal opens
   useEffect(() => {
-    if (!isOpen) return;
+    if (isOpen && searchQuery) {
+      fetchImages();
+    }
+  }, [isOpen, searchQuery]);
 
-    const fetchImages = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        const UNSPLASH_ACCESS_KEY = 'bM02r2IEeq0vNJKEyQ5G4zT22yLMYTxXr-gqFG2Qhok';
-        
-        // Use lessonTopic as search query, fallback to "education"
-        const searchQuery = lessonTopic || 'education';
-        
-        const response = await fetch(
-          `https://api.unsplash.com/photos/random?query=${encodeURIComponent(searchQuery)}&count=4&orientation=landscape`,
-          {
-            headers: {
-              Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`
-            }
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch images from Unsplash');
-        }
-
-        const data = await response.json();
-        
-        const formattedImages: SelectedImage[] = data.map((img: any) => ({
-          id: img.id,
-          url: img.urls.regular,
-          description: img.description || img.alt_description || searchQuery,
-          photographer: img.user.name,
-          photographerUrl: img.user.links.html
-        }));
-
-        setImages(formattedImages);
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Error fetching images:', err);
-        setError('Failed to load images. Please try again.');
-        setIsLoading(false);
-      }
-    };
-
-    fetchImages();
-  }, [isOpen, lessonTopic]);
-
-  // Countdown timer with auto-select
+  // Countdown timer for auto-selection
   useEffect(() => {
-    if (!isOpen || isLoading || images.length === 0) return;
+    if (!isOpen || images.length === 0) return;
 
     const timer = setInterval(() => {
-      setCountdown(prev => {
+      setCountdown((prev) => {
         if (prev <= 1) {
-          // Auto-select first image when countdown reaches 0
-          if (!selectedImageId && images.length > 0) {
-            handleImageSelect(images[0]);
-          }
+          // Auto-select random image when countdown reaches 0
+          const randomImage = images[Math.floor(Math.random() * images.length)];
+          handleImageClick(randomImage);
           return 0;
         }
         return prev - 1;
@@ -98,107 +55,93 @@ export const MediaSelectionModal: React.FC<MediaSelectionModalProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isOpen, isLoading, images, selectedImageId]);
+  }, [isOpen, images]);
 
-  // Reset state when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setImages([]);
-      setIsLoading(true);
-      setSelectedImageId(null);
-      setCountdown(30);
-      setError(null);
+  const fetchImages = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-media', {
+        body: { query: searchQuery, count: 4 }
+      });
+
+      if (error) throw error;
+
+      if (data?.images) {
+        setImages(data.images);
+        setCountdown(30); // Reset countdown
+      }
+    } catch (error) {
+      console.error('Error fetching images:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [isOpen]);
+  };
 
-  const handleImageSelect = (image: SelectedImage) => {
-    setSelectedImageId(image.id);
-    onSelectImage(image);
+  const handleImageClick = (image: ImageSuggestion) => {
+    setSelectedImage(image);
+    onImageSelect(image);
     onClose();
   };
 
-  const progressValue = ((30 - countdown) / 30) * 100;
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-violet-500 to-blue-500">
-            Select an Image for Your Worksheet
+          <DialogTitle className="text-2xl font-bold text-worksheet-purpleDark">
+            Select an Image for Your Lesson
           </DialogTitle>
-          <DialogDescription>
-            Choose an image that best matches your lesson topic: <span className="font-semibold text-foreground">"{lessonTopic}"</span>
+          <DialogDescription className="text-base">
+            Choose one of these images to enhance your picture-based exercises.
+            {countdown > 0 && ` Auto-selecting in ${countdown}s...`}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Countdown Progress Bar */}
-        {!isLoading && images.length > 0 && countdown > 0 && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Auto-selecting first image in:</span>
-              <span className="font-semibold text-foreground">{countdown}s</span>
-            </div>
-            <Progress value={progressValue} className="h-2" />
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-worksheet-purple" />
           </div>
-        )}
-
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <Loader2 className="w-12 h-12 animate-spin text-worksheet-purple" />
-            <p className="text-muted-foreground">Finding perfect images for your lesson...</p>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <ImageIcon className="w-12 h-12 text-destructive" />
-            <p className="text-destructive">{error}</p>
-            <Button onClick={() => window.location.reload()} variant="outline">
-              Try Again
-            </Button>
-          </div>
-        )}
-
-        {/* Images Grid */}
-        {!isLoading && !error && images.length > 0 && (
-          <div className="grid grid-cols-2 gap-4">
-            {images.map((image, index) => (
+        ) : (
+          <div className="grid grid-cols-2 gap-4 py-4">
+            {images.map((image) => (
               <button
                 key={image.id}
-                onClick={() => handleImageSelect(image)}
-                className="group relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-worksheet-purple transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-worksheet-purple focus:ring-offset-2"
+                onClick={() => handleImageClick(image)}
+                className="group relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-worksheet-purple transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-worksheet-purple"
               >
-                <div className="aspect-video relative">
-                  <img
-                    src={image.url}
-                    alt={image.description}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
-                    <span className="text-white font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      Select Image
-                    </span>
+                <img
+                  src={image.thumbnail}
+                  alt={image.description}
+                  className="w-full h-64 object-cover transition-transform duration-200 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end">
+                  <div className="p-4 text-white text-sm">
+                    <p className="font-medium">{image.description}</p>
+                    <p className="text-xs text-gray-300 mt-1">
+                      Photo by {image.photographer}
+                    </p>
                   </div>
                 </div>
-                <div className="p-3 bg-gray-50 group-hover:bg-worksheet-purpleLight transition-colors duration-300">
-                  <p className="text-xs text-gray-600 group-hover:text-gray-800 truncate">
-                    Photo by <span className="font-medium">{image.photographer}</span>
-                  </p>
+                <div className="absolute top-2 right-2 bg-white/90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <ImageIcon className="h-4 w-4 text-worksheet-purple" />
                 </div>
               </button>
             ))}
           </div>
         )}
 
-        {/* Helper Text */}
-        {!isLoading && !error && images.length > 0 && (
-          <p className="text-xs text-center text-muted-foreground mt-4">
-            Click on any image to use it in your worksheet exercises
-          </p>
+        {/* Countdown indicator */}
+        {!isLoading && images.length > 0 && countdown > 0 && (
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+            <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-worksheet-purple transition-all duration-1000 ease-linear"
+                style={{ width: `${(countdown / 30) * 100}%` }}
+              />
+            </div>
+            <span className="whitespace-nowrap font-medium">{countdown}s</span>
+          </div>
         )}
       </DialogContent>
     </Dialog>
   );
-};
+}

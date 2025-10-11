@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { updateWorksheet } from "@/services/worksheetService";
 import { useWorksheetTimes } from "@/hooks/useWorksheetTimes";
@@ -44,7 +44,6 @@ export default function WorksheetContent({
   onExpandAll,
   onCloseSidebar
 }: WorksheetContentProps) {
-  // State for controlling sidebar visibility
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Pass closeSidebar function to parent for toolbar usage
