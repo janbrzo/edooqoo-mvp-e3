@@ -104,6 +104,10 @@ serve(async (req) => {
       imageDescription: selectedImage?.description?.substring(0, 100),
       selectedImageFullObject: selectedImage ? JSON.stringify(selectedImage).substring(0, 200) : null
     });
+    
+    // ETAP 6: Log selectedExercises transformation for picture mode
+    const pictureCompatibleTypes = ['multiple-choice', 'true-false', 'answer-questions'];
+    const selectedExercisesPreliminary = formData?.selectedExercises;
 
     // Determine exercise count from lesson duration  
     let exerciseCount = 8; // Default for 60+ minutes
@@ -125,6 +129,14 @@ serve(async (req) => {
       ? [formData.targetExerciseType] 
       : selectedExercises;
     const exerciseTypes = getExerciseTypesForCount(exerciseCount, effectiveExercises);
+    
+    // ETAP 6: Log transformation details for picture mode
+    console.log('📸 Picture mode - selectedExercises transformation check:', {
+      originalSelectedExercises: effectiveExercises,
+      hasPictureMedia,
+      willTransformToPicture: hasPictureMedia && effectiveExercises?.some(e => pictureCompatibleTypes.includes(e)),
+      pictureCompatibleInSelection: effectiveExercises?.filter(e => pictureCompatibleTypes.includes(e))
+    });
     
     // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage
     const systemMessage = composeSystemMessage(
