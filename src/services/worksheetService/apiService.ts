@@ -25,6 +25,19 @@ export async function generateWorksheetAPI(prompt: WorksheetFormData & { fullPro
       selectedImage: prompt.selectedImage || null  // ETAP 1: Przekazujemy selectedImage do backendu
     };
     
+    // ETAP 2: Fallback - upewnij się że selectedImage jest zawsze przekazany
+    if (!formData.selectedImage && prompt.selectedImage) {
+      formData.selectedImage = prompt.selectedImage;
+    }
+    
+    // ETAP 3: Logowanie dla weryfikacji przekazywania selectedImage
+    console.log('📸 [API-SERVICE] selectedImage being sent to backend:', {
+      hasSelectedImage: !!formData.selectedImage,
+      imageUrl: formData.selectedImage?.url,
+      imageId: formData.selectedImage?.id,
+      photographer: formData.selectedImage?.photographer
+    });
+    
     console.log('Sending formatted prompt to API:', formattedPrompt);
     console.log('Student ID being sent:', prompt.studentId);
     

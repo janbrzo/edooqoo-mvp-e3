@@ -115,7 +115,8 @@ export const createFormDataForStorage = (prompt: FormData) => {
     englishLevel: prompt.englishLevel || null,
     languageStyle: prompt.languageStyle || 3,
     lessonTime: prompt.lessonTime,
-    selectedExercises: prompt.selectedExercises || [] // Dodane pole selectedExercises
+    selectedExercises: prompt.selectedExercises || [], // Dodane pole selectedExercises
+    selectedImage: prompt.selectedImage || null // ETAP 1: Dodanie selectedImage do formDataForStorage
   };
   
   console.log('🔧 [PROMPT-FORMATTER] createFormDataForStorage - output selectedExercises:', formDataForStorage.selectedExercises);
