@@ -14,11 +14,6 @@ export default function MediaDisplay({
   photographerUrl,
   description
 }: MediaDisplayProps) {
-  // ETAP 6: Don't render anything if no image URL
-  if (!imageUrl) {
-    return null;
-  }
-  
   return (
     <div className="my-6 space-y-3">
       <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm">
@@ -26,10 +21,6 @@ export default function MediaDisplay({
           src={imageUrl}
           alt={description || 'Lesson image'}
           className="w-full h-auto object-cover"
-          onError={(e) => {
-            // Hide image if it fails to load
-            e.currentTarget.style.display = 'none';
-          }}
         />
       </div>
       

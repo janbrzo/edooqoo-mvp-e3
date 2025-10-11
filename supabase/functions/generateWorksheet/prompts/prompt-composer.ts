@@ -33,8 +33,7 @@ For any picture-based exercises (describe-picture, answer-questions with picture
   }
   
   const coreInstructions = getCoreInstructions(hasGrammarFocus, grammarFocus, formData, exerciseCount, selectedExercises);
-  // ETAP 4: Pass hasSelectedImage boolean to getExerciseTemplates
-  const exerciseTemplates = getExerciseTemplates(hasGrammarFocus, grammarFocus, exerciseCount, selectedExercises, !!selectedImage);
+  const exerciseTemplates = getExerciseTemplates(hasGrammarFocus, grammarFocus, exerciseCount, selectedExercises);
   const finalRequirements = getFinalRequirements(hasGrammarFocus, exerciseCount, selectedExercises, formData.englishLevel, !!selectedImage);
   
   return `${coreInstructions}${imageContext}
