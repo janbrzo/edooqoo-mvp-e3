@@ -12,6 +12,7 @@ import VocabularySheet from "./VocabularySheet";
 import WorksheetRating from "@/components/WorksheetRating";
 import TeacherNotes from "./TeacherNotes";
 import DemoWatermark from "./DemoWatermark";
+import MediaSection from "./MediaSection";
 import { ExerciseNavSidebar } from "./ExerciseNavSidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronUp, RotateCcw, Loader2 } from "lucide-react";
@@ -335,8 +336,28 @@ export default function WorksheetContent({
         </div>
       )}
 
-      {/* Active exercises */}
-        {activeExercises.map((exercise: any, activeIndex: number) => {
+      {/* Media Section - displays image once for all picture exercises */}
+      {inputParams?.selectedImage && (
+        <MediaSection
+          selectedImage={inputParams.selectedImage}
+          isDownloadUnlocked={isDownloadUnlocked}
+        />
+      )}
+
+      {/* Active exercises - sorted to show picture-related exercises first */}
+        {activeExercises
+          .slice()
+          .sort((a: any, b: any) => {
+            // Check if exercise types contain '-picture' suffix
+            const aIsPicture = a.type?.includes('-picture') || a.image_url;
+            const bIsPicture = b.type?.includes('-picture') || b.image_url;
+            
+            // Picture exercises come first
+            if (aIsPicture && !bIsPicture) return -1;
+            if (!aIsPicture && bIsPicture) return 1;
+            return 0;
+          })
+          .map((exercise: any, activeIndex: number) => {
           // Find the original index in the full exercises array
           const originalIndex = editableWorksheet.exercises.findIndex((ex: any) => ex === exercise);
           
