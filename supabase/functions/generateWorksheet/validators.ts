@@ -18,7 +18,10 @@ export function validateExercise(exercise: any): void {
   const newExerciseTypes = [
     'odd-one-out', 'synonyms-antonyms', 'sentence-transformation', 
     'word-order', 'gap-text', 'negative-prefixes', 'paraphrasing',
-    'complete-word', 'categorize', 'matching-halves'
+    'complete-word', 'categorize', 'matching-halves',
+    // Picture mode variants
+    'multiple-choice-picture', 'true-false-picture', 'matching-picture',
+    'fill-in-blanks-picture', 'categorize-picture', 'word-order-picture'
   ];
   
   const isNewExercise = newExerciseTypes.includes(exercise.type);

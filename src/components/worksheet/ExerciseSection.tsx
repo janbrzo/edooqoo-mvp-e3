@@ -95,6 +95,11 @@ interface ExerciseSectionProps {
   onToggleCollapse?: () => void;
 }
 
+// Helper function to normalize exercise type (removes -picture suffix for rendering logic)
+const normalizeExerciseType = (type: string): string => {
+  return type.replace('-picture', '');
+};
+
 const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   exercise,
   index,
@@ -122,6 +127,9 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
     setGuidelines,
     regenerateExercise
   } = useExerciseRegeneration();
+
+  // Normalize exercise type for conditional rendering (handle both standard and -picture types)
+  const normalizedType = normalizeExerciseType(exercise.type);
 
   const handleRegenerateClick = () => {
     openModal(index);
@@ -219,7 +227,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           onContentChange={val => handleExerciseChangeLocal('content', val)}
         />
 
-        {exercise.type === 'reading' && exercise.questions && (
+        {normalizedType === 'reading' && exercise.questions && (
           <ExerciseReading
             questions={exercise.questions}
             isEditing={isEditing}
@@ -228,7 +236,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'matching' && exercise.items && (
+        {normalizedType === 'matching' && exercise.items && (
           <ExerciseMatching
             items={exercise.items}
             isEditing={isEditing}
@@ -238,7 +246,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'fill-in-blanks' && exercise.sentences && (
+        {normalizedType === 'fill-in-blanks' && exercise.sentences && (
           <ExerciseFillInBlanks
             word_bank={exercise.word_bank}
             sentences={exercise.sentences}
@@ -261,7 +269,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'multiple-choice' && exercise.questions && (
+        {normalizedType === 'multiple-choice' && exercise.questions && (
           <ExerciseMultipleChoice
             questions={exercise.questions}
             isEditing={isEditing}
@@ -287,7 +295,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'dialogue' && exercise.dialogue && (
+        {normalizedType === 'dialogue' && exercise.dialogue && (
           <ExerciseDialogue
             dialogue={exercise.dialogue}
             expressions={exercise.expressions}
@@ -300,7 +308,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'discussion' && exercise.questions && (
+        {normalizedType === 'discussion' && exercise.questions && (
           <div className="space-y-0.5">
             <h3 className="font-medium text-gray-700 mb-2">Discussion Questions:</h3>
             {exercise.questions.map((question: string, qIndex: number) => (
@@ -334,14 +342,14 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           </div>
         )}
 
-        {(exercise.type === 'error-correction' || exercise.type === 'word-formation') && 
+        {(normalizedType === 'error-correction' || normalizedType === 'word-formation') && 
           exercise.sentences && renderOtherExerciseTypes(exercise, isEditing, viewMode, handleSentenceChangeLocal)}
         
-        {exercise.type === 'true-false' && exercise.statements && 
+        {normalizedType === 'true-false' && exercise.statements && 
           renderTrueFalseExercise(exercise, isEditing, viewMode, handleStatementChangeLocal)}
 
         {/* New Phase 1 exercises */}
-        {exercise.type === 'odd-one-out' && exercise.questions && (
+        {normalizedType === 'odd-one-out' && exercise.questions && (
           <ExerciseOddOneOut
             questions={exercise.questions}
             isEditing={isEditing}
@@ -350,7 +358,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {(exercise.type === 'synonyms-antonyms' || exercise.type === 'matching-synonyms' || exercise.type === 'matching-antonyms') && exercise.items && (
+        {(normalizedType === 'synonyms-antonyms' || normalizedType === 'matching-synonyms' || normalizedType === 'matching-antonyms') && exercise.items && (
           <ExerciseSynonymsAntonyms
             items={exercise.items}
             isEditing={isEditing}
@@ -359,7 +367,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'sentence-transformation' && exercise.sentences && (
+        {normalizedType === 'sentence-transformation' && exercise.sentences && (
           <ExerciseSentenceTransformation
             sentences={exercise.sentences}
             isEditing={isEditing}
@@ -368,7 +376,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'word-order' && exercise.sentences && (
+        {normalizedType === 'word-order' && exercise.sentences && (
           <ExerciseWordOrder
             sentences={exercise.sentences}
             isEditing={isEditing}
@@ -377,7 +385,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'gap-text' && exercise.sentences && (
+        {normalizedType === 'gap-text' && exercise.sentences && (
           <ExerciseGapText
             sentences={exercise.sentences}
             isEditing={isEditing}
@@ -386,7 +394,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'negative-prefixes' && exercise.words && (
+        {normalizedType === 'negative-prefixes' && exercise.words && (
           <ExerciseNegativePrefixes
             words={exercise.words}
             isEditing={isEditing}
@@ -411,7 +419,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         )}
 
         {/* New Phase 2 exercises */}
-        {exercise.type === 'categorize' && (
+        {normalizedType === 'categorize' && (
           <ExerciseCategorize
             items={exercise.items}
             words={exercise.words}
@@ -449,7 +457,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'paraphrasing' && exercise.sentences && (
+        {normalizedType === 'paraphrasing' && exercise.sentences && (
           <ExerciseParaphrasing
             sentences={exercise.sentences}
             isEditing={isEditing}
@@ -458,7 +466,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'complete-word' && exercise.words && (
+        {normalizedType === 'complete-word' && exercise.words && (
           <ExerciseCompleteWord
             words={exercise.words}
             isEditing={isEditing}
@@ -482,7 +490,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'matching-halves' && exercise.sentence_halves && (
+        {normalizedType === 'matching-halves' && exercise.sentence_halves && (
           <ExerciseMatchingHalves
             sentence_halves={exercise.sentence_halves}
             isEditing={isEditing}
