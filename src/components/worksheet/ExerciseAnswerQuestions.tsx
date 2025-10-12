@@ -1,9 +1,16 @@
 import React from "react";
 
+interface Question {
+  text?: string;          // Old format (reading exercises)
+  question?: string;      // New format (picture exercises)
+  answer?: string;        // Old format (sample answers)
+  focus?: string;         // New format (grammar focus)
+}
+
 interface ExerciseAnswerQuestionsProps {
   media_url?: string;
   media_type?: "video" | "audio" | "image";
-  questions: any[];
+  questions: Question[];
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
@@ -97,21 +104,27 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
                       className="w-full border p-1 editable-content"
                     />
                   ) : (
-                    <>{qIndex + 1}. {question.text}</>
+                    <>{qIndex + 1}. {question.text || question.question}</>
                   )}
                 </p>
               </div>
-              {viewMode === 'teacher' && (
+              {viewMode === 'teacher' && (question.answer || question.focus) && (
                 <div className="text-green-600 italic ml-3 text-sm">
                   {isEditing ? (
                     <input
                       type="text"
-                      value={question.answer}
-                      onChange={e => onQuestionChange(qIndex, 'answer', e.target.value)}
+                      value={question.answer || question.focus || ''}
+                      onChange={e => onQuestionChange(qIndex, question.answer ? 'answer' : 'focus', e.target.value)}
                       className="border p-1 editable-content w-full"
                     />
                   ) : (
-                    <span>({question.answer})</span>
+                    <span>
+                      {question.answer 
+                        ? `(${question.answer})` 
+                        : question.focus 
+                        ? `Focus: ${question.focus}` 
+                        : ''}
+                    </span>
                   )}
                 </div>
               )}
