@@ -21,7 +21,8 @@ export function validateExercise(exercise: any): void {
     'complete-word', 'categorize', 'matching-halves',
     // Picture mode variants
     'multiple-choice-picture', 'true-false-picture', 'matching-picture',
-    'fill-in-blanks-picture', 'categorize-picture', 'word-order-picture'
+    'fill-in-blanks-picture', 'categorize-picture', 'word-order-picture',
+    'describe-picture', 'answer-questions-picture'
   ];
   
   const isNewExercise = newExerciseTypes.includes(exercise.type);

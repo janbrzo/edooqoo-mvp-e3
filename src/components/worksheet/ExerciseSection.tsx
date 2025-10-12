@@ -515,7 +515,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         )}
 
         {/* New additional exercise types */}
-        {exercise.type === 'describe' && (
+        {normalizedType === 'describe' && (
           <ExerciseDescribe
             image_url={exercise.image_url}
             questions={exercise.questions}
@@ -526,7 +526,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {exercise.type === 'answer-questions' && exercise.questions && (
+        {normalizedType === 'answer-questions' && exercise.questions && (
           <ExerciseAnswerQuestions
             media_url={exercise.media_url}
             media_type={exercise.media_type}

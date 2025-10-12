@@ -349,8 +349,8 @@ export default function WorksheetContent({
           .slice()
           .sort((a: any, b: any) => {
             // Check if exercise types contain '-picture' suffix
-            const aIsPicture = a.type?.includes('-picture') || a.image_url;
-            const bIsPicture = b.type?.includes('-picture') || b.image_url;
+            const aIsPicture = a.type?.includes('-picture') || a.image_url || a.media_url;
+            const bIsPicture = b.type?.includes('-picture') || b.image_url || b.media_url;
             
             // Picture exercises come first
             if (aIsPicture && !bIsPicture) return -1;
