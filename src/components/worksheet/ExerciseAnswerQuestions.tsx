@@ -11,6 +11,7 @@ interface ExerciseAnswerQuestionsProps {
   media_url?: string;
   media_type?: "video" | "audio" | "image";
   questions: Question[];
+  showImage?: boolean;
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
@@ -22,6 +23,7 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
   media_url,
   media_type = "image",
   questions,
+  showImage = true,
   isEditing,
   viewMode,
   onQuestionChange,
@@ -30,8 +32,9 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      {/* Media section */}
-      <div className="flex justify-center">
+      {/* Media section - only show if showImage is true */}
+      {showImage && (
+        <div className="flex justify-center">
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
           {isEditing && onMediaUrlChange && onMediaTypeChange ? (
             <div className="space-y-3">
@@ -87,7 +90,8 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
             </>
           )}
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Questions */}
       <div className="space-y-2">

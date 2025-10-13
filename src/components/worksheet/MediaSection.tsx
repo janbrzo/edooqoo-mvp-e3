@@ -25,11 +25,13 @@ export default function MediaSection({ selectedImage, isDownloadUnlocked }: Medi
       </h2>
       
       <div className="space-y-3">
-        <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm">
+        <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm max-w-3xl mx-auto">
           <img
             src={selectedImage.url}
             alt={selectedImage.description || 'Lesson image'}
-            className="w-full h-auto object-cover max-h-[600px]"
+            className="w-full h-auto object-contain max-h-[400px] cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={() => window.open(selectedImage.url, '_blank')}
+            title="Click to view full size"
           />
         </div>
         

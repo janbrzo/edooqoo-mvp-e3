@@ -3,6 +3,7 @@ import React from "react";
 interface ExerciseDescribeProps {
   image_url?: string;
   questions?: any[];
+  showImage?: boolean;
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
@@ -12,6 +13,7 @@ interface ExerciseDescribeProps {
 const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
   image_url,
   questions,
+  showImage = true,
   isEditing,
   viewMode,
   onQuestionChange,
@@ -19,8 +21,9 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      {/* Image section */}
-      <div className="flex justify-center">
+      {/* Image section - only show if showImage is true */}
+      {showImage && (
+        <div className="flex justify-center">
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
           {isEditing && onImageUrlChange ? (
             <div className="space-y-2">
@@ -45,7 +48,8 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
             </>
           )}
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Optional guiding questions */}
       {questions && questions.length > 0 && (

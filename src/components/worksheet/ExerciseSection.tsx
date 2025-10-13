@@ -78,6 +78,7 @@ export interface Worksheet {
 interface ExerciseSectionProps {
   exercise: any;
   index: number;
+  originalIndex?: number;
   isEditing: boolean;
   viewMode: "student" | "teacher";
   editableWorksheet: any;
@@ -103,6 +104,7 @@ const normalizeExerciseType = (type: string): string => {
 const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   exercise,
   index,
+  originalIndex,
   isEditing,
   viewMode,
   editableWorksheet,
@@ -117,6 +119,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   isCollapsed = false,
   onToggleCollapse,
 }, ref) => {
+  // Use originalIndex for array operations, index for display
+  const arrayIndex = originalIndex !== undefined ? originalIndex : index - 1;
   const {
     isModalOpen,
     isLoading,
@@ -143,7 +147,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 
     await regenerateExercise(
       worksheetId,
-      index,
+      arrayIndex,
       originalFormData,
       exercise,
       editableWorksheet,
@@ -152,38 +156,38 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
     );
   };
 
-  const isRegenerating = isLoading && loadingExerciseIndex === index;
+  const isRegenerating = isLoading && loadingExerciseIndex === arrayIndex;
   // Exercise update handlers using the utility functions
   const handleExerciseChangeLocal = (field: string, value: string) => {
-    handleExerciseChange(editableWorksheet, setEditableWorksheet, index, field, value);
+    handleExerciseChange(editableWorksheet, setEditableWorksheet, arrayIndex, field, value);
   };
 
   const handleQuestionChangeLocal = (questionIndex: number, field: string, value: string) => {
-    handleQuestionChange(editableWorksheet, setEditableWorksheet, index, questionIndex, field, value);
+    handleQuestionChange(editableWorksheet, setEditableWorksheet, arrayIndex, questionIndex, field, value);
   };
 
   const handleItemChangeLocal = (itemIndex: number, field: string, value: string) => {
-    handleItemChange(editableWorksheet, setEditableWorksheet, index, itemIndex, field, value);
+    handleItemChange(editableWorksheet, setEditableWorksheet, arrayIndex, itemIndex, field, value);
   };
 
   const handleSentenceChangeLocal = (sentenceIndex: number, field: string, value: string) => {
-    handleSentenceChange(editableWorksheet, setEditableWorksheet, index, sentenceIndex, field, value);
+    handleSentenceChange(editableWorksheet, setEditableWorksheet, arrayIndex, sentenceIndex, field, value);
   };
 
   const handleExpressionChangeLocal = (expressionIndex: number, value: string) => {
-    handleExpressionChange(editableWorksheet, setEditableWorksheet, index, expressionIndex, value);
+    handleExpressionChange(editableWorksheet, setEditableWorksheet, arrayIndex, expressionIndex, value);
   };
 
   const handleTeacherTipChangeLocal = (value: string) => {
-    handleTeacherTipChange(editableWorksheet, setEditableWorksheet, index, value);
+    handleTeacherTipChange(editableWorksheet, setEditableWorksheet, arrayIndex, value);
   };
 
   const handleDialogueChangeLocal = (dialogueIndex: number, field: string, value: string) => {
-    handleDialogueChange(editableWorksheet, setEditableWorksheet, index, dialogueIndex, field, value);
+    handleDialogueChange(editableWorksheet, setEditableWorksheet, arrayIndex, dialogueIndex, field, value);
   };
   
   const handleStatementChangeLocal = (statementIndex: number, field: string, value: string | boolean) => {
-    handleStatementChange(editableWorksheet, setEditableWorksheet, index, statementIndex, field, value);
+    handleStatementChange(editableWorksheet, setEditableWorksheet, arrayIndex, statementIndex, field, value);
   };
 
   return (
@@ -256,8 +260,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
               const newWordBank = [...exercise.word_bank!];
               newWordBank[wIndex] = value;
               const updatedExercises = [...editableWorksheet.exercises];
-              updatedExercises[index] = {
-                ...updatedExercises[index],
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
                 word_bank: newWordBank
               };
               setEditableWorksheet({
@@ -277,13 +281,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             onQuestionTextChange={(qIndex, value) => handleQuestionChangeLocal(qIndex, 'text', value)}
             onOptionTextChange={(qIndex, oIndex, value) => {
               const updatedExercises = [...editableWorksheet.exercises];
-              const question = updatedExercises[index].questions[qIndex];
+              const question = updatedExercises[arrayIndex].questions[qIndex];
               const newOptions = [...question.options];
               newOptions[oIndex] = {
                 ...newOptions[oIndex],
                 text: value
               };
-              updatedExercises[index].questions[qIndex] = {
+              updatedExercises[arrayIndex].questions[qIndex] = {
                 ...question,
                 options: newOptions
               };
@@ -322,8 +326,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                         const updatedExercises = [...editableWorksheet.exercises];
                         const newQuestions = [...exercise.questions!];
                         newQuestions[qIndex] = e.target.value;
-                        updatedExercises[index] = {
-                          ...updatedExercises[index],
+                        updatedExercises[arrayIndex] = {
+                          ...updatedExercises[arrayIndex],
                           questions: newQuestions
                         };
                         setEditableWorksheet({
@@ -406,8 +410,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 ...newWords[wIndex],
                 [field]: value
               };
-              updatedExercises[index] = {
-                ...updatedExercises[index],
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
                 words: newWords
               };
               setEditableWorksheet({
@@ -428,8 +432,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             viewMode={viewMode}
             onWordsChange={(words) => {
               const updatedExercises = [...editableWorksheet.exercises];
-              updatedExercises[index] = {
-                ...updatedExercises[index],
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
                 words: words,
                 items: words
               };
@@ -445,8 +449,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 ...newCategories[cIndex],
                 [field]: value
               };
-              updatedExercises[index] = {
-                ...updatedExercises[index],
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
                 categories: newCategories
               };
               setEditableWorksheet({
@@ -478,8 +482,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 ...newWords[wIndex],
                 [field]: value
               };
-              updatedExercises[index] = {
-                ...updatedExercises[index],
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
                 words: newWords
               };
               setEditableWorksheet({
@@ -502,8 +506,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 ...newHalves[hIndex],
                 [field]: value
               };
-              updatedExercises[index] = {
-                ...updatedExercises[index],
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
                 sentence_halves: newHalves
               };
               setEditableWorksheet({
@@ -517,10 +521,11 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         {/* New additional exercise types */}
         {normalizedType === 'describe' && (
           <ExerciseDescribe
-            image_url={exercise.image_url}
+            image_url={originalFormData?.selectedImage ? undefined : exercise.image_url}
             questions={exercise.questions}
             isEditing={isEditing}
             viewMode={viewMode}
+            showImage={!originalFormData?.selectedImage}
             onQuestionChange={handleQuestionChangeLocal}
             onImageUrlChange={(url) => handleExerciseChangeLocal('image_url', url)}
           />
@@ -528,11 +533,12 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 
         {normalizedType === 'answer-questions' && exercise.questions && (
           <ExerciseAnswerQuestions
-            media_url={exercise.media_url}
+            media_url={originalFormData?.selectedImage ? undefined : exercise.media_url}
             media_type={exercise.media_type}
             questions={exercise.questions}
             isEditing={isEditing}
             viewMode={viewMode}
+            showImage={!originalFormData?.selectedImage}
             onQuestionChange={handleQuestionChangeLocal}
             onMediaUrlChange={(url) => handleExerciseChangeLocal('media_url', url)}
             onMediaTypeChange={(type) => handleExerciseChangeLocal('media_type', type)}
@@ -553,7 +559,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 
       {/* Regeneration Modal */}
       <ExerciseRegenerateModal
-        isOpen={isModalOpen && loadingExerciseIndex === index}
+        isOpen={isModalOpen && loadingExerciseIndex === arrayIndex}
         onClose={closeModal}
         onConfirm={handleRegenerateConfirm}
         guidelines={guidelines}

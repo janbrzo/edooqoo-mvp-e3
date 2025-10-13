@@ -367,7 +367,8 @@ export default function WorksheetContent({
               <ExerciseSection
                 ref={(el) => (navigation.exerciseRefs.current[originalIndex] = el)}
                 exercise={exercise}
-                index={originalIndex}
+                index={activeIndex + 1}
+                originalIndex={originalIndex}
                 isEditing={isEditing}
                 viewMode={viewMode}
                 editableWorksheet={editableWorksheet}
