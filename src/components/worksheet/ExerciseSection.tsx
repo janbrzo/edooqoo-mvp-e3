@@ -101,6 +101,18 @@ const normalizeExerciseType = (type: string): string => {
   return type.replace('-picture', '');
 };
 
+// Helper function to update exercise number in title for display
+const updateExerciseNumber = (title: string, newNumber: number): string => {
+  // Match "Exercise X:" at the start of the title
+  const match = title.match(/^Exercise\s+\d+:\s*(.*)$/i);
+  if (match) {
+    // Replace with new number, keeping the rest of the title
+    return `Exercise ${newNumber}: ${match[1]}`;
+  }
+  // If no match, return title as is
+  return title;
+};
+
 const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   exercise,
   index,
@@ -195,7 +207,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
       <div ref={ref} className="mb-4 bg-white border rounded-lg overflow-hidden shadow-sm relative">
         <ExerciseHeader
           icon={exercise.icon}
-          title={exercise.title}
+          title={updateExerciseNumber(exercise.title, index)}
           isEditing={isEditing}
           time={exercise.time}
           onTitleChange={val => handleExerciseChangeLocal('title', val)}
