@@ -111,16 +111,18 @@ const InputParamsCard = ({ inputParams, selectedExercises }: InputParamsCardProp
           </div>
         </div>
       
-        {/* Lesson Goal */}
-        <div className="flex items-center gap-3">
-          <div className="bg-worksheet-purpleLight rounded-full p-2">
-            <Star className="h-4 w-4 text-worksheet-purple" />
+        {/* Lesson Goal (conditionally rendered) */}
+        {inputParams.lessonGoal && (
+          <div className="flex items-center gap-3">
+            <div className="bg-worksheet-purpleLight rounded-full p-2">
+              <Star className="h-4 w-4 text-worksheet-purple" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Lesson Goal</p>
+              <p className="font-medium text-sm">{inputParams.lessonGoal}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Lesson Goal</p>
-            <p className="font-medium text-sm">{inputParams.lessonGoal}</p>
-          </div>
-        </div>
+        )}
         
         {/* Grammar focus (conditionally rendered) */}
         {inputParams.teachingPreferences && (

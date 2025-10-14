@@ -379,23 +379,27 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
               {/* Show More Link with Preview - button UNDER the blurred preview */}
               {!showMoreFields && (
                 <div className="mb-6">
-                  {/* Preview with light blur effect showing only field names */}
-                  <div className="relative overflow-hidden mb-4 py-2">
+                  {/* Preview with light blur effect showing only field names - CLICKABLE */}
+                  <div 
+                    className="relative overflow-hidden mb-4 py-2 cursor-pointer hover:bg-accent/50 transition-colors rounded-md px-2"
+                    onClick={() => setShowMoreFields(true)}
+                    title="Click to expand additional fields"
+                  >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-medium text-foreground/60">
+                        <label className="block text-sm font-medium text-foreground/60 cursor-pointer">
                           Additional Information: Extra context & personal or situational details
                         </label>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-foreground/60">
+                        <label className="block text-sm font-medium text-foreground/60 cursor-pointer">
                           Grammar focus
                         </label>
                       </div>
                     </div>
                     
                     {/* Very light blur overlay */}
-                    <div className="absolute inset-0 bg-background/30 backdrop-blur-[0.5px]" />
+                    <div className="absolute inset-0 bg-background/30 backdrop-blur-[0.5px] pointer-events-none" />
                   </div>
                   
                   {/* Button under the preview */}

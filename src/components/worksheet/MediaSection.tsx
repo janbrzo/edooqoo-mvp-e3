@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Image, X } from 'lucide-react';
+import { ExternalLink, Pin, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import DemoWatermark from './DemoWatermark';
 
@@ -17,6 +17,7 @@ interface MediaSectionProps {
 export default function MediaSection({ selectedImage, isDownloadUnlocked }: MediaSectionProps) {
   const [isPinned, setIsPinned] = React.useState(false);
   const [isFullScreen, setIsFullScreen] = React.useState(false);
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
   
   if (!selectedImage) return null;
 
@@ -29,29 +30,51 @@ export default function MediaSection({ selectedImage, isDownloadUnlocked }: Medi
           <h2 className="text-xl font-semibold text-gray-800">
             Lesson Media
           </h2>
-          {!isPinned && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsPinned(true)}
-              className="flex items-center gap-2"
-            >
-              <Image className="h-4 w-4" />
-              Pin Image
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center gap-2"
+          >
+            {isCollapsed ? (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                Expand
+              </>
+            ) : (
+              <>
+                <ChevronUp className="h-4 w-4" />
+                Collapse
+              </>
+            )}
+          </Button>
         </div>
       
-      <div className="space-y-3">
-        <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm max-w-3xl mx-auto">
-          <img
-            src={selectedImage.url}
-            alt={selectedImage.description || 'Lesson image'}
-            className="w-full h-auto object-contain max-h-[400px] cursor-pointer hover:opacity-90 transition-opacity"
-            onClick={() => setIsFullScreen(true)}
-            title="Click to view full size"
-          />
-        </div>
+      {!isCollapsed && (
+        <div className="space-y-3">
+          <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm max-w-3xl mx-auto">
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.description || 'Lesson image'}
+              className="w-full h-auto object-contain max-h-[400px] cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => setIsFullScreen(true)}
+              title="Click to view full size"
+            />
+            {!isPinned && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsPinned(true);
+                }}
+                className="absolute top-2 right-2 bg-white/90 hover:bg-white shadow-md flex items-center gap-1"
+              >
+                <Pin className="h-4 w-4" />
+                <span className="text-xs">Pin</span>
+              </Button>
+            )}
+          </div>
         
         {/* Unsplash attribution */}
         {selectedImage.photographer && (
@@ -83,12 +106,13 @@ export default function MediaSection({ selectedImage, isDownloadUnlocked }: Medi
           </div>
         )}
         
-        {selectedImage.description && (
-          <p className="text-sm text-gray-600 text-center italic">
-            {selectedImage.description}
-          </p>
-        )}
-      </div>
+          {selectedImage.description && (
+            <p className="text-sm text-gray-600 text-center italic">
+              {selectedImage.description}
+            </p>
+          )}
+        </div>
+      )}
       </div>
 
       {/* Full screen modal */}
