@@ -30,6 +30,8 @@ interface WorksheetContentProps {
   userId?: string;
   onExpandAll?: (expandAllFn: () => void) => void;
   onCloseSidebar?: (closeSidebarFn: () => void) => void;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
 }
 
 export default function WorksheetContent({
@@ -43,7 +45,9 @@ export default function WorksheetContent({
   inputParams,
   userId,
   onExpandAll,
-  onCloseSidebar
+  onCloseSidebar,
+  isPinned = false,
+  onTogglePin
 }: WorksheetContentProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
@@ -341,6 +345,8 @@ export default function WorksheetContent({
         <MediaSection
           selectedImage={inputParams.selectedImage}
           isDownloadUnlocked={isDownloadUnlocked}
+          isPinned={isPinned}
+          onTogglePin={onTogglePin}
         />
       )}
 

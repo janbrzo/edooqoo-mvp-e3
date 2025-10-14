@@ -12,10 +12,16 @@ interface MediaSectionProps {
     photographerUrl: string;
   } | null;
   isDownloadUnlocked: boolean;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
 }
 
-export default function MediaSection({ selectedImage, isDownloadUnlocked }: MediaSectionProps) {
-  const [isPinned, setIsPinned] = React.useState(false);
+export default function MediaSection({ 
+  selectedImage, 
+  isDownloadUnlocked,
+  isPinned = false,
+  onTogglePin
+}: MediaSectionProps) {
   const [isFullScreen, setIsFullScreen] = React.useState(false);
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   
@@ -60,13 +66,13 @@ export default function MediaSection({ selectedImage, isDownloadUnlocked }: Medi
               onClick={() => setIsFullScreen(true)}
               title="Click to view full size"
             />
-            {!isPinned && (
+            {!isPinned && onTogglePin && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setIsPinned(true);
+                  onTogglePin();
                 }}
                 className="absolute top-2 right-2 bg-white/90 hover:bg-white shadow-md flex items-center gap-1"
               >
@@ -129,29 +135,6 @@ export default function MediaSection({ selectedImage, isDownloadUnlocked }: Medi
         </div>
       )}
 
-      {/* Pinned image in bottom right corner */}
-      {isPinned && (
-        <div 
-          className="fixed bottom-6 right-6 z-40 bg-white border-2 border-gray-300 rounded-lg shadow-2xl overflow-hidden"
-          style={{ width: '300px' }}
-        >
-          <div className="relative">
-            <img
-              src={selectedImage.url}
-              alt={selectedImage.description || 'Lesson image'}
-              className="w-full h-auto object-contain max-h-[200px]"
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsPinned(false)}
-              className="absolute top-1 right-1 bg-white/80 hover:bg-white"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
     </>
   );
 }

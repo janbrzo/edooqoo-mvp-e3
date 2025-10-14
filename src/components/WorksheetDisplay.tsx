@@ -78,6 +78,7 @@ export default function WorksheetDisplay({
   const [isSaving, setIsSaving] = useState(false);
   const [expandAllRef, setExpandAllRef] = useState<(() => void) | null>(null);
   const [closeSidebarRef, setCloseSidebarRef] = useState<(() => void) | null>(null);
+  const [isPinned, setIsPinned] = useState(false);
   const { toast } = useToast();
   const { isDownloadUnlocked, userIp, handleDownloadUnlock, trackDownload, checkTokenGeneratedWorksheet } = useDownloadStatus();
   const isMobile = useIsMobile();
@@ -252,6 +253,9 @@ export default function WorksheetDisplay({
         isDownloadUnlocked={isDownloadUnlocked}
         viewMode={viewMode}
         editableWorksheet={editableWorksheet}
+        selectedImage={inputParams?.selectedImage}
+        isPinned={isPinned}
+        onTogglePin={() => setIsPinned(!isPinned)}
       >
         <div className={`mb-6 ${isMobile ? 'px-2' : ''}`}>
           <WorksheetHeader
@@ -298,6 +302,8 @@ export default function WorksheetDisplay({
             userId={userId}
             onExpandAll={(expandFn: () => void) => setExpandAllRef(() => expandFn)}
             onCloseSidebar={(closeFn: () => void) => setCloseSidebarRef(() => closeFn)}
+            isPinned={isPinned}
+            onTogglePin={() => setIsPinned(!isPinned)}
           />
         </div>
       </WorksheetContainer>

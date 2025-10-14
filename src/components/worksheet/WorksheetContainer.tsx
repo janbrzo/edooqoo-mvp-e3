@@ -1,9 +1,10 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Image, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generatePDF } from "@/utils/pdfUtils";
 import { FormData } from "@/components/WorksheetForm";
+import { Button } from "@/components/ui/button";
 
 interface WorksheetContainerProps {
   children: React.ReactNode;
@@ -12,6 +13,15 @@ interface WorksheetContainerProps {
   isDownloadUnlocked: boolean;
   viewMode: "student" | "teacher";
   editableWorksheet: any;
+  selectedImage?: {
+    id: string;
+    url: string;
+    description: string;
+    photographer: string;
+    photographerUrl: string;
+  } | null;
+  isPinned?: boolean;
+  onTogglePin?: () => void;
 }
 
 export default function WorksheetContainer({
@@ -20,7 +30,10 @@ export default function WorksheetContainer({
   onDownload,
   isDownloadUnlocked,
   viewMode,
-  editableWorksheet
+  editableWorksheet,
+  selectedImage,
+  isPinned = false,
+  onTogglePin
 }: WorksheetContainerProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const worksheetRef = useRef<HTMLDivElement>(null);
@@ -107,14 +120,54 @@ export default function WorksheetContainer({
       
       {children}
       
+      {/* Fixed action buttons in bottom right */}
       {showScrollTop && (
-        <button 
-          onClick={scrollToTop}
-          className="fixed bottom-6 right-6 rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity z-50"
-          aria-label="Scroll to top"
+        <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-50">
+          {/* Pin Image button - only show if image exists */}
+          {selectedImage && onTogglePin && (
+            <button 
+              onClick={onTogglePin}
+              className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+              aria-label={isPinned ? "Unpin image" : "Pin image"}
+              title={isPinned ? "Unpin image" : "Pin image"}
+            >
+              <Image className="h-5 w-5" />
+            </button>
+          )}
+          
+          {/* Scroll to top button */}
+          <button 
+            onClick={scrollToTop}
+            className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+            aria-label="Scroll to top"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {/* Pinned image in bottom right corner */}
+      {isPinned && selectedImage && (
+        <div 
+          className="fixed bottom-6 right-24 z-40 bg-white border-2 border-gray-300 rounded-lg shadow-2xl overflow-hidden"
+          style={{ width: '300px' }}
         >
-          <ArrowUp className="h-5 w-5" />
-        </button>
+          <div className="relative">
+            <img
+              src={selectedImage.url}
+              alt={selectedImage.description || 'Lesson image'}
+              className="w-full h-auto object-contain max-h-[200px]"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onTogglePin}
+              className="absolute top-1 right-1 bg-white/80 hover:bg-white"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
