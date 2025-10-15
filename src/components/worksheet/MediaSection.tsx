@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Pin, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { ExternalLink, Pin, X, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import DemoWatermark from './DemoWatermark';
 
@@ -14,15 +14,18 @@ interface MediaSectionProps {
   isDownloadUnlocked: boolean;
   isPinned?: boolean;
   onTogglePin?: () => void;
+  isFullScreen?: boolean;
+  onToggleFullScreen?: () => void;
 }
 
 export default function MediaSection({ 
   selectedImage, 
   isDownloadUnlocked,
   isPinned = false,
-  onTogglePin
+  onTogglePin,
+  isFullScreen = false,
+  onToggleFullScreen
 }: MediaSectionProps) {
-  const [isFullScreen, setIsFullScreen] = React.useState(false);
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   
   if (!selectedImage) return null;
@@ -62,23 +65,35 @@ export default function MediaSection({
             <img
               src={selectedImage.url}
               alt={selectedImage.description || 'Lesson image'}
-              className="w-full h-auto object-contain max-h-[400px] cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => setIsFullScreen(true)}
-              title="Click to view full size"
+              className="w-full h-auto object-contain max-h-[400px]"
             />
-            {!isPinned && onTogglePin && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTogglePin();
-                }}
-                className="absolute top-2 right-2 bg-white/90 hover:bg-white shadow-md flex items-center gap-1"
-              >
-                <Pin className="h-4 w-4" />
-                <span className="text-xs">Pin</span>
-              </Button>
+            {!isPinned && onTogglePin && onToggleFullScreen && (
+              <div className="absolute top-2 right-2 flex flex-col gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTogglePin();
+                  }}
+                  className="bg-white/90 hover:bg-white shadow-md"
+                  title="Pin image"
+                >
+                  <Pin className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleFullScreen();
+                  }}
+                  className="bg-white/90 hover:bg-white shadow-md"
+                  title="Expand image"
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Button>
+              </div>
             )}
           </div>
         
@@ -122,11 +137,22 @@ export default function MediaSection({
       </div>
 
       {/* Full screen modal */}
-      {isFullScreen && (
+      {isFullScreen && onToggleFullScreen && (
         <div 
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-pointer"
-          onClick={() => setIsFullScreen(false)}
+          onClick={onToggleFullScreen}
         >
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFullScreen();
+            }}
+            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white"
+          >
+            <X className="h-6 w-6" />
+          </Button>
           <img
             src={selectedImage.url}
             alt={selectedImage.description || 'Lesson image'}

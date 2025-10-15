@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { ArrowUp, Image, X } from "lucide-react";
+import { ArrowUp, Image, X, Maximize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generatePDF } from "@/utils/pdfUtils";
 import { FormData } from "@/components/WorksheetForm";
@@ -22,6 +22,8 @@ interface WorksheetContainerProps {
   } | null;
   isPinned?: boolean;
   onTogglePin?: () => void;
+  isFullScreen?: boolean;
+  onToggleFullScreen?: () => void;
 }
 
 export default function WorksheetContainer({
@@ -33,7 +35,9 @@ export default function WorksheetContainer({
   editableWorksheet,
   selectedImage,
   isPinned = false,
-  onTogglePin
+  onTogglePin,
+  isFullScreen = false,
+  onToggleFullScreen
 }: WorksheetContainerProps) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const worksheetRef = useRef<HTMLDivElement>(null);
@@ -158,15 +162,51 @@ export default function WorksheetContainer({
               alt={selectedImage.description || 'Lesson image'}
               className="w-full h-auto object-contain max-h-[200px]"
             />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onTogglePin}
-              className="absolute top-1 right-1 bg-white/80 hover:bg-white"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="absolute top-1 right-1 flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleFullScreen}
+                className="bg-white/80 hover:bg-white"
+                title="Expand image"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onTogglePin}
+                className="bg-white/80 hover:bg-white"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* Full screen modal for pinned image */}
+      {isFullScreen && selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-pointer"
+          onClick={onToggleFullScreen}
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFullScreen?.();
+            }}
+            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white"
+          >
+            <X className="h-6 w-6" />
+          </Button>
+          <img
+            src={selectedImage.url}
+            alt={selectedImage.description || 'Lesson image'}
+            className="max-w-full max-h-full object-contain"
+          />
         </div>
       )}
     </div>

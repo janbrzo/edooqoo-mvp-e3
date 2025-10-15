@@ -32,6 +32,8 @@ interface WorksheetContentProps {
   onCloseSidebar?: (closeSidebarFn: () => void) => void;
   isPinned?: boolean;
   onTogglePin?: () => void;
+  isFullScreen?: boolean;
+  onToggleFullScreen?: () => void;
 }
 
 export default function WorksheetContent({
@@ -47,7 +49,9 @@ export default function WorksheetContent({
   onExpandAll,
   onCloseSidebar,
   isPinned = false,
-  onTogglePin
+  onTogglePin,
+  isFullScreen = false,
+  onToggleFullScreen
 }: WorksheetContentProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
@@ -347,6 +351,8 @@ export default function WorksheetContent({
           isDownloadUnlocked={isDownloadUnlocked}
           isPinned={isPinned}
           onTogglePin={onTogglePin}
+          isFullScreen={isFullScreen}
+          onToggleFullScreen={onToggleFullScreen}
         />
       )}
 

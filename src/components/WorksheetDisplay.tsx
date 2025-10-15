@@ -79,6 +79,7 @@ export default function WorksheetDisplay({
   const [expandAllRef, setExpandAllRef] = useState<(() => void) | null>(null);
   const [closeSidebarRef, setCloseSidebarRef] = useState<(() => void) | null>(null);
   const [isPinned, setIsPinned] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const { toast } = useToast();
   const { isDownloadUnlocked, userIp, handleDownloadUnlock, trackDownload, checkTokenGeneratedWorksheet } = useDownloadStatus();
   const isMobile = useIsMobile();
@@ -256,6 +257,8 @@ export default function WorksheetDisplay({
         selectedImage={inputParams?.selectedImage}
         isPinned={isPinned}
         onTogglePin={() => setIsPinned(!isPinned)}
+        isFullScreen={isFullScreen}
+        onToggleFullScreen={() => setIsFullScreen(!isFullScreen)}
       >
         <div className={`mb-6 ${isMobile ? 'px-2' : ''}`}>
           <WorksheetHeader
@@ -304,6 +307,8 @@ export default function WorksheetDisplay({
             onCloseSidebar={(closeFn: () => void) => setCloseSidebarRef(() => closeFn)}
             isPinned={isPinned}
             onTogglePin={() => setIsPinned(!isPinned)}
+            isFullScreen={isFullScreen}
+            onToggleFullScreen={() => setIsFullScreen(!isFullScreen)}
           />
         </div>
       </WorksheetContainer>

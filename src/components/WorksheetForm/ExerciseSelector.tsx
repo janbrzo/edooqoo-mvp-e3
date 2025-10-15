@@ -13,8 +13,14 @@ const AVAILABLE_EXERCISES = [{
   id: 'true-false',
   label: 'True/False Questions',
   icon: '✓✗',
-  description: 'Students determine whether statements about the lesson content are true or false, helping develop critical thinking and reading comprehension skills.',
-  pictureVersion: true
+  description: 'Students determine whether statements about the lesson content are true or false, helping develop critical thinking and reading comprehension skills.'
+}, {
+  id: 'true-false-picture',
+  label: 'True/False (Picture)',
+  icon: '✓✗',
+  description: 'Students determine whether statements about the picture are true or false, developing critical thinking and visual comprehension skills.',
+  pictureRequired: true,
+  baseExercise: 'true-false'
 }, {
   id: 'matching',
   label: 'Matching Exercise',
@@ -29,8 +35,14 @@ const AVAILABLE_EXERCISES = [{
   id: 'multiple-choice',
   label: 'Multiple Choice',
   icon: '📝',
-  description: 'Students select the correct answer from several options, testing comprehension, vocabulary knowledge, and grammatical understanding.',
-  pictureVersion: true
+  description: 'Students select the correct answer from several options, testing comprehension, vocabulary knowledge, and grammatical understanding.'
+}, {
+  id: 'multiple-choice-picture',
+  label: 'Multiple Choice (Picture)',
+  icon: '📝',
+  description: 'Students answer questions about the picture by selecting the correct answer from several options, testing visual comprehension.',
+  pictureRequired: true,
+  baseExercise: 'multiple-choice'
 }, {
   id: 'dialogue',
   label: 'Dialogue Practice',
@@ -107,20 +119,26 @@ const AVAILABLE_EXERCISES = [{
   id: 'answer-questions',
   label: 'Answer Questions',
   icon: '❓',
-  description: 'Students provide written or spoken answers to comprehension questions, demonstrating understanding and practicing response formation.',
-  pictureVersion: true
+  description: 'Students provide written or spoken answers to comprehension questions, demonstrating understanding and practicing response formation.'
+}, {
+  id: 'answer-questions-picture',
+  label: 'Answer Questions (Picture)',
+  icon: '❓',
+  description: 'Students provide answers to questions about the picture, demonstrating visual comprehension and observation skills.',
+  pictureRequired: true,
+  baseExercise: 'answer-questions'
 }];
 
-// Picture-compatible exercises for automatic selection
-const PICTURE_COMPATIBLE_EXERCISES = ['multiple-choice', 'true-false', 'answer-questions', 'describe-picture'];
+// Picture-compatible exercises for automatic selection (with -picture suffix)
+const PICTURE_COMPATIBLE_EXERCISES = ['multiple-choice-picture', 'true-false-picture', 'answer-questions-picture', 'describe-picture'];
 
 // Predefined exercise sets for Manual mode
 const MANUAL_EXERCISES_60MIN = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
 const MANUAL_EXERCISES_45MIN = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out'];
 
-// Picture mode defaults (with picture-compatible exercises)
-const MANUAL_EXERCISES_60MIN_PICTURE = ['describe-picture', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'categorize', 'answer-questions', 'discussion'];
-const MANUAL_EXERCISES_45MIN_PICTURE = ['describe-picture', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'answer-questions'];
+// Picture mode defaults (with picture-compatible exercises using -picture suffix)
+const MANUAL_EXERCISES_60MIN_PICTURE = ['describe-picture', 'true-false-picture', 'matching', 'fill-in-blanks', 'multiple-choice-picture', 'categorize', 'answer-questions-picture', 'discussion'];
+const MANUAL_EXERCISES_45MIN_PICTURE = ['describe-picture', 'true-false-picture', 'matching', 'fill-in-blanks', 'multiple-choice-picture', 'answer-questions-picture'];
 
 const MEDIA_ENHANCED_OPTIONS = [{
   id: 'video',
@@ -319,10 +337,19 @@ export default function ExerciseSelector({
           </div>
         </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                {AVAILABLE_EXERCISES.map(exercise => {
+                {AVAILABLE_EXERCISES
+                  .filter(exercise => {
+                    // Hide picture-only exercises when picture mode is OFF
+                    const isPictureMode = selectedMediaTypes.includes('picture');
+                    if (!isPictureMode && exercise.pictureRequired) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map(exercise => {
           const isSelected = selectedExercises.includes(exercise.id);
           const isPictureMode = selectedMediaTypes.includes('picture');
-          const isPictureExercise = PICTURE_COMPATIBLE_EXERCISES.includes(exercise.id);
+          const isPictureExercise = exercise.pictureRequired || false;
           const canSelect = selectionMode === 'manual' && (isSelected || selectedExercises.length < maxExercises) && !exercise.comingSoon;
           const isDisabled = selectionMode !== 'manual' || exercise.comingSoon;
           
@@ -342,9 +369,6 @@ export default function ExerciseSelector({
                          <span className="text-lg">{exercise.icon}</span>
                          <span>{exercise.label}</span>
                          {exercise.comingSoon && <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Soon</span>}
-                         {isPictureMode && isPictureExercise && (
-                           <span className="text-xs bg-worksheet-purple text-white px-2 py-1 rounded ml-auto">Picture</span>
-                         )}
                        </label>
                       
                         {/* Tooltip with 1 second delay */}

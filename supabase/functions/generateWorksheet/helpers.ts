@@ -28,8 +28,26 @@ export function getExerciseTypesForCount(count: number, selectedExercises?: stri
 }
 
 /**
+ * Normalizes exercise ID by removing -picture suffix
+ * Returns both the base ID and whether it requires a picture
+ */
+export function normalizeExerciseId(exerciseId: string): { baseId: string; usePicture: boolean } {
+  if (exerciseId.endsWith('-picture')) {
+    return {
+      baseId: exerciseId.replace('-picture', ''),
+      usePicture: true
+    };
+  }
+  return {
+    baseId: exerciseId,
+    usePicture: false
+  };
+}
+
+/**
  * Validates and filters selected exercises from the form
  * Ensures exercises exist and respects count limit
+ * UPDATED: Now handles -picture suffix
  */
 export function validateAndFilterExercises(selectedExercises: string[], maxCount: number): string[] {
   // All available exercise types (matching individual-exercises.ts)
@@ -39,7 +57,9 @@ export function validateAndFilterExercises(selectedExercises: string[], maxCount
     'odd-one-out', 'synonyms-antonyms', 'sentence-transformation', 
     'word-order', 'gap-text', 'negative-prefixes', 'categorize',
     'paraphrasing', 'complete-word', 'matching-halves', 
-    'describe-picture', 'answer-questions'
+    'describe-picture', 'answer-questions',
+    // Picture versions
+    'true-false-picture', 'multiple-choice-picture', 'answer-questions-picture'
   ];
   
   // Filter out invalid exercise types
