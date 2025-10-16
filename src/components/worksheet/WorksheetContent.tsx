@@ -357,47 +357,51 @@ export default function WorksheetContent({
       )}
 
       {/* Active exercises - sorted to show picture-related exercises first */}
-        {activeExercises
-          .slice()
-          .sort((a: any, b: any) => {
-            // Check if exercise types contain '-picture' suffix
-            const aIsPicture = a.type?.includes('-picture') || a.image_url || a.media_url;
-            const bIsPicture = b.type?.includes('-picture') || b.image_url || b.media_url;
-            
-            // Picture exercises come first
-            if (aIsPicture && !bIsPicture) return -1;
-            if (!aIsPicture && bIsPicture) return 1;
-            return 0;
-          })
-          .map((exercise: any, activeIndex: number) => {
-          // Find the original index in the full exercises array
-          const originalIndex = editableWorksheet.exercises.findIndex((ex: any) => ex === exercise);
+        {(() => {
+          // Create sorted version for display
+          const sortedExercises = activeExercises
+            .slice()
+            .sort((a: any, b: any) => {
+              // Check if exercise types contain '-picture' suffix
+              const aIsPicture = a.type?.includes('-picture') || a.image_url || a.media_url;
+              const bIsPicture = b.type?.includes('-picture') || b.image_url || b.media_url;
+              
+              // Picture exercises come first
+              if (aIsPicture && !bIsPicture) return -1;
+              if (!aIsPicture && bIsPicture) return 1;
+              return 0;
+            });
           
-          return (
-            <div key={originalIndex} className="relative">
-              {!isDownloadUnlocked && <DemoWatermark />}
-              <ExerciseSection
-                ref={(el) => (navigation.exerciseRefs.current[originalIndex] = el)}
-                exercise={exercise}
-                index={activeIndex + 1}
-                originalIndex={originalIndex}
-                isEditing={isEditing}
-                viewMode={viewMode}
-                editableWorksheet={editableWorksheet}
-                setEditableWorksheet={setEditableWorksheet}
-                worksheetId={worksheetId}
-                originalFormData={inputParams}
-                userId={userId}
-                totalExercises={activeExercises.length}
-                onMoveUp={() => moveExerciseUp(originalIndex)}
-                onMoveDown={() => moveExerciseDown(originalIndex)}
-                onDeleteExercise={() => softDeleteExercise(originalIndex)}
-                isCollapsed={navigation.collapsedExercises.get(activeIndex)}
-                onToggleCollapse={() => navigation.toggleExercise(activeIndex)}
-              />
-            </div>
-          );
-        })}
+          return sortedExercises.map((exercise: any, sortedIndex: number) => {
+            // Find the original index in the full exercises array
+            const originalIndex = editableWorksheet.exercises.findIndex((ex: any) => ex === exercise);
+            
+            return (
+              <div key={originalIndex} className="relative">
+                {!isDownloadUnlocked && <DemoWatermark />}
+                <ExerciseSection
+                  ref={(el) => (navigation.exerciseRefs.current[sortedIndex] = el)}
+                  exercise={exercise}
+                  index={sortedIndex + 1}
+                  originalIndex={originalIndex}
+                  isEditing={isEditing}
+                  viewMode={viewMode}
+                  editableWorksheet={editableWorksheet}
+                  setEditableWorksheet={setEditableWorksheet}
+                  worksheetId={worksheetId}
+                  originalFormData={inputParams}
+                  userId={userId}
+                  totalExercises={activeExercises.length}
+                  onMoveUp={() => moveExerciseUp(originalIndex)}
+                  onMoveDown={() => moveExerciseDown(originalIndex)}
+                  onDeleteExercise={() => softDeleteExercise(originalIndex)}
+                  isCollapsed={navigation.collapsedExercises.get(sortedIndex)}
+                  onToggleCollapse={() => navigation.toggleExercise(sortedIndex)}
+                />
+              </div>
+            );
+          });
+        })()}
 
       {editableWorksheet.vocabulary_sheet && editableWorksheet.vocabulary_sheet.length > 0 && (
         <div className="relative">

@@ -138,22 +138,22 @@ const MANUAL_EXERCISES_45MIN = ['reading', 'true-false', 'matching', 'fill-in-bl
 
 // Picture mode defaults (with picture-compatible exercises using -picture suffix)
 const MANUAL_EXERCISES_60MIN_PICTURE = [
-  'answer-questions-picture',
   'describe-picture',
-  'matching',
+  'answer-questions-picture',
+  'true-false',
   'fill-in-blanks',
-  'multiple-choice-picture',
-  'true-false-picture',
+  'multiple-choice',
+  'odd-one-out',
   'categorize',
-  'odd-one-out'
+  'word-order'
 ];
 const MANUAL_EXERCISES_45MIN_PICTURE = [
-  'answer-questions-picture',
   'describe-picture',
-  'matching',
+  'answer-questions-picture',
+  'true-false',
   'fill-in-blanks',
-  'multiple-choice-picture',
-  'true-false-picture'
+  'multiple-choice',
+  'categorize'
 ];
 
 const MEDIA_ENHANCED_OPTIONS = [{
@@ -208,14 +208,14 @@ export default function ExerciseSelector({
         .map(ex => ex.id);
       
       const availableOtherExercises = AVAILABLE_EXERCISES
-        .filter(ex => !ex.comingSoon && !PICTURE_COMPATIBLE_EXERCISES.includes(ex.id) && ex.id !== 'reading')
+        .filter(ex => !ex.comingSoon && !PICTURE_COMPATIBLE_EXERCISES.includes(ex.id) && ex.id !== 'reading' && ex.id !== 'discussion')
         .map(ex => ex.id);
       
       // Select 2 random picture exercises
       const shuffledPicture = [...availablePictureExercises].sort(() => Math.random() - 0.5);
       const selectedPicture = shuffledPicture.slice(0, 2);
       
-      // Select remaining exercises from other types
+      // Select remaining exercises from other types (excluding Reading and Discussion)
       const shuffledOther = [...availableOtherExercises].sort(() => Math.random() - 0.5);
       const selectedOther = shuffledOther.slice(0, maxExercises - 2);
       
