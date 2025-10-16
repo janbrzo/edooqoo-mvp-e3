@@ -65,7 +65,9 @@ export default function MediaSection({
             <img
               src={selectedImage.url}
               alt={selectedImage.description || 'Lesson image'}
-              className="w-full h-auto object-contain max-h-[400px]"
+              className="w-full h-auto object-contain max-h-[400px] cursor-pointer"
+              onClick={onToggleFullScreen}
+              title="Click to expand image"
             />
             {!isPinned && onTogglePin && onToggleFullScreen && (
               <div className="absolute top-2 right-2 flex flex-col gap-2">
