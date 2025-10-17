@@ -127,10 +127,40 @@ const AVAILABLE_EXERCISES = [{
   description: 'Students provide answers to questions about the picture, demonstrating visual comprehension and observation skills.',
   pictureRequired: true,
   baseExercise: 'answer-questions'
+}, {
+  id: 'describe-video',
+  label: 'Describe Video',
+  icon: '🎬',
+  description: 'Students describe scenes, actions, and details from the video, developing observation and speaking skills.',
+  videoRequired: true
+}, {
+  id: 'answer-questions-video',
+  label: 'Answer Questions',
+  icon: '❓',
+  description: 'Students answer comprehension questions about the video content, demonstrating understanding.',
+  videoRequired: true,
+  baseExercise: 'answer-questions'
+}, {
+  id: 'true-false-video',
+  label: 'True/False',
+  icon: '✓✗',
+  description: 'Students determine if statements about the video are true or false.',
+  videoRequired: true,
+  baseExercise: 'true-false'
+}, {
+  id: 'multiple-choice-video',
+  label: 'Multiple Choice',
+  icon: '📝',
+  description: 'Students answer multiple choice questions based on video content.',
+  videoRequired: true,
+  baseExercise: 'multiple-choice'
 }];
 
 // Picture-compatible exercises for automatic selection (with -picture suffix)
 const PICTURE_COMPATIBLE_EXERCISES = ['multiple-choice-picture', 'true-false-picture', 'answer-questions-picture', 'describe-picture'];
+
+// Video-compatible exercises for automatic selection (with -video suffix)
+const VIDEO_COMPATIBLE_EXERCISES = ['describe-video', 'answer-questions-video', 'true-false-video', 'multiple-choice-video'];
 
 // Predefined exercise sets for Manual mode
 const MANUAL_EXERCISES_60MIN = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
@@ -150,6 +180,27 @@ const MANUAL_EXERCISES_60MIN_PICTURE = [
 const MANUAL_EXERCISES_45MIN_PICTURE = [
   'describe-picture',
   'answer-questions-picture',
+  'true-false',
+  'fill-in-blanks',
+  'multiple-choice',
+  'categorize'
+];
+
+// Video mode defaults
+const MANUAL_EXERCISES_60MIN_VIDEO = [
+  'describe-video',
+  'answer-questions-video',
+  'true-false',
+  'fill-in-blanks',
+  'multiple-choice',
+  'odd-one-out',
+  'categorize',
+  'word-order'
+];
+
+const MANUAL_EXERCISES_45MIN_VIDEO = [
+  'describe-video',
+  'answer-questions-video',
   'true-false',
   'fill-in-blanks',
   'multiple-choice',
@@ -191,15 +242,23 @@ export default function ExerciseSelector({
   // Get default exercises for manual mode
   const manualDefaults = useMemo(() => {
     const isPictureMode = selectedMediaTypes.includes('picture');
+    const isVideoMode = selectedMediaTypes.includes('video');
+    
     if (isPictureMode) {
       return lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_PICTURE : MANUAL_EXERCISES_60MIN_PICTURE;
     }
+    
+    if (isVideoMode) {
+      return lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_VIDEO : MANUAL_EXERCISES_60MIN_VIDEO;
+    }
+    
     return lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
   }, [lessonTime, selectedMediaTypes]);
 
   // Generate random exercises for random mode
   const generateRandomExercises = useCallback(() => {
     const isPictureMode = selectedMediaTypes.includes('picture');
+    const isVideoMode = selectedMediaTypes.includes('video');
     
     if (isPictureMode) {
       // Picture mode: Always select 2 picture-compatible exercises, never Reading
@@ -220,6 +279,25 @@ export default function ExerciseSelector({
       const selectedOther = shuffledOther.slice(0, maxExercises - 2);
       
       return [...selectedPicture, ...selectedOther];
+    } else if (isVideoMode) {
+      // Video mode: Always select 2 video-compatible exercises, never Reading
+      const availableVideoExercises = AVAILABLE_EXERCISES
+        .filter(ex => !ex.comingSoon && VIDEO_COMPATIBLE_EXERCISES.includes(ex.id))
+        .map(ex => ex.id);
+      
+      const availableOtherExercises = AVAILABLE_EXERCISES
+        .filter(ex => !ex.comingSoon && !VIDEO_COMPATIBLE_EXERCISES.includes(ex.id) && ex.id !== 'reading' && ex.id !== 'discussion')
+        .map(ex => ex.id);
+      
+      // Select 2 random video exercises
+      const shuffledVideo = [...availableVideoExercises].sort(() => Math.random() - 0.5);
+      const selectedVideo = shuffledVideo.slice(0, 2);
+      
+      // Select remaining exercises from other types (excluding Reading and Discussion)
+      const shuffledOther = [...availableOtherExercises].sort(() => Math.random() - 0.5);
+      const selectedOther = shuffledOther.slice(0, maxExercises - 2);
+      
+      return [...selectedVideo, ...selectedOther];
     } else {
       // Normal mode: random selection from all available
       const availableExercises = AVAILABLE_EXERCISES.filter(ex => !ex.comingSoon).map(ex => ex.id);
@@ -270,7 +348,21 @@ export default function ExerciseSelector({
     onChange(newSelection);
   }, [selectedExercises, maxExercises, onChange, selectionMode]);
   const handleMediaToggle = (mediaType: MediaType) => {
-    const newMediaTypes = selectedMediaTypes.includes(mediaType) ? selectedMediaTypes.filter(type => type !== mediaType) : [...selectedMediaTypes, mediaType];
+    // Video and Picture are mutually exclusive
+    let newMediaTypes: MediaType[];
+    
+    if (selectedMediaTypes.includes(mediaType)) {
+      // Deactivating current media type
+      newMediaTypes = selectedMediaTypes.filter(type => type !== mediaType);
+    } else {
+      // Activating new media type - clear others if picture or video
+      if (mediaType === 'picture' || mediaType === 'video') {
+        newMediaTypes = [mediaType];
+      } else {
+        newMediaTypes = [...selectedMediaTypes, mediaType];
+      }
+    }
+    
     onMediaTypesChange(newMediaTypes);
     
     // Update exercises based on media selection
@@ -296,6 +388,29 @@ export default function ExerciseSelector({
       
       onChange(newExercises);
     }
+    
+    if (mediaType === 'video') {
+      const isVideoActive = !selectedMediaTypes.includes('video');
+      let newExercises: string[];
+      
+      if (isVideoActive) {
+        // Video activated
+        if (selectionMode === 'manual') {
+          newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_VIDEO : MANUAL_EXERCISES_60MIN_VIDEO;
+        } else {
+          newExercises = generateRandomExercises();
+        }
+      } else {
+        // Video deactivated
+        if (selectionMode === 'manual') {
+          newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
+        } else {
+          newExercises = generateRandomExercises();
+        }
+      }
+      
+      onChange(newExercises);
+    }
   };
   return <div className="space-y-4">
       {/* Media Enhanced Options */}
@@ -305,7 +420,8 @@ export default function ExerciseSelector({
           {MEDIA_ENHANCED_OPTIONS.map(media => {
             const isSelected = selectedMediaTypes.includes(media.id as MediaType);
             const isPicture = media.id === 'picture';
-            const isDisabled = !isPicture;
+            const isVideo = media.id === 'video';
+            const isDisabled = media.id === 'audio';
             
             return (
               <button 
@@ -355,17 +471,27 @@ export default function ExerciseSelector({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 {AVAILABLE_EXERCISES
                   .filter(exercise => {
-                    // Hide picture-only exercises when picture mode is OFF
                     const isPictureMode = selectedMediaTypes.includes('picture');
+                    const isVideoMode = selectedMediaTypes.includes('video');
+                    
+                    // Hide picture-only exercises when picture mode is OFF
                     if (!isPictureMode && exercise.pictureRequired) {
                       return false;
                     }
+                    
+                    // Hide video-only exercises when video mode is OFF
+                    if (!isVideoMode && exercise.videoRequired) {
+                      return false;
+                    }
+                    
                     return true;
                   })
                   .map(exercise => {
           const isSelected = selectedExercises.includes(exercise.id);
           const isPictureMode = selectedMediaTypes.includes('picture');
+          const isVideoMode = selectedMediaTypes.includes('video');
           const isPictureExercise = exercise.pictureRequired || false;
+          const isVideoExercise = exercise.videoRequired || false;
           const canSelect = selectionMode === 'manual' && (isSelected || selectedExercises.length < maxExercises) && !exercise.comingSoon;
           const isDisabled = selectionMode !== 'manual' || exercise.comingSoon;
           
@@ -387,6 +513,11 @@ export default function ExerciseSelector({
                          {isPictureExercise && (
                            <span className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white px-2 py-0.5 rounded font-semibold">
                              Picture
+                           </span>
+                         )}
+                         {isVideoExercise && (
+                           <span className="text-xs bg-gradient-to-r from-red-500 to-orange-500 text-white px-2 py-0.5 rounded font-semibold">
+                             Video
                            </span>
                          )}
                          {exercise.comingSoon && <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Soon</span>}

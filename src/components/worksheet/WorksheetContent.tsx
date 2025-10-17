@@ -344,10 +344,11 @@ export default function WorksheetContent({
         </div>
       )}
 
-      {/* Media Section - displays image once for all picture exercises */}
-      {inputParams?.selectedImage && (
+      {/* Media Section - displays image or video for media exercises */}
+      {(inputParams?.selectedImage || inputParams?.selectedVideo) && (
         <MediaSection
           selectedImage={inputParams.selectedImage}
+          selectedVideo={inputParams.selectedVideo}
           isDownloadUnlocked={isDownloadUnlocked}
           isPinned={isPinned}
           onTogglePin={onTogglePin}
@@ -356,19 +357,23 @@ export default function WorksheetContent({
         />
       )}
 
-      {/* Active exercises - sorted to show picture-related exercises first */}
+      {/* Active exercises - sorted to show picture and video exercises first */}
         {(() => {
           // Create sorted version for display
           const sortedExercises = activeExercises
             .slice()
             .sort((a: any, b: any) => {
-              // Check if exercise types contain '-picture' suffix
+              // Check exercise types
               const aIsPicture = a.type?.includes('-picture') || a.image_url || a.media_url;
               const bIsPicture = b.type?.includes('-picture') || b.image_url || b.media_url;
+              const aIsVideo = a.type?.includes('-video') || a.video_url;
+              const bIsVideo = b.type?.includes('-video') || b.video_url;
               
-              // Picture exercises come first
-              if (aIsPicture && !bIsPicture) return -1;
+              // Picture exercises come first, then video, then others
+              if (aIsPicture && !bIsPicture && !bIsVideo) return -1;
               if (!aIsPicture && bIsPicture) return 1;
+              if (aIsVideo && !bIsVideo && !bIsPicture) return -1;
+              if (!aIsVideo && bIsVideo && !aIsPicture) return 1;
               return 0;
             });
           

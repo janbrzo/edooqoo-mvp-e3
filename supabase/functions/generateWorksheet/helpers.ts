@@ -28,19 +28,30 @@ export function getExerciseTypesForCount(count: number, selectedExercises?: stri
 }
 
 /**
- * Normalizes exercise ID by removing -picture suffix
- * Returns both the base ID and whether it requires a picture
+ * Normalizes exercise ID by removing -picture or -video suffix
+ * Returns the base ID and whether it requires picture or video
  */
-export function normalizeExerciseId(exerciseId: string): { baseId: string; usePicture: boolean } {
+export function normalizeExerciseId(exerciseId: string): { baseId: string; usePicture: boolean; useVideo: boolean } {
   if (exerciseId.endsWith('-picture')) {
     return {
       baseId: exerciseId.replace('-picture', ''),
-      usePicture: true
+      usePicture: true,
+      useVideo: false
     };
   }
+  
+  if (exerciseId.endsWith('-video')) {
+    return {
+      baseId: exerciseId.replace('-video', ''),
+      usePicture: false,
+      useVideo: true
+    };
+  }
+  
   return {
     baseId: exerciseId,
-    usePicture: false
+    usePicture: false,
+    useVideo: false
   };
 }
 
@@ -59,7 +70,9 @@ export function validateAndFilterExercises(selectedExercises: string[], maxCount
     'paraphrasing', 'complete-word', 'matching-halves', 
     'describe-picture', 'answer-questions',
     // Picture versions
-    'true-false-picture', 'multiple-choice-picture', 'answer-questions-picture'
+    'true-false-picture', 'multiple-choice-picture', 'answer-questions-picture',
+    // Video versions
+    'describe-video', 'answer-questions-video', 'true-false-video', 'multiple-choice-video'
   ];
   
   // Filter out invalid exercise types
