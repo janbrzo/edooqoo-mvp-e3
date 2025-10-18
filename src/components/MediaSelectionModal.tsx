@@ -13,39 +13,23 @@ interface ImageSuggestion {
   photographerUrl: string;
 }
 
-interface VideoSuggestion {
-  id: string;
-  url: string;
-  thumbnail: string;
-  title: string;
-  description: string;
-  channelTitle: string;
-  publishedAt: string;
-}
-
 interface MediaSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImageSelect?: (image: ImageSuggestion) => void;
-  onVideoSelect?: (video: VideoSuggestion) => void;
+  onImageSelect: (image: ImageSuggestion) => void;
   searchQuery: string;
-  mediaType: 'picture' | 'video';
 }
 
 export default function MediaSelectionModal({
   isOpen,
   onClose,
   onImageSelect,
-  onVideoSelect,
-  searchQuery,
-  mediaType
+  searchQuery
 }: MediaSelectionModalProps) {
   const [images, setImages] = useState<ImageSuggestion[]>([]);
-  const [videos, setVideos] = useState<VideoSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const [selectedImage, setSelectedImage] = useState<ImageSuggestion | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<VideoSuggestion | null>(null);
 
   // Fetch images when modal opens
   useEffect(() => {
@@ -56,20 +40,14 @@ export default function MediaSelectionModal({
 
   // Countdown timer for auto-selection
   useEffect(() => {
-    const hasMedia = mediaType === 'picture' ? images.length > 0 : videos.length > 0;
-    if (!isOpen || !hasMedia) return;
+    if (!isOpen || images.length === 0) return;
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          // Auto-select random media when countdown reaches 0
-          if (mediaType === 'picture' && images.length > 0) {
-            const randomImage = images[Math.floor(Math.random() * images.length)];
-            handleImageClick(randomImage);
-          } else if (mediaType === 'video' && videos.length > 0) {
-            const randomVideo = videos[Math.floor(Math.random() * videos.length)];
-            handleVideoClick(randomVideo);
-          }
+          // Auto-select random image when countdown reaches 0
+          const randomImage = images[Math.floor(Math.random() * images.length)];
+          handleImageClick(randomImage);
           return 0;
         }
         return prev - 1;
@@ -77,26 +55,23 @@ export default function MediaSelectionModal({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isOpen, images, videos, mediaType]);
+  }, [isOpen, images]);
 
   const fetchImages = async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('fetch-media', {
-        body: { query: searchQuery, count: 4, mediaType }
+        body: { query: searchQuery, count: 4 }
       });
 
       if (error) throw error;
 
-      if (mediaType === 'picture' && data?.images) {
+      if (data?.images) {
         setImages(data.images);
-        setCountdown(30);
-      } else if (mediaType === 'video' && data?.videos) {
-        setVideos(data.videos);
-        setCountdown(30);
+        setCountdown(30); // Reset countdown
       }
     } catch (error) {
-      console.error('Error fetching media:', error);
+      console.error('Error fetching images:', error);
     } finally {
       setIsLoading(false);
     }
@@ -104,17 +79,7 @@ export default function MediaSelectionModal({
 
   const handleImageClick = (image: ImageSuggestion) => {
     setSelectedImage(image);
-    if (onImageSelect) {
-      onImageSelect(image);
-    }
-    onClose();
-  };
-
-  const handleVideoClick = (video: VideoSuggestion) => {
-    setSelectedVideo(video);
-    if (onVideoSelect) {
-      onVideoSelect(video);
-    }
+    onImageSelect(image);
     onClose();
   };
 
@@ -123,10 +88,10 @@ export default function MediaSelectionModal({
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-worksheet-purpleDark">
-            Select {mediaType === 'picture' ? 'an Image' : 'a Video'} for Your Lesson
+            Select an Image for Your Lesson
           </DialogTitle>
           <DialogDescription className="text-base">
-            Choose one of these {mediaType === 'picture' ? 'images' : 'videos'} to enhance your {mediaType}-based exercises.
+            Choose one of these images to enhance your picture-based exercises.
             {countdown > 0 && ` Auto-selecting in ${countdown}s...`}
           </DialogDescription>
         </DialogHeader>
@@ -135,7 +100,7 @@ export default function MediaSelectionModal({
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-worksheet-purple" />
           </div>
-        ) : mediaType === 'picture' ? (
+        ) : (
           <div className="grid grid-cols-2 gap-4 py-4">
             {images.map((image) => (
               <button
@@ -162,39 +127,10 @@ export default function MediaSelectionModal({
               </button>
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 py-4">
-            {videos.map((video) => (
-              <button
-                key={video.id}
-                onClick={() => handleVideoClick(video)}
-                className="group relative overflow-hidden rounded-lg border-2 border-gray-200 hover:border-worksheet-purple transition-all duration-200 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-worksheet-purple"
-              >
-                <img
-                  src={video.thumbnail}
-                  alt={video.title}
-                  className="w-full h-64 object-cover transition-transform duration-200 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end">
-                  <div className="p-4 text-white text-sm">
-                    <p className="font-medium line-clamp-2">{video.title}</p>
-                    <p className="text-xs text-gray-300 mt-1">
-                      {video.channelTitle}
-                    </p>
-                  </div>
-                </div>
-                <div className="absolute top-2 right-2 bg-white/90 rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <svg className="h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-                  </svg>
-                </div>
-              </button>
-            ))}
-          </div>
         )}
 
         {/* Countdown indicator */}
-        {!isLoading && (images.length > 0 || videos.length > 0) && countdown > 0 && (
+        {!isLoading && images.length > 0 && countdown > 0 && (
           <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
             <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
               <div 

@@ -55,7 +55,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const [selectionMode, setSelectionMode] = useState<ExerciseSelectionMode>('manual');
   const [selectedMediaTypes, setSelectedMediaTypes] = useState<MediaType[]>([]);
   const [selectedImage, setSelectedImage] = useState<any>(null);
-  const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const [showMediaModal, setShowMediaModal] = useState(false);
 
   const [currentPlaceholders, setCurrentPlaceholders] = useState<PlaceholderSet>(getRandomPlaceholderSet());
@@ -131,12 +130,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
 
     // Check if Picture mode is enabled and no image is selected
     if (selectedMediaTypes.includes('picture') && !selectedImage) {
-      setShowMediaModal(true);
-      return;
-    }
-
-    // Check if Video mode is enabled and no video is selected
-    if (selectedMediaTypes.includes('video') && !selectedVideo) {
+      // Open media selection modal
       setShowMediaModal(true);
       return;
     }
@@ -145,7 +139,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
     submitForm();
   };
 
-  const submitForm = (imageToSubmit?: any, videoToSubmit?: any) => {
+  const submitForm = (imageToSubmit?: any) => {
 
     // Auto-complete exercises if not enough are selected in manual mode
     const maxExercises = lessonTime === '45min' ? 6 : 8;
@@ -209,8 +203,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined,
       selectedExercises: finalExercises,
       selectedMediaTypes,
-      selectedImage: imageToSubmit || selectedImage,
-      selectedVideo: videoToSubmit || selectedVideo
+      selectedImage: imageToSubmit || selectedImage
     };
 
     // Refresh onboarding progress after successful worksheet generation
@@ -276,15 +269,9 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
         onImageSelect={(image) => {
           setSelectedImage(image);
           setShowMediaModal(false);
-          submitForm(image, null);
-        }}
-        onVideoSelect={(video) => {
-          setSelectedVideo(video);
-          setShowMediaModal(false);
-          submitForm(null, video);
+          submitForm(image);
         }}
         searchQuery={lessonTopic || 'education'}
-        mediaType={selectedMediaTypes.includes('video') ? 'video' : 'picture'}
       />
       
       <Card className="bg-white shadow-sm">

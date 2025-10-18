@@ -91,11 +91,9 @@ serve(async (req) => {
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
 
-    // Get selected image and video from formData if available
+    // Get selected image from formData if available
     const selectedImage = formData?.selectedImage || null;
-    const selectedVideo = formData?.selectedVideo || null;
     const hasPictureMedia = selectedImage !== null;
-    const hasVideoMedia = selectedVideo !== null;
     
     // ETAP 5: Enhanced logging for picture mode debugging
     console.log('📸 Picture mode detailed check:', { 
@@ -140,15 +138,14 @@ serve(async (req) => {
       pictureCompatibleInSelection: effectiveExercises?.filter(e => pictureCompatibleTypes.includes(e))
     });
     
-    // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage and selectedVideo
+    // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage
     const systemMessage = composeSystemMessage(
       hasGrammarFocus, 
       grammarFocus, 
       formData, 
       exerciseCount, 
       effectiveExercises,
-      selectedImage,
-      selectedVideo
+      selectedImage
     );
 
     // HEARTBEAT LOG: Before OpenAI API call

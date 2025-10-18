@@ -9,16 +9,6 @@ export type Tile = {
   title: string;
 };
 
-export interface VideoSuggestion {
-  id: string;
-  url: string; // YouTube embed URL
-  thumbnail: string;
-  title: string;
-  description: string;
-  channelTitle: string;
-  publishedAt: string;
-}
-
 export interface FormData {
   lessonTime: LessonTime;
   lessonTopic: string;
@@ -41,7 +31,6 @@ export interface FormData {
     photographer: string;
     photographerUrl: string;
   };
-  selectedVideo?: VideoSuggestion;
 }
 
 export interface WorksheetData {
