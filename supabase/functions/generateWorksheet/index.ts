@@ -91,24 +91,6 @@ serve(async (req) => {
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
 
-    // Get selected image from formData if available
-    const selectedImage = formData?.selectedImage || null;
-    const hasPictureMedia = selectedImage !== null;
-    
-    // ETAP 5: Enhanced logging for picture mode debugging
-    console.log('📸 Picture mode detailed check:', { 
-      hasPictureMedia, 
-      hasImageUrl: !!selectedImage?.url,
-      imageId: selectedImage?.id,
-      photographer: selectedImage?.photographer,
-      imageDescription: selectedImage?.description?.substring(0, 100),
-      selectedImageFullObject: selectedImage ? JSON.stringify(selectedImage).substring(0, 200) : null
-    });
-    
-    // ETAP 6: Log selectedExercises transformation for picture mode
-    const pictureCompatibleTypes = ['multiple-choice', 'true-false', 'answer-questions'];
-    const selectedExercisesPreliminary = formData?.selectedExercises;
-
     // Determine exercise count from lesson duration  
     let exerciseCount = 8; // Default for 60+ minutes
     
@@ -128,14 +110,87 @@ serve(async (req) => {
     const effectiveExercises = isRegeneration && formData?.targetExerciseType 
       ? [formData.targetExerciseType] 
       : selectedExercises;
+
+    // CHECK: Do exercises require picture?
+    const pictureRequiredExercises = [
+      'describe-picture', 
+      'answer-questions-picture', 
+      'true-false-picture', 
+      'multiple-choice-picture'
+    ];
+    const requiresPicture = effectiveExercises?.some(ex => 
+      pictureRequiredExercises.some(reqEx => ex.includes(reqEx))
+    );
+
+    console.log('📸 Picture requirement check:', {
+      selectedExercises: effectiveExercises,
+      requiresPicture,
+      hasExistingImage: !!formData?.selectedImage
+    });
+
+    // AUTO-GENERATE IMAGE if exercises require picture but no image provided
+    let selectedImage = formData?.selectedImage || null;
+    
+    if (requiresPicture && !selectedImage) {
+      console.log('🎨 [GEMINI-IMAGE] Auto-generating image - exercises require picture');
+      
+      try {
+        // Extract topic from formData or prompt
+        const topic = formData?.lessonTopic || formData?.topic || 'general English lesson';
+        const englishLevel = formData?.englishLevel || 'B1/B2';
+
+        console.log('🎨 [GEMINI-IMAGE] Calling generate-image function with:', { topic, englishLevel });
+
+        // Call generate-image edge function
+        const imageGenResponse = await fetch(
+          `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-image`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+            },
+            body: JSON.stringify({ topic, englishLevel })
+          }
+        );
+
+        if (!imageGenResponse.ok) {
+          const errorText = await imageGenResponse.text();
+          console.error('🎨 [GEMINI-IMAGE] Generation failed:', errorText);
+          throw new Error(`Image generation failed: ${imageGenResponse.status}`);
+        }
+
+        const imageGenData = await imageGenResponse.json();
+        
+        if (imageGenData.success && imageGenData.image) {
+          selectedImage = imageGenData.image;
+          console.log('🎨 [GEMINI-IMAGE] Image generated successfully:', {
+            imageId: selectedImage.id,
+            descriptionLength: selectedImage.detailedDescription?.length,
+            source: selectedImage.source
+          });
+        } else {
+          throw new Error('Invalid response from generate-image function');
+        }
+
+      } catch (imageError) {
+        console.error('🎨 [GEMINI-IMAGE] Failed to generate image:', imageError);
+        // Continue without image - exercises will be generated without picture
+        console.log('⚠️ Continuing worksheet generation without picture');
+      }
+    }
+
+    const hasPictureMedia = selectedImage !== null;
     const exerciseTypes = getExerciseTypesForCount(exerciseCount, effectiveExercises);
     
-    // ETAP 6: Log transformation details for picture mode
-    console.log('📸 Picture mode - selectedExercises transformation check:', {
-      originalSelectedExercises: effectiveExercises,
-      hasPictureMedia,
-      willTransformToPicture: hasPictureMedia && effectiveExercises?.some(e => pictureCompatibleTypes.includes(e)),
-      pictureCompatibleInSelection: effectiveExercises?.filter(e => pictureCompatibleTypes.includes(e))
+    // Enhanced logging for picture mode debugging
+    console.log('📸 Picture mode final state:', { 
+      hasPictureMedia, 
+      hasImageUrl: !!selectedImage?.url,
+      imageId: selectedImage?.id,
+      imageSource: selectedImage?.source,
+      hasDetailedDescription: !!selectedImage?.detailedDescription,
+      descriptionPreview: selectedImage?.detailedDescription?.substring(0, 150)
     });
     
     // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage

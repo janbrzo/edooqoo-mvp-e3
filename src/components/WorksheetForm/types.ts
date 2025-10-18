@@ -28,8 +28,13 @@ export interface FormData {
     url: string;
     thumbnail: string;
     description: string;
+    detailedDescription?: string; // NEW: Full 200-300 word description for AI-generated images
     photographer: string;
     photographerUrl: string;
+    source?: string; // NEW: 'gemini-generated' | 'unsplash'
+    generationPrompt?: string; // NEW: Original prompt used to generate image
+    topic?: string; // NEW: Lesson topic used for generation
+    englishLevel?: string; // NEW: Level used for generation
   };
 }
 

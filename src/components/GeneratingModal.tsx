@@ -10,6 +10,7 @@ const generationSteps = [
   "Analyzing your requirements...",
   "Researching topic-specific content...", 
   "Creating exercise structure...",
+  "🎨 Generating custom AI image...", // NEW: Image generation step
   "Generating reading comprehension...",
   "Creating vocabulary exercises...",
   "Developing grammar activities...",

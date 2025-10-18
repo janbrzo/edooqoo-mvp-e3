@@ -15,7 +15,6 @@ import { useStudents } from "@/hooks/useStudents";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shuffle, Brain, MousePointer, ChevronDown } from "lucide-react";
-import MediaSelectionModal from "@/components/MediaSelectionModal";
 import type { MediaType } from './types';
 
 export type { FormData };
@@ -55,7 +54,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const [selectionMode, setSelectionMode] = useState<ExerciseSelectionMode>('manual');
   const [selectedMediaTypes, setSelectedMediaTypes] = useState<MediaType[]>([]);
   const [selectedImage, setSelectedImage] = useState<any>(null);
-  const [showMediaModal, setShowMediaModal] = useState(false);
 
   const [currentPlaceholders, setCurrentPlaceholders] = useState<PlaceholderSet>(getRandomPlaceholderSet());
   const [currentSuggestions, setCurrentSuggestions] = useState<SuggestionSet[]>([]);
@@ -128,19 +126,11 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       return;
     }
 
-    // Check if Picture mode is enabled and no image is selected
-    if (selectedMediaTypes.includes('picture') && !selectedImage) {
-      // Open media selection modal
-      setShowMediaModal(true);
-      return;
-    }
-
-    // Proceed with normal form submission
+    // Proceed with form submission - image generation handled in backend
     submitForm();
   };
 
-  const submitForm = (imageToSubmit?: any) => {
-
+  const submitForm = () => {
     // Auto-complete exercises if not enough are selected in manual mode
     const maxExercises = lessonTime === '45min' ? 6 : 8;
     let finalExercises = [...selectedExercises];
@@ -203,7 +193,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined,
       selectedExercises: finalExercises,
       selectedMediaTypes,
-      selectedImage: imageToSubmit || selectedImage
+      selectedImage: selectedImage // Image will be auto-generated in backend if needed
     };
 
     // Refresh onboarding progress after successful worksheet generation
@@ -262,18 +252,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
 
   return (
     <div className={`w-full ${isMobile ? 'py-2' : 'py-[24px]'}`}>
-      {/* Media Selection Modal */}
-      <MediaSelectionModal
-        isOpen={showMediaModal}
-        onClose={() => setShowMediaModal(false)}
-        onImageSelect={(image) => {
-          setSelectedImage(image);
-          setShowMediaModal(false);
-          submitForm(image);
-        }}
-        searchQuery={lessonTopic || 'education'}
-      />
-      
       <Card className="bg-white shadow-sm">
         <CardContent className={`${isMobile ? 'p-3' : 'p-8'}`}>
           <form onSubmit={handleSubmit}>
