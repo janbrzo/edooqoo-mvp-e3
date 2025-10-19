@@ -3,38 +3,42 @@
  * EXACT content from original prompt - modularized for flexibility
  */
 
-import { 
-  exerciseFunctions, 
-  exerciseOrder, 
-  getVocabularySheet 
-} from './individual-exercises.ts';
+import { exerciseFunctions, exerciseOrder, getVocabularySheet } from "./individual-exercises.ts";
 
-export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: string | null, exerciseCount: number = 8, selectedExercises?: string[], hasSelectedImage?: boolean) => {
+export const getExerciseTemplates = (
+  hasGrammarFocus: boolean,
+  grammarFocus: string | null,
+  exerciseCount: number = 8,
+  selectedExercises?: string[],
+  hasSelectedImage?: boolean,
+) => {
   let finalExercises: string[];
-  
+
   // Use custom selected exercises if provided, otherwise use default order
   if (selectedExercises && selectedExercises.length > 0) {
     // Validate selected exercises exist in our functions
-    finalExercises = selectedExercises.filter(type => {
-      const hasFunction = type in exerciseFunctions;
-      return hasFunction;
-    }).slice(0, exerciseCount);
+    finalExercises = selectedExercises
+      .filter((type) => {
+        const hasFunction = type in exerciseFunctions;
+        return hasFunction;
+      })
+      .slice(0, exerciseCount);
   } else {
     // Select the first N exercises from the default order
     finalExercises = exerciseOrder.slice(0, exerciseCount);
   }
-  
+
   // ETAP 2: Generate exercise JSON fragments with picture mode support
-  const exerciseFragments = finalExercises.map(type => {
+  const exerciseFragments = finalExercises.map((type) => {
     // Picture-compatible exercises that have -picture versions
-    const pictureCompatible = ['multiple-choice', 'true-false', 'answer-questions'];
-    
+    const pictureCompatible = ["multiple-choice", "true-false", "answer-questions"];
+
     // If picture mode is active and exercise is compatible, use picture version
     let actualType = type;
     if (hasSelectedImage && pictureCompatible.includes(type)) {
       actualType = `${type}-picture`;
     }
-    
+
     const exerciseFunction = exerciseFunctions[actualType as keyof typeof exerciseFunctions];
     if (!exerciseFunction) {
       // Fallback to standard version if picture version doesn't exist
@@ -42,7 +46,7 @@ export const getExerciseTemplates = (hasGrammarFocus: boolean, grammarFocus: str
     }
     return exerciseFunction();
   });
-  return `20. Generate a structured JSON worksheet with this EXACT format:
+  return `23. Generate a structured JSON worksheet with this EXACT format:
 EXAMPLE OUTPUT (IGNORE CONTENT, FOCUS ON STRUCTURE):
 
 IMPORTANT: Include a "warmup_questions" array with exactly 4 conversation starter questions that are personal and opinion-based, directly related to the lesson topic. Make questions 1-2 generic and questions 3-4 specific to engage students at the beginning of the lesson.
@@ -57,7 +61,9 @@ IMPORTANT: Include a "warmup_questions" array with exactly 4 conversation starte
     "Specific question 3 directly about the lesson context",
     "Specific question 4 directly about the lesson context"
   ],
-  ${hasGrammarFocus ? `"grammar_rules": {
+  ${
+    hasGrammarFocus
+      ? `"grammar_rules": {
     "title": "Grammar Focus: ${grammarFocus}",
     "introduction": "Adjectives are words that describe or modify nouns, providing information about qualities such as size, color, shape, age, and many others. When we want to compare people, objects, or ideas, we use adjectives in their comparative or superlative forms.\\n\\nComparatives are used to compare two things or people, showing that one has a higher or lower degree of a particular quality than the other. For example, when saying \\"John is taller than Mike,\\" the adjective \\"taller\\" is in the comparative form, indicating a comparison between two individuals. Comparatives are often followed by the word \\"than\\" to introduce the second element of comparison.\\n\\nSuperlatives, on the other hand, are used to describe the extreme or highest degree of a quality among three or more things or people. For example, \\"Anna is the tallest in her class\\" uses the superlative form \\"tallest\\" to indicate that Anna has the greatest height compared to all others in the group. Superlatives are usually preceded by the definite article \\"the\\".\\n\\nThe formation of comparatives and superlatives depends largely on the length and ending of the adjective. One-syllable adjectives usually form comparatives and superlatives by adding the suffixes \\"-er\\" and \\"-est\\". For adjectives with two syllables or more, especially those with three or more syllables, the words \\"more\\" and \\"most\\" are used before the adjective instead of adding suffixes.\\n\\nSome adjectives have irregular comparative and superlative forms that must be memorized as they do not follow standard patterns. For instance, \\"good\\" becomes \\"better\\" (comparative) and \\"best\\" (superlative).\\n\\nIn addition to indicating comparisons of difference, adjectives can also be used to express equality, using the structure \\"as + adjective + as\\" to show that two things share the same degree of a quality.\\n\\nUnderstanding and correctly using comparatives and superlatives is essential for effective communication, enabling speakers and writers to accurately compare qualities and express degrees of difference or similarity.",
     "rules": [
@@ -97,9 +103,11 @@ IMPORTANT: Include a "warmup_questions" array with exactly 4 conversation starte
         "examples": ["This dish is not as hot as I expected.", "The new waiter is as friendly as the old one."]
       }
     ]
-  },` : ''}
+  },`
+      : ""
+  }
   "exercises": [
-${exerciseFragments.join(',\n')}
+${exerciseFragments.join(",\n")}
   ],
 ${getVocabularySheet()}
 }
