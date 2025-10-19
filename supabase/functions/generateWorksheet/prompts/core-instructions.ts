@@ -81,7 +81,12 @@ ${hasGrammarFocus ? `
 19. NO GRAMMAR FOCUS: The user has not specified a grammar focus, so create a general worksheet focused on the topic and goal without emphasizing any particular grammar point.
 `}
 
-  18. ENSURE ALL INSTRUCTIONS ARE STRICTLY ADHERED TO AND THAT THE JSON IS COMPLETE AND VALID.
-  19. Check your work again before finalizing. Every part of the JSON must be intentional and correct.
+${hasSelectedImage ? `
+20. IMAGE CONTEXT FOR PICTURE EXERCISES: 
+You have an AI-generated image with detailed description provided separately. For picture-based exercises, use SPECIFIC DETAILS from that description (people, objects, colors, positions, actions). Each exercise must focus on different aspects.
+` : ''}
+
+  21. ENSURE ALL INSTRUCTIONS ARE STRICTLY ADHERED TO AND THAT THE JSON IS COMPLETE AND VALID.
+  22. Check your work again before finalizing. Every part of the JSON must be intentional and correct.
   `;
 };

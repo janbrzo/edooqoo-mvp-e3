@@ -24,17 +24,17 @@ export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: nu
     'complete-word': `EXACTLY 10 words with "partial", "complete", and "clue" fields. Missing letters use always all the vowels: a, e, i, o, u, y. For missing letters dont use any consonants. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'matching-halves': `EXACTLY 10 sentence halves with "first_half", "second_half", and "id" fields. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'describe-picture': hasSelectedImage 
-      ? `Generate complete exercise based on the provided image. Include "image_description" describing the actual image, 8 detailed "prompts" specific to what's visible in the image, "useful_vocabulary" relevant to the image content, "image_url", "photographer", and "photographer_url". Time: 10 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
+      ? `Generate complete exercise based on the provided image. Include "image_description" describing the actual image, 8 detailed "prompts" specific to what's visible, "useful_vocabulary" relevant to content. Time: 10 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
       : `Generate generic describe-picture exercise with general prompts. Include "image_description", 8 general "prompts", and "useful_vocabulary". Time: 10 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'answer-questions': hasSelectedImage
-      ? `Generate EXACTLY 10 questions with "question" and "focus" fields based on the provided image. Questions should reference what's visible in the image and encourage personal response. Include "image_url", "photographer", and "photographer_url" in exercise data. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
-      : `EXACTLY 10 questions with "question" and "focus" fields for personal response exercises. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+      ? `EXACTLY 10 questions with "question" and "focus" fields based on image. Questions reference visible details and encourage personal response. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
+      : `EXACTLY 10 questions with "question" and "focus" fields for personal response. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'multiple-choice-picture': hasSelectedImage
-      ? `Generate EXACTLY 10 multiple-choice questions based on the provided image. Each question must have 4 options with one correct answer. Questions should reference what's visible in the image. Include "image_url", "photographer", and "photographer_url" in exercise data. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
-      : `Generate EXACTLY 10 multiple-choice questions about pictures in general. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+      ? `EXACTLY 10 multiple-choice questions based on the provided image. Each question has 4 options with one correct answer referencing visible details. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
+      : `EXACTLY 10 multiple-choice questions about pictures in general. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'true-false-picture': hasSelectedImage
-      ? `Generate EXACTLY 10 true/false statements based on the provided image. Statements should reference what's visible in the image. Include "image_url", "photographer", and "photographer_url" in exercise data. Time: 5 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
-      : `Generate EXACTLY 10 true/false statements about pictures in general. Time: 5 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
+      ? `EXACTLY 10 true/false statements based on visible details in the provided image. Time: 5 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
+      : `EXACTLY 10 true/false statements about pictures in general. Time: 5 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
   };
 
   let requirements = '\nCRITICAL REQUIREMENTS VERIFICATION:\n';

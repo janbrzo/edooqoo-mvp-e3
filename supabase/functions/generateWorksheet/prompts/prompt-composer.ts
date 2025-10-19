@@ -39,33 +39,9 @@ You have been provided with an AI-generated image specifically created for this 
 
 ${selectedImage.detailedDescription}
 
-CRITICAL INSTRUCTIONS FOR PICTURE-BASED EXERCISES:
+IMAGE CONTEXT FOR PICTURE EXERCISES:
 
-1. BASE ALL QUESTIONS ON THE DESCRIPTION - use specific details (people, objects, colors, positions)
-2. ENSURE VARIETY - Each exercise focuses on different aspects (people/objects/actions/details)
-3. INCLUDE positions (left/right, foreground/background), colors, and numbers
-4. EXAMPLES:
-   ✅ "The woman in the blue jacket is holding which object in her right hand?"
-   ❌ "What do you see in the image?" (too generic)
-5. ADD METADATA: "image_url", "photographer", "photographer_url", "source": "gemini-generated"
-6. NON-PICTURE EXERCISES: Generate normally without referencing the image
-`;
-    } else {
-      // LEGACY IMAGE (Unsplash or old format): Use basic description
-      imageContext = `\n\nIMAGE CONTEXT FOR PICTURE EXERCISES:
-You have access to the following image for picture-based exercises:
-- Image URL: ${selectedImage.url}
-- Image Description: ${selectedImage.description}
-- Photographer: ${selectedImage.photographer}
-- Photo Source: ${selectedImage.source || 'Unsplash'}
-
-For any picture-based exercises (describe-picture, answer-questions-picture, multiple-choice-picture, true-false-picture):
-- These exercises with "-picture" suffix MUST reference this specific image
-- Create questions and content based on what's described
-- Include the image URL in the exercise data as "image_url": "${selectedImage.url}"
-- Add photographer attribution: "photographer": "${selectedImage.photographer}", "photographer_url": "${selectedImage.photographerUrl}"
-
-IMPORTANT: Exercises WITHOUT the "-picture" suffix should be generated normally without referencing the image.
+For picture-based exercises, use SPECIFIC DETAILS from description above (people, objects, colors, positions, actions). Each exercise must focus on different aspects. Non-picture exercises ignore this image.
 `;
     }
   }
