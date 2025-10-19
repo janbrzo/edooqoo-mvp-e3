@@ -30,6 +30,19 @@ export default function MediaSection({
 }: MediaSectionProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   
+  // DEBUGGING: Log selectedImage data
+  console.log('🖼️ [MEDIASECTION] Rendering with selectedImage:', {
+    hasImage: !!selectedImage,
+    id: selectedImage?.id,
+    url: selectedImage?.url?.substring(0, 50) + '...',
+    hasDescription: !!selectedImage?.description,
+    hasDetailedDescription: !!selectedImage?.detailedDescription,
+    descriptionLength: selectedImage?.description?.length,
+    detailedDescriptionLength: selectedImage?.detailedDescription?.length,
+    source: selectedImage?.source,
+    photographer: selectedImage?.photographer,
+  });
+  
   if (!selectedImage) return null;
 
   // Priority: detailedDescription (Vertex AI) > description (Unsplash)

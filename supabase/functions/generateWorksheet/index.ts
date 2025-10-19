@@ -125,6 +125,16 @@ serve(async (req) => {
 
     // AUTO-GENERATE IMAGE if exercises require picture but no image provided
     let selectedImage = formData?.selectedImage || null;
+    
+    // DEBUGGING: Log received selectedImage
+    console.log('📸 [GENERATE-WORKSHEET] selectedImage received from formData:', {
+      hasSelectedImage: !!selectedImage,
+      imageId: selectedImage?.id,
+      imageSource: selectedImage?.source,
+      hasUrl: !!selectedImage?.url,
+      hasDetailedDescription: !!selectedImage?.detailedDescription,
+      detailedDescriptionLength: selectedImage?.detailedDescription?.length,
+    });
 
     if (requiresPicture && !selectedImage) {
       console.log("🎨 [GEMINI-IMAGE] Auto-generating image - exercises require picture");

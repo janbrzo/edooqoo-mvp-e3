@@ -107,20 +107,49 @@ serve(async (req) => {
 
     const descriptionPrompt = `You are analyzing an AI-generated image for an English language worksheet. The image was generated for the topic: "${topic}" at level ${englishLevel}.
 
-CRITICAL: Generate a CONCISE, FACTUAL description (EXACTLY 150 words, MAX 1000 characters) focusing ONLY on key elements for exercise generation.
+CRITICAL: Generate a DETAILED, FACTUAL description (200-300 words, MAX 2000 characters) focusing on key elements for exercise generation.
 
-INCLUDE ONLY:
-1. PEOPLE (max 3 sentences): Count, clothing colors, expressions, what they're holding/doing
-2. MAIN OBJECTS (max 2 sentences): Key items with colors and positions (left/right, foreground/background)
-3. KEY ACTIONS (max 2 sentences): What is happening, interactions
+STRUCTURE YOUR DESCRIPTION:
 
-FORMAT:
-- Present continuous tense ("A woman is sitting...")
-- Specific details with colors, numbers, positions
-- NO subjective interpretations ("is smiling" NOT "seems happy")
-- List 5-6 key vocabulary items visible in scene
+1. PEOPLE (4-5 sentences): 
+   - Exact count and their positions (left/right, foreground/background)
+   - Detailed clothing descriptions with colors and styles
+   - Facial expressions and body language
+   - What each person is holding or doing
+   - Interactions between people
 
-Generate the description now (150 words max):`;
+2. OBJECTS (3-4 sentences):
+   - Main objects with specific colors, sizes, and materials
+   - Precise positions relative to people and other objects
+   - Condition and state of objects
+   - Secondary objects in background
+
+3. ACTIONS (3-4 sentences):
+   - Main activity happening in the scene
+   - Specific movements and interactions
+   - Sequential actions if multiple things are happening
+   - Purpose or goal of the actions
+
+4. SETTING (2-3 sentences):
+   - Location type (indoor/outdoor, specific room/place)
+   - Background elements and environment
+   - Lighting and atmosphere
+   - Time of day indicators if visible
+
+5. VOCABULARY LIST (8-10 key words):
+   - Visible nouns (objects, places)
+   - Action verbs from the scene
+   - Adjectives describing visible elements
+   - Prepositions of place relevant to the scene
+
+FORMAT RULES:
+- Use present continuous tense ("A woman is sitting...", "Three people are discussing...")
+- Include specific details: colors, numbers, exact positions
+- Be objective and factual - NO interpretations ("is smiling" NOT "seems happy")
+- Use spatial prepositions (in front of, behind, next to, between, etc.)
+- Target 200-300 words for comprehensive detail
+
+Generate the detailed description now (200-300 words):`;
 
     const descriptionResult = await descriptionModel.generateContent(descriptionPrompt);
     let detailedDescription = descriptionResult.response.text();
@@ -129,10 +158,10 @@ Generate the description now (150 words max):`;
       throw new Error("Generated description is too short or empty");
     }
 
-    // Truncate to max 1000 chars as backup
-    if (detailedDescription.length > 1000) {
-      detailedDescription = detailedDescription.substring(0, 997) + '...';
-      console.log(`[GENERATE-IMAGE] Description truncated to 1000 chars`);
+    // Truncate to max 2000 chars as backup
+    if (detailedDescription.length > 2000) {
+      detailedDescription = detailedDescription.substring(0, 1997) + '...';
+      console.log(`[GENERATE-IMAGE] Description truncated to 2000 chars`);
     }
 
     console.log(`[GENERATE-IMAGE] Description generated (${detailedDescription.length} chars)`);
