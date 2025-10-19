@@ -218,7 +218,7 @@ serve(async (req) => {
           content: sanitizedPrompt,
         },
       ],
-      max_tokens: 10000, // nowa nazwa parametru  max_completion_tokens: 7500
+      max_completion_tokens: 20000, // nowa nazwa parametru  max_completion_tokens: 7500
     });
 
     // HEARTBEAT LOG: After OpenAI API call
