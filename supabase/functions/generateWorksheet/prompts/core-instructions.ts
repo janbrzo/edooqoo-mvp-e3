@@ -31,7 +31,8 @@ const generateExerciseListInstruction = (selectedExercises?: string[], exerciseC
   return `Use EXACTLY these exercise types in this EXACT ORDER: ${exerciseList}${exerciseCount === 6 ? ' (use only first 6)' : ''}`;
 };
 
-export const getCoreInstructions = (hasGrammarFocus: boolean, grammarFocus: string | null, formData: any, exerciseCount: number = 8, selectedExercises?: string[], hasSelectedImage?: boolean) => {
+export const getCoreInstructions = (hasGrammarFocus: boolean, grammarFocus: string | null, formData: any, exerciseCount: number = 8, selectedExercises?: string[], selectedImage?: any) => {
+  const hasSelectedImage = !!selectedImage;
   return `You are an expert ESL English language teacher specialized in creating context-specific, structured, comprehensive, high-quality English language worksheets for individual (one-on-one) tutoring sessions.
           Your goal: produce a worksheet so compelling that a private tutor will happily pay for it and actually use it.
           Your output will be used immediately in a 1-on-1 lesson; exercises must be ready-to-print without structural edits.
@@ -83,10 +84,14 @@ ${hasGrammarFocus ? `
 
 ${hasSelectedImage ? `
 20. IMAGE CONTEXT FOR PICTURE EXERCISES: 
-You have an AI-generated image with detailed description provided separately. For picture-based exercises, use SPECIFIC DETAILS from that description (people, objects, colors, positions, actions). Each exercise must focus on different aspects.
+You have an AI-generated image with detailed description:
+
+${selectedImage.detailedDescription}
+
+For picture-based exercises, use SPECIFIC DETAILS from description above (people, objects, colors, positions, actions). Each exercise must focus on different aspects.
 ` : ''}
 
-  21. ENSURE ALL INSTRUCTIONS ARE STRICTLY ADHERED TO AND THAT THE JSON IS COMPLETE AND VALID.
-  22. Check your work again before finalizing. Every part of the JSON must be intentional and correct.
+21. ENSURE ALL INSTRUCTIONS ARE STRICTLY ADHERED TO AND THAT THE JSON IS COMPLETE AND VALID.
+22. Check your work again before finalizing. Every part of the JSON must be intentional and correct.
   `;
 };

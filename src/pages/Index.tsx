@@ -86,10 +86,11 @@ const Index = () => {
             const inputParamsWithStudent = {
               ...worksheet.form_data,
               studentId: worksheet.student_id,
-              studentName: studentName || worksheet.studentName
+              studentName: studentName || worksheet.studentName,
+              selectedImage: worksheet.selected_image
             };
             worksheetState.setInputParams(inputParamsWithStudent);
-            console.log('✅ Successfully mapped form_data with student info:', inputParamsWithStudent);
+            console.log('✅ Successfully mapped form_data with student info and selectedImage:', inputParamsWithStudent);
           }
           
           worksheetState.setWorksheetId(worksheet.id);
