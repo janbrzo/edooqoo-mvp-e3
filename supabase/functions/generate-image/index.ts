@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0";
+import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const GEMINI_VERTEX_API_KEY = Deno.env.get("GEMINI_VERTEX_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,8 +33,8 @@ serve(async (req) => {
       });
     }
 
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "Lovable API key not configured" }), {
+    if (!GEMINI_VERTEX_API_KEY) {
+      return new Response(JSON.stringify({ error: "Gemini Vertex API key not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -41,56 +42,62 @@ serve(async (req) => {
 
     console.log(`[GENERATE-IMAGE] Starting image generation for topic: "${topic}", level: ${englishLevel}`);
 
-    // STEP 1: Generate image using Lovable AI (Nano Banana)
+    // STEP 1: Generate image using Vertex AI Imagen 4.0 Fast
     const imagePrompt = createImagePrompt(topic, englishLevel);
     console.log(`[GENERATE-IMAGE] Image prompt: ${imagePrompt.substring(0, 150)}...`);
 
-    const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Get access token from service account
+    const accessToken = await getVertexAccessToken(GEMINI_VERTEX_API_KEY);
+    
+    // Parse project ID from service account JSON
+    let projectId = "your-gcp-project";
+    try {
+      const serviceAccount = JSON.parse(GEMINI_VERTEX_API_KEY);
+      projectId = serviceAccount.project_id;
+      console.log(`[GENERATE-IMAGE] Using project ID: ${projectId}`);
+    } catch {
+      throw new Error("GEMINI_VERTEX_API_KEY must be a valid service account JSON");
+    }
+
+    const vertexEndpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/imagen-4.0-fast-generate-001:predict`;
+    
+    const imageResponse = await fetch(vertexEndpoint, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
-        messages: [
+        instances: [
           {
-            role: "user",
-            content: imagePrompt,
-          },
+            prompt: imagePrompt
+          }
         ],
-        modalities: ["image", "text"],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio: "16:9",
+          safetyFilterLevel: "block_few",
+          personGeneration: "allow_all"
+        }
       }),
     });
 
     if (!imageResponse.ok) {
-      if (imageResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a few moments." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (imageResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       const errorText = await imageResponse.text();
-      console.error(`[GENERATE-IMAGE] Lovable AI error: ${imageResponse.status} - ${errorText}`);
-      throw new Error(`Image generation failed: ${imageResponse.status}`);
+      console.error(`[GENERATE-IMAGE] Vertex AI error: ${imageResponse.status} - ${errorText}`);
+      throw new Error(`Image generation failed: ${imageResponse.status} - ${errorText}`);
     }
 
     const imageData = await imageResponse.json();
-    const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    const base64Image = imageData.predictions?.[0]?.bytesBase64Encoded;
 
-    if (!imageUrl || !imageUrl.startsWith("data:image/")) {
-      throw new Error("No valid image data received from Lovable AI");
+    if (!base64Image) {
+      console.error("[GENERATE-IMAGE] No image in Vertex AI response:", JSON.stringify(imageData));
+      throw new Error("No valid image data received from Vertex AI");
     }
 
-    // Extract base64 for size calculation
-    const base64Match = imageUrl.match(/^data:image\/\w+;base64,(.+)$/);
-    const base64Image = base64Match ? base64Match[1] : "";
+    // Convert to data URL
+    const imageUrl = `data:image/png;base64,${base64Image}`;
     
     console.log(`[GENERATE-IMAGE] Image generated successfully (${Math.round(base64Image.length / 1024)}KB)`);
 
@@ -160,14 +167,14 @@ Generate the description now:`;
       JSON.stringify({
         success: true,
         image: {
-          id: `lovable-ai-${Date.now()}`,
+          id: `vertex-ai-${Date.now()}`,
           url: imageUrl,
           thumbnail: imageUrl,
           description: detailedDescription.substring(0, 100) + "...",
           detailedDescription: detailedDescription,
-          photographer: "AI Generated (Lovable AI - Nano Banana)",
-          photographerUrl: "https://docs.lovable.dev/features/ai",
-          source: "lovable-ai-generated",
+          photographer: "AI Generated (Google Imagen 4.0 Fast)",
+          photographerUrl: "https://cloud.google.com/vertex-ai/generative-ai/docs/image/generate-images",
+          source: "vertex-ai-generated",
           generationPrompt: imagePrompt,
           topic: topic,
           englishLevel: englishLevel,
@@ -186,6 +193,43 @@ Generate the description now:`;
     );
   }
 });
+
+
+/**
+ * Get OAuth2 access token from service account JSON
+ */
+async function getVertexAccessToken(serviceAccountJson: string): Promise<string> {
+  const serviceAccount = JSON.parse(serviceAccountJson);
+  
+  const jwt = await create(
+    { alg: "RS256", typ: "JWT" },
+    {
+      iss: serviceAccount.client_email,
+      scope: "https://www.googleapis.com/auth/cloud-platform",
+      aud: "https://oauth2.googleapis.com/token",
+      exp: getNumericDate(60 * 60), // 1 hour
+      iat: getNumericDate(0),
+    },
+    serviceAccount.private_key
+  );
+
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    const error = await tokenResponse.text();
+    throw new Error(`Failed to get access token: ${error}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  return tokenData.access_token;
+}
 
 /**
  * Creates a detailed prompt for Gemini Imagen 3.0
