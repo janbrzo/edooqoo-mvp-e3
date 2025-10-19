@@ -41,42 +41,14 @@ ${selectedImage.detailedDescription}
 
 CRITICAL INSTRUCTIONS FOR PICTURE-BASED EXERCISES:
 
-1. BASE ALL QUESTIONS ON THE DESCRIPTION ABOVE
-   - Use SPECIFIC details mentioned in the description
-   - Reference EXACT elements (people, objects, actions, colors, positions)
-   - Create questions that REQUIRE the description to answer
-
-2. ENSURE VARIETY ACROSS 2-4 PICTURE EXERCISES:
-   Exercise 1: Focus on PEOPLE (appearances, actions, expressions)
-   Exercise 2: Focus on OBJECTS & SETTING (items, location, atmosphere)
-   Exercise 3: Focus on ACTIONS & INTERACTIONS (what's happening, relationships)
-   Exercise 4: Focus on DETAILS & INFERENCE (specific observations, implied context)
-
-3. QUESTION TYPES FOR EACH EXERCISE:
-   - Use DIFFERENT aspects of the description for each question
-   - Vary difficulty: some obvious details, some requiring careful observation
-   - Include WHERE/WHAT/WHO/HOW questions for diversity
-   - Reference specific POSITIONS (left/right, foreground/background)
-   - Use COLORS, NUMBERS, and CONCRETE observations
-
-4. QUALITY CONTROL:
-   ✅ GOOD: "The woman in the blue jacket is holding which object in her right hand?"
-   ✅ GOOD: "How many people are sitting at the table in the background?"
-   ✅ GOOD: "What color is the bag on the chair to the left?"
-   ❌ BAD: "What do you see in the image?" (too generic)
-   ❌ BAD: "Is there a person?" (too simple, could apply to any image)
-
-5. METADATA TO INCLUDE:
-   - "image_url": "${selectedImage.url}"
-   - "photographer": "${selectedImage.photographer}"
-   - "photographer_url": "${selectedImage.photographerUrl}"
-   - "source": "gemini-generated"
-
-6. EXERCISES WITHOUT "-picture" SUFFIX:
-   - Generate normally WITHOUT referencing the image
-   - Do NOT use image content in these exercises
-
-REMEMBER: The description above is 100% accurate. Create questions that PROVE the student has seen THIS specific image.
+1. BASE ALL QUESTIONS ON THE DESCRIPTION - use specific details (people, objects, colors, positions)
+2. ENSURE VARIETY - Each exercise focuses on different aspects (people/objects/actions/details)
+3. INCLUDE positions (left/right, foreground/background), colors, and numbers
+4. EXAMPLES:
+   ✅ "The woman in the blue jacket is holding which object in her right hand?"
+   ❌ "What do you see in the image?" (too generic)
+5. ADD METADATA: "image_url", "photographer", "photographer_url", "source": "gemini-generated"
+6. NON-PICTURE EXERCISES: Generate normally without referencing the image
 `;
     } else {
       // LEGACY IMAGE (Unsplash or old format): Use basic description

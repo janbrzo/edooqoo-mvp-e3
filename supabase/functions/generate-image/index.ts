@@ -107,57 +107,32 @@ serve(async (req) => {
 
     const descriptionPrompt = `You are analyzing an AI-generated image for an English language worksheet. The image was generated for the topic: "${topic}" at level ${englishLevel}.
 
-CRITICAL: Generate a DETAILED, FACTUAL description (200-300 words) of this image that will allow creating 2-4 UNIQUE picture-based exercises WITHOUT repetition.
+CRITICAL: Generate a CONCISE, FACTUAL description (EXACTLY 150 words, MAX 1000 characters) focusing ONLY on key elements for exercise generation.
 
-DESCRIPTION STRUCTURE (include ALL elements):
+INCLUDE ONLY:
+1. PEOPLE (max 3 sentences): Count, clothing colors, expressions, what they're holding/doing
+2. MAIN OBJECTS (max 2 sentences): Key items with colors and positions (left/right, foreground/background)
+3. KEY ACTIONS (max 2 sentences): What is happening, interactions
 
-1. PEOPLE (if present):
-   - Count, approximate ages, genders
-   - Clothing (colors, styles, formality)
-   - Facial expressions (specific emotions)
-   - Body language and postures
-   - Interactions between people
-   - What each person is doing/holding
+FORMAT:
+- Present continuous tense ("A woman is sitting...")
+- Specific details with colors, numbers, positions
+- NO subjective interpretations ("is smiling" NOT "seems happy")
+- List 5-6 key vocabulary items visible in scene
 
-2. SETTING:
-   - Indoor/outdoor
-   - Specific location type (office, restaurant, park, street, etc.)
-   - Time of day (if inferable from lighting)
-   - Weather/season (if visible)
-   - Atmosphere (busy/calm, formal/casual)
-
-3. OBJECTS & DETAILS:
-   - Prominent items (furniture, tools, food, technology)
-   - Colors and textures
-   - Positions and arrangements
-   - Conditions (new/old, clean/messy)
-   - Text visible (signs, labels)
-
-4. ACTIONS & EVENTS:
-   - What is happening in the scene
-   - Sequence of events (if multiple)
-   - Purpose/goal of the activity
-
-5. TEACHING OPPORTUNITIES:
-   - Vocabulary that could be taught (list 8-10 specific items visible)
-   - Grammar structures applicable to the scene
-   - Cultural or situational aspects
-
-FORMAT REQUIREMENTS:
-- Write in present continuous tense ("A woman is sitting...")
-- Use specific details, NOT generic descriptions
-- Mention positions (left/right, foreground/background)
-- Include colors, numbers, and concrete observations
-- AVOID subjective interpretations ("seems happy" → "is smiling")
-- Each paragraph should focus on different aspects to enable varied exercises
-
-Generate the description now:`;
+Generate the description now (150 words max):`;
 
     const descriptionResult = await descriptionModel.generateContent(descriptionPrompt);
-    const detailedDescription = descriptionResult.response.text();
+    let detailedDescription = descriptionResult.response.text();
 
     if (!detailedDescription || detailedDescription.length < 100) {
       throw new Error("Generated description is too short or empty");
+    }
+
+    // Truncate to max 1000 chars as backup
+    if (detailedDescription.length > 1000) {
+      detailedDescription = detailedDescription.substring(0, 997) + '...';
+      console.log(`[GENERATE-IMAGE] Description truncated to 1000 chars`);
     }
 
     console.log(`[GENERATE-IMAGE] Description generated (${detailedDescription.length} chars)`);
