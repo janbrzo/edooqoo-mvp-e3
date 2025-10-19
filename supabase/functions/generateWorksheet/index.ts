@@ -207,7 +207,7 @@ serve(async (req) => {
     // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-5-mini-2025-08-07", // gpt-4.1-2025-04-14 Changed back to gpt-4o i można gpt-4.1-2025-04-14
-      temperature: 0.2, //
+      temperature: 1, //0.2
       messages: [
         {
           role: "system",
