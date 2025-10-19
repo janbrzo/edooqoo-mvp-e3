@@ -33,6 +33,10 @@ const generateExerciseListInstruction = (selectedExercises?: string[], exerciseC
 
 export const getCoreInstructions = (hasGrammarFocus: boolean, grammarFocus: string | null, formData: any, exerciseCount: number = 8, selectedExercises?: string[], selectedImage?: any) => {
   const hasSelectedImage = !!selectedImage;
+  
+  // Extract image description before building the prompt to ensure it's properly embedded
+  const imageDescription = selectedImage?.detailedDescription || '';
+  
   return `You are an expert ESL English language teacher specialized in creating context-specific, structured, comprehensive, high-quality English language worksheets for individual (one-on-one) tutoring sessions.
           Your goal: produce a worksheet so compelling that a private tutor will happily pay for it and actually use it.
           Your output will be used immediately in a 1-on-1 lesson; exercises must be ready-to-print without structural edits.
@@ -86,7 +90,7 @@ ${hasSelectedImage ? `
 20. IMAGE CONTEXT FOR PICTURE EXERCISES: 
 You have an AI-generated image with detailed description:
 
-${selectedImage.detailedDescription}
+${imageDescription}
 
 For picture-based exercises, use SPECIFIC DETAILS from description above (people, objects, colors, positions, actions). Each exercise must focus on different aspects.
 ` : ''}
