@@ -196,10 +196,58 @@ Generate the description now:`;
 
 
 /**
+ * Convert PEM private key to ArrayBuffer
+ */
+function pemToArrayBuffer(pem: string): ArrayBuffer {
+  // Remove PEM header/footer and newlines
+  const pemContents = pem
+    .replace(/-----BEGIN PRIVATE KEY-----/, "")
+    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/\s/g, "");
+  
+  // Decode base64 to binary string
+  const binaryString = atob(pemContents);
+  
+  // Convert binary string to ArrayBuffer
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  
+  return bytes.buffer;
+}
+
+/**
+ * Import private key as CryptoKey for JWT signing
+ */
+async function importPrivateKey(pemKey: string): Promise<CryptoKey> {
+  try {
+    const keyData = pemToArrayBuffer(pemKey);
+    
+    return await crypto.subtle.importKey(
+      "pkcs8",
+      keyData,
+      {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: "SHA-256",
+      },
+      false,
+      ["sign"]
+    );
+  } catch (error) {
+    console.error("[GENERATE-IMAGE] Failed to import private key:", error);
+    throw new Error(`Invalid private key format: ${error.message}`);
+  }
+}
+
+/**
  * Get OAuth2 access token from service account JSON
  */
 async function getVertexAccessToken(serviceAccountJson: string): Promise<string> {
   const serviceAccount = JSON.parse(serviceAccountJson);
+  
+  // Import the private key as CryptoKey
+  const privateKey = await importPrivateKey(serviceAccount.private_key);
   
   const jwt = await create(
     { alg: "RS256", typ: "JWT" },
@@ -210,7 +258,7 @@ async function getVertexAccessToken(serviceAccountJson: string): Promise<string>
       exp: getNumericDate(60 * 60), // 1 hour
       iat: getNumericDate(0),
     },
-    serviceAccount.private_key
+    privateKey
   );
 
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
