@@ -1,34 +1,34 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0";
 
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { topic, englishLevel = 'B1/B2' } = await req.json();
+    const { topic, englishLevel = "B1/B2" } = await req.json();
 
     if (!topic) {
-      return new Response(
-        JSON.stringify({ error: 'Topic is required for image generation' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: "Topic is required for image generation" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (!GEMINI_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'Gemini API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: "Gemini API key not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     console.log(`[GENERATE-IMAGE] Starting image generation for topic: "${topic}", level: ${englishLevel}`);
@@ -37,22 +37,22 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
     // STEP 1: Generate image using Gemini Imagen 3.0
-    const imageModel = genAI.getGenerativeModel({ model: "imagen-3.0-generate-001" });
+    const imageModel = genAI.getGenerativeModel({ model: "imagen-3.0-generate-002" });
 
     const imagePrompt = createImagePrompt(topic, englishLevel);
     console.log(`[GENERATE-IMAGE] Image prompt: ${imagePrompt.substring(0, 150)}...`);
 
     const imageResult = await imageModel.generateContent(imagePrompt);
-    
+
     // Extract image from response
     const imageData = imageResult.response.candidates?.[0]?.content?.parts?.[0];
-    
+
     if (!imageData || !imageData.inlineData) {
-      throw new Error('No image data received from Gemini Imagen');
+      throw new Error("No image data received from Gemini Imagen");
     }
 
     const base64Image = imageData.inlineData.data;
-    const mimeType = imageData.inlineData.mimeType || 'image/jpeg';
+    const mimeType = imageData.inlineData.mimeType || "image/jpeg";
     const imageUrl = `data:${mimeType};base64,${base64Image}`;
 
     console.log(`[GENERATE-IMAGE] Image generated successfully (${Math.round(base64Image.length / 1024)}KB)`);
@@ -112,7 +112,7 @@ Generate the description now:`;
     const detailedDescription = descriptionResult.response.text();
 
     if (!detailedDescription || detailedDescription.length < 100) {
-      throw new Error('Generated description is too short or empty');
+      throw new Error("Generated description is too short or empty");
     }
 
     console.log(`[GENERATE-IMAGE] Description generated (${detailedDescription.length} chars)`);
@@ -125,27 +125,26 @@ Generate the description now:`;
           id: `gemini-${Date.now()}`,
           url: imageUrl,
           thumbnail: imageUrl, // Same as URL for now (could compress later)
-          description: detailedDescription.substring(0, 100) + '...', // Short version
+          description: detailedDescription.substring(0, 100) + "...", // Short version
           detailedDescription: detailedDescription, // FULL description for exercises
-          photographer: 'AI Generated (Gemini Imagen 3.0)',
-          photographerUrl: 'https://ai.google.dev/gemini-api/docs/imagen',
-          source: 'gemini-generated',
+          photographer: "AI Generated (Gemini Imagen 3.0)",
+          photographerUrl: "https://ai.google.dev/gemini-api/docs/imagen",
+          source: "gemini-generated",
           generationPrompt: imagePrompt,
           topic: topic,
-          englishLevel: englishLevel
-        }
+          englishLevel: englishLevel,
+        },
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-
   } catch (error) {
-    console.error('[GENERATE-IMAGE] Error:', error);
+    console.error("[GENERATE-IMAGE] Error:", error);
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: error.message,
-        details: 'Failed to generate image or description'
+        details: "Failed to generate image or description",
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
@@ -156,11 +155,12 @@ Generate the description now:`;
  */
 function createImagePrompt(topic: string, englishLevel: string): string {
   // Map English levels to complexity
-  const complexity = {
-    'A1/A2': 'simple, clear, basic',
-    'B1/B2': 'moderate detail, everyday context',
-    'C1/C2': 'complex, nuanced, sophisticated'
-  }[englishLevel] || 'moderate detail, everyday context';
+  const complexity =
+    {
+      "A1/A2": "simple, clear, basic",
+      "B1/B2": "moderate detail, everyday context",
+      "C1/C2": "complex, nuanced, sophisticated",
+    }[englishLevel] || "moderate detail, everyday context";
 
   return `Create a photorealistic image for an English language learning worksheet about: ${topic}
 
