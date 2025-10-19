@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,33 +32,70 @@ serve(async (req) => {
       });
     }
 
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: "Lovable API key not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     console.log(`[GENERATE-IMAGE] Starting image generation for topic: "${topic}", level: ${englishLevel}`);
 
-    // Initialize Gemini AI
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-
-    // STEP 1: Generate image using Gemini Imagen 3.0
-    const imageModel = genAI.getGenerativeModel({ model: "imagen-3.0-generate-002" });
-
+    // STEP 1: Generate image using Lovable AI (Nano Banana)
     const imagePrompt = createImagePrompt(topic, englishLevel);
     console.log(`[GENERATE-IMAGE] Image prompt: ${imagePrompt.substring(0, 150)}...`);
 
-    const imageResult = await imageModel.generateContent(imagePrompt);
+    const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-image-preview",
+        messages: [
+          {
+            role: "user",
+            content: imagePrompt,
+          },
+        ],
+        modalities: ["image", "text"],
+      }),
+    });
 
-    // Extract image from response
-    const imageData = imageResult.response.candidates?.[0]?.content?.parts?.[0];
-
-    if (!imageData || !imageData.inlineData) {
-      throw new Error("No image data received from Gemini Imagen");
+    if (!imageResponse.ok) {
+      if (imageResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Please try again in a few moments." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (imageResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const errorText = await imageResponse.text();
+      console.error(`[GENERATE-IMAGE] Lovable AI error: ${imageResponse.status} - ${errorText}`);
+      throw new Error(`Image generation failed: ${imageResponse.status}`);
     }
 
-    const base64Image = imageData.inlineData.data;
-    const mimeType = imageData.inlineData.mimeType || "image/jpeg";
-    const imageUrl = `data:${mimeType};base64,${base64Image}`;
+    const imageData = await imageResponse.json();
+    const imageUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
+    if (!imageUrl || !imageUrl.startsWith("data:image/")) {
+      throw new Error("No valid image data received from Lovable AI");
+    }
+
+    // Extract base64 for size calculation
+    const base64Match = imageUrl.match(/^data:image\/\w+;base64,(.+)$/);
+    const base64Image = base64Match ? base64Match[1] : "";
+    
     console.log(`[GENERATE-IMAGE] Image generated successfully (${Math.round(base64Image.length / 1024)}KB)`);
 
     // STEP 2: Generate detailed description using Gemini Pro
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const descriptionModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
     const descriptionPrompt = `You are analyzing an AI-generated image for an English language worksheet. The image was generated for the topic: "${topic}" at level ${englishLevel}.
@@ -122,14 +160,14 @@ Generate the description now:`;
       JSON.stringify({
         success: true,
         image: {
-          id: `gemini-${Date.now()}`,
+          id: `lovable-ai-${Date.now()}`,
           url: imageUrl,
-          thumbnail: imageUrl, // Same as URL for now (could compress later)
-          description: detailedDescription.substring(0, 100) + "...", // Short version
-          detailedDescription: detailedDescription, // FULL description for exercises
-          photographer: "AI Generated (Gemini Imagen 3.0)",
-          photographerUrl: "https://ai.google.dev/gemini-api/docs/imagen",
-          source: "gemini-generated",
+          thumbnail: imageUrl,
+          description: detailedDescription.substring(0, 100) + "...",
+          detailedDescription: detailedDescription,
+          photographer: "AI Generated (Lovable AI - Nano Banana)",
+          photographerUrl: "https://docs.lovable.dev/features/ai",
+          source: "lovable-ai-generated",
           generationPrompt: imagePrompt,
           topic: topic,
           englishLevel: englishLevel,
