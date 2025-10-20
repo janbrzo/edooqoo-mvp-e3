@@ -167,18 +167,54 @@ Generate the detailed description now (200-300 words):`;
     console.log(`[GENERATE-IMAGE] Description generated (${detailedDescription.length} chars)`);
     console.log(`[GENERATE-IMAGE] Description preview: ${detailedDescription.substring(0, 200)}...`);
 
+    // ETAP 3: Upload image to Cloudflare R2 for permanent storage
+    let finalImageUrl = imageUrl; // Default to base64 as fallback
+    let imageSource = "vertex-ai-base64";
+
+    try {
+      console.log(`[GENERATE-IMAGE] 🚀 Starting R2 upload...`);
+      
+      const uploadResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/upload-to-r2`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({
+          base64Image: imageUrl,
+          filename: `worksheets/image_${Date.now()}_${topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`,
+          contentType: "image/png",
+        }),
+      });
+
+      if (uploadResponse.ok) {
+        const uploadData = await uploadResponse.json();
+        if (uploadData.success && uploadData.url) {
+          finalImageUrl = uploadData.url;
+          imageSource = "r2-cloudflare";
+          console.log(`[GENERATE-IMAGE] ✅ R2 upload successful: ${finalImageUrl}`);
+          console.log(`[GENERATE-IMAGE] 💾 Saved ${Math.round(uploadData.size / 1024)}KB to R2`);
+        }
+      } else {
+        const errorText = await uploadResponse.text();
+        console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload failed (${uploadResponse.status}), falling back to base64:`, errorText);
+      }
+    } catch (uploadError) {
+      console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload error, falling back to base64:`, uploadError.message);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         image: {
           id: `vertex-ai-${Date.now()}`,
-          url: imageUrl,
-          thumbnail: imageUrl,
+          url: finalImageUrl, // R2 URL or base64 fallback
+          thumbnail: finalImageUrl,
           description: detailedDescription.substring(0, 100) + "...",
           detailedDescription: detailedDescription,
           photographer: "AI Generated (Google Imagen 4.0 Fast)",
           photographerUrl: "https://cloud.google.com/vertex-ai/generative-ai/docs/image/generate-images",
-          source: "vertex-ai-generated",
+          source: imageSource, // "r2-cloudflare" or "vertex-ai-base64"
           generationPrompt: imagePrompt,
           topic: topic,
           englishLevel: englishLevel,

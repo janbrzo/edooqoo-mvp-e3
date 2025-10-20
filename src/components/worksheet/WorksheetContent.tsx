@@ -345,9 +345,10 @@ export default function WorksheetContent({
       )}
 
       {/* Media Section - displays image once for all picture exercises */}
-      {inputParams?.selectedImage && (
+      {/* ETAP 5: Check both inputParams (Unsplash) and editableWorksheet (AI-generated from R2/base64) */}
+      {(inputParams?.selectedImage || editableWorksheet?.selected_image) && (
         <MediaSection
-          selectedImage={inputParams.selectedImage}
+          selectedImage={inputParams?.selectedImage || editableWorksheet.selected_image}
           isDownloadUnlocked={isDownloadUnlocked}
           isPinned={isPinned}
           onTogglePin={onTogglePin}

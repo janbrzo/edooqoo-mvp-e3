@@ -369,10 +369,22 @@ serve(async (req) => {
       }
     }
 
+    // ETAP 4: Add selected_image to response if it exists (so frontend receives it)
+    if (selectedImage) {
+      worksheetData.selected_image = selectedImage;
+      console.log('📸 [RESPONSE] Returning selected_image in response:', {
+        hasUrl: !!selectedImage.url,
+        source: selectedImage.source,
+        urlType: selectedImage.url?.startsWith('data:') ? 'base64' : 'external',
+        urlPreview: selectedImage.url?.substring(0, 80) + '...',
+      });
+    }
+
     // HEARTBEAT LOG: Returning successful response
     console.log("🟢 HEARTBEAT: Returning successful response to client", {
       timestamp: new Date().toISOString(),
       totalDuration: Math.round((Date.now() - generationStartTime) / 1000) + "s",
+      hasSelectedImage: !!selectedImage,
     });
 
     return new Response(JSON.stringify(worksheetData), {
