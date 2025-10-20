@@ -345,9 +345,9 @@ export default function WorksheetContent({
       )}
 
       {/* Media Section - displays image once for all picture exercises */}
-      {(inputParams?.selectedImage || editableWorksheet.selected_image) && (
+      {inputParams?.selectedImage && (
         <MediaSection
-          selectedImage={inputParams?.selectedImage || editableWorksheet.selected_image}
+          selectedImage={inputParams.selectedImage}
           isDownloadUnlocked={isDownloadUnlocked}
           isPinned={isPinned}
           onTogglePin={onTogglePin}

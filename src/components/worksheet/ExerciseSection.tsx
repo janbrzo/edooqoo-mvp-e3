@@ -169,10 +169,6 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   };
 
   const isRegenerating = isLoading && loadingExerciseIndex === arrayIndex;
-  
-  // Check if worksheet has a selected image (either from Unsplash or AI-generated)
-  const hasSelectedImage = !!(originalFormData?.selectedImage || editableWorksheet?.selected_image);
-  
   // Exercise update handlers using the utility functions
   const handleExerciseChangeLocal = (field: string, value: string) => {
     handleExerciseChange(editableWorksheet, setEditableWorksheet, arrayIndex, field, value);
@@ -537,11 +533,11 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         {/* New additional exercise types */}
         {normalizedType === 'describe' && (
           <ExerciseDescribe
-            image_url={hasSelectedImage ? undefined : exercise.image_url}
+            image_url={originalFormData?.selectedImage ? undefined : exercise.image_url}
             questions={exercise.questions}
             isEditing={isEditing}
             viewMode={viewMode}
-            showImage={!hasSelectedImage}
+            showImage={!originalFormData?.selectedImage}
             onQuestionChange={handleQuestionChangeLocal}
             onImageUrlChange={(url) => handleExerciseChangeLocal('image_url', url)}
           />
@@ -549,12 +545,12 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 
         {normalizedType === 'answer-questions' && exercise.questions && (
           <ExerciseAnswerQuestions
-            media_url={hasSelectedImage ? undefined : exercise.media_url}
+            media_url={originalFormData?.selectedImage ? undefined : exercise.media_url}
             media_type={exercise.media_type}
             questions={exercise.questions}
             isEditing={isEditing}
             viewMode={viewMode}
-            showImage={!hasSelectedImage}
+            showImage={!originalFormData?.selectedImage}
             onQuestionChange={handleQuestionChangeLocal}
             onMediaUrlChange={(url) => handleExerciseChangeLocal('media_url', url)}
             onMediaTypeChange={(type) => handleExerciseChangeLocal('media_type', type)}

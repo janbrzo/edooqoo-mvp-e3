@@ -375,20 +375,6 @@ serve(async (req) => {
       totalDuration: Math.round((Date.now() - generationStartTime) / 1000) + "s",
     });
 
-    // Add selected_image to response if it exists (so frontend receives it)
-    if (selectedImage) {
-      worksheetData.selected_image = selectedImage;
-      console.log('📸 [RESPONSE] Returning selected_image in response:', {
-        imageId: selectedImage.id,
-        source: selectedImage.source,
-        hasUrl: !!selectedImage.url,
-        hasDetailedDescription: !!selectedImage.detailedDescription,
-        descriptionLength: selectedImage.detailedDescription?.length || 0
-      });
-    } else {
-      console.log('📸 [RESPONSE] No selected_image to return in response');
-    }
-
     return new Response(JSON.stringify(worksheetData), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
