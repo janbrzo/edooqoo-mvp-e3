@@ -128,7 +128,7 @@ FORMAT:
 - Specific details colors, numbers, positions
 - Objective "is smiling" NOT "seems happy"
 - Spatial prepositions (in front of, behind, next to)
-;
+`;
 
     const descriptionResult = await descriptionModel.generateContent([
       descriptionPrompt,
