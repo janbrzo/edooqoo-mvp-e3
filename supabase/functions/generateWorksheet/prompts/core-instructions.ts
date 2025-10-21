@@ -7,36 +7,56 @@
  * Helper function to generate dynamic exercise list instruction
  * @param hasSelectedImage - If true, transforms picture-compatible exercises to -picture versions
  */
-const generateExerciseListInstruction = (selectedExercises?: string[], exerciseCount: number = 8, hasSelectedImage?: boolean) => {
+const generateExerciseListInstruction = (
+  selectedExercises?: string[],
+  exerciseCount: number = 8,
+  hasSelectedImage?: boolean,
+) => {
   if (selectedExercises && selectedExercises.length > 0) {
     // Picture-compatible exercise types that should be transformed to -picture versions
-    const pictureCompatible = ['multiple-choice', 'true-false', 'answer-questions'];
-    
+    const pictureCompatible = ["multiple-choice", "true-false", "answer-questions"];
+
     // Transform exercise names to -picture versions if picture mode is active
-    const transformedExercises = selectedExercises.slice(0, exerciseCount).map(type => {
+    const transformedExercises = selectedExercises.slice(0, exerciseCount).map((type) => {
       // If picture mode is active and exercise type is picture-compatible, add -picture suffix
       if (hasSelectedImage && pictureCompatible.includes(type)) {
         return `${type}-picture`;
       }
       return type;
     });
-    
-    const exerciseList = transformedExercises.join(', ');
+
+    const exerciseList = transformedExercises.join(", ");
     return `Use EXACTLY these exercise types in this EXACT ORDER: ${exerciseList}`;
   }
-  
+
   // Fallback to default exercises (no picture transformation for defaults)
-  const defaultExercises = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction'];
-  const exerciseList = defaultExercises.slice(0, exerciseCount).join(', ');
-  return `Use EXACTLY these exercise types in this EXACT ORDER: ${exerciseList}${exerciseCount === 6 ? ' (use only first 6)' : ''}`;
+  const defaultExercises = [
+    "reading",
+    "true-false",
+    "matching",
+    "fill-in-blanks",
+    "multiple-choice",
+    "dialogue",
+    "discussion",
+    "error-correction",
+  ];
+  const exerciseList = defaultExercises.slice(0, exerciseCount).join(", ");
+  return `Use EXACTLY these exercise types in this EXACT ORDER: ${exerciseList}${exerciseCount === 6 ? " (use only first 6)" : ""}`;
 };
 
-export const getCoreInstructions = (hasGrammarFocus: boolean, grammarFocus: string | null, formData: any, exerciseCount: number = 8, selectedExercises?: string[], selectedImage?: any) => {
+export const getCoreInstructions = (
+  hasGrammarFocus: boolean,
+  grammarFocus: string | null,
+  formData: any,
+  exerciseCount: number = 8,
+  selectedExercises?: string[],
+  selectedImage?: any,
+) => {
   const hasSelectedImage = !!selectedImage;
-  
+
   // Extract image description before building the prompt to ensure it's properly embedded
-  const imageDescription = selectedImage?.detailedDescription || '';
-  
+  const imageDescription = selectedImage?.detailedDescription || "";
+
   return `You are an expert ESL English language teacher specialized in creating context-specific, structured, comprehensive, high-quality English language worksheets for individual (one-on-one) tutoring sessions.
           Your goal: produce a worksheet so compelling that a private tutor will happily pay for it and actually use it.
           Your output will be used immediately in a 1-on-1 lesson; exercises must be ready-to-print without structural edits.
@@ -74,7 +94,9 @@ Before generating content, ask yourself:
 
 18. ADAPT TO USER'S INPUT: Carefully analyze all information from the USER MESSAGE. The 'lessonTopic' and 'lessonGoal' must define the theme of all exercises. The 'englishLevel' must dictate the complexity of vocabulary and grammar according to CEFR scale.
 
-${hasGrammarFocus ? `
+${
+  hasGrammarFocus
+    ? `
 19. GRAMMAR FOCUS REQUIREMENT: The user has specified a grammar focus: "${grammarFocus}". You MUST:
     - ENSURE grammar complexity matches CERF level: "${formData.englishLevel}"
     - Include a "grammar_rules" section in the JSON with detailed explanation of this grammar topic
@@ -82,18 +104,22 @@ ${hasGrammarFocus ? `
     - Ensure the reading text, vocabulary, and all exercises incorporate examples of this grammar
     - Make this grammar topic the central pedagogical focus of the entire worksheet
     -provide a detailed and comprehensive explanation about the grammatical topic, including a thorough introduction explaining its usage, importance, and general overview, written in the style of well-known grammar reference books (such as My Grammar Lab, Cambridge Grammar, or Virginia Evans).
-` : `
+`
+    : `
 19. NO GRAMMAR FOCUS: The user has not specified a grammar focus, so create a general worksheet focused on the topic and goal without emphasizing any particular grammar point.
-`}
+`
+}
 
-${hasSelectedImage ? `
+${
+  hasSelectedImage
+    ? `
 20. IMAGE CONTEXT FOR PICTURE EXERCISES: 
-You have an AI-generated image with detailed description:
-
+You have an AI-generated image with detailed description. Use it only for picture-based exercises.
+For picture-based exercises use SPECIFIC DETAILS from description below (people, objects, colors, positions, actions). Each exercise must focus on different aspects.
 ${imageDescription}
-
-For picture-based exercises, use SPECIFIC DETAILS from description above (people, objects, colors, positions, actions). Each exercise must focus on different aspects.
-` : ''}
+`
+    : ""
+}
 
 21. ENSURE ALL INSTRUCTIONS ARE STRICTLY ADHERED TO AND THAT THE JSON IS COMPLETE AND VALID.
 22. Check your work again before finalizing. Every part of the JSON must be intentional and correct.
