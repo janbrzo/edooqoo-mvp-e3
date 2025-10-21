@@ -48,7 +48,7 @@ serve(async (req) => {
 
     // Get access token from service account
     const accessToken = await getVertexAccessToken(GEMINI_VERTEX_API_KEY);
-    
+
     // Parse project ID from service account JSON
     let projectId = "your-gcp-project";
     try {
@@ -60,25 +60,25 @@ serve(async (req) => {
     }
 
     const vertexEndpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/imagen-4.0-fast-generate-001:predict`;
-    
+
     const imageResponse = await fetch(vertexEndpoint, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         instances: [
           {
-            prompt: imagePrompt
-          }
+            prompt: imagePrompt,
+          },
         ],
         parameters: {
           sampleCount: 1,
           aspectRatio: "16:9",
           safetyFilterLevel: "block_few",
-          personGeneration: "allow_all"
-        }
+          personGeneration: "allow_all",
+        },
       }),
     });
 
@@ -98,7 +98,7 @@ serve(async (req) => {
 
     // Convert to data URL
     const imageUrl = `data:image/png;base64,${base64Image}`;
-    
+
     console.log(`[GENERATE-IMAGE] Image generated successfully (${Math.round(base64Image.length / 1024)}KB)`);
 
     // STEP 2: Generate detailed description using Gemini Pro WITH VISION
@@ -108,9 +108,9 @@ serve(async (req) => {
     // Pass the actual image to Gemini for VISUAL analysis
     const imagePart = {
       inlineData: {
-        data: base64Image,  // raw base64 without data URL prefix
-        mimeType: "image/png"
-      }
+        data: base64Image, // raw base64 without data URL prefix
+        mimeType: "image/png",
+      },
     };
 
     const descriptionPrompt = `Analyze this AI-generated image created for an English language worksheet about: "${topic}" at level ${englishLevel}.
@@ -118,10 +118,10 @@ serve(async (req) => {
 CRITICAL: Generate a DETAILED, FACTUAL description 300 words (max 2000 chars) of EXACTLY what you see in the image.
 
 STRUCTURE:
-1. PEOPLE Count, positions, clothing (colors/styles), expressions, what they're holding/doing, interactions
-2. OBJECTS Main objects (colors/sizes/materials), positions, condition, background objects  
-3. ACTIONS Main activity, movements, interactions, purpose
-4. SETTING Location type, background, lighting, time indicators
+A. PEOPLE Count, positions, clothing (colors/styles), expressions, what they're holding/doing, interactions
+B. OBJECTS Main objects (colors/sizes/materials), positions, condition, background objects  
+C. ACTIONS Main activity, movements, interactions, purpose
+D. SETTING Location type, background, lighting, time indicators
 
 FORMAT:
 - Present continuous "is sitting", "are discussing"
@@ -132,7 +132,7 @@ FORMAT:
 
     const descriptionResult = await descriptionModel.generateContent([
       descriptionPrompt,
-      imagePart  // ✅ PASS THE ACTUAL IMAGE TO GEMINI!
+      imagePart, // ✅ PASS THE ACTUAL IMAGE TO GEMINI!
     ]);
     let detailedDescription = descriptionResult.response.text();
 
@@ -142,7 +142,7 @@ FORMAT:
 
     // Truncate to max 2000 chars as backup
     if (detailedDescription.length > 2000) {
-      detailedDescription = detailedDescription.substring(0, 1997) + '...';
+      detailedDescription = detailedDescription.substring(0, 1997) + "...";
       console.log(`[GENERATE-IMAGE] Description truncated to 2000 chars`);
     }
 
@@ -155,16 +155,16 @@ FORMAT:
 
     try {
       console.log(`[GENERATE-IMAGE] 🚀 Starting R2 upload...`);
-      
+
       const uploadResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/upload-to-r2`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
         },
         body: JSON.stringify({
           base64Image: imageUrl,
-          filename: `worksheets/image_${Date.now()}_${topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`,
+          filename: `worksheets/image_${Date.now()}_${topic.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.png`,
           contentType: "image/png",
         }),
       });
@@ -179,7 +179,10 @@ FORMAT:
         }
       } else {
         const errorText = await uploadResponse.text();
-        console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload failed (${uploadResponse.status}), falling back to base64:`, errorText);
+        console.warn(
+          `[GENERATE-IMAGE] ⚠️ R2 upload failed (${uploadResponse.status}), falling back to base64:`,
+          errorText,
+        );
       }
     } catch (uploadError) {
       console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload error, falling back to base64:`, uploadError.message);
@@ -196,8 +199,8 @@ FORMAT:
           detailedDescription: detailedDescription,
           photographer: "AI Generated",
           photographerUrl: "https://cloud.google.com/vertex-ai/generative-ai/docs/image/generate-images",
-          source: "vertex-ai-generated",  // ✅ ALWAYS this for AI images
-          storageLocation: imageSource,   // ✅ Separate field: "r2-cloudflare" or "vertex-ai-base64"
+          source: "vertex-ai-generated", // ✅ ALWAYS this for AI images
+          storageLocation: imageSource, // ✅ Separate field: "r2-cloudflare" or "vertex-ai-base64"
           generationPrompt: imagePrompt,
           topic: topic,
           englishLevel: englishLevel,
@@ -217,7 +220,6 @@ FORMAT:
   }
 });
 
-
 /**
  * Convert PEM private key to ArrayBuffer
  */
@@ -227,16 +229,16 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
     .replace(/-----BEGIN PRIVATE KEY-----/, "")
     .replace(/-----END PRIVATE KEY-----/, "")
     .replace(/\s/g, "");
-  
+
   // Decode base64 to binary string
   const binaryString = atob(pemContents);
-  
+
   // Convert binary string to ArrayBuffer
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
   }
-  
+
   return bytes.buffer;
 }
 
@@ -246,7 +248,7 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
 async function importPrivateKey(pemKey: string): Promise<CryptoKey> {
   try {
     const keyData = pemToArrayBuffer(pemKey);
-    
+
     return await crypto.subtle.importKey(
       "pkcs8",
       keyData,
@@ -255,7 +257,7 @@ async function importPrivateKey(pemKey: string): Promise<CryptoKey> {
         hash: "SHA-256",
       },
       false,
-      ["sign"]
+      ["sign"],
     );
   } catch (error) {
     console.error("[GENERATE-IMAGE] Failed to import private key:", error);
@@ -268,10 +270,10 @@ async function importPrivateKey(pemKey: string): Promise<CryptoKey> {
  */
 async function getVertexAccessToken(serviceAccountJson: string): Promise<string> {
   const serviceAccount = JSON.parse(serviceAccountJson);
-  
+
   // Import the private key as CryptoKey
   const privateKey = await importPrivateKey(serviceAccount.private_key);
-  
+
   const jwt = await create(
     { alg: "RS256", typ: "JWT" },
     {
@@ -281,7 +283,7 @@ async function getVertexAccessToken(serviceAccountJson: string): Promise<string>
       exp: getNumericDate(60 * 60), // 1 hour
       iat: getNumericDate(0),
     },
-    privateKey
+    privateKey,
   );
 
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
