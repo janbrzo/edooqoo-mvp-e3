@@ -39,6 +39,7 @@ serve(async (req) => {
     console.log(`[UPLOAD-TO-R2] Starting upload: ${filename} to bucket: ${R2_BUCKET_NAME}`);
 
     // Initialize S3-compatible client for R2
+    // Force static credentials (Deno doesn't support fs.readFile for AWS SDK profile loading)
     const r2Client = new S3Client({
       region: "auto",
       endpoint: R2_ENDPOINT,
@@ -46,6 +47,12 @@ serve(async (req) => {
         accessKeyId: R2_ACCESS_KEY_ID,
         secretAccessKey: R2_SECRET_ACCESS_KEY,
       },
+      forcePathStyle: true,
+      // Disable credential provider chain to prevent fs.readFile errors
+      credentialDefaultProvider: () => () => Promise.resolve({
+        accessKeyId: R2_ACCESS_KEY_ID,
+        secretAccessKey: R2_SECRET_ACCESS_KEY,
+      }),
     });
 
     // Convert base64 to binary buffer

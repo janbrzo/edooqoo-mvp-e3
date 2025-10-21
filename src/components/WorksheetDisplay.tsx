@@ -254,7 +254,7 @@ export default function WorksheetDisplay({
         isDownloadUnlocked={isDownloadUnlocked}
         viewMode={viewMode}
         editableWorksheet={editableWorksheet}
-        selectedImage={inputParams?.selectedImage}
+        selectedImage={inputParams?.selectedImage || editableWorksheet?.selected_image}
         isPinned={isPinned}
         onTogglePin={() => setIsPinned(!isPinned)}
         isFullScreen={isFullScreen}
