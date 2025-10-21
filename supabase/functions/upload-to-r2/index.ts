@@ -69,18 +69,33 @@ serve(async (req) => {
 
     // Extract account ID from endpoint for public URL
     // R2_ENDPOINT format: https://[account_id].r2.cloudflarestorage.com
-    const accountId = R2_ENDPOINT.match(/https:\/\/(.+?)\.r2\.cloudflarestorage\.com/)?.[1];
+    console.log(`[UPLOAD-TO-R2] R2_ENDPOINT: ${R2_ENDPOINT}`);  // ✅ Debug log
+    
+    const accountIdMatch = R2_ENDPOINT.match(/https:\/\/(.+?)\.r2\.cloudflarestorage\.com/);
+    const accountId = accountIdMatch?.[1];
+    
+    console.log(`[UPLOAD-TO-R2] Extracted account ID: ${accountId}`);  // ✅ Debug log
     
     if (!accountId) {
       console.error("[UPLOAD-TO-R2] Could not extract account ID from endpoint:", R2_ENDPOINT);
+      console.error("[UPLOAD-TO-R2] Expected format: https://[account_id].r2.cloudflarestorage.com");
       return new Response(
-        JSON.stringify({ error: "Invalid R2 endpoint configuration" }),
+        JSON.stringify({ 
+          error: "Invalid R2 endpoint configuration",
+          endpoint: R2_ENDPOINT,
+          expectedFormat: "https://[account_id].r2.cloudflarestorage.com"
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Construct public R2 URL
-    const publicUrl = `https://pub-${accountId}.r2.dev/${filename}`;
+    // Construct public R2 URL (with custom domain support)
+    const CUSTOM_DOMAIN = Deno.env.get("R2_CUSTOM_DOMAIN");  // Optional: "images.edooqoo.com"
+    const publicUrl = CUSTOM_DOMAIN 
+      ? `https://${CUSTOM_DOMAIN}/${filename}`
+      : `https://pub-${accountId}.r2.dev/${filename}`;
+    
+    console.log(`[UPLOAD-TO-R2] Constructed public URL: ${publicUrl}`);  // ✅ Debug log
 
     console.log(`[UPLOAD-TO-R2] ✅ Upload successful: ${publicUrl}`);
     console.log(`[UPLOAD-TO-R2] File size: ${Math.round(bytes.length / 1024)}KB`);

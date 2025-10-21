@@ -101,57 +101,42 @@ serve(async (req) => {
     
     console.log(`[GENERATE-IMAGE] Image generated successfully (${Math.round(base64Image.length / 1024)}KB)`);
 
-    // STEP 2: Generate detailed description using Gemini Pro
+    // STEP 2: Generate detailed description using Gemini Pro WITH VISION
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const descriptionModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-    const descriptionPrompt = `You are analyzing an AI-generated image for an English language worksheet. The image was generated for the topic: "${topic}" at level ${englishLevel}.
+    // Pass the actual image to Gemini for VISUAL analysis
+    const imagePart = {
+      inlineData: {
+        data: base64Image,  // raw base64 without data URL prefix
+        mimeType: "image/png"
+      }
+    };
 
-CRITICAL: Generate a DETAILED, FACTUAL description (200-300 words, MAX 2000 characters) focusing on key elements for exercise generation.
+    const descriptionPrompt = `Analyze this AI-generated image created for an English language worksheet about: "${topic}" at level ${englishLevel}.
 
-STRUCTURE YOUR DESCRIPTION:
+CRITICAL: Generate a DETAILED, FACTUAL description (200-300 words, MAX 2000 characters) of EXACTLY what you see in the image.
 
-1. PEOPLE (4-5 sentences): 
-   - Exact count and their positions (left/right, foreground/background)
-   - Detailed clothing descriptions with colors and styles
-   - Facial expressions and body language
-   - What each person is holding or doing
-   - Interactions between people
+STRUCTURE:
+1. PEOPLE (4-5 sentences): Count, positions, clothing (colors/styles), expressions, what they're holding/doing, interactions
+2. OBJECTS (3-4 sentences): Main objects (colors/sizes/materials), positions, condition, background objects  
+3. ACTIONS (3-4 sentences): Main activity, movements, interactions, purpose
+4. SETTING (2-3 sentences): Location type, background, lighting, time indicators
+5. VOCABULARY LIST (8-10 words): Nouns, verbs, adjectives, prepositions from the scene
 
-2. OBJECTS (3-4 sentences):
-   - Main objects with specific colors, sizes, and materials
-   - Precise positions relative to people and other objects
-   - Condition and state of objects
-   - Secondary objects in background
+FORMAT:
+- Present continuous ("is sitting", "are discussing")
+- Specific details (colors, numbers, positions)
+- Objective ("is smiling" NOT "seems happy")
+- Spatial prepositions (in front of, behind, next to)
+- 200-300 words
 
-3. ACTIONS (3-4 sentences):
-   - Main activity happening in the scene
-   - Specific movements and interactions
-   - Sequential actions if multiple things are happening
-   - Purpose or goal of the actions
+Describe what you see now:`;
 
-4. SETTING (2-3 sentences):
-   - Location type (indoor/outdoor, specific room/place)
-   - Background elements and environment
-   - Lighting and atmosphere
-   - Time of day indicators if visible
-
-5. VOCABULARY LIST (8-10 key words):
-   - Visible nouns (objects, places)
-   - Action verbs from the scene
-   - Adjectives describing visible elements
-   - Prepositions of place relevant to the scene
-
-FORMAT RULES:
-- Use present continuous tense ("A woman is sitting...", "Three people are discussing...")
-- Include specific details: colors, numbers, exact positions
-- Be objective and factual - NO interpretations ("is smiling" NOT "seems happy")
-- Use spatial prepositions (in front of, behind, next to, between, etc.)
-- Target 200-300 words for comprehensive detail
-
-Generate the detailed description now (200-300 words):`;
-
-    const descriptionResult = await descriptionModel.generateContent(descriptionPrompt);
+    const descriptionResult = await descriptionModel.generateContent([
+      descriptionPrompt,
+      imagePart  // ✅ PASS THE ACTUAL IMAGE TO GEMINI!
+    ]);
     let detailedDescription = descriptionResult.response.text();
 
     if (!detailedDescription || detailedDescription.length < 100) {
@@ -164,7 +149,7 @@ Generate the detailed description now (200-300 words):`;
       console.log(`[GENERATE-IMAGE] Description truncated to 2000 chars`);
     }
 
-    console.log(`[GENERATE-IMAGE] Description generated (${detailedDescription.length} chars)`);
+    console.log(`[GENERATE-IMAGE] Description generated with vision analysis (${detailedDescription.length} chars)`);
     console.log(`[GENERATE-IMAGE] Description preview: ${detailedDescription.substring(0, 200)}...`);
 
     // ETAP 3: Upload image to Cloudflare R2 for permanent storage
@@ -212,9 +197,10 @@ Generate the detailed description now (200-300 words):`;
           thumbnail: finalImageUrl,
           description: detailedDescription.substring(0, 100) + "...",
           detailedDescription: detailedDescription,
-          photographer: "AI Generated (Google Imagen 4.0 Fast)",
+          photographer: "AI Generated",
           photographerUrl: "https://cloud.google.com/vertex-ai/generative-ai/docs/image/generate-images",
-          source: imageSource, // "r2-cloudflare" or "vertex-ai-base64"
+          source: "vertex-ai-generated",  // ✅ ALWAYS this for AI images
+          storageLocation: imageSource,   // ✅ Separate field: "r2-cloudflare" or "vertex-ai-base64"
           generationPrompt: imagePrompt,
           topic: topic,
           englishLevel: englishLevel,

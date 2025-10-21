@@ -146,6 +146,9 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 
   // Normalize exercise type for conditional rendering (handle both standard and -picture types)
   const normalizedType = normalizeExerciseType(exercise.type);
+  
+  // ✅ Check BOTH sources for selected image (Unsplash OR AI-generated)
+  const hasSelectedImage = originalFormData?.selectedImage || editableWorksheet?.selected_image;
 
   const handleRegenerateClick = () => {
     openModal(index);
@@ -533,11 +536,11 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         {/* New additional exercise types */}
         {normalizedType === 'describe' && (
           <ExerciseDescribe
-            image_url={originalFormData?.selectedImage ? undefined : exercise.image_url}
+            image_url={hasSelectedImage ? undefined : exercise.image_url}
             questions={exercise.questions}
             isEditing={isEditing}
             viewMode={viewMode}
-            showImage={!originalFormData?.selectedImage}
+            showImage={!hasSelectedImage}
             onQuestionChange={handleQuestionChangeLocal}
             onImageUrlChange={(url) => handleExerciseChangeLocal('image_url', url)}
           />
@@ -545,12 +548,12 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 
         {normalizedType === 'answer-questions' && exercise.questions && (
           <ExerciseAnswerQuestions
-            media_url={originalFormData?.selectedImage ? undefined : exercise.media_url}
+            media_url={hasSelectedImage ? undefined : exercise.media_url}
             media_type={exercise.media_type}
             questions={exercise.questions}
             isEditing={isEditing}
             viewMode={viewMode}
-            showImage={!originalFormData?.selectedImage}
+            showImage={!hasSelectedImage}
             onQuestionChange={handleQuestionChangeLocal}
             onMediaUrlChange={(url) => handleExerciseChangeLocal('media_url', url)}
             onMediaTypeChange={(type) => handleExerciseChangeLocal('media_type', type)}
