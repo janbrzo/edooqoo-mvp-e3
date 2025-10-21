@@ -115,23 +115,20 @@ serve(async (req) => {
 
     const descriptionPrompt = `Analyze this AI-generated image created for an English language worksheet about: "${topic}" at level ${englishLevel}.
 
-CRITICAL: Generate a DETAILED, FACTUAL description (200-300 words, MAX 2000 characters) of EXACTLY what you see in the image.
+CRITICAL: Generate a DETAILED, FACTUAL description 300 words (max 2000 chars) of EXACTLY what you see in the image.
 
 STRUCTURE:
-1. PEOPLE (4-5 sentences): Count, positions, clothing (colors/styles), expressions, what they're holding/doing, interactions
-2. OBJECTS (3-4 sentences): Main objects (colors/sizes/materials), positions, condition, background objects  
-3. ACTIONS (3-4 sentences): Main activity, movements, interactions, purpose
-4. SETTING (2-3 sentences): Location type, background, lighting, time indicators
-5. VOCABULARY LIST (8-10 words): Nouns, verbs, adjectives, prepositions from the scene
+1. PEOPLE Count, positions, clothing (colors/styles), expressions, what they're holding/doing, interactions
+2. OBJECTS Main objects (colors/sizes/materials), positions, condition, background objects  
+3. ACTIONS Main activity, movements, interactions, purpose
+4. SETTING Location type, background, lighting, time indicators
 
 FORMAT:
-- Present continuous ("is sitting", "are discussing")
-- Specific details (colors, numbers, positions)
-- Objective ("is smiling" NOT "seems happy")
+- Present continuous "is sitting", "are discussing"
+- Specific details colors, numbers, positions
+- Objective "is smiling" NOT "seems happy"
 - Spatial prepositions (in front of, behind, next to)
-- 200-300 words
-
-Describe what you see now:`;
+;
 
     const descriptionResult = await descriptionModel.generateContent([
       descriptionPrompt,
@@ -323,7 +320,7 @@ function createImagePrompt(topic: string, englishLevel: string): string {
 CRITICAL REQUIREMENTS:
 - Style: Photorealistic, NOT artistic or illustrated
 - Setting: Real-world, everyday situation (NOT staged or overly perfect)
-- People: Include 2-4 people in natural interactions showing clear emotions and body language
+- People: Include 2-8 people in natural interactions showing clear emotions and body language
 - Context: ${complexity} scene with visible details for teaching
 - Composition: Clear foreground and background, multiple elements to discuss
 - Lighting: Natural, bright enough to see all details clearly
