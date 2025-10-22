@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { S3Client, PutObjectCommand } from "https://esm.sh/@aws-sdk/client-s3@3.490.0";
+import { AwsClient } from "https://deno.land/x/aws_api@v0.8.1/client/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,21 +38,11 @@ serve(async (req) => {
 
     console.log(`[UPLOAD-TO-R2] Starting upload: ${filename} to bucket: ${R2_BUCKET_NAME}`);
 
-    // Initialize S3-compatible client for R2
-    // Force static credentials (Deno doesn't support fs.readFile for AWS SDK profile loading)
-    const r2Client = new S3Client({
+    // Initialize AWS client (compatible with Deno Edge Functions - no filesystem dependencies)
+    const awsClient = new AwsClient({
+      accessKeyId: R2_ACCESS_KEY_ID,
+      secretAccessKey: R2_SECRET_ACCESS_KEY,
       region: "auto",
-      endpoint: R2_ENDPOINT,
-      credentials: {
-        accessKeyId: R2_ACCESS_KEY_ID,
-        secretAccessKey: R2_SECRET_ACCESS_KEY,
-      },
-      forcePathStyle: true,
-      // Disable credential provider chain to prevent fs.readFile errors
-      credentialDefaultProvider: () => () => Promise.resolve({
-        accessKeyId: R2_ACCESS_KEY_ID,
-        secretAccessKey: R2_SECRET_ACCESS_KEY,
-      }),
     });
 
     // Convert base64 to binary buffer
@@ -63,16 +53,25 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
-    // Upload to R2
-    const command = new PutObjectCommand({
-      Bucket: R2_BUCKET_NAME,
-      Key: filename,
-      Body: bytes,
-      ContentType: contentType,
-      CacheControl: "public, max-age=31536000", // Cache for 1 year
+    // Construct the R2 upload URL
+    const uploadUrl = `${R2_ENDPOINT}/${R2_BUCKET_NAME}/${filename}`;
+    console.log(`[UPLOAD-TO-R2] Upload URL: ${uploadUrl}`);
+
+    // Upload to R2 using signed request
+    const response = await awsClient.fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": contentType,
+        "Cache-Control": "public, max-age=31536000",
+      },
+      body: bytes,
     });
 
-    await r2Client.send(command);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[UPLOAD-TO-R2] Upload failed: ${response.status} ${response.statusText}`, errorText);
+      throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+    }
 
     // Extract account ID from endpoint for public URL
     // R2_ENDPOINT format: https://[account_id].r2.cloudflarestorage.com
