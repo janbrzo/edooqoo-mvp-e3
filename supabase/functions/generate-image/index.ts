@@ -317,7 +317,7 @@ function createImagePrompt(topic: string, englishLevel: string): string {
       "C1/C2": "complex, nuanced, sophisticated",
     }[englishLevel] || "moderate detail, everyday context";
 
-  return `Create a photorealistic image for an English language learning worksheet about: ${topic}
+  return `Create a photorealistic image about: ${topic}
 
 CRITICAL REQUIREMENTS:
 - Style: Photorealistic, NOT artistic or illustrated
@@ -332,6 +332,7 @@ CRITICAL REQUIREMENTS:
 - Teaching value: Scene should illustrate vocabulary, actions, and situations related to ${topic}
 
 AVOID:
+- Multiple pictures in one image
 - Artistic filters or effects
 - Overly staged or professional photography look
 - Empty scenes without people
@@ -339,5 +340,5 @@ AVOID:
 - Abstract or symbolic imagery
 - Text or writing in the image (unless naturally part of scene like signs)
 
-Generate a realistic photograph of this scene now.`;
+`;
 }
