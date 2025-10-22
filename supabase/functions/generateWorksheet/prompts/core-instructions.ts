@@ -13,19 +13,16 @@ const generateExerciseListInstruction = (
   hasSelectedImage?: boolean,
 ) => {
   if (selectedExercises && selectedExercises.length > 0) {
-    // Picture-compatible exercise types that should be transformed to -picture versions
-    const pictureCompatible = ["multiple-choice", "true-false", "answer-questions"];
+    let orderedExercises = [...selectedExercises].slice(0, exerciseCount);
+    
+    // SORT: Picture exercises ALWAYS first if image is selected
+    if (hasSelectedImage) {
+      const pictureExercises = orderedExercises.filter(ex => ex.endsWith('-picture'));
+      const nonPictureExercises = orderedExercises.filter(ex => !ex.endsWith('-picture'));
+      orderedExercises = [...pictureExercises, ...nonPictureExercises];
+    }
 
-    // Transform exercise names to -picture versions if picture mode is active
-    const transformedExercises = selectedExercises.slice(0, exerciseCount).map((type) => {
-      // If picture mode is active and exercise type is picture-compatible, add -picture suffix
-      if (hasSelectedImage && pictureCompatible.includes(type)) {
-        return `${type}-picture`;
-      }
-      return type;
-    });
-
-    const exerciseList = transformedExercises.join(", ");
+    const exerciseList = orderedExercises.join(", ");
     return `Use EXACTLY these exercise types in this EXACT ORDER: ${exerciseList}`;
   }
 
@@ -114,8 +111,9 @@ ${
   hasSelectedImage
     ? `
 20. IMAGE CONTEXT FOR PICTURE EXERCISES: 
-You have an AI-generated image with detailed description. Use it only for picture-based exercises.
-For picture-based exercises use SPECIFIC DETAILS from description below (people, objects, colors, positions, actions). Each exercise must focus on different aspects.
+IMPORTANT: You have an AI-generated image with detailed description.
+The following exercises MUST use this image: ${selectedExercises?.filter(ex => ex.endsWith('-picture')).join(', ')}
+For these picture-based exercises, use SPECIFIC DETAILS from the image description below (people, objects, colors, positions, actions). Each exercise must focus on different aspects of the image.
 ${imageDescription}
 `
     : ""

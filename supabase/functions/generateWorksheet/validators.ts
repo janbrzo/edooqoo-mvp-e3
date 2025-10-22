@@ -86,6 +86,16 @@ export function validateExercise(exercise: any): void {
     case 'answer-questions':
       validateAnswerQuestionsExercise(exercise);
       break;
+    // Picture mode variants - use same validators as base exercises
+    case 'multiple-choice-picture':
+      validateMultipleChoiceExercise(exercise);
+      break;
+    case 'true-false-picture':
+      validateTrueFalseExercise(exercise);
+      break;
+    case 'answer-questions-picture':
+      validateAnswerQuestionsExercise(exercise);
+      break;
     default:
       console.warn(`🔧 [VALIDATOR] Unknown exercise type: ${exercise.type} - allowing with basic validation`);
       validateBasicExerciseStructure(exercise);
