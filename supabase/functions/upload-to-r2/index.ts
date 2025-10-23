@@ -1,10 +1,39 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { createHash, createHmac } from "https://deno.land/std@0.208.0/node/crypto.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Helper: Convert ArrayBuffer to hex string
+function bufferToHex(buffer: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// Helper: SHA256 hash using Web Crypto API
+async function sha256(data: string | Uint8Array): Promise<string> {
+  const encoder = new TextEncoder();
+  const dataBuffer = typeof data === 'string' ? encoder.encode(data) : data;
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  return bufferToHex(hashBuffer);
+}
+
+// Helper: HMAC-SHA256 using Web Crypto API
+async function hmacSha256(key: Uint8Array | string, data: string): Promise<Uint8Array> {
+  const encoder = new TextEncoder();
+  const keyData = typeof key === 'string' ? encoder.encode(key) : key;
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(data));
+  return new Uint8Array(signature);
+}
 
 // AWS Signature V4 signing helper for R2/S3 compatibility
 async function signAwsRequest(
@@ -25,23 +54,24 @@ async function signAwsRequest(
   // Canonical request
   const canonicalHeaders = `host:${host}\nx-amz-date:${date}\n`;
   const signedHeaders = "host;x-amz-date";
-  const payloadHash = createHash("sha256").update(body).digest("hex");
+  const payloadHash = await sha256(body);
   const canonicalRequest = `${method}\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
 
   // String to sign
   const algorithm = "AWS4-HMAC-SHA256";
   const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
-  const canonicalRequestHash = createHash("sha256").update(canonicalRequest).digest("hex");
+  const canonicalRequestHash = await sha256(canonicalRequest);
   const stringToSign = `${algorithm}\n${date}\n${credentialScope}\n${canonicalRequestHash}`;
 
-  // Signing key
-  const kDate = createHmac("sha256", `AWS4${secretAccessKey}`).update(dateStamp).digest();
-  const kRegion = createHmac("sha256", kDate).update(region).digest();
-  const kService = createHmac("sha256", kRegion).update("s3").digest();
-  const kSigning = createHmac("sha256", kService).update("aws4_request").digest();
+  // Signing key (chain of HMAC operations)
+  const kDate = await hmacSha256(`AWS4${secretAccessKey}`, dateStamp);
+  const kRegion = await hmacSha256(kDate, region);
+  const kService = await hmacSha256(kRegion, "s3");
+  const kSigning = await hmacSha256(kService, "aws4_request");
 
   // Signature
-  const signature = createHmac("sha256", kSigning).update(stringToSign).digest("hex");
+  const signatureBytes = await hmacSha256(kSigning, stringToSign);
+  const signature = bufferToHex(signatureBytes.buffer);
 
   // Authorization header
   const authHeader = `${algorithm} Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
