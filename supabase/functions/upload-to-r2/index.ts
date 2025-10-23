@@ -1,10 +1,57 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { AwsClient } from "https://deno.land/x/aws_api@v0.8.1/client/mod.ts";
+import { createHash, createHmac } from "https://deno.land/std@0.208.0/node/crypto.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// AWS Signature V4 signing helper for R2/S3 compatibility
+async function signAwsRequest(
+  method: string,
+  url: string,
+  headers: Record<string, string>,
+  body: Uint8Array,
+  accessKeyId: string,
+  secretAccessKey: string,
+  region: string = "auto"
+) {
+  const urlObj = new URL(url);
+  const host = urlObj.hostname;
+  const path = urlObj.pathname;
+  const date = new Date().toISOString().replace(/[:-]|\.\d{3}/g, "");
+  const dateStamp = date.slice(0, 8);
+
+  // Canonical request
+  const canonicalHeaders = `host:${host}\nx-amz-date:${date}\n`;
+  const signedHeaders = "host;x-amz-date";
+  const payloadHash = createHash("sha256").update(body).digest("hex");
+  const canonicalRequest = `${method}\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+
+  // String to sign
+  const algorithm = "AWS4-HMAC-SHA256";
+  const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
+  const canonicalRequestHash = createHash("sha256").update(canonicalRequest).digest("hex");
+  const stringToSign = `${algorithm}\n${date}\n${credentialScope}\n${canonicalRequestHash}`;
+
+  // Signing key
+  const kDate = createHmac("sha256", `AWS4${secretAccessKey}`).update(dateStamp).digest();
+  const kRegion = createHmac("sha256", kDate).update(region).digest();
+  const kService = createHmac("sha256", kRegion).update("s3").digest();
+  const kSigning = createHmac("sha256", kService).update("aws4_request").digest();
+
+  // Signature
+  const signature = createHmac("sha256", kSigning).update(stringToSign).digest("hex");
+
+  // Authorization header
+  const authHeader = `${algorithm} Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  return {
+    ...headers,
+    "x-amz-date": date,
+    "Authorization": authHeader,
+  };
+}
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -38,14 +85,7 @@ serve(async (req) => {
 
     console.log(`[UPLOAD-TO-R2] Starting upload: ${filename} to bucket: ${R2_BUCKET_NAME}`);
 
-    // Initialize AWS client (compatible with Deno Edge Functions - no filesystem dependencies)
-    const awsClient = new AwsClient({
-      accessKeyId: R2_ACCESS_KEY_ID,
-      secretAccessKey: R2_SECRET_ACCESS_KEY,
-      region: "auto",
-    });
-
-    // Convert base64 to binary buffer
+    // Convert base64 to binary
     const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
     const binaryString = atob(base64Data);
     const bytes = new Uint8Array(binaryString.length);
@@ -53,23 +93,33 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
-    // Construct the R2 upload URL
+    // Construct upload URL
     const uploadUrl = `${R2_ENDPOINT}/${R2_BUCKET_NAME}/${filename}`;
     console.log(`[UPLOAD-TO-R2] Upload URL: ${uploadUrl}`);
 
-    // Upload to R2 using signed request
-    const response = await awsClient.fetch(uploadUrl, {
-      method: "PUT",
-      headers: {
+    // Sign request with AWS Signature V4
+    const signedHeaders = await signAwsRequest(
+      "PUT",
+      uploadUrl,
+      {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=31536000",
       },
+      bytes,
+      R2_ACCESS_KEY_ID,
+      R2_SECRET_ACCESS_KEY
+    );
+
+    // Upload to R2 using native fetch with signed request
+    const response = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: signedHeaders,
       body: bytes,
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[UPLOAD-TO-R2] Upload failed: ${response.status} ${response.statusText}`, errorText);
+      console.error(`[UPLOAD-TO-R2] Upload failed: ${response.status}`, errorText);
       throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
     }
 
