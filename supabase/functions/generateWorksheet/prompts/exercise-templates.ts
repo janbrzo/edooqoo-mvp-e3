@@ -4,6 +4,7 @@
  */
 
 import { exerciseFunctions, exerciseOrder, getVocabularySheet } from "./individual-exercises.ts";
+import { normalizeExerciseId } from "../helpers.ts";
 
 export const getExerciseTemplates = (
   hasGrammarFocus: boolean,
@@ -16,35 +17,40 @@ export const getExerciseTemplates = (
 
   // Use custom selected exercises if provided, otherwise use default order
   if (selectedExercises && selectedExercises.length > 0) {
-    // Validate selected exercises exist in our functions
-    finalExercises = selectedExercises
-      .filter((type) => {
-        const hasFunction = type in exerciseFunctions;
-        return hasFunction;
-      })
-      .slice(0, exerciseCount);
+    // ✅ Keep ORIGINAL exercise types (with -picture suffix if present)
+    finalExercises = selectedExercises.slice(0, exerciseCount);
   } else {
     // Select the first N exercises from the default order
     finalExercises = exerciseOrder.slice(0, exerciseCount);
   }
 
-  // ETAP 2: Generate exercise JSON fragments with picture mode support
-  const exerciseFragments = finalExercises.map((type) => {
-    // Picture-compatible exercises that have -picture versions
-    const pictureCompatible = ["multiple-choice", "true-false", "answer-questions"];
-
-    // If picture mode is active and exercise is compatible, use picture version
-    let actualType = type;
-    if (hasSelectedImage && pictureCompatible.includes(type)) {
-      actualType = `${type}-picture`;
-    }
-
-    const exerciseFunction = exerciseFunctions[actualType as keyof typeof exerciseFunctions];
+  // ETAP 2: Generate exercise JSON fragments preserving -picture suffix in type
+  const exerciseFragments = finalExercises.map((originalType) => {
+    // ✅ Normalize ONLY for template lookup (internal use)
+    const normalized = normalizeExerciseId(originalType);
+    const baseType = normalized.baseId;
+    
+    // Try to get the exercise function for the base type
+    const exerciseFunction = exerciseFunctions[baseType as keyof typeof exerciseFunctions];
+    
     if (!exerciseFunction) {
-      // Fallback to standard version if picture version doesn't exist
-      return exerciseFunctions[type as keyof typeof exerciseFunctions]();
+      console.warn(`[EXERCISE-TEMPLATES] No function found for base type: ${baseType}`);
+      return "";
     }
-    return exerciseFunction();
+    
+    // Get the template
+    let template = exerciseFunction();
+    
+    // ✅ CRITICAL: Preserve original type (with -picture suffix) in JSON output
+    // Replace "type": "base-type" with "type": "original-type"
+    if (originalType !== baseType) {
+      template = template.replace(
+        `"type": "${baseType}"`,
+        `"type": "${originalType}"`
+      );
+    }
+    
+    return template;
   });
   return `23. Generate a structured JSON worksheet with this EXACT format:
 EXAMPLE OUTPUT (IGNORE CONTENT, FOCUS ON STRUCTURE):

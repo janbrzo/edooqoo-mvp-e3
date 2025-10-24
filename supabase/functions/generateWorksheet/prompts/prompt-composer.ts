@@ -15,19 +15,15 @@ export const composeSystemMessage = (
   selectedExercises?: string[],
   selectedImage?: any
 ): string => {
-  // Normalize exercises ONLY for exerciseTemplates (removes -picture suffix for template lookup)
-  const normalizedExercises = selectedExercises?.map(ex => {
-    const normalized = normalizeExerciseId(ex);
-    return normalized.baseId;
-  });
-  
-  // Pass ORIGINAL selectedExercises (with -picture) to coreInstructions and finalRequirements
+  // ✅ Pass ORIGINAL selectedExercises (with -picture suffix) to ALL functions
+  // Each function will handle normalization internally if needed for template lookup
   const coreInstructions = getCoreInstructions(hasGrammarFocus, grammarFocus, formData, exerciseCount, selectedExercises, selectedImage);
   
-  // Pass NORMALIZED exercises (without -picture) to exerciseTemplates
-  const exerciseTemplates = getExerciseTemplates(hasGrammarFocus, grammarFocus, exerciseCount, normalizedExercises, !!selectedImage);
+  // ✅ Pass ORIGINAL exercises - exerciseTemplates will normalize internally for lookup
+  // but preserve original type in output JSON
+  const exerciseTemplates = getExerciseTemplates(hasGrammarFocus, grammarFocus, exerciseCount, selectedExercises, !!selectedImage);
   
-  // Pass ORIGINAL selectedExercises (with -picture) to finalRequirements
+  // ✅ Pass ORIGINAL selectedExercises (with -picture) to finalRequirements
   const finalRequirements = getFinalRequirements(hasGrammarFocus, exerciseCount, selectedExercises, formData.englishLevel, !!selectedImage);
   
   return `${coreInstructions}

@@ -536,12 +536,30 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         {/* New additional exercise types */}
         {normalizedType === 'describe' && (
           <ExerciseDescribe
-            image_url={hasSelectedImage ? undefined : exercise.image_url}
-            questions={exercise.questions}
+            image_url={exercise.image_url || hasSelectedImage?.unsplash_url || hasSelectedImage?.ai_generated_url}
+            questions={exercise.prompts || exercise.questions || []}
             isEditing={isEditing}
             viewMode={viewMode}
-            showImage={!hasSelectedImage}
-            onQuestionChange={handleQuestionChangeLocal}
+            showImage={true}
+            onQuestionChange={(qIndex, field, value) => {
+              // ✅ Update prompts array correctly
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newPrompts = [...(exercise.prompts || exercise.questions || [])];
+              
+              if (field === 'text' || field === 'question') {
+                newPrompts[qIndex] = value;
+              }
+              
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
+                prompts: newPrompts
+              };
+              
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
             onImageUrlChange={(url) => handleExerciseChangeLocal('image_url', url)}
           />
         )}
