@@ -8,6 +8,7 @@ interface MediaSectionProps {
   selectedImage: {
     id: string;
     url: string;
+    ai_generated_url?: string; // R2 URL for AI-generated images
     description?: string; // Legacy Unsplash short description
     detailedDescription?: string; // New Vertex AI detailed description
     photographer?: string;
@@ -82,8 +83,8 @@ export default function MediaSection({
       {!isCollapsed && (
         <div className="space-y-3">
           <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm max-w-3xl mx-auto">
-            <img
-              src={selectedImage.url}
+              <img
+                src={selectedImage.ai_generated_url || selectedImage.url}
               alt={displayDescription}
               className="w-full h-auto object-contain max-h-[400px] cursor-pointer"
               onClick={onToggleFullScreen}

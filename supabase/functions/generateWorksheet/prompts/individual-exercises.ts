@@ -691,6 +691,7 @@ export const exerciseFunctions = {
   'complete-word': getCompleteWordExercise,
   'matching-halves': getMatchingHalvesExercise,
   'describe-picture': getDescribePictureExercise,
+  'describe': getDescribePictureExercise, // Alias for backward compatibility
   'answer-questions': getAnswerQuestionsExercise,
   // PICTURE-BASED VERSIONS:
   'multiple-choice-picture': getMultipleChoicePictureExercise,

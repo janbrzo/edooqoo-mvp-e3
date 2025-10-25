@@ -194,6 +194,7 @@ FORMAT:
         image: {
           id: `vertex-ai-${Date.now()}`,
           url: finalImageUrl, // R2 URL or base64 fallback
+          ai_generated_url: finalImageUrl, // ✅ Explicit R2 URL field for frontend
           thumbnail: finalImageUrl,
           description: detailedDescription.substring(0, 100) + "...",
           detailedDescription: detailedDescription,

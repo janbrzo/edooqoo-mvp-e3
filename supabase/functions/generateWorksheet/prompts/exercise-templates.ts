@@ -26,32 +26,28 @@ export const getExerciseTemplates = (
 
   // ETAP 2: Generate exercise JSON fragments preserving -picture suffix in type
   const exerciseFragments = finalExercises.map((originalType) => {
-    // ✅ Normalize ONLY for template lookup (internal use)
-    const normalized = normalizeExerciseId(originalType);
-    const baseType = normalized.baseId;
-    
-    // Try to get the exercise function for the base type
-    const exerciseFunction = exerciseFunctions[baseType as keyof typeof exerciseFunctions];
+    // ✅ Try original type first, then try normalized
+    let exerciseFunction = exerciseFunctions[originalType as keyof typeof exerciseFunctions];
     
     if (!exerciseFunction) {
-      console.warn(`[EXERCISE-TEMPLATES] No function found for base type: ${baseType}`);
+      // Fallback: normalize and try base type
+      const normalized = normalizeExerciseId(originalType);
+      const baseType = normalized.baseId;
+      exerciseFunction = exerciseFunctions[baseType as keyof typeof exerciseFunctions];
+    }
+    
+    if (!exerciseFunction) {
+      console.warn(`[EXERCISE-TEMPLATES] No function found for type: ${originalType}`);
       return "";
     }
     
-    // Get the template
+    // Get template (already has correct type from individual-exercises.ts)
     let template = exerciseFunction();
     
-    // ✅ CRITICAL: Preserve original type (with -picture suffix) in JSON output
-    // Replace "type": "base-type" with "type": "original-type"
-    if (originalType !== baseType) {
-      template = template.replace(
-        `"type": "${baseType}"`,
-        `"type": "${originalType}"`
-      );
-    }
+    // ✅ NO NEED to replace type - template already has correct type from ETAP 2 fix
     
     return template;
-  });
+  }).filter(Boolean);
   return `23. Generate a structured JSON worksheet with this EXACT format:
 EXAMPLE OUTPUT (IGNORE CONTENT, FOCUS ON STRUCTURE):
 

@@ -26,9 +26,10 @@ export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: nu
     'describe-picture': hasSelectedImage 
       ? `Generate complete exercise based on the provided image. Include "image_description" describing the actual image, 8 detailed "prompts" specific to what's visible, "useful_vocabulary" relevant to content. Time: 10 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
       : `Generate generic describe-picture exercise with general prompts. Include "image_description", 8 general "prompts", and "useful_vocabulary". Time: 10 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
-    'answer-questions': hasSelectedImage
-      ? `EXACTLY 10 questions with "question" and "focus" fields based on image. Questions reference visible details and encourage personal response. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
-      : `EXACTLY 10 questions with "question" and "focus" fields for personal response. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'answer-questions-picture': hasSelectedImage
+      ? `EXACTLY 10 questions with "question" and "focus" fields based on the provided image. Questions reference visible details and encourage personal response. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
+      : `EXACTLY 10 questions with "question" and "focus" fields for general picture analysis. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'answer-questions': `EXACTLY 10 questions with "question" and "focus" fields for personal response. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'multiple-choice-picture': hasSelectedImage
       ? `EXACTLY 10 multiple-choice questions based on the provided image. Each question has 4 options with one correct answer referencing visible details. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
       : `EXACTLY 10 multiple-choice questions about pictures in general. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
