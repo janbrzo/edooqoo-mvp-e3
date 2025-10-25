@@ -39,21 +39,13 @@ export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: nu
 
   let requirements = '\nCRITICAL REQUIREMENTS VERIFICATION:\n';
   
-  // ETAP 3: Generate requirements based on selected exercises or default order with picture mode support
+  // ETAP 3: Generate requirements based on selected exercises (type already has -picture suffix if needed)
   if (selectedExercises) {
     selectedExercises.slice(0, exerciseCount).forEach((exerciseType, index) => {
-      // Picture-compatible exercises that have -picture versions
-      const pictureCompatible = ['multiple-choice', 'true-false', 'answer-questions'];
-      
-      // If picture mode is active and exercise is compatible, use picture version
-      let actualExerciseType = exerciseType;
-      if (hasSelectedImage && pictureCompatible.includes(exerciseType)) {
-        actualExerciseType = `${exerciseType}-picture`;
-      }
-      
-      const requirement = exerciseRequirements[actualExerciseType as keyof typeof exerciseRequirements];
+      // ✅ Use exercise type directly (already has -picture suffix from prompt-composer)
+      const requirement = exerciseRequirements[exerciseType as keyof typeof exerciseRequirements];
       if (requirement) {
-        requirements += `${index + 1}. Exercise ${index + 1} (${actualExerciseType}): ${requirement}\n`;
+        requirements += `${index + 1}. Exercise ${index + 1} (${exerciseType}): ${requirement}\n`;
       }
     });
   } else {

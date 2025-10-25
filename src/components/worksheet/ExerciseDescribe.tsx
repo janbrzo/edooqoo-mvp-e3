@@ -21,33 +21,10 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      {/* Image section - only show if showImage is true */}
-      {showImage && (
-        <div className="flex justify-center">
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
-          {isEditing && onImageUrlChange ? (
-            <div className="space-y-2">
-              <input
-                type="text"
-                value={image_url || ""}
-                onChange={e => onImageUrlChange(e.target.value)}
-                placeholder="Enter image URL"
-                className="w-full border p-2 editable-content"
-              />
-              <p className="text-xs text-gray-500">Enter image URL for the picture description exercise</p>
-            </div>
-          ) : (
-            <>
-              {image_url ? (
-                <img src={image_url} alt="Description exercise" className="max-w-full max-h-64 mx-auto rounded" />
-              ) : (
-                <div className="w-64 h-48 bg-gray-200 rounded flex items-center justify-center">
-                  <p className="text-gray-500">📷 Picture for description</p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+      {/* Image is displayed in MediaSection above - no duplicate needed */}
+      {showImage && !image_url && (
+        <div className="text-center text-sm text-muted-foreground py-2">
+          ℹ️ Refer to the image in the Lesson Media section above
         </div>
       )}
 

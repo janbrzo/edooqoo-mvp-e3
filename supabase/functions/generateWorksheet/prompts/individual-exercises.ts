@@ -509,7 +509,7 @@ export const getAnswerQuestionsExercise = () => `    {
 // =============== PICTURE-BASED EXERCISE VERSIONS (for Phase 2 - after image selection) ===============
 
 export const getMultipleChoicePictureExercise = () => `    {
-      "type": "multiple-choice",
+      "type": "multiple-choice-picture",
       "title": "Exercise X: Multiple Choice - Picture Analysis",
       "icon": "fa-check-square",
       "time": 8,
@@ -610,7 +610,7 @@ export const getMultipleChoicePictureExercise = () => `    {
     }`;
 
 export const getTrueFalsePictureExercise = () => `    {
-      "type": "true-false",
+      "type": "true-false-picture",
       "title": "Exercise X: True or False - Picture Analysis",
       "icon": "fa-balance-scale",
       "time": 5,
@@ -631,7 +631,7 @@ export const getTrueFalsePictureExercise = () => `    {
     }`;
 
 export const getAnswerQuestionsPictureExercise = () => `    {
-      "type": "answer-questions",
+      "type": "answer-questions-picture",
       "title": "Exercise X: Answer Questions About the Picture",
       "icon": "fa-question-circle",
       "time": 8,

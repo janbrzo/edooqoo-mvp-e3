@@ -51,10 +51,10 @@ async function signAwsRequest(
   const date = new Date().toISOString().replace(/[:-]|\.\d{3}/g, "");
   const dateStamp = date.slice(0, 8);
 
-  // Canonical request
-  const canonicalHeaders = `host:${host}\nx-amz-date:${date}\n`;
-  const signedHeaders = "host;x-amz-date";
+  // Canonical request - MUST include x-amz-content-sha256 for R2
   const payloadHash = await sha256(body);
+  const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${date}\n`;
+  const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
   const canonicalRequest = `${method}\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
 
   // String to sign
@@ -78,6 +78,7 @@ async function signAwsRequest(
 
   return {
     ...headers,
+    "x-amz-content-sha256": payloadHash,
     "x-amz-date": date,
     "Authorization": authHeader,
   };
