@@ -2,6 +2,7 @@ import React from 'react';
 import { ExternalLink, Pin, X, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import DemoWatermark from './DemoWatermark';
 
 interface MediaSectionProps {
@@ -31,12 +32,16 @@ export default function MediaSection({
   onToggleFullScreen
 }: MediaSectionProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const [imageError, setImageError] = React.useState(false);
+  const [imageLoading, setImageLoading] = React.useState(true);
+  const { toast } = useToast();
   
   // DEBUGGING: Log selectedImage data
   console.log('🖼️ [MEDIASECTION] Rendering with selectedImage:', {
     hasImage: !!selectedImage,
     id: selectedImage?.id,
     url: selectedImage?.url?.substring(0, 50) + '...',
+    ai_generated_url: selectedImage?.ai_generated_url?.substring(0, 50) + '...',
     hasDescription: !!selectedImage?.description,
     hasDetailedDescription: !!selectedImage?.detailedDescription,
     descriptionLength: selectedImage?.description?.length,
@@ -49,7 +54,20 @@ export default function MediaSection({
 
   // Priority: detailedDescription (Vertex AI) > description (Unsplash)
   const displayDescription = selectedImage.detailedDescription || selectedImage.description || 'Lesson image';
-  const isVertexAIGenerated = selectedImage.source === 'vertex-ai-generated';  // ✅ Check correct source key
+  const isVertexAIGenerated = selectedImage.source === 'vertex-ai-generated';
+  
+  // Determine which URL to use with automatic fallback
+  const imageUrl = React.useMemo(() => {
+    // If R2 URL failed, try base64 fallback
+    if (imageError && selectedImage.url && selectedImage.url !== selectedImage.ai_generated_url) {
+      console.log('🔄 [MEDIASECTION] R2 URL failed, falling back to base64');
+      return selectedImage.url;
+    }
+    // Priority: R2 URL > base64
+    const finalUrl = selectedImage.ai_generated_url || selectedImage.url;
+    console.log('🖼️ [MEDIASECTION] Using image URL:', finalUrl?.substring(0, 80) + '...');
+    return finalUrl;
+  }, [imageError, selectedImage]);
 
   return (
     <>
@@ -83,11 +101,43 @@ export default function MediaSection({
       {!isCollapsed && (
         <div className="space-y-3">
           <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm max-w-3xl mx-auto">
-              <img
-                src={selectedImage.ai_generated_url || selectedImage.url}
+            {imageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 min-h-[200px]">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="animate-spin h-8 w-8 border-4 border-worksheet-purple border-t-transparent rounded-full"></div>
+                  <p className="text-sm text-gray-600">Loading image...</p>
+                </div>
+              </div>
+            )}
+            <img
+              src={imageUrl}
               alt={displayDescription}
               className="w-full h-auto object-contain max-h-[400px] cursor-pointer"
               onClick={onToggleFullScreen}
+              onLoad={() => {
+                setImageLoading(false);
+                console.log('✅ [MEDIASECTION] Image loaded successfully:', imageUrl?.substring(0, 80));
+              }}
+              onError={(e) => {
+                console.error('❌ [MEDIASECTION] Image load failed:', imageUrl?.substring(0, 80));
+                setImageLoading(false);
+                if (!imageError) {
+                  setImageError(true);  // Trigger re-render with fallback
+                  toast({
+                    title: "Image loading issue",
+                    description: "Trying alternative image source...",
+                    variant: "default",
+                  });
+                } else {
+                  // Even fallback failed - show error
+                  console.error('❌ [MEDIASECTION] Both R2 and base64 failed');
+                  toast({
+                    title: "Failed to load image",
+                    description: "Please try regenerating the worksheet or contact support.",
+                    variant: "destructive",
+                  });
+                }
+              }}
               title="Click to expand image"
             />
             {onTogglePin && onToggleFullScreen && (
@@ -193,7 +243,7 @@ export default function MediaSection({
             <X className="h-6 w-6" />
           </Button>
           <img
-            src={selectedImage.url}
+            src={imageUrl}
             alt={displayDescription}
             className="max-w-full max-h-full object-contain"
           />
