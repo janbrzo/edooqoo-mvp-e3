@@ -349,6 +349,7 @@ export default function WorksheetContent({
       {(inputParams?.selectedImage || editableWorksheet?.selected_image) && (
         <MediaSection
           selectedImage={inputParams?.selectedImage || editableWorksheet.selected_image}
+          base64Backup={editableWorksheet?.base64_backup} // ✅ NEW: Pass base64 from separate database column
           isDownloadUnlocked={isDownloadUnlocked}
           isPinned={isPinned}
           onTogglePin={onTogglePin}

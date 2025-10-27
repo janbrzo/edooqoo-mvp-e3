@@ -10,13 +10,13 @@ interface MediaSectionProps {
     id: string;
     url: string;
     ai_generated_url?: string; // R2 URL for AI-generated images
-    base64_backup?: string; // Base64 backup for emergency fallback
     description?: string; // Legacy Unsplash short description
     detailedDescription?: string; // New Vertex AI detailed description
     photographer?: string;
     photographerUrl?: string;
     source?: string; // 'vertex-ai-generated' | 'unsplash' | undefined
   } | null;
+  base64Backup?: string; // ✅ NEW: Base64 backup from separate database column (worksheets.base64_backup)
   isDownloadUnlocked: boolean;
   isPinned?: boolean;
   onTogglePin?: () => void;
@@ -24,8 +24,9 @@ interface MediaSectionProps {
   onToggleFullScreen?: () => void;
 }
 
-export default function MediaSection({ 
-  selectedImage, 
+export default function MediaSection({
+  selectedImage,
+  base64Backup, // ✅ NEW: Receive base64 from separate database column
   isDownloadUnlocked,
   isPinned = false,
   onTogglePin,
@@ -73,16 +74,16 @@ export default function MediaSection({
       }
     }
     
-    // Priority 2: Emergency fallback to base64 backup
-    if (selectedImage.base64_backup) {
-      console.log('🔄 [MEDIASECTION] Falling back to base64_backup');
-      return selectedImage.base64_backup;
+    // Priority 2: Emergency fallback to base64 from separate database column (NEW!)
+    if (base64Backup) {
+      console.log('🔄 [MEDIASECTION] Falling back to base64_backup from separate database column');
+      return base64Backup;
     }
     
     // Priority 3: Last resort - url field (might be base64 from old worksheets)
-    console.log('🔄 [MEDIASECTION] Using url field as last resort');
+    console.log('🔄 [MEDIASECTION] Using url field as last resort (backward compatibility)');
     return selectedImage.url || "";
-  }, [selectedImage, imageError]);
+  }, [selectedImage, imageError, base64Backup]);
 
   return (
     <>

@@ -33,7 +33,6 @@ export interface FormData {
     photographerUrl: string;
     source?: string; // NEW: 'gemini-generated' | 'unsplash'
     ai_generated_url?: string; // NEW: R2 URL for AI-generated images
-    base64_backup?: string; // NEW: Base64 backup for emergency fallback
     generationPrompt?: string; // NEW: Original prompt used to generate image
     topic?: string; // NEW: Lesson topic used for generation
     englishLevel?: string; // NEW: Level used for generation

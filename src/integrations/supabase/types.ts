@@ -437,6 +437,7 @@ export type Database = {
       worksheets: {
         Row: {
           ai_response: string
+          base64_backup: string | null
           city: string | null
           country: string | null
           created_at: string
@@ -466,6 +467,7 @@ export type Database = {
         }
         Insert: {
           ai_response: string
+          base64_backup?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
@@ -495,6 +497,7 @@ export type Database = {
         }
         Update: {
           ai_response?: string
+          base64_backup?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
@@ -579,10 +582,7 @@ export type Database = {
         }
         Returns: string
       }
-      get_token_balance: {
-        Args: { p_teacher_id: string }
-        Returns: number
-      }
+      get_token_balance: { Args: { p_teacher_id: string }; Returns: number }
       get_worksheet_by_share_token: {
         Args: { p_share_token: string }
         Returns: {
@@ -605,9 +605,9 @@ export type Database = {
         Args: { p_worksheet_id: string }
         Returns: number
       }
-      insert_worksheet_bypass_limit: {
-        Args:
-          | {
+      insert_worksheet_bypass_limit:
+        | {
+            Args: {
               p_ai_response: string
               p_city?: string
               p_country?: string
@@ -621,7 +621,14 @@ export type Database = {
               p_title: string
               p_user_id: string
             }
-          | {
+            Returns: {
+              created_at: string
+              id: string
+              title: string
+            }[]
+          }
+        | {
+            Args: {
               p_ai_response: string
               p_city?: string
               p_country?: string
@@ -634,32 +641,23 @@ export type Database = {
               p_title: string
               p_user_id: string
             }
-        Returns: {
-          created_at: string
-          id: string
-          title: string
-        }[]
-      }
-      is_user_anonymous: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+            Returns: {
+              created_at: string
+              id: string
+              title: string
+            }[]
+          }
+      is_user_anonymous: { Args: { user_id: string }; Returns: boolean }
       reactivate_user_account: {
         Args: { user_email: string }
         Returns: boolean
       }
-      should_show_onboarding: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+      should_show_onboarding: { Args: { user_id: string }; Returns: boolean }
       soft_delete_student: {
         Args: { p_student_id: string; p_teacher_id: string }
         Returns: boolean
       }
-      soft_delete_user_account: {
-        Args: { user_id: string }
-        Returns: boolean
-      }
+      soft_delete_user_account: { Args: { user_id: string }; Returns: boolean }
       soft_delete_worksheet: {
         Args: { p_teacher_id: string; p_worksheet_id: string }
         Returns: boolean

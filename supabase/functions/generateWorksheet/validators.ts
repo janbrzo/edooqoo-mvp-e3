@@ -288,9 +288,9 @@ function validateDescribePictureExercise(exercise: any): void {
     throw new Error('Describe Picture exercise must have instructions or description');
   }
   
-  // Optional: Check for image_url (but might not be present in all cases)
+  // INFO: image_url is optional - image is provided via selectedImage prop to MediaSection
   if (!exercise.image_url) {
-    console.warn('Describe Picture exercise missing image_url');
+    console.info('[INFO] Describe Picture exercise without image_url field (image will be provided via selectedImage in MediaSection)');
   }
 }
 

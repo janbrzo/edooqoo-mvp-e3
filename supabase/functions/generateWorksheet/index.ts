@@ -320,6 +320,13 @@ serve(async (req) => {
         const fullPrompt = `SYSTEM MESSAGE:\n${systemMessage}\n\nUSER MESSAGE:\n${sanitizedPrompt}`;
         const sanitizedFormData = formData ? JSON.parse(JSON.stringify(formData)) : {};
 
+        // ✅ Separate base64 from selected_image to keep JSONB small
+        const base64Backup = selectedImage?.base64_backup;
+        const selectedImageWithoutBase64 = selectedImage ? {
+          ...selectedImage,
+          base64_backup: undefined // Remove base64 from JSONB
+        } : null;
+
         const { data: worksheet, error: worksheetError } = await supabase
           .from("worksheets")
           .insert({
@@ -331,7 +338,8 @@ serve(async (req) => {
             teacher_id: userId || null, // Add teacher_id for authenticated users
             teacher_email: teacherEmail, // Add teacher_email
             student_id: studentId || null, // Add student_id if provided
-            selected_image: selectedImage || null, // ETAP 4: Store selected image directly as JSONB (no JSON.stringify)
+            selected_image: selectedImageWithoutBase64, // ✅ JSONB without base64 (~2-5KB instead of 500KB-2MB)
+            base64_backup: base64Backup || null, // ✅ NEW: Store base64 in separate TEXT column
             ip_address: ip,
             status: "created",
             title: worksheetData.title?.substring(0, 255) || "Generated Worksheet", // Limit title length
