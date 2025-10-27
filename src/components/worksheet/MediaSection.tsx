@@ -10,6 +10,7 @@ interface MediaSectionProps {
     id: string;
     url: string;
     ai_generated_url?: string; // R2 URL for AI-generated images
+    base64_backup?: string; // Base64 backup for emergency fallback
     description?: string; // Legacy Unsplash short description
     detailedDescription?: string; // New Vertex AI detailed description
     photographer?: string;
@@ -56,18 +57,32 @@ export default function MediaSection({
   const displayDescription = selectedImage.detailedDescription || selectedImage.description || 'Lesson image';
   const isVertexAIGenerated = selectedImage.source === 'vertex-ai-generated';
   
-  // Determine which URL to use with automatic fallback
+  // Determine which URL to use with intelligent fallback
   const imageUrl = React.useMemo(() => {
-    // If R2 URL failed, try base64 fallback
-    if (imageError && selectedImage.url && selectedImage.url !== selectedImage.ai_generated_url) {
-      console.log('🔄 [MEDIASECTION] R2 URL failed, falling back to base64');
-      return selectedImage.url;
+    if (!selectedImage) return "";
+    
+    // Priority 1: Try R2 URL first (ai_generated_url or url if not base64)
+    if (!imageError) {
+      if (selectedImage.ai_generated_url) {
+        console.log('🖼️ [MEDIASECTION] Using R2 URL (ai_generated_url):', selectedImage.ai_generated_url?.substring(0, 80) + '...');
+        return selectedImage.ai_generated_url;
+      }
+      if (selectedImage.url && !selectedImage.url.startsWith('data:')) {
+        console.log('🖼️ [MEDIASECTION] Using R2 URL (url field):', selectedImage.url?.substring(0, 80) + '...');
+        return selectedImage.url;
+      }
     }
-    // Priority: R2 URL > base64
-    const finalUrl = selectedImage.ai_generated_url || selectedImage.url;
-    console.log('🖼️ [MEDIASECTION] Using image URL:', finalUrl?.substring(0, 80) + '...');
-    return finalUrl;
-  }, [imageError, selectedImage]);
+    
+    // Priority 2: Emergency fallback to base64 backup
+    if (selectedImage.base64_backup) {
+      console.log('🔄 [MEDIASECTION] Falling back to base64_backup');
+      return selectedImage.base64_backup;
+    }
+    
+    // Priority 3: Last resort - url field (might be base64 from old worksheets)
+    console.log('🔄 [MEDIASECTION] Using url field as last resort');
+    return selectedImage.url || "";
+  }, [selectedImage, imageError]);
 
   return (
     <>
