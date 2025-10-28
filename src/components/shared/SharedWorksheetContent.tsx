@@ -426,12 +426,17 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
                 />
               )}
 
-              {(exercise.type === 'synonyms-antonyms' || exercise.type === 'matching-synonyms' || exercise.type === 'matching-antonyms') && exercise.items && (
+              {(exercise.type === 'synonyms-antonyms' || 
+                exercise.type === 'synonyms-matching' ||
+                exercise.type === 'antonyms-matching' ||
+                exercise.type === 'matching-synonyms' || 
+                exercise.type === 'matching-antonyms') && exercise.items && (
                 <ExerciseSynonymsAntonyms
                   items={exercise.items}
                   isEditing={false}
                   viewMode="student"
-                  onItemChange={() => {}} // No-op for shared view
+                  onItemChange={() => {}}
+                  exerciseType={exercise.type}
                 />
               )}
 

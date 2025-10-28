@@ -99,10 +99,25 @@ const AVAILABLE_EXERCISES = [{
   icon: '🅰️',
   description: 'Students complete partially written words using context clues, strengthening spelling, vocabulary recognition, and contextual understanding.'
 }, {
+  id: 'synonyms-matching',
+  label: 'Synonyms Matching',
+  icon: '=',
+  comingSoon: false,
+  requiresImage: false,
+  description: 'Students match words with their synonyms (similar meanings), expanding vocabulary knowledge.'
+}, {
+  id: 'antonyms-matching',
+  label: 'Antonyms Matching',
+  icon: '≠',
+  comingSoon: false,
+  requiresImage: false,
+  description: 'Students match words with their antonyms (opposite meanings), understanding word contrasts.'
+}, {
   id: 'synonyms-antonyms',
-  label: 'Synonyms & Antonyms Matching',
+  label: 'Synonyms & Antonyms (Old)',
   icon: '↔️',
-  description: 'Students match words with their synonyms or antonyms, expanding vocabulary knowledge and understanding word relationships and nuances.'
+  comingSoon: true,
+  description: 'DEPRECATED: Use Synonyms Matching or Antonyms Matching instead.'
 }, {
   id: 'sentence-transformation',
   label: 'Sentence Transformation',

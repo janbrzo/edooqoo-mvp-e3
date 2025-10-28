@@ -59,6 +59,8 @@ export function validateExercise(exercise: any): void {
       validateOddOneOutExercise(exercise);
       break;
     case 'synonyms-antonyms':
+    case 'synonyms-matching': // ✅ NEW
+    case 'antonyms-matching': // ✅ NEW
       validateSynonymsAntonymsExercise(exercise);
       break;
     case 'sentence-transformation':

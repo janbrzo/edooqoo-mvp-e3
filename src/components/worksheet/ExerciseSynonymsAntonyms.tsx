@@ -5,6 +5,7 @@ interface ExerciseSynonymsAntonymsProps {
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onItemChange: (iIndex: number, field: string, value: string) => void;
+  exerciseType?: string; // ✅ NEW: to determine column header
 }
 
 // Shuffle function for matching exercise
@@ -18,8 +19,15 @@ function shuffleArray(array: any[]) {
 }
 
 const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
-  items, isEditing, viewMode, onItemChange
+  items, isEditing, viewMode, onItemChange, exerciseType
 }) => {
+  // ✅ Dynamic column header based on exercise type
+  const columnTitle = exerciseType === 'synonyms-matching' || exerciseType === 'matching-synonyms'
+    ? 'Synonyms'
+    : exerciseType === 'antonyms-matching' || exerciseType === 'matching-antonyms'
+    ? 'Antonyms'
+    : 'Synonyms/Antonyms'; // Default for old worksheets
+  
   // Use useMemo to prevent re-shuffling on every render
   const shuffledDefinitions = useMemo(() => {
     return shuffleArray([...items]);
@@ -50,7 +58,7 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
       </div>
 
       <div className="md:col-span-7 space-y-2">
-        <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Synonyms/Antonyms</h4>
+        <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">{columnTitle}</h4>
         {shuffledDefinitions.map((item, iIndex) => (
           <div key={iIndex} className="p-2 border rounded-md bg-white">
             <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + iIndex)}.</span>

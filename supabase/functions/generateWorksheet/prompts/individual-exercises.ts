@@ -270,7 +270,7 @@ export const getOddOneOutExercise = () => `    {
       "title": "Exercise 9: Odd One Out",
       "icon": "fa-search",
       "time": 6,
-      "instructions": "Choose the word that doesn't belong in each group.",
+      "instructions": "In each group, all words belong to the same grammatical category (e.g., all nouns, all adjectives, all verbs) EXCEPT ONE. Choose the word that doesn't belong grammatically or thematically.",
       "questions": [
         {"options": ["pizza", "pasta", "sushi", "lasagna", "noodles"], "correct_answer": "sushi"},
         {"options": ["waiter", "chef", "customer", "cook", "bartender"], "correct_answer": "customer"},
@@ -303,6 +303,50 @@ export const getSynonymsAntonymsExercise = () => `    {
         { "term": "quick", "definition": "fast", "letter": "J" }
       ],
       "teacher_tip": "Use these word pairs to create role-play scenarios where students practice using both positive and negative restaurant vocabulary in context."
+    }`;
+
+// ✅ NEW: Separate Synonyms Matching exercise
+export const getSynonymsExercise = () => `    {
+      "type": "synonyms-matching",
+      "title": "Exercise 10A: Synonyms Matching",
+      "icon": "fa-equals",
+      "time": 7,
+      "instructions": "Match each word with its SYNONYM (word with similar meaning).",
+      "items": [
+        { "term": "delicious", "definition": "tasty", "letter": "A" },
+        { "term": "expensive", "definition": "costly", "letter": "B" },
+        { "term": "popular", "definition": "famous", "letter": "C" },
+        { "term": "fresh", "definition": "new", "letter": "D" },
+        { "term": "complaint", "definition": "criticism", "letter": "E" },
+        { "term": "quick", "definition": "fast", "letter": "F" },
+        { "term": "begin", "definition": "start", "letter": "G" },
+        { "term": "angry", "definition": "mad", "letter": "H" },
+        { "term": "happy", "definition": "joyful", "letter": "I" },
+        { "term": "large", "definition": "big", "letter": "J" }
+      ],
+      "teacher_tip": "After matching, ask students to create original sentences using BOTH words from each pair to reinforce understanding of synonyms."
+    }`;
+
+// ✅ NEW: Separate Antonyms Matching exercise
+export const getAntonymsExercise = () => `    {
+      "type": "antonyms-matching",
+      "title": "Exercise 10B: Antonyms Matching",
+      "icon": "fa-not-equal",
+      "time": 7,
+      "instructions": "Match each word with its ANTONYM (word with opposite meaning).",
+      "items": [
+        { "term": "hot", "definition": "cold", "letter": "A" },
+        { "term": "busy", "definition": "quiet", "letter": "B" },
+        { "term": "polite", "definition": "rude", "letter": "C" },
+        { "term": "satisfied", "definition": "disappointed", "letter": "D" },
+        { "term": "expensive", "definition": "cheap", "letter": "E" },
+        { "term": "fresh", "definition": "stale", "letter": "F" },
+        { "term": "full", "definition": "empty", "letter": "G" },
+        { "term": "fast", "definition": "slow", "letter": "H" },
+        { "term": "clean", "definition": "dirty", "letter": "I" },
+        { "term": "light", "definition": "dark", "letter": "J" }
+      ],
+      "teacher_tip": "Encourage students to explain situations where they would use each pair of opposites, helping them understand context and appropriate usage."
     }`;
 
 export const getSentenceTransformationExercise = () => `    {
@@ -670,19 +714,64 @@ export const getVocabularySheet = () => `  "vocabulary_sheet": [
   ]`;
 
 // Exercise type to function mapping for easy selection - UPDATED WITH 12 NEW EXERCISES + PICTURE VERSIONS
-export const exerciseFunctions = {
-  reading: getReadingExercise,
+export const EXERCISE_FUNCTIONS: Record<string, () => string> = {
+  // ORIGINAL 8 EXERCISES:
+  'reading': getReadingExercise,
   'true-false': getTrueFalseExercise,
-  matching: getMatchingExercise,
+  'matching': getMatchingExercise,
   'fill-in-blanks': getFillInBlanksExercise,
   'multiple-choice': getMultipleChoiceExercise,
-  dialogue: getDialogueExercise,
-  discussion: getDiscussionExercise,
+  'dialogue': getDialogueExercise,
+  'discussion': getDiscussionExercise,
   'error-correction': getErrorCorrectionExercise,
   // 12 NEW EXERCISES ADDED:
   'odd-one-out': getOddOneOutExercise,
-  'synonyms-antonyms': getSynonymsAntonymsExercise,
+  'synonyms-antonyms': getSynonymsAntonymsExercise, // DEPRECATED but kept for backward compatibility
+  'synonyms-matching': getSynonymsExercise, // ✅ NEW
+  'antonyms-matching': getAntonymsExercise, // ✅ NEW
   'sentence-transformation': getSentenceTransformationExercise,
+  'word-order': getWordOrderExercise,
+  'gap-text': getGapTextExercise,
+  'negative-prefixes': getNegativePrefixesExercise,
+  'categorize': getCategorizeExercise,
+  'paraphrasing': getParaphrasingExercise,
+  'complete-word': getCompleteWordExercise,
+  'matching-halves': getMatchingHalvesExercise,
+  'describe-picture': getDescribePictureExercise,
+  'describe': getDescribePictureExercise, // Alias for backward compatibility
+  'answer-questions': getAnswerQuestionsExercise,
+  // PICTURE-BASED VERSIONS:
+  'multiple-choice-picture': getMultipleChoicePictureExercise,
+  'true-false-picture': getTrueFalsePictureExercise,
+  'answer-questions-picture': getAnswerQuestionsPictureExercise
+};
+
+export const exerciseOrder = [
+  // ORIGINAL 8 EXERCISES:
+  'reading',
+  'true-false', 
+  'matching',
+  'fill-in-blanks',
+  'multiple-choice',
+  'dialogue',
+  'discussion',
+  'error-correction',
+  // 12 NEW EXERCISES ADDED:
+  'odd-one-out',
+  'synonyms-matching', // ✅ NEW (separate from antonyms)
+  'antonyms-matching', // ✅ NEW (separate from synonyms)
+  'synonyms-antonyms', // DEPRECATED but kept at end for backward compatibility
+  'sentence-transformation',
+  'word-order',
+  'gap-text',
+  'negative-prefixes',
+  'categorize',
+  'paraphrasing',
+  'complete-word',
+  'matching-halves',
+  'describe-picture',
+  'answer-questions'
+];
   'word-order': getWordOrderExercise,
   'gap-text': getGapTextExercise,
   'negative-prefixes': getNegativePrefixesExercise,

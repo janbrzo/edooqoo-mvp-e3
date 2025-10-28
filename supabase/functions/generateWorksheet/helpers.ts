@@ -54,8 +54,8 @@ export function validateAndFilterExercises(selectedExercises: string[], maxCount
   const availableTypes = [
     'reading', 'true-false', 'matching', 'fill-in-blanks', 
     'multiple-choice', 'dialogue', 'discussion', 'error-correction',
-    'odd-one-out', 'synonyms-antonyms', 'sentence-transformation', 
-    'word-order', 'gap-text', 'negative-prefixes', 'categorize',
+    'odd-one-out', 'synonyms-antonyms', 'synonyms-matching', 'antonyms-matching',
+    'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 'categorize',
     'paraphrasing', 'complete-word', 'matching-halves', 
     'describe-picture', 'answer-questions',
     // Picture versions
@@ -93,7 +93,9 @@ export function getIconForType(type: string): string {
     'true-false': 'fa-balance-scale',
     // New Phase 1 exercise icons
     'odd-one-out': 'fa-search',
-    'synonyms-antonyms': 'fa-exchange-alt',
+    'synonyms-antonyms': 'fa-exchange-alt', // DEPRECATED
+    'synonyms-matching': 'fa-equals', // ✅ NEW
+    'antonyms-matching': 'fa-not-equal', // ✅ NEW
     'sentence-transformation': 'fa-random',
     'word-order': 'fa-sort',
     'gap-text': 'fa-text-width',

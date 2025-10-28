@@ -377,12 +377,17 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {(normalizedType === 'synonyms-antonyms' || normalizedType === 'matching-synonyms' || normalizedType === 'matching-antonyms') && exercise.items && (
+        {(normalizedType === 'synonyms-antonyms' || 
+           normalizedType === 'synonyms-matching' ||
+           normalizedType === 'antonyms-matching' ||
+           normalizedType === 'matching-synonyms' || 
+           normalizedType === 'matching-antonyms') && exercise.items && (
           <ExerciseSynonymsAntonyms
             items={exercise.items}
             isEditing={isEditing}
             viewMode={viewMode}
             onItemChange={handleItemChangeLocal}
+            exerciseType={normalizedType}
           />
         )}
 

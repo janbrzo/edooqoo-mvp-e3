@@ -10,6 +10,19 @@ interface ExerciseMatchingHalvesProps {
 const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
   sentence_halves = [], isEditing, viewMode, onHalvesChange
 }) => {
+  // ✅ AUTO-APPEND dots if AI forgot them (frontend failsafe)
+  const processedHalves = React.useMemo(() => {
+    return sentence_halves.map(item => ({
+      ...item,
+      first_half: item.first_half?.trim().endsWith('......') 
+        ? item.first_half 
+        : `${item.first_half?.trim()} ......`,
+      second_half: item.second_half?.trim().startsWith('......')
+        ? item.second_half
+        : `...... ${item.second_half?.trim()}`
+    }));
+  }, [sentence_halves]);
+
   const handleFirstHalfChange = (hIndex: number, value: string) => {
     onHalvesChange(hIndex, 'first_half', value);
   };
@@ -35,10 +48,10 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
 
   // Create shuffled second halves array for consistent indexing
   const shuffledSecondHalves = React.useMemo(() => {
-    return shuffledIndices.map(originalIndex => sentence_halves[originalIndex]);
-  }, [shuffledIndices, sentence_halves]);
+    return shuffledIndices.map(originalIndex => processedHalves[originalIndex]);
+  }, [shuffledIndices, processedHalves]);
 
-  if (!sentence_halves || sentence_halves.length === 0) {
+  if (!processedHalves || processedHalves.length === 0) {
     return <div className="text-gray-500 italic">No sentence halves available for this exercise.</div>;
   }
 
@@ -47,7 +60,7 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">
         <div className="md:col-span-5 space-y-2">
           <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence beginnings</h4>
-          {sentence_halves.map((item, hIndex) => (
+          {processedHalves.map((item, hIndex) => (
             <div key={hIndex} className="p-2 border rounded-md bg-white">
               <span className="text-worksheet-purple font-medium mr-2">{hIndex + 1}.</span>
               {viewMode === 'student' ? (
@@ -70,7 +83,7 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
         <div className="md:col-span-7 space-y-2">
           <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence endings</h4>
           {shuffledIndices.map((originalIndex, displayIndex) => {
-            const item = sentence_halves[originalIndex];
+            const item = processedHalves[originalIndex];
             return (
               <div key={`shuffled-${displayIndex}`} className="p-2 border rounded-md bg-white">
                 <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + displayIndex)}.</span>
