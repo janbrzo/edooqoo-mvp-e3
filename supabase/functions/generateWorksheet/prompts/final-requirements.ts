@@ -3,10 +3,15 @@
  */
 
 export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: number = 8, selectedExercises?: string[], englishLevel?: string, hasSelectedImage?: boolean) => {
+  // Check if Reading exercise is present in selected exercises
+  const hasReading = selectedExercises?.some(ex => ex === 'reading' || ex === 'reading-picture') ?? false;
+  
   // Exercise-specific requirements mapping
   const exerciseRequirements = {
     'reading': `Exercise with reading must have content more than 300 words. Analyze the lessonTopic, lessonGoal, grammarFocus and additionalInformation to determine the most appropriate text format. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
-    'true-false': `EXACTLY 10 statements ALL directly based on the reading text from Exercise 1. NO general knowledge questions. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'true-false': hasReading
+      ? `EXACTLY 10 statements ALL directly based on the reading text from Exercise 1. NO general knowledge questions. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
+      : `EXACTLY 10 statements based on the lesson topic and general knowledge about it. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'matching': `EXACTLY 10 items to match with proper term-definition pairs. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'fill-in-blanks': `EXACTLY 10 sentences and 10 words in word bank. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'multiple-choice': `EXACTLY 10 questions with 4 options each. All 4 options must be completely different from each other. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
