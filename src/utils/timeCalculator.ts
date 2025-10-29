@@ -64,9 +64,7 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'true-false': 5,
         // New Phase 1 exercises
         'odd-one-out': 5,
-        'synonyms-antonyms': 6, // DEPRECATED
-        'synonyms-matching': 6, // ✅ NEW
-        'antonyms-matching': 6, // ✅ NEW
+        'synonyms-antonyms': 6,
         'sentence-transformation': 7,
         'gap-text': 5,
         'negative-prefixes': 4
@@ -86,9 +84,7 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'true-false': 3,
         // New Phase 1 exercises
         'odd-one-out': 4,
-        'synonyms-antonyms': 5, // DEPRECATED
-        'synonyms-matching': 5, // ✅ NEW
-        'antonyms-matching': 5, // ✅ NEW
+        'synonyms-antonyms': 5,
         'sentence-transformation': 6,
         'gap-text': 4,
         'negative-prefixes': 3
@@ -106,9 +102,7 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'true-false': 5,
         // New Phase 1 exercises
         'odd-one-out': 5,
-        'synonyms-antonyms': 6, // DEPRECATED
-        'synonyms-matching': 6, // ✅ NEW
-        'antonyms-matching': 6, // ✅ NEW
+        'synonyms-antonyms': 6,
         'sentence-transformation': 8,
         'gap-text': 5,
         'negative-prefixes': 4

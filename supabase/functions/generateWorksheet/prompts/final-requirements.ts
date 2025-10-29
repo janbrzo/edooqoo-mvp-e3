@@ -3,24 +3,17 @@
  */
 
 export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: number = 8, selectedExercises?: string[], englishLevel?: string, hasSelectedImage?: boolean) => {
-  // ✅ PART 1: Check if reading exercise exists in selected exercises
-  const hasReadingExercise = selectedExercises?.some(ex => ex === 'reading' || ex === 'reading-picture');
-  
   // Exercise-specific requirements mapping
   const exerciseRequirements = {
     'reading': `Exercise with reading must have content more than 300 words. Analyze the lessonTopic, lessonGoal, grammarFocus and additionalInformation to determine the most appropriate text format. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
-    'true-false': hasReadingExercise
-      ? `EXACTLY 10 statements ALL directly based on the reading text from Exercise 1. NO general knowledge questions. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
-      : `EXACTLY 10 statements about the lesson topic. These should be factual statements that students can verify or discuss, NOT based on any reading text. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'true-false': `EXACTLY 10 statements ALL directly based on the reading text from Exercise 1. NO general knowledge questions. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'matching': `EXACTLY 10 items to match with proper term-definition pairs. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'fill-in-blanks': `EXACTLY 10 sentences and 10 words in word bank. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'multiple-choice': `EXACTLY 10 questions with 4 options each. All 4 options must be completely different from each other. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'dialogue': `AT LEAST 10 dialogue exchanges and EXACTLY 10 expressions. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'discussion': `EXACTLY 10 discussion questions. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'error-correction': `EXACTLY 10 sentences with errors. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
-    'odd-one-out': `EXACTLY 10 groups with EXACTLY 5 options each. CRITICAL: Each group must contain words of the SAME grammatical category (all nouns, all verbs, all adjectives, etc.) with ONE word that is grammatically OR thematically different. Use only vocabulary units. Excluding proper names, names of cities. Each group must have clear odd-one-out with logical reasoning based on grammar or theme. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
-    'synonyms-matching': `EXACTLY 10 word pairs with SYNONYM matching ONLY. Use "items" array with "term", "definition", "letter" fields. All pairs must be synonyms (similar meanings). Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
-    'antonyms-matching': `EXACTLY 10 word pairs with ANTONYM matching ONLY. Use "items" array with "term", "definition", "letter" fields. All pairs must be antonyms (opposite meanings). Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'odd-one-out': `EXACTLY 10 groups with EXACTLY 5 options each. Use only vocabulary units. Excluding propare names, names of cities, grammatical units, sentences. Each group must have clear odd-one-out with logical reasoning. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'synonyms-antonyms': `EXACTLY 10 word pairs with synonym/antonym matching. Use "items" array with "term", "definition", "letter" fields. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'sentence-transformation': `EXACTLY 10 sentences with "original", "instruction", and "transformed" fields. Keep the same meaning. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'word-order': `EXACTLY 10 sentences with "scrambled_words" (separated by " / ") and "correct_order" fields. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
