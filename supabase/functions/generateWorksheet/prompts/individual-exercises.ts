@@ -270,16 +270,16 @@ export const getOddOneOutExercise = () => `    {
       "title": "Exercise 9: Odd One Out",
       "icon": "fa-search",
       "time": 6,
-      "instructions": "Choose the word that doesn't belong in each group.",
+      "instructions": "In each group, find the word that is grammatically different from the others (different part of speech).",
       "questions": [
-        {"options": ["pizza", "pasta", "sushi", "lasagna", "noodles"], "correct_answer": "sushi"},
-        {"options": ["waiter", "chef", "customer", "cook", "bartender"], "correct_answer": "customer"},
-        {"options": ["appetizer", "dessert", "beverage", "main course", "starter"], "correct_answer": "beverage"},
-        {"options": ["spicy", "sweet", "expensive", "salty", "bitter"], "correct_answer": "expensive"},
-        {"options": ["reservation", "complaint", "compliment", "order", "booking"], "correct_answer": "compliment"},
-        {"options": ["fork", "spoon", "napkin", "knife", "chopsticks"], "correct_answer": "napkin"},
-        {"options": ["breakfast", "lunch", "snack", "dinner", "brunch"], "correct_answer": "snack"},
-        {"options": ["grilled", "fried", "boiled", "delicious", "steamed"], "correct_answer": "delicious"}
+        {"options": ["running", "swimming", "cycling", "sport", "dancing"], "correct_answer": "sport"},
+        {"options": ["quickly", "slowly", "carefully", "fast", "quietly"], "correct_answer": "fast"},
+        {"options": ["delicious", "tasty", "eat", "spicy", "sweet"], "correct_answer": "eat"},
+        {"options": ["waiter", "chef", "serve", "cook", "bartender"], "correct_answer": "serve"},
+        {"options": ["reservation", "booking", "order", "complain", "menu"], "correct_answer": "complain"},
+        {"options": ["hot", "cold", "warmth", "fresh", "spicy"], "correct_answer": "warmth"},
+        {"options": ["eating", "drinking", "table", "cooking", "serving"], "correct_answer": "table"},
+        {"options": ["expensive", "cheap", "beautifully", "fresh", "delicious"], "correct_answer": "beautifully"}
       ],
       "teacher_tip": "After students identify the odd word, ask them to explain their reasoning. This develops critical thinking and vocabulary categorization skills."
     }`;
