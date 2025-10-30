@@ -133,10 +133,10 @@ export const processExercises = (exercises: any[], lessonTime: string = '45min',
       console.log(`🔧 Processed odd-one-out exercise with ${exercise.questions.length} questions`);
     }
 
-    if (exercise.type === "synonyms-antonyms" && exercise.items) {
+    if (exercise.type === "synonyms" || exercise.type === "antonyms" || exercise.type === "synonyms-antonyms" && exercise.items) {
       // Shuffle items for variety but maintain pairs
       exercise.originalItems = [...exercise.items];
-      console.log(`🔧 Processed synonyms-antonyms exercise with ${exercise.items.length} pairs`);
+      console.log(`🔧 Processed ${exercise.type} exercise with ${exercise.items.length} pairs`);
     }
 
     if (exercise.type === "sentence-transformation" && exercise.sentences) {

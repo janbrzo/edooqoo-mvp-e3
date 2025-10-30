@@ -24,6 +24,8 @@ const EXERCISE_TYPES_MAP: Record<string, string> = {
   'paraphrasing': 'Paraphrasing',
   'sentencetransformation': 'Sentence Transformation',
   'oddoneout': 'Odd One Out',
+  'synonymsmatching': 'Synonyms Matching', // NEW
+  'antonymsmatching': 'Antonyms Matching', // NEW
   'synonymsantonyms': 'Synonyms & Antonyms',
   'matchinghalves': 'Matching Halves',
   'completeword': 'Complete Word',
@@ -34,6 +36,8 @@ const EXERCISE_TYPES_MAP: Record<string, string> = {
   'true-false': 'True/False',
   'gap-text': 'Gap Text',
   'fill-in-blanks': 'Fill in the Blanks',
+  'synonyms': 'Synonyms Matching', // NEW
+  'antonyms': 'Antonyms Matching', // NEW
   'synonyms-antonyms': 'Synonyms & Antonyms',
   'word-order': 'Word Order',
   'odd-one-out': 'Odd One Out',

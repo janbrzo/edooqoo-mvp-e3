@@ -16,7 +16,7 @@ export function validateExercise(exercise: any): void {
 
   // NEW EXERCISE TYPES - Use lenient validation (warnings instead of errors)
   const newExerciseTypes = [
-    'odd-one-out', 'synonyms-antonyms', 'sentence-transformation', 
+    'odd-one-out', 'synonyms', 'antonyms', 'synonyms-antonyms', 'sentence-transformation', 
     'word-order', 'gap-text', 'negative-prefixes', 'paraphrasing',
     'complete-word', 'categorize', 'matching-halves',
     // Picture mode variants
@@ -57,6 +57,12 @@ export function validateExercise(exercise: any): void {
     // New Phase 1 exercise validations
     case 'odd-one-out':
       validateOddOneOutExercise(exercise);
+      break;
+    case 'synonyms':
+      validateSynonymsAntonymsExercise(exercise);
+      break;
+    case 'antonyms':
+      validateSynonymsAntonymsExercise(exercise);
       break;
     case 'synonyms-antonyms':
       validateSynonymsAntonymsExercise(exercise);
@@ -223,13 +229,20 @@ function validateOddOneOutExercise(exercise: any): void {
 }
 
 function validateSynonymsAntonymsExercise(exercise: any): void {
-  if (!exercise.pairs || !Array.isArray(exercise.pairs) || exercise.pairs.length < 5) {
+  // Handle both 'pairs' and 'items' field names (items is the new standard)
+  const dataArray = exercise.items || exercise.pairs;
+  
+  if (!dataArray || !Array.isArray(dataArray) || dataArray.length < 5) {
     throw new Error('Synonyms/Antonyms exercise must have at least 5 pairs');
   }
   
-  for (const pair of exercise.pairs) {
-    if (!pair.word || !pair.match) {
-      throw new Error('Each synonym/antonym pair must have word and match properties');
+  for (const pair of dataArray) {
+    // Support both old format (word/match) and new format (term/definition)
+    const hasOldFormat = pair.word && pair.match;
+    const hasNewFormat = pair.term && pair.definition;
+    
+    if (!hasOldFormat && !hasNewFormat) {
+      throw new Error('Each synonym/antonym pair must have either (word, match) or (term, definition) properties');
     }
   }
 }

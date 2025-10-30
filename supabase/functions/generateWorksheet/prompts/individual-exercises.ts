@@ -284,6 +284,51 @@ export const getOddOneOutExercise = () => `    {
       "teacher_tip": "After students identify the odd word, ask them to explain their reasoning. This develops critical thinking and vocabulary categorization skills."
     }`;
 
+// NEW: Separate Synonyms Exercise
+export const getSynonymsExercise = () => `    {
+      "type": "synonyms",
+      "title": "Exercise 10: Synonyms Matching",
+      "icon": "fa-equals",
+      "time": 5,
+      "instructions": "Match each word on the left with its synonym (word with similar meaning) on the right.",
+      "items": [
+        { "term": "delicious", "definition": "tasty", "letter": "A" },
+        { "term": "expensive", "definition": "costly", "letter": "B" },
+        { "term": "recommend", "definition": "suggest", "letter": "C" },
+        { "term": "popular", "definition": "well-liked", "letter": "D" },
+        { "term": "affordable", "definition": "reasonably priced", "letter": "E" },
+        { "term": "authentic", "definition": "genuine", "letter": "F" },
+        { "term": "amazing", "definition": "wonderful", "letter": "G" },
+        { "term": "cozy", "definition": "comfortable", "letter": "H" },
+        { "term": "busy", "definition": "crowded", "letter": "I" },
+        { "term": "excellent", "definition": "outstanding", "letter": "J" }
+      ],
+      "teacher_tip": "After completing the exercise, have students create sentences using both words from 2-3 pairs to demonstrate they understand the synonyms have similar meanings in context."
+    }`;
+
+// NEW: Separate Antonyms Exercise
+export const getAntonymsExercise = () => `    {
+      "type": "antonyms",
+      "title": "Exercise 11: Antonyms Matching",
+      "icon": "fa-not-equal",
+      "time": 5,
+      "instructions": "Match each word on the left with its antonym (word with opposite meaning) on the right.",
+      "items": [
+        { "term": "expensive", "definition": "cheap", "letter": "A" },
+        { "term": "delicious", "definition": "tasteless", "letter": "B" },
+        { "term": "spicy", "definition": "mild", "letter": "C" },
+        { "term": "fresh", "definition": "stale", "letter": "D" },
+        { "term": "hot", "definition": "cold", "letter": "E" },
+        { "term": "crowded", "definition": "empty", "letter": "F" },
+        { "term": "fast", "definition": "slow", "letter": "G" },
+        { "term": "polite", "definition": "rude", "letter": "H" },
+        { "term": "clean", "definition": "dirty", "letter": "I" },
+        { "term": "quiet", "definition": "noisy", "letter": "J" }
+      ],
+      "teacher_tip": "After completing the exercise, have students create pairs of contrasting sentences (e.g., 'The restaurant was expensive' vs 'The restaurant was cheap') to reinforce understanding of opposites."
+    }`;
+
+// LEGACY: Keep old combined exercise for backward compatibility
 export const getSynonymsAntonymsExercise = () => `    {
       "type": "synonyms-antonyms",
       "title": "Exercise 10: Synonyms & Antonyms Matching",
@@ -292,7 +337,7 @@ export const getSynonymsAntonymsExercise = () => `    {
       "instructions": "Match each word with its synonym or antonym from the options provided.",
       "items": [
         { "term": "delicious", "definition": "tasty", "letter": "A" },
-        { "term": "expensive", "definition": "costly", "letter": "B" },
+        { "term": "expensive", "definition": "cheap", "letter": "B" },
         { "term": "popular", "definition": "famous", "letter": "C" },
         { "term": "fresh", "definition": "new", "letter": "D" },
         { "term": "hot", "definition": "cold", "letter": "E" },
@@ -681,7 +726,9 @@ export const exerciseFunctions = {
   'error-correction': getErrorCorrectionExercise,
   // 12 NEW EXERCISES ADDED:
   'odd-one-out': getOddOneOutExercise,
-  'synonyms-antonyms': getSynonymsAntonymsExercise,
+  'synonyms': getSynonymsExercise, // NEW
+  'antonyms': getAntonymsExercise, // NEW
+  'synonyms-antonyms': getSynonymsAntonymsExercise, // LEGACY - for backward compatibility
   'sentence-transformation': getSentenceTransformationExercise,
   'word-order': getWordOrderExercise,
   'gap-text': getGapTextExercise,
@@ -690,36 +737,43 @@ export const exerciseFunctions = {
   'paraphrasing': getParaphrasingExercise,
   'complete-word': getCompleteWordExercise,
   'matching-halves': getMatchingHalvesExercise,
+  // NEW: Picture-based exercise versions
   'describe-picture': getDescribePictureExercise,
-  'describe': getDescribePictureExercise, // Alias for backward compatibility
   'answer-questions': getAnswerQuestionsExercise,
-  // PICTURE-BASED VERSIONS:
   'multiple-choice-picture': getMultipleChoicePictureExercise,
   'true-false-picture': getTrueFalsePictureExercise,
   'answer-questions-picture': getAnswerQuestionsPictureExercise
 };
 
+// =============== ORDERED LIST OF EXERCISES - UPDATED WITH NEW EXERCISES ===============
+
 export const exerciseOrder = [
-  // ORIGINAL 8 EXERCISES:
   'reading',
-  'true-false', 
+  'true-false',
   'matching',
   'fill-in-blanks',
   'multiple-choice',
   'dialogue',
   'discussion',
   'error-correction',
-  // 12 NEW EXERCISES ADDED:
+  // New Phase 1 exercises
   'odd-one-out',
-  'synonyms-antonyms',
+  'synonyms', // NEW - preferred over combined
+  'antonyms', // NEW - preferred over combined
+  'synonyms-antonyms', // LEGACY - still available for old worksheets
   'sentence-transformation',
   'word-order',
   'gap-text',
   'negative-prefixes',
+  // New Phase 2 exercises
   'categorize',
   'paraphrasing',
   'complete-word',
   'matching-halves',
+  // Picture mode exercises
   'describe-picture',
-  'answer-questions'
+  'answer-questions',
+  'multiple-choice-picture',
+  'true-false-picture',
+  'answer-questions-picture'
 ];

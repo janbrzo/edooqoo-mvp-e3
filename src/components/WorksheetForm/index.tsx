@@ -141,7 +141,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       // Get available exercises (excluding coming soon ones)
       const availableExercises = [
         'reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 
-        'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms-antonyms',
+        'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms', 'antonyms',
         'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 
         'categorize', 'paraphrasing', 'complete-word', 'matching-halves'
       ];
@@ -228,7 +228,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       // Generate random exercises
       const availableExercises = [
         'reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 
-        'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms-antonyms',
+        'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms', 'antonyms',
         'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 
         'categorize', 'paraphrasing', 'complete-word', 'matching-halves'
       ];

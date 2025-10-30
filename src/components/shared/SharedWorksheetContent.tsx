@@ -426,32 +426,33 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
                 />
               )}
 
-              {(exercise.type === 'synonyms-antonyms' || exercise.type === 'matching-synonyms' || exercise.type === 'matching-antonyms') && exercise.items && (
+              {(exercise.type === 'synonyms-antonyms' || exercise.type === 'synonyms' || exercise.type === 'antonyms') && exercise.items && (
                 <ExerciseSynonymsAntonyms
                   items={exercise.items}
                   isEditing={false}
                   viewMode="student"
                   onItemChange={() => {}} // No-op for shared view
+                  exerciseType={exercise.type}
                 />
               )}
 
-              {/* Other exercise types - use existing simple rendering */}
-              {(exercise.type === 'error-correction' || exercise.type === 'word-formation') && 
-                exercise.sentences && (
-                  <div className="space-y-0.5">
-                    {exercise.sentences.map((sentence: any, sIndex: number) => (
-                      <div key={sIndex} className="border-b pb-1">
-                        <p className="leading-snug">
-                          {sIndex + 1}. {
-                            exercise.type === 'word-formation' 
-                              ? sentence.text.replace(/_+/g, "_______________") 
-                              : sentence.text
-                          }
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              {exercise.type === 'sentence-transformation' && exercise.sentences && (
+                <ExerciseSentenceTransformation
+                  sentences={exercise.sentences}
+                  isEditing={false}
+                  viewMode="student"
+                  onSentenceChange={() => {}} // No-op for shared view
+                />
+              )}
+
+              {exercise.type === 'matching-halves' && exercise.sentence_halves && (
+                <ExerciseMatchingHalves
+                  sentence_halves={exercise.sentence_halves}
+                  isEditing={false}
+                  viewMode="student"
+                  onHalvesChange={() => {}} // No-op for shared view
+                />
+              )}
 
               {/* True/False exercise type */}
               {exercise.type === 'true-false' && exercise.statements && (

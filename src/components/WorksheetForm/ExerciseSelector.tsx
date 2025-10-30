@@ -99,10 +99,21 @@ const AVAILABLE_EXERCISES = [{
   icon: '🅰️',
   description: 'Students complete partially written words using context clues, strengthening spelling, vocabulary recognition, and contextual understanding.'
 }, {
+  id: 'synonyms',
+  label: 'Synonyms Matching',
+  icon: '🔄',
+  description: 'Students match words with their synonyms (similar meanings), expanding vocabulary knowledge and understanding word relationships.'
+}, {
+  id: 'antonyms',
+  label: 'Antonyms Matching',
+  icon: '↕️',
+  description: 'Students match words with their antonyms (opposite meanings), understanding contrasts and expanding vocabulary range.'
+}, {
   id: 'synonyms-antonyms',
   label: 'Synonyms & Antonyms Matching',
   icon: '↔️',
-  description: 'Students match words with their synonyms or antonyms, expanding vocabulary knowledge and understanding word relationships and nuances.'
+  description: 'Students match words with their synonyms or antonyms, expanding vocabulary knowledge and understanding word relationships and nuances.',
+  deprecated: true // Hidden from UI, but kept for backward compatibility
 }, {
   id: 'sentence-transformation',
   label: 'Sentence Transformation',
@@ -354,10 +365,14 @@ export default function ExerciseSelector({
         </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 {AVAILABLE_EXERCISES
-                  .filter(exercise => {
+                .filter(exercise => {
                     // Hide picture-only exercises when picture mode is OFF
                     const isPictureMode = selectedMediaTypes.includes('picture');
                     if (!isPictureMode && exercise.pictureRequired) {
+                      return false;
+                    }
+                    // Hide deprecated exercises from UI
+                    if (exercise.deprecated) {
                       return false;
                     }
                     return true;
