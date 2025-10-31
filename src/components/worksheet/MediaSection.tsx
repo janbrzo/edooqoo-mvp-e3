@@ -4,19 +4,30 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import DemoWatermark from './DemoWatermark';
+import AudioPlayer from './AudioPlayer';
 
 interface MediaSectionProps {
-  selectedImage: {
+  selectedImage?: {
     id: string;
     url: string;
-    ai_generated_url?: string; // R2 URL for AI-generated images
-    description?: string; // Legacy Unsplash short description
-    detailedDescription?: string; // New Vertex AI detailed description
+    ai_generated_url?: string;
+    description?: string;
+    detailedDescription?: string;
     photographer?: string;
     photographerUrl?: string;
-    source?: string; // 'vertex-ai-generated' | 'unsplash' | undefined
+    source?: string;
   } | null;
-  base64Backup?: string; // ✅ NEW: Base64 backup from separate database column (worksheets.base64_backup)
+  selectedAudio?: {
+    id: string;
+    url: string;
+    ai_generated_audio_url?: string;
+    transcript?: string;
+    detailedTranscript?: string;
+    duration?: number;
+    voice?: string;
+    source?: string;
+  } | null;
+  base64Backup?: string;
   isDownloadUnlocked: boolean;
   isPinned?: boolean;
   onTogglePin?: () => void;
@@ -26,7 +37,8 @@ interface MediaSectionProps {
 
 export default function MediaSection({
   selectedImage,
-  base64Backup, // ✅ NEW: Receive base64 from separate database column
+  selectedAudio,
+  base64Backup,
   isDownloadUnlocked,
   isPinned = false,
   onTogglePin,
@@ -38,21 +50,61 @@ export default function MediaSection({
   const [imageLoading, setImageLoading] = React.useState(true);
   const { toast } = useToast();
   
-  // DEBUGGING: Log selectedImage data
-  console.log('🖼️ [MEDIASECTION] Rendering with selectedImage:', {
+  // DEBUGGING: Log media data
+  console.log('🖼️ [MEDIASECTION] Rendering with media:', {
     hasImage: !!selectedImage,
-    id: selectedImage?.id,
-    url: selectedImage?.url?.substring(0, 50) + '...',
-    ai_generated_url: selectedImage?.ai_generated_url?.substring(0, 50) + '...',
-    hasDescription: !!selectedImage?.description,
-    hasDetailedDescription: !!selectedImage?.detailedDescription,
-    descriptionLength: selectedImage?.description?.length,
-    detailedDescriptionLength: selectedImage?.detailedDescription?.length,
-    source: selectedImage?.source,
-    photographer: selectedImage?.photographer,
+    hasAudio: !!selectedAudio,
+    imageId: selectedImage?.id,
+    audioId: selectedAudio?.id,
+    audioUrl: selectedAudio?.url?.substring(0, 50),
+    source: selectedImage?.source || selectedAudio?.source,
   });
   
-  if (!selectedImage) return null;
+  if (!selectedImage && !selectedAudio) return null;
+
+  // If audio is present, render audio player
+  if (selectedAudio) {
+    return (
+      <div className="mb-8 bg-white border rounded-lg overflow-hidden shadow-sm p-6 relative">
+        {!isDownloadUnlocked && <DemoWatermark />}
+        
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">
+            Lesson Media
+          </h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="flex items-center gap-2"
+          >
+            {isCollapsed ? (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                Expand
+              </>
+            ) : (
+              <>
+                <ChevronUp className="h-4 w-4" />
+                Collapse
+              </>
+            )}
+          </Button>
+        </div>
+        
+        {!isCollapsed && (
+          <AudioPlayer
+            audioUrl={selectedAudio.ai_generated_audio_url || selectedAudio.url}
+            transcript={selectedAudio.transcript}
+            duration={selectedAudio.duration}
+            voice={selectedAudio.voice}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // If image is present, render image (existing logic)
 
   // Priority: detailedDescription (Vertex AI) > description (Unsplash)
   const displayDescription = selectedImage.detailedDescription || selectedImage.description || 'Lesson image';

@@ -24,6 +24,11 @@ import ExerciseSentenceTransformation from "./ExerciseSentenceTransformation";
 import ExerciseNegativePrefixes from "./ExerciseNegativePrefixes";
 import ExerciseWordOrder from "./ExerciseWordOrder";
 import ExerciseSynonymsAntonyms from "./ExerciseSynonymsAntonyms";
+import ExerciseListeningComprehension from "./ExerciseListeningComprehension";
+import ExerciseMultipleChoiceAudio from "./ExerciseMultipleChoiceAudio";
+import ExerciseTrueFalseAudio from "./ExerciseTrueFalseAudio";
+import ExerciseFillInBlanksAudio from "./ExerciseFillInBlanksAudio";
+import ExerciseAnswerQuestionsAudio from "./ExerciseAnswerQuestionsAudio";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Loader2, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -543,7 +548,6 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             viewMode={viewMode}
             showImage={true}
             onQuestionChange={(qIndex, field, value) => {
-              // ✅ Update prompts array correctly
               const updatedExercises = [...editableWorksheet.exercises];
               const newPrompts = [...(exercise.prompts || exercise.questions || [])];
               
@@ -576,6 +580,70 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             onQuestionChange={handleQuestionChangeLocal}
             onMediaUrlChange={(url) => handleExerciseChangeLocal('media_url', url)}
             onMediaTypeChange={(type) => handleExerciseChangeLocal('media_type', type)}
+          />
+        )}
+
+        {/* Audio exercises */}
+        {normalizedType === 'listening-comprehension' && exercise.questions && (
+          <ExerciseListeningComprehension
+            questions={exercise.questions}
+            audio_url={exercise.audio_url}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onQuestionChange={handleQuestionChangeLocal}
+          />
+        )}
+
+        {normalizedType === 'multiple-choice-audio' && exercise.questions && (
+          <ExerciseMultipleChoiceAudio
+            questions={exercise.questions}
+            audio_url={exercise.audio_url}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onQuestionChange={handleQuestionChangeLocal}
+          />
+        )}
+
+        {normalizedType === 'true-false-audio' && exercise.statements && (
+          <ExerciseTrueFalseAudio
+            statements={exercise.statements}
+            audio_url={exercise.audio_url}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onStatementChange={handleStatementChangeLocal}
+          />
+        )}
+
+        {normalizedType === 'fill-in-blanks-audio' && (
+          <ExerciseFillInBlanksAudio
+            transcript_with_blanks={exercise.transcript_with_blanks}
+            answers={exercise.answers}
+            full_transcript={exercise.full_transcript}
+            audio_url={exercise.audio_url}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onTranscriptChange={(value) => handleExerciseChangeLocal('transcript_with_blanks', value)}
+            onAnswersChange={(answers) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
+                answers
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
+          />
+        )}
+
+        {normalizedType === 'answer-questions-audio' && exercise.questions && (
+          <ExerciseAnswerQuestionsAudio
+            questions={exercise.questions}
+            audio_url={exercise.audio_url}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onQuestionChange={handleQuestionChangeLocal}
           />
         )}
 

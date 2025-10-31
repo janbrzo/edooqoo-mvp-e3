@@ -15,17 +15,20 @@ export function validateExercise(exercise: any): void {
   }
 
   // NEW EXERCISE TYPES - Use lenient validation (warnings instead of errors)
-  const newExerciseTypes = [
+  const NEW_EXERCISE_TYPES = [
     'odd-one-out', 'synonyms', 'antonyms', 'synonyms-antonyms', 'sentence-transformation', 
     'word-order', 'gap-text', 'negative-prefixes', 'paraphrasing',
     'complete-word', 'categorize', 'matching-halves',
     // Picture mode variants
     'multiple-choice-picture', 'true-false-picture', 'matching-picture',
     'fill-in-blanks-picture', 'categorize-picture', 'word-order-picture',
-    'describe-picture', 'answer-questions-picture'
+    'describe-picture', 'answer-questions-picture',
+    // Audio mode variants
+    'listening-comprehension', 'multiple-choice-audio', 'true-false-audio',
+    'fill-in-blanks-audio', 'answer-questions-audio'
   ];
   
-  const isNewExercise = newExerciseTypes.includes(exercise.type);
+  const isNewExercise = NEW_EXERCISE_TYPES.includes(exercise.type);
   
   // Type-specific validation
   try {
@@ -100,6 +103,22 @@ export function validateExercise(exercise: any): void {
       validateTrueFalseExercise(exercise);
       break;
     case 'answer-questions-picture':
+      validateAnswerQuestionsExercise(exercise);
+      break;
+    // Audio exercises
+    case 'listening-comprehension':
+      validateListeningComprehensionExercise(exercise);
+      break;
+    case 'multiple-choice-audio':
+      validateMultipleChoiceExercise(exercise);
+      break;
+    case 'true-false-audio':
+      validateTrueFalseExercise(exercise);
+      break;
+    case 'fill-in-blanks-audio':
+      validateFillInBlanksAudioExercise(exercise);
+      break;
+    case 'answer-questions-audio':
       validateAnswerQuestionsExercise(exercise);
       break;
     default:
@@ -330,5 +349,40 @@ function validateBasicExerciseStructure(exercise: any): void {
   
   if (!exercise.icon) {
     exercise.icon = 'fa-tasks'; // Set default icon
+  }
+}
+
+/**
+ * Validates Listening Comprehension exercise (audio)
+ */
+function validateListeningComprehensionExercise(exercise: any): void {
+  if (!exercise.questions || !Array.isArray(exercise.questions) || exercise.questions.length < 8) {
+    throw new Error('Listening Comprehension exercise must have at least 8 questions');
+  }
+  
+  for (const question of exercise.questions) {
+    if (!question.text || typeof question.text !== 'string') {
+      throw new Error('Each question must have a text property');
+    }
+    if (!question.answer || typeof question.answer !== 'string') {
+      throw new Error('Each question must have an answer property');
+    }
+  }
+}
+
+/**
+ * Validates Fill in Blanks Audio exercise (dictation)
+ */
+function validateFillInBlanksAudioExercise(exercise: any): void {
+  if (!exercise.transcript_with_blanks || typeof exercise.transcript_with_blanks !== 'string') {
+    throw new Error('Fill in Blanks Audio must have transcript_with_blanks');
+  }
+  
+  if (!exercise.answers || !Array.isArray(exercise.answers) || exercise.answers.length < 10) {
+    throw new Error('Fill in Blanks Audio must have at least 10 answers');
+  }
+  
+  if (!exercise.full_transcript || typeof exercise.full_transcript !== 'string') {
+    throw new Error('Fill in Blanks Audio must have full_transcript');
   }
 }

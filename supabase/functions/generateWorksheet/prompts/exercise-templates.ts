@@ -12,6 +12,7 @@ export const getExerciseTemplates = (
   exerciseCount: number = 8,
   selectedExercises?: string[],
   hasSelectedImage?: boolean,
+  hasSelectedAudio?: boolean,
 ) => {
   let finalExercises: string[];
 

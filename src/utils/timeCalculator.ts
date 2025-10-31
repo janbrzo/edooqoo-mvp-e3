@@ -39,19 +39,24 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'fill-in-blanks': 4,
         'matching': 5,
         'dialogue': 6,
-        'discussion': 3, // Was 0 - now minimum 3 min
-        'error-correction': 3, // Was 0 - now minimum 3 min
+        'discussion': 3,
+        'error-correction': 3,
         'word-formation': 4,
         'word-order': 4,
         'true-false': 3,
-        // New Phase 1 exercises
         'odd-one-out': 4,
-        'synonyms': 5, // NEW
-        'antonyms': 5, // NEW
-        'synonyms-antonyms': 5, // LEGACY
+        'synonyms': 5,
+        'antonyms': 5,
+        'synonyms-antonyms': 5,
         'sentence-transformation': 6,
         'gap-text': 4,
-        'negative-prefixes': 3
+        'negative-prefixes': 3,
+        // Audio exercises
+        'listening-comprehension': 12,
+        'multiple-choice-audio': 10,
+        'true-false-audio': 6,
+        'fill-in-blanks-audio': 10,
+        'answer-questions-audio': 10
       },
       withoutGrammar: { // 45min total: 5 warmup + 0 grammar + 40 exercises = 45min
         'reading': 8,
@@ -59,19 +64,24 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'fill-in-blanks': 5,
         'matching': 6,
         'dialogue': 7,
-        'discussion': 4, // Was 0 - now minimum 4 min
-        'error-correction': 4, // Was 0 - now minimum 4 min
+        'discussion': 4,
+        'error-correction': 4,
         'word-formation': 5,
         'word-order': 5,
         'true-false': 5,
-        // New Phase 1 exercises
         'odd-one-out': 5,
-        'synonyms': 6, // NEW
-        'antonyms': 6, // NEW
-        'synonyms-antonyms': 6, // LEGACY
+        'synonyms': 6,
+        'antonyms': 6,
+        'synonyms-antonyms': 6,
         'sentence-transformation': 7,
         'gap-text': 5,
-        'negative-prefixes': 4
+        'negative-prefixes': 4,
+        // Audio exercises
+        'listening-comprehension': 12,
+        'multiple-choice-audio': 10,
+        'true-false-audio': 6,
+        'fill-in-blanks-audio': 10,
+        'answer-questions-audio': 10
       }
     },
     '60min': {
@@ -86,14 +96,19 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'word-formation': 4,
         'word-order': 4,
         'true-false': 3,
-        // New Phase 1 exercises
         'odd-one-out': 4,
-        'synonyms': 5, // NEW
-        'antonyms': 5, // NEW
-        'synonyms-antonyms': 5, // LEGACY
+        'synonyms': 5,
+        'antonyms': 5,
+        'synonyms-antonyms': 5,
         'sentence-transformation': 6,
         'gap-text': 4,
-        'negative-prefixes': 3
+        'negative-prefixes': 3,
+        // Audio exercises
+        'listening-comprehension': 12,
+        'multiple-choice-audio': 10,
+        'true-false-audio': 6,
+        'fill-in-blanks-audio': 10,
+        'answer-questions-audio': 10
       },
       withoutGrammar: { // 60min total: 5 warmup + 0 grammar + 55 exercises = 60min
         'reading': 9,
@@ -106,14 +121,19 @@ export const getExerciseTimeByType = (exerciseType: string, lessonTime: string, 
         'word-formation': 6,
         'word-order': 6,
         'true-false': 5,
-        // New Phase 1 exercises
         'odd-one-out': 5,
-        'synonyms': 6, // NEW
-        'antonyms': 6, // NEW
-        'synonyms-antonyms': 6, // LEGACY
+        'synonyms': 6,
+        'antonyms': 6,
+        'synonyms-antonyms': 6,
         'sentence-transformation': 8,
         'gap-text': 5,
-        'negative-prefixes': 4
+        'negative-prefixes': 4,
+        // Audio exercises
+        'listening-comprehension': 12,
+        'multiple-choice-audio': 10,
+        'true-false-audio': 6,
+        'fill-in-blanks-audio': 10,
+        'answer-questions-audio': 10
       }
     }
   };

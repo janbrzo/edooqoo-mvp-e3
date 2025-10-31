@@ -28,14 +28,27 @@ export interface FormData {
     url: string;
     thumbnail: string;
     description: string;
-    detailedDescription?: string; // NEW: Full 200-300 word description for AI-generated images
+    detailedDescription?: string;
     photographer: string;
     photographerUrl: string;
-    source?: string; // NEW: 'gemini-generated' | 'unsplash'
-    ai_generated_url?: string; // NEW: R2 URL for AI-generated images
-    generationPrompt?: string; // NEW: Original prompt used to generate image
-    topic?: string; // NEW: Lesson topic used for generation
-    englishLevel?: string; // NEW: Level used for generation
+    source?: string;
+    ai_generated_url?: string;
+    generationPrompt?: string;
+    topic?: string;
+    englishLevel?: string;
+  };
+  selectedAudio?: {
+    id: string;
+    url: string;
+    ai_generated_audio_url?: string;
+    transcript?: string;
+    detailedTranscript?: string;
+    duration?: number;
+    voice?: string;
+    source?: string;
+    generationPrompt?: string;
+    topic?: string;
+    englishLevel?: string;
   };
 }
 

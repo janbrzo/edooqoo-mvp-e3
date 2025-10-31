@@ -28,19 +28,36 @@ export function getExerciseTypesForCount(count: number, selectedExercises?: stri
 }
 
 /**
- * Normalizes exercise ID by removing -picture suffix
- * Returns both the base ID and whether it requires a picture
+ * Normalizes exercise ID by removing -picture or -audio suffix
+ * Returns both the base ID and flags for picture/audio requirements
  */
-export function normalizeExerciseId(exerciseId: string): { baseId: string; usePicture: boolean } {
+export function normalizeExerciseId(exerciseId: string): { baseId: string; usePicture: boolean; useAudio: boolean } {
   if (exerciseId.endsWith('-picture')) {
     return {
       baseId: exerciseId.replace('-picture', ''),
-      usePicture: true
+      usePicture: true,
+      useAudio: false
+    };
+  }
+  if (exerciseId.endsWith('-audio')) {
+    return {
+      baseId: exerciseId.replace('-audio', ''),
+      usePicture: false,
+      useAudio: true
+    };
+  }
+  // Special case: listening-comprehension is audio-only but doesn't have -audio suffix
+  if (exerciseId === 'listening-comprehension') {
+    return {
+      baseId: exerciseId,
+      usePicture: false,
+      useAudio: true
     };
   }
   return {
     baseId: exerciseId,
-    usePicture: false
+    usePicture: false,
+    useAudio: false
   };
 }
 
@@ -59,7 +76,10 @@ export function validateAndFilterExercises(selectedExercises: string[], maxCount
     'paraphrasing', 'complete-word', 'matching-halves', 
     'describe-picture', 'answer-questions',
     // Picture versions
-    'true-false-picture', 'multiple-choice-picture', 'answer-questions-picture'
+    'true-false-picture', 'multiple-choice-picture', 'answer-questions-picture',
+    // Audio versions
+    'listening-comprehension', 'multiple-choice-audio', 'true-false-audio', 
+    'fill-in-blanks-audio', 'answer-questions-audio'
   ];
   
   // Filter out invalid exercise types
@@ -91,15 +111,20 @@ export function getIconForType(type: string): string {
     'discussion': 'fa-users',
     'error-correction': 'fa-exclamation-triangle',
     'true-false': 'fa-balance-scale',
-    // New Phase 1 exercise icons
     'odd-one-out': 'fa-search',
-    'synonyms': 'fa-equals', // NEW
-    'antonyms': 'fa-not-equal', // NEW
-    'synonyms-antonyms': 'fa-exchange-alt', // LEGACY
+    'synonyms': 'fa-equals',
+    'antonyms': 'fa-not-equal',
+    'synonyms-antonyms': 'fa-exchange-alt',
     'sentence-transformation': 'fa-random',
     'word-order': 'fa-sort',
     'gap-text': 'fa-text-width',
-    'negative-prefixes': 'fa-minus-circle'
+    'negative-prefixes': 'fa-minus-circle',
+    // Audio exercises
+    'listening-comprehension': 'fa-headphones',
+    'multiple-choice-audio': 'fa-check-square',
+    'true-false-audio': 'fa-balance-scale',
+    'fill-in-blanks-audio': 'fa-pencil-alt',
+    'answer-questions-audio': 'fa-question-circle'
   };
   
   return iconMap[type] || 'fa-tasks';

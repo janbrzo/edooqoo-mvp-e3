@@ -401,19 +401,23 @@ serve(async (req) => {
         const { data: worksheet, error: worksheetError } = await supabase
           .from("worksheets")
           .insert({
-            prompt: fullPrompt, // NOW SAVING FULL PROMPT (SYSTEM + USER)
+            prompt: fullPrompt,
             form_data: sanitizedFormData,
-            ai_response: jsonContent?.substring(0, 50000) || "", // Limit response size
+            ai_response: jsonContent?.substring(0, 50000) || "",
             html_content: JSON.stringify(worksheetData),
             user_id: userId || null,
-            teacher_id: userId || null, // Add teacher_id for authenticated users
-            teacher_email: teacherEmail, // Add teacher_email
-            student_id: studentId || null, // Add student_id if provided
-            selected_image: selectedImageWithoutBase64, // ✅ JSONB without base64 (~2-5KB instead of 500KB-2MB)
-            base64_backup: base64Backup || null, // ✅ NEW: Store base64 in separate TEXT column
+            teacher_id: userId || null,
+            teacher_email: teacherEmail,
+            student_id: studentId || null,
+            selected_image: selectedImageWithoutBase64,
+            base64_backup: base64Backup || null,
+            audio_url: selectedAudio?.url || null,
+            audio_transcript: selectedAudio?.transcript || null,
+            audio_duration: selectedAudio?.duration || null,
+            audio_voice: selectedAudio?.voice || null,
             ip_address: ip,
             status: "created",
-            title: worksheetData.title?.substring(0, 255) || "Generated Worksheet", // Limit title length
+            title: worksheetData.title?.substring(0, 255) || "Generated Worksheet",
             generation_time_seconds: generationTimeSeconds,
             country: geoData.country || null,
             city: geoData.city || null,

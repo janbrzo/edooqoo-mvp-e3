@@ -138,10 +138,53 @@ const AVAILABLE_EXERCISES = [{
   description: 'Students provide answers to questions about the picture, demonstrating visual comprehension and observation skills.',
   pictureRequired: true,
   baseExercise: 'answer-questions'
+}, {
+  id: 'listening-comprehension',
+  label: 'Listening Comprehension',
+  icon: '🎧',
+  description: 'Students listen to audio and answer comprehension questions, developing listening skills and understanding of spoken English.',
+  audioRequired: true
+}, {
+  id: 'multiple-choice-audio',
+  label: 'Multiple Choice',
+  icon: '📝',
+  description: 'Students answer questions about the audio by selecting the correct answer from several options, testing listening comprehension.',
+  audioRequired: true,
+  baseExercise: 'multiple-choice'
+}, {
+  id: 'true-false-audio',
+  label: 'True/False',
+  icon: '✓✗',
+  description: 'Students determine whether statements about the audio are true or false, developing critical listening skills.',
+  audioRequired: true,
+  baseExercise: 'true-false'
+}, {
+  id: 'fill-in-blanks-audio',
+  label: 'Fill in the Blanks',
+  icon: '✏️',
+  description: 'Students listen to audio and fill in missing words in the transcript, practicing dictation and spelling.',
+  audioRequired: true,
+  baseExercise: 'fill-in-blanks'
+}, {
+  id: 'answer-questions-audio',
+  label: 'Answer Questions',
+  icon: '❓',
+  description: 'Students provide answers to questions about the audio content, demonstrating listening comprehension.',
+  audioRequired: true,
+  baseExercise: 'answer-questions'
 }];
 
 // Picture-compatible exercises for automatic selection (with -picture suffix)
 const PICTURE_COMPATIBLE_EXERCISES = ['multiple-choice-picture', 'true-false-picture', 'answer-questions-picture', 'describe-picture'];
+
+// Audio-compatible exercises for automatic selection (with -audio suffix)
+const AUDIO_COMPATIBLE_EXERCISES = [
+  'listening-comprehension',
+  'multiple-choice-audio',
+  'true-false-audio',
+  'fill-in-blanks-audio',
+  'answer-questions-audio'
+];
 
 // Predefined exercise sets for Manual mode
 const MANUAL_EXERCISES_60MIN = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
@@ -164,6 +207,26 @@ const MANUAL_EXERCISES_45MIN_PICTURE = [
   'true-false',
   'fill-in-blanks',
   'multiple-choice',
+  'categorize'
+];
+
+// Audio mode defaults (with audio-compatible exercises using -audio suffix)
+const MANUAL_EXERCISES_60MIN_AUDIO = [
+  'listening-comprehension',
+  'answer-questions-audio',
+  'true-false',
+  'fill-in-blanks-audio',
+  'multiple-choice',
+  'discussion',
+  'categorize',
+  'word-order'
+];
+const MANUAL_EXERCISES_45MIN_AUDIO = [
+  'listening-comprehension',
+  'answer-questions-audio',
+  'true-false-audio',
+  'fill-in-blanks',
+  'multiple-choice-audio',
   'categorize'
 ];
 
@@ -202,8 +265,13 @@ export default function ExerciseSelector({
   // Get default exercises for manual mode
   const manualDefaults = useMemo(() => {
     const isPictureMode = selectedMediaTypes.includes('picture');
+    const isAudioMode = selectedMediaTypes.includes('audio');
+    
     if (isPictureMode) {
       return lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_PICTURE : MANUAL_EXERCISES_60MIN_PICTURE;
+    }
+    if (isAudioMode) {
+      return lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_AUDIO : MANUAL_EXERCISES_60MIN_AUDIO;
     }
     return lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
   }, [lessonTime, selectedMediaTypes]);
@@ -281,32 +349,24 @@ export default function ExerciseSelector({
     onChange(newSelection);
   }, [selectedExercises, maxExercises, onChange, selectionMode]);
   const handleMediaToggle = (mediaType: MediaType) => {
-    const newMediaTypes = selectedMediaTypes.includes(mediaType) ? selectedMediaTypes.filter(type => type !== mediaType) : [...selectedMediaTypes, mediaType];
+    // ✅ CRITICAL: Only ONE media type allowed at a time
+    const newMediaTypes = [mediaType];  // Replace, don't add
     onMediaTypesChange(newMediaTypes);
     
-    // Update exercises based on media selection
+    let newExercises: string[];
+    
     if (mediaType === 'picture') {
-      const isPictureActive = !selectedMediaTypes.includes('picture');
-      let newExercises: string[];
-      
-      if (isPictureActive) {
-        // Picture activated
-        if (selectionMode === 'manual') {
-          newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_PICTURE : MANUAL_EXERCISES_60MIN_PICTURE;
-        } else {
-          newExercises = generateRandomExercises();
-        }
-      } else {
-        // Picture deactivated
-        if (selectionMode === 'manual') {
-          newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
-        } else {
-          newExercises = generateRandomExercises();
-        }
-      }
-      
-      onChange(newExercises);
+      // Picture mode logic
+      newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_PICTURE : MANUAL_EXERCISES_60MIN_PICTURE;
+    } else if (mediaType === 'audio') {
+      // ✅ NEW: Audio mode logic
+      newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_AUDIO : MANUAL_EXERCISES_60MIN_AUDIO;
+    } else {
+      // Default mode (no media)
+      newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
     }
+    
+    onChange(newExercises);
   };
   return <div className="space-y-4">
       {/* Media Enhanced Options */}
@@ -316,7 +376,8 @@ export default function ExerciseSelector({
           {MEDIA_ENHANCED_OPTIONS.map(media => {
             const isSelected = selectedMediaTypes.includes(media.id as MediaType);
             const isPicture = media.id === 'picture';
-            const isDisabled = !isPicture;
+            const isAudio = media.id === 'audio';
+            const isDisabled = !isPicture && !isAudio;  // ✅ Audio now enabled!
             
             return (
               <button 
@@ -366,15 +427,24 @@ export default function ExerciseSelector({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 {AVAILABLE_EXERCISES
                 .filter(exercise => {
-                    // Hide picture-only exercises when picture mode is OFF
                     const isPictureMode = selectedMediaTypes.includes('picture');
+                    const isAudioMode = selectedMediaTypes.includes('audio');
+                    
+                    // Hide picture-only exercises when picture mode is OFF
                     if (!isPictureMode && exercise.pictureRequired) {
                       return false;
                     }
+                    
+                    // ✅ NEW: Hide audio-only exercises when audio mode is OFF
+                    if (!isAudioMode && exercise.audioRequired) {
+                      return false;
+                    }
+                    
                     // Hide deprecated exercises from UI
                     if (exercise.deprecated) {
                       return false;
                     }
+                    
                     return true;
                   })
                   .map(exercise => {

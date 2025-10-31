@@ -47,7 +47,13 @@ const EXERCISE_TYPES_MAP: Record<string, string> = {
   'error-correction': 'Error Correction',
   'sentence-transformation': 'Sentence Transformation',
   'complete-word': 'Complete Word',
-  'answer-questions': 'Answer Questions'
+  'answer-questions': 'Answer Questions',
+  // Audio exercises
+  'listening-comprehension': 'Listening Comprehension',
+  'multiple-choice-audio': 'Multiple Choice (Audio)',
+  'true-false-audio': 'True/False (Audio)',
+  'fill-in-blanks-audio': 'Fill in the Blanks (Dictation)',
+  'answer-questions-audio': 'Answer Questions (Audio)'
 };
 
 interface InputParamsCardProps {

@@ -344,12 +344,12 @@ export default function WorksheetContent({
         </div>
       )}
 
-      {/* Media Section - displays image once for all picture exercises */}
-      {/* ETAP 5: Check both inputParams (Unsplash) and editableWorksheet (AI-generated from R2/base64) */}
-      {(inputParams?.selectedImage || editableWorksheet?.selected_image) && (
+      {/* Media Section - displays image or audio for media-enhanced exercises */}
+      {(inputParams?.selectedImage || editableWorksheet?.selected_image || inputParams?.selectedAudio || editableWorksheet?.selected_audio) && (
         <MediaSection
-          selectedImage={inputParams?.selectedImage || editableWorksheet.selected_image}
-          base64Backup={editableWorksheet?.base64_backup} // ✅ NEW: Pass base64 from separate database column
+          selectedImage={inputParams?.selectedImage || editableWorksheet?.selected_image}
+          selectedAudio={inputParams?.selectedAudio || editableWorksheet?.selected_audio}
+          base64Backup={editableWorksheet?.base64_backup}
           isDownloadUnlocked={isDownloadUnlocked}
           isPinned={isPinned}
           onTogglePin={onTogglePin}
