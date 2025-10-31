@@ -10,10 +10,10 @@ interface ExerciseOddOneOutProps {
 const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
   questions = [], isEditing, viewMode, onQuestionChange
 }) => {
-  // Randomize options for student view (not in edit mode or teacher view)
+  // Randomize options (not in edit mode)
   const questionsWithShuffledOptions = React.useMemo(() => {
-    if (isEditing || viewMode === 'teacher') {
-      return questions; // Don't shuffle in edit mode or teacher view
+    if (isEditing) {
+      return questions; // Don't shuffle in edit mode only
     }
     
     return questions.map(question => {
