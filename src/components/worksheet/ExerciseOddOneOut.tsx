@@ -10,6 +10,28 @@ interface ExerciseOddOneOutProps {
 const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
   questions = [], isEditing, viewMode, onQuestionChange
 }) => {
+  // Randomize options for student view (not in edit mode or teacher view)
+  const questionsWithShuffledOptions = React.useMemo(() => {
+    if (isEditing || viewMode === 'teacher') {
+      return questions; // Don't shuffle in edit mode or teacher view
+    }
+    
+    return questions.map(question => {
+      if (!question.options || question.options.length === 0) return question;
+      
+      // Fisher-Yates shuffle for options
+      const shuffled = [...question.options];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      
+      return {
+        ...question,
+        options: shuffled
+      };
+    });
+  }, [questions, isEditing, viewMode]);
   const handleOptionChange = (qIndex: number, oIndex: number, value: string) => {
     const question = questions[qIndex];
     if (!question) return;
@@ -29,7 +51,7 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
   return (
     <div>
       <div className="space-y-3">
-        {questions.map((question, qIndex) => (
+        {questionsWithShuffledOptions.map((question, qIndex) => (
           <div key={qIndex} className="border-b pb-2">
             <div className="flex items-center gap-3">
               <span className="font-medium">{qIndex + 1}.</span>

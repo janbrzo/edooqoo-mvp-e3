@@ -497,14 +497,16 @@ export const getMatchingHalvesExercise = () => `    {
       "time": 7,
       "instructions": "Match the first half of each sentence with the correct second half.",
       "sentence_halves": [
-        {"first_half": "I'd like to make a reservation", "second_half": "for two people at 7 PM tonight.", "id": 1},
-        {"first_half": "The waiter recommended", "second_half": "the grilled salmon with vegetables.", "id": 2},
-        {"first_half": "Could you please bring us", "second_half": "some more bread and water?", "id": 3},
-        {"first_half": "I'm sorry, but this isn't", "second_half": "what I ordered from the menu.", "id": 4},
-        {"first_half": "The restaurant is famous", "second_half": "for its authentic Italian cuisine.", "id": 5},
-        {"first_half": "We always leave a tip", "second_half": "when the service is excellent.", "id": 6},
-        {"first_half": "The food was so spicy", "second_half": "that I couldn't finish my meal.", "id": 7},
-        {"first_half": "Would you like to try", "second_half": "our chef's special dessert today?", "id": 8}
+        {"first_half": "I'd like to make a reservation", "second_half": "for four people at 7:30 PM this Friday.", "id": 1},
+        {"first_half": "The waiter recommended the grilled salmon", "second_half": "because it's the chef's specialty this week.", "id": 2},
+        {"first_half": "Could you bring us two glasses of sparkling water", "second_half": "and the dessert menu, please?", "id": 3},
+        {"first_half": "I ordered the vegetarian pasta", "second_half": "but they brought me a seafood dish instead.", "id": 4},
+        {"first_half": "This Italian restaurant is famous", "second_half": "for serving the most authentic pizza in town.", "id": 5},
+        {"first_half": "We always leave a generous tip", "second_half": "when the service exceeds our expectations.", "id": 6},
+        {"first_half": "The curry was so incredibly spicy", "second_half": "that I had to order a glass of milk.", "id": 7},
+        {"first_half": "Would you like to try the chocolate lava cake", "second_half": "which our pastry chef made fresh today?", "id": 8},
+        {"first_half": "The restaurant refused to serve us", "second_half": "because we arrived after their closing time.", "id": 9},
+        {"first_half": "My grandmother taught me how to cook", "second_half": "traditional French dishes when I was young.", "id": 10}
       ],
       "teacher_tip": "After matching, have students read the complete sentences aloud to practice pronunciation and natural sentence rhythm."
     }`;
