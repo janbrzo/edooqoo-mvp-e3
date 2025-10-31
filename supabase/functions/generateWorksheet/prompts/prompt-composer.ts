@@ -13,18 +13,19 @@ export const composeSystemMessage = (
   formData: any, 
   exerciseCount: number = 8, 
   selectedExercises?: string[],
-  selectedImage?: any
+  selectedImage?: any,
+  selectedAudio?: any
 ): string => {
-  // ✅ Pass ORIGINAL selectedExercises (with -picture suffix) to ALL functions
+  // ✅ Pass ORIGINAL selectedExercises (with -picture or -audio suffix) to ALL functions
   // Each function will handle normalization internally if needed for template lookup
-  const coreInstructions = getCoreInstructions(hasGrammarFocus, grammarFocus, formData, exerciseCount, selectedExercises, selectedImage);
+  const coreInstructions = getCoreInstructions(hasGrammarFocus, grammarFocus, formData, exerciseCount, selectedExercises, selectedImage, selectedAudio);
   
   // ✅ Pass ORIGINAL exercises - exerciseTemplates will normalize internally for lookup
   // but preserve original type in output JSON
-  const exerciseTemplates = getExerciseTemplates(hasGrammarFocus, grammarFocus, exerciseCount, selectedExercises, !!selectedImage);
+  const exerciseTemplates = getExerciseTemplates(hasGrammarFocus, grammarFocus, exerciseCount, selectedExercises, !!selectedImage, !!selectedAudio);
   
-  // ✅ Pass ORIGINAL selectedExercises (with -picture) to finalRequirements
-  const finalRequirements = getFinalRequirements(hasGrammarFocus, exerciseCount, selectedExercises, formData.englishLevel, !!selectedImage);
+  // ✅ Pass ORIGINAL selectedExercises (with -picture or -audio) to finalRequirements
+  const finalRequirements = getFinalRequirements(hasGrammarFocus, exerciseCount, selectedExercises, formData.englishLevel, !!selectedImage, !!selectedAudio);
   
   return `${coreInstructions}
 

@@ -181,6 +181,76 @@ serve(async (req) => {
       }
     }
 
+    // CHECK: Do exercises require audio?
+    const audioRequiredExercises = [
+      "listening-comprehension",
+      "multiple-choice-audio",
+      "true-false-audio",
+      "fill-in-blanks-audio",
+      "answer-questions-audio",
+    ];
+    const requiresAudio = effectiveExercises?.some((ex) =>
+      audioRequiredExercises.some((reqEx) => ex.includes(reqEx)),
+    );
+
+    console.log("🎵 Audio requirement check:", {
+      selectedExercises: effectiveExercises,
+      requiresAudio,
+      hasExistingAudio: !!formData?.selectedAudio,
+    });
+
+    // AUTO-GENERATE AUDIO if exercises require audio but no audio provided
+    let selectedAudio = formData?.selectedAudio || null;
+
+    if (requiresAudio && !selectedAudio) {
+      console.log("🎵 [AUDIO] Auto-generating audio - exercises require audio");
+
+      try {
+        const topic = formData?.lessonTopic || "general English lesson";
+        const englishLevel = formData?.englishLevel || "B1/B2";
+        const lessonFocus = formData?.lessonGoal || "";
+        const additionalInformation = formData?.additionalInformation || "";
+        const grammarFocus = formData?.teachingPreferences || "";
+
+        console.log("🎵 [AUDIO] Calling generate-audio function with:", { 
+          topic, 
+          englishLevel, 
+          lessonFocus 
+        });
+
+        const audioGenResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-audio`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            topic,
+            englishLevel,
+            lessonFocus,
+            additionalInformation,
+            grammarFocus,
+            duration: 90
+          }),
+        });
+
+        if (audioGenResponse.ok) {
+          const audioData = await audioGenResponse.json();
+          console.log("🎵 [AUDIO] Audio generated successfully");
+          selectedAudio = audioData.audioData;
+        } else {
+          const errorText = await audioGenResponse.text();
+          console.error("❌ [AUDIO] Failed to generate audio:", errorText);
+          throw new Error("Audio generation failed");
+        }
+      } catch (audioError) {
+        console.error("🎵 [AUDIO] Failed to generate audio:", audioError);
+        console.log("⚠️ Continuing worksheet generation without audio");
+      }
+    }
+
+    const hasAudioMedia = selectedAudio !== null;
+
     const hasPictureMedia = selectedImage !== null;
     const exerciseTypes = getExerciseTypesForCount(exerciseCount, effectiveExercises);
 
@@ -194,7 +264,7 @@ serve(async (req) => {
       descriptionPreview: selectedImage?.detailedDescription?.substring(0, 150),
     });
 
-    // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage
+    // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage and selectedAudio
     const systemMessage = composeSystemMessage(
       hasGrammarFocus,
       grammarFocus,
@@ -202,6 +272,7 @@ serve(async (req) => {
       exerciseCount,
       effectiveExercises,
       selectedImage,
+      selectedAudio
     );
 
     // HEARTBEAT LOG: Before OpenAI API call

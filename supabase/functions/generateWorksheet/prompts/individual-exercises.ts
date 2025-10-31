@@ -716,7 +716,190 @@ export const getVocabularySheet = () => `  "vocabulary_sheet": [
     {"term": "Tip", "meaning": "An extra amount of money given to the waiter as a thank you for good service."}
   ]`;
 
-// Exercise type to function mapping for easy selection - UPDATED WITH 12 NEW EXERCISES + PICTURE VERSIONS
+// =============== AUDIO-BASED EXERCISE VERSIONS ===============
+
+export const getListeningComprehensionExercise = () => `    {
+      "type": "listening-comprehension",
+      "title": "Exercise X: Listening Comprehension",
+      "icon": "fa-headphones",
+      "time": 12,
+      "instructions": "Listen to the audio carefully and answer the following questions based on what you hear.",
+      "audio_url": null,
+      "questions": [
+        {"text": "What is the main topic or situation in the audio?", "answer": "The audio discusses [specific topic], where [main situation/event]."},
+        {"text": "Who are the speakers in the audio? What are their roles or relationships?", "answer": "The speakers are [description of speakers and their relationship]."},
+        {"text": "What specific details or facts are mentioned in the audio?", "answer": "[Specific details from audio: numbers, names, places, times]."},
+        {"text": "What problem or challenge is discussed, and how is it addressed?", "answer": "The problem is [description], and it is addressed by [solution/approach]."},
+        {"text": "What is the tone or mood of the audio? (formal/informal, serious/casual, etc.)", "answer": "The tone is [description of tone/mood]."},
+        {"text": "What happens at the beginning, middle, and end of the audio?", "answer": "Beginning: [description]. Middle: [description]. End: [description]."},
+        {"text": "What opinions or suggestions are given by the speakers?", "answer": "[Opinions/suggestions mentioned in audio]."},
+        {"text": "What cultural or contextual information can you infer from the audio?", "answer": "[Cultural/contextual details that can be inferred]."},
+        {"text": "What emotions do the speakers express during the conversation?", "answer": "[Emotions and feelings expressed by speakers]."},
+        {"text": "What is the outcome or conclusion of the audio scenario?", "answer": "[Final outcome or resolution mentioned in audio]."}
+      ],
+      "teacher_tip": "Play the audio 2-3 times. First time: general understanding. Second time: focus on details. Third time: verification of answers. Encourage students to take notes while listening."
+    }`;
+
+export const getMultipleChoiceAudioExercise = () => `    {
+      "type": "multiple-choice-audio",
+      "title": "Exercise X: Multiple Choice - Audio Analysis",
+      "icon": "fa-check-square",
+      "time": 10,
+      "instructions": "Listen to the audio and choose the best answer to each question.",
+      "audio_url": null,
+      "questions": [
+        {
+          "text": "What is the main purpose of this audio?",
+          "options": [
+            {"label": "A", "text": "To give information", "correct": true},
+            {"label": "B", "text": "To entertain", "correct": false},
+            {"label": "C", "text": "To complain", "correct": false},
+            {"label": "D", "text": "To persuade", "correct": false}
+          ]
+        },
+        {
+          "text": "Where does this conversation most likely take place?",
+          "options": [
+            {"label": "A", "text": "At home", "correct": false},
+            {"label": "B", "text": "At a restaurant", "correct": true},
+            {"label": "C", "text": "At a school", "correct": false},
+            {"label": "D", "text": "At an office", "correct": false}
+          ]
+        },
+        {
+          "text": "What time is mentioned in the audio?",
+          "options": [
+            {"label": "A", "text": "Morning", "correct": false},
+            {"label": "B", "text": "Afternoon", "correct": true},
+            {"label": "C", "text": "Evening", "correct": false},
+            {"label": "D", "text": "Night", "correct": false}
+          ]
+        },
+        {
+          "text": "How does the speaker feel about the situation?",
+          "options": [
+            {"label": "A", "text": "Angry", "correct": false},
+            {"label": "B", "text": "Happy", "correct": false},
+            {"label": "C", "text": "Concerned", "correct": true},
+            {"label": "D", "text": "Indifferent", "correct": false}
+          ]
+        },
+        {
+          "text": "What specific detail is mentioned about the topic?",
+          "options": [
+            {"label": "A", "text": "Detail A", "correct": true},
+            {"label": "B", "text": "Detail B", "correct": false},
+            {"label": "C", "text": "Detail C", "correct": false},
+            {"label": "D", "text": "Detail D", "correct": false}
+          ]
+        },
+        {
+          "text": "What does the speaker plan to do next?",
+          "options": [
+            {"label": "A", "text": "Option A", "correct": false},
+            {"label": "B", "text": "Option B", "correct": false},
+            {"label": "C", "text": "Option C", "correct": true},
+            {"label": "D", "text": "Option D", "correct": false}
+          ]
+        },
+        {
+          "text": "What tone does the speaker use?",
+          "options": [
+            {"label": "A", "text": "Aggressive", "correct": false},
+            {"label": "B", "text": "Polite but firm", "correct": true},
+            {"label": "C", "text": "Sarcastic", "correct": false},
+            {"label": "D", "text": "Apologetic", "correct": false}
+          ]
+        },
+        {
+          "text": "What specific information is mentioned?",
+          "options": [
+            {"label": "A", "text": "Information A", "correct": false},
+            {"label": "B", "text": "Information B", "correct": true},
+            {"label": "C", "text": "Information C", "correct": false},
+            {"label": "D", "text": "Information D", "correct": false}
+          ]
+        },
+        {
+          "text": "Who initiates the conversation in the audio?",
+          "options": [
+            {"label": "A", "text": "Person A", "correct": true},
+            {"label": "B", "text": "Person B", "correct": false},
+            {"label": "C", "text": "Person C", "correct": false},
+            {"label": "D", "text": "Person D", "correct": false}
+          ]
+        },
+        {
+          "text": "What is the relationship between the speakers?",
+          "options": [
+            {"label": "A", "text": "Friends", "correct": false},
+            {"label": "B", "text": "Colleagues", "correct": false},
+            {"label": "C", "text": "Service provider and customer", "correct": true},
+            {"label": "D", "text": "Family members", "correct": false}
+          ]
+        }
+      ],
+      "teacher_tip": "After choosing answers, ask students to explain WHY they selected each answer by referencing specific words or phrases they heard in the audio."
+    }`;
+
+export const getTrueFalseAudioExercise = () => `    {
+      "type": "true-false-audio",
+      "title": "Exercise X: True or False - Audio Analysis",
+      "icon": "fa-balance-scale",
+      "time": 6,
+      "instructions": "Listen to the audio carefully and decide if each statement is true or false based on what you hear.",
+      "audio_url": null,
+      "statements": [
+        {"text": "The speakers mention a specific time in the audio.", "isTrue": true},
+        {"text": "The conversation takes place in the morning.", "isTrue": false},
+        {"text": "One of the speakers expresses dissatisfaction.", "isTrue": true},
+        {"text": "The audio mentions a price or cost.", "isTrue": true},
+        {"text": "The speakers are planning to leave immediately.", "isTrue": false},
+        {"text": "The audio includes a discussion about quality.", "isTrue": true},
+        {"text": "The speakers sound angry and aggressive.", "isTrue": false},
+        {"text": "A specific location or place is mentioned.", "isTrue": true},
+        {"text": "The speakers agree on everything discussed.", "isTrue": false},
+        {"text": "The audio ends with a clear resolution.", "isTrue": true}
+      ],
+      "teacher_tip": "After completing the exercise, ask students to provide evidence from the audio to support their true/false answers. This helps them practice active listening and justification."
+    }`;
+
+export const getFillInBlanksAudioExercise = () => `    {
+      "type": "fill-in-blanks-audio",
+      "title": "Exercise X: Fill in the Blanks - Dictation",
+      "icon": "fa-pencil-alt",
+      "time": 10,
+      "instructions": "Listen to the audio and fill in the missing words you hear. You may need to listen multiple times.",
+      "audio_url": null,
+      "transcript_with_blanks": "Welcome to [blank] Restaurant. I'm [blank] and I'll be your [blank] today. Can I start you off with something to [blank]? We have some [blank] specials today. The chef [blank] the grilled salmon with [blank] vegetables. It's [blank] popular. Would you like to [blank] our menu, or would you [blank] to order now?",
+      "answers": ["Mario's", "Jennifer", "server", "drink", "excellent", "recommends", "seasonal", "very", "see", "like"],
+      "full_transcript": "Welcome to Mario's Restaurant. I'm Jennifer and I'll be your server today. Can I start you off with something to drink? We have some excellent specials today. The chef recommends the grilled salmon with seasonal vegetables. It's very popular. Would you like to see our menu, or would you like to order now?",
+      "teacher_tip": "This is a dictation exercise. Play the audio in short segments, allowing students time to write. Focus on pronunciation, connected speech, and spelling accuracy."
+    }`;
+
+export const getAnswerQuestionsAudioExercise = () => `    {
+      "type": "answer-questions-audio",
+      "title": "Exercise X: Answer Questions About the Audio",
+      "icon": "fa-question-circle",
+      "time": 10,
+      "instructions": "Listen to the audio and answer these questions based on what you hear and your personal opinions.",
+      "audio_url": null,
+      "questions": [
+        {"question": "Describe the main situation or event you hear in the audio. What is happening?", "focus": "Comprehension and summary"},
+        {"question": "What emotions or attitudes do you hear in the speakers' voices? How can you tell?", "focus": "Tone analysis and inference"},
+        {"question": "What specific words or phrases stood out to you? Why?", "focus": "Vocabulary and attention to detail"},
+        {"question": "If you were in this situation, how would you respond? What would you say?", "focus": "Personal application and speaking practice"},
+        {"question": "Compare this situation to a similar experience you've had. What's similar or different?", "focus": "Personal connection and comparison"},
+        {"question": "What cultural insights can you gain from this audio? How might this situation differ in your country?", "focus": "Cultural awareness"},
+        {"question": "What do you think happens after the audio ends? Predict the next part of the conversation.", "focus": "Prediction and creative thinking"},
+        {"question": "What advice would you give to the speakers in this situation?", "focus": "Critical thinking and modal verbs"},
+        {"question": "What is the most important piece of information you learned from the audio?", "focus": "Main idea identification"},
+        {"question": "How would you describe the relationship between the speakers based on their language and tone?", "focus": "Relationship analysis and pragmatics"}
+      ],
+      "teacher_tip": "Encourage students to refer directly to specific words and phrases they heard in the audio when answering. This develops their ability to provide evidence and detailed responses."
+    }`;
+
+// Exercise type to function mapping for easy selection - UPDATED WITH AUDIO EXERCISES
 export const exerciseFunctions = {
   reading: getReadingExercise,
   'true-false': getTrueFalseExercise,
@@ -726,11 +909,10 @@ export const exerciseFunctions = {
   dialogue: getDialogueExercise,
   discussion: getDiscussionExercise,
   'error-correction': getErrorCorrectionExercise,
-  // 12 NEW EXERCISES ADDED:
   'odd-one-out': getOddOneOutExercise,
-  'synonyms': getSynonymsExercise, // NEW
-  'antonyms': getAntonymsExercise, // NEW
-  'synonyms-antonyms': getSynonymsAntonymsExercise, // LEGACY - for backward compatibility
+  'synonyms': getSynonymsExercise,
+  'antonyms': getAntonymsExercise,
+  'synonyms-antonyms': getSynonymsAntonymsExercise,
   'sentence-transformation': getSentenceTransformationExercise,
   'word-order': getWordOrderExercise,
   'gap-text': getGapTextExercise,
@@ -739,15 +921,18 @@ export const exerciseFunctions = {
   'paraphrasing': getParaphrasingExercise,
   'complete-word': getCompleteWordExercise,
   'matching-halves': getMatchingHalvesExercise,
-  // NEW: Picture-based exercise versions
   'describe-picture': getDescribePictureExercise,
   'answer-questions': getAnswerQuestionsExercise,
   'multiple-choice-picture': getMultipleChoicePictureExercise,
   'true-false-picture': getTrueFalsePictureExercise,
-  'answer-questions-picture': getAnswerQuestionsPictureExercise
+  'answer-questions-picture': getAnswerQuestionsPictureExercise,
+  // NEW: Audio exercises
+  'listening-comprehension': getListeningComprehensionExercise,
+  'multiple-choice-audio': getMultipleChoiceAudioExercise,
+  'true-false-audio': getTrueFalseAudioExercise,
+  'fill-in-blanks-audio': getFillInBlanksAudioExercise,
+  'answer-questions-audio': getAnswerQuestionsAudioExercise
 };
-
-// =============== ORDERED LIST OF EXERCISES - UPDATED WITH NEW EXERCISES ===============
 
 export const exerciseOrder = [
   'reading',
@@ -758,24 +943,27 @@ export const exerciseOrder = [
   'dialogue',
   'discussion',
   'error-correction',
-  // New Phase 1 exercises
   'odd-one-out',
-  'synonyms', // NEW - preferred over combined
-  'antonyms', // NEW - preferred over combined
-  'synonyms-antonyms', // LEGACY - still available for old worksheets
+  'synonyms',
+  'antonyms',
+  'synonyms-antonyms',
   'sentence-transformation',
   'word-order',
   'gap-text',
   'negative-prefixes',
-  // New Phase 2 exercises
   'categorize',
   'paraphrasing',
   'complete-word',
   'matching-halves',
-  // Picture mode exercises
   'describe-picture',
   'answer-questions',
   'multiple-choice-picture',
   'true-false-picture',
-  'answer-questions-picture'
+  'answer-questions-picture',
+  // Audio exercises
+  'listening-comprehension',
+  'multiple-choice-audio',
+  'true-false-audio',
+  'fill-in-blanks-audio',
+  'answer-questions-audio'
 ];

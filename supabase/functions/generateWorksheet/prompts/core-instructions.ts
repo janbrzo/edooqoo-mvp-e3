@@ -11,22 +11,32 @@ const generateExerciseListInstruction = (
   selectedExercises?: string[],
   exerciseCount: number = 8,
   hasSelectedImage?: boolean,
+  hasSelectedAudio?: boolean,
 ) => {
   if (selectedExercises && selectedExercises.length > 0) {
     let orderedExercises = [...selectedExercises].slice(0, exerciseCount);
     
-    // SORT: Picture exercises ALWAYS first if image is selected
-    if (hasSelectedImage) {
+    // SORT: Picture exercises ALWAYS first, then audio exercises, then others
+    if (hasSelectedImage || hasSelectedAudio) {
       const pictureExercises = orderedExercises.filter(ex => ex.endsWith('-picture'));
-      const nonPictureExercises = orderedExercises.filter(ex => !ex.endsWith('-picture'));
-      orderedExercises = [...pictureExercises, ...nonPictureExercises];
+      const audioExercises = orderedExercises.filter(ex => 
+        ex.endsWith('-audio') || ex === 'listening-comprehension'
+      );
+      const otherExercises = orderedExercises.filter(ex => 
+        !ex.endsWith('-picture') && 
+        !ex.endsWith('-audio') && 
+        ex !== 'listening-comprehension'
+      );
+      
+      // Priority: picture > audio > others
+      orderedExercises = [...pictureExercises, ...audioExercises, ...otherExercises];
     }
 
     const exerciseList = orderedExercises.join(", ");
     return `Use EXACTLY these exercise types in this EXACT ORDER: ${exerciseList}`;
   }
 
-  // Fallback to default exercises (no picture transformation for defaults)
+  // Fallback to default exercises (no picture/audio transformation for defaults)
   const defaultExercises = [
     "reading",
     "true-false",
@@ -48,11 +58,15 @@ export const getCoreInstructions = (
   exerciseCount: number = 8,
   selectedExercises?: string[],
   selectedImage?: any,
+  selectedAudio?: any,
 ) => {
   const hasSelectedImage = !!selectedImage;
+  const hasSelectedAudio = !!selectedAudio;
 
   // Extract image description before building the prompt to ensure it's properly embedded
   const imageDescription = selectedImage?.detailedDescription || "";
+  const audioTranscript = selectedAudio?.transcript || "";
+  const audioDuration = selectedAudio?.duration || 0;
 
   return `You are an expert ESL English language teacher specialized in creating context-specific, structured, comprehensive, high-quality English language worksheets for individual (one-on-one) tutoring sessions.
           Your goal: produce a worksheet so compelling that a private tutor will happily pay for it and actually use it.
@@ -60,7 +74,7 @@ export const getCoreInstructions = (
 
 CRITICAL RULES AND REQUIREMENTS:
 1. Create EXACTLY ${exerciseCount} exercises. No fewer, no more. Number them Exercise 1 through Exercise ${exerciseCount}.
-2. ${generateExerciseListInstruction(selectedExercises, exerciseCount, hasSelectedImage)}
+2. ${generateExerciseListInstruction(selectedExercises, exerciseCount, hasSelectedImage, hasSelectedAudio)}
 3. All exercises should be closely related to the specified lessonTopic, lessonGoal, grammarFocus and additionalInformation
 4. Include specific vocabulary, expressions, and language structures related to the specified lessonTopic, lessonGoal, grammarFocus and additionalInformation. The 'englishLevel' must dictate the complexity of vocabulary and grammar according to CEFR scale
 5. Keep exercise instructions clear and concise. Students should understand tasks without additional explanation.
@@ -115,6 +129,16 @@ IMPORTANT: You have an AI-generated image with detailed description.
 The following exercises MUST use this image: ${selectedExercises?.filter(ex => ex.endsWith('-picture')).join(', ')}
 For these picture-based exercises, use SPECIFIC DETAILS from the image description below (people, objects, colors, positions, actions). Each exercise must focus on different aspects of the image.
 ${imageDescription}
+`
+    : hasSelectedAudio
+    ? `
+20. AUDIO CONTEXT FOR LISTENING EXERCISES:
+IMPORTANT: You have an AI-generated audio scenario with transcript.
+The following exercises MUST use this audio: ${selectedExercises?.filter(ex => ex.endsWith('-audio') || ex === 'listening-comprehension').join(', ')}
+For these audio-based exercises, use SPECIFIC DETAILS from the audio transcript below. Create questions that test listening comprehension, detail retention, and understanding of spoken context.
+AUDIO TRANSCRIPT:
+${audioTranscript}
+AUDIO DURATION: ${audioDuration} seconds
 `
     : ""
 }

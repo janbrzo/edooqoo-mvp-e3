@@ -2,7 +2,7 @@
  * Final requirements section - DYNAMIC content based on selected exercises
  */
 
-export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: number = 8, selectedExercises?: string[], englishLevel?: string, hasSelectedImage?: boolean) => {
+export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: number = 8, selectedExercises?: string[], englishLevel?: string, hasSelectedImage?: boolean, hasSelectedAudio?: boolean) => {
   // Check if Reading exercise is present in selected exercises
   const hasReading = selectedExercises?.some(ex => ex === 'reading' || ex === 'reading-picture') ?? false;
   
@@ -42,7 +42,13 @@ export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: nu
       : `EXACTLY 10 multiple-choice questions about pictures in general. Time: 8 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
     'true-false-picture': hasSelectedImage
       ? `EXACTLY 10 true/false statements based on visible details in the provided image. Time: 5 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
-      : `EXACTLY 10 true/false statements about pictures in general. Time: 5 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
+      : `EXACTLY 10 true/false statements about pictures in general. Time: 5 min. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    // Audio exercises
+    'listening-comprehension': `EXACTLY 10 questions about the audio content. Questions must test understanding of main ideas, specific details, speaker attitudes, emotions, and contextual information. Each question must have a detailed answer (2-3 sentences). Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'multiple-choice-audio': `EXACTLY 10 multiple-choice questions about the audio. Each question must have EXACTLY 4 options labeled A, B, C, D with one marked as correct. Questions should test comprehension of main ideas, specific details, speaker intentions, relationships, and contextual clues from the audio. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'true-false-audio': `EXACTLY 10 true/false statements about the audio content. Statements should test understanding of specific details, main ideas, and inferences from the audio. Mix obvious facts with subtle details. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'fill-in-blanks-audio': `Provide a partial transcript of the audio with EXACTLY 10 blanks for students to fill in through dictation. Include "transcript_with_blanks" (text with [blank] markers), "answers" (array of 10 correct words), and "full_transcript" (complete original text). Focus on key vocabulary, phrases, or challenging words. Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`,
+    'answer-questions-audio': `EXACTLY 10 open-ended questions about the audio content. Questions should encourage critical thinking, personal opinions, emotional analysis, and connections to students' own experiences. Each question should have a "focus" field explaining the language skill being practiced (e.g., "Past tense and narrative skills"). Ensure all content matches CEFR level ${englishLevel || 'as specified'}.`
   };
 
   let requirements = '\nCRITICAL REQUIREMENTS VERIFICATION:\n';
