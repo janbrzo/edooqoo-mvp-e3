@@ -489,10 +489,17 @@ export default function ExerciseSelector({
               const isPictureMode = selectedMediaTypes.includes('picture');
               const isAudioMode = selectedMediaTypes.includes('audio');
               
-              if (isPictureMode && ex.pictureRequired) return true;
-              if (isAudioMode && ex.audioRequired) return true;
-              if (!isPictureMode && !isAudioMode && !ex.pictureRequired && !ex.audioRequired) return true;
+              // Picture mode: Show picture-required + basic exercises (exclude audio-only)
+              if (isPictureMode) {
+                return ex.pictureRequired || (!ex.audioRequired && !ex.pictureRequired);
+              }
               
+              // Audio mode: Show audio-required + basic exercises (exclude picture-only)
+              if (isAudioMode) {
+                return ex.audioRequired || (!ex.audioRequired && !ex.pictureRequired);
+              }
+              
+              // No media mode: Show ONLY basic exercises (exclude both picture and audio)
               return !ex.pictureRequired && !ex.audioRequired;
             })
             .map(exercise => {
