@@ -456,7 +456,6 @@ export type Database = {
           media_metadata: Json | null
           prompt: string
           referrer_url: string | null
-          selected_audio: Json | null
           selected_image: Json | null
           sequence_number: number
           session_id: string | null
@@ -491,7 +490,6 @@ export type Database = {
           media_metadata?: Json | null
           prompt: string
           referrer_url?: string | null
-          selected_audio?: Json | null
           selected_image?: Json | null
           sequence_number?: number
           session_id?: string | null
@@ -526,7 +524,6 @@ export type Database = {
           media_metadata?: Json | null
           prompt?: string
           referrer_url?: string | null
-          selected_audio?: Json | null
           selected_image?: Json | null
           sequence_number?: number
           session_id?: string | null
