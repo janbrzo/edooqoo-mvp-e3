@@ -347,17 +347,18 @@ export default function WorksheetContent({
       {/* Media Section - displays image or audio for media-enhanced exercises */}
       {(() => {
         // Reconstruct selectedAudio from worksheet database fields if needed
-        const reconstructedAudio = editableWorksheet?.audio_url || editableWorksheet?.audio_base64_backup 
+        const reconstructedAudio = (editableWorksheet?.audio_url || editableWorksheet?.audio_base64_backup)
           ? {
-              url: editableWorksheet.audio_url,
-              ai_generated_audio_url: editableWorksheet.audio_url,
-              audio_base64_backup: editableWorksheet.audio_base64_backup,
-              transcript: editableWorksheet.audio_transcript,
-              duration: editableWorksheet.audio_duration,
-              voice: editableWorksheet.audio_voice,
-              source: 'openai-tts-generated'
+              url: editableWorksheet.audio_url || null,
+              ai_generated_audio_url: editableWorksheet.audio_url || null,
+              audio_base64_backup: editableWorksheet.audio_base64_backup || null,
+              transcript: editableWorksheet.audio_transcript || null,
+              duration: editableWorksheet.audio_duration || null,
+              voice: editableWorksheet.audio_voice || null,
+              source: 'openai-tts-generated',
+              id: editableWorksheet.id
             }
-          : (inputParams?.selectedAudio || editableWorksheet?.selected_audio);
+          : (inputParams?.selectedAudio || editableWorksheet?.selected_audio || null);
 
         const hasMedia = inputParams?.selectedImage || editableWorksheet?.selected_image || reconstructedAudio;
         

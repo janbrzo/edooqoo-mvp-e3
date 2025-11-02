@@ -616,17 +616,34 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 
         {normalizedType === 'fill-in-blanks-audio' && (
           <ExerciseFillInBlanksAudio
+            word_bank={exercise.word_bank}
+            sentences={exercise.sentences}
             transcript_with_blanks={exercise.transcript_with_blanks}
             answers={exercise.answers}
             audio_url={exercise.audio_url}
             isEditing={isEditing}
             viewMode={viewMode}
-            onTranscriptChange={(value) => handleExerciseChangeLocal('transcript_with_blanks', value)}
-            onAnswersChange={(answers) => {
+            onWordBankChange={(wIndex, value) => {
+              const newWordBank = [...(exercise.word_bank || [])];
+              newWordBank[wIndex] = value;
               const updatedExercises = [...editableWorksheet.exercises];
               updatedExercises[arrayIndex] = {
                 ...updatedExercises[arrayIndex],
-                answers
+                word_bank: newWordBank
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
+            onSentenceChange={handleSentenceChangeLocal}
+            onTranscriptChange={(value) => handleExerciseChangeLocal('transcript_with_blanks', value)}
+            onAnswersChange={(value) => {
+              const answersArray = typeof value === 'string' ? value.split(',').map(a => a.trim()) : value;
+              const updatedExercises = [...editableWorksheet.exercises];
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
+                answers: answersArray
               };
               setEditableWorksheet({
                 ...editableWorksheet,
