@@ -866,23 +866,24 @@ export const getTrueFalseAudioExercise = () => `    {
 
 export const getFillInBlanksAudioExercise = () => `    {
       "type": "fill-in-blanks-audio",
-      "title": "Exercise X: Fill in the Blanks - Dictation",
+      "title": "Exercise X: Fill in the Blanks - Audio Dictation",
       "icon": "fa-pencil-alt",
       "time": 10,
-      "instructions": "Listen to the audio and fill in the missing words you hear. You may need to listen multiple times.",
-      "word_bank": ["Mario's", "Jennifer", "server", "drink", "excellent", "recommends", "seasonal", "very", "see", "like"],
+      "instructions": "Listen to the audio and complete the sentences below with the missing words you hear.",
       "sentences": [
-        {"text": "Welcome to ______ Restaurant.", "answer": "Mario's"},
-        {"text": "I'm ______ and I'll be your ______ today.", "answer": "Jennifer"},
-        {"text": "Can I start you off with something to ______?", "answer": "drink"},
-        {"text": "We have some ______ specials today.", "answer": "excellent"},
-        {"text": "The chef ______ the grilled salmon with ______ vegetables.", "answer": "recommends"},
-        {"text": "It's ______ popular.", "answer": "very"},
-        {"text": "Would you like to ______ our menu?", "answer": "see"},
-        {"text": "Or would you ______ to order now?", "answer": "like"}
+        {"text": "Welcome to _______ Restaurant.", "answer": "Mario's"},
+        {"text": "I'm _______ and I'll be your _______ today.", "answer": "Jennifer"},
+        {"text": "Can I start you off with something to _______?", "answer": "drink"},
+        {"text": "We have some _______ specials today.", "answer": "excellent"},
+        {"text": "The chef _______ the grilled salmon.", "answer": "recommends"},
+        {"text": "It comes with _______ vegetables.", "answer": "seasonal"},
+        {"text": "This dish is _______ popular with our guests.", "answer": "very"},
+        {"text": "Would you like to _______ our dessert menu?", "answer": "see"},
+        {"text": "Or would you _______ to order now?", "answer": "like"},
+        {"text": "I can also bring you some _______ water.", "answer": "cold"}
       ],
-      "full_transcript": "Welcome to Mario's Restaurant. I'm Jennifer and I'll be your server today. Can I start you off with something to drink? We have some excellent specials today. The chef recommends the grilled salmon with seasonal vegetables. It's very popular. Would you like to see our menu, or would you like to order now?",
-      "teacher_tip": "This is a dictation exercise. Play the audio in short segments, allowing students time to write. Focus on pronunciation, connected speech, and spelling accuracy."
+      "word_bank": ["Mario's", "Jennifer", "server", "drink", "excellent", "recommends", "seasonal", "very", "see", "like", "cold"],
+      "teacher_tip": "CRITICAL: Use EXACT structure matching basic fill-in-blanks exercise - 'sentences' array with 'text' and 'answer' fields, plus 'word_bank' array. Each sentence has ONE blank (represented by _______). Extract key vocabulary from audio transcript. DO NOT use 'full_transcript' or 'transcript_with_blanks' fields."
     }`;
 
 export const getAnswerQuestionsAudioExercise = () => `    {

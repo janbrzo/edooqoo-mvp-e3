@@ -87,9 +87,19 @@ OUTPUT FORMAT: Return ONLY the spoken text (no JSON, no markdown).`;
     const data = await response.json();
     console.log("✅ [AUDIO] OpenAI response received");
     
-    // Extract audio and transcript
+    // Extract audio and transcript (check multiple possible locations)
     const audioBase64 = data.choices[0]?.message?.audio?.data;
-    const transcript = data.choices[0]?.message?.content || "";
+    const transcript = data.choices[0]?.message?.audio?.transcript || 
+                      data.choices[0]?.message?.content || 
+                      "";
+    
+    // DEBUG: Log transcript extraction
+    console.log('🎵 [AUDIO] Transcript extracted:', {
+      hasTranscript: !!transcript,
+      length: transcript.length,
+      preview: transcript.substring(0, 150),
+      source: data.choices[0]?.message?.audio?.transcript ? 'audio.transcript' : 'content'
+    });
     
     if (!audioBase64) {
       throw new Error("No audio data in OpenAI response");
@@ -107,7 +117,7 @@ OUTPUT FORMAT: Return ONLY the spoken text (no JSON, no markdown).`;
         },
         body: JSON.stringify({
           base64Image: audioBase64,
-          filename: `audio-${Date.now()}-${randomVoice}.mp3`,
+          filename: `audio/audio-${Date.now()}-${randomVoice}.mp3`,
           contentType: "audio/mpeg"
         }),
       });
