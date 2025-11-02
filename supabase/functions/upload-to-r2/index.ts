@@ -91,9 +91,9 @@ serve(async (req) => {
   }
 
   try {
-    const { base64Image, filename, contentType = "image/png" } = await req.json();
+    const { base64Image, base64Data, filename, contentType = "image/png" } = await req.json();
 
-    if (!base64Image || !filename) {
+    if ((!base64Image && !base64Data) || !filename) {
       return new Response(
         JSON.stringify({ error: "Missing base64Image or filename" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -116,9 +116,9 @@ serve(async (req) => {
 
     console.log(`[UPLOAD-TO-R2] Starting upload: ${filename} to bucket: ${R2_BUCKET_NAME}`);
 
-    // Convert base64 to binary
-    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
-    const binaryString = atob(base64Data);
+    // Convert base64 to binary - support both images and audio
+    const rawBase64 = (base64Image || base64Data || "").replace(/^data:[^;]+;base64,/, "");
+    const binaryString = atob(rawBase64);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);

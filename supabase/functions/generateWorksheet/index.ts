@@ -264,6 +264,16 @@ serve(async (req) => {
       descriptionPreview: selectedImage?.detailedDescription?.substring(0, 150),
     });
 
+    // DEBUG: Log audio data before passing to prompt composer
+    console.log('🎵 [DEBUG] selectedAudio being passed to prompt composer:', {
+      hasAudio: !!selectedAudio,
+      hasTranscript: !!selectedAudio?.transcript,
+      transcriptLength: selectedAudio?.transcript?.length || 0,
+      transcriptPreview: selectedAudio?.transcript?.substring(0, 100) || '[EMPTY]',
+      audioDuration: selectedAudio?.duration,
+      audioVoice: selectedAudio?.voice,
+    });
+
     // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage and selectedAudio
     const systemMessage = composeSystemMessage(
       hasGrammarFocus,

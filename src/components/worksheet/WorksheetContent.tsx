@@ -375,19 +375,26 @@ export default function WorksheetContent({
         ) : null;
       })()}
 
-      {/* Active exercises - sorted to show picture-related exercises first */}
+      {/* Active exercises - sorted to show media exercises first (picture > audio > others) */}
         {(() => {
           // Create sorted version for display
           const sortedExercises = activeExercises
             .slice()
             .sort((a: any, b: any) => {
-              // Check if exercise types contain '-picture' suffix
+              // Check if exercise types contain '-picture' or '-audio' suffix
               const aIsPicture = a.type?.includes('-picture') || a.image_url || a.media_url;
               const bIsPicture = b.type?.includes('-picture') || b.image_url || b.media_url;
               
-              // Picture exercises come first
+              const aIsAudio = a.type?.includes('-audio') || a.type === 'listening-comprehension';
+              const bIsAudio = b.type?.includes('-audio') || b.type === 'listening-comprehension';
+              
+              // Priority: picture > audio > others
               if (aIsPicture && !bIsPicture) return -1;
               if (!aIsPicture && bIsPicture) return 1;
+              
+              if (aIsAudio && !bIsAudio) return -1;
+              if (!aIsAudio && bIsAudio) return 1;
+              
               return 0;
             });
           

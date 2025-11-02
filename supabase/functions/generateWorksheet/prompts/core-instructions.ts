@@ -137,7 +137,7 @@ IMPORTANT: You have an AI-generated audio scenario with transcript.
 The following exercises MUST use this audio: ${selectedExercises?.filter(ex => ex.endsWith('-audio') || ex === 'listening-comprehension').join(', ')}
 For these audio-based exercises, use SPECIFIC DETAILS from the audio transcript below. Create questions that test listening comprehension, detail retention, and understanding of spoken context.
 AUDIO TRANSCRIPT:
-${audioTranscript}
+${audioTranscript || "[NO TRANSCRIPT AVAILABLE - Generate generic audio-based exercise]"}
 AUDIO DURATION: ${audioDuration} seconds
 `
     : ""

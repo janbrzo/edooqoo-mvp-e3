@@ -106,8 +106,8 @@ OUTPUT FORMAT: Return ONLY the spoken text (no JSON, no markdown).`;
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          base64Data: audioBase64,
-          fileName: `audio-${Date.now()}-${randomVoice}.mp3`,
+          base64Image: audioBase64,
+          filename: `audio-${Date.now()}-${randomVoice}.mp3`,
           contentType: "audio/mpeg"
         }),
       });
