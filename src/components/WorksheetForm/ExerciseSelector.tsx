@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useCallback, useState } from 'react';
+import React, { useEffect, useMemo, useCallback, useState, useRef } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -533,14 +533,25 @@ export default function ExerciseSelector({
     }
   }, [lessonTime, selectionMode, selectedExercises.length, onChange, manualDefaults, generateRandomExercises]);
 
-  // Handle lesson time changes
+  // Handle lesson time and selection mode changes (but NOT user's manual selections)
+  const prevLessonTimeRef = useRef(lessonTime);
+  const prevSelectionModeRef = useRef(selectionMode);
+  
   useEffect(() => {
-    if (selectedExercises.length > 0) {
-      if (selectionMode === 'manual') {
-        onChange(manualDefaults);
-      } else if (selectionMode === 'random') {
-        onChange(generateRandomExercises());
+    // Only reset if lessonTime or selectionMode actually changed (not just selectedExercises)
+    const lessonTimeChanged = prevLessonTimeRef.current !== lessonTime;
+    const selectionModeChanged = prevSelectionModeRef.current !== selectionMode;
+    
+    if (lessonTimeChanged || selectionModeChanged) {
+      if (selectedExercises.length > 0) {
+        if (selectionMode === 'manual') {
+          onChange(manualDefaults);
+        } else if (selectionMode === 'random') {
+          onChange(generateRandomExercises());
+        }
       }
+      prevLessonTimeRef.current = lessonTime;
+      prevSelectionModeRef.current = selectionMode;
     }
   }, [lessonTime, selectionMode, generateRandomExercises, onChange, manualDefaults, selectedExercises.length]);
 
