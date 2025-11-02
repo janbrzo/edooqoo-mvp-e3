@@ -10,7 +10,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'reading',
     label: 'Reading Comprehension',
-    icon: 'fa-book-open',
+    icon: '📖',
     description: 'Read and answer questions about the text',
     requiresPicture: false,
     requiresAudio: false,
@@ -22,7 +22,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'fill-in-blanks',
     label: 'Fill in the Blanks',
-    icon: 'fa-pen',
+    icon: '✏️',
     description: 'Complete sentences with missing words',
     requiresPicture: false,
     requiresAudio: false,
@@ -33,8 +33,8 @@ const AVAILABLE_EXERCISES = [
   },
   {
     id: 'fill-in-blanks-audio',
-    label: 'Fill in Blanks (Audio)',
-    icon: 'fa-headphones',
+    label: 'Fill in the Blanks',
+    icon: '✏️',
     description: 'Complete transcript while listening',
     requiresPicture: false,
     requiresAudio: true,
@@ -47,7 +47,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'multiple-choice',
     label: 'Multiple Choice',
-    icon: 'fa-list-check',
+    icon: '📝',
     description: 'Choose the correct answer from options',
     requiresPicture: false,
     requiresAudio: false,
@@ -58,8 +58,8 @@ const AVAILABLE_EXERCISES = [
   },
   {
     id: 'multiple-choice-audio',
-    label: 'Multiple Choice (Audio)',
-    icon: 'fa-headphones',
+    label: 'Multiple Choice',
+    icon: '📝',
     description: 'Choose answers based on audio',
     requiresPicture: false,
     requiresAudio: true,
@@ -71,8 +71,8 @@ const AVAILABLE_EXERCISES = [
   },
   {
     id: 'multiple-choice-picture',
-    label: 'Multiple Choice (Picture)',
-    icon: 'fa-image',
+    label: 'Multiple Choice',
+    icon: '📝',
     description: 'Choose answers based on a picture',
     requiresPicture: true,
     requiresAudio: false,
@@ -84,8 +84,8 @@ const AVAILABLE_EXERCISES = [
   },
   {
     id: 'true-false',
-    label: 'True or False',
-    icon: 'fa-check-double',
+    label: 'True/False Questions',
+    icon: '✓✗',
     description: 'Decide if statements are true or false',
     requiresPicture: false,
     requiresAudio: false,
@@ -96,8 +96,8 @@ const AVAILABLE_EXERCISES = [
   },
   {
     id: 'true-false-audio',
-    label: 'True/False (Audio)',
-    icon: 'fa-headphones',
+    label: 'True/False',
+    icon: '✓✗',
     description: 'True or false questions about audio',
     requiresPicture: false,
     requiresAudio: true,
@@ -109,8 +109,8 @@ const AVAILABLE_EXERCISES = [
   },
   {
     id: 'true-false-picture',
-    label: 'True/False (Picture)',
-    icon: 'fa-image',
+    label: 'True/False',
+    icon: '✓✗',
     description: 'True or false questions about a picture',
     requiresPicture: true,
     requiresAudio: false,
@@ -122,8 +122,8 @@ const AVAILABLE_EXERCISES = [
   },
   {
     id: 'matching',
-    label: 'Matching',
-    icon: 'fa-arrow-right-arrow-left',
+    label: 'Matching Exercise',
+    icon: '🔗',
     description: 'Match related items',
     requiresPicture: false,
     requiresAudio: false,
@@ -134,8 +134,8 @@ const AVAILABLE_EXERCISES = [
   },
   {
     id: 'dialogue',
-    label: 'Dialogue',
-    icon: 'fa-comments',
+    label: 'Dialogue Practice',
+    icon: '💬',
     description: 'Practice conversations',
     requiresPicture: false,
     requiresAudio: false,
@@ -147,7 +147,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'listening-comprehension',
     label: 'Listening Comprehension',
-    icon: 'fa-headphones',
+    icon: '🎧',
     description: 'Listen and answer comprehension questions',
     requiresPicture: false,
     requiresAudio: true,
@@ -160,7 +160,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'answer-questions',
     label: 'Answer Questions',
-    icon: 'fa-question',
+    icon: '❓',
     description: 'Answer comprehension questions',
     requiresPicture: false,
     requiresAudio: false,
@@ -171,8 +171,8 @@ const AVAILABLE_EXERCISES = [
   },
   {
     id: 'answer-questions-audio',
-    label: 'Answer Questions (Audio)',
-    icon: 'fa-headphones',
+    label: 'Answer Questions',
+    icon: '❓',
     description: 'Answer questions based on audio',
     requiresPicture: false,
     requiresAudio: true,
@@ -184,8 +184,8 @@ const AVAILABLE_EXERCISES = [
   },
   {
     id: 'answer-questions-picture',
-    label: 'Answer Questions (Picture)',
-    icon: 'fa-image',
+    label: 'Answer Questions',
+    icon: '❓',
     description: 'Answer questions based on a picture',
     requiresPicture: true,
     requiresAudio: false,
@@ -197,8 +197,8 @@ const AVAILABLE_EXERCISES = [
   },
   {
     id: 'describe',
-    label: 'Describe (Picture)',
-    icon: 'fa-image',
+    label: 'Describe Picture',
+    icon: '🖼️',
     description: 'Describe what you see in the picture',
     requiresPicture: true,
     requiresAudio: false,
@@ -211,7 +211,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'discussion',
     label: 'Discussion Questions',
-    icon: 'fa-users',
+    icon: '👥',
     description: 'Engage in meaningful conversation about the topic',
     requiresPicture: false,
     requiresAudio: false,
@@ -223,7 +223,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'error-correction',
     label: 'Error Correction',
-    icon: 'fa-spell-check',
+    icon: '⚠️',
     description: 'Find and correct mistakes in sentences',
     requiresPicture: false,
     requiresAudio: false,
@@ -235,7 +235,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'odd-one-out',
     label: 'Odd One Out',
-    icon: 'fa-filter',
+    icon: '🔍',
     description: 'Identify which item doesn\'t belong',
     requiresPicture: false,
     requiresAudio: false,
@@ -247,7 +247,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'matching-halves',
     label: 'Matching Halves',
-    icon: 'fa-puzzle-piece',
+    icon: '🧩',
     description: 'Match sentence halves to complete ideas',
     requiresPicture: false,
     requiresAudio: false,
@@ -259,7 +259,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'word-order',
     label: 'Word Order',
-    icon: 'fa-sort',
+    icon: '📋',
     description: 'Arrange words to form correct sentences',
     requiresPicture: false,
     requiresAudio: false,
@@ -271,7 +271,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'gap-text',
     label: 'Gap Text (Cloze)',
-    icon: 'fa-align-left',
+    icon: '📄',
     description: 'Fill in missing parts of a text',
     requiresPicture: false,
     requiresAudio: false,
@@ -283,7 +283,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'negative-prefixes',
     label: 'Negative Prefixes',
-    icon: 'fa-minus-circle',
+    icon: '➖',
     description: 'Practice adding negative prefixes to words',
     requiresPicture: false,
     requiresAudio: false,
@@ -295,7 +295,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'categorize',
     label: 'Categorization',
-    icon: 'fa-layer-group',
+    icon: '📊',
     description: 'Sort words or phrases into categories',
     requiresPicture: false,
     requiresAudio: false,
@@ -307,7 +307,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'paraphrasing',
     label: 'Paraphrasing',
-    icon: 'fa-retweet',
+    icon: '🔄',
     description: 'Rewrite sentences using different words',
     requiresPicture: false,
     requiresAudio: false,
@@ -319,7 +319,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'complete-word',
     label: 'Complete the Word',
-    icon: 'fa-font',
+    icon: '🅰️',
     description: 'Fill in missing letters to complete words',
     requiresPicture: false,
     requiresAudio: false,
@@ -331,7 +331,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'synonyms',
     label: 'Synonyms Matching',
-    icon: 'fa-equals',
+    icon: '🔄',
     description: 'Match words with similar meanings',
     requiresPicture: false,
     requiresAudio: false,
@@ -343,7 +343,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'antonyms',
     label: 'Antonyms Matching',
-    icon: 'fa-not-equal',
+    icon: '↕️',
     description: 'Match words with opposite meanings',
     requiresPicture: false,
     requiresAudio: false,
@@ -355,7 +355,7 @@ const AVAILABLE_EXERCISES = [
   {
     id: 'sentence-transformation',
     label: 'Sentence Transformation',
-    icon: 'fa-rotate',
+    icon: '🔄',
     description: 'Transform sentences while keeping the same meaning',
     requiresPicture: false,
     requiresAudio: false,
@@ -665,7 +665,7 @@ export default function ExerciseSelector({
               const isPictureExercise = exercise.pictureRequired;
               const isAudioExercise = exercise.audioRequired;
               const canSelect = selectionMode === 'manual' && (isSelected || selectedExercises.length < maxExercises) && !exercise.comingSoon;
-              const isDisabled = selectionMode !== 'manual' || exercise.comingSoon;
+              const isDisabled = selectionMode !== 'manual' || (exercise.comingSoon || (!isSelected && !canSelect));
               
               return (
                 <div key={exercise.id} className={`relative group flex items-center space-x-2 p-2 rounded-lg border transition-colors ${
@@ -686,8 +686,8 @@ export default function ExerciseSelector({
                     disabled={isDisabled} 
                     className="data-[state=checked]:bg-worksheet-purple data-[state=checked]:border-worksheet-purple" 
                   />
-                  <label htmlFor={exercise.id} className={`flex items-center space-x-2 text-xs font-medium cursor-pointer ${exercise.comingSoon ? 'text-gray-400' : canSelect ? 'text-gray-700' : 'text-gray-400'}`}>
-                    <i className={`fa-solid ${exercise.icon} text-lg`}></i>
+                  <label htmlFor={exercise.id} className={`flex items-center space-x-2 text-xs font-medium cursor-pointer ${exercise.comingSoon ? 'text-gray-400' : canSelect || isSelected ? 'text-gray-700' : 'text-gray-400'}`}>
+                    <span className="text-lg">{exercise.icon}</span>
                     <span>{exercise.label}</span>
                     {exercise.badge && (
                       <span className={`text-xs px-2 py-0.5 rounded font-semibold ${
