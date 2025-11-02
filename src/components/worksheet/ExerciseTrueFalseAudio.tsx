@@ -28,54 +28,53 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
         </div>
       )}
       
-      <div className="space-y-3">
+      <div className="space-y-2">
         {statements.map((statement, sIndex) => (
-          <div 
-            key={sIndex} 
-            className={`p-3 rounded-lg border ${
-              viewMode === 'teacher'
-                ? statement.isTrue
-                  ? 'bg-green-50 border-green-200'
-                  : 'bg-red-50 border-red-200'
-                : 'bg-gray-50 border-gray-200'
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <span className="font-medium text-gray-700 mt-0.5">{sIndex + 1}.</span>
-              {isEditing ? (
-                <div className="flex-1 space-y-2">
-                  <input
-                    type="text"
-                    value={statement.text}
-                    onChange={e => onStatementChange(sIndex, 'text', e.target.value)}
-                    className="w-full border p-2 rounded editable-content"
-                  />
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm">
-                      <input
-                        type="checkbox"
-                        checked={statement.isTrue}
-                        onChange={e => onStatementChange(sIndex, 'isTrue', e.target.checked)}
-                        className="mr-2 editable-content"
-                      />
-                      Is True
+          <div key={sIndex} className="border-b pb-2">
+            <div className="flex flex-row items-start">
+              <div className="flex-grow">
+                <p className="leading-snug">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={statement.text}
+                      onChange={e => onStatementChange(sIndex, 'text', e.target.value)}
+                      className="w-full border p-1 editable-content"
+                    />
+                  ) : (
+                    <>{sIndex + 1}. {statement.text}</>
+                  )}
+                </p>
+              </div>
+              <div className="ml-4 flex space-x-4">
+                {viewMode === 'student' ? (
+                  <div className="flex space-x-4">
+                    <label className="inline-flex items-center">
+                      <input type="radio" name={`statement-audio-${sIndex}`} className="form-radio h-4 w-4" disabled={!isEditing} />
+                      <span className="ml-2">True</span>
+                    </label>
+                    <label className="inline-flex items-center">
+                      <input type="radio" name={`statement-audio-${sIndex}`} className="form-radio h-4 w-4" disabled={!isEditing} />
+                      <span className="ml-2">False</span>
                     </label>
                   </div>
-                </div>
-              ) : (
-                <div className="flex-1">
-                  <p className="text-sm text-gray-800">{statement.text}</p>
-                  {viewMode === 'teacher' && (
-                    <p className="text-sm font-medium mt-2">
-                      {statement.isTrue ? (
-                        <span className="text-green-700">✓ TRUE</span>
-                      ) : (
-                        <span className="text-red-700">✗ FALSE</span>
-                      )}
-                    </p>
-                  )}
-                </div>
-              )}
+                ) : (
+                  <div className="text-green-600 italic ml-3 text-sm">
+                    {isEditing ? (
+                      <select
+                        value={statement.isTrue ? "true" : "false"}
+                        onChange={e => onStatementChange(sIndex, 'isTrue', e.target.value === "true")}
+                        className="border p-1 editable-content"
+                      >
+                        <option value="true">True</option>
+                        <option value="false">False</option>
+                      </select>
+                    ) : (
+                      <span>({statement.isTrue ? "True" : "False"})</span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ))}

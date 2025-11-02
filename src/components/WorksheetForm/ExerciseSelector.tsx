@@ -665,7 +665,7 @@ export default function ExerciseSelector({
               const isPictureExercise = exercise.pictureRequired;
               const isAudioExercise = exercise.audioRequired;
               const canSelect = selectionMode === 'manual' && (isSelected || selectedExercises.length < maxExercises) && !exercise.comingSoon;
-              const isDisabled = selectionMode !== 'manual' || (exercise.comingSoon || (!isSelected && !canSelect));
+              const isDisabled = selectionMode !== 'manual' || (exercise.comingSoon || (!isSelected && selectedExercises.length >= maxExercises));
               
               return (
                 <div key={exercise.id} className={`relative group flex items-center space-x-2 p-2 rounded-lg border transition-colors ${

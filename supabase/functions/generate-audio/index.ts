@@ -95,34 +95,42 @@ OUTPUT FORMAT: Return ONLY the spoken text (no JSON, no markdown).`;
       throw new Error("No audio data in OpenAI response");
     }
     
-    // Upload to R2
-    const uploadResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/upload-to-r2`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        base64Data: audioBase64,
-        fileName: `audio-${Date.now()}-${randomVoice}.mp3`,
-        contentType: "audio/mpeg"
-      }),
-    });
+    // Upload to R2 with fallback
+    let r2Url = null;
     
-    if (!uploadResponse.ok) {
-      throw new Error("Failed to upload audio to R2");
+    try {
+      const uploadResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/upload-to-r2`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          base64Data: audioBase64,
+          fileName: `audio-${Date.now()}-${randomVoice}.mp3`,
+          contentType: "audio/mpeg"
+        }),
+      });
+      
+      if (uploadResponse.ok) {
+        const uploadData = await uploadResponse.json();
+        r2Url = uploadData.url;
+        console.log("✅ [AUDIO] Uploaded to R2:", r2Url);
+      } else {
+        console.warn("⚠️ [AUDIO] R2 upload failed, using base64 fallback");
+      }
+    } catch (uploadError) {
+      console.warn("⚠️ [AUDIO] R2 upload error:", uploadError, "- using base64 fallback");
     }
     
-    const { url: r2Url } = await uploadResponse.json();
-    console.log("✅ [AUDIO] Uploaded to R2:", r2Url);
-    
-    // Return audio data
+    // Return audio data with BOTH R2 URL and base64 backup
     return new Response(
       JSON.stringify({
         success: true,
         audioData: {
           url: r2Url,
           ai_generated_audio_url: r2Url,
+          audio_base64_backup: audioBase64,
           transcript: transcript,
           duration: duration,
           source: 'openai-tts-generated',

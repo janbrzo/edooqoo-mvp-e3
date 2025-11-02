@@ -618,7 +618,6 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseFillInBlanksAudio
             transcript_with_blanks={exercise.transcript_with_blanks}
             answers={exercise.answers}
-            full_transcript={exercise.full_transcript}
             audio_url={exercise.audio_url}
             isEditing={isEditing}
             viewMode={viewMode}

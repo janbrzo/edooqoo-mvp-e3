@@ -21,6 +21,7 @@ interface MediaSectionProps {
     id: string;
     url: string;
     ai_generated_audio_url?: string;
+    audio_base64_backup?: string;
     transcript?: string;
     detailedTranscript?: string;
     duration?: number;
@@ -63,7 +64,7 @@ export default function MediaSection({
   if (!selectedImage && !selectedAudio) return null;
 
   // If audio is present, render audio player
-  if (selectedAudio) {
+  if (selectedAudio && (selectedAudio.url || selectedAudio.ai_generated_audio_url || selectedAudio.audio_base64_backup)) {
     return (
       <div className="mb-8 bg-white border rounded-lg overflow-hidden shadow-sm p-6 relative">
         {!isDownloadUnlocked && <DemoWatermark />}
@@ -94,7 +95,11 @@ export default function MediaSection({
         
         {!isCollapsed && (
           <AudioPlayer
-            audioUrl={selectedAudio.ai_generated_audio_url || selectedAudio.url}
+            audioUrl={
+              selectedAudio.ai_generated_audio_url || 
+              selectedAudio.url || 
+              (selectedAudio.audio_base64_backup ? `data:audio/mpeg;base64,${selectedAudio.audio_base64_backup}` : '')
+            }
             transcript={selectedAudio.transcript}
             duration={selectedAudio.duration}
             voice={selectedAudio.voice}
