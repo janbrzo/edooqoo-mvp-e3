@@ -345,18 +345,35 @@ export default function WorksheetContent({
       )}
 
       {/* Media Section - displays image or audio for media-enhanced exercises */}
-      {(inputParams?.selectedImage || editableWorksheet?.selected_image || inputParams?.selectedAudio || editableWorksheet?.selected_audio) && (
-        <MediaSection
-          selectedImage={inputParams?.selectedImage || editableWorksheet?.selected_image}
-          selectedAudio={inputParams?.selectedAudio || editableWorksheet?.selected_audio}
-          base64Backup={editableWorksheet?.base64_backup}
-          isDownloadUnlocked={isDownloadUnlocked}
-          isPinned={isPinned}
-          onTogglePin={onTogglePin}
-          isFullScreen={isFullScreen}
-          onToggleFullScreen={onToggleFullScreen}
-        />
-      )}
+      {(() => {
+        // Reconstruct selectedAudio from worksheet database fields if needed
+        const reconstructedAudio = editableWorksheet?.audio_url || editableWorksheet?.audio_base64_backup 
+          ? {
+              url: editableWorksheet.audio_url,
+              ai_generated_audio_url: editableWorksheet.audio_url,
+              audio_base64_backup: editableWorksheet.audio_base64_backup,
+              transcript: editableWorksheet.audio_transcript,
+              duration: editableWorksheet.audio_duration,
+              voice: editableWorksheet.audio_voice,
+              source: 'openai-tts-generated'
+            }
+          : (inputParams?.selectedAudio || editableWorksheet?.selected_audio);
+
+        const hasMedia = inputParams?.selectedImage || editableWorksheet?.selected_image || reconstructedAudio;
+        
+        return hasMedia ? (
+          <MediaSection
+            selectedImage={inputParams?.selectedImage || editableWorksheet?.selected_image}
+            selectedAudio={reconstructedAudio}
+            base64Backup={editableWorksheet?.base64_backup}
+            isDownloadUnlocked={isDownloadUnlocked}
+            isPinned={isPinned}
+            onTogglePin={onTogglePin}
+            isFullScreen={isFullScreen}
+            onToggleFullScreen={onToggleFullScreen}
+          />
+        ) : null;
+      })()}
 
       {/* Active exercises - sorted to show picture-related exercises first */}
         {(() => {

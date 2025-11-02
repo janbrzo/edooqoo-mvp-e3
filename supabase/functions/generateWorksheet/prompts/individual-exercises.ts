@@ -870,9 +870,17 @@ export const getFillInBlanksAudioExercise = () => `    {
       "icon": "fa-pencil-alt",
       "time": 10,
       "instructions": "Listen to the audio and fill in the missing words you hear. You may need to listen multiple times.",
-      "audio_url": null,
-      "transcript_with_blanks": "Welcome to [blank] Restaurant. I'm [blank] and I'll be your [blank] today. Can I start you off with something to [blank]? We have some [blank] specials today. The chef [blank] the grilled salmon with [blank] vegetables. It's [blank] popular. Would you like to [blank] our menu, or would you [blank] to order now?",
-      "answers": ["Mario's", "Jennifer", "server", "drink", "excellent", "recommends", "seasonal", "very", "see", "like"],
+      "word_bank": ["Mario's", "Jennifer", "server", "drink", "excellent", "recommends", "seasonal", "very", "see", "like"],
+      "sentences": [
+        {"text": "Welcome to ______ Restaurant.", "answer": "Mario's"},
+        {"text": "I'm ______ and I'll be your ______ today.", "answer": "Jennifer"},
+        {"text": "Can I start you off with something to ______?", "answer": "drink"},
+        {"text": "We have some ______ specials today.", "answer": "excellent"},
+        {"text": "The chef ______ the grilled salmon with ______ vegetables.", "answer": "recommends"},
+        {"text": "It's ______ popular.", "answer": "very"},
+        {"text": "Would you like to ______ our menu?", "answer": "see"},
+        {"text": "Or would you ______ to order now?", "answer": "like"}
+      ],
       "full_transcript": "Welcome to Mario's Restaurant. I'm Jennifer and I'll be your server today. Can I start you off with something to drink? We have some excellent specials today. The chef recommends the grilled salmon with seasonal vegetables. It's very popular. Would you like to see our menu, or would you like to order now?",
       "teacher_tip": "This is a dictation exercise. Play the audio in short segments, allowing students time to write. Focus on pronunciation, connected speech, and spelling accuracy."
     }`;
