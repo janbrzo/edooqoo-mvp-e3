@@ -28,7 +28,7 @@ export const useDeletedWorksheets = (studentId?: string) => {
 
       let query = supabase
         .from('worksheets')
-        .select('id, title, created_at, deleted_at, form_data, ai_response, html_content, student_id, generation_time_seconds, audio_url, audio_base64_backup, audio_transcript, audio_duration, audio_voice')
+        .select('id, title, created_at, deleted_at, form_data, ai_response, html_content, student_id, generation_time_seconds')
         .eq('teacher_id', user.id)
         .not('deleted_at', 'is', null) // Only fetch deleted worksheets
         .order('deleted_at', { ascending: false });
