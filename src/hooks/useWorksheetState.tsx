@@ -97,24 +97,14 @@ export const useWorksheetState = (authLoading: boolean) => {
   useEffect(() => {
     if (generatedWorksheet && inputParams) {
       try {
-        // Explicitly include audio fields when saving to sessionStorage
-        const worksheetToSave = {
-          ...generatedWorksheet,
-          audio_url: generatedWorksheet.audio_url || null,
-          audio_base64_backup: generatedWorksheet.audio_base64_backup || null,
-          audio_transcript: generatedWorksheet.audio_transcript || null,
-          audio_duration: generatedWorksheet.audio_duration || null,
-          audio_voice: generatedWorksheet.audio_voice || null
-        };
-        
-        sessionStorage.setItem('currentWorksheet', JSON.stringify(worksheetToSave));
+        sessionStorage.setItem('currentWorksheet', JSON.stringify(generatedWorksheet));
         sessionStorage.setItem('currentInputParams', JSON.stringify(inputParams));
         sessionStorage.setItem('currentGenerationTime', generationTime.toString());
         sessionStorage.setItem('currentSourceCount', sourceCount.toString());
         if (worksheetId) {
           sessionStorage.setItem('currentWorksheetId', worksheetId);
         }
-        console.log('Worksheet state saved to sessionStorage with audio fields');
+        console.log('Worksheet state saved to sessionStorage');
       } catch (error) {
         console.error('Error saving worksheet state:', error);
       }
