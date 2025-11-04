@@ -375,48 +375,46 @@ export default function WorksheetContent({
               onToggleFullScreen={onToggleFullScreen}
             />
             
-            {/* Pinned Audio Player - compact mini player in bottom right corner */}
+            {/* Pinned Audio Player - small floating window in bottom right corner */}
             {isPinned && reconstructedAudio && (
-              <div className="fixed bottom-20 right-4 z-50 bg-white border-2 border-worksheet-purple rounded-lg shadow-2xl w-64">
-                {/* X button at top right */}
-                <div className="flex items-center justify-end p-2 pb-0">
+              <div className="fixed bottom-20 right-4 z-50 bg-white border-2 border-worksheet-purple rounded-lg shadow-2xl p-4 w-80">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                    🎧 Pinned Audio Player
+                  </span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={onTogglePin}
-                    className="h-6 w-6 p-0 hover:bg-gray-100"
+                    className="h-7 w-7 p-0 hover:bg-gray-100"
                     title="Unpin audio player"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
                 
-                {/* Audio Player */}
-                <div className="px-2 pb-2">
-                  <audio
-                    controls
-                    src={
-                      reconstructedAudio.ai_generated_audio_url || 
-                      reconstructedAudio.url || 
-                      (reconstructedAudio.audio_base64_backup ? `data:audio/mpeg;base64,${reconstructedAudio.audio_base64_backup}` : '')
-                    }
-                    className="w-full"
-                    controlsList="nodownload"
-                    style={{ 
-                      height: '32px',
-                      backgroundColor: '#f3f4f6',
-                      borderRadius: '6px'
-                    }}
-                  />
-                </div>
+                <audio
+                  controls
+                  src={
+                    reconstructedAudio.ai_generated_audio_url || 
+                    reconstructedAudio.url || 
+                    (reconstructedAudio.audio_base64_backup ? `data:audio/mpeg;base64,${reconstructedAudio.audio_base64_backup}` : '')
+                  }
+                  className="w-full"
+                  controlsList="nodownload"
+                  style={{ 
+                    height: '40px',
+                    backgroundColor: '#f3f4f6',
+                    borderRadius: '8px'
+                  }}
+                />
                 
-                {/* Transcript - optional */}
                 {reconstructedAudio.transcript && (
-                  <details className="px-2 pb-2">
+                  <details className="mt-3">
                     <summary className="cursor-pointer text-xs font-medium text-gray-700 hover:text-worksheet-purple">
-                      Transcript
+                      Show Transcript
                     </summary>
-                    <div className="mt-1 p-2 bg-gray-50 rounded-lg text-xs text-gray-700 leading-relaxed max-h-32 overflow-y-auto">
+                    <div className="mt-2 p-2 bg-gray-50 rounded-lg text-xs text-gray-700 leading-relaxed max-h-40 overflow-y-auto">
                       {reconstructedAudio.transcript}
                     </div>
                   </details>
