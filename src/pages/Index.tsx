@@ -78,14 +78,7 @@ const Index = () => {
         }
         
         if (parsedWorksheet) {
-          // Copy database fields to parsedWorksheet
           parsedWorksheet.id = worksheet.id;
-          parsedWorksheet.audio_url = worksheet.audio_url;
-          parsedWorksheet.audio_base64_backup = worksheet.audio_base64_backup;
-          parsedWorksheet.audio_transcript = worksheet.audio_transcript;
-          parsedWorksheet.audio_duration = worksheet.audio_duration;
-          parsedWorksheet.audio_voice = worksheet.audio_voice;
-          
           worksheetState.setGeneratedWorksheet(parsedWorksheet);
           worksheetState.setEditableWorksheet(parsedWorksheet);
           
