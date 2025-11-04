@@ -13,14 +13,22 @@ const FREE_DEMO_WEEK_END = new Date('2025-10-05T23:59:59.999Z');   // End: 5.10.
  */
 export const isFreeCustomDemoWeek = (): boolean => {
   const now = new Date();
+  
+  // HARDCODED DISABLE: Promotion permanently ended
+  const isPromotionActive = false; // ⬅️ Disable promotion permanently
+  
+  const isWithinDateRange = now >= FREE_DEMO_WEEK_START && now <= FREE_DEMO_WEEK_END;
+  
   console.log('🎁 FREE DEMO WEEK CHECK:', {
     now: now.toISOString(),
     start: FREE_DEMO_WEEK_START.toISOString(),
     end: FREE_DEMO_WEEK_END.toISOString(),
-    isActive: now >= FREE_DEMO_WEEK_START && now <= FREE_DEMO_WEEK_END
+    isWithinDateRange,
+    isPromotionActive,
+    finalResult: isPromotionActive && isWithinDateRange
   });
   
-  return now >= FREE_DEMO_WEEK_START && now <= FREE_DEMO_WEEK_END;
+  return isPromotionActive && isWithinDateRange;
 };
 
 /**
