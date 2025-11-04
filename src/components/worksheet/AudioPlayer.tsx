@@ -93,43 +93,47 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       {/* Grid Layout: Audio Player (left) + QR Code (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6">
         {/* LEFT: Audio Player (75-80%) */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
             🎧 Lesson Audio
             {voice && <span className="text-sm text-gray-500">({voice})</span>}
           </h3>
           
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <Slider
-              value={[currentTime]}
-              max={audioDuration}
-              step={0.1}
-              onValueChange={handleSeek}
-              className="w-full"
-            />
-            <div className="flex justify-between text-xs text-gray-600">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(audioDuration)}</span>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="flex items-center gap-4">
+          {/* ALL IN ONE LINE: Play + Progress + Time + Volume */}
+          <div className="flex items-center gap-3">
+            {/* Play Button */}
             <Button
               onClick={togglePlay}
-              size="lg"
-              className="bg-worksheet-purple hover:bg-worksheet-purple/90"
+              size="sm"
+              className="bg-worksheet-purple hover:bg-worksheet-purple/90 shrink-0"
             >
-              {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
+              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
             </Button>
             
-            <div className="flex items-center gap-2 flex-1">
+            {/* Progress Bar + Time */}
+            <div className="flex-1 flex items-center gap-2">
+              <span className="text-xs text-gray-600 w-12 text-right shrink-0">
+                {formatTime(currentTime)}
+              </span>
+              <Slider
+                value={[currentTime]}
+                max={audioDuration}
+                step={0.1}
+                onValueChange={handleSeek}
+                className="flex-1"
+              />
+              <span className="text-xs text-gray-600 w-12 shrink-0">
+                {formatTime(audioDuration)}
+              </span>
+            </div>
+
+            {/* Volume Controls */}
+            <div className="flex items-center gap-2 shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleMute}
-                className="p-2"
+                className="p-1.5 h-8 w-8"
               >
                 {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               </Button>
@@ -138,14 +142,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
                 max={1}
                 step={0.01}
                 onValueChange={handleVolumeChange}
-                className="w-24"
+                className="w-20"
               />
             </div>
           </div>
 
           {/* Transcript (optional) */}
           {transcript && (
-            <details className="mt-4">
+            <details className="mt-3">
               <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-worksheet-purple">
                 Show Transcript
               </summary>
