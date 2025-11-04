@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { ArrowUp, Image, X, Maximize2, Headphones } from "lucide-react";
+import { ArrowUp, Image, X, Maximize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generatePDF } from "@/utils/pdfUtils";
 import { FormData } from "@/components/WorksheetForm";
@@ -20,13 +20,6 @@ interface WorksheetContainerProps {
     photographer: string;
     photographerUrl: string;
   } | null;
-  selectedAudio?: {
-    url?: string | null;
-    ai_generated_audio_url?: string | null;
-    audio_base64_backup?: string | null;
-    transcript?: string | null;
-    duration?: number | null;
-  } | null;
   isPinned?: boolean;
   onTogglePin?: () => void;
   isFullScreen?: boolean;
@@ -41,7 +34,6 @@ export default function WorksheetContainer({
   viewMode,
   editableWorksheet,
   selectedImage,
-  selectedAudio,
   isPinned = false,
   onTogglePin,
   isFullScreen = false,
@@ -135,8 +127,8 @@ export default function WorksheetContainer({
       {/* Fixed action buttons in bottom right */}
       {showScrollTop && (
         <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-50">
-          {/* Pin Image button - only show if image exists and no audio */}
-          {selectedImage && !selectedAudio && onTogglePin && (
+          {/* Pin Image button - only show if image exists */}
+          {selectedImage && onTogglePin && (
             <button 
               onClick={onTogglePin}
               className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
@@ -144,18 +136,6 @@ export default function WorksheetContainer({
               title={isPinned ? "Unpin image" : "Pin image"}
             >
               <Image className="h-5 w-5" />
-            </button>
-          )}
-          
-          {/* Pin Audio button - only show if audio exists */}
-          {selectedAudio && onTogglePin && (
-            <button 
-              onClick={onTogglePin}
-              className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
-              aria-label={isPinned ? "Unpin audio player" : "Pin audio player"}
-              title={isPinned ? "Unpin audio player" : "Pin audio player"}
-            >
-              <Headphones className="h-5 w-5" />
             </button>
           )}
           
