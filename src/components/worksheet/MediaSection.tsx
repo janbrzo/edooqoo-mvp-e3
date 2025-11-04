@@ -63,16 +63,6 @@ export default function MediaSection({
   
   if (!selectedImage && !selectedAudio) return null;
 
-  // DEBUG: Log audio rendering conditions
-  console.log('🎵 [MEDIASECTION] Checking audio render:', {
-    hasSelectedAudio: !!selectedAudio,
-    hasUrl: !!selectedAudio?.url,
-    hasAiUrl: !!selectedAudio?.ai_generated_audio_url,
-    hasBase64: !!selectedAudio?.audio_base64_backup,
-    transcriptPreview: selectedAudio?.transcript?.substring(0, 50) || '[NO TRANSCRIPT]',
-    duration: selectedAudio?.duration
-  });
-
   // If audio is present, render audio player
   if (selectedAudio && (selectedAudio.url || selectedAudio.ai_generated_audio_url || selectedAudio.audio_base64_backup)) {
     return (

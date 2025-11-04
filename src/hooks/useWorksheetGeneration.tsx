@@ -106,7 +106,11 @@ export const useWorksheetGeneration = (
         backendId: worksheetResult?.backendId,
         exerciseCount: worksheetResult?.exercises?.length || 0,
         hasTitle: !!worksheetResult?.title,
-        hasVocabulary: !!worksheetResult?.vocabulary_sheet
+        hasVocabulary: !!worksheetResult?.vocabulary_sheet,
+        hasAudioUrl: !!worksheetResult?.audio_url,
+        hasAudioBase64: !!worksheetResult?.audio_base64_backup,
+        hasAudioTranscript: !!worksheetResult?.audio_transcript,
+        audioTranscriptLength: worksheetResult?.audio_transcript?.length || 0
       });
 
       // CRITICAL FIX: Use the correct ID from backend response
