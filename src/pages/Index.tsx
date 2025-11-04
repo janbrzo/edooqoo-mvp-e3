@@ -14,6 +14,7 @@ import { PricingSection } from "@/components/PricingSection";
 import { FreeWeekBanner } from "@/components/FreeWeekBanner";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { User, GraduationCap, DollarSign } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Main Index page component that handles worksheet generation and display
@@ -38,6 +39,24 @@ const Index = () => {
     }
   };
 
+  // Fetch audio fields from database
+  const fetchAudioFields = async (worksheetId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('worksheets')
+        .select('audio_url, audio_base64_backup, audio_transcript, audio_duration, audio_voice')
+        .eq('id', worksheetId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      console.log('✅ Audio fields fetched from database:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Error fetching audio fields:', error);
+      return null;
+    }
+  };
+
   // Check for pre-selected student from student page
   useEffect(() => {
     const preSelected = sessionStorage.getItem('preSelectedStudent');
@@ -55,66 +74,80 @@ const Index = () => {
 
   // Check for restored worksheet from dashboard
   useEffect(() => {
-    const restoredWorksheet = sessionStorage.getItem('restoredWorksheet');
-    const studentName = sessionStorage.getItem('worksheetStudentName');
-    
-    if (restoredWorksheet) {
-      try {
-        const worksheet = JSON.parse(restoredWorksheet);
-        console.log('🔄 Restoring worksheet from dashboard:', worksheet);
-        
-        let parsedWorksheet = null;
-        if (worksheet.ai_response) {
-          try {
-            parsedWorksheet = JSON.parse(worksheet.ai_response);
-            console.log('✅ Successfully parsed ai_response:', parsedWorksheet);
-            
-            parsedWorksheet = deepFixTextObjects(parsedWorksheet, 'restoredWorksheet');
-            console.log('✅ Successfully fixed {text} objects in restored worksheet');
-            
-          } catch (parseError) {
-            console.error('❌ Failed to parse ai_response:', parseError);
-          }
-        }
-        
-        if (parsedWorksheet) {
-          // Copy database fields to parsedWorksheet
-          parsedWorksheet.id = worksheet.id;
-          parsedWorksheet.audio_url = worksheet.audio_url;
-          parsedWorksheet.audio_base64_backup = worksheet.audio_base64_backup;
-          parsedWorksheet.audio_transcript = worksheet.audio_transcript;
-          parsedWorksheet.audio_duration = worksheet.audio_duration;
-          parsedWorksheet.audio_voice = worksheet.audio_voice;
+    const restoreWorksheet = async () => {
+      const restoredWorksheet = sessionStorage.getItem('restoredWorksheet');
+      const studentName = sessionStorage.getItem('worksheetStudentName');
+      
+      if (restoredWorksheet) {
+        try {
+          const worksheet = JSON.parse(restoredWorksheet);
+          console.log('🔄 Restoring worksheet from dashboard:', worksheet);
           
-          worksheetState.setGeneratedWorksheet(parsedWorksheet);
-          worksheetState.setEditableWorksheet(parsedWorksheet);
-          
-          if (worksheet.form_data) {
-            const inputParamsWithStudent = {
-              ...worksheet.form_data,
-              studentId: worksheet.student_id,
-              studentName: studentName || worksheet.studentName,
-              selectedImage: worksheet.selected_image
-            };
-            worksheetState.setInputParams(inputParamsWithStudent);
-            console.log('✅ Successfully mapped form_data with student info and selectedImage:', inputParamsWithStudent);
+          let parsedWorksheet = null;
+          if (worksheet.ai_response) {
+            try {
+              parsedWorksheet = JSON.parse(worksheet.ai_response);
+              console.log('✅ Successfully parsed ai_response:', parsedWorksheet);
+              
+              parsedWorksheet = deepFixTextObjects(parsedWorksheet, 'restoredWorksheet');
+              console.log('✅ Successfully fixed {text} objects in restored worksheet');
+              
+            } catch (parseError) {
+              console.error('❌ Failed to parse ai_response:', parseError);
+            }
           }
           
-          worksheetState.setWorksheetId(worksheet.id);
-          worksheetState.setGenerationTime(worksheet.generation_time_seconds || 5);
-          worksheetState.setSourceCount(75);
+          if (parsedWorksheet) {
+            // Copy database fields to parsedWorksheet
+            parsedWorksheet.id = worksheet.id;
+            
+            // Fetch audio fields from database instead of relying on sessionStorage
+            const audioFields = await fetchAudioFields(worksheet.id);
+            if (audioFields) {
+              parsedWorksheet.audio_url = audioFields.audio_url;
+              parsedWorksheet.audio_base64_backup = audioFields.audio_base64_backup;
+              parsedWorksheet.audio_transcript = audioFields.audio_transcript;
+              parsedWorksheet.audio_duration = audioFields.audio_duration;
+              parsedWorksheet.audio_voice = audioFields.audio_voice;
+              console.log('✅ Audio fields successfully added to parsedWorksheet:', {
+                hasAudioUrl: !!audioFields.audio_url,
+                hasBackup: !!audioFields.audio_base64_backup,
+                hasTranscript: !!audioFields.audio_transcript
+              });
+            }
+            
+            worksheetState.setGeneratedWorksheet(parsedWorksheet);
+            worksheetState.setEditableWorksheet(parsedWorksheet);
+            
+            if (worksheet.form_data) {
+              const inputParamsWithStudent = {
+                ...worksheet.form_data,
+                studentId: worksheet.student_id,
+                studentName: studentName || worksheet.studentName,
+                selectedImage: worksheet.selected_image
+              };
+              worksheetState.setInputParams(inputParamsWithStudent);
+              console.log('✅ Successfully mapped form_data with student info and selectedImage:', inputParamsWithStudent);
+            }
+            
+            worksheetState.setWorksheetId(worksheet.id);
+            worksheetState.setGenerationTime(worksheet.generation_time_seconds || 5);
+            worksheetState.setSourceCount(75);
+            
+            console.log('🎉 Worksheet fully restored with student information and audio');
+          }
           
-          console.log('🎉 Worksheet fully restored with student information');
+          sessionStorage.removeItem('restoredWorksheet');
+          sessionStorage.removeItem('worksheetStudentName');
+        } catch (error) {
+          console.error('💥 Error restoring worksheet:', error);
+          sessionStorage.removeItem('restoredWorksheet');
+          sessionStorage.removeItem('worksheetStudentName');
         }
-        
-        sessionStorage.removeItem('restoredWorksheet');
-        sessionStorage.removeItem('worksheetStudentName');
-      } catch (error) {
-        console.error('💥 Error restoring worksheet:', error);
-        sessionStorage.removeItem('restoredWorksheet');
-        sessionStorage.removeItem('worksheetStudentName');
       }
-    }
+    };
+    
+    restoreWorksheet();
   }, []);
 
   // Show loading indicator while auth is initializing
