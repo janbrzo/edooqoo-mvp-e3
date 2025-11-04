@@ -255,18 +255,6 @@ export default function WorksheetDisplay({
         viewMode={viewMode}
         editableWorksheet={editableWorksheet}
         selectedImage={inputParams?.selectedImage || editableWorksheet?.selected_image}
-        selectedAudio={(() => {
-          // Reconstruct selectedAudio from editableWorksheet or inputParams
-          return (editableWorksheet?.audio_url || editableWorksheet?.audio_base64_backup)
-            ? {
-                url: editableWorksheet.audio_url || null,
-                ai_generated_audio_url: editableWorksheet.audio_url || null,
-                audio_base64_backup: editableWorksheet.audio_base64_backup || null,
-                transcript: editableWorksheet.audio_transcript || null,
-                duration: editableWorksheet.audio_duration || null,
-              }
-            : (inputParams?.selectedAudio || editableWorksheet?.selected_audio || null);
-        })()}
         isPinned={isPinned}
         onTogglePin={() => setIsPinned(!isPinned)}
         isFullScreen={isFullScreen}
