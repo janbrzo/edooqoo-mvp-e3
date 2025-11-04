@@ -15,7 +15,7 @@ import DemoWatermark from "./DemoWatermark";
 import MediaSection from "./MediaSection";
 import { ExerciseNavSidebar } from "./ExerciseNavSidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp, RotateCcw, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, RotateCcw, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface WorksheetContentProps {
@@ -363,16 +363,65 @@ export default function WorksheetContent({
         const hasMedia = inputParams?.selectedImage || editableWorksheet?.selected_image || reconstructedAudio;
         
         return hasMedia ? (
-          <MediaSection
-            selectedImage={inputParams?.selectedImage || editableWorksheet?.selected_image}
-            selectedAudio={reconstructedAudio}
-            base64Backup={editableWorksheet?.base64_backup}
-            isDownloadUnlocked={isDownloadUnlocked}
-            isPinned={isPinned}
-            onTogglePin={onTogglePin}
-            isFullScreen={isFullScreen}
-            onToggleFullScreen={onToggleFullScreen}
-          />
+          <>
+            <MediaSection
+              selectedImage={inputParams?.selectedImage || editableWorksheet?.selected_image}
+              selectedAudio={reconstructedAudio}
+              base64Backup={editableWorksheet?.base64_backup}
+              isDownloadUnlocked={isDownloadUnlocked}
+              isPinned={isPinned}
+              onTogglePin={onTogglePin}
+              isFullScreen={isFullScreen}
+              onToggleFullScreen={onToggleFullScreen}
+            />
+            
+            {/* Pinned Audio Player - small floating window in bottom right corner */}
+            {isPinned && reconstructedAudio && (
+              <div className="fixed bottom-20 right-4 z-50 bg-white border-2 border-worksheet-purple rounded-lg shadow-2xl p-4 w-80">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                    🎧 Pinned Audio Player
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onTogglePin}
+                    className="h-7 w-7 p-0 hover:bg-gray-100"
+                    title="Unpin audio player"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <audio
+                  controls
+                  src={
+                    reconstructedAudio.ai_generated_audio_url || 
+                    reconstructedAudio.url || 
+                    (reconstructedAudio.audio_base64_backup ? `data:audio/mpeg;base64,${reconstructedAudio.audio_base64_backup}` : '')
+                  }
+                  className="w-full"
+                  controlsList="nodownload"
+                  style={{ 
+                    height: '40px',
+                    backgroundColor: '#f3f4f6',
+                    borderRadius: '8px'
+                  }}
+                />
+                
+                {reconstructedAudio.transcript && (
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-xs font-medium text-gray-700 hover:text-worksheet-purple">
+                      Show Transcript
+                    </summary>
+                    <div className="mt-2 p-2 bg-gray-50 rounded-lg text-xs text-gray-700 leading-relaxed max-h-40 overflow-y-auto">
+                      {reconstructedAudio.transcript}
+                    </div>
+                  </details>
+                )}
+              </div>
+            )}
+          </>
         ) : null;
       })()}
 

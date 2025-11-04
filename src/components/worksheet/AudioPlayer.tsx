@@ -23,7 +23,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [audioDuration, setAudioDuration] = useState(duration || 0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
-  const [showQR, setShowQR] = useState(false);
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -91,88 +90,79 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         onEnded={() => setIsPlaying(false)}
       />
       
-      <div className="space-y-4">
-        {/* Header with QR Code button */}
-        <div className="flex items-center justify-between">
+      {/* Grid Layout: Audio Player (left) + QR Code (right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6">
+        {/* LEFT: Audio Player (75-80%) */}
+        <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
             🎧 Lesson Audio
             {voice && <span className="text-sm text-gray-500">({voice})</span>}
           </h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowQR(!showQR)}
-            className="text-xs"
-          >
-            {showQR ? 'Hide QR' : 'Show QR Code'}
-          </Button>
-        </div>
-
-        {/* QR Code (collapsible) */}
-        {showQR && (
-          <div className="flex flex-col items-center gap-2 p-4 bg-white rounded-lg border">
-            <QRCode value={audioUrl} size={150} />
-            <p className="text-xs text-gray-600 text-center">
-              Scan to listen on your phone
-            </p>
-          </div>
-        )}
-
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <Slider
-            value={[currentTime]}
-            max={audioDuration}
-            step={0.1}
-            onValueChange={handleSeek}
-            className="w-full"
-          />
-          <div className="flex justify-between text-xs text-gray-600">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(audioDuration)}</span>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center gap-4">
-          <Button
-            onClick={togglePlay}
-            size="lg"
-            className="bg-worksheet-purple hover:bg-worksheet-purple/90"
-          >
-            {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
-          </Button>
           
-          <div className="flex items-center gap-2 flex-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleMute}
-              className="p-2"
-            >
-              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </Button>
+          {/* Progress Bar */}
+          <div className="space-y-2">
             <Slider
-              value={[isMuted ? 0 : volume]}
-              max={1}
-              step={0.01}
-              onValueChange={handleVolumeChange}
-              className="w-24"
+              value={[currentTime]}
+              max={audioDuration}
+              step={0.1}
+              onValueChange={handleSeek}
+              className="w-full"
             />
-          </div>
-        </div>
-
-        {/* Transcript (optional) */}
-        {transcript && (
-          <details className="mt-4">
-            <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-worksheet-purple">
-              Show Transcript
-            </summary>
-            <div className="mt-2 p-4 bg-white rounded-lg border text-sm text-gray-700 leading-relaxed">
-              {transcript}
+            <div className="flex justify-between text-xs text-gray-600">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(audioDuration)}</span>
             </div>
-          </details>
-        )}
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={togglePlay}
+              size="lg"
+              className="bg-worksheet-purple hover:bg-worksheet-purple/90"
+            >
+              {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
+            </Button>
+            
+            <div className="flex items-center gap-2 flex-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleMute}
+                className="p-2"
+              >
+                {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </Button>
+              <Slider
+                value={[isMuted ? 0 : volume]}
+                max={1}
+                step={0.01}
+                onValueChange={handleVolumeChange}
+                className="w-24"
+              />
+            </div>
+          </div>
+
+          {/* Transcript (optional) */}
+          {transcript && (
+            <details className="mt-4">
+              <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-worksheet-purple">
+                Show Transcript
+              </summary>
+              <div className="mt-2 p-4 bg-white rounded-lg border text-sm text-gray-700 leading-relaxed">
+                {transcript}
+              </div>
+            </details>
+          )}
+        </div>
+        
+        {/* RIGHT: QR Code (20-25%) - always visible */}
+        <div className="flex flex-col items-center justify-center bg-white rounded-lg border-2 border-worksheet-purple p-4 shadow-sm min-w-[160px]">
+          <QRCode value={audioUrl} size={120} />
+          <p className="text-xs text-gray-600 text-center mt-2 font-medium">
+            Scan to listen on your phone
+          </p>
+        </div>
       </div>
     </div>
   );

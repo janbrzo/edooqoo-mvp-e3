@@ -474,11 +474,29 @@ serve(async (req) => {
       });
     }
 
+    // ETAP 5: Add audio fields to response (CRITICAL FIX for Problem 1)
+    if (selectedAudio) {
+      worksheetData.audio_url = selectedAudio.ai_generated_audio_url || selectedAudio.url || null;
+      worksheetData.audio_base64_backup = selectedAudio.audio_base64_backup || null;
+      worksheetData.audio_transcript = selectedAudio.transcript || null;
+      worksheetData.audio_duration = selectedAudio.duration || null;
+      worksheetData.audio_voice = selectedAudio.voice || null;
+      
+      console.log('🎵 [RESPONSE] Returning audio fields in response:', {
+        hasAudioUrl: !!worksheetData.audio_url,
+        hasTranscript: !!worksheetData.audio_transcript,
+        transcriptLength: worksheetData.audio_transcript?.length || 0,
+        duration: worksheetData.audio_duration,
+        voice: worksheetData.audio_voice
+      });
+    }
+
     // HEARTBEAT LOG: Returning successful response
     console.log("🟢 HEARTBEAT: Returning successful response to client", {
       timestamp: new Date().toISOString(),
       totalDuration: Math.round((Date.now() - generationStartTime) / 1000) + "s",
       hasSelectedImage: !!selectedImage,
+      hasAudio: !!selectedAudio,
     });
 
     return new Response(JSON.stringify(worksheetData), {

@@ -83,24 +83,45 @@ export default function MediaSection({
           <h2 className="text-xl font-semibold text-gray-800">
             Lesson Media
           </h2>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="flex items-center gap-2"
-          >
-            {isCollapsed ? (
-              <>
-                <ChevronDown className="h-4 w-4" />
-                Expand
-              </>
-            ) : (
-              <>
-                <ChevronUp className="h-4 w-4" />
-                Collapse
-              </>
+          
+          <div className="flex items-center gap-2">
+            {/* Pin Button for Audio */}
+            {onTogglePin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onTogglePin}
+                className={cn(
+                  "flex items-center gap-2",
+                  isPinned && "bg-worksheet-purple text-white hover:bg-worksheet-purple/90"
+                )}
+                title={isPinned ? "Unpin audio player" : "Pin audio player"}
+              >
+                <Pin className={cn("h-4 w-4", isPinned && "fill-current")} />
+                {isPinned ? 'Unpin' : 'Pin'}
+              </Button>
             )}
-          </Button>
+            
+            {/* Collapse Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="flex items-center gap-2"
+            >
+              {isCollapsed ? (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Expand
+                </>
+              ) : (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Collapse
+                </>
+              )}
+            </Button>
+          </div>
         </div>
         
         {!isCollapsed && (
@@ -300,9 +321,14 @@ export default function MediaSection({
         )}
         
           {displayDescription && (
-            <p className="text-sm text-gray-600 text-center italic">
-              {displayDescription}
-            </p>
+            <details className="mt-4">
+              <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-worksheet-purple text-center">
+                Show Description
+              </summary>
+              <div className="mt-2 p-4 bg-white rounded-lg border text-sm text-gray-600 text-center italic leading-relaxed">
+                {displayDescription}
+              </div>
+            </details>
           )}
         </div>
       )}
