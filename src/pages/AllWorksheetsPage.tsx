@@ -31,6 +31,8 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
+import { MediaBadges } from '@/components/worksheet/MediaBadges';
+import { hasImage, hasAudio } from '@/utils/worksheetUtils';
 
 interface WorksheetHistoryItem {
   id: string;
@@ -371,9 +373,16 @@ const AllWorksheetsPage = () => {
                           className="cursor-pointer group"
                           onClick={() => handleWorksheetOpen(worksheet)}
                         >
-                          <h3 className="font-medium text-gray-900 group-hover:text-primary transition-colors truncate">
-                            {formatWorksheetTitle(worksheet)}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium text-gray-900 group-hover:text-primary transition-colors truncate">
+                              {formatWorksheetTitle(worksheet)}
+                            </h3>
+                            <MediaBadges 
+                              hasImage={hasImage(worksheet)} 
+                              hasAudio={hasAudio(worksheet)}
+                              size="sm"
+                            />
+                          </div>
                           <p className="text-sm text-gray-500 mt-1">
                             ID: {worksheet.id.slice(0, 8)}...
                           </p>

@@ -16,6 +16,20 @@ export const shuffleArray = (array: any[]) => {
   return newArray;
 };
 
+// Check if worksheet has an image
+export const hasImage = (worksheet: any): boolean => {
+  return !!(worksheet?.form_data?.selectedImage && 
+            worksheet.form_data.selectedImage !== null &&
+            typeof worksheet.form_data.selectedImage === 'object');
+};
+
+// Check if worksheet has audio
+export const hasAudio = (worksheet: any): boolean => {
+  return !!(worksheet?.form_data?.selectedAudio && 
+            worksheet.form_data.selectedAudio !== null &&
+            typeof worksheet.form_data.selectedAudio === 'object');
+};
+
 export const createSampleVocabulary = (count: number) => {
   const terms = [
     'Abundant', 'Benevolent', 'Concurrent', 'Diligent', 'Ephemeral', 
