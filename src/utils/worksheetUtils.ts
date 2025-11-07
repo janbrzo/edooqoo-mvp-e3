@@ -18,16 +18,31 @@ export const shuffleArray = (array: any[]) => {
 
 // Check if worksheet has an image
 export const hasImage = (worksheet: any): boolean => {
-  // Check form_data first
+  // Priority 1: Check form_data first
   if (worksheet?.form_data?.selectedImage && 
       worksheet.form_data.selectedImage !== null &&
       typeof worksheet.form_data.selectedImage === 'object') {
     return true;
   }
   
-  // Check if any exercise has an image
-  if (worksheet?.exercises && Array.isArray(worksheet.exercises)) {
-    return worksheet.exercises.some((ex: any) => 
+  // Priority 2: Parse ai_response if it's a string
+  let exercises = worksheet?.exercises;
+  
+  if (!exercises && worksheet?.ai_response) {
+    try {
+      const parsed = typeof worksheet.ai_response === 'string' 
+        ? JSON.parse(worksheet.ai_response) 
+        : worksheet.ai_response;
+      exercises = parsed?.exercises;
+    } catch (e) {
+      console.warn('Failed to parse ai_response for image detection:', e);
+      return false;
+    }
+  }
+  
+  // Priority 3: Check if any exercise has an image
+  if (exercises && Array.isArray(exercises)) {
+    return exercises.some((ex: any) => 
       ex.image || ex.imageUrl || ex.image_url
     );
   }
@@ -37,14 +52,29 @@ export const hasImage = (worksheet: any): boolean => {
 
 // Check if worksheet has audio
 export const hasAudio = (worksheet: any): boolean => {
-  // Check form_data first
+  // Priority 1: Check form_data first
   if (worksheet?.form_data?.selectedAudio && 
       worksheet.form_data.selectedAudio !== null &&
       typeof worksheet.form_data.selectedAudio === 'object') {
     return true;
   }
   
-  // Check if any exercise is audio-based
+  // Priority 2: Parse ai_response if it's a string
+  let exercises = worksheet?.exercises;
+  
+  if (!exercises && worksheet?.ai_response) {
+    try {
+      const parsed = typeof worksheet.ai_response === 'string' 
+        ? JSON.parse(worksheet.ai_response) 
+        : worksheet.ai_response;
+      exercises = parsed?.exercises;
+    } catch (e) {
+      console.warn('Failed to parse ai_response for audio detection:', e);
+      return false;
+    }
+  }
+  
+  // Priority 3: Check if any exercise is audio-based
   const audioExercises = [
     'listening-comprehension',
     'answer-questions-audio',
@@ -53,8 +83,8 @@ export const hasAudio = (worksheet: any): boolean => {
     'multiple-choice-audio'
   ];
   
-  if (worksheet?.exercises && Array.isArray(worksheet.exercises)) {
-    return worksheet.exercises.some((ex: any) => 
+  if (exercises && Array.isArray(exercises)) {
+    return exercises.some((ex: any) => 
       audioExercises.includes(ex.type) || ex.audio || ex.audioUrl || ex.audio_url
     );
   }
