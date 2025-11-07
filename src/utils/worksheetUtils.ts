@@ -18,16 +18,48 @@ export const shuffleArray = (array: any[]) => {
 
 // Check if worksheet has an image
 export const hasImage = (worksheet: any): boolean => {
-  return !!(worksheet?.form_data?.selectedImage && 
-            worksheet.form_data.selectedImage !== null &&
-            typeof worksheet.form_data.selectedImage === 'object');
+  // Check form_data first
+  if (worksheet?.form_data?.selectedImage && 
+      worksheet.form_data.selectedImage !== null &&
+      typeof worksheet.form_data.selectedImage === 'object') {
+    return true;
+  }
+  
+  // Check if any exercise has an image
+  if (worksheet?.exercises && Array.isArray(worksheet.exercises)) {
+    return worksheet.exercises.some((ex: any) => 
+      ex.image || ex.imageUrl || ex.image_url
+    );
+  }
+  
+  return false;
 };
 
 // Check if worksheet has audio
 export const hasAudio = (worksheet: any): boolean => {
-  return !!(worksheet?.form_data?.selectedAudio && 
-            worksheet.form_data.selectedAudio !== null &&
-            typeof worksheet.form_data.selectedAudio === 'object');
+  // Check form_data first
+  if (worksheet?.form_data?.selectedAudio && 
+      worksheet.form_data.selectedAudio !== null &&
+      typeof worksheet.form_data.selectedAudio === 'object') {
+    return true;
+  }
+  
+  // Check if any exercise is audio-based
+  const audioExercises = [
+    'listening-comprehension',
+    'answer-questions-audio',
+    'true-false-audio',
+    'fill-in-blanks-audio',
+    'multiple-choice-audio'
+  ];
+  
+  if (worksheet?.exercises && Array.isArray(worksheet.exercises)) {
+    return worksheet.exercises.some((ex: any) => 
+      audioExercises.includes(ex.type) || ex.audio || ex.audioUrl || ex.audio_url
+    );
+  }
+  
+  return false;
 };
 
 export const createSampleVocabulary = (count: number) => {
