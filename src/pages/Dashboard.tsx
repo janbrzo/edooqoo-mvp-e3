@@ -42,18 +42,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("month");
 
-  // ✅ FIX: Add debugging for worksheets state
-  useEffect(() => {
-    console.log('📊 [Dashboard] Worksheets state updated:', {
-      count: worksheets.length,
-      loading: historyLoading,
-      firstThree: worksheets.slice(0, 3).map(w => ({
-        id: w.id,
-        title: w.title
-      }))
-    });
-  }, [worksheets, historyLoading]);
-
   // Authentication check and redirection
   useEffect(() => {
     if (!loading && !isRegisteredUser) {
