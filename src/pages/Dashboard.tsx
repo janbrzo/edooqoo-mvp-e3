@@ -54,6 +54,14 @@ const Dashboard = () => {
     });
   }, [worksheets, historyLoading]);
 
+  // ✅ FIX: Force refetch worksheets when user is ready
+  useEffect(() => {
+    if (user && !loading) {
+      console.log('🔄 [Dashboard] User ready, forcing worksheet refetch...');
+      refetchWorksheets();
+    }
+  }, [user, loading]);
+
   // Authentication check and redirection
   useEffect(() => {
     if (!loading && !isRegisteredUser) {

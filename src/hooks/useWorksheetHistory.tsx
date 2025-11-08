@@ -19,15 +19,21 @@ export const useWorksheetHistory = (studentId?: string) => {
 
   const fetchWorksheets = async () => {
     try {
+      console.log('[useWorksheetHistory] 🔄 Starting fetch...');
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       
+      console.log('[useWorksheetHistory] 👤 User:', user?.id);
+      
       if (!user) {
+        console.log('[useWorksheetHistory] ❌ No user found');
         setWorksheets([]);
         setLoading(false);
         return;
       }
 
+      console.log('[useWorksheetHistory] 📝 Building query for teacher_id:', user.id);
+      
       let query = supabase
         .from('worksheets')
         .select('id, title, created_at, form_data, ai_response, html_content, student_id, generation_time_seconds, audio_url, audio_transcript, audio_duration, audio_voice, selected_audio, selected_image, media_metadata')
@@ -36,17 +42,31 @@ export const useWorksheetHistory = (studentId?: string) => {
         .order('created_at', { ascending: false });
 
       if (studentId) {
+        console.log('[useWorksheetHistory] 🎓 Filtering by student_id:', studentId);
         query = query.eq('student_id', studentId);
       }
 
+      console.log('[useWorksheetHistory] 🚀 Executing query...');
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useWorksheetHistory] ❌ Query error:', error);
+        throw error;
+      }
+      
+      console.log('[useWorksheetHistory] ✅ Query success! Worksheets found:', data?.length || 0);
+      console.log('[useWorksheetHistory] 📊 First 3 worksheets:', data?.slice(0, 3).map(w => ({
+        id: w.id,
+        title: w.title,
+        created_at: w.created_at
+      })));
+      
       setWorksheets(data || []);
     } catch (error: any) {
-      console.error('Error fetching worksheets:', error);
+      console.error('[useWorksheetHistory] 💥 Fatal error:', error);
       setWorksheets([]);
     } finally {
+      console.log('[useWorksheetHistory] ⏹️ Fetch completed');
       setLoading(false);
     }
   };
