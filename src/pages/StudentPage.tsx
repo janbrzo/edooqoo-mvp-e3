@@ -412,31 +412,6 @@ const StudentPage = () => {
               </div>
             )}
             
-            {/* Pagination for active worksheets */}
-            {worksheets.length > 0 && totalCount > pageSize && (
-              <div className="flex items-center justify-between pt-4 border-t">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  Page {currentPage} of {Math.ceil(totalCount / pageSize)}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => p + 1)}
-                  disabled={currentPage >= Math.ceil(totalCount / pageSize)}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
-            
             {/* Pagination for deleted worksheets */}
             {deletedWorksheets.length > 0 && deletedTotalCount > pageSize && (
               <div className="flex items-center justify-between pt-4 border-t">

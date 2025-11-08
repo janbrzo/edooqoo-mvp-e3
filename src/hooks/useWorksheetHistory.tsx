@@ -52,8 +52,20 @@ export const useWorksheetHistory = (
         .from('worksheets')
         .select(selectQuery, { count: 'exact' })
         .eq('teacher_id', user.id)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false });
+        .is('deleted_at', null);
+
+      // Apply student filter BEFORE sorting and pagination (critical for correct filtering)
+      if (studentId) {
+        console.log('[useWorksheetHistory] 🎓 Filtering by student_id:', studentId);
+        if (studentId === 'unassigned') {
+          query = query.is('student_id', null);
+        } else {
+          query = query.eq('student_id', studentId);
+        }
+      }
+
+      // Apply sorting
+      query = query.order('created_at', { ascending: false });
 
       // Apply pagination for list views BEFORE lightweight limit
       if (listView) {
@@ -67,15 +79,6 @@ export const useWorksheetHistory = (
       if (lightweight && !listView) {
         console.log('[useWorksheetHistory] 📊 Applying limit(10) for recent views');
         query = query.limit(10);
-      }
-
-      if (studentId) {
-        console.log('[useWorksheetHistory] 🎓 Filtering by student_id:', studentId);
-        if (studentId === 'unassigned') {
-          query = query.is('student_id', null);  // Filter for NULL student_id
-        } else {
-          query = query.eq('student_id', studentId);  // Filter for specific student
-        }
       }
 
       console.log('[useWorksheetHistory] 🚀 Executing query...');

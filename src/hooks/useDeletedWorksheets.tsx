@@ -42,8 +42,19 @@ export const useDeletedWorksheets = (
         .from('worksheets')
         .select(selectQuery, { count: 'exact' })
         .eq('teacher_id', user.id)
-        .not('deleted_at', 'is', null) // Only fetch deleted worksheets
-        .order('deleted_at', { ascending: false });
+        .not('deleted_at', 'is', null); // Only fetch deleted worksheets
+
+      // Apply student filter BEFORE pagination (critical for correct filtering)
+      if (studentId) {
+        if (studentId === 'unassigned') {
+          query = query.is('student_id', null);
+        } else {
+          query = query.eq('student_id', studentId);
+        }
+      }
+
+      // Apply sorting
+      query = query.order('deleted_at', { ascending: false });
 
       // Apply pagination for list views BEFORE lightweight limit
       if (listView) {
@@ -55,14 +66,6 @@ export const useDeletedWorksheets = (
       // Apply limit only for Dashboard/Recent views (not for list views)
       if (lightweight && !listView) {
         query = query.limit(10);
-      }
-
-      if (studentId) {
-        if (studentId === 'unassigned') {
-          query = query.is('student_id', null);  // Filter for NULL student_id
-        } else {
-          query = query.eq('student_id', studentId);  // Filter for specific student
-        }
       }
 
       const { data, error, count } = await query as any; // Type assertion for custom select

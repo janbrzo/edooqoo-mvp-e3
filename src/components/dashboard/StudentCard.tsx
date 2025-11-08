@@ -36,7 +36,7 @@ interface StudentCardProps {
 export const StudentCard = ({ student, onViewHistory, onOpenWorksheet, onDeleteStudent }: StudentCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   // ✅ FIX: Use lightweight mode to avoid timeout
-  const { worksheets, loading, getRecentWorksheets, deleteWorksheet } = useWorksheetHistory(student.id, true);
+  const { worksheets, loading, getRecentWorksheets, deleteWorksheet, totalCount } = useWorksheetHistory(student.id, true);
   const recentWorksheets = getRecentWorksheets(3);
 
   const formatGoal = (goal: string) => {
@@ -80,7 +80,7 @@ export const StudentCard = ({ student, onViewHistory, onOpenWorksheet, onDeleteS
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
             <BookOpen className="h-4 w-4" />
-            <span>{worksheets.length} worksheets</span>
+            <span>{totalCount} worksheets</span>
           </div>
           <div className="flex space-x-2">
             <Button variant="outline" size="sm" asChild>
@@ -152,7 +152,7 @@ export const StudentCard = ({ student, onViewHistory, onOpenWorksheet, onDeleteS
                   asChild
                 >
                   <Link to={`/student/${student.id}`}>
-                    View All ({worksheets.length} total)
+                    View All ({totalCount} total)
                   </Link>
                 </Button>
               </div>
