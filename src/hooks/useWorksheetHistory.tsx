@@ -28,7 +28,7 @@ export const useWorksheetHistory = (studentId?: string) => {
 
       let query = supabase
         .from('worksheets')
-        .select('id, title, created_at, form_data, ai_response, html_content, student_id, generation_time_seconds')
+        .select('id, title, created_at, form_data, ai_response, html_content, student_id, generation_time_seconds, audio_url, audio_transcript, audio_duration, audio_voice, selected_audio, selected_image, media_metadata')
         .eq('teacher_id', user.id)
         .is('deleted_at', null) // Only fetch non-deleted worksheets
         .order('created_at', { ascending: false });

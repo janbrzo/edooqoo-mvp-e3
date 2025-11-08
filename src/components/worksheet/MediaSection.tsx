@@ -21,14 +21,12 @@ interface MediaSectionProps {
     id: string;
     url: string;
     ai_generated_audio_url?: string;
-    audio_base64_backup?: string;
     transcript?: string;
     detailedTranscript?: string;
     duration?: number;
     voice?: string;
     source?: string;
   } | null;
-  base64Backup?: string;
   isDownloadUnlocked: boolean;
   isPinned?: boolean;
   onTogglePin?: () => void;
@@ -39,7 +37,6 @@ interface MediaSectionProps {
 export default function MediaSection({
   selectedImage,
   selectedAudio,
-  base64Backup,
   isDownloadUnlocked,
   isPinned = false,
   onTogglePin,
@@ -68,13 +65,12 @@ export default function MediaSection({
     hasSelectedAudio: !!selectedAudio,
     hasUrl: !!selectedAudio?.url,
     hasAiUrl: !!selectedAudio?.ai_generated_audio_url,
-    hasBase64: !!selectedAudio?.audio_base64_backup,
     transcriptPreview: selectedAudio?.transcript?.substring(0, 50) || '[NO TRANSCRIPT]',
     duration: selectedAudio?.duration
   });
 
   // If audio is present, render audio player
-  if (selectedAudio && (selectedAudio.url || selectedAudio.ai_generated_audio_url || selectedAudio.audio_base64_backup)) {
+  if (selectedAudio && (selectedAudio.url || selectedAudio.ai_generated_audio_url)) {
     return (
       <div className="mb-8 bg-white border rounded-lg overflow-hidden shadow-sm p-6 relative">
         {!isDownloadUnlocked && <DemoWatermark />}
@@ -129,7 +125,7 @@ export default function MediaSection({
             audioUrl={
               selectedAudio.ai_generated_audio_url || 
               selectedAudio.url || 
-              (selectedAudio.audio_base64_backup ? `data:audio/mpeg;base64,${selectedAudio.audio_base64_backup}` : '')
+              ''
             }
             transcript={selectedAudio.transcript}
             duration={selectedAudio.duration}
@@ -162,16 +158,10 @@ export default function MediaSection({
       }
     }
     
-    // Priority 2: Emergency fallback to base64 from separate database column (NEW!)
-    if (base64Backup) {
-      console.log('🔄 [MEDIASECTION] Falling back to base64_backup from separate database column');
-      return base64Backup;
-    }
-    
-    // Priority 3: Last resort - url field (might be base64 from old worksheets)
+    // Priority 2: Last resort - url field (might be base64 from old worksheets)
     console.log('🔄 [MEDIASECTION] Using url field as last resort (backward compatibility)');
     return selectedImage.url || "";
-  }, [selectedImage, imageError, base64Backup]);
+  }, [selectedImage, imageError]);
 
   return (
     <>

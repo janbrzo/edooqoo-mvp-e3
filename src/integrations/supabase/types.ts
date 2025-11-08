@@ -437,12 +437,10 @@ export type Database = {
       worksheets: {
         Row: {
           ai_response: string
-          audio_base64_backup: string | null
           audio_duration: number | null
           audio_transcript: string | null
           audio_url: string | null
           audio_voice: string | null
-          base64_backup: string | null
           city: string | null
           country: string | null
           created_at: string
@@ -473,12 +471,10 @@ export type Database = {
         }
         Insert: {
           ai_response: string
-          audio_base64_backup?: string | null
           audio_duration?: number | null
           audio_transcript?: string | null
           audio_url?: string | null
           audio_voice?: string | null
-          base64_backup?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
@@ -509,12 +505,10 @@ export type Database = {
         }
         Update: {
           ai_response?: string
-          audio_base64_backup?: string | null
           audio_duration?: number | null
           audio_transcript?: string | null
           audio_url?: string | null
           audio_voice?: string | null
-          base64_backup?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
