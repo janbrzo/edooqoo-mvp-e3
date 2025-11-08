@@ -1,4 +1,3 @@
-
 export const getExpectedExerciseCount = (lessonTime: string): number => {
   if (lessonTime.includes('45')) {
     return 6;
@@ -16,16 +15,42 @@ export const shuffleArray = (array: any[]) => {
   return newArray;
 };
 
+// Picture exercise types
+const pictureExercises = [
+  'multiple-choice-picture',
+  'true-false-picture',
+  'answer-questions-picture',
+  'describe',
+  'describe-picture'
+];
+
+// Audio exercise types
+const audioExercises = [
+  'listening-comprehension',
+  'answer-questions-audio',
+  'true-false-audio',
+  'fill-in-blanks-audio',
+  'multiple-choice-audio'
+];
+
 // Check if worksheet has an image
 export const hasImage = (worksheet: any): boolean => {
-  // Priority 1: Check form_data first
+  // Priority 1: Check form_data.selectedExercises for picture exercises
+  if (worksheet?.form_data?.selectedExercises && Array.isArray(worksheet.form_data.selectedExercises)) {
+    const hasPictureExercise = worksheet.form_data.selectedExercises.some((exerciseId: string) =>
+      pictureExercises.includes(exerciseId)
+    );
+    if (hasPictureExercise) return true;
+  }
+  
+  // Priority 2: Check form_data.selectedImage
   if (worksheet?.form_data?.selectedImage && 
       worksheet.form_data.selectedImage !== null &&
       typeof worksheet.form_data.selectedImage === 'object') {
     return true;
   }
   
-  // Priority 2: Parse ai_response if it's a string
+  // Priority 3: Parse ai_response if it's a string
   let exercises = worksheet?.exercises;
   
   if (!exercises && worksheet?.ai_response) {
@@ -40,10 +65,10 @@ export const hasImage = (worksheet: any): boolean => {
     }
   }
   
-  // Priority 3: Check if any exercise has an image
+  // Priority 4: Check if any exercise has an image or is a picture exercise type
   if (exercises && Array.isArray(exercises)) {
     return exercises.some((ex: any) => 
-      ex.image || ex.imageUrl || ex.image_url
+      pictureExercises.includes(ex.type) || ex.image || ex.imageUrl || ex.image_url
     );
   }
   
@@ -52,14 +77,22 @@ export const hasImage = (worksheet: any): boolean => {
 
 // Check if worksheet has audio
 export const hasAudio = (worksheet: any): boolean => {
-  // Priority 1: Check form_data first
+  // Priority 1: Check form_data.selectedExercises for audio exercises
+  if (worksheet?.form_data?.selectedExercises && Array.isArray(worksheet.form_data.selectedExercises)) {
+    const hasAudioExercise = worksheet.form_data.selectedExercises.some((exerciseId: string) =>
+      audioExercises.includes(exerciseId)
+    );
+    if (hasAudioExercise) return true;
+  }
+  
+  // Priority 2: Check form_data.selectedAudio
   if (worksheet?.form_data?.selectedAudio && 
       worksheet.form_data.selectedAudio !== null &&
       typeof worksheet.form_data.selectedAudio === 'object') {
     return true;
   }
   
-  // Priority 2: Parse ai_response if it's a string
+  // Priority 3: Parse ai_response if it's a string
   let exercises = worksheet?.exercises;
   
   if (!exercises && worksheet?.ai_response) {
@@ -74,15 +107,7 @@ export const hasAudio = (worksheet: any): boolean => {
     }
   }
   
-  // Priority 3: Check if any exercise is audio-based
-  const audioExercises = [
-    'listening-comprehension',
-    'answer-questions-audio',
-    'true-false-audio',
-    'fill-in-blanks-audio',
-    'multiple-choice-audio'
-  ];
-  
+  // Priority 4: Check if any exercise is audio-based
   if (exercises && Array.isArray(exercises)) {
     return exercises.some((ex: any) => 
       audioExercises.includes(ex.type) || ex.audio || ex.audioUrl || ex.audio_url
