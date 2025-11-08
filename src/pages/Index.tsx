@@ -79,6 +79,15 @@ const Index = () => {
         
         if (parsedWorksheet) {
           parsedWorksheet.id = worksheet.id;
+          
+          // ✅ FIX: Add audio and image fields from database to editableWorksheet
+          parsedWorksheet.audio_url = worksheet.audio_url;
+          parsedWorksheet.audio_transcript = worksheet.audio_transcript;
+          parsedWorksheet.audio_duration = worksheet.audio_duration;
+          parsedWorksheet.audio_voice = worksheet.audio_voice;
+          parsedWorksheet.selected_audio = worksheet.selected_audio;
+          parsedWorksheet.selected_image = worksheet.selected_image;
+          
           worksheetState.setGeneratedWorksheet(parsedWorksheet);
           worksheetState.setEditableWorksheet(parsedWorksheet);
           
@@ -87,10 +96,11 @@ const Index = () => {
               ...worksheet.form_data,
               studentId: worksheet.student_id,
               studentName: studentName || worksheet.studentName,
-              selectedImage: worksheet.selected_image
+              selectedImage: worksheet.selected_image,
+              selectedAudio: worksheet.selected_audio  // ✅ FIX: Add audio mapping
             };
             worksheetState.setInputParams(inputParamsWithStudent);
-            console.log('✅ Successfully mapped form_data with student info and selectedImage:', inputParamsWithStudent);
+            console.log('✅ Successfully mapped form_data with student info, selectedImage and selectedAudio:', inputParamsWithStudent);
           }
           
           worksheetState.setWorksheetId(worksheet.id);
