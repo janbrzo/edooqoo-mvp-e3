@@ -86,6 +86,41 @@ export default function WorksheetDisplay({
   const { trackDownloadAttempt } = useDownloadTracking(userId);
   const { trackPaymentButtonClick } = usePaymentTracking(userId);
   
+  // CRITICAL FIX: Reconstruct selectedAudio/selectedImage from database fields
+  // This fixes Problem 2 - media not loading from Dashboard
+  useEffect(() => {
+    if (!editableWorksheet || !worksheetId) return;
+    
+    let needsUpdate = false;
+    const updatedWorksheet = { ...editableWorksheet };
+    
+    // Reconstruct selectedAudio if NULL but audio_url exists
+    if (!updatedWorksheet.selected_audio && updatedWorksheet.audio_url) {
+      console.log('🎵 Reconstructing selectedAudio from database fields');
+      updatedWorksheet.selected_audio = {
+        url: updatedWorksheet.audio_url,
+        ai_generated_audio_url: updatedWorksheet.audio_url,
+        transcript: updatedWorksheet.audio_transcript || null,
+        duration: updatedWorksheet.audio_duration || null,
+        voice: updatedWorksheet.audio_voice || null,
+        source: 'database-reconstructed'
+      };
+      needsUpdate = true;
+    }
+    
+    // Reconstruct selectedImage if NULL but form_data has selectedImage
+    if (!updatedWorksheet.selected_image && updatedWorksheet.form_data?.selectedImage) {
+      console.log('🖼️ Reconstructing selectedImage from form_data');
+      updatedWorksheet.selected_image = updatedWorksheet.form_data.selectedImage;
+      needsUpdate = true;
+    }
+    
+    if (needsUpdate) {
+      console.log('✅ Media reconstructed successfully');
+      setEditableWorksheet(updatedWorksheet);
+    }
+  }, [worksheetId]); // Only run when worksheet changes
+  
   useEffect(() => {
     validateWorksheetStructure();
     
