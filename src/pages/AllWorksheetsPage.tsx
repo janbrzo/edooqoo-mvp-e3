@@ -50,11 +50,18 @@ type Student = Tables<'students'>;
 
 const AllWorksheetsPage = () => {
   const { user, loading: authLoading, isRegisteredUser } = useAuthFlow();
-  // ✅ FIX: Use listView mode - fetches ALL worksheets but skips ai_response & html_content
-  const { worksheets, loading, deleteWorksheet, restoreWorksheet } = useWorksheetHistory(undefined, false, true);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  
+  // ✅ Server-side pagination with listView mode
+  const { worksheets, loading, deleteWorksheet, restoreWorksheet, totalCount, refetch: refetchWorksheets } = 
+    useWorksheetHistory(undefined, false, true, currentPage, itemsPerPage);
   const { students } = useStudents();
-  // ✅ FIX: Use listView mode for deleted worksheets too
-  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted } = useDeletedWorksheets(undefined, false, true);
+  // ✅ Server-side pagination for deleted worksheets
+  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted, totalCount: deletedTotalCount, refetch: refetchDeleted } = 
+    useDeletedWorksheets(undefined, false, true, currentPage, itemsPerPage);
   const navigate = useNavigate();
 
   // State for filtering and sorting
@@ -64,10 +71,6 @@ const AllWorksheetsPage = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedWorksheets, setSelectedWorksheets] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'active' | 'deleted'>('active');
-  
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
 
   // Authentication check
   useEffect(() => {
@@ -75,6 +78,20 @@ const AllWorksheetsPage = () => {
       navigate('/');
     }
   }, [authLoading, isRegisteredUser, navigate]);
+
+  // Refetch when page or tab changes
+  useEffect(() => {
+    if (activeTab === 'active') {
+      refetchWorksheets();
+    } else {
+      refetchDeleted();
+    }
+  }, [currentPage, activeTab]);
+
+  // Reset to page 1 when changing tabs or filters
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, selectedStudent]);
 
   // Helper functions
   const getStudentName = (studentId: string | null) => {
@@ -130,10 +147,10 @@ const AllWorksheetsPage = () => {
       return sortOrder === 'desc' ? -comparison : comparison;
     });
 
-  // Pagination
-  const totalPages = Math.ceil(filteredAndSortedWorksheets.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedWorksheets = filteredAndSortedWorksheets.slice(startIndex, startIndex + itemsPerPage);
+  // Server-side pagination - worksheets are already paginated from the hook
+  const currentTotalCount = activeTab === 'active' ? totalCount : deletedTotalCount;
+  const totalPages = Math.ceil(currentTotalCount / itemsPerPage);
+  const paginatedWorksheets = filteredAndSortedWorksheets; // Already paginated from server
 
   // Selection handlers
   const handleSelectAll = (checked: boolean) => {
@@ -480,8 +497,8 @@ const AllWorksheetsPage = () => {
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-6">
             <p className="text-sm text-gray-700">
-              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredAndSortedWorksheets.length)} of{' '}
-              {filteredAndSortedWorksheets.length} results
+              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, currentTotalCount)} of{' '}
+              {currentTotalCount} results
             </p>
             <div className="flex items-center gap-2">
               <Button

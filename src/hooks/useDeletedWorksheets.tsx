@@ -13,13 +13,20 @@ interface DeletedWorksheetItem {
   generation_time_seconds?: number;
 }
 
-export const useDeletedWorksheets = (studentId?: string, lightweight: boolean = false, listView: boolean = false) => {
+export const useDeletedWorksheets = (
+  studentId?: string, 
+  lightweight: boolean = false, 
+  listView: boolean = false,
+  page: number = 1,
+  pageSize: number = 20
+) => {
   const [deletedWorksheets, setDeletedWorksheets] = useState<DeletedWorksheetItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     fetchDeletedWorksheets();
-  }, [studentId]);
+  }, [studentId, page, pageSize]);
 
   const fetchDeletedWorksheets = async () => {
     try {
@@ -33,13 +40,20 @@ export const useDeletedWorksheets = (studentId?: string, lightweight: boolean = 
 
       let query = supabase
         .from('worksheets')
-        .select(selectQuery)
+        .select(selectQuery, { count: 'exact' })
         .eq('teacher_id', user.id)
         .not('deleted_at', 'is', null) // Only fetch deleted worksheets
         .order('deleted_at', { ascending: false });
 
-      // Apply limit only for Dashboard/Recent views
-      if (lightweight) {
+      // Apply pagination for list views BEFORE lightweight limit
+      if (listView) {
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
+        query = query.range(from, to);
+      }
+
+      // Apply limit only for Dashboard/Recent views (not for list views)
+      if (lightweight && !listView) {
         query = query.limit(10);
       }
 
@@ -47,10 +61,11 @@ export const useDeletedWorksheets = (studentId?: string, lightweight: boolean = 
         query = query.eq('student_id', studentId);
       }
 
-      const { data, error } = await query as any; // Type assertion for custom select
+      const { data, error, count } = await query as any; // Type assertion for custom select
 
       if (error) throw error;
       setDeletedWorksheets(data || []);
+      setTotalCount(count || 0);
     } catch (error: any) {
       console.error('Error fetching deleted worksheets:', error);
     } finally {
@@ -86,6 +101,7 @@ export const useDeletedWorksheets = (studentId?: string, lightweight: boolean = 
     deletedWorksheets,
     loading,
     refetch: fetchDeletedWorksheets,
-    restoreWorksheet
+    restoreWorksheet,
+    totalCount
   };
 };

@@ -13,9 +13,16 @@ interface WorksheetHistoryItem {
   generation_time_seconds?: number;
 }
 
-export const useWorksheetHistory = (studentId?: string, lightweight: boolean = false, listView: boolean = false) => {
+export const useWorksheetHistory = (
+  studentId?: string, 
+  lightweight: boolean = false, 
+  listView: boolean = false,
+  page: number = 1,
+  pageSize: number = 20
+) => {
   const [worksheets, setWorksheets] = useState<WorksheetHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
 
   const fetchWorksheets = async () => {
     try {
@@ -43,13 +50,21 @@ export const useWorksheetHistory = (studentId?: string, lightweight: boolean = f
       
       let query = supabase
         .from('worksheets')
-        .select(selectQuery)
+        .select(selectQuery, { count: 'exact' })
         .eq('teacher_id', user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
+      // Apply pagination for list views BEFORE lightweight limit
+      if (listView) {
+        const from = (page - 1) * pageSize;
+        const to = from + pageSize - 1;
+        query = query.range(from, to);
+        console.log('[useWorksheetHistory] 📄 Applying pagination:', { page, pageSize, from, to });
+      }
+
       // Apply limit only for Dashboard/Recent views (not for AllWorksheetsPage)
-      if (lightweight) {
+      if (lightweight && !listView) {
         console.log('[useWorksheetHistory] 📊 Applying limit(10) for recent views');
         query = query.limit(10);
       }
@@ -60,7 +75,7 @@ export const useWorksheetHistory = (studentId?: string, lightweight: boolean = f
       }
 
       console.log('[useWorksheetHistory] 🚀 Executing query...');
-      const { data, error } = await query as any; // Type assertion for custom select
+      const { data, error, count } = await query as any; // Type assertion for custom select
 
       if (error) {
         console.error('[useWorksheetHistory] ❌ Query error:', error);
@@ -68,6 +83,7 @@ export const useWorksheetHistory = (studentId?: string, lightweight: boolean = f
       }
       
       console.log('[useWorksheetHistory] ✅ Query success! Worksheets found:', data?.length || 0);
+      console.log('[useWorksheetHistory] 📊 Total count:', count);
       console.log('[useWorksheetHistory] 📊 First 3 worksheets:', data?.slice(0, 3).map(w => ({
         id: w.id,
         title: w.title,
@@ -75,6 +91,7 @@ export const useWorksheetHistory = (studentId?: string, lightweight: boolean = f
       })));
       
       setWorksheets(data || []);
+      setTotalCount(count || 0);
     } catch (error: any) {
       console.error('[useWorksheetHistory] 💥 Fatal error:', error);
       setWorksheets([]);
@@ -86,7 +103,7 @@ export const useWorksheetHistory = (studentId?: string, lightweight: boolean = f
 
   useEffect(() => {
     fetchWorksheets();
-  }, [studentId]);
+  }, [studentId, page, pageSize]);
 
   const refetchWorksheets = async () => {
     setLoading(true);
@@ -150,6 +167,7 @@ export const useWorksheetHistory = (studentId?: string, lightweight: boolean = f
     getRecentWorksheets,
     refetch: refetchWorksheets,
     deleteWorksheet,
-    restoreWorksheet
+    restoreWorksheet,
+    totalCount
   };
 };

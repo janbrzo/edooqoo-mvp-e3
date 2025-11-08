@@ -50,7 +50,7 @@ export const hasImage = (worksheet: any): boolean => {
     return true;
   }
   
-  // Priority 3: Parse ai_response if it's a string
+  // Priority 3: Parse ai_response if it's a string (skip if not available)
   let exercises = worksheet?.exercises;
   
   if (!exercises && worksheet?.ai_response) {
@@ -63,6 +63,9 @@ export const hasImage = (worksheet: any): boolean => {
       console.warn('Failed to parse ai_response for image detection:', e);
       return false;
     }
+  } else if (!exercises && !worksheet?.ai_response) {
+    // In listView mode, ai_response is not loaded, skip this check
+    return false;
   }
   
   // Priority 4: Check if any exercise has an image or is a picture exercise type
@@ -92,7 +95,7 @@ export const hasAudio = (worksheet: any): boolean => {
     return true;
   }
   
-  // Priority 3: Parse ai_response if it's a string
+  // Priority 3: Parse ai_response if it's a string (skip if not available)
   let exercises = worksheet?.exercises;
   
   if (!exercises && worksheet?.ai_response) {
@@ -105,6 +108,9 @@ export const hasAudio = (worksheet: any): boolean => {
       console.warn('Failed to parse ai_response for audio detection:', e);
       return false;
     }
+  } else if (!exercises && !worksheet?.ai_response) {
+    // In listView mode, ai_response is not loaded, skip this check
+    return false;
   }
   
   // Priority 4: Check if any exercise is audio-based
