@@ -188,20 +188,22 @@ FORMAT:
       console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload error, falling back to base64:`, uploadError.message);
     }
 
+    // ✅ FIX: Return R2 URL in url/ai_generated_url + base64 in separate backup field
     return new Response(
       JSON.stringify({
         success: true,
         image: {
           id: `vertex-ai-${Date.now()}`,
-          url: finalImageUrl,
-          ai_generated_url: finalImageUrl,
+          url: finalImageUrl, // ✅ R2 URL (or base64 if R2 upload failed)
+          ai_generated_url: finalImageUrl, // ✅ R2 URL (or base64 if R2 upload failed)
+          base64_backup: imageUrl, // ✅ NEW: Always base64 for emergency fallback
           thumbnail: finalImageUrl,
           description: detailedDescription.substring(0, 100) + "...",
-          detailedDescription: detailedDescription,
+          detailedDescription: detailedDescription, // ✅ FULL TEXT (not truncated!)
           photographer: "AI Generated",
           photographerUrl: "https://cloud.google.com/vertex-ai/generative-ai/docs/image/generate-images",
-          source: "vertex-ai-generated",
-          storageLocation: imageSource,
+          source: "vertex-ai-generated", // ✅ ALWAYS this for AI images
+          storageLocation: imageSource, // ✅ "r2-cloudflare" or "vertex-ai-base64"
           generationPrompt: imagePrompt,
           topic: topic,
           englishLevel: englishLevel,

@@ -347,10 +347,11 @@ export default function WorksheetContent({
       {/* Media Section - displays image or audio for media-enhanced exercises */}
       {(() => {
         // Reconstruct selectedAudio from worksheet database fields if needed
-        const reconstructedAudio = (editableWorksheet?.audio_url)
+        const reconstructedAudio = (editableWorksheet?.audio_url || editableWorksheet?.audio_base64_backup)
           ? {
               url: editableWorksheet.audio_url || null,
               ai_generated_audio_url: editableWorksheet.audio_url || null,
+              audio_base64_backup: editableWorksheet.audio_base64_backup || null,
               transcript: editableWorksheet.audio_transcript || null,
               duration: editableWorksheet.audio_duration || null,
               voice: editableWorksheet.audio_voice || null,
@@ -366,6 +367,7 @@ export default function WorksheetContent({
             <MediaSection
               selectedImage={inputParams?.selectedImage || editableWorksheet?.selected_image}
               selectedAudio={reconstructedAudio}
+              base64Backup={editableWorksheet?.base64_backup}
               isDownloadUnlocked={isDownloadUnlocked}
               isPinned={isPinned}
               onTogglePin={onTogglePin}
@@ -396,7 +398,7 @@ export default function WorksheetContent({
                   src={
                     reconstructedAudio.ai_generated_audio_url || 
                     reconstructedAudio.url || 
-                    ''
+                    (reconstructedAudio.audio_base64_backup ? `data:audio/mpeg;base64,${reconstructedAudio.audio_base64_backup}` : '')
                   }
                   className="w-full"
                   controlsList="nodownload"

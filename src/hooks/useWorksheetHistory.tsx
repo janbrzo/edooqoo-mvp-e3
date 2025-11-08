@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface WorksheetHistoryItem {
@@ -17,6 +17,10 @@ export const useWorksheetHistory = (studentId?: string) => {
   const [worksheets, setWorksheets] = useState<WorksheetHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    fetchWorksheets();
+  }, [studentId]);
+
   const fetchWorksheets = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -24,9 +28,9 @@ export const useWorksheetHistory = (studentId?: string) => {
 
       let query = supabase
         .from('worksheets')
-        .select('id, title, created_at, form_data, ai_response, html_content, student_id, generation_time_seconds, audio_url, audio_transcript, audio_duration, audio_voice, selected_audio, selected_image, media_metadata')
+        .select('id, title, created_at, form_data, ai_response, html_content, student_id, generation_time_seconds')
         .eq('teacher_id', user.id)
-        .is('deleted_at', null)
+        .is('deleted_at', null) // Only fetch non-deleted worksheets
         .order('created_at', { ascending: false });
 
       if (studentId) {
@@ -42,15 +46,6 @@ export const useWorksheetHistory = (studentId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchWorksheets();
-  }, [studentId]);
-
-  const refetchWorksheets = async () => {
-    setLoading(true);
-    await fetchWorksheets();
   };
 
   const deleteWorksheet = async (worksheetId: string) => {
@@ -108,7 +103,7 @@ export const useWorksheetHistory = (studentId?: string) => {
     worksheets,
     loading,
     getRecentWorksheets,
-    refetch: refetchWorksheets,
+    refetch: fetchWorksheets,
     deleteWorksheet,
     restoreWorksheet
   };
