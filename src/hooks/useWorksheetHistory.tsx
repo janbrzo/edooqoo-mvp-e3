@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface WorksheetHistoryItem {
@@ -17,7 +17,7 @@ export const useWorksheetHistory = (studentId?: string) => {
   const [worksheets, setWorksheets] = useState<WorksheetHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchWorksheets = useCallback(async () => {
+  const fetchWorksheets = async () => {
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -49,11 +49,11 @@ export const useWorksheetHistory = (studentId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [studentId]);
+  };
 
   useEffect(() => {
     fetchWorksheets();
-  }, [fetchWorksheets]);
+  }, [studentId]);
 
   const refetchWorksheets = async () => {
     setLoading(true);
