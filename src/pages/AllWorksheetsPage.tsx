@@ -49,9 +49,11 @@ type Student = Tables<'students'>;
 
 const AllWorksheetsPage = () => {
   const { user, loading: authLoading, isRegisteredUser } = useAuthFlow();
-  const { worksheets, loading, deleteWorksheet, restoreWorksheet } = useWorksheetHistory();
+  // ✅ FIX: Use lightweight mode to avoid timeout
+  const { worksheets, loading, deleteWorksheet, restoreWorksheet } = useWorksheetHistory(undefined, true);
   const { students } = useStudents();
-  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted } = useDeletedWorksheets();
+  // ✅ FIX: Use lightweight mode for deleted worksheets too
+  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted } = useDeletedWorksheets(undefined, true);
   const navigate = useNavigate();
 
   // State for filtering and sorting

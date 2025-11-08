@@ -13,7 +13,7 @@ interface DeletedWorksheetItem {
   generation_time_seconds?: number;
 }
 
-export const useDeletedWorksheets = (studentId?: string) => {
+export const useDeletedWorksheets = (studentId?: string, lightweight: boolean = false) => {
   const [deletedWorksheets, setDeletedWorksheets] = useState<DeletedWorksheetItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,10 +28,15 @@ export const useDeletedWorksheets = (studentId?: string) => {
 
       let query = supabase
         .from('worksheets')
-        .select('id, title, created_at, deleted_at, form_data, ai_response, html_content, student_id, generation_time_seconds')
+        .select('*')
         .eq('teacher_id', user.id)
         .not('deleted_at', 'is', null) // Only fetch deleted worksheets
         .order('deleted_at', { ascending: false });
+
+      // ✅ FIX: Limit results in lightweight mode to avoid timeout
+      if (lightweight) {
+        query = query.limit(10);
+      }
 
       if (studentId) {
         query = query.eq('student_id', studentId);

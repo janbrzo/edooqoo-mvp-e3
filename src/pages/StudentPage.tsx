@@ -31,8 +31,9 @@ const StudentPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { students, updateStudent, deleteStudent } = useStudents();
-  const { worksheets, loading, deleteWorksheet, refetch: refetchWorksheets, restoreWorksheet } = useWorksheetHistory(id || '');
-  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted } = useDeletedWorksheets(id || '');
+  // ✅ FIX: Use lightweight mode to avoid timeout
+  const { worksheets, loading, deleteWorksheet, refetch: refetchWorksheets, restoreWorksheet } = useWorksheetHistory(id || '', true);
+  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted } = useDeletedWorksheets(id || '', true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const student = students.find(s => s.id === id);

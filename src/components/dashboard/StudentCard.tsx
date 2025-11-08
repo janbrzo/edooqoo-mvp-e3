@@ -35,7 +35,8 @@ interface StudentCardProps {
 
 export const StudentCard = ({ student, onViewHistory, onOpenWorksheet, onDeleteStudent }: StudentCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { worksheets, loading, getRecentWorksheets, deleteWorksheet } = useWorksheetHistory(student.id);
+  // ✅ FIX: Use lightweight mode to avoid timeout
+  const { worksheets, loading, getRecentWorksheets, deleteWorksheet } = useWorksheetHistory(student.id, true);
   const recentWorksheets = getRecentWorksheets(3);
 
   const formatGoal = (goal: string) => {
