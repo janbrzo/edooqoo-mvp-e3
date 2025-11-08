@@ -29,8 +29,6 @@ import {
 import { useWorksheetStats } from "@/hooks/useWorksheetStats";
 import { DeleteWorksheetButton } from "@/components/DeleteWorksheetButton";
 import { FreeWeekBanner } from "@/components/FreeWeekBanner";
-import { MediaBadges } from '@/components/worksheet/MediaBadges';
-import { hasImage, hasAudio } from '@/utils/worksheetUtils';
 
 const Dashboard = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
@@ -318,11 +316,6 @@ const Dashboard = () => {
                               <span className="text-primary shrink-0">
                                 for {studentName || "Unassigned"}
                               </span>
-                              <MediaBadges 
-                                hasImage={hasImage(worksheet)} 
-                                hasAudio={hasAudio(worksheet)}
-                                size="sm"
-                              />
                             </div>
                             <div className="flex items-center gap-2 ml-2 pointer-events-auto">
                               <StudentSelector
