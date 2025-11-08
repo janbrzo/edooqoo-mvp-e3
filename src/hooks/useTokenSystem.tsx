@@ -30,12 +30,22 @@ export const useTokenSystem = (userId?: string | null) => {
   const checkUserStatus = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const anonymous = user?.is_anonymous === true || !user?.email;
+      
+      // FIXED: User is anonymous ONLY if explicitly marked as anonymous
+      // If user has an email, they're NOT anonymous (registered user)
+      let anonymous = user?.is_anonymous === true;
+      
+      // Additional check: If user has email, they're definitely NOT anonymous
+      if (user?.email && user.email.trim() !== '') {
+        anonymous = false;
+      }
+      
       console.log('🔍 User status check:', {
         hasUser: !!user,
         userId: user?.id,
         isAnonymous: user?.is_anonymous,
         hasEmail: !!user?.email,
+        email: user?.email,
         finalAnonymousStatus: anonymous
       });
       setIsAnonymousUser(anonymous);

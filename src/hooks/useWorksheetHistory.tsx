@@ -18,33 +18,63 @@ export const useWorksheetHistory = (studentId?: string) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('🔍 [useWorksheetHistory] Effect triggered:', { studentId });
     fetchWorksheets();
   }, [studentId]);
 
   const fetchWorksheets = async () => {
+    console.log('🚀 [useWorksheetHistory] Starting fetch...', { studentId });
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      console.log('👤 [useWorksheetHistory] User check:', { 
+        hasUser: !!user, 
+        userId: user?.id 
+      });
+      
+      if (!user) {
+        console.warn('⚠️ [useWorksheetHistory] No user found, aborting fetch');
+        return;
+      }
 
       let query = supabase
         .from('worksheets')
-        .select('id, title, created_at, form_data, ai_response, html_content, student_id, generation_time_seconds')
+        .select('id, title, created_at, form_data, ai_response, html_content, student_id, generation_time_seconds, audio_url, audio_transcript, audio_duration, audio_voice, selected_audio, selected_image, media_metadata')
         .eq('teacher_id', user.id)
-        .is('deleted_at', null) // Only fetch non-deleted worksheets
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (studentId) {
+        console.log('🎯 [useWorksheetHistory] Filtering by student:', studentId);
         query = query.eq('student_id', studentId);
+      } else {
+        console.log('📋 [useWorksheetHistory] Fetching ALL worksheets (no student filter)');
       }
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [useWorksheetHistory] Query error:', error);
+        throw error;
+      }
+      
+      console.log('📋 [useWorksheetHistory] Worksheets fetched:', {
+        count: data?.length || 0,
+        studentId: studentId || 'all',
+        firstThree: data?.slice(0, 3).map(w => ({ 
+          id: w.id, 
+          title: w.title, 
+          created_at: w.created_at,
+          student_id: w.student_id
+        }))
+      });
+      
       setWorksheets(data || []);
+      console.log('✅ [useWorksheetHistory] State updated with', data?.length || 0, 'worksheets');
     } catch (error: any) {
-      console.error('Error fetching worksheets:', error);
+      console.error('💥 [useWorksheetHistory] Error fetching worksheets:', error);
     } finally {
       setLoading(false);
+      console.log('🏁 [useWorksheetHistory] Fetch completed');
     }
   };
 

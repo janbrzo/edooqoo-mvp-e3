@@ -401,13 +401,6 @@ serve(async (req) => {
         const fullPrompt = `SYSTEM MESSAGE:\n${systemMessage}\n\nUSER MESSAGE:\n${sanitizedPrompt}`;
         const sanitizedFormData = formData ? JSON.parse(JSON.stringify(formData)) : {};
 
-        // ✅ Separate base64 from selected_image to keep JSONB small
-        const base64Backup = selectedImage?.base64_backup;
-        const selectedImageWithoutBase64 = selectedImage ? {
-          ...selectedImage,
-          base64_backup: undefined // Remove base64 from JSONB
-        } : null;
-
         const { data: worksheet, error: worksheetError } = await supabase
           .from("worksheets")
           .insert({
@@ -419,13 +412,12 @@ serve(async (req) => {
             teacher_id: userId || null,
             teacher_email: teacherEmail,
             student_id: studentId || null,
-            selected_image: selectedImageWithoutBase64,
-            base64_backup: base64Backup || null,
+            selected_image: selectedImage,
+            selected_audio: selectedAudio,
             audio_url: selectedAudio?.ai_generated_audio_url || selectedAudio?.url || null,
             audio_transcript: selectedAudio?.transcript || null,
             audio_duration: selectedAudio?.duration || null,
             audio_voice: selectedAudio?.voice || null,
-            audio_base64_backup: selectedAudio?.audio_base64_backup || null,
             ip_address: ip,
             status: "created",
             title: worksheetData.title?.substring(0, 255) || "Generated Worksheet",
@@ -474,13 +466,13 @@ serve(async (req) => {
       });
     }
 
-    // ETAP 5: Add audio fields to response (CRITICAL FIX for Problem 1)
+    // ETAP 5: Add audio fields to response
     if (selectedAudio) {
       worksheetData.audio_url = selectedAudio.ai_generated_audio_url || selectedAudio.url || null;
-      worksheetData.audio_base64_backup = selectedAudio.audio_base64_backup || null;
       worksheetData.audio_transcript = selectedAudio.transcript || null;
       worksheetData.audio_duration = selectedAudio.duration || null;
       worksheetData.audio_voice = selectedAudio.voice || null;
+      worksheetData.selected_audio = selectedAudio;
       
       console.log('🎵 [RESPONSE] Returning audio fields in response:', {
         hasAudioUrl: !!worksheetData.audio_url,
