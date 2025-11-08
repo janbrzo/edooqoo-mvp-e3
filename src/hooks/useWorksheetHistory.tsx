@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface WorksheetHistoryItem {
@@ -17,12 +17,7 @@ export const useWorksheetHistory = (studentId?: string) => {
   const [worksheets, setWorksheets] = useState<WorksheetHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    console.log('🔍 [useWorksheetHistory] Effect triggered:', { studentId });
-    fetchWorksheets();
-  }, [studentId]);
-
-  const fetchWorksheets = async () => {
+  const fetchWorksheets = useCallback(async () => {
     console.log('🚀 [useWorksheetHistory] Starting fetch...', { studentId });
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -76,7 +71,12 @@ export const useWorksheetHistory = (studentId?: string) => {
       setLoading(false);
       console.log('🏁 [useWorksheetHistory] Fetch completed');
     }
-  };
+  }, [studentId]);
+
+  useEffect(() => {
+    console.log('🔍 [useWorksheetHistory] Effect triggered:', { studentId });
+    fetchWorksheets();
+  }, [studentId, fetchWorksheets]);
 
   const deleteWorksheet = async (worksheetId: string) => {
     try {
