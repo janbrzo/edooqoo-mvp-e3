@@ -238,11 +238,11 @@ export const useOnboardingProgress = () => {
       )
       .subscribe();
 
-    // ULTRA-FAST: 200ms periodic check for INSTANT responsiveness
+    // Periodic check every 10 seconds to reduce database load
     intervalRef.current = setInterval(() => {
-      console.log('[Onboarding] Periodic check triggered - immediate mode');
+      console.log('[Onboarding] Periodic check triggered');
       checkSteps();
-    }, 200);  // ULTRA-SHORTENED: 200ms for INSTANT response after adding student
+    }, 10000);  // 10 seconds interval to improve performance (reduced from 200ms)
     
     // ADDED: Force refresh on window focus for better responsiveness
     const handleWindowFocus = () => {
