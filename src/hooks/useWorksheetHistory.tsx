@@ -13,7 +13,7 @@ interface WorksheetHistoryItem {
   generation_time_seconds?: number;
 }
 
-export const useWorksheetHistory = (studentId?: string) => {
+export const useWorksheetHistory = (studentId?: string, lightweight: boolean = false) => {
   const [worksheets, setWorksheets] = useState<WorksheetHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,13 +33,20 @@ export const useWorksheetHistory = (studentId?: string) => {
       }
 
       console.log('[useWorksheetHistory] 📝 Building query for teacher_id:', user.id);
+      console.log('[useWorksheetHistory] 🎯 Lightweight mode:', lightweight);
       
       let query = supabase
         .from('worksheets')
-        .select('id, title, created_at, form_data, ai_response, html_content, student_id, generation_time_seconds, audio_url, audio_transcript, audio_duration, audio_voice, selected_audio, selected_image, media_metadata')
+        .select('*')
         .eq('teacher_id', user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
+
+      // ✅ FIX: Limit results in lightweight mode to avoid timeout
+      if (lightweight) {
+        console.log('[useWorksheetHistory] 📊 Applying limit(10) for lightweight mode');
+        query = query.limit(10);
+      }
 
       if (studentId) {
         console.log('[useWorksheetHistory] 🎓 Filtering by student_id:', studentId);

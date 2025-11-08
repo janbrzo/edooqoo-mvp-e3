@@ -36,7 +36,8 @@ const Dashboard = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
   const { tokenLeft, profile } = useTokenSystem(user?.id);
   const { students, loading: studentsLoading, refetch: refetchStudents, deleteStudent } = useStudents();
-  const { worksheets, loading: historyLoading, refetch: refetchWorksheets, deleteWorksheet } = useWorksheetHistory();
+  // ✅ FIX: Use lightweight mode to avoid timeout - don't load ai_response & html_content
+  const { worksheets, loading: historyLoading, refetch: refetchWorksheets, deleteWorksheet } = useWorksheetHistory(undefined, true);
   const { thisMonthCount, loading: statsLoading } = useWorksheetStats();
   const { profile: userProfile } = useProfile();
   const navigate = useNavigate();
