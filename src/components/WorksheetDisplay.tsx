@@ -257,10 +257,11 @@ export default function WorksheetDisplay({
         selectedImage={inputParams?.selectedImage || editableWorksheet?.selected_image}
         selectedAudio={(() => {
           // Reconstruct selectedAudio from editableWorksheet
-          return (editableWorksheet?.audio_url)
+          return (editableWorksheet?.audio_url || editableWorksheet?.audio_base64_backup)
             ? {
                 url: editableWorksheet.audio_url || null,
                 ai_generated_audio_url: editableWorksheet.audio_url || null,
+                audio_base64_backup: editableWorksheet.audio_base64_backup || null,
                 transcript: editableWorksheet.audio_transcript || null,
                 duration: editableWorksheet.audio_duration || null,
               }

@@ -129,29 +129,11 @@ export const useWorksheetGeneration = (
       }
 
       // Consume token for authenticated users AFTER successful generation
-      console.log('🎯 TOKEN CONSUMPTION CHECK:', {
-        isDemo,
-        userId,
-        hasUserId: !!userId,
-        willConsumeToken: !isDemo && !!userId,
-        finalWorksheetId
-      });
-      
       if (!isDemo && userId) {
-        console.log('✅ Attempting to consume token for user:', userId);
         const tokenConsumed = await consumeToken(finalWorksheetId);
-        console.log('🔍 Token consumption result:', tokenConsumed);
         if (!tokenConsumed) {
           console.warn('⚠️ Failed to consume token, but worksheet was generated');
-        } else {
-          console.log('✅ Token consumed successfully');
         }
-      } else {
-        console.warn('❌ Token consumption SKIPPED:', {
-          reason: !userId ? 'No userId' : 'isDemo=true',
-          isDemo,
-          userId
-        });
       }
       
       const actualGenerationTime = Math.round((Date.now() - startTime) / 1000);
