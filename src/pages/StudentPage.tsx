@@ -13,6 +13,8 @@ import { StudentSelector } from '@/components/StudentSelector';
 import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { deepFixTextObjects } from '@/utils/textObjectFixer';
+import { MediaBadges } from '@/components/worksheet/MediaBadges';
+import { hasImage, hasAudio } from '@/utils/worksheetUtils';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -242,10 +244,17 @@ const StudentPage = () => {
                           onClick={() => handleWorksheetClick(worksheet)}
                         >
                           <FileText className="h-5 w-5 text-primary" />
-                          <div>
-                            <h3 className="font-medium">
-                              {worksheet.title || 'Untitled Worksheet'}
-                            </h3>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium">
+                                {worksheet.title || 'Untitled Worksheet'}
+                              </h3>
+                              <MediaBadges 
+                                hasImage={hasImage(worksheet)} 
+                                hasAudio={hasAudio(worksheet)}
+                                size="sm"
+                              />
+                            </div>
                             <p className="text-sm text-muted-foreground">
                               {worksheet.form_data?.lessonTopic && `Topic: ${worksheet.form_data.lessonTopic}`}
                               {/* Check for both grammar field names for compatibility */}

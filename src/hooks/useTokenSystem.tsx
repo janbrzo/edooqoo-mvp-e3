@@ -102,7 +102,19 @@ export const useTokenSystem = (userId?: string | null) => {
   };
 
   const consumeToken = async (worksheetId: string): Promise<boolean> => {
-    if (!userId || isAnonymousUser) return false;
+    console.log('🎯 consumeToken CALLED:', { 
+      userId, 
+      worksheetId, 
+      isAnonymousUser,
+      isFreeWeek: isFreeCustomDemoWeek(),
+      currentTokens: tokenLeft,
+      profileState: profile
+    });
+    
+    if (!userId || isAnonymousUser) {
+      console.log('❌ consumeToken ABORTED: No userId or anonymous user');
+      return false;
+    }
     
     // FREE DEMO WEEK: Don't consume tokens, just return success
     if (isFreeCustomDemoWeek()) {
@@ -113,23 +125,49 @@ export const useTokenSystem = (userId?: string | null) => {
     }
     
     try {
+      console.log('📡 CALLING RPC consume_token with params:', {
+        p_teacher_id: userId,
+        p_worksheet_id: worksheetId
+      });
+      
       const { data, error } = await supabase
         .rpc('consume_token', { 
           p_teacher_id: userId, 
           p_worksheet_id: worksheetId 
         });
       
-      if (error) throw error;
+      console.log('📥 RPC RESPONSE:', { 
+        data, 
+        error,
+        errorDetails: error ? {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        } : null
+      });
       
-      if (data) {
+      if (error) {
+        console.error('❌ RPC ERROR:', error);
+        throw error;
+      }
+      
+      if (data === true) {
+        console.log('✅ Token consumed successfully, refreshing balance...');
         // Refresh the token data after successful consumption
         await fetchTokenBalance();
         return true;
+      } else {
+        console.warn('⚠️ Token consumption returned FALSE:', data);
+        return false;
       }
-      
-      return false;
     } catch (error: any) {
-      console.error('Error consuming token:', error);
+      console.error('💥 ERROR consuming token:', {
+        error,
+        message: error?.message,
+        code: error?.code,
+        details: error?.details
+      });
       return false;
     }
   };
