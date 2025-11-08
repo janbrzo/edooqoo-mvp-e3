@@ -13,7 +13,7 @@ interface WorksheetHistoryItem {
   generation_time_seconds?: number;
 }
 
-export const useWorksheetHistory = (studentId?: string, lightweight: boolean = false) => {
+export const useWorksheetHistory = (studentId?: string, lightweight: boolean = false, listView: boolean = false) => {
   const [worksheets, setWorksheets] = useState<WorksheetHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,18 +33,24 @@ export const useWorksheetHistory = (studentId?: string, lightweight: boolean = f
       }
 
       console.log('[useWorksheetHistory] 📝 Building query for teacher_id:', user.id);
-      console.log('[useWorksheetHistory] 🎯 Lightweight mode:', lightweight);
+      console.log('[useWorksheetHistory] 🎯 Lightweight mode:', lightweight, 'List view:', listView);
+      
+      // ✅ FIX: For list views, skip heavy columns (ai_response, html_content)
+      // These are only needed when opening a specific worksheet
+      const selectQuery = listView 
+        ? 'id, title, created_at, student_id, generation_time_seconds, form_data, audio_url, audio_duration, audio_voice, selected_audio, selected_image, media_metadata'
+        : '*';
       
       let query = supabase
         .from('worksheets')
-        .select('*')
+        .select(selectQuery)
         .eq('teacher_id', user.id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
-      // ✅ FIX: Limit results in lightweight mode to avoid timeout
+      // Apply limit only for Dashboard/Recent views (not for AllWorksheetsPage)
       if (lightweight) {
-        console.log('[useWorksheetHistory] 📊 Applying limit(10) for lightweight mode');
+        console.log('[useWorksheetHistory] 📊 Applying limit(10) for recent views');
         query = query.limit(10);
       }
 
@@ -54,7 +60,7 @@ export const useWorksheetHistory = (studentId?: string, lightweight: boolean = f
       }
 
       console.log('[useWorksheetHistory] 🚀 Executing query...');
-      const { data, error } = await query;
+      const { data, error } = await query as any; // Type assertion for custom select
 
       if (error) {
         console.error('[useWorksheetHistory] ❌ Query error:', error);

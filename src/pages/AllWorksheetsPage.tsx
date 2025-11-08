@@ -11,6 +11,7 @@ import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { useWorksheetHistory } from '@/hooks/useWorksheetHistory';
 import { useStudents } from '@/hooks/useStudents';
 import { useDeletedWorksheets } from '@/hooks/useDeletedWorksheets';
+import { supabase } from '@/integrations/supabase/client';
 import { DeleteWorksheetButton } from '@/components/DeleteWorksheetButton';
 import { format } from 'date-fns';
 import { 
@@ -49,11 +50,11 @@ type Student = Tables<'students'>;
 
 const AllWorksheetsPage = () => {
   const { user, loading: authLoading, isRegisteredUser } = useAuthFlow();
-  // ✅ FIX: Use lightweight mode to avoid timeout
-  const { worksheets, loading, deleteWorksheet, restoreWorksheet } = useWorksheetHistory(undefined, true);
+  // ✅ FIX: Use listView mode - fetches ALL worksheets but skips ai_response & html_content
+  const { worksheets, loading, deleteWorksheet, restoreWorksheet } = useWorksheetHistory(undefined, false, true);
   const { students } = useStudents();
-  // ✅ FIX: Use lightweight mode for deleted worksheets too
-  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted } = useDeletedWorksheets(undefined, true);
+  // ✅ FIX: Use listView mode for deleted worksheets too
+  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted } = useDeletedWorksheets(undefined, false, true);
   const navigate = useNavigate();
 
   // State for filtering and sorting
@@ -163,15 +164,32 @@ const AllWorksheetsPage = () => {
     setSelectedWorksheets([]);
   };
 
-  const handleWorksheetOpen = (worksheet: WorksheetHistoryItem) => {
+  const handleWorksheetOpen = async (worksheet: WorksheetHistoryItem) => {
     try {
+      // ✅ FIX: In listView mode, we don't have ai_response, so fetch it separately
+      let worksheetData = worksheet;
+      
+      if (!worksheet.ai_response) {
+        console.log('[AllWorksheets] Fetching full worksheet data for:', worksheet.id);
+        const { data, error } = await supabase
+          .from('worksheets')
+          .select('*')
+          .eq('id', worksheet.id)
+          .single();
+        
+        if (error) throw error;
+        if (!data) throw new Error('Worksheet not found');
+        
+        worksheetData = data as any;
+      }
+      
       // Parse the AI response to get the worksheet data
-      const worksheetData = JSON.parse(worksheet.ai_response);
+      const parsedData = JSON.parse(worksheetData.ai_response);
       
       // Store worksheet data in sessionStorage for restoration
       const restoredWorksheet = {
-        ...worksheet,
-        ai_response: JSON.stringify(worksheetData)
+        ...worksheetData,
+        ai_response: JSON.stringify(parsedData)
       };
       
       sessionStorage.setItem('restoredWorksheet', JSON.stringify(restoredWorksheet));

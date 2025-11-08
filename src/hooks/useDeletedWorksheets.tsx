@@ -13,7 +13,7 @@ interface DeletedWorksheetItem {
   generation_time_seconds?: number;
 }
 
-export const useDeletedWorksheets = (studentId?: string, lightweight: boolean = false) => {
+export const useDeletedWorksheets = (studentId?: string, lightweight: boolean = false, listView: boolean = false) => {
   const [deletedWorksheets, setDeletedWorksheets] = useState<DeletedWorksheetItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,14 +26,19 @@ export const useDeletedWorksheets = (studentId?: string, lightweight: boolean = 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // ✅ FIX: For list views, skip heavy columns (ai_response, html_content)
+      const selectQuery = listView
+        ? 'id, title, created_at, deleted_at, student_id, generation_time_seconds, form_data, audio_url, audio_duration, audio_voice, selected_audio, selected_image, media_metadata'
+        : '*';
+
       let query = supabase
         .from('worksheets')
-        .select('*')
+        .select(selectQuery)
         .eq('teacher_id', user.id)
         .not('deleted_at', 'is', null) // Only fetch deleted worksheets
         .order('deleted_at', { ascending: false });
 
-      // ✅ FIX: Limit results in lightweight mode to avoid timeout
+      // Apply limit only for Dashboard/Recent views
       if (lightweight) {
         query = query.limit(10);
       }
@@ -42,7 +47,7 @@ export const useDeletedWorksheets = (studentId?: string, lightweight: boolean = 
         query = query.eq('student_id', studentId);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query as any; // Type assertion for custom select
 
       if (error) throw error;
       setDeletedWorksheets(data || []);
