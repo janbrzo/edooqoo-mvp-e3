@@ -55,15 +55,6 @@ const AllWorksheetsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
   
-  // ✅ Server-side pagination with listView mode
-  const { worksheets, loading, deleteWorksheet, restoreWorksheet, totalCount, refetch: refetchWorksheets } = 
-    useWorksheetHistory(undefined, false, true, currentPage, itemsPerPage);
-  const { students } = useStudents();
-  // ✅ Server-side pagination for deleted worksheets
-  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted, totalCount: deletedTotalCount, refetch: refetchDeleted } = 
-    useDeletedWorksheets(undefined, false, true, currentPage, itemsPerPage);
-  const navigate = useNavigate();
-
   // State for filtering and sorting
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
@@ -71,6 +62,20 @@ const AllWorksheetsPage = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedWorksheets, setSelectedWorksheets] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'active' | 'deleted'>('active');
+  
+  // Pass selectedStudent filter to hooks for server-side filtering
+  const studentFilter = (selectedStudent === 'all' || selectedStudent === 'unassigned') 
+    ? (selectedStudent === 'unassigned' ? 'unassigned' : undefined)
+    : selectedStudent;
+
+  // ✅ Server-side pagination with listView mode and student filtering
+  const { worksheets, loading, deleteWorksheet, restoreWorksheet, totalCount, refetch: refetchWorksheets } = 
+    useWorksheetHistory(studentFilter, false, true, currentPage, itemsPerPage);
+  const { students } = useStudents();
+  // ✅ Server-side pagination for deleted worksheets
+  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted, totalCount: deletedTotalCount, refetch: refetchDeleted } = 
+    useDeletedWorksheets(studentFilter, false, true, currentPage, itemsPerPage);
+  const navigate = useNavigate();
 
   // Authentication check
   useEffect(() => {
@@ -88,9 +93,14 @@ const AllWorksheetsPage = () => {
     }
   }, [currentPage, activeTab]);
 
-  // Reset to page 1 when changing tabs or filters
+  // Reset to page 1 and refetch when filters change
   useEffect(() => {
     setCurrentPage(1);
+    if (activeTab === 'active') {
+      refetchWorksheets();
+    } else {
+      refetchDeleted();
+    }
   }, [activeTab, searchQuery, selectedStudent]);
 
   // Helper functions
@@ -111,17 +121,14 @@ const AllWorksheetsPage = () => {
 
   // Filter and sort worksheets based on active tab
   const currentWorksheets = activeTab === 'active' ? worksheets : deletedWorksheets;
+  // Student filtering is now server-side, only search filter is client-side
   const filteredAndSortedWorksheets = currentWorksheets
     .filter(worksheet => {
       const matchesSearch = searchQuery === '' || 
         formatWorksheetTitle(worksheet).toLowerCase().includes(searchQuery.toLowerCase()) ||
         getStudentName(worksheet.student_id).toLowerCase().includes(searchQuery.toLowerCase());
       
-      const matchesStudent = selectedStudent === 'all' || 
-        (selectedStudent === 'unassigned' && !worksheet.student_id) ||
-        worksheet.student_id === selectedStudent;
-      
-      return matchesSearch && matchesStudent;
+      return matchesSearch;
     })
     .sort((a, b) => {
       let comparison = 0;

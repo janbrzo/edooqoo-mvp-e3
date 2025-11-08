@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,12 +32,31 @@ const StudentPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { students, updateStudent, deleteStudent } = useStudents();
-  // ✅ FIX: Use lightweight mode to avoid timeout
-  const { worksheets, loading, deleteWorksheet, refetch: refetchWorksheets, restoreWorksheet } = useWorksheetHistory(id || '', true);
-  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted } = useDeletedWorksheets(id || '', true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deletedCurrentPage, setDeletedCurrentPage] = useState(1);
+  const pageSize = 10;
+  
+  // ✅ FIX: Use pagination with pageSize=10
+  const { worksheets, loading, deleteWorksheet, refetch: refetchWorksheets, restoreWorksheet, totalCount } = 
+    useWorksheetHistory(id || '', false, true, currentPage, pageSize);
+  const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted, totalCount: deletedTotalCount } = 
+    useDeletedWorksheets(id || '', false, true, deletedCurrentPage, pageSize);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const student = students.find(s => s.id === id);
+
+  // Refetch worksheets when page changes
+  useEffect(() => {
+    refetchWorksheets();
+  }, [currentPage]);
+
+  useEffect(() => {
+    refetchWorksheets();
+  }, [deletedCurrentPage]);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   if (!student) {
     return (
@@ -53,17 +73,34 @@ const StudentPage = () => {
     );
   }
 
-  const handleWorksheetClick = (worksheet: any) => {
+  const handleWorksheetClick = async (worksheet: any) => {
     try {
+      // ✅ FIX: In listView mode, we don't have ai_response, so fetch it separately
+      let worksheetData = worksheet;
+      
+      if (!worksheet.ai_response) {
+        console.log('[StudentPage] Fetching full worksheet data for:', worksheet.id);
+        const { data, error } = await supabase
+          .from('worksheets')
+          .select('*')
+          .eq('id', worksheet.id)
+          .single();
+        
+        if (error) throw error;
+        if (!data) throw new Error('Worksheet not found');
+        
+        worksheetData = data;
+      }
+      
       // Parse the AI response to get the worksheet data
-      const worksheetData = JSON.parse(worksheet.ai_response);
+      const parsedData = JSON.parse(worksheetData.ai_response);
       
       // Apply deepFixTextObjects to fix {text: "..."} objects
-      const fixedWorksheetData = deepFixTextObjects(worksheetData, 'studentPage');
+      const fixedWorksheetData = deepFixTextObjects(parsedData, 'studentPage');
       
       // Store worksheet data in sessionStorage for restoration
       const restoredWorksheet = {
-        ...worksheet,
+        ...worksheetData,
         ai_response: JSON.stringify(fixedWorksheetData)
       };
       
@@ -297,6 +334,31 @@ const StudentPage = () => {
                     </Button>
                   </div>
                 )}
+                
+                {/* Pagination for active worksheets */}
+                {worksheets.length > 0 && totalCount > pageSize && (
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {Math.ceil(totalCount / pageSize)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(p => p + 1)}
+                      disabled={currentPage >= Math.ceil(totalCount / pageSize)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -345,12 +407,62 @@ const StudentPage = () => {
                           >
                             Restore
                           </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Pagination for active worksheets */}
+            {worksheets.length > 0 && totalCount > pageSize && (
+              <div className="flex items-center justify-between pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage} of {Math.ceil(totalCount / pageSize)}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  disabled={currentPage >= Math.ceil(totalCount / pageSize)}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+            
+            {/* Pagination for deleted worksheets */}
+            {deletedWorksheets.length > 0 && deletedTotalCount > pageSize && (
+              <div className="flex items-center justify-between pt-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDeletedCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={deletedCurrentPage === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {deletedCurrentPage} of {Math.ceil(deletedTotalCount / pageSize)}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDeletedCurrentPage(p => p + 1)}
+                  disabled={deletedCurrentPage >= Math.ceil(deletedTotalCount / pageSize)}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
             )}
           </div>
         </div>

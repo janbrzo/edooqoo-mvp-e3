@@ -71,7 +71,11 @@ export const useWorksheetHistory = (
 
       if (studentId) {
         console.log('[useWorksheetHistory] 🎓 Filtering by student_id:', studentId);
-        query = query.eq('student_id', studentId);
+        if (studentId === 'unassigned') {
+          query = query.is('student_id', null);  // Filter for NULL student_id
+        } else {
+          query = query.eq('student_id', studentId);  // Filter for specific student
+        }
       }
 
       console.log('[useWorksheetHistory] 🚀 Executing query...');

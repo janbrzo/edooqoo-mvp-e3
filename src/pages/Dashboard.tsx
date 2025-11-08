@@ -9,6 +9,7 @@ import { useTokenSystem } from "@/hooks/useTokenSystem";
 import { useStudents } from "@/hooks/useStudents";
 import { useWorksheetHistory } from "@/hooks/useWorksheetHistory";
 import { AddStudentButton } from "@/components/dashboard/AddStudentButton";
+import { supabase } from '@/integrations/supabase/client';
 import { StudentCard } from "@/components/dashboard/StudentCard";
 import { StudentSelector } from "@/components/StudentSelector";
 import { useProfile } from "@/hooks/useProfile";
@@ -36,8 +37,8 @@ const Dashboard = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
   const { tokenLeft, profile } = useTokenSystem(user?.id);
   const { students, loading: studentsLoading, refetch: refetchStudents, deleteStudent } = useStudents();
-  // ✅ FIX: Use lightweight mode to avoid timeout - don't load ai_response & html_content
-  const { worksheets, loading: historyLoading, refetch: refetchWorksheets, deleteWorksheet } = useWorksheetHistory(undefined, true);
+  // ✅ FIX: Use lightweight + listView mode - only fetch necessary columns, not ai_response & html_content
+  const { worksheets, loading: historyLoading, refetch: refetchWorksheets, deleteWorksheet } = useWorksheetHistory(undefined, true, true);
   const { thisMonthCount, loading: statsLoading } = useWorksheetStats();
   const { profile: userProfile } = useProfile();
   const navigate = useNavigate();
@@ -99,9 +100,34 @@ const Dashboard = () => {
     navigate('/');
   };
 
-  const handleWorksheetOpen = (worksheet: any) => {
-    sessionStorage.setItem('restoredWorksheet', JSON.stringify(worksheet));
-    navigate('/');
+  const handleWorksheetOpen = async (worksheet: any) => {
+    try {
+      // ✅ FIX: In lightweight+listView mode, we don't have ai_response, so fetch it separately
+      let worksheetData = worksheet;
+      
+      if (!worksheet.ai_response) {
+        console.log('[Dashboard] Fetching full worksheet data for:', worksheet.id);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+        
+        const { data: fullWorksheet, error: fetchError } = await supabase
+          .from('worksheets')
+          .select('*')
+          .eq('id', worksheet.id)
+          .eq('teacher_id', user.id)
+          .single();
+        
+        if (fetchError) throw fetchError;
+        if (!fullWorksheet) throw new Error('Worksheet not found');
+        
+        worksheetData = fullWorksheet;
+      }
+      
+      sessionStorage.setItem('restoredWorksheet', JSON.stringify(worksheetData));
+      navigate('/');
+    } catch (error) {
+      console.error('Error opening worksheet:', error);
+    }
   };
 
   const handleDeleteWorksheet = async (worksheetId: string) => {
