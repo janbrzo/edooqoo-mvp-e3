@@ -23,7 +23,6 @@ interface WorksheetContainerProps {
   selectedAudio?: {
     url?: string | null;
     ai_generated_audio_url?: string | null;
-    audio_base64_backup?: string | null;
     transcript?: string | null;
     duration?: number | null;
   } | null;

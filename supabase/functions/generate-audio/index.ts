@@ -133,14 +133,12 @@ OUTPUT FORMAT: Return ONLY the spoken text (no JSON, no markdown).`;
       console.warn("⚠️ [AUDIO] R2 upload error:", uploadError, "- using base64 fallback");
     }
     
-    // Return audio data with BOTH R2 URL and base64 backup
     return new Response(
       JSON.stringify({
         success: true,
         audioData: {
           url: r2Url,
           ai_generated_audio_url: r2Url,
-          audio_base64_backup: audioBase64,
           transcript: transcript,
           duration: duration,
           source: 'openai-tts-generated',
