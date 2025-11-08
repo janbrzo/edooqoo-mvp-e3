@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Info, Clock, Database, Star, Edit, GraduationCap, BookOpen, FileText, MessageSquare } from "lucide-react";
+import { Info, Clock, Database, Star, Edit, GraduationCap, BookOpen, FileText, MessageSquare, Headphones, Image } from "lucide-react";
 
 // Exercise types mapping
 const EXERCISE_TYPES_MAP: Record<string, string> = {
@@ -68,6 +68,37 @@ interface InputParamsCardProps {
   };
   selectedExercises?: string[];
 }
+
+// Helper function to get icon for exercise type
+const getExerciseIcon = (exerciseId: string): React.ReactElement => {
+  // Audio exercises
+  const audioExercises = [
+    'listening-comprehension',
+    'multiple-choice-audio',
+    'true-false-audio',
+    'fill-in-blanks-audio',
+    'answer-questions-audio'
+  ];
+  
+  // Picture exercises
+  const pictureExercises = [
+    'multiple-choice-picture',
+    'true-false-picture',
+    'answer-questions-picture',
+    'describe',
+    'describe-picture'
+  ];
+  
+  if (audioExercises.includes(exerciseId)) {
+    return <Headphones className="h-4 w-4 text-worksheet-purple" />;
+  }
+  
+  if (pictureExercises.includes(exerciseId)) {
+    return <Image className="h-4 w-4 text-worksheet-purple" />;
+  }
+  
+  return <FileText className="h-4 w-4 text-worksheet-purple" />;
+};
 
 // Function to convert language style number to descriptive text
 const getLanguageStyleDescription = (value: number): string => {
@@ -178,8 +209,12 @@ const InputParamsCard = ({ inputParams, selectedExercises }: InputParamsCardProp
         {/* Selected Exercise Types */}
         {selectedExercises && selectedExercises.length > 0 && (
           <div className="flex items-start gap-3 col-span-1">
-            <div className="bg-worksheet-purpleLight rounded-full p-2">
-              <FileText className="h-4 w-4 text-worksheet-purple" />
+            <div className="bg-worksheet-purpleLight rounded-full p-2 flex items-center justify-center">
+              {selectedExercises.length === 1 ? (
+                getExerciseIcon(selectedExercises[0])
+              ) : (
+                <FileText className="h-4 w-4 text-worksheet-purple" />
+              )}
             </div>
             <div className="flex-1">
               <p className="text-sm text-gray-500">Selected Exercise Types</p>

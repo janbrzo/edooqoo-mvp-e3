@@ -8,6 +8,8 @@ import { Tables } from '@/integrations/supabase/types';
 import { User, BookOpen, ChevronDown, ChevronRight, FileText, Calendar, ExternalLink, Trash2 } from 'lucide-react';
 import { useWorksheetHistory } from '@/hooks/useWorksheetHistory';
 import { DeleteWorksheetButton } from '@/components/DeleteWorksheetButton';
+import { MediaBadges } from '@/components/worksheet/MediaBadges';
+import { hasImage, hasAudio } from '@/utils/worksheetUtils';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -114,7 +116,16 @@ export const StudentCard = ({ student, onViewHistory, onOpenWorksheet, onDeleteS
                       className="flex items-center space-x-2 flex-1 min-w-0"
                       onClick={(e) => handleWorksheetClick(worksheet, e)}
                     >
-                      <FileText className="h-3 w-3 flex-shrink-0" />
+                      {hasImage(worksheet) || hasAudio(worksheet) ? (
+                        <MediaBadges 
+                          hasImage={hasImage(worksheet)} 
+                          hasAudio={hasAudio(worksheet)}
+                          size="sm"
+                          className="shrink-0"
+                        />
+                      ) : (
+                        <FileText className="h-3 w-3 flex-shrink-0" />
+                      )}
                       <span className="text-xs font-medium truncate">
                         {worksheet.title || 'Untitled Worksheet'}
                       </span>
