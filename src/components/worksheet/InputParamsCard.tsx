@@ -210,11 +210,53 @@ const InputParamsCard = ({ inputParams, selectedExercises }: InputParamsCardProp
         {selectedExercises && selectedExercises.length > 0 && (
           <div className="flex items-start gap-3 col-span-1">
             <div className="bg-worksheet-purpleLight rounded-full p-2 flex items-center justify-center">
-              {selectedExercises.length === 1 ? (
-                getExerciseIcon(selectedExercises[0])
-              ) : (
-                <FileText className="h-4 w-4 text-worksheet-purple" />
-              )}
+              {(() => {
+                // Audio exercises
+                const audioExercises = [
+                  'listening-comprehension',
+                  'multiple-choice-audio',
+                  'true-false-audio',
+                  'fill-in-blanks-audio',
+                  'answer-questions-audio'
+                ];
+                
+                // Picture exercises
+                const pictureExercises = [
+                  'multiple-choice-picture',
+                  'true-false-picture',
+                  'answer-questions-picture',
+                  'describe',
+                  'describe-picture'
+                ];
+                
+                // Check if any exercise is audio
+                const hasAudioExercise = selectedExercises.some(exerciseId => 
+                  audioExercises.includes(exerciseId)
+                );
+                
+                // Check if any exercise is picture
+                const hasPictureExercise = selectedExercises.some(exerciseId => 
+                  pictureExercises.includes(exerciseId)
+                );
+                
+                // If both audio and picture, show FileText (or you could show both icons)
+                if (hasAudioExercise && hasPictureExercise) {
+                  return <FileText className="h-4 w-4 text-worksheet-purple" />;
+                }
+                
+                // If only audio, show Headphones
+                if (hasAudioExercise) {
+                  return <Headphones className="h-4 w-4 text-worksheet-purple" />;
+                }
+                
+                // If only picture, show Image
+                if (hasPictureExercise) {
+                  return <Image className="h-4 w-4 text-worksheet-purple" />;
+                }
+                
+                // Default to FileText
+                return <FileText className="h-4 w-4 text-worksheet-purple" />;
+              })()}
             </div>
             <div className="flex-1">
               <p className="text-sm text-gray-500">Selected Exercise Types</p>
