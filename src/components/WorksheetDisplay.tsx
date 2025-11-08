@@ -91,12 +91,25 @@ export default function WorksheetDisplay({
   useEffect(() => {
     if (!editableWorksheet || !worksheetId) return;
     
+    console.log('🔍 Media reconstruction check:', {
+      worksheetId,
+      hasSelectedAudio: !!editableWorksheet.selected_audio,
+      hasAudioUrl: !!editableWorksheet.audio_url,
+      hasSelectedImage: !!editableWorksheet.selected_image,
+      hasImageInFormData: !!editableWorksheet.form_data?.selectedImage
+    });
+    
     let needsUpdate = false;
     const updatedWorksheet = { ...editableWorksheet };
     
     // Reconstruct selectedAudio if NULL but audio_url exists
     if (!updatedWorksheet.selected_audio && updatedWorksheet.audio_url) {
-      console.log('🎵 Reconstructing selectedAudio from database fields');
+      console.log('🎵 Reconstructing selectedAudio from database fields:', {
+        audio_url: updatedWorksheet.audio_url,
+        audio_transcript: updatedWorksheet.audio_transcript,
+        audio_duration: updatedWorksheet.audio_duration,
+        audio_voice: updatedWorksheet.audio_voice
+      });
       updatedWorksheet.selected_audio = {
         url: updatedWorksheet.audio_url,
         ai_generated_audio_url: updatedWorksheet.audio_url,
@@ -116,10 +129,12 @@ export default function WorksheetDisplay({
     }
     
     if (needsUpdate) {
-      console.log('✅ Media reconstructed successfully');
+      console.log('✅ Media reconstructed successfully, updating state');
       setEditableWorksheet(updatedWorksheet);
+    } else {
+      console.log('✅ No media reconstruction needed');
     }
-  }, [worksheetId]); // Only run when worksheet changes
+  }, [worksheetId, editableWorksheet?.audio_url, editableWorksheet?.selected_audio, editableWorksheet?.selected_image]); // Run when worksheet or media fields change
   
   useEffect(() => {
     validateWorksheetStructure();

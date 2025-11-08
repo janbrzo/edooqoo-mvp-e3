@@ -40,6 +40,19 @@ export const useWorksheetHistory = (studentId?: string) => {
       const { data, error } = await query;
 
       if (error) throw error;
+      
+      // DEBUG: Log fetched worksheets for Problem 3 diagnosis
+      console.log('📋 Worksheets fetched:', {
+        count: data?.length || 0,
+        studentId: studentId || 'all',
+        firstThree: data?.slice(0, 3).map(w => ({
+          id: w.id,
+          title: w.title,
+          created_at: w.created_at,
+          student_id: w.student_id
+        }))
+      });
+      
       setWorksheets(data || []);
     } catch (error: any) {
       console.error('Error fetching worksheets:', error);
