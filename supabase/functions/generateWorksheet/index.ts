@@ -117,6 +117,18 @@ serve(async (req) => {
       pictureRequiredExercises.some((reqEx) => ex.includes(reqEx)),
     );
 
+    // Check if audio is required
+    const audioRequiredExercises = [
+      "listening-comprehension",
+      "multiple-choice-audio",
+      "true-false-audio",
+      "fill-in-blanks-audio",
+      "answer-questions-audio",
+    ];
+    const requiresAudio = effectiveExercises?.some((ex) =>
+      audioRequiredExercises.some((reqEx) => ex.includes(reqEx)),
+    );
+
     console.log("📸 Picture requirement check:", {
       selectedExercises: effectiveExercises,
       requiresPicture,
@@ -190,20 +202,8 @@ serve(async (req) => {
       mediaGenerationPromises.push({ type: 'image', promise: imagePromise });
     }
 
-    // CHECK: Do exercises require audio?
-    const audioRequiredExercises = [
-      "listening-comprehension",
-      "multiple-choice-audio",
-      "true-false-audio",
-      "fill-in-blanks-audio",
-      "answer-questions-audio",
-    ];
-    const requiresAudioCheck = effectiveExercises?.some((ex) =>
-      audioRequiredExercises.some((reqEx) => ex.includes(reqEx)),
-    );
-
     // Add AUDIO generation promise if needed
-    if (requiresAudioCheck && !selectedAudio) {
+    if (requiresAudio && !selectedAudio) {
       console.log("🎵 [AUDIO-PARALLEL] Queuing audio generation");
 
       const audioPromise = (async () => {
