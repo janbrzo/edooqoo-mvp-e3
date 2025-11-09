@@ -149,57 +149,52 @@ FORMAT:
     console.log(`[GENERATE-IMAGE] Description generated with vision analysis (${detailedDescription.length} chars)`);
     console.log(`[GENERATE-IMAGE] Description preview: ${detailedDescription.substring(0, 200)}...`);
 
-    // ✅ OPT 3: Upload image to R2 in BACKGROUND (saves ~2-3s)
-    const finalImageUrl = imageUrl; // Return base64 immediately
-    const imageSource = "vertex-ai-base64";
+    // ✅ OPT 3 FIXED: Upload to R2 and wait for URL before returning
+    const finalImageUrl = imageUrl; // Base64 initially
+    const imageSource = "r2-cloudflare"; // Will be R2 after upload
     const timestamp = Date.now();
     
-    console.log(`[GENERATE-IMAGE] ⚡ Returning response immediately, R2 upload queued for background`);
+    console.log(`[GENERATE-IMAGE] 🚀 Starting R2 upload...`);
 
-    // Background task: Upload to R2 without blocking response
-    const uploadToR2 = async () => {
-      try {
-        console.log(`[GENERATE-IMAGE-BG] 🚀 Starting background R2 upload...`);
-        
-        const uploadResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/upload-to-r2`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          },
-          body: JSON.stringify({
-            base64Image: imageUrl,
-            filename: `worksheets/image_${timestamp}_${topic.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.png`,
-            contentType: "image/png",
-          }),
-        });
+    // Upload to R2 synchronously (we need R2 URL in database, not base64!)
+    let finalR2Url = finalImageUrl;
+    try {
+      const uploadResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/upload-to-r2`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({
+          base64Image: imageUrl,
+          filename: `worksheets/image_${timestamp}_${topic.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.png`,
+          contentType: "image/png",
+        }),
+      });
 
-        if (uploadResponse.ok) {
-          const uploadData = await uploadResponse.json();
-          if (uploadData.success && uploadData.url) {
-            console.log(`[GENERATE-IMAGE-BG] ✅ R2 upload successful: ${uploadData.url}`);
-            console.log(`[GENERATE-IMAGE-BG] 💾 Saved ${Math.round(uploadData.size / 1024)}KB to R2`);
-          }
+      if (uploadResponse.ok) {
+        const uploadData = await uploadResponse.json();
+        if (uploadData.success && uploadData.url) {
+          console.log(`[GENERATE-IMAGE] ✅ R2 upload successful: ${uploadData.url}`);
+          finalR2Url = uploadData.url;
         } else {
-          const errorText = await uploadResponse.text();
-          console.warn(`[GENERATE-IMAGE-BG] ⚠️ R2 upload failed (${uploadResponse.status}):`, errorText);
+          console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload failed, using base64 fallback`);
         }
-      } catch (uploadError) {
-        console.warn(`[GENERATE-IMAGE-BG] ⚠️ R2 upload error:`, uploadError.message);
+      } else {
+        console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload failed (${uploadResponse.status}), using base64 fallback`);
       }
-    };
-
-    // Queue background task
-    EdgeRuntime.waitUntil(uploadToR2());
+    } catch (uploadError) {
+      console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload error:`, uploadError.message, ', using base64 fallback');
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         image: {
           id: `vertex-ai-${timestamp}`,
-          url: finalImageUrl,
-          ai_generated_url: finalImageUrl,
-          thumbnail: finalImageUrl,
+          url: finalR2Url, // R2 URL if upload succeeded, base64 as fallback
+          ai_generated_url: finalR2Url,
+          thumbnail: finalR2Url,
           description: detailedDescription.substring(0, 100) + "...",
           detailedDescription: detailedDescription,
           photographer: "AI Generated",

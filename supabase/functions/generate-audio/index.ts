@@ -105,53 +105,50 @@ OUTPUT FORMAT: Return ONLY the spoken text (no JSON, no markdown).`;
       throw new Error("No audio data in OpenAI response");
     }
     
-    // ✅ OPT 3: Upload to R2 in BACKGROUND (saves ~2-3s)
+    // ✅ OPT 3 FIXED: Upload to R2 and wait for URL before returning
     const timestamp = Date.now();
     
-    console.log(`[AUDIO] ⚡ Returning response immediately, R2 upload queued for background`);
+    console.log(`[AUDIO] 🚀 Starting R2 upload...`);
     
-    // Background task: Upload to R2 without blocking response
-    const uploadToR2 = async () => {
-      try {
-        console.log(`[AUDIO-BG] 🚀 Starting background R2 upload...`);
-        
-        const uploadResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/upload-to-r2`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            base64Image: audioBase64,
-            filename: `audio/audio-${timestamp}-${randomVoice}.mp3`,
-            contentType: "audio/mpeg"
-          }),
-        });
-        
-        if (uploadResponse.ok) {
-          const uploadData = await uploadResponse.json();
-          console.log(`[AUDIO-BG] ✅ Uploaded to R2:`, uploadData.url);
-        } else {
-          const errorText = await uploadResponse.text();
-          console.warn(`[AUDIO-BG] ⚠️ R2 upload failed (${uploadResponse.status}):`, errorText);
-        }
-      } catch (uploadError) {
-        console.warn(`[AUDIO-BG] ⚠️ R2 upload error:`, uploadError.message);
-      }
-    };
-    
-    // Queue background task
-    EdgeRuntime.waitUntil(uploadToR2());
-    
-    // Return base64 audio immediately for playback (works in HTML5 audio)
+    // Upload to R2 synchronously (we need R2 URL in database, not base64!)
     const audioDataUrl = `data:audio/mpeg;base64,${audioBase64}`;
+    let finalAudioUrl = audioDataUrl;
+    
+    try {
+      const uploadResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/upload-to-r2`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          base64Image: audioBase64,
+          filename: `audio/audio-${timestamp}-${randomVoice}.mp3`,
+          contentType: "audio/mpeg"
+        }),
+      });
+      
+      if (uploadResponse.ok) {
+        const uploadData = await uploadResponse.json();
+        if (uploadData.success && uploadData.url) {
+          console.log(`[AUDIO] ✅ R2 upload successful:`, uploadData.url);
+          finalAudioUrl = uploadData.url;
+        } else {
+          console.warn(`[AUDIO] ⚠️ R2 upload failed, using base64 fallback`);
+        }
+      } else {
+        console.warn(`[AUDIO] ⚠️ R2 upload failed (${uploadResponse.status}), using base64 fallback`);
+      }
+    } catch (uploadError) {
+      console.warn(`[AUDIO] ⚠️ R2 upload error:`, uploadError.message, ', using base64 fallback');
+    }
     
     return new Response(
       JSON.stringify({
         success: true,
         audioData: {
-          url: audioDataUrl, // Base64 data URL for immediate playback
-          ai_generated_audio_url: audioDataUrl,
+          url: finalAudioUrl, // R2 URL if upload succeeded, base64 as fallback
+          ai_generated_audio_url: finalAudioUrl,
           transcript: transcript,
           duration: duration,
           source: 'openai-tts-generated',
