@@ -607,6 +607,14 @@ export type Database = {
         Returns: undefined
       }
       clean_old_geolocation_cache: { Args: never; Returns: undefined }
+      cleanup_worksheet_base64: {
+        Args: never
+        Returns: {
+          table_size_after: string
+          table_size_before: string
+          worksheets_cleaned: number
+        }[]
+      }
       consume_token: {
         Args: { p_teacher_id: string; p_worksheet_id: string }
         Returns: boolean
