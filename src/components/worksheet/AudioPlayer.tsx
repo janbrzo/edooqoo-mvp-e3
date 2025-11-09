@@ -156,13 +156,15 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
           )}
         </div>
         
-        {/* RIGHT: QR Code (20-25%) - always visible */}
-        <div className="flex flex-col items-center justify-center bg-white rounded-lg border-2 border-worksheet-purple p-4 shadow-sm min-w-[160px]">
-          <QRCode value={audioUrl} size={120} />
-          <p className="text-xs text-gray-600 text-center mt-2 font-medium">
-            Scan to listen on your phone
-          </p>
-        </div>
+        {/* RIGHT: QR Code (20-25%) - only for non-base64 URLs */}
+        {!audioUrl.startsWith('data:') && (
+          <div className="flex flex-col items-center justify-center bg-white rounded-lg border-2 border-worksheet-purple p-4 shadow-sm min-w-[160px]">
+            <QRCode value={audioUrl} size={120} />
+            <p className="text-xs text-gray-600 text-center mt-2 font-medium">
+              Scan to listen on your phone
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

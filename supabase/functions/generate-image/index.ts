@@ -149,50 +149,54 @@ FORMAT:
     console.log(`[GENERATE-IMAGE] Description generated with vision analysis (${detailedDescription.length} chars)`);
     console.log(`[GENERATE-IMAGE] Description preview: ${detailedDescription.substring(0, 200)}...`);
 
-    // ETAP 3: Upload image to Cloudflare R2 for permanent storage
-    let finalImageUrl = imageUrl; // Default to base64 as fallback
-    let imageSource = "vertex-ai-base64";
+    // ✅ OPT 3: Upload image to R2 in BACKGROUND (saves ~2-3s)
+    const finalImageUrl = imageUrl; // Return base64 immediately
+    const imageSource = "vertex-ai-base64";
+    const timestamp = Date.now();
+    
+    console.log(`[GENERATE-IMAGE] ⚡ Returning response immediately, R2 upload queued for background`);
 
-    try {
-      console.log(`[GENERATE-IMAGE] 🚀 Starting R2 upload...`);
+    // Background task: Upload to R2 without blocking response
+    const uploadToR2 = async () => {
+      try {
+        console.log(`[GENERATE-IMAGE-BG] 🚀 Starting background R2 upload...`);
+        
+        const uploadResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/upload-to-r2`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            base64Image: imageUrl,
+            filename: `worksheets/image_${timestamp}_${topic.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.png`,
+            contentType: "image/png",
+          }),
+        });
 
-      const uploadResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/upload-to-r2`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        },
-        body: JSON.stringify({
-          base64Image: imageUrl,
-          filename: `worksheets/image_${Date.now()}_${topic.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.png`,
-          contentType: "image/png",
-        }),
-      });
-
-      if (uploadResponse.ok) {
-        const uploadData = await uploadResponse.json();
-        if (uploadData.success && uploadData.url) {
-          finalImageUrl = uploadData.url;
-          imageSource = "r2-cloudflare";
-          console.log(`[GENERATE-IMAGE] ✅ R2 upload successful: ${finalImageUrl}`);
-          console.log(`[GENERATE-IMAGE] 💾 Saved ${Math.round(uploadData.size / 1024)}KB to R2`);
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          if (uploadData.success && uploadData.url) {
+            console.log(`[GENERATE-IMAGE-BG] ✅ R2 upload successful: ${uploadData.url}`);
+            console.log(`[GENERATE-IMAGE-BG] 💾 Saved ${Math.round(uploadData.size / 1024)}KB to R2`);
+          }
+        } else {
+          const errorText = await uploadResponse.text();
+          console.warn(`[GENERATE-IMAGE-BG] ⚠️ R2 upload failed (${uploadResponse.status}):`, errorText);
         }
-      } else {
-        const errorText = await uploadResponse.text();
-        console.warn(
-          `[GENERATE-IMAGE] ⚠️ R2 upload failed (${uploadResponse.status}), falling back to base64:`,
-          errorText,
-        );
+      } catch (uploadError) {
+        console.warn(`[GENERATE-IMAGE-BG] ⚠️ R2 upload error:`, uploadError.message);
       }
-    } catch (uploadError) {
-      console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload error, falling back to base64:`, uploadError.message);
-    }
+    };
+
+    // Queue background task
+    EdgeRuntime.waitUntil(uploadToR2());
 
     return new Response(
       JSON.stringify({
         success: true,
         image: {
-          id: `vertex-ai-${Date.now()}`,
+          id: `vertex-ai-${timestamp}`,
           url: finalImageUrl,
           ai_generated_url: finalImageUrl,
           thumbnail: finalImageUrl,
