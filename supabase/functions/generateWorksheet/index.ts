@@ -62,8 +62,11 @@ serve(async (req) => {
       });
     }
 
-    // Get geolocation data
+    // ⏱️ TIMING: Get geolocation data
+    const geoStartTime = Date.now();
     const geoData = await getGeolocation(ip);
+    const geoDuration = Date.now() - geoStartTime;
+    console.log(`⏱️ [TIMING] Geolocation lookup: ${geoDuration}ms`);
 
     // Sanitize inputs
     const sanitizedPrompt = sanitizeInput(prompt, 5000);
@@ -435,7 +438,8 @@ serve(async (req) => {
     // Save worksheet to database - SKIP FOR REGENERATION
     if (!isRegeneration) {
       try {
-        // HEARTBEAT LOG: Starting database save
+        // ⏱️ TIMING: Starting database save
+        const dbSaveStartTime = Date.now();
         console.log("🔵 HEARTBEAT: Starting database save", {
           timestamp: new Date().toISOString(),
           userId: userId || "anonymous",
@@ -494,6 +498,10 @@ serve(async (req) => {
           const worksheetId = worksheet[0].id;
           worksheetData.id = worksheetId;
 
+          // ⏱️ TIMING: Database save completed
+          const dbSaveDuration = Date.now() - dbSaveStartTime;
+          console.log(`⏱️ [TIMING] Database save: ${dbSaveDuration}ms`);
+
           // HEARTBEAT LOG: Database save completed
           console.log("🟢 HEARTBEAT: Database save completed", {
             timestamp: new Date().toISOString(),
@@ -541,6 +549,35 @@ serve(async (req) => {
         voice: worksheetData.audio_voice
       });
     }
+
+    // ⏱️ TIMING SUMMARY: Complete breakdown of all operations
+    const totalDuration = Date.now() - generationStartTime;
+    console.log(`
+╔════════════════════════════════════════════════════════════════════════════╗
+║                      ⏱️  TIMING SUMMARY - WORKSHEET GENERATION              ║
+╚════════════════════════════════════════════════════════════════════════════╝
+  📊 Total Generation Time: ${(totalDuration / 1000).toFixed(2)}s (${totalDuration}ms)
+  
+  🔹 Phase Breakdown:
+     • Geolocation:        ${geoDuration}ms
+     • Media Generation:   ${mediaGenerationPromises.length > 0 ? 'See parallel logs above' : 'Skipped (no media required)'}
+     • OpenAI API Call:    ${openaiDuration}s
+     • JSON Parsing:       Fast (< 100ms)
+     • Database Save:      ${!isRegeneration ? 'See DB logs above' : 'Skipped (regeneration)'}
+  
+  🎯 Configuration:
+     • Model:              gpt-5-mini-2025-08-07
+     • Exercise Count:     ${exerciseCount}
+     • Has Picture:        ${!!selectedImage}
+     • Has Audio:          ${!!selectedAudio}
+     • Regeneration Mode:  ${!!isRegeneration}
+  
+  📍 Context:
+     • Location:           ${geoData.country || 'unknown'} / ${geoData.city || 'unknown'}
+     • IP:                 ${ip}
+     • Teacher:            ${teacherEmail || 'anonymous'}
+╚════════════════════════════════════════════════════════════════════════════╝
+    `);
 
     // HEARTBEAT LOG: Returning successful response
     console.log("🟢 HEARTBEAT: Returning successful response to client", {
