@@ -445,6 +445,20 @@ serve(async (req) => {
         const fullPrompt = `SYSTEM MESSAGE:\n${systemMessage}\n\nUSER MESSAGE:\n${sanitizedPrompt}`;
         const sanitizedFormData = formData ? JSON.parse(JSON.stringify(formData)) : {};
 
+        // 🧹 OPTIMIZATION 3A: Remove base64 data URLs before saving to database
+        // This saves ~0.5-3MB per worksheet and drastically reduces egress costs
+        const sanitizedImage = selectedImage ? {
+          ...selectedImage,
+          url: selectedImage.url?.startsWith('data:') ? null : selectedImage.url,
+          ai_generated_url: selectedImage.ai_generated_url?.startsWith('data:') ? null : selectedImage.ai_generated_url
+        } : null;
+
+        const sanitizedAudio = selectedAudio ? {
+          ...selectedAudio,
+          url: selectedAudio.url?.startsWith('data:') ? null : selectedAudio.url,
+          ai_generated_audio_url: selectedAudio.ai_generated_audio_url?.startsWith('data:') ? null : selectedAudio.ai_generated_audio_url
+        } : null;
+
         const { data: worksheet, error: worksheetError } = await supabase
           .from("worksheets")
           .insert({
@@ -456,8 +470,8 @@ serve(async (req) => {
             teacher_id: userId || null,
             teacher_email: teacherEmail,
             student_id: studentId || null,
-            selected_image: selectedImage,
-            selected_audio: selectedAudio,
+            selected_image: sanitizedImage,
+            selected_audio: sanitizedAudio,
             audio_url: selectedAudio?.ai_generated_audio_url || selectedAudio?.url || null,
             audio_transcript: selectedAudio?.transcript || null,
             audio_duration: selectedAudio?.duration || null,
