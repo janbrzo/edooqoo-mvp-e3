@@ -450,7 +450,8 @@ serve(async (req) => {
         const sanitizedImage = selectedImage ? {
           ...selectedImage,
           url: selectedImage.url?.startsWith('data:') ? null : selectedImage.url,
-          ai_generated_url: selectedImage.ai_generated_url?.startsWith('data:') ? null : selectedImage.ai_generated_url
+          ai_generated_url: selectedImage.ai_generated_url?.startsWith('data:') ? null : selectedImage.ai_generated_url,
+          thumbnail: selectedImage.thumbnail?.startsWith('data:') ? null : selectedImage.thumbnail
         } : null;
 
         const sanitizedAudio = selectedAudio ? {
