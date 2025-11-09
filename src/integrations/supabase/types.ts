@@ -119,6 +119,30 @@ export type Database = {
         }
         Relationships: []
       }
+      geolocation_cache: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          ip: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          ip: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          ip?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       processed_upgrade_sessions: {
         Row: {
           email: string | null
@@ -582,6 +606,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      clean_old_geolocation_cache: { Args: never; Returns: undefined }
       consume_token: {
         Args: { p_teacher_id: string; p_worksheet_id: string }
         Returns: boolean

@@ -1,5 +1,7 @@
 
-// Geolocation utility with improved IP parsing and reliable services
+// Geolocation utility with improved IP parsing, reliable services, and database cache
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
 export async function getGeolocation(ip: string): Promise<{ country?: string; city?: string }> {
   try {
@@ -12,11 +14,23 @@ export async function getGeolocation(ip: string): Promise<{ country?: string; ci
       return {};
     }
 
+    // ✅ OPT 2: Check cache first (saves 0.5-2s per request)
+    const cachedResult = await getCachedGeolocation(cleanIP);
+    if (cachedResult) {
+      console.log(`✅ [CACHE HIT] Geolocation from cache: ${cachedResult.country}, ${cachedResult.city}`);
+      return cachedResult;
+    }
+
+    console.log(`❌ [CACHE MISS] Fetching geolocation from API for IP: ${cleanIP}`);
+
     // Try primary service first
+    let result: { country?: string; city?: string } = {};
     try {
-      const result = await tryIPAPIService(cleanIP);
+      result = await tryIPAPIService(cleanIP);
       if (result.country || result.city) {
         console.log(`Geolocation success with ipapi.co: ${result.country}, ${result.city}`);
+        // Save to cache for future requests
+        await saveCachedGeolocation(cleanIP, result);
         return result;
       }
     } catch (error) {
@@ -25,9 +39,11 @@ export async function getGeolocation(ip: string): Promise<{ country?: string; ci
 
     // Try backup service
     try {
-      const result = await tryFreeGeoIPService(cleanIP);
+      result = await tryFreeGeoIPService(cleanIP);
       if (result.country || result.city) {
         console.log(`Geolocation success with freegeoip.app: ${result.country}, ${result.city}`);
+        // Save to cache for future requests
+        await saveCachedGeolocation(cleanIP, result);
         return result;
       }
     } catch (error) {
@@ -40,6 +56,66 @@ export async function getGeolocation(ip: string): Promise<{ country?: string; ci
   
   console.log('Geolocation: No data available, returning empty object');
   return {};
+}
+
+// ✅ Cache helper: Get from database cache (TTL: 7 days)
+async function getCachedGeolocation(ip: string): Promise<{ country?: string; city?: string } | null> {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { data, error } = await supabase
+      .from('geolocation_cache')
+      .select('country, city, updated_at')
+      .eq('ip', ip)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    // Check if cache is still fresh (< 7 days)
+    const cacheAge = Date.now() - new Date(data.updated_at).getTime();
+    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+
+    if (cacheAge > sevenDaysInMs) {
+      console.log(`⏰ Cache expired for IP: ${ip}`);
+      return null;
+    }
+
+    return {
+      country: data.country || undefined,
+      city: data.city || undefined,
+    };
+  } catch (error) {
+    console.warn('Error reading geolocation cache:', error);
+    return null;
+  }
+}
+
+// ✅ Cache helper: Save to database cache
+async function saveCachedGeolocation(ip: string, data: { country?: string; city?: string }): Promise<void> {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    await supabase
+      .from('geolocation_cache')
+      .upsert({
+        ip,
+        country: data.country || null,
+        city: data.city || null,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'ip'
+      });
+
+    console.log(`💾 Saved geolocation to cache: ${ip} -> ${data.country}, ${data.city}`);
+  } catch (error) {
+    console.warn('Error saving geolocation cache:', error);
+  }
 }
 
 function parseIP(ipString: string): string | null {
