@@ -1,11 +1,9 @@
 
 import { useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress";
-import { StreamingProgress } from "@/hooks/useWorksheetGeneration";
 
 interface GeneratingModalProps {
   isOpen: boolean;
-  streamingProgress?: StreamingProgress | null;
 }
 
 const generationSteps = [
@@ -25,7 +23,7 @@ const generationSteps = [
   "Almost ready..."
 ];
 
-export default function GeneratingModal({ isOpen, streamingProgress }: GeneratingModalProps) {
+export default function GeneratingModal({ isOpen }: GeneratingModalProps) {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -38,53 +36,36 @@ export default function GeneratingModal({ isOpen, streamingProgress }: Generatin
       return;
     }
 
-    // If we have real streaming progress, use it
-    if (streamingProgress) {
-      const { elapsedTime: realTime, estimatedExercise, totalExercises } = streamingProgress;
-      
-      // Update elapsed time from real data
-      setElapsedTime(realTime);
-      
-      // Calculate progress based on exercise completion
-      if (totalExercises && totalExercises > 0) {
-        const exerciseProgress = (estimatedExercise / totalExercises) * 100;
-        setProgress(Math.min(exerciseProgress, 95)); // Cap at 95%
-      }
-      
-      // Update current step based on progress
-      const stepIndex = Math.min(
-        Math.floor((estimatedExercise / (totalExercises || 8)) * generationSteps.length),
-        generationSteps.length - 1
-      );
-      setCurrentStep(stepIndex);
-      
-      return; // Don't run fake timers when we have real data
-    }
-
-    // Fallback: Use fake progress animation (when streaming not available)
+    // More realistic progress - slower and more variable
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 95) {
+          // Slow down significantly near the end
           return Math.min(prev + Math.random() * 0.5, 99);
         } else if (prev >= 80) {
+          // Slow down at 80%
           return prev + Math.random() * 1;
         } else if (prev >= 60) {
+          // Medium speed at 60%
           return prev + Math.random() * 2;
         } else {
+          // Faster at the beginning
           return prev + Math.random() * 3;
         }
       });
-    }, 800);
+    }, 800); // Slower interval
 
+    // Realistic step progression - varies between 3-8 seconds per step
     const stepInterval = setInterval(() => {
       setCurrentStep(prev => {
         if (prev >= generationSteps.length - 1) {
-          return Math.floor(Math.random() * 3) + generationSteps.length - 3;
+          return Math.floor(Math.random() * 3) + generationSteps.length - 3; // Stay in last 3 steps
         }
         return prev + 1;
       });
-    }, Math.random() * 5000 + 3000);
+    }, Math.random() * 5000 + 3000); // Between 3-8 seconds
 
+    // Timer - counts real time
     const timerInterval = setInterval(() => {
       setElapsedTime(prev => prev + 1);
     }, 1000);
@@ -94,7 +75,7 @@ export default function GeneratingModal({ isOpen, streamingProgress }: Generatin
       clearInterval(stepInterval);
       clearInterval(timerInterval);
     };
-  }, [isOpen, streamingProgress]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -123,10 +104,7 @@ export default function GeneratingModal({ isOpen, streamingProgress }: Generatin
         </div>
         
         <p className="text-center min-h-[24px] animate-pulse font-normal text-sky-400">
-          {streamingProgress && streamingProgress.totalExercises 
-            ? `Generating exercise ${streamingProgress.estimatedExercise + 1} of ${streamingProgress.totalExercises}...`
-            : generationSteps[currentStep]
-          }
+          {generationSteps[currentStep]}
         </p>
         
         <p className="text-center text-xs text-gray-400">

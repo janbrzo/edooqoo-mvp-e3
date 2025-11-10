@@ -12,24 +12,16 @@ import { useEventTracking } from "@/hooks/useEventTracking";
 import { useTokenSystem } from "@/hooks/useTokenSystem";
 import { supabase } from "@/integrations/supabase/client";
 
-export interface StreamingProgress {
-  contentLength: number;
-  elapsedTime: number;
-  estimatedExercise: number;
-  totalExercises?: number;
-}
-
 export const useWorksheetGeneration = (
   userId: string | null,
   worksheetState: any,
   studentId?: string | null
 ) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [streamingProgress, setStreamingProgress] = useState<StreamingProgress | null>(null);
   const [startGenerationTime, setStartGenerationTime] = useState<number>(0);
   const { toast } = useToast();
   const { trackEvent } = useEventTracking(userId);
-  const { tokenLeft, hasTokens, isDemo, consumeToken} = useTokenSystem(userId);
+  const { tokenLeft, hasTokens, isDemo, consumeToken } = useTokenSystem(userId);
 
   const generateWorksheetHandler = async (data: FormData) => {
     console.log('🚀 Starting worksheet generation for:', data.lessonTime);
@@ -98,103 +90,13 @@ export const useWorksheetGeneration = (
         throw new Error("You must be logged in to generate worksheets");
       }
       
-      // Try streaming generation with SSE
-      console.log('🌊 Attempting streaming generation with SSE');
-      const GENERATE_WORKSHEET_URL = 'https://bvfrkzdlklyvnhlpleck.supabase.co/functions/v1/generateWorksheet';
-      
-      const response = await fetch(GENERATE_WORKSHEET_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'text/event-stream', // Request SSE streaming
-        },
-        body: JSON.stringify({
-          prompt: fullPrompt,
-          formData: formDataForStorage,
-          userId,
-          studentId
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || 'Failed to generate worksheet');
-      }
-
-      // Check if we got SSE stream or JSON fallback
-      const contentType = response.headers.get('content-type') || '';
-      let worksheetResult;
-
-      if (contentType.includes('text/event-stream')) {
-        // Parse SSE stream
-        console.log('🌊 Parsing SSE stream');
-        worksheetResult = await new Promise((resolve, reject) => {
-          const reader = response.body?.getReader();
-          if (!reader) {
-            reject(new Error('Response body is not readable'));
-            return;
-          }
-
-          const decoder = new TextDecoder();
-          let buffer = '';
-
-          const readStream = async () => {
-            try {
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-
-                let newlineIndex: number;
-                while ((newlineIndex = buffer.indexOf('\n\n')) !== -1) {
-                  const message = buffer.slice(0, newlineIndex);
-                  buffer = buffer.slice(newlineIndex + 2);
-
-                  if (message.startsWith('data: ')) {
-                    const jsonStr = message.slice(6).trim();
-                    try {
-                      const event = JSON.parse(jsonStr);
-
-                      if (event.type === 'progress') {
-                        setStreamingProgress(event);
-                      } else if (event.type === 'complete') {
-                        resolve(event.data);
-                        return;
-                      } else if (event.type === 'error') {
-                        reject(new Error(event.error));
-                        return;
-                      }
-                    } catch (parseError) {
-                      console.error('Failed to parse SSE message:', jsonStr);
-                    }
-                  }
-                }
-              }
-            } catch (error) {
-              reject(error);
-            }
-          };
-
-          readStream();
-        });
-
-        console.log('🟢 SSE stream completed successfully');
-        setStreamingProgress(null);
-
-      } else {
-        // Fallback: traditional JSON response
-        console.log('📦 Using traditional JSON response (fallback)');
-        worksheetResult = await response.json();
-      }
-      
       // Pass the full prompt to the API
-      //const worksheetResult = await generateWorksheet({ 
-      //  ...data, 
-      //  fullPrompt,
-      //  formDataForStorage,
-      //  studentId
-      //}, userId);
+      const worksheetResult = await generateWorksheet({ 
+        ...data, 
+        fullPrompt,
+        formDataForStorage,
+        studentId
+      }, userId);
 
       console.log("✅ Generated worksheet result received:", {
         hasData: !!worksheetResult,
@@ -398,7 +300,6 @@ export const useWorksheetGeneration = (
     generateWorksheetHandler,
     tokenLeft,
     hasTokens,
-    isDemo,
-    streamingProgress
+    isDemo
   };
 };
