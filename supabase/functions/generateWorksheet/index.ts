@@ -332,25 +332,20 @@ serve(async (req) => {
       selectedAudio
     );
 
-    // Check if client supports streaming via Accept header
-    const acceptHeader = req.headers.get('accept') || '';
-    const supportsSSE = acceptHeader.includes('text/event-stream');
-
     // HEARTBEAT LOG: Before OpenAI API call
     const openaiStartTime = Date.now();
     console.log("🔵 HEARTBEAT: Starting OpenAI API call", {
       timestamp: new Date().toISOString(),
       elapsedSinceStart: Math.round((openaiStartTime - generationStartTime) / 1000) + "s",
-      model: "gpt-5-mini-2025-08-07",
+      model: "gpt-5-mini-2025-08-07", //gpt-4.1-2025-04-14
       exerciseCount,
       promptLength: sanitizedPrompt.length,
-      streamingMode: supportsSSE ? 'SSE' : 'blocking'
     });
 
-    // Generate worksheet using OpenAI with streaming support
+    // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({
-      model: "gpt-5-mini-2025-08-07",
-      temperature: 1,
+      model: "gpt-5-mini-2025-08-07", // gpt-4.1-2025-04-14 Changed back to gpt-4o i można gpt-4.1-2025-04-14
+      temperature: 1, //0.2
       messages: [
         {
           role: "system",
@@ -361,240 +356,20 @@ serve(async (req) => {
           content: sanitizedPrompt,
         },
       ],
-      max_completion_tokens: 20000,
-      stream: supportsSSE, // Enable streaming for SSE-capable clients
+      max_completion_tokens: 20000, // nowa nazwa parametru  max_completion_tokens: 7500
     });
 
-    // Handle streaming vs non-streaming responses
-    let jsonContent: string;
-    let openaiDuration: number;
+    // HEARTBEAT LOG: After OpenAI API call
+    const openaiEndTime = Date.now();
+    const openaiDuration = Math.round((openaiEndTime - openaiStartTime) / 1000);
+    console.log("🟢 HEARTBEAT: OpenAI API call completed", {
+      timestamp: new Date().toISOString(),
+      openaiDuration: openaiDuration + "s",
+      totalElapsed: Math.round((openaiEndTime - generationStartTime) / 1000) + "s",
+      responseLength: aiResponse.choices[0].message.content?.length || 0,
+    });
 
-    if (supportsSSE) {
-      // STREAMING MODE: Stream chunks to client via SSE
-      console.log("🌊 [STREAMING] Starting SSE stream to client");
-
-      const stream = new ReadableStream({
-        async start(controller) {
-          const encoder = new TextEncoder();
-          let accumulatedContent = "";
-          let lastProgressUpdate = Date.now();
-          const progressThrottleMs = 500; // Send progress every 500ms
-          let chunkCount = 0;
-
-          try {
-            // Send initial progress event
-            const progressData = {
-              type: 'progress',
-              contentLength: 0,
-              elapsedTime: 0,
-              estimatedExercise: 0
-            };
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressData)}\n\n`));
-
-            for await (const chunk of aiResponse) {
-              const delta = chunk.choices[0]?.delta?.content || '';
-              if (delta) {
-                accumulatedContent += delta;
-                chunkCount++;
-
-                // Throttled progress updates
-                const now = Date.now();
-                if (now - lastProgressUpdate >= progressThrottleMs) {
-                  const elapsedSeconds = Math.floor((now - openaiStartTime) / 1000);
-                  const estimatedExercise = Math.min(
-                    Math.floor(accumulatedContent.length / 2000), 
-                    exerciseCount
-                  );
-
-                  const progressData = {
-                    type: 'progress',
-                    contentLength: accumulatedContent.length,
-                    elapsedTime: elapsedSeconds,
-                    estimatedExercise,
-                    totalExercises: exerciseCount
-                  };
-
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(progressData)}\n\n`));
-                  lastProgressUpdate = now;
-
-                  console.log(`🌊 [STREAMING] Progress: ${accumulatedContent.length} chars, exercise ~${estimatedExercise}/${exerciseCount}`);
-                }
-              }
-            }
-
-            openaiDuration = Math.round((Date.now() - openaiStartTime) / 1000);
-            console.log(`⏱️ [TIMING] OpenAI streaming completed: ${openaiDuration}s (${chunkCount} chunks)`);
-
-            jsonContent = accumulatedContent;
-
-            // Parse and validate the complete response
-            let worksheetData;
-            try {
-              console.log("🔵 [STREAMING] Starting JSON parsing", {
-                timestamp: new Date().toISOString(),
-                contentLength: jsonContent?.length || 0,
-              });
-
-              worksheetData = parseAIResponse(jsonContent);
-
-              console.log("🟢 [STREAMING] JSON parsing completed", {
-                timestamp: new Date().toISOString(),
-                exercisesCount: worksheetData.exercises?.length || 0,
-              });
-
-              if (!worksheetData.title || !worksheetData.exercises || !Array.isArray(worksheetData.exercises)) {
-                throw new Error("Invalid worksheet structure returned from AI");
-              }
-
-              if (worksheetData.exercises.length !== exerciseCount && !isRegeneration) {
-                throw new Error(`Generated ${worksheetData.exercises.length} exercises instead of required ${exerciseCount}`);
-              }
-
-              // Validate and fix exercises
-              for (let i = 0; i < worksheetData.exercises.length; i++) {
-                const exercise = worksheetData.exercises[i];
-                try {
-                  validateExercise(exercise);
-                } catch (validationError) {
-                  // Continue with lenient mode
-                }
-              }
-
-              // Fix exercise numbering
-              worksheetData.exercises.forEach((exercise: any, index: number) => {
-                const exerciseNumber = index + 1;
-                const exerciseType = exercise.type.charAt(0).toUpperCase() + exercise.type.slice(1).replace(/-/g, " ");
-                exercise.title = `Exercise ${exerciseNumber}: ${exerciseType}`;
-              });
-
-              const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);
-              worksheetData.sourceCount = sourceCount;
-
-            } catch (parseError) {
-              console.error("❌ [STREAMING] Failed to parse AI response:", parseError);
-              throw parseError;
-            }
-
-            // Save to database if not regeneration
-            if (!isRegeneration) {
-              try {
-                const dbSaveStartTime = Date.now();
-                console.log("🔵 [STREAMING] Starting database save");
-
-                const fullPrompt = `SYSTEM MESSAGE:\n${systemMessage}\n\nUSER MESSAGE:\n${sanitizedPrompt}`;
-                const sanitizedFormData = formData ? JSON.parse(JSON.stringify(formData)) : {};
-
-                // Remove base64 data URLs before saving
-                const sanitizedImage = selectedImage ? {
-                  ...selectedImage,
-                  url: selectedImage.url?.startsWith('data:') ? null : selectedImage.url,
-                  ai_generated_url: selectedImage.ai_generated_url?.startsWith('data:') ? null : selectedImage.ai_generated_url,
-                  thumbnail: selectedImage.thumbnail?.startsWith('data:') ? null : selectedImage.thumbnail
-                } : null;
-
-                const sanitizedAudio = selectedAudio ? {
-                  ...selectedAudio,
-                  url: selectedAudio.url?.startsWith('data:') ? null : selectedAudio.url,
-                  ai_generated_audio_url: selectedAudio.ai_generated_audio_url?.startsWith('data:') ? null : selectedAudio.ai_generated_audio_url
-                } : null;
-
-                const generationTimeSeconds = Math.round((Date.now() - generationStartTime) / 1000);
-
-                const { data: worksheet, error } = await supabaseAdmin
-                  .rpc("insert_worksheet_bypass_limit", {
-                    p_prompt: fullPrompt,
-                    p_form_data: {
-                      ...sanitizedFormData,
-                      selectedImage: sanitizedImage,
-                      selectedAudio: sanitizedAudio,
-                    },
-                    p_ai_response: JSON.stringify(worksheetData),
-                    p_html_content: null,
-                    p_user_id: userId || null,
-                    p_ip_address: ip || "",
-                    p_status: "completed",
-                    p_title: worksheetData.title || "Untitled Worksheet",
-                    p_generation_time_seconds: generationTimeSeconds,
-                    p_country: geoData.country || null,
-                    p_city: geoData.city || null,
-                    p_teacher_email: teacherEmail || null,
-                  });
-
-                if (error) {
-                  console.error("❌ [STREAMING] Database save error:", error);
-                  throw new Error(`Database save failed: ${error.message}`);
-                }
-
-                if (!worksheet || worksheet.length === 0) {
-                  throw new Error("Failed to insert worksheet");
-                }
-
-                const worksheetId = worksheet[0].id;
-                worksheetData.id = worksheetId;
-
-                const dbSaveDuration = Date.now() - dbSaveStartTime;
-                console.log(`⏱️ [TIMING] Database save: ${dbSaveDuration}ms`);
-
-                console.log("🟢 [STREAMING] Database save completed", {
-                  worksheetId,
-                  duration: `${dbSaveDuration}ms`,
-                });
-              } catch (dbError) {
-                console.error("❌ [STREAMING] Database save failed:", dbError);
-                // Continue anyway - frontend can retry save
-              }
-            }
-
-            // Send completion event with worksheet data
-            const completeData = {
-              type: 'complete',
-              data: worksheetData,
-              timings: {
-                openai: openaiDuration,
-                totalChunks: chunkCount
-              }
-            };
-
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(completeData)}\n\n`));
-            console.log("🟢 [STREAMING] Stream completed successfully");
-
-            controller.close();
-          } catch (error) {
-            console.error("❌ [STREAMING] Stream error:", error);
-            const errorData = {
-              type: 'error',
-              error: error instanceof Error ? error.message : 'Unknown streaming error'
-            };
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorData)}\n\n`));
-            controller.close();
-          }
-        }
-      });
-
-      return new Response(stream, {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        },
-      });
-
-    } else {
-      // NON-STREAMING MODE: Traditional blocking response (fallback)
-      console.log("📦 [NON-STREAMING] Using traditional blocking mode");
-      
-      jsonContent = aiResponse.choices[0].message.content;
-      const openaiEndTime = Date.now();
-      openaiDuration = Math.round((openaiEndTime - openaiStartTime) / 1000);
-      
-      console.log("🟢 HEARTBEAT: OpenAI API call completed", {
-        timestamp: new Date().toISOString(),
-        openaiDuration: openaiDuration + "s",
-        totalElapsed: Math.round((openaiEndTime - generationStartTime) / 1000) + "s",
-        responseLength: jsonContent?.length || 0,
-      });
-    }
+    const jsonContent = aiResponse.choices[0].message.content;
 
     // Parse the JSON response with error handling
     let worksheetData;
