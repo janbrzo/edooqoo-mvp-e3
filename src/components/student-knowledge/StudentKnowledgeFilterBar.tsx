@@ -29,6 +29,9 @@ interface StudentKnowledgeFilterBarProps {
   onShowOutdatedChange: (value: boolean) => void;
   onReset: () => void;
   hasActiveFilters: boolean;
+  groupBy?: 'none' | 'category';
+  onGroupByChange?: (value: 'none' | 'category') => void;
+  totalCount?: number;
 }
 
 export const StudentKnowledgeFilterBar = ({
@@ -42,6 +45,9 @@ export const StudentKnowledgeFilterBar = ({
   onShowOutdatedChange,
   onReset,
   hasActiveFilters,
+  groupBy,
+  onGroupByChange,
+  totalCount,
 }: StudentKnowledgeFilterBarProps) => {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -59,6 +65,22 @@ export const StudentKnowledgeFilterBar = ({
 
       {/* Filters - compact layout in one line */}
       <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+        {/* View Type (Group By) */}
+        {groupBy !== undefined && onGroupByChange && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">View:</span>
+            <Select value={groupBy} onValueChange={onGroupByChange}>
+              <SelectTrigger className="w-[140px] h-9 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Timeline</SelectItem>
+                <SelectItem value="category">By Category</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {/* Category Filter */}
         <Popover>
           <PopoverTrigger asChild>
@@ -131,6 +153,13 @@ export const StudentKnowledgeFilterBar = ({
             Outdated
           </Label>
         </div>
+
+        {/* Total Count */}
+        {totalCount !== undefined && (
+          <span className="text-xs text-muted-foreground whitespace-nowrap ml-auto">
+            {totalCount} {totalCount === 1 ? 'note' : 'notes'}
+          </span>
+        )}
 
         {/* Reset Filters */}
         {hasActiveFilters && (

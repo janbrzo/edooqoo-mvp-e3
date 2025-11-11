@@ -172,24 +172,10 @@ export const StudentKnowledgeSection = ({
         onShowOutdatedChange={handleShowOutdatedChange}
         onReset={handleReset}
         hasActiveFilters={hasActiveFilters}
+        groupBy={groupBy}
+        onGroupByChange={(v) => setGroupBy(v)}
+        totalCount={totalCount}
       />
-
-      {/* Group By Toggle */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">View:</span>
-        <Select value={groupBy} onValueChange={(v) => setGroupBy(v as 'none' | 'category')}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Timeline View</SelectItem>
-            <SelectItem value="category">Group by Category</SelectItem>
-          </SelectContent>
-        </Select>
-        <span className="text-sm text-muted-foreground ml-auto">
-          {totalCount} {totalCount === 1 ? 'note' : 'notes'}
-        </span>
-      </div>
 
       {/* Loading State */}
       {isLoading && entries.length === 0 && (
