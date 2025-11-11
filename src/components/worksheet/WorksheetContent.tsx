@@ -375,7 +375,7 @@ export default function WorksheetContent({
             
             {/* Pinned Audio Player - small floating window in bottom right corner */}
             {isPinned && reconstructedAudio && (
-              <div className="fixed bottom-20 right-4 z-50 bg-white border-2 border-worksheet-purple rounded-lg shadow-2xl p-4 w-80">
+              <div className="fixed bottom-6 right-24 z-50 bg-white border-2 border-worksheet-purple rounded-lg shadow-2xl p-4 w-80">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                     🎧 Pinned Audio Player

@@ -25,18 +25,18 @@ export const StudentKnowledgeToggleButton = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="relative">
+          <div className="fixed top-[calc(50%+35px)] right-6 z-40">
             <Button
               onClick={onClick}
               size="icon"
-              className="fixed top-[calc(50%+40px)] right-6 p-3 rounded-full shadow-lg bg-amber-500 text-white opacity-80 hover:opacity-100 transition-opacity z-40"
+              className="relative p-3 rounded-full shadow-lg bg-amber-500 text-white opacity-80 hover:opacity-100 transition-opacity"
             >
               <StickyNote className="h-5 w-5" />
             </Button>
             {count > 0 && (
               <Badge 
                 variant="secondary" 
-                className="absolute top-[calc(50%+20px)] right-3 h-6 w-6 flex items-center justify-center p-0 text-xs bg-red-500 text-white border-2 border-background shadow-md z-50"
+                className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 text-xs bg-red-500 text-white border-2 border-background shadow-md z-10"
               >
                 {count > 9 ? '9+' : count}
               </Badge>
