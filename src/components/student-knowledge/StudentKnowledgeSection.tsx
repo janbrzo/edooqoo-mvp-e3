@@ -6,8 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StudentKnowledgeFilterBar } from './StudentKnowledgeFilterBar';
 import { StudentKnowledgeEntryCard } from './StudentKnowledgeEntryCard';
-import { StudentKnowledgeEditDialog } from './StudentKnowledgeEditDialog';
-import { StudentKnowledgeQuickAddModal } from './StudentKnowledgeQuickAddModal';
+import { StudentKnowledgeSidePanel } from './StudentKnowledgeSidePanel';
 import { useStudentKnowledge } from '@/hooks/useStudentKnowledge';
 import {
   StudentKnowledgeEntry,
@@ -53,8 +52,9 @@ export const StudentKnowledgeSection = ({
     resetFilters,
   } = useStudentKnowledge({ studentId, teacherId });
 
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<StudentKnowledgeEntry | null>(null);
+  const [panelMode, setPanelMode] = useState<'add' | 'view' | 'edit'>('add');
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<StudentKnowledgeEntry | null>(null);
   const [groupBy, setGroupBy] = useState<'none' | 'category'>('none');
 
   // Group entries by category if needed
@@ -94,23 +94,45 @@ export const StudentKnowledgeSection = ({
     resetFilters();
   };
 
-  const handleAdd = async (entry: Omit<NewKnowledgeEntry, 'student_id' | 'teacher_id'>) => {
-    await addEntry(entry);
+  const handleOpenAddPanel = () => {
+    setPanelMode('add');
+    setSelectedEntry(null);
+    setIsPanelOpen(true);
   };
 
-  const handleUpdate = async (entryId: string, updates: UpdateKnowledgeEntry) => {
-    await updateEntry(entryId, updates);
+  const handleViewEntry = (entry: StudentKnowledgeEntry) => {
+    setPanelMode('view');
+    setSelectedEntry(entry);
+    setIsPanelOpen(true);
+  };
+
+  const handleEditEntry = (entry: StudentKnowledgeEntry) => {
+    setPanelMode('edit');
+    setSelectedEntry(entry);
+    setIsPanelOpen(true);
+  };
+
+  const handlePanelSave = async (data: NewKnowledgeEntry | { entryId: string; updates: UpdateKnowledgeEntry }) => {
+    if ('entryId' in data) {
+      // Edit mode
+      await updateEntry(data.entryId, data.updates);
+    } else {
+      // Add mode
+      await addEntry(data);
+    }
+    setIsPanelOpen(false);
+    setSelectedEntry(null);
   };
 
   const handleDelete = async (entryId: string) => {
     await deleteEntry(entryId);
   };
 
-  const handleMarkAsOutdated = async (entryId: string) => {
+  const handleMarkOutdated = async (entryId: string) => {
     await markAsOutdated(entryId);
   };
 
-  const handleMarkAsCurrent = async (entryId: string) => {
+  const handleMarkCurrent = async (entryId: string) => {
     await markAsCurrent(entryId);
   };
 
@@ -130,7 +152,7 @@ export const StudentKnowledgeSection = ({
             Notes and observations about {studentName}
           </p>
         </div>
-        <Button onClick={() => setIsQuickAddOpen(true)} className="gap-2">
+        <Button onClick={handleOpenAddPanel} className="gap-2">
           <Plus className="h-4 w-4" />
           Add Note
         </Button>
@@ -193,7 +215,7 @@ export const StudentKnowledgeSection = ({
             <p className="text-sm text-muted-foreground mb-4 max-w-sm">
               Start building your knowledge base about {studentName} by adding your first note.
             </p>
-            <Button onClick={() => setIsQuickAddOpen(true)} className="gap-2">
+            <Button onClick={handleOpenAddPanel} className="gap-2">
               <Plus className="h-4 w-4" />
               Add your first note
             </Button>
@@ -227,10 +249,11 @@ export const StudentKnowledgeSection = ({
                   <StudentKnowledgeEntryCard
                     key={entry.id}
                     entry={entry}
-                    onEdit={setEditingEntry}
+                    onView={handleViewEntry}
+                    onEdit={handleEditEntry}
                     onDelete={handleDelete}
-                    onMarkAsOutdated={handleMarkAsOutdated}
-                    onMarkAsCurrent={handleMarkAsCurrent}
+                    onMarkOutdated={handleMarkOutdated}
+                    onMarkCurrent={handleMarkCurrent}
                     worksheetTitle={entry.worksheet_id ? 'Worksheet' : undefined}
                   />
                 ))}
@@ -249,20 +272,20 @@ export const StudentKnowledgeSection = ({
         </div>
       )}
 
-      {/* Quick Add Modal */}
-      <StudentKnowledgeQuickAddModal
-        isOpen={isQuickAddOpen}
-        onClose={() => setIsQuickAddOpen(false)}
-        onAdd={handleAdd}
+      {/* Side Panel */}
+      <StudentKnowledgeSidePanel
+        mode={panelMode}
+        isOpen={isPanelOpen}
+        onClose={() => {
+          setIsPanelOpen(false);
+          setSelectedEntry(null);
+        }}
+        entry={selectedEntry}
+        studentId={studentId}
+        teacherId={teacherId}
+        studentName={studentName}
+        onSave={handlePanelSave}
         suggestedTags={suggestedTags}
-      />
-
-      {/* Edit Dialog */}
-      <StudentKnowledgeEditDialog
-        entry={editingEntry}
-        isOpen={!!editingEntry}
-        onClose={() => setEditingEntry(null)}
-        onSave={handleUpdate}
       />
     </div>
   );

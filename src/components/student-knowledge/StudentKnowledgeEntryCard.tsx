@@ -1,4 +1,4 @@
-import { Pencil, Trash2, ExternalLink, Archive, ArchiveRestore } from 'lucide-react';
+import { Eye, Pencil, Trash2, ExternalLink, Archive, ArchiveRestore } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,19 +18,21 @@ import { format } from 'date-fns';
 
 interface StudentKnowledgeEntryCardProps {
   entry: StudentKnowledgeEntry;
+  onView: (entry: StudentKnowledgeEntry) => void;
   onEdit: (entry: StudentKnowledgeEntry) => void;
   onDelete: (entryId: string) => void;
-  onMarkAsOutdated: (entryId: string) => void;
-  onMarkAsCurrent: (entryId: string) => void;
+  onMarkOutdated: (entryId: string) => void;
+  onMarkCurrent: (entryId: string) => void;
   worksheetTitle?: string;
 }
 
 export const StudentKnowledgeEntryCard = ({
   entry,
+  onView,
   onEdit,
   onDelete,
-  onMarkAsOutdated,
-  onMarkAsCurrent,
+  onMarkOutdated,
+  onMarkCurrent,
   worksheetTitle,
 }: StudentKnowledgeEntryCardProps) => {
   const categoryMeta = getCategoryMetadata(entry.category);
@@ -66,6 +68,15 @@ export const StudentKnowledgeEntryCard = ({
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => onView(entry)}
+              className="h-8 w-8 p-0"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => onEdit(entry)}
               className="h-8 w-8 p-0"
               disabled={entry.is_outdated}
@@ -95,7 +106,7 @@ export const StudentKnowledgeEntryCard = ({
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() => onMarkAsCurrent(entry.id)}
+                      onClick={() => onMarkCurrent(entry.id)}
                       className="bg-blue-600 hover:bg-blue-700"
                     >
                       Mark as Current
@@ -124,7 +135,7 @@ export const StudentKnowledgeEntryCard = ({
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() => onMarkAsOutdated(entry.id)}
+                      onClick={() => onMarkOutdated(entry.id)}
                       className="bg-orange-600 hover:bg-orange-700"
                     >
                       Mark as Outdated
