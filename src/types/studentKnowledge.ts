@@ -212,7 +212,7 @@ export const DEFAULT_FILTERS: KnowledgeFilters = {
   limit: 20, // 20 wpisów na stronę
   offset: 0,
   sortBy: 'newest',
-  showOutdated: false // Domyślnie nie pokazuj nieaktualnych
+  showOutdated: true // Domyślnie pokazuj wszystkie wpisy włącznie z nieaktualnymi
 };
 
 /**

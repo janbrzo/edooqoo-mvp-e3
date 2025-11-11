@@ -57,16 +57,16 @@ export const StudentKnowledgeFilterBar = ({
         />
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-2">
+      {/* Filters - compact layout in one line */}
+      <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
         {/* Category Filter */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Category
+            <Button variant="outline" size="sm" className="gap-1.5 h-9">
+              <Filter className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Category</span>
               {selectedCategory && (
-                <Badge variant="secondary" className="ml-1 px-1.5 py-0">
+                <Badge variant="secondary" className="ml-0.5 px-1.5 py-0 text-xs">
                   1
                 </Badge>
               )}
@@ -107,7 +107,7 @@ export const StudentKnowledgeFilterBar = ({
 
         {/* Sort By */}
         <Select value={sortBy} onValueChange={onSortChange}>
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[130px] h-9 text-sm">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
@@ -120,22 +120,23 @@ export const StudentKnowledgeFilterBar = ({
         </Select>
 
         {/* Show Outdated Toggle */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 border rounded-md px-2.5 h-9 bg-background">
           <Switch
             id="show-outdated"
             checked={showOutdated}
             onCheckedChange={onShowOutdatedChange}
+            className="scale-90"
           />
-          <Label htmlFor="show-outdated" className="text-sm cursor-pointer">
-            Show Outdated
+          <Label htmlFor="show-outdated" className="text-xs cursor-pointer whitespace-nowrap">
+            Outdated
           </Label>
         </div>
 
         {/* Reset Filters */}
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={onReset} className="gap-2">
-            <X className="h-4 w-4" />
-            Reset
+          <Button variant="ghost" size="sm" onClick={onReset} className="gap-1.5 h-9 px-2.5">
+            <X className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Reset</span>
           </Button>
         )}
       </div>
