@@ -12,7 +12,9 @@ import { StudentEditDialog } from '@/components/StudentEditDialog';
 import { DeleteWorksheetButton } from '@/components/DeleteWorksheetButton';
 import { StudentSelector } from '@/components/StudentSelector';
 import { StudentKnowledgeSection } from '@/components/student-knowledge/StudentKnowledgeSection';
-import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap } from 'lucide-react';
+import { useStudentKnowledge } from '@/hooks/useStudentKnowledge';
+import { StudentKnowledgeEntryCard } from '@/components/student-knowledge/StudentKnowledgeEntryCard';
+import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote } from 'lucide-react';
 import { format } from 'date-fns';
 import { deepFixTextObjects } from '@/utils/textObjectFixer';
 import { MediaBadges } from '@/components/worksheet/MediaBadges';
@@ -38,13 +40,19 @@ const StudentPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const pageSize = 10;
   
+  const student = students.find(s => s.id === id);
+  
   const { worksheets, loading, deleteWorksheet, refetch: refetchWorksheets, restoreWorksheet, totalCount } = 
     useWorksheetHistory(id || '', false, true, currentPage, pageSize);
   const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted, totalCount: deletedTotalCount } = 
     useDeletedWorksheets(id || '', false, true, deletedCurrentPage, pageSize);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const student = students.find(s => s.id === id);
+  // Get recent notes for overview
+  const studentKnowledge = useStudentKnowledge({
+    studentId: id || '',
+    teacherId: student?.teacher_id || '',
+  });
 
   useEffect(() => {
     refetchWorksheets();
@@ -181,7 +189,8 @@ const StudentPage = () => {
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview">
+          <TabsContent value="overview" className="space-y-6">
+            {/* Student Details */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -250,6 +259,131 @@ const StudentPage = () => {
                     <span>{format(new Date(student.created_at), 'MMM dd, yyyy')}</span>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Worksheets */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center">
+                    <FileText className="h-5 w-5 mr-2" />
+                    Recent Worksheets
+                  </CardTitle>
+                  {worksheets.length > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setActiveTab('worksheets')}
+                    >
+                      View All
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  </div>
+                ) : worksheets.length > 0 ? (
+                  <div className="space-y-3">
+                    {worksheets.slice(0, 5).map((worksheet) => (
+                      <div
+                        key={worksheet.id}
+                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => handleWorksheetClick(worksheet)}
+                      >
+                        <div className="flex items-center space-x-3 flex-1">
+                          <FileText className="h-4 w-4 text-primary" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-sm">
+                                {worksheet.title || 'Untitled Worksheet'}
+                              </h3>
+                              <MediaBadges 
+                                hasImage={hasImage(worksheet)} 
+                                hasAudio={hasAudio(worksheet)}
+                                size="sm"
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(worksheet.created_at), 'MMM dd, yyyy')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                    <p className="text-muted-foreground">No worksheets generated yet</p>
+                    <Button onClick={handleGenerateWorksheet} className="mt-4" size="sm">
+                      Generate First Worksheet
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Recent Notes */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center">
+                    <StickyNote className="h-5 w-5 mr-2" />
+                    Recent Notes
+                  </CardTitle>
+                  {studentKnowledge.entries.length > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setActiveTab('knowledge')}
+                    >
+                      View All
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {studentKnowledge.isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  </div>
+                ) : studentKnowledge.entries.length > 0 ? (
+                  <div className="space-y-3">
+                    {studentKnowledge.entries.slice(0, 3).map((entry) => (
+                      <StudentKnowledgeEntryCard
+                        key={entry.id}
+                        entry={entry}
+                        onView={(entryToView) => {
+                          // Switch to Knowledge Base tab for viewing
+                          setActiveTab('knowledge');
+                        }}
+                        onEdit={(entryToEdit) => {
+                          // Switch to Knowledge Base tab for editing
+                          setActiveTab('knowledge');
+                        }}
+                        onDelete={studentKnowledge.deleteEntry}
+                        onMarkOutdated={studentKnowledge.markAsOutdated}
+                        onMarkCurrent={studentKnowledge.markAsCurrent}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <StickyNote className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                    <p className="text-muted-foreground">No notes added yet</p>
+                    <Button 
+                      onClick={() => setActiveTab('knowledge')} 
+                      className="mt-4" 
+                      size="sm"
+                    >
+                      Add First Note
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
