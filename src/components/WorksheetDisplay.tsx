@@ -11,6 +11,9 @@ import WorksheetContent from "./worksheet/WorksheetContent";
 import WorksheetViewTracking from "./worksheet/WorksheetViewTracking";
 import { useDownloadStatus } from "@/hooks/useDownloadStatus";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { StudentKnowledgeFAB } from "@/components/student-knowledge/StudentKnowledgeFAB";
+import { StudentKnowledgeQuickAddModal } from "@/components/student-knowledge/StudentKnowledgeQuickAddModal";
+import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
 
 interface Exercise {
   type: string;
@@ -54,6 +57,7 @@ interface WorksheetDisplayProps {
   setEditableWorksheet: (worksheet: any) => void;
   userId?: string;
   studentName?: string;
+  studentId?: string;
   onStudentChange?: () => void;
 }
 
@@ -71,6 +75,7 @@ export default function WorksheetDisplay({
   setEditableWorksheet,
   userId,
   studentName,
+  studentId,
   onStudentChange
 }: WorksheetDisplayProps) {
   const [viewMode, setViewMode] = useState<'student' | 'teacher'>('student');
@@ -85,6 +90,15 @@ export default function WorksheetDisplay({
   const isMobile = useIsMobile();
   const { trackDownloadAttempt } = useDownloadTracking(userId);
   const { trackPaymentButtonClick } = usePaymentTracking(userId);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  
+  // Initialize student knowledge hook only if we have studentId and userId (teacherId)
+  const studentKnowledge = useStudentKnowledge({
+    studentId: studentId || '',
+    teacherId: userId || ''
+  });
+  
+  const shouldShowFAB = !!(studentId && userId && worksheetId);
   
   // CRITICAL FIX: Reconstruct selectedAudio/selectedImage from database fields
   // This fixes Problem 2 - media not loading from Dashboard
@@ -296,8 +310,31 @@ export default function WorksheetDisplay({
     handleDownloadUnlock(token);
   };
 
+  const handleQuickAddNote = async (entry: any) => {
+    if (studentKnowledge.addEntry) {
+      // Add worksheet_id to the entry
+      await studentKnowledge.addEntry({
+        ...entry,
+        worksheet_id: worksheetId
+      });
+      setIsQuickAddOpen(false);
+    }
+  };
+
   return (
     <WorksheetViewTracking worksheetId={worksheetId} userId={userId}>
+      {shouldShowFAB && (
+        <>
+          <StudentKnowledgeFAB onClick={() => setIsQuickAddOpen(true)} />
+          <StudentKnowledgeQuickAddModal
+            isOpen={isQuickAddOpen}
+            onClose={() => setIsQuickAddOpen(false)}
+            onAdd={handleQuickAddNote}
+            suggestedTags={studentKnowledge.suggestedTags || []}
+          />
+        </>
+      )}
+      
       <WorksheetContainer
         worksheetId={worksheetId}
         onDownload={handleDownloadWithTracking}

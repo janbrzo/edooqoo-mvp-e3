@@ -86,6 +86,7 @@ export default function GenerationView({
         onFeedbackSubmit={handleFeedbackSubmit}
         userId={userId}
         studentName={studentName}
+        studentId={inputParams?.studentId}
       />
     </div>
   );

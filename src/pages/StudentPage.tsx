@@ -11,6 +11,7 @@ import { useDeletedWorksheets } from '@/hooks/useDeletedWorksheets';
 import { StudentEditDialog } from '@/components/StudentEditDialog';
 import { DeleteWorksheetButton } from '@/components/DeleteWorksheetButton';
 import { StudentSelector } from '@/components/StudentSelector';
+import { StudentKnowledgeSection } from '@/components/student-knowledge/StudentKnowledgeSection';
 import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { deepFixTextObjects } from '@/utils/textObjectFixer';
@@ -440,6 +441,15 @@ const StudentPage = () => {
         </Card>
             )}
           </div>
+        </div>
+
+        {/* Student Knowledge Section */}
+        <div className="mt-8">
+          <StudentKnowledgeSection
+            studentId={student.id}
+            teacherId={student.teacher_id}
+            studentName={student.name}
+          />
         </div>
 
         <StudentEditDialog
