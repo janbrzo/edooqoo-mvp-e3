@@ -46,6 +46,8 @@ export const StudentKnowledgeSection = ({
     addEntry,
     updateEntry,
     deleteEntry,
+    markAsOutdated,
+    markAsCurrent,
     fetchEntries,
     loadMore,
     resetFilters,
@@ -84,6 +86,10 @@ export const StudentKnowledgeSection = ({
     fetchEntries({ ...filters, sortBy, offset: 0 });
   };
 
+  const handleShowOutdatedChange = (showOutdated: boolean) => {
+    fetchEntries({ ...filters, showOutdated, offset: 0 });
+  };
+
   const handleReset = () => {
     resetFilters();
   };
@@ -100,10 +106,19 @@ export const StudentKnowledgeSection = ({
     await deleteEntry(entryId);
   };
 
+  const handleMarkAsOutdated = async (entryId: string) => {
+    await markAsOutdated(entryId);
+  };
+
+  const handleMarkAsCurrent = async (entryId: string) => {
+    await markAsCurrent(entryId);
+  };
+
   const hasActiveFilters =
     filters.search !== '' ||
     filters.category !== null ||
-    filters.sortBy !== DEFAULT_FILTERS.sortBy;
+    filters.sortBy !== DEFAULT_FILTERS.sortBy ||
+    filters.showOutdated !== DEFAULT_FILTERS.showOutdated;
 
   return (
     <div className="space-y-6">
@@ -131,6 +146,8 @@ export const StudentKnowledgeSection = ({
         onCategoryChange={handleCategoryChange}
         sortBy={filters.sortBy || 'newest'}
         onSortChange={handleSortChange}
+        showOutdated={filters.showOutdated || false}
+        onShowOutdatedChange={handleShowOutdatedChange}
         onReset={handleReset}
         hasActiveFilters={hasActiveFilters}
       />
@@ -212,6 +229,8 @@ export const StudentKnowledgeSection = ({
                     entry={entry}
                     onEdit={setEditingEntry}
                     onDelete={handleDelete}
+                    onMarkAsOutdated={handleMarkAsOutdated}
+                    onMarkAsCurrent={handleMarkAsCurrent}
                     worksheetTitle={entry.worksheet_id ? 'Worksheet' : undefined}
                   />
                 ))}

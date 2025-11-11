@@ -256,6 +256,9 @@ export type Database = {
           deleted_at: string | null
           entry_source: string | null
           id: string
+          is_outdated: boolean | null
+          outdated_at: string | null
+          outdated_reason: string | null
           student_id: string
           tags: string[] | null
           teacher_id: string
@@ -269,6 +272,9 @@ export type Database = {
           deleted_at?: string | null
           entry_source?: string | null
           id?: string
+          is_outdated?: boolean | null
+          outdated_at?: string | null
+          outdated_reason?: string | null
           student_id: string
           tags?: string[] | null
           teacher_id: string
@@ -282,6 +288,9 @@ export type Database = {
           deleted_at?: string | null
           entry_source?: string | null
           id?: string
+          is_outdated?: boolean | null
+          outdated_at?: string | null
+          outdated_reason?: string | null
           student_id?: string
           tags?: string[] | null
           teacher_id?: string
@@ -754,6 +763,14 @@ export type Database = {
             }[]
           }
       is_user_anonymous: { Args: { user_id: string }; Returns: boolean }
+      mark_knowledge_current: {
+        Args: { p_entry_id: string; p_teacher_id: string }
+        Returns: boolean
+      }
+      mark_knowledge_outdated: {
+        Args: { p_entry_id: string; p_reason?: string; p_teacher_id: string }
+        Returns: boolean
+      }
       normalize_tag: { Args: { tag: string }; Returns: string }
       reactivate_user_account: {
         Args: { user_email: string }

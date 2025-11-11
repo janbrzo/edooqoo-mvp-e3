@@ -41,6 +41,11 @@ export const useStudentKnowledge = ({ studentId, teacherId }: UseStudentKnowledg
         .eq('teacher_id', teacherId)
         .is('deleted_at', null);
 
+      // Filter outdated entries (default: hide outdated)
+      if (!appliedFilters.showOutdated) {
+        query = query.eq('is_outdated', false);
+      }
+
       // Apply category filter
       if (appliedFilters.category) {
         query = query.eq('category', appliedFilters.category);
@@ -253,6 +258,87 @@ export const useStudentKnowledge = ({ studentId, teacherId }: UseStudentKnowledg
   }, [teacherId, fetchEntries]);
 
   /**
+   * Mark entry as outdated
+   */
+  const markAsOutdated = useCallback(async (entryId: string, reason?: string) => {
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.rpc('mark_knowledge_outdated', {
+        p_entry_id: entryId,
+        p_teacher_id: teacherId,
+        p_reason: reason || null,
+      });
+
+      if (error) throw error;
+
+      if (!data) {
+        throw new Error('Entry not found or you do not have permission to mark it as outdated');
+      }
+
+      // Refresh entries after marking as outdated
+      await fetchEntries();
+
+      toast({
+        title: 'Success',
+        description: 'Knowledge entry marked as outdated',
+      });
+
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to mark entry as outdated';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [teacherId, fetchEntries]);
+
+  /**
+   * Mark entry as current (undo outdated)
+   */
+  const markAsCurrent = useCallback(async (entryId: string) => {
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.rpc('mark_knowledge_current', {
+        p_entry_id: entryId,
+        p_teacher_id: teacherId,
+      });
+
+      if (error) throw error;
+
+      if (!data) {
+        throw new Error('Entry not found or you do not have permission to mark it as current');
+      }
+
+      // Refresh entries after marking as current
+      await fetchEntries();
+
+      toast({
+        title: 'Success',
+        description: 'Knowledge entry marked as current',
+      });
+
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to mark entry as current';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [teacherId, fetchEntries]);
+
+  /**
    * Load next page
    */
   const loadMore = useCallback(() => {
@@ -288,6 +374,8 @@ export const useStudentKnowledge = ({ studentId, teacherId }: UseStudentKnowledg
     addEntry,
     updateEntry,
     deleteEntry,
+    markAsOutdated,
+    markAsCurrent,
     loadMore,
     resetFilters,
     setFilters,

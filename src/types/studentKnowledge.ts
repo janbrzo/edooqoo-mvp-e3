@@ -67,6 +67,9 @@ export interface StudentKnowledgeEntry {
   created_at: string; // ISO timestamp
   updated_at: string; // ISO timestamp
   deleted_at: string | null; // NULL = aktywny, NOT NULL = usunięty
+  is_outdated: boolean; // TRUE = nieaktualne (przedawnione)
+  outdated_at: string | null; // Kiedy oznaczono jako nieaktualne
+  outdated_reason: string | null; // Opcjonalny powód oznaczenia jako nieaktualne
 }
 
 /**
@@ -92,6 +95,8 @@ export interface UpdateKnowledgeEntry {
   content?: string;
   tags?: string[];
   worksheet_id?: string | null;
+  is_outdated?: boolean;
+  outdated_reason?: string | null;
 }
 
 /**
@@ -108,6 +113,7 @@ export interface KnowledgeFilters {
   limit?: number; // Maksymalna liczba wyników (dla paginacji)
   offset?: number; // Przesunięcie dla paginacji (offset = 0 to pierwsza strona)
   sortBy?: SortOption; // Sposób sortowania
+  showOutdated?: boolean; // Pokazuj nieaktualne wpisy (domyślnie: false)
 }
 
 /**
@@ -205,7 +211,8 @@ export const DEFAULT_FILTERS: KnowledgeFilters = {
   search: '',
   limit: 20, // 20 wpisów na stronę
   offset: 0,
-  sortBy: 'newest'
+  sortBy: 'newest',
+  showOutdated: false // Domyślnie nie pokazuj nieaktualnych
 };
 
 /**

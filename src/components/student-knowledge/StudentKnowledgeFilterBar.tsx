@@ -1,6 +1,8 @@
 import { Search, Filter, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -23,6 +25,8 @@ interface StudentKnowledgeFilterBarProps {
   onCategoryChange: (category: KnowledgeCategory | null) => void;
   sortBy: 'newest' | 'oldest' | 'category';
   onSortChange: (sort: 'newest' | 'oldest' | 'category') => void;
+  showOutdated: boolean;
+  onShowOutdatedChange: (value: boolean) => void;
   onReset: () => void;
   hasActiveFilters: boolean;
 }
@@ -34,6 +38,8 @@ export const StudentKnowledgeFilterBar = ({
   onCategoryChange,
   sortBy,
   onSortChange,
+  showOutdated,
+  onShowOutdatedChange,
   onReset,
   hasActiveFilters,
 }: StudentKnowledgeFilterBarProps) => {
@@ -112,6 +118,18 @@ export const StudentKnowledgeFilterBar = ({
             ))}
           </SelectContent>
         </Select>
+
+        {/* Show Outdated Toggle */}
+        <div className="flex items-center gap-2">
+          <Switch
+            id="show-outdated"
+            checked={showOutdated}
+            onCheckedChange={onShowOutdatedChange}
+          />
+          <Label htmlFor="show-outdated" className="text-sm cursor-pointer">
+            Show Outdated
+          </Label>
+        </div>
 
         {/* Reset Filters */}
         {hasActiveFilters && (

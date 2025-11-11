@@ -1,4 +1,4 @@
-import { Pencil, Trash2, ExternalLink } from 'lucide-react';
+import { Pencil, Trash2, ExternalLink, Archive, ArchiveRestore } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,8 @@ interface StudentKnowledgeEntryCardProps {
   entry: StudentKnowledgeEntry;
   onEdit: (entry: StudentKnowledgeEntry) => void;
   onDelete: (entryId: string) => void;
+  onMarkAsOutdated: (entryId: string) => void;
+  onMarkAsCurrent: (entryId: string) => void;
   worksheetTitle?: string;
 }
 
@@ -27,6 +29,8 @@ export const StudentKnowledgeEntryCard = ({
   entry,
   onEdit,
   onDelete,
+  onMarkAsOutdated,
+  onMarkAsCurrent,
   worksheetTitle,
 }: StudentKnowledgeEntryCardProps) => {
   const categoryMeta = getCategoryMetadata(entry.category);
@@ -38,17 +42,25 @@ export const StudentKnowledgeEntryCard = ({
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className={`hover:shadow-md transition-shadow ${entry.is_outdated ? 'opacity-60' : ''}`}>
       <CardContent className="p-4">
-        {/* Header: Category + Actions */}
+        {/* Header: Category + Outdated Badge + Actions */}
         <div className="flex items-start justify-between mb-3">
-          <Badge
-            variant="outline"
-            className={`${categoryMeta?.color} border gap-1.5 px-2 py-1`}
-          >
-            <span className="text-sm">{categoryMeta?.icon}</span>
-            <span className="text-xs font-medium">{categoryMeta?.label}</span>
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="outline"
+              className={`${categoryMeta?.color} border gap-1.5 px-2 py-1`}
+            >
+              <span className="text-sm">{categoryMeta?.icon}</span>
+              <span className="text-xs font-medium">{categoryMeta?.label}</span>
+            </Badge>
+            
+            {entry.is_outdated && (
+              <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                Outdated
+              </Badge>
+            )}
+          </div>
 
           <div className="flex items-center gap-1">
             <Button
@@ -56,9 +68,71 @@ export const StudentKnowledgeEntryCard = ({
               size="sm"
               onClick={() => onEdit(entry)}
               className="h-8 w-8 p-0"
+              disabled={entry.is_outdated}
             >
               <Pencil className="h-4 w-4" />
             </Button>
+
+            {/* Archive/Restore Button */}
+            {entry.is_outdated ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700"
+                  >
+                    <ArchiveRestore className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Mark as Current?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will restore the note as current and relevant again.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onMarkAsCurrent(entry.id)}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Mark as Current
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700"
+                  >
+                    <Archive className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Mark as Outdated?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will mark the note as no longer relevant (e.g., student changed jobs, already mastered this skill). You can restore it later if needed.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => onMarkAsOutdated(entry.id)}
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      Mark as Outdated
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
