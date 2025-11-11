@@ -13,8 +13,9 @@ import { useDownloadStatus } from "@/hooks/useDownloadStatus";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StudentKnowledgeFAB } from "@/components/student-knowledge/StudentKnowledgeFAB";
 import { StudentKnowledgeSidePanel } from "@/components/student-knowledge/StudentKnowledgeSidePanel";
+import { StudentKnowledgeMiniList } from "@/components/student-knowledge/StudentKnowledgeMiniList";
 import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
-import type { NewKnowledgeEntry } from "@/types/studentKnowledge";
+import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry } from "@/types/studentKnowledge";
 
 interface Exercise {
   type: string;
@@ -92,6 +93,8 @@ export default function WorksheetDisplay({
   const { trackDownloadAttempt } = useDownloadTracking(userId);
   const { trackPaymentButtonClick } = usePaymentTracking(userId);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [panelMode, setPanelMode] = useState<'add' | 'view' | 'edit'>('add');
+  const [selectedEntry, setSelectedEntry] = useState<StudentKnowledgeEntry | null>(null);
   
   // Initialize student knowledge hook only if we have studentId and userId (teacherId)
   const studentKnowledge = useStudentKnowledge({
@@ -100,6 +103,7 @@ export default function WorksheetDisplay({
   });
   
   const shouldShowFAB = !!(studentId && userId && worksheetId);
+  const shouldShowMiniList = shouldShowFAB && studentKnowledge.entries.length > 0;
   
   // CRITICAL FIX: Reconstruct selectedAudio/selectedImage from database fields
   // This fixes Problem 2 - media not loading from Dashboard
@@ -311,31 +315,83 @@ export default function WorksheetDisplay({
     handleDownloadUnlock(token);
   };
 
-  const handleQuickAddNote = async (entry: NewKnowledgeEntry) => {
-    if (studentKnowledge.addEntry) {
-      await studentKnowledge.addEntry(entry);
+  const handleSaveEntry = async (data: NewKnowledgeEntry | { entryId: string; updates: UpdateKnowledgeEntry }) => {
+    try {
+      if ('entryId' in data) {
+        // Edit existing entry
+        await studentKnowledge.updateEntry(data.entryId, data.updates);
+        toast({
+          title: "Note updated",
+          description: "Student knowledge entry has been updated successfully.",
+          className: "bg-green-50 border-green-200"
+        });
+      } else {
+        // Add new entry
+        await studentKnowledge.addEntry(data);
+        toast({
+          title: "Note added",
+          description: "Student knowledge entry has been added successfully.",
+          className: "bg-green-50 border-green-200"
+        });
+      }
       setIsPanelOpen(false);
+      setSelectedEntry(null);
+      setPanelMode('add');
+    } catch (error) {
+      console.error('Error saving entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save the note. Please try again.",
+        variant: "destructive"
+      });
     }
+  };
+
+  const handleViewEntry = (entry: StudentKnowledgeEntry) => {
+    setSelectedEntry(entry);
+    setPanelMode('view');
+    setIsPanelOpen(true);
+  };
+
+  const handleAddNote = () => {
+    setSelectedEntry(null);
+    setPanelMode('add');
+    setIsPanelOpen(true);
+  };
+
+  const handleClosePanel = () => {
+    setIsPanelOpen(false);
+    setSelectedEntry(null);
+    setPanelMode('add');
   };
 
   return (
     <WorksheetViewTracking worksheetId={worksheetId} userId={userId}>
       {shouldShowFAB && (
         <>
-          <StudentKnowledgeFAB onClick={() => setIsPanelOpen(true)} />
+          <StudentKnowledgeFAB onClick={handleAddNote} />
           <StudentKnowledgeSidePanel
-            mode="add"
+            mode={panelMode}
             isOpen={isPanelOpen}
-            onClose={() => setIsPanelOpen(false)}
-            entry={null}
+            onClose={handleClosePanel}
+            entry={selectedEntry}
             studentId={studentId!}
             teacherId={userId!}
             studentName={studentName || ''}
             worksheetId={worksheetId || undefined}
-            onSave={handleQuickAddNote}
+            onSave={handleSaveEntry}
             suggestedTags={studentKnowledge.suggestedTags || []}
+            onEdit={() => setPanelMode('edit')}
           />
         </>
+      )}
+      
+      {shouldShowMiniList && !isPanelOpen && (
+        <StudentKnowledgeMiniList
+          entries={studentKnowledge.entries.slice(0, 10)}
+          onViewEntry={handleViewEntry}
+          isLoading={studentKnowledge.isLoading}
+        />
       )}
       
       <WorksheetContainer

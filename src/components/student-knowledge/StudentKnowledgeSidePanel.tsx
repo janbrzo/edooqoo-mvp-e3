@@ -36,6 +36,7 @@ interface StudentKnowledgeSidePanelProps {
   worksheetId?: string;
   onSave: (data: NewKnowledgeEntry | { entryId: string; updates: UpdateKnowledgeEntry }) => Promise<void>;
   suggestedTags?: string[];
+  onEdit?: () => void; // Callback to switch from view to edit mode
 }
 
 export const StudentKnowledgeSidePanel = ({
@@ -49,6 +50,7 @@ export const StudentKnowledgeSidePanel = ({
   worksheetId,
   onSave,
   suggestedTags = [],
+  onEdit,
 }: StudentKnowledgeSidePanelProps) => {
   const [selectedCategory, setSelectedCategory] = useState<KnowledgeCategory>('Goals');
   const [content, setContent] = useState('');
@@ -132,7 +134,7 @@ export const StudentKnowledgeSidePanel = ({
 
   return (
     <Sheet open={isOpen} onOpenChange={handleClose}>
-      <SheetContent side="right" className="w-full sm:max-w-xl">
+      <SheetContent side="right" className="w-full sm:max-w-[460px]">
         <SheetHeader>
           <SheetTitle>{getTitle()}</SheetTitle>
           <SheetDescription>{getDescription()}</SheetDescription>
@@ -143,7 +145,7 @@ export const StudentKnowledgeSidePanel = ({
             {/* Category Selection */}
             <div className="space-y-3">
               <Label>Category</Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 {KNOWLEDGE_CATEGORIES.map((cat) => {
                   const isSelected = selectedCategory === cat.id;
                   return (
@@ -151,15 +153,15 @@ export const StudentKnowledgeSidePanel = ({
                       key={cat.id}
                       variant={isSelected ? 'default' : 'outline'}
                       className={cn(
-                        'h-auto flex-col gap-2 p-3',
+                        'h-auto flex-col gap-1 p-2',
                         isSelected && 'ring-2 ring-ring',
                         isReadOnly && 'pointer-events-none opacity-60'
                       )}
                       onClick={() => !isReadOnly && setSelectedCategory(cat.id)}
                       disabled={isReadOnly}
                     >
-                      <span className="text-xl">{cat.icon}</span>
-                      <span className="text-xs font-medium text-center leading-tight">
+                      <span className="text-lg">{cat.icon}</span>
+                      <span className="text-[10px] font-medium text-center leading-tight">
                         {cat.label}
                       </span>
                     </Button>
@@ -274,6 +276,11 @@ export const StudentKnowledgeSidePanel = ({
             <Button variant="outline" onClick={handleClose} disabled={isSaving}>
               {isReadOnly ? 'Close' : 'Cancel'}
             </Button>
+            {mode === 'view' && onEdit && (
+              <Button onClick={onEdit}>
+                Edit Note
+              </Button>
+            )}
             {!isReadOnly && (
               <Button onClick={handleSave} disabled={isSaving || !content.trim()}>
                 {isSaving ? 'Saving...' : 'Save Note'}
