@@ -248,6 +248,63 @@ export type Database = {
         }
         Relationships: []
       }
+      student_knowledge_entries: {
+        Row: {
+          category: string
+          content: string
+          created_at: string | null
+          deleted_at: string | null
+          entry_source: string | null
+          id: string
+          student_id: string
+          tags: string[] | null
+          teacher_id: string
+          updated_at: string | null
+          worksheet_id: string | null
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string | null
+          deleted_at?: string | null
+          entry_source?: string | null
+          id?: string
+          student_id: string
+          tags?: string[] | null
+          teacher_id: string
+          updated_at?: string | null
+          worksheet_id?: string | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          entry_source?: string | null
+          id?: string
+          student_id?: string
+          tags?: string[] | null
+          teacher_id?: string
+          updated_at?: string | null
+          worksheet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_knowledge_entries_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_knowledge_entries_worksheet_id_fkey"
+            columns: ["worksheet_id"]
+            isOneToOne: false
+            referencedRelation: "worksheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           created_at: string
@@ -627,6 +684,10 @@ export type Database = {
         }
         Returns: string
       }
+      get_student_tags: {
+        Args: { p_student_id: string; p_teacher_id: string }
+        Returns: string[]
+      }
       get_token_balance: { Args: { p_teacher_id: string }; Returns: number }
       get_worksheet_by_share_token: {
         Args: { p_share_token: string }
@@ -693,11 +754,16 @@ export type Database = {
             }[]
           }
       is_user_anonymous: { Args: { user_id: string }; Returns: boolean }
+      normalize_tag: { Args: { tag: string }; Returns: string }
       reactivate_user_account: {
         Args: { user_email: string }
         Returns: boolean
       }
       should_show_onboarding: { Args: { user_id: string }; Returns: boolean }
+      soft_delete_knowledge_entry: {
+        Args: { p_entry_id: string; p_teacher_id: string }
+        Returns: boolean
+      }
       soft_delete_student: {
         Args: { p_student_id: string; p_teacher_id: string }
         Returns: boolean
