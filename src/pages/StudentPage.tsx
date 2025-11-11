@@ -189,9 +189,10 @@ const StudentPage = () => {
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Student Details */}
-            <Card>
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Student Details */}
+              <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center">
@@ -262,25 +263,33 @@ const StudentPage = () => {
               </CardContent>
             </Card>
 
-            {/* Recent Worksheets */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center">
+              {/* Recent Worksheets */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center mb-2">
                     <FileText className="h-5 w-5 mr-2" />
                     Recent Worksheets
                   </CardTitle>
-                  {worksheets.length > 0 && (
+                  <div className="flex gap-2">
                     <Button 
-                      variant="ghost" 
                       size="sm"
-                      onClick={() => setActiveTab('worksheets')}
+                      onClick={handleGenerateWorksheet}
+                      className="flex-1"
                     >
-                      View All
+                      <Plus className="h-4 w-4 mr-1" />
+                      Generate Another
                     </Button>
-                  )}
-                </div>
-              </CardHeader>
+                    {worksheets.length > 0 && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setActiveTab('worksheets')}
+                      >
+                        View All
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
               <CardContent>
                 {loading ? (
                   <div className="text-center py-8">
@@ -327,25 +336,33 @@ const StudentPage = () => {
               </CardContent>
             </Card>
 
-            {/* Recent Notes */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center">
+              {/* Recent Notes */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center mb-2">
                     <StickyNote className="h-5 w-5 mr-2" />
                     Recent Notes
                   </CardTitle>
-                  {studentKnowledge.entries.length > 0 && (
+                  <div className="flex gap-2">
                     <Button 
-                      variant="ghost" 
                       size="sm"
                       onClick={() => setActiveTab('knowledge')}
+                      className="flex-1"
                     >
-                      View All
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Note
                     </Button>
-                  )}
-                </div>
-              </CardHeader>
+                    {studentKnowledge.entries.length > 0 && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setActiveTab('knowledge')}
+                      >
+                        View All
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
               <CardContent>
                 {studentKnowledge.isLoading ? (
                   <div className="text-center py-8">
@@ -384,8 +401,9 @@ const StudentPage = () => {
                     </Button>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Worksheets Tab */}

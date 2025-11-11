@@ -1,7 +1,8 @@
-import { Eye, Pencil, Trash2, ExternalLink, Archive, ArchiveRestore } from 'lucide-react';
+import { Eye, Pencil, Trash2, ExternalLink, Archive, ArchiveRestore, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,12 @@ export const StudentKnowledgeEntryCard = ({
   worksheetTitle,
 }: StudentKnowledgeEntryCardProps) => {
   const categoryMeta = getCategoryMetadata(entry.category);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Check if content has more than 4 lines (estimate: ~80 chars per line)
+  const contentLength = entry.content.length;
+  const estimatedLines = Math.ceil(contentLength / 80);
+  const hasLongContent = estimatedLines > 4;
 
   const handleWorksheetClick = () => {
     if (entry.worksheet_id) {
@@ -173,7 +180,31 @@ export const StudentKnowledgeEntryCard = ({
         </div>
 
         {/* Content */}
-        <p className="text-sm text-foreground mb-3 whitespace-pre-wrap">{entry.content}</p>
+        <div className="mb-3">
+          <p className={`text-sm text-foreground whitespace-pre-wrap ${!isExpanded && hasLongContent ? 'line-clamp-4' : ''}`}>
+            {entry.content}
+          </p>
+          {hasLongContent && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="mt-2 h-auto p-0 text-xs text-primary hover:text-primary/80"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-3 w-3 mr-1" />
+                  Show less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3 mr-1" />
+                  Read full
+                </>
+              )}
+            </Button>
+          )}
+        </div>
 
         {/* Tags */}
         {entry.tags && entry.tags.length > 0 && (
