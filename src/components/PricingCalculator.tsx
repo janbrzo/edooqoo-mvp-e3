@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Calculator, TrendingUp, Clock, Plus, Minus, Info } from 'lucide-react';
 import { useProfile } from '@/hooks/useProfile';
 interface PricingCalculatorProps {
@@ -126,86 +126,80 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
       <CardContent className="bg-white">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <TooltipProvider>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1">
-                  <Label htmlFor="prep-time" className="text-sm">
-                    Prep time? (minutes)
-                  </Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>How many minutes do you typically spend preparing materials for each lesson?</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleDecrement('prepTime')}>
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <Input id="prep-time" type="number" value={prepTime} onChange={e => setPrepTime(Math.max(1, Math.min(120, Number(e.target.value))))} min="1" max="120" className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
-                  <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleIncrement('prepTime')}>
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <Label htmlFor="prep-time" className="text-sm">
+                  Prep time? (minutes)
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>How many minutes do you typically spend preparing materials for each lesson?</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
-            </TooltipProvider>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleDecrement('prepTime')}>
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <Input id="prep-time" type="number" value={prepTime} onChange={e => setPrepTime(Math.max(1, Math.min(120, Number(e.target.value))))} min="1" max="120" className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
+                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleIncrement('prepTime')}>
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
             
-            <TooltipProvider>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1">
-                  <Label htmlFor="lesson-price" className="text-sm">
-                    Lesson price? ($)
-                  </Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>What do you charge per hour for your English lessons?</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleDecrement('lessonPrice')}>
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <Input id="lesson-price" type="number" value={lessonPrice} onChange={e => setLessonPrice(Math.max(1, Math.min(200, Number(e.target.value))))} min="1" max="200" className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
-                  <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleIncrement('lessonPrice')}>
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <Label htmlFor="lesson-price" className="text-sm">
+                  Lesson price? ($)
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>What do you charge per hour for your English lessons?</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
-            </TooltipProvider>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleDecrement('lessonPrice')}>
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <Input id="lesson-price" type="number" value={lessonPrice} onChange={e => setLessonPrice(Math.max(1, Math.min(200, Number(e.target.value))))} min="1" max="200" className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
+                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleIncrement('lessonPrice')}>
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
             
-            <TooltipProvider>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1">
-                  <Label htmlFor="lessons-week" className="text-sm">
-                    Lessons weekly?
-                  </Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>How many lessons do you teach per week on average?</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleDecrement('lessonsPerWeek')}>
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <Input id="lessons-week" type="number" value={lessonsPerWeek} onChange={e => setLessonsPerWeek(Math.max(1, Math.min(50, Number(e.target.value))))} min="1" max="50" className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
-                  <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleIncrement('lessonsPerWeek')}>
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1">
+                <Label htmlFor="lessons-week" className="text-sm">
+                  Lessons weekly?
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>How many lessons do you teach per week on average?</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
-            </TooltipProvider>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleDecrement('lessonsPerWeek')}>
+                  <Minus className="h-3 w-3" />
+                </Button>
+                <Input id="lessons-week" type="number" value={lessonsPerWeek} onChange={e => setLessonsPerWeek(Math.max(1, Math.min(50, Number(e.target.value))))} min="1" max="50" className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
+                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleIncrement('lessonsPerWeek')}>
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
           </div>
           
           {monthlySavings > 0 && <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
