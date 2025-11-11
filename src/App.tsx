@@ -22,6 +22,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import SharedWorksheet from "./pages/SharedWorksheet";
 import TestExercises from "./pages/TestExercises";
 import AllWorksheetsPage from "./pages/AllWorksheetsPage";
+import WorksheetPage from "./pages/WorksheetPage";
 import CookieBanner from "./components/CookieBanner";
 import GlobalFooter from "./components/GlobalFooter";
 import OnboardingChecklist from "./components/OnboardingChecklist";
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/cookie-policy" element={<CookiePolicy />} />
               <Route path="/student/:id" element={<StudentPage />} />
               <Route path="/worksheets" element={<AllWorksheetsPage />} />
+              <Route path="/worksheet/:id" element={<WorksheetPage />} />
               <Route path="/success" element={<PaymentSuccess />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/shared/:token" element={<SharedWorksheet />} />
