@@ -10,6 +10,15 @@ import {
   DEFAULT_FILTERS,
 } from '@/types/studentKnowledge';
 
+/**
+ * Validates if a string is a valid UUID
+ */
+const isValidUUID = (uuid: string): boolean => {
+  if (!uuid || uuid.trim() === '') return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
 interface UseStudentKnowledgeProps {
   studentId: string;
   teacherId: string;
@@ -28,6 +37,12 @@ export const useStudentKnowledge = ({ studentId, teacherId }: UseStudentKnowledg
    * Fetch entries with filters and pagination
    */
   const fetchEntries = useCallback(async (newFilters?: Partial<KnowledgeFilters>) => {
+    // Early return if IDs are invalid
+    if (!isValidUUID(studentId) || !isValidUUID(teacherId)) {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -113,6 +128,11 @@ export const useStudentKnowledge = ({ studentId, teacherId }: UseStudentKnowledg
    * Fetch suggested tags for autocomplete
    */
   const fetchSuggestedTags = useCallback(async () => {
+    // Early return if IDs are invalid
+    if (!isValidUUID(studentId) || !isValidUUID(teacherId)) {
+      return;
+    }
+
     try {
       const { data, error } = await supabase.rpc('get_student_tags', {
         p_student_id: studentId,
@@ -355,10 +375,12 @@ export const useStudentKnowledge = ({ studentId, teacherId }: UseStudentKnowledg
     fetchEntries(DEFAULT_FILTERS);
   }, [fetchEntries]);
 
-  // Initial fetch
+  // Initial fetch - only if both IDs are valid UUIDs
   useEffect(() => {
-    fetchEntries();
-    fetchSuggestedTags();
+    if (isValidUUID(studentId) && isValidUUID(teacherId)) {
+      fetchEntries();
+      fetchSuggestedTags();
+    }
   }, [studentId, teacherId]); // Only run on mount and when IDs change
 
   return {
