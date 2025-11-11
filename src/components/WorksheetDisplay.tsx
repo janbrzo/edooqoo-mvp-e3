@@ -12,8 +12,9 @@ import WorksheetViewTracking from "./worksheet/WorksheetViewTracking";
 import { useDownloadStatus } from "@/hooks/useDownloadStatus";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StudentKnowledgeFAB } from "@/components/student-knowledge/StudentKnowledgeFAB";
-import { StudentKnowledgeQuickAddModal } from "@/components/student-knowledge/StudentKnowledgeQuickAddModal";
+import { StudentKnowledgeSidePanel } from "@/components/student-knowledge/StudentKnowledgeSidePanel";
 import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
+import type { NewKnowledgeEntry } from "@/types/studentKnowledge";
 
 interface Exercise {
   type: string;
@@ -90,7 +91,7 @@ export default function WorksheetDisplay({
   const isMobile = useIsMobile();
   const { trackDownloadAttempt } = useDownloadTracking(userId);
   const { trackPaymentButtonClick } = usePaymentTracking(userId);
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   
   // Initialize student knowledge hook only if we have studentId and userId (teacherId)
   const studentKnowledge = useStudentKnowledge({
@@ -310,14 +311,10 @@ export default function WorksheetDisplay({
     handleDownloadUnlock(token);
   };
 
-  const handleQuickAddNote = async (entry: any) => {
+  const handleQuickAddNote = async (entry: NewKnowledgeEntry) => {
     if (studentKnowledge.addEntry) {
-      // Add worksheet_id to the entry
-      await studentKnowledge.addEntry({
-        ...entry,
-        worksheet_id: worksheetId
-      });
-      setIsQuickAddOpen(false);
+      await studentKnowledge.addEntry(entry);
+      setIsPanelOpen(false);
     }
   };
 
@@ -325,11 +322,17 @@ export default function WorksheetDisplay({
     <WorksheetViewTracking worksheetId={worksheetId} userId={userId}>
       {shouldShowFAB && (
         <>
-          <StudentKnowledgeFAB onClick={() => setIsQuickAddOpen(true)} />
-          <StudentKnowledgeQuickAddModal
-            isOpen={isQuickAddOpen}
-            onClose={() => setIsQuickAddOpen(false)}
-            onAdd={handleQuickAddNote}
+          <StudentKnowledgeFAB onClick={() => setIsPanelOpen(true)} />
+          <StudentKnowledgeSidePanel
+            mode="add"
+            isOpen={isPanelOpen}
+            onClose={() => setIsPanelOpen(false)}
+            entry={null}
+            studentId={studentId!}
+            teacherId={userId!}
+            studentName={studentName || ''}
+            worksheetId={worksheetId || undefined}
+            onSave={handleQuickAddNote}
             suggestedTags={studentKnowledge.suggestedTags || []}
           />
         </>
