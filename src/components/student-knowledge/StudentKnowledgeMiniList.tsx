@@ -55,7 +55,7 @@ export const StudentKnowledgeMiniList = ({
   const displayedEntries = isExpanded ? filteredEntries.slice(0, 8) : filteredEntries.slice(0, 3);
 
   return (
-    <Card className="fixed top-1/2 -translate-y-[calc(50%+80px)] right-6 w-80 shadow-lg z-45 bg-background/95 backdrop-blur border-amber-200">
+    <Card className="fixed top-[calc(50%-200px)] right-6 w-80 shadow-lg z-[60] bg-background/95 backdrop-blur border-amber-200">
       <div className="p-3 border-b bg-amber-50/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

@@ -149,7 +149,7 @@ export const StudentKnowledgeFloatingPanel = ({
           </div>
         </CardHeader>
 
-        <ScrollArea className="h-[calc(90vh-280px)]">
+        <ScrollArea className="h-[calc(90vh-220px)]">
           <CardContent className="pt-6 space-y-6">
             {/* Category Selection */}
             <div className="space-y-3">
@@ -170,9 +170,9 @@ export const StudentKnowledgeFloatingPanel = ({
                       disabled={isReadOnly}
                     >
                       <span className="text-base">{cat.icon}</span>
-                      <span className="text-[9px] font-medium leading-tight">
-                        {cat.label}
-                      </span>
+              <span className="text-xs font-medium leading-tight">
+                {cat.label}
+              </span>
                     </Button>
                   );
                 })}
@@ -208,7 +208,8 @@ export const StudentKnowledgeFloatingPanel = ({
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
                 placeholder="e.g., past simple, pronunciation, common mistakes"
-                className="min-h-[40px] resize-none"
+                className="min-h-[40px] max-h-[40px] resize-none"
+                rows={1}
                 disabled={isReadOnly}
                 readOnly={isReadOnly}
               />

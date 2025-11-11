@@ -161,9 +161,9 @@ export const StudentKnowledgeSidePanel = ({
                       disabled={isReadOnly}
                     >
                       <span className="text-base">{cat.icon}</span>
-                      <span className="text-[9px] font-medium leading-tight">
-                        {cat.label}
-                      </span>
+              <span className="text-xs font-medium leading-tight">
+                {cat.label}
+              </span>
                     </Button>
                   );
                 })}
@@ -199,7 +199,8 @@ export const StudentKnowledgeSidePanel = ({
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
                 placeholder="e.g., past simple, pronunciation, common mistakes"
-                className="min-h-[40px] resize-none"
+                className="min-h-[40px] max-h-[40px] resize-none"
+                rows={1}
                 disabled={isReadOnly}
                 readOnly={isReadOnly}
               />

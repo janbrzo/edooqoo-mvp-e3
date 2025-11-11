@@ -28,14 +28,14 @@ export const StudentKnowledgeToggleButton = ({
           <Button
             onClick={onClick}
             size="icon"
-            className="fixed top-1/2 -translate-y-1/2 right-24 h-14 w-14 rounded-full shadow-lg z-40 bg-amber-100 hover:bg-amber-200 text-amber-700 border-2 border-amber-300"
+            className="fixed top-[calc(50%+40px)] right-6 h-14 w-14 rounded-full shadow-lg z-40 bg-amber-500/90 hover:bg-amber-600/90 text-white border-2 border-amber-600"
           >
             <div className="relative">
               <List className="h-5 w-5" />
               {count > 0 && (
                 <Badge 
                   variant="secondary" 
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] bg-amber-500 text-white border-2 border-background"
+                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-[10px] bg-red-500 text-white border-2 border-background"
                 >
                   {count > 9 ? '9+' : count}
                 </Badge>
