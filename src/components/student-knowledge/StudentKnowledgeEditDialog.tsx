@@ -92,10 +92,10 @@ export const StudentKnowledgeEditDialog = ({
                   type="button"
                   variant={selectedCategory === cat.id ? 'default' : 'outline'}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className="h-auto py-3 flex flex-col items-center gap-1"
+                  className="h-auto py-2 px-3 flex flex-row items-center gap-2 justify-start"
                 >
-                  <span className="text-2xl">{cat.icon}</span>
-                  <span className="text-xs text-center leading-tight">{cat.label}</span>
+                  <span className="text-lg">{cat.icon}</span>
+                  <span className="text-xs leading-tight">{cat.label}</span>
                 </Button>
               ))}
             </div>
@@ -122,7 +122,7 @@ export const StudentKnowledgeEditDialog = ({
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
               placeholder="e.g., grammar, past_tense, needs_practice"
-              rows={2}
+              rows={1}
               className="resize-none"
             />
             <p className="text-xs text-muted-foreground">
