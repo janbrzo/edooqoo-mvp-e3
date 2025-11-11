@@ -16,7 +16,7 @@ import { StudentKnowledgeMiniList } from "@/components/student-knowledge/Student
 import { StudentKnowledgeToggleButton } from "@/components/student-knowledge/StudentKnowledgeToggleButton";
 import { StudentKnowledgeFloatingPanel } from "@/components/student-knowledge/StudentKnowledgeFloatingPanel";
 import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
-import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry } from "@/types/studentKnowledge";
+import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry, KnowledgeCategory } from "@/types/studentKnowledge";
 
 interface Exercise {
   type: string;
@@ -98,6 +98,7 @@ export default function WorksheetDisplay({
   const [selectedEntry, setSelectedEntry] = useState<StudentKnowledgeEntry | null>(null);
   const [isMiniListOpen, setIsMiniListOpen] = useState(false);
   const [miniListPage, setMiniListPage] = useState(1);
+  const [miniListCategoryFilter, setMiniListCategoryFilter] = useState<KnowledgeCategory | null>(null);
   const MINI_LIST_PAGE_SIZE = 8;
   
   // Initialize student knowledge hook only if we have studentId and userId (teacherId)
@@ -397,6 +398,8 @@ export default function WorksheetDisplay({
               isLoadingMore={false}
               isOpen={isMiniListOpen}
               onToggle={() => setIsMiniListOpen(!isMiniListOpen)}
+              selectedCategory={miniListCategoryFilter}
+              onCategoryFilter={setMiniListCategoryFilter}
             />
           )}
         </>

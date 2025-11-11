@@ -149,12 +149,12 @@ export const StudentKnowledgeFloatingPanel = ({
           </div>
         </CardHeader>
 
-        <ScrollArea className="h-[calc(90vh-200px)]">
+        <ScrollArea className="h-[calc(90vh-280px)]">
           <CardContent className="pt-6 space-y-6">
             {/* Category Selection */}
             <div className="space-y-3">
               <Label>Category</Label>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-3 gap-1">
                 {KNOWLEDGE_CATEGORIES.map((cat) => {
                   const isSelected = selectedCategory === cat.id;
                   return (
@@ -162,15 +162,15 @@ export const StudentKnowledgeFloatingPanel = ({
                       key={cat.id}
                       variant={isSelected ? 'default' : 'outline'}
                       className={cn(
-                        'h-auto flex-col gap-1 p-2',
+                        'h-auto flex items-center gap-1 px-2 py-1.5',
                         isSelected && 'ring-2 ring-ring',
                         isReadOnly && 'pointer-events-none opacity-60'
                       )}
                       onClick={() => !isReadOnly && setSelectedCategory(cat.id)}
                       disabled={isReadOnly}
                     >
-                      <span className="text-lg">{cat.icon}</span>
-                      <span className="text-[10px] font-medium text-center leading-tight">
+                      <span className="text-base">{cat.icon}</span>
+                      <span className="text-[9px] font-medium leading-tight">
                         {cat.label}
                       </span>
                     </Button>
@@ -192,7 +192,7 @@ export const StudentKnowledgeFloatingPanel = ({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Enter your note here..."
-                className="min-h-[200px] resize-none"
+                className="min-h-[100px] resize-none"
                 disabled={isReadOnly}
                 readOnly={isReadOnly}
               />
@@ -208,7 +208,7 @@ export const StudentKnowledgeFloatingPanel = ({
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
                 placeholder="e.g., past simple, pronunciation, common mistakes"
-                className="min-h-[80px] resize-none"
+                className="min-h-[40px] resize-none"
                 disabled={isReadOnly}
                 readOnly={isReadOnly}
               />
