@@ -149,7 +149,7 @@ export const StudentKnowledgeFloatingPanel = ({
           </div>
         </CardHeader>
 
-        <ScrollArea className="h-[calc(90vh-220px)]">
+        <ScrollArea className="h-[calc(90vh-187px)]">
           <CardContent className="pt-6 space-y-6">
             {/* Category Selection */}
             <div className="space-y-3">

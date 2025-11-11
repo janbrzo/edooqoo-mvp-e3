@@ -1,4 +1,4 @@
-import { List } from 'lucide-react';
+import { StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -31,7 +31,7 @@ export const StudentKnowledgeToggleButton = ({
             className="fixed top-[calc(50%+40px)] right-6 h-14 w-14 rounded-full shadow-lg z-40 bg-amber-500/90 hover:bg-amber-600/90 text-white border-2 border-amber-600"
           >
             <div className="relative">
-              <List className="h-5 w-5" />
+              <StickyNote className="h-5 w-5" />
               {count > 0 && (
                 <Badge 
                   variant="secondary" 
