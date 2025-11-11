@@ -10,32 +10,39 @@ import { cn } from '@/lib/utils';
 interface StudentKnowledgeMiniListProps {
   entries: StudentKnowledgeEntry[];
   onViewEntry: (entry: StudentKnowledgeEntry) => void;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
   isLoading?: boolean;
+  isLoadingMore?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
 export const StudentKnowledgeMiniList = ({
   entries,
   onViewEntry,
+  onLoadMore,
+  hasMore = false,
   isLoading = false,
+  isLoadingMore = false,
+  isOpen,
+  onToggle,
 }: StudentKnowledgeMiniListProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  if (isLoading) {
-    return (
-      <Card className="fixed bottom-24 right-6 w-80 p-4 shadow-lg z-40 bg-background/95 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <StickyNote className="h-4 w-4 animate-pulse" />
-          <span className="text-sm text-muted-foreground">Loading notes...</span>
-        </div>
-      </Card>
-    );
+  if (isLoading && entries.length === 0) {
+    return null; // Don't show anything while initial loading
   }
 
   if (entries.length === 0) {
     return null;
   }
 
-  const displayedEntries = isExpanded ? entries.slice(0, 5) : entries.slice(0, 3);
+  if (!isOpen) {
+    return null; // Hidden when not open
+  }
+
+  const displayedEntries = isExpanded ? entries.slice(0, 8) : entries.slice(0, 3);
 
   return (
     <Card className="fixed bottom-24 right-6 w-80 shadow-lg z-40 bg-background/95 backdrop-blur border-amber-200">
@@ -119,11 +126,17 @@ export const StudentKnowledgeMiniList = ({
         </div>
       </ScrollArea>
 
-      {entries.length > 5 && isExpanded && (
-        <div className="p-2 border-t bg-muted/30 text-center">
-          <p className="text-xs text-muted-foreground">
-            Showing 5 of {entries.length} notes
-          </p>
+      {isExpanded && hasMore && (
+        <div className="p-2 border-t bg-muted/30">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs"
+            onClick={onLoadMore}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? 'Loading...' : 'Show More'}
+          </Button>
         </div>
       )}
     </Card>

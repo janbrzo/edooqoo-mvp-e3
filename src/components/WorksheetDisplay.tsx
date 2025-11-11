@@ -12,8 +12,9 @@ import WorksheetViewTracking from "./worksheet/WorksheetViewTracking";
 import { useDownloadStatus } from "@/hooks/useDownloadStatus";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StudentKnowledgeFAB } from "@/components/student-knowledge/StudentKnowledgeFAB";
-import { StudentKnowledgeSidePanel } from "@/components/student-knowledge/StudentKnowledgeSidePanel";
 import { StudentKnowledgeMiniList } from "@/components/student-knowledge/StudentKnowledgeMiniList";
+import { StudentKnowledgeToggleButton } from "@/components/student-knowledge/StudentKnowledgeToggleButton";
+import { StudentKnowledgeFloatingPanel } from "@/components/student-knowledge/StudentKnowledgeFloatingPanel";
 import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
 import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry } from "@/types/studentKnowledge";
 
@@ -95,15 +96,18 @@ export default function WorksheetDisplay({
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [panelMode, setPanelMode] = useState<'add' | 'view' | 'edit'>('add');
   const [selectedEntry, setSelectedEntry] = useState<StudentKnowledgeEntry | null>(null);
+  const [isMiniListOpen, setIsMiniListOpen] = useState(false);
+  const [miniListPage, setMiniListPage] = useState(1);
+  const MINI_LIST_PAGE_SIZE = 8;
   
   // Initialize student knowledge hook only if we have studentId and userId (teacherId)
+  const shouldShowFAB = !!(studentId && userId && worksheetId);
   const studentKnowledge = useStudentKnowledge({
     studentId: studentId || '',
     teacherId: userId || ''
   });
   
-  const shouldShowFAB = !!(studentId && userId && worksheetId);
-  const shouldShowMiniList = shouldShowFAB && studentKnowledge.entries.length > 0;
+  const shouldShowMiniList = shouldShowFAB && (studentKnowledge.entries?.length || 0) > 0;
   
   // CRITICAL FIX: Reconstruct selectedAudio/selectedImage from database fields
   // This fixes Problem 2 - media not loading from Dashboard
@@ -365,32 +369,53 @@ export default function WorksheetDisplay({
     setPanelMode('add');
   };
 
+  const handleLoadMoreMiniList = () => {
+    setMiniListPage(prev => prev + 1);
+  };
+
+  const totalEntries = studentKnowledge.entries?.length || 0;
+  const hasMoreEntries = totalEntries >= miniListPage * MINI_LIST_PAGE_SIZE;
+
   return (
     <WorksheetViewTracking worksheetId={worksheetId} userId={userId}>
+      {/* Student Knowledge FAB, Toggle Button, and Mini List */}
       {shouldShowFAB && (
         <>
           <StudentKnowledgeFAB onClick={handleAddNote} />
-          <StudentKnowledgeSidePanel
-            mode={panelMode}
-            isOpen={isPanelOpen}
-            onClose={handleClosePanel}
-            entry={selectedEntry}
-            studentId={studentId!}
-            teacherId={userId!}
-            studentName={studentName || ''}
-            worksheetId={worksheetId || undefined}
-            onSave={handleSaveEntry}
-            suggestedTags={studentKnowledge.suggestedTags || []}
-            onEdit={() => setPanelMode('edit')}
+          <StudentKnowledgeToggleButton
+            count={totalEntries}
+            isOpen={isMiniListOpen}
+            onClick={() => setIsMiniListOpen(!isMiniListOpen)}
           />
+          {!isPanelOpen && (
+            <StudentKnowledgeMiniList
+              entries={studentKnowledge.entries || []}
+              onViewEntry={handleViewEntry}
+              onLoadMore={handleLoadMoreMiniList}
+              hasMore={hasMoreEntries}
+              isLoading={studentKnowledge.isLoading}
+              isLoadingMore={false}
+              isOpen={isMiniListOpen}
+              onToggle={() => setIsMiniListOpen(!isMiniListOpen)}
+            />
+          )}
         </>
       )}
-      
-      {shouldShowMiniList && !isPanelOpen && (
-        <StudentKnowledgeMiniList
-          entries={studentKnowledge.entries.slice(0, 10)}
-          onViewEntry={handleViewEntry}
-          isLoading={studentKnowledge.isLoading}
+
+      {/* Student Knowledge Floating Panel */}
+      {shouldShowFAB && (
+        <StudentKnowledgeFloatingPanel
+          mode={panelMode}
+          isOpen={isPanelOpen}
+          onClose={handleClosePanel}
+          entry={selectedEntry}
+          studentId={studentId!}
+          teacherId={userId!}
+          studentName={studentName || ''}
+          worksheetId={worksheetId || undefined}
+          onSave={handleSaveEntry}
+          suggestedTags={studentKnowledge.suggestedTags || []}
+          onEdit={() => setPanelMode('edit')}
         />
       )}
       
