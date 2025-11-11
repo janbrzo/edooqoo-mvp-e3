@@ -16,10 +16,10 @@ export const StudentKnowledgeFAB = ({ onClick }: StudentKnowledgeFABProps) => {
       <TooltipTrigger asChild>
         <Button
           onClick={onClick}
-          size="lg"
-          className="fixed top-[calc(50%-40px)] right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50 bg-amber-500 hover:bg-amber-600 text-white"
+          size="icon"
+          className="fixed top-[calc(50%-40px)] right-6 p-3 rounded-full shadow-lg bg-amber-500 text-white opacity-80 hover:opacity-100 transition-opacity z-50"
         >
-          <Plus className="h-6 w-6" />
+          <Plus className="h-5 w-5" />
         </Button>
       </TooltipTrigger>
       <TooltipContent side="left">

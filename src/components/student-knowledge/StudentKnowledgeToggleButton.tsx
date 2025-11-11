@@ -25,23 +25,23 @@ export const StudentKnowledgeToggleButton = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            onClick={onClick}
-            size="icon"
-            className="fixed top-[calc(50%+40px)] right-6 h-14 w-14 rounded-full shadow-lg z-40 bg-amber-500/90 hover:bg-amber-600/90 text-white border-2 border-amber-600"
-          >
-            <div className="relative">
+          <div className="relative">
+            <Button
+              onClick={onClick}
+              size="icon"
+              className="fixed top-[calc(50%+40px)] right-6 p-3 rounded-full shadow-lg bg-amber-500 text-white opacity-80 hover:opacity-100 transition-opacity z-40"
+            >
               <StickyNote className="h-5 w-5" />
-              {count > 0 && (
-                <Badge 
-                  variant="secondary" 
-                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-[10px] bg-red-500 text-white border-2 border-background"
-                >
-                  {count > 9 ? '9+' : count}
-                </Badge>
-              )}
-            </div>
-          </Button>
+            </Button>
+            {count > 0 && (
+              <Badge 
+                variant="secondary" 
+                className="absolute top-[calc(50%+20px)] right-3 h-6 w-6 flex items-center justify-center p-0 text-xs bg-red-500 text-white border-2 border-background shadow-md z-50"
+              >
+                {count > 9 ? '9+' : count}
+              </Badge>
+            )}
+          </div>
         </TooltipTrigger>
         <TooltipContent side="left">
           <p>{isOpen ? 'Hide Recent Notes' : 'Show Recent Notes'}</p>
