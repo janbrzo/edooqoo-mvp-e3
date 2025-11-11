@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -19,13 +19,13 @@ export const StudentKnowledgeFAB = ({ onClick }: StudentKnowledgeFABProps) => {
           <Button
             onClick={onClick}
             size="lg"
-            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50"
+            className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-shadow z-50 bg-amber-500 hover:bg-amber-600 text-white"
           >
-            <Plus className="h-6 w-6" />
+            <StickyNote className="h-6 w-6" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="left">
-          <p>Quick Add Note</p>
+          <p>Add Student Note</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
