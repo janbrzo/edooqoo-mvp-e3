@@ -480,6 +480,7 @@ export default function ExerciseSelector({
     const isAudioMode = selectedMediaTypes.includes('audio');
     
     if (isPictureMode) {
+      // Get ALL picture exercises (ensure we have at least 2)
       const availablePictureExercises = AVAILABLE_EXERCISES
         .filter(ex => !ex.comingSoon && PICTURE_COMPATIBLE_EXERCISES.includes(ex.id))
         .map(ex => ex.id);
@@ -488,14 +489,20 @@ export default function ExerciseSelector({
         .filter(ex => !ex.comingSoon && !PICTURE_COMPATIBLE_EXERCISES.includes(ex.id) && ex.id !== 'reading')
         .map(ex => ex.id);
       
+      // Always select exactly 2 picture exercises
       const shuffledPicture = [...availablePictureExercises].sort(() => Math.random() - 0.5);
-      const selectedPicture = shuffledPicture.slice(0, 2);
+      const selectedPicture = shuffledPicture.slice(0, Math.min(2, availablePictureExercises.length));
       
+      // Fill remaining slots with other exercises
+      const remainingSlots = maxExercises - selectedPicture.length;
       const shuffledOther = [...availableOtherExercises].sort(() => Math.random() - 0.5);
-      const selectedOther = shuffledOther.slice(0, maxExercises - 2);
+      const selectedOther = shuffledOther.slice(0, remainingSlots);
       
+      console.log('🎲 [RANDOM-PICTURE] Selected picture exercises:', selectedPicture);
+      console.log('🎲 [RANDOM-PICTURE] Selected other exercises:', selectedOther);
       return [...selectedPicture, ...selectedOther];
     } else if (isAudioMode) {
+      // Get ALL audio exercises (ensure we have at least 2)
       const availableAudioExercises = AVAILABLE_EXERCISES
         .filter(ex => !ex.comingSoon && AUDIO_COMPATIBLE_EXERCISES.includes(ex.id))
         .map(ex => ex.id);
@@ -504,12 +511,17 @@ export default function ExerciseSelector({
         .filter(ex => !ex.comingSoon && !AUDIO_COMPATIBLE_EXERCISES.includes(ex.id))
         .map(ex => ex.id);
       
+      // Always select exactly 2 audio exercises
       const shuffledAudio = [...availableAudioExercises].sort(() => Math.random() - 0.5);
-      const selectedAudio = shuffledAudio.slice(0, 2);
+      const selectedAudio = shuffledAudio.slice(0, Math.min(2, availableAudioExercises.length));
       
+      // Fill remaining slots with other exercises
+      const remainingSlots = maxExercises - selectedAudio.length;
       const shuffledOther = [...availableOtherExercises].sort(() => Math.random() - 0.5);
-      const selectedOther = shuffledOther.slice(0, maxExercises - 2);
+      const selectedOther = shuffledOther.slice(0, remainingSlots);
       
+      console.log('🎲 [RANDOM-AUDIO] Selected audio exercises:', selectedAudio);
+      console.log('🎲 [RANDOM-AUDIO] Selected other exercises:', selectedOther);
       return [...selectedAudio, ...selectedOther];
     } else {
       const availableExercises = AVAILABLE_EXERCISES.filter(ex => !ex.comingSoon).map(ex => ex.id);

@@ -22,6 +22,8 @@ import ExerciseTrueFalseAudio from '../worksheet/ExerciseTrueFalseAudio';
 import ExerciseMultipleChoiceAudio from '../worksheet/ExerciseMultipleChoiceAudio';
 import ExerciseFillInBlanksAudio from '../worksheet/ExerciseFillInBlanksAudio';
 import ExerciseDescribe from '../worksheet/ExerciseDescribe';
+import ExerciseAnswerQuestions from '../worksheet/ExerciseAnswerQuestions';
+import MediaSection from '../worksheet/MediaSection';
 import { deepFixTextObjects } from '../../utils/textObjectFixer';
 import { getIconComponent } from '../../utils/iconUtils';
 
@@ -223,6 +225,21 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Lesson Media Section - Audio/Picture */}
+      {(worksheetData.selected_audio || worksheetData.selected_image) && (
+        <div className="mt-8 mb-8">
+          <MediaSection
+            selectedImage={worksheetData.selected_image}
+            selectedAudio={worksheetData.selected_audio}
+            isDownloadUnlocked={true}
+            isPinned={false}
+            onTogglePin={undefined}
+            isFullScreen={false}
+            onToggleFullScreen={undefined}
+          />
         </div>
       )}
 
@@ -544,10 +561,11 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
 
               {/* Picture exercises - Answer Questions (uses normalized type for -picture suffix) */}
               {normalizedType === 'answer-questions' && exercise.questions && (
-                <ExerciseReading
+                <ExerciseAnswerQuestions
                   questions={exercise.questions}
                   isEditing={false}
                   viewMode="student"
+                  showImage={false}
                   onQuestionChange={() => {}}
                 />
               )}
