@@ -4,7 +4,7 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Fix:** All exercise types now work perfectly in shared worksheets, including new types like Categorize, Paraphrasing, and Complete Word.
+**Latest Fix:** All audio and picture exercises now work perfectly in shared worksheets (/shared). PDF export margins corrected to 1cm sides, 0.5cm top/bottom for professional printing.
 
 ## How it works?
 1. **Create account** - Sign up and get 2 free tokens

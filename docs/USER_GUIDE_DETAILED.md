@@ -14,6 +14,8 @@
 
 ## Getting Started
 
+**Latest Fix:** All audio exercises (Listening Comprehension, Answer Questions Audio, True/False Audio, Multiple Choice Audio, Fill in Blanks Audio) and picture exercises (Answer Questions Picture, True/False Picture, Describe Picture, Multiple Choice Picture) now display correctly when sharing worksheets. PDF export margins optimized for professional printing (1cm sides, 0.5cm top/bottom).
+
 ### Account Creation (Required)
 - **Registration required**: You must create an account to generate worksheets
 - **Email confirmation**: Verify your email to access all features

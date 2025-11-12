@@ -320,7 +320,7 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
       /* Print styles */
       @media print {
         @page {
-          margin: 0.5cm 1.5cm 0.5cm 1.5cm !important;
+          margin: 0.5cm 1cm 0.5cm 1cm !important;
           size: A4 !important;
           
           @top-left { content: none !important; }

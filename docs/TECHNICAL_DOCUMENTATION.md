@@ -5,7 +5,11 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2025):** Fixed shared worksheet display issues - all new exercise types (categorize, paraphrasing, complete-word) now properly display content instead of appearing empty. Removed duplicate "Deleted Exercises" section for better UX.
+**Latest Update (January 2025):** Fixed shared worksheet display issues and PDF export margins:
+- All audio exercises (Listening Comprehension, Answer Questions Audio, True/False Audio, Multiple Choice Audio, Fill in Blanks Audio) now display correctly in shared worksheets (/shared)
+- All picture exercises (Answer Questions Picture, True/False Picture, Describe Picture, Multiple Choice Picture) now display correctly in shared worksheets
+- PDF export margins corrected: 1cm sides, 0.5cm top/bottom (previously 1.5cm sides, 0.5cm top/bottom causing excessive whitespace)
+- Added `normalizeExerciseType` helper function to handle `-picture` and `-audio` suffixes in SharedWorksheetContent component
 
 ## Architecture Stack
 

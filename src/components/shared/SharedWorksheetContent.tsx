@@ -16,6 +16,12 @@ import ExerciseGapText from '../worksheet/ExerciseGapText';
 import ExerciseSentenceTransformation from '../worksheet/ExerciseSentenceTransformation';
 import ExerciseMatchingHalves from '../worksheet/ExerciseMatchingHalves';
 import ExerciseSynonymsAntonyms from '../worksheet/ExerciseSynonymsAntonyms';
+import ExerciseListeningComprehension from '../worksheet/ExerciseListeningComprehension';
+import ExerciseAnswerQuestionsAudio from '../worksheet/ExerciseAnswerQuestionsAudio';
+import ExerciseTrueFalseAudio from '../worksheet/ExerciseTrueFalseAudio';
+import ExerciseMultipleChoiceAudio from '../worksheet/ExerciseMultipleChoiceAudio';
+import ExerciseFillInBlanksAudio from '../worksheet/ExerciseFillInBlanksAudio';
+import ExerciseDescribe from '../worksheet/ExerciseDescribe';
 import { deepFixTextObjects } from '../../utils/textObjectFixer';
 import { getIconComponent } from '../../utils/iconUtils';
 
@@ -26,6 +32,11 @@ interface SharedWorksheetContentProps {
     title: string;
   };
 }
+
+// Helper function to normalize exercise type (removes -picture and -audio suffixes)
+const normalizeExerciseType = (type: string): string => {
+  return type.replace('-picture', '').replace('-audio', '');
+};
 
 const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ worksheet }) => {
   console.log('🔧 SharedWorksheetContent: Starting data parsing...');
@@ -219,6 +230,9 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
       {worksheetData.exercises && worksheetData.exercises.map((exercise: any, index: number) => {
         console.log(`🔧 Rendering exercise ${index + 1}: ${exercise.type}`, exercise);
         
+        // Normalize type to handle -picture and -audio suffixes
+        const normalizedType = normalizeExerciseType(exercise.type);
+        
         return (
           <div key={index} className="mb-6 bg-white border rounded-lg overflow-hidden shadow-sm">
             <div className="bg-worksheet-purple text-white p-2 flex justify-between items-center exercise-header">
@@ -251,7 +265,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
               )}
               
               {/* Type-aware exercise rendering using React components */}
-              {exercise.type === 'reading' && exercise.questions && (
+              {normalizedType === 'reading' && exercise.questions && (
                 <ExerciseReading
                   questions={exercise.questions}
                   isEditing={false}
@@ -454,8 +468,92 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
                 />
               )}
 
+              {/* Audio exercises - Listening Comprehension */}
+              {exercise.type === 'listening-comprehension' && exercise.questions && (
+                <ExerciseListeningComprehension
+                  questions={exercise.questions}
+                  audio_url={exercise.audio_url}
+                  isEditing={false}
+                  viewMode="student"
+                  onQuestionChange={() => {}}
+                />
+              )}
+
+              {/* Audio exercises - Answer Questions Audio */}
+              {exercise.type === 'answer-questions-audio' && exercise.questions && (
+                <ExerciseAnswerQuestionsAudio
+                  questions={exercise.questions}
+                  audio_url={exercise.audio_url}
+                  isEditing={false}
+                  viewMode="student"
+                  onQuestionChange={() => {}}
+                />
+              )}
+
+              {/* Audio exercises - True/False Audio */}
+              {exercise.type === 'true-false-audio' && exercise.statements && (
+                <ExerciseTrueFalseAudio
+                  statements={exercise.statements}
+                  audio_url={exercise.audio_url}
+                  isEditing={false}
+                  viewMode="student"
+                  onStatementChange={() => {}}
+                />
+              )}
+
+              {/* Audio exercises - Multiple Choice Audio */}
+              {exercise.type === 'multiple-choice-audio' && exercise.questions && (
+                <ExerciseMultipleChoiceAudio
+                  questions={exercise.questions}
+                  audio_url={exercise.audio_url}
+                  isEditing={false}
+                  viewMode="student"
+                  onQuestionChange={() => {}}
+                />
+              )}
+
+              {/* Audio exercises - Fill in Blanks Audio */}
+              {exercise.type === 'fill-in-blanks-audio' && (
+                <ExerciseFillInBlanksAudio
+                  word_bank={exercise.word_bank}
+                  sentences={exercise.sentences}
+                  transcript_with_blanks={exercise.transcript_with_blanks}
+                  answers={exercise.answers}
+                  audio_url={exercise.audio_url}
+                  isEditing={false}
+                  viewMode="student"
+                  onWordBankChange={() => {}}
+                  onSentenceChange={() => {}}
+                  onTranscriptChange={() => {}}
+                  onAnswersChange={() => {}}
+                />
+              )}
+
+              {/* Picture exercises - Describe Picture */}
+              {normalizedType === 'describe' && (
+                <ExerciseDescribe
+                  image_url={exercise.image_url}
+                  questions={exercise.prompts || exercise.questions || []}
+                  isEditing={false}
+                  viewMode="student"
+                  showImage={true}
+                  onQuestionChange={() => {}}
+                  onImageUrlChange={() => {}}
+                />
+              )}
+
+              {/* Picture exercises - Answer Questions (uses normalized type for -picture suffix) */}
+              {normalizedType === 'answer-questions' && exercise.questions && (
+                <ExerciseReading
+                  questions={exercise.questions}
+                  isEditing={false}
+                  viewMode="student"
+                  onQuestionChange={() => {}}
+                />
+              )}
+
               {/* True/False exercise type */}
-              {exercise.type === 'true-false' && exercise.statements && (
+              {normalizedType === 'true-false' && exercise.statements && (
                 <div className="space-y-2">
                   {exercise.statements.map((statement: any, sIndex: number) => (
                     <div key={sIndex} className="border-b pb-2">

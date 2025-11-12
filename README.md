@@ -56,6 +56,7 @@ No registration required for basic use.
 - ✅ Event tracking
 - ✅ Mobile responsive
 - ✅ Quality content generation
+- ✅ **Latest fix**: Audio and picture exercises in shared worksheets, PDF margins optimized
 
 ## 🗺 Development Roadmap
 

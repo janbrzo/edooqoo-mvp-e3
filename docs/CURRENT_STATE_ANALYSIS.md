@@ -6,7 +6,10 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa:** Naprawiono wyświetlanie udostępnianych worksheetów - wszystkie nowe typy ćwiczeń działają poprawnie
+**Ostatnia naprawa (2025-01):** 
+- ✅ Naprawiono wyświetlanie wszystkich zadań audio (Listening Comprehension, Answer Questions Audio, True/False Audio, Multiple Choice Audio, Fill in Blanks Audio) w udostępnianych worksheetach
+- ✅ Naprawiono wyświetlanie wszystkich zadań picture (Answer Questions Picture, True/False Picture, Describe Picture, Multiple Choice Picture) w udostępnianych worksheetach
+- ✅ Skorygowano marginesy PDF: 1cm boki, 0.5cm góra/dół (wcześniej 1.5cm boki powodowało nadmierne białe przestrzenie)
 
 ## Wygląd i Interface
 
