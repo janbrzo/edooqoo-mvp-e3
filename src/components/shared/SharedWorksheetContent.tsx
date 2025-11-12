@@ -32,6 +32,9 @@ interface SharedWorksheetContentProps {
     html_content: string;
     ai_response: string;
     title: string;
+    selected_image?: any;
+    selected_audio?: any;
+    audio_url?: string;
   };
 }
 
@@ -228,13 +231,13 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
         </div>
       )}
 
-      {/* Lesson Media Section - Audio/Picture with fallbacks */}
-      {(worksheetData.selected_audio || worksheetData.selected_image || 
-        worksheetData.media?.audio_url || worksheetData.media?.image_url) && (
+      {/* Lesson Media Section - from direct columns OR parsed data */}
+      {(worksheet.selected_audio || worksheet.selected_image || 
+        worksheetData.selected_audio || worksheetData.selected_image) && (
         <div className="mt-8 mb-8">
           <MediaSection
-            selectedImage={worksheetData.selected_image || worksheetData.media?.image_url}
-            selectedAudio={worksheetData.selected_audio || worksheetData.media?.audio_url}
+            selectedImage={worksheet.selected_image || worksheetData.selected_image}
+            selectedAudio={worksheet.selected_audio || worksheetData.selected_audio}
             isDownloadUnlocked={true}
             isPinned={false}
             onTogglePin={undefined}

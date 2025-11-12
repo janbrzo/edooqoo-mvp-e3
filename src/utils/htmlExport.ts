@@ -319,51 +319,56 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
       
       /* Print styles */
       @media print {
-        /* STEP 1: Global reset - remove all default margins */
-        *, html, body {
+        /* ULTRA AGGRESSIVE: Remove ALL margins */
+        * {
           margin: 0 !important;
           padding: 0 !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
         
-        html {
+        html, body {
           width: 100% !important;
           height: 100% !important;
-        }
-        
-        body {
-          width: 100% !important;
-          height: auto !important;
-        }
-        
-        /* STEP 2: Set page margins (0.5cm top/bottom, 1cm sides) */
-        @page {
-          margin: 0.5cm 1cm 0.5cm 1cm !important;
-          size: A4 portrait !important;
-          
-          @top-left { content: none !important; }
-          @top-center { content: none !important; }
-          @top-right { content: none !important; }
-          @bottom-left { content: none !important; }
-          @bottom-center { 
-            content: counter(page) " / " counter(pages) !important;
-            font-size: 10px !important;
-            color: #666 !important;
-          }
-          @bottom-right { content: none !important; }
-        }
-        
-        /* STEP 3: Apply padding to .container (matches HTML structure at line 669) */
-        .container {
-          padding: 0.5cm 1cm !important;
           margin: 0 !important;
+          padding: 0 !important;
+        }
+        
+        /* Set page to ZERO margin (forces browser to use our padding) */
+        @page {
+          margin: 0 !important;
+          size: A4 portrait !important;
+        }
+        
+        /* Apply all spacing as PADDING on container */
+        .container {
           box-sizing: border-box !important;
           width: 100% !important;
+          /* 0.5cm top/bottom, 1cm sides = matches your requirement */
+          padding: 0.5cm 1cm !important;
+          margin: 0 !important;
+          min-height: 100vh !important;
         }
         
-        .print-button, .scroll-up-button, .nav-menu-button, .nav-numbered-buttons, .nav-sidebar {
+        /* Ensure content doesn't overflow */
+        .worksheet-content {
+          max-width: 100% !important;
+          overflow: hidden !important;
+        }
+        
+        /* Hide navigation and buttons */
+        .print-button, .scroll-up-button, .nav-menu-button, 
+        .nav-numbered-buttons, .nav-sidebar, .pdf-instructions {
           display: none !important;
+        }
+        
+        /* Optimize page breaks */
+        .exercise {
+          page-break-inside: avoid !important;
+        }
+        
+        h2, h3 {
+          page-break-after: avoid !important;
         }
         
         html, body {
@@ -659,7 +664,17 @@ ${finalCSS}
     </style>
 </head>
 <body>
-    ${printButton.outerHTML}
+    <!-- PDF Print Instructions -->
+    <div class="pdf-instructions">
+      <strong>📄 For best PDF margins (0.5cm top/bottom, 1cm sides):</strong><br>
+      1. Click Print below<br>
+      2. In print dialog, set margins to <strong>"None" or "Minimum"</strong><br>
+      3. Save as PDF<br>
+      <em>Note: Different browsers may show slightly different margins.</em>
+    </div>
+    
+    <!-- Print Button -->
+    <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
     ${scrollUpButton.outerHTML}
     ${navMenuButton.outerHTML}
     ${numberedButtonsContainer.outerHTML}

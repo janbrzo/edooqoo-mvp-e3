@@ -126,6 +126,20 @@
 - **Real-time preview**: See changes immediately
 - **Save before download**: Preserve modifications
 
+### Format Options
+
+Two formats are available:
+
+#### PDF Export Instructions
+When printing HTML to PDF:
+1. Open the downloaded HTML file in your browser
+2. Click the Print button
+3. In the print dialog, set margins to **"None" or "Minimum"**
+4. Choose "Save as PDF"
+5. Save the file
+
+This ensures proper margins (0.5cm top/bottom, 1cm sides) in the final PDF.
+
 ### Student vs Teacher Views
 - **Student version**: Clean, answer-free format
 - **Teacher version**: Includes answers, notes, teaching tips

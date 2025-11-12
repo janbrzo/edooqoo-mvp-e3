@@ -13,6 +13,9 @@ interface SharedWorksheetData {
   html_content: string;
   created_at: string;
   teacher_email: string;
+  selected_image?: any;
+  selected_audio?: any;
+  audio_url?: string;
 }
 
 const SharedWorksheet = () => {

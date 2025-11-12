@@ -702,9 +702,12 @@ export type Database = {
         Args: { p_share_token: string }
         Returns: {
           ai_response: string
+          audio_url: string
           created_at: string
           html_content: string
           id: string
+          selected_audio: Json
+          selected_image: Json
           teacher_email: string
           title: string
         }[]

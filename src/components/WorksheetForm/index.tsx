@@ -213,30 +213,73 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   // Handle selection mode changes
   const handleModeChange = (mode: ExerciseSelectionMode) => {
     console.log(`🔧 [WORKSHEET-FORM] Changing mode to: ${mode}`);
+    console.log(`🔧 [WORKSHEET-FORM] Current selectedMediaTypes:`, selectedMediaTypes);
+    
     setSelectionMode(mode);
-    setActiveTab('exercises'); // Auto-expand Exercise Types card
+    setActiveTab('exercises');
     
     const maxExercises = lessonTime === '45min' ? 6 : 8;
-    const manualDefaults = lessonTime === '45min' 
-      ? ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out']
-      : ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
+    const isPictureMode = selectedMediaTypes.includes('picture');
+    const isAudioMode = selectedMediaTypes.includes('audio');
     
     let newExercises: string[];
+    
     if (mode === 'manual') {
-      newExercises = manualDefaults;
+      // Manual mode - use predefined defaults based on media
+      if (isPictureMode) {
+        newExercises = lessonTime === '45min' 
+          ? ['describe', 'answer-questions-picture', 'fill-in-blanks', 'dialogue', 'matching', 'true-false']
+          : ['describe', 'answer-questions-picture', 'true-false-picture', 'fill-in-blanks', 'multiple-choice', 'matching', 'dialogue', 'answer-questions'];
+      } else if (isAudioMode) {
+        newExercises = lessonTime === '45min'
+          ? ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'fill-in-blanks', 'multiple-choice-audio', 'matching']
+          : ['listening-comprehension', 'answer-questions-audio', 'true-false', 'fill-in-blanks-audio', 'multiple-choice', 'dialogue', 'answer-questions', 'matching'];
+      } else {
+        newExercises = lessonTime === '45min' 
+          ? ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out']
+          : ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
+      }
     } else if (mode === 'random') {
-      // Generate random exercises
-      const availableExercises = [
-        'reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 
+      // Random mode - CRITICAL FIX: Prioritize media exercises
+      
+      const PICTURE_EXERCISES = ['describe', 'answer-questions-picture', 'true-false-picture', 'multiple-choice-picture'];
+      const AUDIO_EXERCISES = ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'multiple-choice-audio', 'fill-in-blanks-audio'];
+      const GENERAL_EXERCISES = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 
         'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms', 'antonyms',
         'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 
-        'categorize', 'paraphrasing', 'complete-word', 'matching-halves'
-      ];
-      const shuffled = [...availableExercises].sort(() => Math.random() - 0.5);
-      newExercises = shuffled.slice(0, maxExercises);
+        'categorize', 'paraphrasing', 'complete-word', 'matching-halves'];
+      
+      if (isPictureMode) {
+        // Always select 2 picture exercises + fill rest with general
+        const shuffledPicture = [...PICTURE_EXERCISES].sort(() => Math.random() - 0.5);
+        const selectedPicture = shuffledPicture.slice(0, Math.min(2, PICTURE_EXERCISES.length));
+        
+        const shuffledGeneral = [...GENERAL_EXERCISES].sort(() => Math.random() - 0.5);
+        const selectedGeneral = shuffledGeneral.slice(0, maxExercises - selectedPicture.length);
+        
+        newExercises = [...selectedPicture, ...selectedGeneral];
+        console.log('🎲 [RANDOM-PICTURE] Selected exercises:', newExercises);
+      } else if (isAudioMode) {
+        // Always select 2 audio exercises + fill rest with general
+        const shuffledAudio = [...AUDIO_EXERCISES].sort(() => Math.random() - 0.5);
+        const selectedAudio = shuffledAudio.slice(0, Math.min(2, AUDIO_EXERCISES.length));
+        
+        const shuffledGeneral = [...GENERAL_EXERCISES].sort(() => Math.random() - 0.5);
+        const selectedGeneral = shuffledGeneral.slice(0, maxExercises - selectedAudio.length);
+        
+        newExercises = [...selectedAudio, ...selectedGeneral];
+        console.log('🎲 [RANDOM-AUDIO] Selected exercises:', newExercises);
+      } else {
+        // No media - pure random
+        const shuffled = [...GENERAL_EXERCISES].sort(() => Math.random() - 0.5);
+        newExercises = shuffled.slice(0, maxExercises);
+        console.log('🎲 [RANDOM-NONE] Selected exercises:', newExercises);
+      }
     } else {
       // Smart mode - use manual defaults for now
-      newExercises = manualDefaults;
+      newExercises = lessonTime === '45min' 
+        ? ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out']
+        : ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
     }
     
     console.log(`🔧 [WORKSHEET-FORM] Setting exercises for ${mode} mode:`, newExercises);

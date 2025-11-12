@@ -177,6 +177,13 @@ interface SubscriptionPlan {
   features: string[];
 }
 
+## Database Functions
+
+The application uses several PostgreSQL functions for security and business logic:
+
+### Shared Worksheets
+- `get_worksheet_by_share_token(p_share_token text)`: Returns worksheet data including media fields (selected_image, selected_audio, audio_url) for public sharing via token. Includes automatic expiration check.
+
 const plans = [
   { id: 'free', name: 'Free Demo', price: 0, monthlyLimit: 0 },
   { id: 'side-gig', name: 'Side-Gig Plan', price: 9, monthlyLimit: 15 },
