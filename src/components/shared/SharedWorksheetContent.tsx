@@ -228,12 +228,13 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
         </div>
       )}
 
-      {/* Lesson Media Section - Audio/Picture */}
-      {(worksheetData.selected_audio || worksheetData.selected_image) && (
+      {/* Lesson Media Section - Audio/Picture with fallbacks */}
+      {(worksheetData.selected_audio || worksheetData.selected_image || 
+        worksheetData.media?.audio_url || worksheetData.media?.image_url) && (
         <div className="mt-8 mb-8">
           <MediaSection
-            selectedImage={worksheetData.selected_image}
-            selectedAudio={worksheetData.selected_audio}
+            selectedImage={worksheetData.selected_image || worksheetData.media?.image_url}
+            selectedAudio={worksheetData.selected_audio || worksheetData.media?.audio_url}
             isDownloadUnlocked={true}
             isPinned={false}
             onTogglePin={undefined}
@@ -560,7 +561,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
               )}
 
               {/* Picture exercises - Answer Questions (uses normalized type for -picture suffix) */}
-              {normalizedType === 'answer-questions' && exercise.questions && (
+              {normalizedType === 'answer-questions' && !exercise.type.includes('-audio') && exercise.questions && (
                 <ExerciseAnswerQuestions
                   questions={exercise.questions}
                   isEditing={false}
@@ -571,7 +572,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
               )}
 
               {/* True/False exercise type */}
-              {normalizedType === 'true-false' && exercise.statements && (
+              {normalizedType === 'true-false' && !exercise.type.includes('-audio') && exercise.statements && (
                 <div className="space-y-2">
                   {exercise.statements.map((statement: any, sIndex: number) => (
                     <div key={sIndex} className="border-b pb-2">

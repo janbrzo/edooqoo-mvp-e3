@@ -587,19 +587,69 @@ export default function ExerciseSelector({
     
     onMediaTypesChange(newMediaTypes);
     
-    // Reset exercises based on media selection
+    // Reset exercises based on media selection AND selection mode
     let newExercises: string[];
     
-    if (newMediaTypes.includes('picture')) {
-      newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_PICTURE : MANUAL_EXERCISES_60MIN_PICTURE;
-    } else if (newMediaTypes.includes('audio')) {
-      newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_AUDIO : MANUAL_EXERCISES_60MIN_AUDIO;
+    // CRITICAL FIX: In Random mode, generate random exercises with media priority
+    if (selectionMode === 'random') {
+      // Temporarily update selectedMediaTypes for generateRandomExercises to use
+      // We need to regenerate with the new media types
+      const tempMediaTypes = newMediaTypes;
+      
+      // Generate random exercises with new media types
+      if (tempMediaTypes.includes('picture')) {
+        const availablePictureExercises = AVAILABLE_EXERCISES
+          .filter(ex => !ex.comingSoon && PICTURE_COMPATIBLE_EXERCISES.includes(ex.id))
+          .map(ex => ex.id);
+        const availableOtherExercises = AVAILABLE_EXERCISES
+          .filter(ex => !ex.comingSoon && !PICTURE_COMPATIBLE_EXERCISES.includes(ex.id) && ex.id !== 'reading')
+          .map(ex => ex.id);
+        
+        const shuffledPicture = [...availablePictureExercises].sort(() => Math.random() - 0.5);
+        const selectedPicture = shuffledPicture.slice(0, Math.min(2, availablePictureExercises.length));
+        
+        const remainingSlots = maxExercises - selectedPicture.length;
+        const shuffledOther = [...availableOtherExercises].sort(() => Math.random() - 0.5);
+        const selectedOther = shuffledOther.slice(0, remainingSlots);
+        
+        newExercises = [...selectedPicture, ...selectedOther];
+        console.log('🎲 [MEDIA-TOGGLE-RANDOM-PICTURE] Selected exercises:', newExercises);
+      } else if (tempMediaTypes.includes('audio')) {
+        const availableAudioExercises = AVAILABLE_EXERCISES
+          .filter(ex => !ex.comingSoon && AUDIO_COMPATIBLE_EXERCISES.includes(ex.id))
+          .map(ex => ex.id);
+        const availableOtherExercises = AVAILABLE_EXERCISES
+          .filter(ex => !ex.comingSoon && !AUDIO_COMPATIBLE_EXERCISES.includes(ex.id))
+          .map(ex => ex.id);
+        
+        const shuffledAudio = [...availableAudioExercises].sort(() => Math.random() - 0.5);
+        const selectedAudio = shuffledAudio.slice(0, Math.min(2, availableAudioExercises.length));
+        
+        const remainingSlots = maxExercises - selectedAudio.length;
+        const shuffledOther = [...availableOtherExercises].sort(() => Math.random() - 0.5);
+        const selectedOther = shuffledOther.slice(0, remainingSlots);
+        
+        newExercises = [...selectedAudio, ...selectedOther];
+        console.log('🎲 [MEDIA-TOGGLE-RANDOM-AUDIO] Selected exercises:', newExercises);
+      } else {
+        const availableExercises = AVAILABLE_EXERCISES.filter(ex => !ex.comingSoon).map(ex => ex.id);
+        const shuffled = [...availableExercises].sort(() => Math.random() - 0.5);
+        newExercises = shuffled.slice(0, maxExercises);
+        console.log('🎲 [MEDIA-TOGGLE-RANDOM-NONE] Selected exercises:', newExercises);
+      }
     } else {
-      newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
+      // Manual mode: use predefined defaults
+      if (newMediaTypes.includes('picture')) {
+        newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_PICTURE : MANUAL_EXERCISES_60MIN_PICTURE;
+      } else if (newMediaTypes.includes('audio')) {
+        newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN_AUDIO : MANUAL_EXERCISES_60MIN_AUDIO;
+      } else {
+        newExercises = lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
+      }
     }
     
     onChange(newExercises);
-  }, [selectedMediaTypes, lessonTime, onChange, onMediaTypesChange]);
+  }, [selectedMediaTypes, lessonTime, onChange, onMediaTypesChange, selectionMode, maxExercises]);
 
   return (
     <div className="space-y-4">

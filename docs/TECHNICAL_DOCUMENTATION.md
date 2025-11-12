@@ -5,11 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2025):** Fixed shared worksheet display issues and PDF export margins:
-- All audio exercises (Listening Comprehension, Answer Questions Audio, True/False Audio, Multiple Choice Audio, Fill in Blanks Audio) now display correctly in shared worksheets (/shared)
-- All picture exercises (Answer Questions Picture, True/False Picture, Describe Picture, Multiple Choice Picture) now display correctly in shared worksheets
-- PDF export margins corrected: 1cm sides, 0.5cm top/bottom (previously 1.5cm sides, 0.5cm top/bottom causing excessive whitespace)
-- Added `normalizeExerciseType` helper function to handle `-picture` and `-audio` suffixes in SharedWorksheetContent component
+**Latest Update (January 2025):** Fixed critical issues with shared worksheets, PDF export, and exercise selection:
+- **Shared Worksheets**: All audio exercises (Listening Comprehension, Answer Questions Audio, True/False Audio, Multiple Choice Audio, Fill in Blanks Audio) now display correctly without duplication in /shared routes
+- **Picture Exercises**: All picture exercises (Answer Questions Picture, True/False Picture, Describe Picture, Multiple Choice Picture) render correctly in shared worksheets
+- **PDF Margins**: Export margins corrected to professional standards (1cm sides, 0.5cm top/bottom) using `.container` class targeting in print CSS
+- **Lesson Media Section**: Added to shared worksheets with fallback support for multiple data structure formats (`selected_audio/image` or `media.audio_url/image_url`)
+- **Random Exercise Selection**: Fixed to maintain 2 media-specific exercises (Audio/Picture) when shuffling in Random mode, ensuring media priority is preserved
+- **Technical Fixes**: Added `normalizeExerciseType` helper function to handle `-picture` and `-audio` suffixes, preventing duplicate rendering
 
 ## Architecture Stack
 

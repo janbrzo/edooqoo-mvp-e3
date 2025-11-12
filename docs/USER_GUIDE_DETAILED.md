@@ -14,7 +14,10 @@
 
 ## Getting Started
 
-**Latest Fix:** All audio exercises (Listening Comprehension, Answer Questions Audio, True/False Audio, Multiple Choice Audio, Fill in Blanks Audio) and picture exercises (Answer Questions Picture, True/False Picture, Describe Picture, Multiple Choice Picture) now display correctly when sharing worksheets. PDF export margins optimized for professional printing (1cm sides, 0.5cm top/bottom).
+**Latest Fix:** Critical improvements to shared worksheets, PDF export, and exercise selection:
+- **Shared Worksheets**: All audio/picture exercises display correctly without duplication. Lesson Media section now included with fallback support.
+- **PDF Export**: Margins optimized (1cm sides, 0.5cm top/bottom) for professional printing using correct `.container` class targeting.
+- **Random Mode**: Fixed to always select 2 media-specific exercises (Audio/Picture) even when shuffling, maintaining media priority throughout worksheet generation.
 
 ### Account Creation (Required)
 - **Registration required**: You must create an account to generate worksheets

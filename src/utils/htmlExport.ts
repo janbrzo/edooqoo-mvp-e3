@@ -319,29 +319,27 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
       
       /* Print styles */
       @media print {
-        /* STEP 1: Reset all default margins */
-        * {
+        /* STEP 1: Global reset - remove all default margins */
+        *, html, body {
+          margin: 0 !important;
+          padding: 0 !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
         }
         
         html {
-          margin: 0 !important;
-          padding: 0 !important;
           width: 100% !important;
           height: 100% !important;
         }
         
         body {
-          margin: 0 !important;
-          padding: 0 !important;
           width: 100% !important;
           height: auto !important;
         }
         
-        /* STEP 2: Set page margins */
+        /* STEP 2: Set page margins (0.5cm top/bottom, 1cm sides) */
         @page {
-          margin: 0.5cm 1cm !important;
+          margin: 0.5cm 1cm 0.5cm 1cm !important;
           size: A4 portrait !important;
           
           @top-left { content: none !important; }
@@ -356,8 +354,8 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
           @bottom-right { content: none !important; }
         }
         
-        /* STEP 3: Add content padding to match page margins */
-        .worksheet-content {
+        /* STEP 3: Apply padding to .container (matches HTML structure at line 669) */
+        .container {
           padding: 0.5cm 1cm !important;
           margin: 0 !important;
           box-sizing: border-box !important;
