@@ -10,8 +10,8 @@
 - ✅ Naprawiono wyświetlanie wszystkich zadań audio (Listening Comprehension, Answer Questions Audio, True/False Audio, Multiple Choice Audio, Fill in Blanks Audio) w udostępnianych worksheetach
 - ✅ Naprawiono wyświetlanie wszystkich zadań picture (Answer Questions Picture, True/False Picture, Describe Picture, Multiple Choice Picture) w udostępnianych worksheetach
 - ✅ Skorygowano marginesy PDF: 1cm boki, 0.5cm góra/dół (wcześniej 1.5cm boki powodowało nadmierne białe przestrzenie)
-- ✅ Naprawiono niezgodność ID zadania "describe" vs "describe-picture" między frontend a backend - wyeliminowano błędy "No function found" i brakujące wytyczne w promptach
-- ✅ Poprawiono validator "odd-one-out" - zmieniono z błędu "< 5 grup" na ostrzeżenie gdy nie jest dokładnie 10 grup (zgodnie z requirements)
+- ✅ **NAPRAWIONO "describe-picture"**: Zmieniono wszystkie referencje frontend z `'describe'` na `'describe-picture'` (8 plików: ExerciseSelector, WorksheetForm, InputParamsCard, SharedWorksheetContent, ExerciseSection, worksheetUtils, mockNewExercisesData), dzięki czemu backend znajduje właściwą funkcję template i dołącza wytyczne do promptu ChatGPT
+- ✅ **NAPRAWIONO "odd-one-out" validator**: Zmieniono strukturę z `groups` na `questions` (zgodnie z frontendem ExerciseOddOneOut.tsx), walidacja sprawdza `questions` array z polami `options` i `correct_answer`; dodano 2 pytania do template (8→10 zgodnie z requirements); zmieniono terminologię w final-requirements z "groups" na "questions"
 
 ## Wygląd i Interface
 

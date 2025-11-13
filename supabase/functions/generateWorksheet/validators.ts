@@ -233,21 +233,23 @@ function validateErrorCorrectionExercise(exercise: any): void {
 
 // New Phase 1 exercise validation functions (RELAXED FOR TESTING)
 function validateOddOneOutExercise(exercise: any): void {
-  if (!exercise.groups || !Array.isArray(exercise.groups)) {
-    throw new Error('Odd One Out exercise must have groups array');
+  // ✅ Changed from 'groups' to 'questions' to match frontend component
+  if (!exercise.questions || !Array.isArray(exercise.questions)) {
+    throw new Error('Odd One Out exercise must have questions array');
   }
   
-  // Soft validation: warn if not exactly 10 groups (as per requirements)
-  if (exercise.groups.length !== 10) {
-    console.warn(`⚠️ [VALIDATOR] Odd One Out has ${exercise.groups.length} groups (expected: 10)`);
+  // Check for exactly 10 questions (as per requirements)
+  if (exercise.questions.length !== 10) {
+    console.warn(`⚠️ [VALIDATOR] Odd One Out has ${exercise.questions.length} questions (expected: 10)`);
   }
   
-  for (const group of exercise.groups) {
-    if (!group.words || !Array.isArray(group.words) || group.words.length < 3) {
-      throw new Error('Each Odd One Out group must have at least 3 words');
+  // Validate each question has 5 options and a correct_answer
+  for (const question of exercise.questions) {
+    if (!question.options || !Array.isArray(question.options) || question.options.length !== 5) {
+      throw new Error('Each Odd One Out question must have exactly 5 options');
     }
-    if (!group.odd_one) {
-      throw new Error('Each Odd One Out group must have an odd_one property');
+    if (!question.correct_answer || typeof question.correct_answer !== 'string') {
+      throw new Error('Each Odd One Out question must have a correct_answer');
     }
   }
 }

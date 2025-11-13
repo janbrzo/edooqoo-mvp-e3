@@ -551,7 +551,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
               )}
 
               {/* Picture exercises - Describe Picture */}
-              {normalizedType === 'describe' && (
+              {normalizedType === 'describe-picture' && (
                 <ExerciseDescribe
                   image_url={exercise.image_url}
                   questions={exercise.prompts || exercise.questions || []}

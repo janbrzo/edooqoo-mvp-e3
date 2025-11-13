@@ -20,7 +20,6 @@ const pictureExercises = [
   'multiple-choice-picture',
   'true-false-picture',
   'answer-questions-picture',
-  'describe',
   'describe-picture'
 ];
 

@@ -279,7 +279,9 @@ export const getOddOneOutExercise = () => `    {
         {"options": ["reservation", "booking", "order", "complain", "menu"], "correct_answer": "complain"},
         {"options": ["hot", "cold", "warmth", "fresh", "spicy"], "correct_answer": "warmth"},
         {"options": ["eating", "drinking", "table", "cooking", "serving"], "correct_answer": "table"},
-        {"options": ["expensive", "cheap", "beautifully", "fresh", "delicious"], "correct_answer": "beautifully"}
+        {"options": ["expensive", "cheap", "beautifully", "fresh", "delicious"], "correct_answer": "beautifully"},
+        {"options": ["starter", "dessert", "appetizer", "main", "eat"], "correct_answer": "eat"},
+        {"options": ["restaurant", "cafe", "cooking", "bistro", "diner"], "correct_answer": "cooking"}
       ],
       "teacher_tip": "After students identify the odd word, ask them to explain their reasoning. This develops critical thinking and vocabulary categorization skills."
     }`;
