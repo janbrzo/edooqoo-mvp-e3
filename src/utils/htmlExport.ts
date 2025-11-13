@@ -319,8 +319,8 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
       
       /* Print styles */
       @media print {
-        /* ULTRA AGGRESSIVE: Remove ALL margins */
-        * {
+        /* ULTRA AGGRESSIVE: Remove ALL margins except container */
+        *:not(.container) {
           margin: 0 !important;
           padding: 0 !important;
           -webkit-print-color-adjust: exact !important;
@@ -348,6 +348,22 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
           padding: 0.5cm 1cm !important;
           margin: 0 !important;
           min-height: 100vh !important;
+        }
+        
+        /* Spacing between exercises and sections */
+        [data-exercise-index],
+        .exercise,
+        .exercise-section,
+        section {
+          margin-bottom: 0.3cm !important;
+        }
+        
+        /* Remove margin from last exercise to avoid extra space at end */
+        [data-exercise-index]:last-child,
+        .exercise:last-child,
+        .exercise-section:last-child,
+        section:last-child {
+          margin-bottom: 0 !important;
         }
         
         /* Ensure content doesn't overflow */
@@ -664,15 +680,6 @@ ${finalCSS}
     </style>
 </head>
 <body>
-    <!-- PDF Print Instructions -->
-    <div class="pdf-instructions">
-      <strong>📄 For best PDF margins (0.5cm top/bottom, 1cm sides):</strong><br>
-      1. Click Print below<br>
-      2. In print dialog, set margins to <strong>"None" or "Minimum"</strong><br>
-      3. Save as PDF<br>
-      <em>Note: Different browsers may show slightly different margins.</em>
-    </div>
-    
     <!-- Print Button -->
     <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
     ${scrollUpButton.outerHTML}
