@@ -196,7 +196,7 @@ const AVAILABLE_EXERCISES = [
     deprecated: false,
   },
   {
-    id: 'describe',
+    id: 'describe-picture',
     label: 'Describe Picture',
     icon: '🖼️',
     description: 'Describe what you see in the picture',
@@ -367,7 +367,7 @@ const AVAILABLE_EXERCISES = [
 ];
 
 // Picture-compatible exercises
-const PICTURE_COMPATIBLE_EXERCISES = ['multiple-choice-picture', 'true-false-picture', 'answer-questions-picture', 'describe'];
+const PICTURE_COMPATIBLE_EXERCISES = ['multiple-choice-picture', 'true-false-picture', 'answer-questions-picture', 'describe-picture'];
 
 // Audio-compatible exercises
 const AUDIO_COMPATIBLE_EXERCISES = [
@@ -384,7 +384,7 @@ const MANUAL_EXERCISES_45MIN = ['reading', 'true-false', 'matching', 'fill-in-bl
 
 // Picture mode defaults
 const MANUAL_EXERCISES_60MIN_PICTURE = [
-  'describe',
+  'describe-picture',
   'answer-questions-picture',
   'true-false',
   'fill-in-blanks',
@@ -394,7 +394,7 @@ const MANUAL_EXERCISES_60MIN_PICTURE = [
   'answer-questions'
 ];
 const MANUAL_EXERCISES_45MIN_PICTURE = [
-  'describe',
+  'describe-picture',
   'answer-questions-picture',
   'true-false',
   'fill-in-blanks',

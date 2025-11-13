@@ -228,8 +228,8 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       // Manual mode - use predefined defaults based on media
       if (isPictureMode) {
         newExercises = lessonTime === '45min' 
-          ? ['describe', 'answer-questions-picture', 'fill-in-blanks', 'dialogue', 'matching', 'true-false']
-          : ['describe', 'answer-questions-picture', 'true-false-picture', 'fill-in-blanks', 'multiple-choice', 'matching', 'dialogue', 'answer-questions'];
+          ? ['describe-picture', 'answer-questions-picture', 'fill-in-blanks', 'dialogue', 'matching', 'true-false']
+          : ['describe-picture', 'answer-questions-picture', 'true-false-picture', 'fill-in-blanks', 'multiple-choice', 'matching', 'dialogue', 'answer-questions'];
       } else if (isAudioMode) {
         newExercises = lessonTime === '45min'
           ? ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'fill-in-blanks', 'multiple-choice-audio', 'matching']
@@ -242,7 +242,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
     } else if (mode === 'random') {
       // Random mode - CRITICAL FIX: Prioritize media exercises
       
-      const PICTURE_EXERCISES = ['describe', 'answer-questions-picture', 'true-false-picture', 'multiple-choice-picture'];
+      const PICTURE_EXERCISES = ['describe-picture', 'answer-questions-picture', 'true-false-picture', 'multiple-choice-picture'];
       const AUDIO_EXERCISES = ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'multiple-choice-audio', 'fill-in-blanks-audio'];
       const GENERAL_EXERCISES = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 
         'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms', 'antonyms',
