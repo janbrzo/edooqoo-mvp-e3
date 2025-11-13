@@ -540,7 +540,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         )}
 
         {/* New additional exercise types */}
-        {normalizedType === 'describe' && (
+        {normalizedType === 'describe-picture' && (
           <ExerciseDescribe
             image_url={exercise.image_url || hasSelectedImage?.unsplash_url || hasSelectedImage?.ai_generated_url}
             questions={exercise.prompts || exercise.questions || []}

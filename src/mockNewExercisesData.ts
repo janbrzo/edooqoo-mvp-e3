@@ -429,7 +429,7 @@ export const mockNewExercisesData = {
     },
     // New additional exercise types
     {
-      "type": "describe",
+      "type": "describe-picture",
       "title": "Describe the Picture",
       "icon": "Camera",
       "time": 15,

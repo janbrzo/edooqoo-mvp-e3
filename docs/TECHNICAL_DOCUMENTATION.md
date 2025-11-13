@@ -11,8 +11,8 @@ The English Worksheet Generator is a full-featured SaaS platform built on React,
 - **PDF Margins**: Export margins corrected to professional standards (1cm sides, 0.5cm top/bottom) using `.container` class targeting in print CSS
 - **Lesson Media Section**: Added to shared worksheets with fallback support for multiple data structure formats (`selected_audio/image` or `media.audio_url/image_url`)
 - **Random Exercise Selection**: Fixed to maintain 2 media-specific exercises (Audio/Picture) when shuffling in Random mode, ensuring media priority is preserved
-- **Exercise Type "describe-picture"**: Fixed frontend-backend mismatch where frontend sent `'describe'` but backend expected `'describe-picture'`, causing missing prompt guidelines and validation errors
-- **Validator for "odd-one-out"**: Changed from strict `< 5 groups` error to soft warning when not exactly 10 groups (matching requirements), preventing misleading error logs
+- **Exercise Type "describe-picture"**: ✅ FIXED - Changed all frontend references from `'describe'` to `'describe-picture'` (ExerciseSelector, WorksheetForm, InputParamsCard, SharedWorksheetContent, ExerciseSection, worksheetUtils, mockNewExercisesData), ensuring backend finds correct template function `getDescribePictureExercise()` and includes prompt guidelines in ChatGPT requests
+- **Validator for "odd-one-out"**: ✅ FIXED - Changed validator structure from `groups` to `questions` (matching frontend ExerciseOddOneOut.tsx component), validating `questions` array with `options` and `correct_answer` fields; added 2 questions to template (8→10) to match requirements; changed final-requirements from "groups" to "questions" terminology
 - **Technical Fixes**: Added `normalizeExerciseType` helper function to handle `-picture` and `-audio` suffixes, preventing duplicate rendering
 
 ## Architecture Stack

@@ -19,7 +19,7 @@ const EXERCISE_TYPES_MAP: Record<string, string> = {
   'truefalse': 'True/False',
   'wordorder': 'Word Order',
   'dialogue': 'Dialogue',
-  'describe': 'Describe',
+  'describe-picture': 'Describe Picture',
   'answerquestions': 'Answer Questions',
   'paraphrasing': 'Paraphrasing',
   'sentencetransformation': 'Sentence Transformation',
@@ -85,7 +85,6 @@ const getExerciseIcon = (exerciseId: string): React.ReactElement => {
     'multiple-choice-picture',
     'true-false-picture',
     'answer-questions-picture',
-    'describe',
     'describe-picture'
   ];
   
