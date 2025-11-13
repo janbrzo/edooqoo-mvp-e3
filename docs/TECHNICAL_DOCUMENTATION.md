@@ -5,12 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2025):** Fixed critical issues with shared worksheets, PDF export, and exercise selection:
+**Latest Update (January 2025):** Fixed critical issues with shared worksheets, PDF export, exercise selection, and backend validation:
 - **Shared Worksheets**: All audio exercises (Listening Comprehension, Answer Questions Audio, True/False Audio, Multiple Choice Audio, Fill in Blanks Audio) now display correctly without duplication in /shared routes
 - **Picture Exercises**: All picture exercises (Answer Questions Picture, True/False Picture, Describe Picture, Multiple Choice Picture) render correctly in shared worksheets
 - **PDF Margins**: Export margins corrected to professional standards (1cm sides, 0.5cm top/bottom) using `.container` class targeting in print CSS
 - **Lesson Media Section**: Added to shared worksheets with fallback support for multiple data structure formats (`selected_audio/image` or `media.audio_url/image_url`)
 - **Random Exercise Selection**: Fixed to maintain 2 media-specific exercises (Audio/Picture) when shuffling in Random mode, ensuring media priority is preserved
+- **Exercise Type "describe-picture"**: Fixed frontend-backend mismatch where frontend sent `'describe'` but backend expected `'describe-picture'`, causing missing prompt guidelines and validation errors
+- **Validator for "odd-one-out"**: Changed from strict `< 5 groups` error to soft warning when not exactly 10 groups (matching requirements), preventing misleading error logs
 - **Technical Fixes**: Added `normalizeExerciseType` helper function to handle `-picture` and `-audio` suffixes, preventing duplicate rendering
 
 ## Architecture Stack

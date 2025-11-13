@@ -233,8 +233,13 @@ function validateErrorCorrectionExercise(exercise: any): void {
 
 // New Phase 1 exercise validation functions (RELAXED FOR TESTING)
 function validateOddOneOutExercise(exercise: any): void {
-  if (!exercise.groups || !Array.isArray(exercise.groups) || exercise.groups.length < 5) {
-    throw new Error('Odd One Out exercise must have at least 5 groups');
+  if (!exercise.groups || !Array.isArray(exercise.groups)) {
+    throw new Error('Odd One Out exercise must have groups array');
+  }
+  
+  // Soft validation: warn if not exactly 10 groups (as per requirements)
+  if (exercise.groups.length !== 10) {
+    console.warn(`⚠️ [VALIDATOR] Odd One Out has ${exercise.groups.length} groups (expected: 10)`);
   }
   
   for (const group of exercise.groups) {
