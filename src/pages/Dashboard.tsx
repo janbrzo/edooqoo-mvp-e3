@@ -32,6 +32,8 @@ import { DeleteWorksheetButton } from "@/components/DeleteWorksheetButton";
 import { FreeWeekBanner } from "@/components/FreeWeekBanner";
 import { MediaBadges } from '@/components/worksheet/MediaBadges';
 import { hasImage, hasAudio } from '@/utils/worksheetUtils';
+import { useAllWorksheetHomework } from "@/hooks/useAllWorksheetHomework";
+import { WorksheetCardWithHomework } from "@/components/dashboard/WorksheetCardWithHomework";
 
 const Dashboard = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
@@ -43,6 +45,10 @@ const Dashboard = () => {
   const { profile: userProfile } = useProfile();
   const navigate = useNavigate();
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("month");
+  
+  // Fetch homework for all worksheets
+  const worksheetIds = worksheets.map(w => w.id);
+  const { homeworkByWorksheet, loading: homeworkLoading } = useAllWorksheetHomework(worksheetIds);
 
   // ✅ FIX: Add debugging for worksheets state
   useEffect(() => {
@@ -348,61 +354,18 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {worksheets.slice(0, 5).map((worksheet) => {
-                    const studentName = getStudentNameForWorksheet(worksheet);
-                    return (
-                      <div
-                        key={worksheet.id}
-                        className="p-4 bg-muted/20 rounded-lg border border-border/50"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <div 
-                              className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer hover:text-primary transition-colors"
-                              onClick={() => handleWorksheetOpen(worksheet)}
-                            >
-                              <h3 className="font-medium text-base truncate">{formatWorksheetTitle(worksheet)}</h3>
-                              <span className="text-primary shrink-0">
-                                for {studentName || "Unassigned"}
-                              </span>
-                              <MediaBadges 
-                                hasImage={hasImage(worksheet)} 
-                                hasAudio={hasAudio(worksheet)}
-                                size="sm"
-                              />
-                            </div>
-                            <div className="flex items-center gap-2 ml-2 pointer-events-auto">
-                              <StudentSelector
-                                worksheetId={worksheet.id}
-                                currentStudentId={worksheet.student_id}
-                                worksheetTitle={formatWorksheetTitle(worksheet)}
-                                onTransferSuccess={refetchWorksheets}
-                                className="hover:bg-muted"
-                              />
-                              <DeleteWorksheetButton
-                                worksheetId={worksheet.id}
-                                worksheetTitle={formatWorksheetTitle(worksheet)}
-                                onDelete={handleDeleteWorksheet}
-                                variant="ghost"
-                                size="sm"
-                              />
-                            </div>
-                          </div>
-                          {formatWorksheetDescription(worksheet) && (
-                            <p className="text-sm text-muted-foreground">
-                              {formatWorksheetDescription(worksheet)}
-                            </p>
-                          )}
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            <span>{format(new Date(worksheet.created_at), 'MMM dd, yyyy')}</span>
-                            <span className="mx-2">•</span>
-                            <span>{format(new Date(worksheet.created_at), 'HH:mm')}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {worksheets.slice(0, 5).map((worksheet) => (
+                    <WorksheetCardWithHomework
+                      key={worksheet.id}
+                      worksheet={worksheet}
+                      homework={homeworkByWorksheet[worksheet.id] || []}
+                      onOpen={(id) => handleWorksheetOpen(worksheets.find(w => w.id === id))}
+                      onDelete={handleDeleteWorksheet}
+                      formatTitle={formatWorksheetTitle}
+                      formatDescription={formatWorksheetDescription}
+                      getStudentName={getStudentNameForWorksheet}
+                    />
+                  ))}
                 </div>
               )}
             </CardContent>
