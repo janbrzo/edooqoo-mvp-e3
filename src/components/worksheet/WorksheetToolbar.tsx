@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift } from "lucide-react";
+import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen } from "lucide-react";
 import { isFreeCustomDemoWeek } from "@/utils/promoUtils";
 import PaymentPopup from "@/components/PaymentPopup";
 import ShareWorksheetModal from "@/components/ShareWorksheetModal";
@@ -32,6 +32,7 @@ interface WorksheetToolbarProps {
   userId?: string;
   onExpandAll?: () => void;
   onCloseSidebar?: () => void;
+  onCreateHomework?: () => void;
 }
 
 const WorksheetToolbar = ({
@@ -51,6 +52,7 @@ const WorksheetToolbar = ({
   userId,
   onExpandAll,
   onCloseSidebar,
+  onCreateHomework,
 }: WorksheetToolbarProps) => {
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -217,14 +219,27 @@ const WorksheetToolbar = ({
                 </Button>
                 
                 {canShareWorksheet && (
-                  <Button
-                    variant="outline"
-                    onClick={handleShareClick}
-                    className={`border-worksheet-purple text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
-                    size="sm"
-                  >
-                    <Share2 className="mr-2 h-4 w-4" /> Share Worksheet
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={handleShareClick}
+                      className={`border-worksheet-purple text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
+                      size="sm"
+                    >
+                      <Share2 className="mr-2 h-4 w-4" /> Share Worksheet
+                    </Button>
+                    
+                    {onCreateHomework && (
+                      <Button
+                        variant="outline"
+                        onClick={onCreateHomework}
+                        className={`border-worksheet-purple text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
+                        size="sm"
+                      >
+                        <BookOpen className="mr-2 h-4 w-4" /> Create Homework
+                      </Button>
+                    )}
+                  </>
                 )}
               </>
             )}

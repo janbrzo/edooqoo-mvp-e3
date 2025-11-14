@@ -16,6 +16,8 @@ import { StudentKnowledgeMiniList } from "@/components/student-knowledge/Student
 import { StudentKnowledgeToggleButton } from "@/components/student-knowledge/StudentKnowledgeToggleButton";
 import { StudentKnowledgeFloatingPanel } from "@/components/student-knowledge/StudentKnowledgeFloatingPanel";
 import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
+import { useStudents } from "@/hooks/useStudents";
+import { CreateHomeworkModal } from "@/components/homework/CreateHomeworkModal";
 import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry, KnowledgeCategory } from "@/types/studentKnowledge";
 
 interface Exercise {
@@ -100,6 +102,10 @@ export default function WorksheetDisplay({
   const [miniListPage, setMiniListPage] = useState(1);
   const [miniListCategoryFilter, setMiniListCategoryFilter] = useState<KnowledgeCategory | null>(null);
   const MINI_LIST_PAGE_SIZE = 8;
+  const [showHomeworkModal, setShowHomeworkModal] = useState(false);
+  
+  // Fetch all students for homework creation
+  const { students } = useStudents();
   
   // Initialize student knowledge hook only if we have studentId and userId (teacherId)
   const shouldShowFAB = !!(studentId && userId && worksheetId);
@@ -370,6 +376,28 @@ export default function WorksheetDisplay({
     setPanelMode('add');
   };
 
+  const handleCreateHomework = () => {
+    if (!userId) {
+      toast({
+        title: "Login required",
+        description: "Please log in to create homework assignments.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!worksheetId) {
+      toast({
+        title: "Cannot create homework",
+        description: "Worksheet must be saved first.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setShowHomeworkModal(true);
+  };
+
   const handleLoadMoreMiniList = () => {
     setMiniListPage(prev => prev + 1);
   };
@@ -476,6 +504,7 @@ export default function WorksheetDisplay({
             userId={userId}
             onExpandAll={expandAllRef || (() => {})}
             onCloseSidebar={closeSidebarRef || (() => {})}
+            onCreateHomework={handleCreateHomework}
           />
 
           <WorksheetContent
@@ -497,6 +526,17 @@ export default function WorksheetDisplay({
           />
         </div>
       </WorksheetContainer>
+      
+      {/* Homework Modal */}
+      <CreateHomeworkModal
+        open={showHomeworkModal}
+        onOpenChange={setShowHomeworkModal}
+        worksheetId={worksheetId || ''}
+        worksheetTitle={editableWorksheet?.title || 'Worksheet'}
+        exercises={editableWorksheet?.exercises || []}
+        teacherId={userId || ''}
+        students={students}
+      />
     </WorksheetViewTracking>
   );
 }
