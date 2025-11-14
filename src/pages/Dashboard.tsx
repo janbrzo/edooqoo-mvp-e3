@@ -33,7 +33,9 @@ import { FreeWeekBanner } from "@/components/FreeWeekBanner";
 import { MediaBadges } from '@/components/worksheet/MediaBadges';
 import { hasImage, hasAudio } from '@/utils/worksheetUtils';
 import { useAllWorksheetHomework } from "@/hooks/useAllWorksheetHomework";
-import { WorksheetCardWithHomework } from "@/components/dashboard/WorksheetCardWithHomework";
+import { WorksheetHomeworkList } from "@/components/dashboard/WorksheetHomeworkList";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 const Dashboard = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
@@ -354,18 +356,91 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {worksheets.slice(0, 5).map((worksheet) => (
-                    <WorksheetCardWithHomework
-                      key={worksheet.id}
-                      worksheet={worksheet}
-                      homework={homeworkByWorksheet[worksheet.id] || []}
-                      onOpen={(id) => handleWorksheetOpen(worksheets.find(w => w.id === id))}
-                      onDelete={handleDeleteWorksheet}
-                      formatTitle={formatWorksheetTitle}
-                      formatDescription={formatWorksheetDescription}
-                      getStudentName={getStudentNameForWorksheet}
-                    />
-                  ))}
+                  {worksheets.slice(0, 5).map((worksheet) => {
+                    const homework = homeworkByWorksheet[worksheet.id] || [];
+                    const homeworkCount = homework.length;
+                    
+                    return (
+                      <Card key={worksheet.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold text-base truncate flex-1">
+                              {formatWorksheetTitle(worksheet.form_data)}
+                            </h3>
+                            <MediaBadges 
+                              hasImage={hasImage(worksheet)} 
+                              hasAudio={hasAudio(worksheet)}
+                            />
+                          </div>
+                          
+                          <p className="text-sm text-muted-foreground mb-3">
+                            {formatWorksheetDescription(worksheet.form_data)}
+                          </p>
+                          
+                          <div className="flex items-center gap-2 mb-3 flex-wrap">
+                            {worksheet.student_id && (
+                              <Badge variant="outline" className="text-xs">
+                                <User className="h-3 w-3 mr-1" />
+                                {getStudentNameForWorksheet(worksheet.student_id)}
+                              </Badge>
+                            )}
+                            {worksheet.generation_time_seconds && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {worksheet.generation_time_seconds}s
+                              </Badge>
+                            )}
+                            <Badge variant="secondary" className="text-xs">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {format(new Date(worksheet.created_at), 'MMM dd, yyyy')}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex gap-2 mb-3">
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              onClick={() => handleWorksheetOpen(worksheet)}
+                            >
+                              <BookOpen className="h-4 w-4 mr-1" />
+                              Open
+                            </Button>
+                            <StudentSelector 
+                              worksheetId={worksheet.id}
+                              currentStudentId={worksheet.student_id}
+                              onTransferSuccess={refetchWorksheets}
+                            />
+                            <DeleteWorksheetButton 
+                              worksheetId={worksheet.id}
+                              worksheetTitle={formatWorksheetTitle(worksheet.form_data)}
+                              onDelete={handleDeleteWorksheet}
+                            />
+                          </div>
+                          
+                          {homeworkCount > 0 && (
+                            <Collapsible>
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full justify-between hover:bg-accent/50"
+                                >
+                                  <span className="flex items-center gap-2 text-sm font-medium">
+                                    <BookOpen className="h-4 w-4 text-primary" />
+                                    Homework Assignments ({homeworkCount})
+                                  </span>
+                                  <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                </Button>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="mt-2">
+                                <WorksheetHomeworkList homework={homework} />
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
