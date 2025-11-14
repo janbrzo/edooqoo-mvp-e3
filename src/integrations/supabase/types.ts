@@ -143,6 +143,72 @@ export type Database = {
         }
         Relationships: []
       }
+      homework_assignments: {
+        Row: {
+          created_at: string
+          deadline: string | null
+          id: string
+          reminder_sent_at: string | null
+          selected_exercises: Json
+          share_expires_at: string | null
+          share_token: string | null
+          source_worksheet_id: string | null
+          student_id: string | null
+          teacher_id: string
+          title: string
+          updated_at: string
+          view_count: number
+          viewed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          reminder_sent_at?: string | null
+          selected_exercises?: Json
+          share_expires_at?: string | null
+          share_token?: string | null
+          source_worksheet_id?: string | null
+          student_id?: string | null
+          teacher_id: string
+          title: string
+          updated_at?: string
+          view_count?: number
+          viewed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          reminder_sent_at?: string | null
+          selected_exercises?: Json
+          share_expires_at?: string | null
+          share_token?: string | null
+          source_worksheet_id?: string | null
+          student_id?: string | null
+          teacher_id?: string
+          title?: string
+          updated_at?: string
+          view_count?: number
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_assignments_source_worksheet_id_fkey"
+            columns: ["source_worksheet_id"]
+            isOneToOne: false
+            referencedRelation: "worksheets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homework_assignments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processed_upgrade_sessions: {
         Row: {
           email: string | null
@@ -685,6 +751,10 @@ export type Database = {
         Args: { p_teacher_id: string; p_worksheet_id: string }
         Returns: boolean
       }
+      generate_homework_share_token: {
+        Args: { p_homework_id: string; p_teacher_id: string }
+        Returns: string
+      }
       generate_worksheet_share_token: {
         Args: {
           p_expires_hours?: number
@@ -692,6 +762,22 @@ export type Database = {
           p_worksheet_id: string
         }
         Returns: string
+      }
+      get_homework_by_share_token: {
+        Args: { p_share_token: string }
+        Returns: {
+          created_at: string
+          deadline: string
+          id: string
+          selected_exercises: Json
+          source_worksheet_title: string
+          student_english_level: string
+          student_name: string
+          teacher_email: string
+          teacher_first_name: string
+          teacher_last_name: string
+          title: string
+        }[]
       }
       get_student_tags: {
         Args: { p_student_id: string; p_teacher_id: string }
