@@ -1,4 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { Resend } from 'npm:resend@4.0.0';
+import { renderAsync } from 'npm:@react-email/components@0.0.22';
+import React from 'npm:react@18.3.1';
+import { HomeworkReminderEmail } from '../_shared/email-templates/homework-reminder.tsx';
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,9 +25,17 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Find homework assignments that need reminders
-    // Criteria: deadline is set, reminder not sent yet, created more than 24h ago
+    // Criteria: 
+    // - Created more than 24 hours ago
+    // - Has a deadline that hasn't passed yet OR is slightly overdue (up to 7 days)
+    // - Has not been completed
+    // - Reminder hasn't been sent yet OR last reminder was sent more than 24h ago
+    // - Student has email address
     const reminderThreshold = new Date();
     reminderThreshold.setHours(reminderThreshold.getHours() - 24);
+    
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const { data: homeworkToRemind, error: fetchError } = await supabase
       .from('homework_assignments')
@@ -32,9 +46,12 @@ Deno.serve(async (req) => {
         share_token,
         teacher_id,
         student_id,
+        reminder_sent_at,
+        completed_at,
         students (
+          id,
           name,
-          teacher_email
+          student_email
         ),
         profiles (
           email,
@@ -42,17 +59,17 @@ Deno.serve(async (req) => {
           last_name
         )
       `)
-      .is('reminder_sent_at', null)
       .not('deadline', 'is', null)
-      .lt('created_at', reminderThreshold.toISOString())
-      .gte('deadline', new Date().toISOString()); // Only remind if deadline hasn't passed
+      .is('completed_at', null) // Not completed
+      .gt('deadline', sevenDaysAgo.toISOString()) // Deadline within last 7 days (allows overdue)
+      .lt('created_at', reminderThreshold.toISOString()); // Created more than 24h ago
 
     if (fetchError) {
       console.error('[HOMEWORK-REMINDERS] Error fetching homework:', fetchError);
       throw fetchError;
     }
 
-    console.log(`[HOMEWORK-REMINDERS] Found ${homeworkToRemind?.length || 0} homework assignments needing reminders`);
+    console.log(`[HOMEWORK-REMINDERS] Found ${homeworkToRemind?.length || 0} homework assignments (before filtering)`);
 
     if (!homeworkToRemind || homeworkToRemind.length === 0) {
       return new Response(
@@ -65,87 +82,129 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Filter: only homework where student has email AND (no reminder sent OR reminder sent >24h ago)
+    const filteredHomework = homeworkToRemind.filter((hw) => {
+      const student = Array.isArray(hw.students) ? hw.students[0] : hw.students;
+      if (!student?.student_email) return false;
+      if (!hw.reminder_sent_at) return true; // No reminder sent yet
+      
+      // Check if last reminder was sent more than 24h ago
+      const lastReminder = new Date(hw.reminder_sent_at);
+      const hoursSinceLastReminder = (Date.now() - lastReminder.getTime()) / (1000 * 60 * 60);
+      return hoursSinceLastReminder > 24;
+    });
+
+    console.log(`[HOMEWORK-REMINDERS] Filtered to ${filteredHomework.length} homework with student emails and reminder criteria`);
+
     // Process each homework
     const results = [];
-    for (const homework of homeworkToRemind) {
+    for (const homework of filteredHomework) {
       try {
         const student = Array.isArray(homework.students) ? homework.students[0] : homework.students;
         const teacher = Array.isArray(homework.profiles) ? homework.profiles[0] : homework.profiles;
         
-        const studentEmail = student?.teacher_email;
+        const studentName = student?.name || 'Student';
+        const studentEmail = student?.student_email;
         const teacherName = teacher?.first_name && teacher?.last_name 
           ? `${teacher.first_name} ${teacher.last_name}`
           : teacher?.email || 'Your teacher';
         
-        const homeworkUrl = `${supabaseUrl.replace('.supabase.co', '')}/homework/${homework.share_token}`;
+        const deadline = new Date(homework.deadline);
+        const now = new Date();
+        const daysUntilDeadline = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         
-        // Log reminder information (in production, this would send an email)
-        console.log(`[HOMEWORK-REMINDERS] Would send reminder for homework "${homework.title}"`);
-        console.log(`  To: ${studentEmail || 'No email'}`);
-        console.log(`  From: ${teacherName}`);
-        console.log(`  Deadline: ${homework.deadline}`);
-        console.log(`  Link: ${homeworkUrl}`);
+        const homeworkUrl = `${req.headers.get('origin') || supabaseUrl}/homework/${homework.share_token}`;
         
-        // TODO: Integrate with email service (e.g., Resend)
-        // const emailResult = await fetch('https://api.resend.com/emails', {
-        //   method: 'POST',
-        //   headers: {
-        //     'Authorization': `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
-        //     'Content-Type': 'application/json'
-        //   },
-        //   body: JSON.stringify({
-        //     from: 'noreply@yourdomain.com',
-        //     to: studentEmail,
-        //     subject: `Reminder: Homework "${homework.title}" due soon`,
-        //     html: `
-        //       <h2>Homework Reminder</h2>
-        //       <p>Hi ${student?.name || 'Student'},</p>
-        //       <p>This is a reminder about your homework assignment: <strong>${homework.title}</strong></p>
-        //       <p>Deadline: <strong>${new Date(homework.deadline).toLocaleString()}</strong></p>
-        //       <p><a href="${homeworkUrl}">Click here to view your homework</a></p>
-        //       <p>Best regards,<br>${teacherName}</p>
-        //     `
-        //   })
-        // });
+        console.log(`[HOMEWORK-REMINDERS] Sending reminder for homework "${homework.title}" to ${studentEmail}`);
+        
+        // Render email template
+        const html = await renderAsync(
+          React.createElement(HomeworkReminderEmail, {
+            studentName,
+            teacherName,
+            homeworkTitle: homework.title,
+            homeworkLink: homeworkUrl,
+            deadline: homework.deadline,
+            daysUntilDeadline,
+          })
+        );
 
+        // Send email via Resend
+        const { data: emailData, error: emailError } = await resend.emails.send({
+          from: `${teacherName} <onboarding@resend.dev>`, // TODO: Use your verified domain
+          to: [studentEmail!],
+          subject: daysUntilDeadline < 0 
+            ? `⚠️ Overdue Homework: ${homework.title}`
+            : `⏰ Reminder: ${homework.title} due ${daysUntilDeadline === 0 ? 'today' : `in ${daysUntilDeadline} day${daysUntilDeadline !== 1 ? 's' : ''}`}`,
+          html,
+        });
+
+        if (emailError) {
+          console.error(`[HOMEWORK-REMINDERS] Failed to send email for homework ${homework.id}:`, emailError);
+          results.push({
+            homeworkId: homework.id,
+            success: false,
+            error: emailError.message,
+          });
+          continue;
+        }
+
+        console.log(`[HOMEWORK-REMINDERS] Email sent successfully for homework ${homework.id}:`, emailData);
+        
         // Mark reminder as sent
         const { error: updateError } = await supabase
           .from('homework_assignments')
-          .update({ reminder_sent_at: new Date().toISOString() })
+          .update({ 
+            reminder_sent_at: new Date().toISOString() 
+          })
           .eq('id', homework.id);
-
+        
         if (updateError) {
-          console.error(`[HOMEWORK-REMINDERS] Error updating homework ${homework.id}:`, updateError);
-          results.push({ id: homework.id, success: false, error: updateError.message });
+          console.error(`[HOMEWORK-REMINDERS] Failed to update reminder status for homework ${homework.id}:`, updateError);
+          results.push({
+            homeworkId: homework.id,
+            success: false,
+            error: 'Failed to update reminder status',
+          });
         } else {
-          results.push({ id: homework.id, success: true });
+          results.push({
+            homeworkId: homework.id,
+            studentName,
+            studentEmail,
+            homeworkTitle: homework.title,
+            emailId: emailData?.id,
+            success: true,
+            reminderSent: true,
+          });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error(`[HOMEWORK-REMINDERS] Error processing homework ${homework.id}:`, error);
-        results.push({ id: homework.id, success: false, error: error.message });
+        results.push({
+          homeworkId: homework.id,
+          success: false,
+          error: error.message || 'Unknown error',
+        });
       }
     }
 
     const successCount = results.filter(r => r.success).length;
-    console.log(`[HOMEWORK-REMINDERS] Processed ${results.length} reminders, ${successCount} successful`);
+    console.log(`[HOMEWORK-REMINDERS] Completed: ${successCount}/${results.length} reminders sent successfully`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Processed ${results.length} homework reminders`,
-        successCount,
-        totalCount: results.length,
+        message: `Sent ${successCount} homework reminders`,
+        count: successCount,
         results 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-
-  } catch (error) {
-    console.error('[HOMEWORK-REMINDERS] Function error:', error);
+  } catch (error: any) {
+    console.error('[HOMEWORK-REMINDERS] Error:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error.message || 'Internal server error'
       }),
       { 
         status: 500,
