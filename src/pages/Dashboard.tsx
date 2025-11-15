@@ -161,18 +161,6 @@ const Dashboard = () => {
     return 'Untitled Worksheet';
   };
 
-  const formatWorksheetDescription = (worksheet: any) => {
-    const formData = worksheet.form_data;
-    if (!formData) return '';
-    
-    const parts = [];
-    if (formData.lessonTopic) parts.push(`Topic: ${formData.lessonTopic}`);
-    // Check for both grammar field names for compatibility
-    if (formData.grammar) parts.push(`Grammar: ${formData.grammar}`);
-    else if (formData.lessonGoal) parts.push(`Grammar: ${formData.lessonGoal}`);
-    
-    return parts.join(' • ');
-  };
 
   const getStudentNameForWorksheet = (worksheet: any) => {
     if (worksheet.student_id) {
@@ -363,58 +351,54 @@ const Dashboard = () => {
                     return (
                       <Card key={worksheet.id} className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-semibold text-base truncate flex-1">
-                              {formatWorksheetTitle(worksheet.form_data)}
-                            </h3>
-                            <MediaBadges 
-                              hasImage={hasImage(worksheet)} 
-                              hasAudio={hasAudio(worksheet)}
-                            />
-                          </div>
-                          
-                          <p className="text-sm text-muted-foreground mb-3">
-                            {formatWorksheetDescription(worksheet.form_data)}
-                          </p>
-                          
-                          <div className="flex items-center gap-2 mb-3 flex-wrap">
-                            {worksheet.student_id && (
-                              <Badge variant="outline" className="text-xs">
-                                <User className="h-3 w-3 mr-1" />
-                                {getStudentNameForWorksheet(worksheet.student_id)}
-                              </Badge>
-                            )}
-                            {worksheet.generation_time_seconds && (
-                              <Badge variant="secondary" className="text-xs">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {worksheet.generation_time_seconds}s
-                              </Badge>
-                            )}
-                            <Badge variant="secondary" className="text-xs">
-                              <Calendar className="h-3 w-3 mr-1" />
-                              {format(new Date(worksheet.created_at), 'MMM dd, yyyy')}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex gap-2 mb-3">
-                            <Button 
-                              variant="default" 
-                              size="sm"
+                          {/* First line: Title + Student Badge + Media + Actions */}
+                          <div className="flex items-center justify-between mb-2">
+                            <div 
+                              className="flex items-center gap-2 flex-1 cursor-pointer hover:text-primary transition-colors"
                               onClick={() => handleWorksheetOpen(worksheet)}
                             >
-                              <BookOpen className="h-4 w-4 mr-1" />
-                              Open
-                            </Button>
-                            <StudentSelector 
-                              worksheetId={worksheet.id}
-                              currentStudentId={worksheet.student_id}
-                              onTransferSuccess={refetchWorksheets}
-                            />
-                            <DeleteWorksheetButton 
-                              worksheetId={worksheet.id}
-                              worksheetTitle={formatWorksheetTitle(worksheet.form_data)}
-                              onDelete={handleDeleteWorksheet}
-                            />
+                              <h3 className="font-semibold text-base truncate">
+                                {formatWorksheetTitle(worksheet)}
+                              </h3>
+                              <Badge variant="secondary" className="text-xs shrink-0">
+                                for {getStudentNameForWorksheet(worksheet) || 'Unassigned'}
+                              </Badge>
+                              <MediaBadges 
+                                hasImage={hasImage(worksheet)} 
+                                hasAudio={hasAudio(worksheet)}
+                                size="sm"
+                              />
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <StudentSelector 
+                                worksheetId={worksheet.id}
+                                currentStudentId={worksheet.student_id}
+                                onTransferSuccess={refetchWorksheets}
+                              />
+                              <DeleteWorksheetButton 
+                                worksheetId={worksheet.id}
+                                worksheetTitle={formatWorksheetTitle(worksheet)}
+                                onDelete={handleDeleteWorksheet}
+                                variant="ghost"
+                                size="sm"
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Second line: Topic */}
+                          {worksheet.form_data?.lessonTopic && (
+                            <p className="text-sm text-muted-foreground mb-2">
+                              Topic: {worksheet.form_data.lessonTopic}
+                            </p>
+                          )}
+                          
+                          {/* Third line: Date + Time */}
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+                            <Calendar className="h-3 w-3" />
+                            <span>{format(new Date(worksheet.created_at), 'MMM dd, yyyy')}</span>
+                            <span>•</span>
+                            <span>{format(new Date(worksheet.created_at), 'HH:mm')}</span>
                           </div>
                           
                           {homeworkCount > 0 && (
