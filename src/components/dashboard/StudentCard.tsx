@@ -10,6 +10,8 @@ import { useWorksheetHistory } from '@/hooks/useWorksheetHistory';
 import { DeleteWorksheetButton } from '@/components/DeleteWorksheetButton';
 import { MediaBadges } from '@/components/worksheet/MediaBadges';
 import { hasImage, hasAudio } from '@/utils/worksheetUtils';
+import { useAllWorksheetHomework } from '@/hooks/useAllWorksheetHomework';
+import { WorksheetHomeworkSection } from '@/components/worksheet/WorksheetHomeworkSection';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +40,10 @@ export const StudentCard = ({ student, onViewHistory, onOpenWorksheet, onDeleteS
   // ✅ FIX: Use lightweight mode to avoid timeout
   const { worksheets, loading, getRecentWorksheets, deleteWorksheet, totalCount } = useWorksheetHistory(student.id, true);
   const recentWorksheets = getRecentWorksheets(3);
+  
+  // Fetch homework for recent worksheets
+  const worksheetIds = recentWorksheets.map(w => w.id);
+  const { homeworkByWorksheet } = useAllWorksheetHomework(worksheetIds, student.id);
 
   const formatGoal = (goal: string) => {
     const goalMap: Record<string, string> = {
@@ -109,41 +115,45 @@ export const StudentCard = ({ student, onViewHistory, onOpenWorksheet, onDeleteS
             ) : recentWorksheets.length > 0 ? (
               <div className="space-y-2 mt-2">
                 {recentWorksheets.map((worksheet) => (
-                  <div
-                    key={worksheet.id}
-                    className="flex items-center justify-between p-2 bg-muted/50 rounded cursor-pointer hover:bg-muted transition-colors"
-                  >
-                    <div
-                      className="flex items-center space-x-2 flex-1 min-w-0"
-                      onClick={(e) => handleWorksheetClick(worksheet, e)}
-                    >
-                      {hasImage(worksheet) || hasAudio(worksheet) ? (
-                        <MediaBadges 
-                          hasImage={hasImage(worksheet)} 
-                          hasAudio={hasAudio(worksheet)}
-                          size="sm"
-                          className="shrink-0"
-                        />
-                      ) : (
-                        <FileText className="h-3 w-3 flex-shrink-0" />
-                      )}
-                      <span className="text-xs font-medium truncate">
-                        {worksheet.title || 'Untitled Worksheet'}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
-                      <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        <span>{format(new Date(worksheet.created_at), 'MMM dd')}</span>
+                  <React.Fragment key={worksheet.id}>
+                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded cursor-pointer hover:bg-muted transition-colors">
+                      <div
+                        className="flex items-center space-x-2 flex-1 min-w-0"
+                        onClick={(e) => handleWorksheetClick(worksheet, e)}
+                      >
+                        {hasImage(worksheet) || hasAudio(worksheet) ? (
+                          <MediaBadges 
+                            hasImage={hasImage(worksheet)} 
+                            hasAudio={hasAudio(worksheet)}
+                            size="sm"
+                            className="shrink-0"
+                          />
+                        ) : (
+                          <FileText className="h-3 w-3 flex-shrink-0" />
+                        )}
+                        <span className="text-xs font-medium truncate">
+                          {worksheet.title || 'Untitled Worksheet'}
+                        </span>
                       </div>
-                      <DeleteWorksheetButton
-                        worksheetId={worksheet.id}
-                        worksheetTitle={worksheet.title || 'Untitled Worksheet'}
-                        onDelete={deleteWorksheet}
-                        size="sm"
-                      />
+                      <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
+                        <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>{format(new Date(worksheet.created_at), 'MMM dd')}</span>
+                        </div>
+                        <DeleteWorksheetButton
+                          worksheetId={worksheet.id}
+                          worksheetTitle={worksheet.title || 'Untitled Worksheet'}
+                          onDelete={deleteWorksheet}
+                          size="sm"
+                        />
+                      </div>
                     </div>
-                  </div>
+                    <WorksheetHomeworkSection 
+                      worksheetId={worksheet.id}
+                      homework={homeworkByWorksheet[worksheet.id]}
+                      compact={true}
+                    />
+                  </React.Fragment>
                 ))}
                 <Button
                   variant="link"

@@ -14,6 +14,9 @@ import { StudentSelector } from '@/components/StudentSelector';
 import { StudentKnowledgeSection } from '@/components/student-knowledge/StudentKnowledgeSection';
 import { useStudentKnowledge } from '@/hooks/useStudentKnowledge';
 import { StudentKnowledgeEntryCard } from '@/components/student-knowledge/StudentKnowledgeEntryCard';
+import { useAllWorksheetHomework } from '@/hooks/useAllWorksheetHomework';
+import { WorksheetHomeworkSection } from '@/components/worksheet/WorksheetHomeworkSection';
+import { StudentHomeworkTab } from '@/components/student-homework/StudentHomeworkTab';
 import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote } from 'lucide-react';
 import { format } from 'date-fns';
 import { deepFixTextObjects } from '@/utils/textObjectFixer';
@@ -169,7 +172,7 @@ const StudentPage = () => {
 
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Overview
@@ -177,6 +180,10 @@ const StudentPage = () => {
             <TabsTrigger value="worksheets" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Worksheets
+            </TabsTrigger>
+            <TabsTrigger value="homework" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              Homework
             </TabsTrigger>
             <TabsTrigger value="knowledge" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
@@ -298,29 +305,34 @@ const StudentPage = () => {
                 ) : worksheets.length > 0 ? (
                   <div className="space-y-3">
                     {worksheets.slice(0, 5).map((worksheet) => (
-                      <div
-                        key={worksheet.id}
-                        className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => handleWorksheetClick(worksheet)}
-                      >
-                        <div className="flex items-center space-x-3 flex-1">
-                          <FileText className="h-4 w-4 text-primary" />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium text-sm">
-                                {worksheet.title || 'Untitled Worksheet'}
-                              </h3>
-                              <MediaBadges 
-                                hasImage={hasImage(worksheet)} 
-                                hasAudio={hasAudio(worksheet)}
-                                size="sm"
-                              />
+                      <div key={worksheet.id}>
+                        <div
+                          className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => handleWorksheetClick(worksheet)}
+                        >
+                          <div className="flex items-center space-x-3 flex-1">
+                            <FileText className="h-4 w-4 text-primary" />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-medium text-sm">
+                                  {worksheet.title || 'Untitled Worksheet'}
+                                </h3>
+                                <MediaBadges 
+                                  hasImage={hasImage(worksheet)} 
+                                  hasAudio={hasAudio(worksheet)}
+                                  size="sm"
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(worksheet.created_at), 'MMM dd, yyyy')}
+                              </p>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              {format(new Date(worksheet.created_at), 'MMM dd, yyyy')}
-                            </p>
                           </div>
                         </div>
+                        <WorksheetHomeworkSection 
+                          worksheetId={worksheet.id}
+                          compact={true}
+                        />
                       </div>
                     ))}
                   </div>
@@ -435,53 +447,55 @@ const StudentPage = () => {
                     <>
                       <div className="space-y-3">
                         {worksheets.map((worksheet) => (
-                          <div
-                            key={worksheet.id}
-                            className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-                          >
-                            <div 
-                              className="flex items-center space-x-3 cursor-pointer flex-1"
-                              onClick={() => handleWorksheetClick(worksheet)}
-                            >
-                              <FileText className="h-5 w-5 text-primary" />
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium">
-                                    {worksheet.title || 'Untitled Worksheet'}
-                                  </h3>
-                                  <MediaBadges 
-                                    hasImage={hasImage(worksheet)} 
-                                    hasAudio={hasAudio(worksheet)}
-                                    size="sm"
-                                  />
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                  {worksheet.form_data?.lessonTopic && `Topic: ${worksheet.form_data.lessonTopic}`}
-                                  {worksheet.form_data?.grammar && ` • Grammar: ${worksheet.form_data.grammar}`}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <div className="text-right">
-                                <div className="text-sm font-medium">
-                                  {format(new Date(worksheet.created_at), 'MMM dd, yyyy')}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {format(new Date(worksheet.created_at), 'HH:mm')}
+                          <div key={worksheet.id}>
+                            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                              <div 
+                                className="flex items-center space-x-3 cursor-pointer flex-1"
+                                onClick={() => handleWorksheetClick(worksheet)}
+                              >
+                                <FileText className="h-5 w-5 text-primary" />
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-medium">
+                                      {worksheet.title || 'Untitled Worksheet'}
+                                    </h3>
+                                    <MediaBadges 
+                                      hasImage={hasImage(worksheet)} 
+                                      hasAudio={hasAudio(worksheet)}
+                                      size="sm"
+                                    />
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {worksheet.form_data?.lessonTopic && `Topic: ${worksheet.form_data.lessonTopic}`}
+                                    {worksheet.form_data?.grammar && ` • Grammar: ${worksheet.form_data.grammar}`}
+                                  </p>
                                 </div>
                               </div>
-                              <StudentSelector
-                                worksheetId={worksheet.id}
-                                currentStudentId={worksheet.student_id}
-                                worksheetTitle={worksheet.title || 'Untitled Worksheet'}
-                                onTransferSuccess={refetchWorksheets}
-                              />
-                              <DeleteWorksheetButton
-                                worksheetId={worksheet.id}
-                                worksheetTitle={worksheet.title || 'Untitled Worksheet'}
-                                onDelete={deleteWorksheet}
-                              />
+                              <div className="flex items-center space-x-2">
+                                <div className="text-right">
+                                  <div className="text-sm font-medium">
+                                    {format(new Date(worksheet.created_at), 'MMM dd, yyyy')}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {format(new Date(worksheet.created_at), 'HH:mm')}
+                                  </div>
+                                </div>
+                                <StudentSelector
+                                  worksheetId={worksheet.id}
+                                  currentStudentId={worksheet.student_id}
+                                  worksheetTitle={worksheet.title || 'Untitled Worksheet'}
+                                  onTransferSuccess={refetchWorksheets}
+                                />
+                                <DeleteWorksheetButton
+                                  worksheetId={worksheet.id}
+                                  worksheetTitle={worksheet.title || 'Untitled Worksheet'}
+                                  onDelete={deleteWorksheet}
+                                />
+                              </div>
                             </div>
+                            <WorksheetHomeworkSection 
+                              worksheetId={worksheet.id}
+                            />
                           </div>
                         ))}
                       </div>
@@ -601,6 +615,19 @@ const StudentPage = () => {
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          {/* Homework Tab */}
+          <TabsContent value="homework">
+            <Card>
+              <CardContent className="pt-6">
+                <StudentHomeworkTab
+                  studentId={id!}
+                  teacherId={student.teacher_id}
+                  studentName={student.name}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Knowledge Base Tab */}

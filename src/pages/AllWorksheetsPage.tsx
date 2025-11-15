@@ -34,6 +34,10 @@ import {
 import { Tables } from '@/integrations/supabase/types';
 import { MediaBadges } from '@/components/worksheet/MediaBadges';
 import { hasImage, hasAudio } from '@/utils/worksheetUtils';
+import { useAllWorksheetHomework } from '@/hooks/useAllWorksheetHomework';
+import { WorksheetHomeworkList } from '@/components/dashboard/WorksheetHomeworkList';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface WorksheetHistoryItem {
   id: string;
@@ -47,6 +51,159 @@ interface WorksheetHistoryItem {
 }
 
 type Student = Tables<'students'>;
+
+// WorksheetTableRow component for handling individual worksheet rows with homework
+const WorksheetTableRow = ({ 
+  worksheet, 
+  homework,
+  homeworkCount,
+  isSelected,
+  onSelectChange,
+  onOpen,
+  onDelete,
+  onRestore,
+  getStudentName,
+  formatWorksheetTitle,
+  activeTab
+}: {
+  worksheet: WorksheetHistoryItem;
+  homework: any[];
+  homeworkCount: number;
+  isSelected: boolean;
+  onSelectChange: (checked: boolean) => void;
+  onOpen: (worksheet: WorksheetHistoryItem) => void;
+  onDelete: (id: string) => Promise<{ success: boolean; error?: string }>;
+  onRestore: (id: string) => Promise<{ success: boolean; error?: string }>;
+  getStudentName: (studentId: string | null) => string;
+  formatWorksheetTitle: (worksheet: WorksheetHistoryItem) => string;
+  activeTab: 'active' | 'deleted';
+}) => {
+  const [isHomeworkOpen, setIsHomeworkOpen] = useState(false);
+  
+  return (
+    <>
+      {/* Worksheet Row */}
+      <div className="p-4 hover:bg-gray-50 transition-colors">
+        <div className="grid grid-cols-12 gap-4 items-center">
+          {/* Checkbox */}
+          <div className="col-span-1">
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={onSelectChange}
+            />
+          </div>
+
+          {/* Worksheet Info */}
+          <div className="col-span-5">
+            <div
+              className="cursor-pointer group"
+              onClick={() => onOpen(worksheet)}
+            >
+              <div className="flex items-center gap-2">
+                <h3 className="font-medium text-gray-900 group-hover:text-primary transition-colors truncate">
+                  {formatWorksheetTitle(worksheet)}
+                </h3>
+                <MediaBadges 
+                  hasImage={hasImage(worksheet)} 
+                  hasAudio={hasAudio(worksheet)}
+                  size="sm"
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                ID: {worksheet.id.slice(0, 8)}...
+              </p>
+            </div>
+          </div>
+
+          {/* Student */}
+          <div className="col-span-2">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-gray-400" />
+              <span className="text-sm text-gray-700 truncate">
+                {getStudentName(worksheet.student_id)}
+              </span>
+            </div>
+          </div>
+
+          {/* Date */}
+          <div className="col-span-2">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-400" />
+              <span className="text-sm text-gray-700">
+                {format(new Date(worksheet.created_at), 'MMM dd, yyyy')}
+              </span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="col-span-2">
+            <div className="flex items-center gap-1">
+              {activeTab === 'active' ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onOpen(worksheet)}
+                    className="text-gray-600 hover:text-primary"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <DeleteWorksheetButton
+                    worksheetId={worksheet.id}
+                    worksheetTitle={formatWorksheetTitle(worksheet)}
+                    onDelete={onDelete}
+                    size="sm"
+                  />
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const result = await onRestore(worksheet.id);
+                    if (result.success) {
+                      window.location.reload();
+                    }
+                  }}
+                  className="border-green-500 text-green-700 hover:bg-green-50"
+                >
+                  <RotateCcw className="h-4 w-4 mr-1" />
+                  Restore
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Homework Row */}
+      {homeworkCount > 0 && activeTab === 'active' && (
+        <div className="border-t bg-muted/20">
+          <Collapsible open={isHomeworkOpen} onOpenChange={setIsHomeworkOpen}>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start hover:bg-accent/30 rounded-none py-3"
+              >
+                <BookOpen className="h-4 w-4 mr-2 text-primary" />
+                Homework Assignments ({homeworkCount})
+                {isHomeworkOpen ? (
+                  <ChevronUp className="h-4 w-4 ml-auto" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 ml-auto" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="px-4 pb-4">
+              <WorksheetHomeworkList homework={homework} />
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      )}
+    </>
+  );
+};
 
 const AllWorksheetsPage = () => {
   const { user, loading: authLoading, isRegisteredUser } = useAuthFlow();
@@ -72,6 +229,11 @@ const AllWorksheetsPage = () => {
   const { worksheets, loading, deleteWorksheet, restoreWorksheet, totalCount, refetch: refetchWorksheets } = 
     useWorksheetHistory(studentFilter, false, true, currentPage, itemsPerPage);
   const { students } = useStudents();
+  
+  // Fetch homework for all worksheets
+  const worksheetIds = worksheets.map(w => w.id);
+  const { homeworkByWorksheet } = useAllWorksheetHomework(worksheetIds);
+  
   // ✅ Server-side pagination for deleted worksheets
   const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted, totalCount: deletedTotalCount, refetch: refetchDeleted } = 
     useDeletedWorksheets(studentFilter, false, true, currentPage, itemsPerPage);
@@ -397,104 +559,30 @@ const AllWorksheetsPage = () => {
               </div>
             ) : (
               <div className="divide-y">
-                {paginatedWorksheets.map((worksheet) => (
-                  <div
-                    key={worksheet.id}
-                    className="p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="grid grid-cols-12 gap-4 items-center">
-                      {/* Checkbox */}
-                      <div className="col-span-1">
-                        <Checkbox
-                          checked={selectedWorksheets.includes(worksheet.id)}
-                          onCheckedChange={(checked) => handleSelectWorksheet(worksheet.id, checked as boolean)}
-                        />
-                      </div>
-
-                      {/* Worksheet Info */}
-                      <div className="col-span-5">
-                        <div
-                          className="cursor-pointer group"
-                          onClick={() => handleWorksheetOpen(worksheet)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-gray-900 group-hover:text-primary transition-colors truncate">
-                              {formatWorksheetTitle(worksheet)}
-                            </h3>
-                            <MediaBadges 
-                              hasImage={hasImage(worksheet)} 
-                              hasAudio={hasAudio(worksheet)}
-                              size="sm"
-                            />
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">
-                            ID: {worksheet.id.slice(0, 8)}...
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Student */}
-                      <div className="col-span-2">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-700 truncate">
-                            {getStudentName(worksheet.student_id)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Date */}
-                      <div className="col-span-2">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-700">
-                            {format(new Date(worksheet.created_at), 'MMM dd, yyyy')}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="col-span-2">
-                        <div className="flex items-center gap-1">
-                          {activeTab === 'active' ? (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleWorksheetOpen(worksheet)}
-                                className="text-gray-600 hover:text-primary"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <DeleteWorksheetButton
-                                worksheetId={worksheet.id}
-                                worksheetTitle={formatWorksheetTitle(worksheet)}
-                                onDelete={deleteWorksheet}
-                                size="sm"
-                              />
-                            </>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={async () => {
-                                const result = await restoreDeleted(worksheet.id);
-                                if (result.success) {
-                                  // Refresh both lists
-                                  window.location.reload();
-                                }
-                              }}
-                              className="border-green-500 text-green-700 hover:bg-green-50"
-                            >
-                              <RotateCcw className="h-4 w-4 mr-1" />
-                              Restore
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                {paginatedWorksheets.map((worksheet) => {
+                  const homework = homeworkByWorksheet[worksheet.id] || [];
+                  const homeworkCount = homework.length;
+                  
+                  return (
+                    <WorksheetTableRow
+                      key={worksheet.id}
+                      worksheet={worksheet}
+                      homework={homework}
+                      homeworkCount={homeworkCount}
+                      isSelected={selectedWorksheets.includes(worksheet.id)}
+                      onSelectChange={(checked) => handleSelectWorksheet(worksheet.id, checked)}
+                      onOpen={handleWorksheetOpen}
+                      onDelete={async (id) => { 
+                        await deleteWorksheet(id); 
+                        return { success: true }; 
+                      }}
+                      onRestore={restoreDeleted}
+                      getStudentName={getStudentName}
+                      formatWorksheetTitle={formatWorksheetTitle}
+                      activeTab={activeTab}
+                    />
+                  );
+                })}
               </div>
             )}
           </CardContent>
