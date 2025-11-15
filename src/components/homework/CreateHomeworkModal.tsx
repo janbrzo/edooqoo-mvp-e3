@@ -114,11 +114,6 @@ export function CreateHomeworkModal({
       const url = `${baseUrl}/homework/${tokenData}`;
       setShareUrl(url);
 
-      // Emit event to notify components that homework was created
-      window.dispatchEvent(new CustomEvent('homeworkCreated', {
-        detail: { worksheetId, homeworkId: homework.id }
-      }));
-
       toast.success("Homework created successfully!");
     } catch (error) {
       console.error('Error creating homework:', error);
