@@ -145,6 +145,8 @@ export type Database = {
       }
       homework_assignments: {
         Row: {
+          completed_at: string | null
+          completed_by_teacher: boolean | null
           created_at: string
           deadline: string | null
           id: string
@@ -161,6 +163,8 @@ export type Database = {
           viewed_at: string | null
         }
         Insert: {
+          completed_at?: string | null
+          completed_by_teacher?: boolean | null
           created_at?: string
           deadline?: string | null
           id?: string
@@ -177,6 +181,8 @@ export type Database = {
           viewed_at?: string | null
         }
         Update: {
+          completed_at?: string | null
+          completed_by_teacher?: boolean | null
           created_at?: string
           deadline?: string | null
           id?: string
@@ -202,6 +208,57 @@ export type Database = {
           },
           {
             foreignKeyName: "homework_assignments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homework_notifications: {
+        Row: {
+          created_at: string | null
+          homework_id: string
+          id: string
+          is_read: boolean | null
+          message: string
+          notification_type: string
+          read_at: string | null
+          student_id: string
+          teacher_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          homework_id: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          notification_type: string
+          read_at?: string | null
+          student_id: string
+          teacher_id: string
+        }
+        Update: {
+          created_at?: string | null
+          homework_id?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          notification_type?: string
+          read_at?: string | null
+          student_id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_notifications_homework_id_fkey"
+            columns: ["homework_id"]
+            isOneToOne: false
+            referencedRelation: "homework_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homework_notifications_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -388,6 +445,7 @@ export type Database = {
           id: string
           main_goal: string
           name: string
+          student_email: string | null
           teacher_email: string | null
           teacher_id: string
           updated_at: string
@@ -399,6 +457,7 @@ export type Database = {
           id?: string
           main_goal: string
           name: string
+          student_email?: string | null
           teacher_email?: string | null
           teacher_id: string
           updated_at?: string
@@ -410,6 +469,7 @@ export type Database = {
           id?: string
           main_goal?: string
           name?: string
+          student_email?: string | null
           teacher_email?: string | null
           teacher_id?: string
           updated_at?: string
@@ -852,6 +912,14 @@ export type Database = {
             }[]
           }
       is_user_anonymous: { Args: { user_id: string }; Returns: boolean }
+      mark_homework_completed: {
+        Args: {
+          p_homework_id: string
+          p_is_teacher?: boolean
+          p_user_id: string
+        }
+        Returns: Json
+      }
       mark_knowledge_current: {
         Args: { p_entry_id: string; p_teacher_id: string }
         Returns: boolean
