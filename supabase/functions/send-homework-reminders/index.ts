@@ -1,31 +1,31 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
-import { Resend } from 'npm:resend@4.0.0';
-import { renderAsync } from 'npm:@react-email/components@0.0.22';
-import React from 'npm:react@18.3.1';
-import { HomeworkReminderEmail } from '../_shared/email-templates/homework-reminder.tsx';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { Resend } from "npm:resend@4.0.0";
+import { renderAsync } from "npm:@react-email/components@0.0.22";
+import React from "npm:react@18.3.1";
+import { HomeworkReminderEmail } from "../_shared/email-templates/homework-reminder.tsx";
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
+const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('[HOMEWORK-REMINDERS] Function started');
+    console.log("[HOMEWORK-REMINDERS] Function started");
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Find homework assignments that need reminders
-    // Criteria: 
+    // Criteria:
     // - Created more than 24 hours ago
     // - Has a deadline that hasn't passed yet OR is slightly overdue (up to 7 days)
     // - Has not been completed
@@ -33,13 +33,14 @@ Deno.serve(async (req) => {
     // - Student has email address
     const reminderThreshold = new Date();
     reminderThreshold.setHours(reminderThreshold.getHours() - 24);
-    
+
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const { data: homeworkToRemind, error: fetchError } = await supabase
-      .from('homework_assignments')
-      .select(`
+      .from("homework_assignments")
+      .select(
+        `
         id,
         title,
         deadline,
@@ -58,14 +59,15 @@ Deno.serve(async (req) => {
           first_name,
           last_name
         )
-      `)
-      .not('deadline', 'is', null)
-      .is('completed_at', null) // Not completed
-      .gt('deadline', sevenDaysAgo.toISOString()) // Deadline within last 7 days (allows overdue)
-      .lt('created_at', reminderThreshold.toISOString()); // Created more than 24h ago
+      `,
+      )
+      .not("deadline", "is", null)
+      .is("completed_at", null) // Not completed
+      .gt("deadline", sevenDaysAgo.toISOString()) // Deadline within last 7 days (allows overdue)
+      .lt("created_at", reminderThreshold.toISOString()); // Created more than 24h ago
 
     if (fetchError) {
-      console.error('[HOMEWORK-REMINDERS] Error fetching homework:', fetchError);
+      console.error("[HOMEWORK-REMINDERS] Error fetching homework:", fetchError);
       throw fetchError;
     }
 
@@ -73,12 +75,12 @@ Deno.serve(async (req) => {
 
     if (!homeworkToRemind || homeworkToRemind.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'No homework reminders to send',
-          count: 0 
+        JSON.stringify({
+          success: true,
+          message: "No homework reminders to send",
+          count: 0,
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -87,14 +89,16 @@ Deno.serve(async (req) => {
       const student = Array.isArray(hw.students) ? hw.students[0] : hw.students;
       if (!student?.student_email) return false;
       if (!hw.reminder_sent_at) return true; // No reminder sent yet
-      
+
       // Check if last reminder was sent more than 24h ago
       const lastReminder = new Date(hw.reminder_sent_at);
       const hoursSinceLastReminder = (Date.now() - lastReminder.getTime()) / (1000 * 60 * 60);
       return hoursSinceLastReminder > 24;
     });
 
-    console.log(`[HOMEWORK-REMINDERS] Filtered to ${filteredHomework.length} homework with student emails and reminder criteria`);
+    console.log(
+      `[HOMEWORK-REMINDERS] Filtered to ${filteredHomework.length} homework with student emails and reminder criteria`,
+    );
 
     // Process each homework
     const results = [];
@@ -102,21 +106,22 @@ Deno.serve(async (req) => {
       try {
         const student = Array.isArray(homework.students) ? homework.students[0] : homework.students;
         const teacher = Array.isArray(homework.profiles) ? homework.profiles[0] : homework.profiles;
-        
-        const studentName = student?.name || 'Student';
+
+        const studentName = student?.name || "Student";
         const studentEmail = student?.student_email;
-        const teacherName = teacher?.first_name && teacher?.last_name 
-          ? `${teacher.first_name} ${teacher.last_name}`
-          : teacher?.email || 'Your teacher';
-        
+        const teacherName =
+          teacher?.first_name && teacher?.last_name
+            ? `${teacher.first_name} ${teacher.last_name}`
+            : teacher?.email || "Your teacher";
+
         const deadline = new Date(homework.deadline);
         const now = new Date();
         const daysUntilDeadline = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        
-        const homeworkUrl = `${req.headers.get('origin') || supabaseUrl}/homework/${homework.share_token}`;
-        
+
+        const homeworkUrl = `${req.headers.get("origin") || supabaseUrl}/homework/${homework.share_token}`;
+
         console.log(`[HOMEWORK-REMINDERS] Sending reminder for homework "${homework.title}" to ${studentEmail}`);
-        
+
         // Render email template
         const html = await renderAsync(
           React.createElement(HomeworkReminderEmail, {
@@ -126,16 +131,17 @@ Deno.serve(async (req) => {
             homeworkLink: homeworkUrl,
             deadline: homework.deadline,
             daysUntilDeadline,
-          })
+          }),
         );
 
         // Send email via Resend
         const { data: emailData, error: emailError } = await resend.emails.send({
-          from: `${teacherName} <onboarding@resend.dev>`, // TODO: Use your verified domain
+          from: `${teacherName} <onboarding@edooqoo.com>`, // TODO: Use your verified domain
           to: [studentEmail!],
-          subject: daysUntilDeadline < 0 
-            ? `⚠️ Overdue Homework: ${homework.title}`
-            : `⏰ Reminder: ${homework.title} due ${daysUntilDeadline === 0 ? 'today' : `in ${daysUntilDeadline} day${daysUntilDeadline !== 1 ? 's' : ''}`}`,
+          subject:
+            daysUntilDeadline < 0
+              ? `⚠️ Overdue Homework: ${homework.title}`
+              : `⏰ Reminder: ${homework.title} due ${daysUntilDeadline === 0 ? "today" : `in ${daysUntilDeadline} day${daysUntilDeadline !== 1 ? "s" : ""}`}`,
           html,
         });
 
@@ -150,21 +156,24 @@ Deno.serve(async (req) => {
         }
 
         console.log(`[HOMEWORK-REMINDERS] Email sent successfully for homework ${homework.id}:`, emailData);
-        
+
         // Mark reminder as sent
         const { error: updateError } = await supabase
-          .from('homework_assignments')
-          .update({ 
-            reminder_sent_at: new Date().toISOString() 
+          .from("homework_assignments")
+          .update({
+            reminder_sent_at: new Date().toISOString(),
           })
-          .eq('id', homework.id);
-        
+          .eq("id", homework.id);
+
         if (updateError) {
-          console.error(`[HOMEWORK-REMINDERS] Failed to update reminder status for homework ${homework.id}:`, updateError);
+          console.error(
+            `[HOMEWORK-REMINDERS] Failed to update reminder status for homework ${homework.id}:`,
+            updateError,
+          );
           results.push({
             homeworkId: homework.id,
             success: false,
-            error: 'Failed to update reminder status',
+            error: "Failed to update reminder status",
           });
         } else {
           results.push({
@@ -182,34 +191,34 @@ Deno.serve(async (req) => {
         results.push({
           homeworkId: homework.id,
           success: false,
-          error: error.message || 'Unknown error',
+          error: error.message || "Unknown error",
         });
       }
     }
 
-    const successCount = results.filter(r => r.success).length;
+    const successCount = results.filter((r) => r.success).length;
     console.log(`[HOMEWORK-REMINDERS] Completed: ${successCount}/${results.length} reminders sent successfully`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: `Sent ${successCount} homework reminders`,
         count: successCount,
-        results 
+        results,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error: any) {
-    console.error('[HOMEWORK-REMINDERS] Error:', error);
+    console.error("[HOMEWORK-REMINDERS] Error:", error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message || 'Internal server error'
+      JSON.stringify({
+        success: false,
+        error: error.message || "Internal server error",
       }),
-      { 
+      {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
     );
   }
 });
