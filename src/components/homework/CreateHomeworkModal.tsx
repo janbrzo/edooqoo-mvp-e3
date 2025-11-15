@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ interface CreateHomeworkModalProps {
     name: string;
     english_level: string;
   }>;
+  preselectedStudent?: string;
 }
 
 export function CreateHomeworkModal({
@@ -32,7 +33,8 @@ export function CreateHomeworkModal({
   worksheetTitle,
   exercises,
   teacherId,
-  students
+  students,
+  preselectedStudent
 }: CreateHomeworkModalProps) {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedExercises, setSelectedExercises] = useState<Set<number>>(new Set());
@@ -40,6 +42,13 @@ export function CreateHomeworkModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const [shareUrl, setShareUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  
+  // Set preselected student when modal opens
+  useEffect(() => {
+    if (preselectedStudent && open) {
+      setSelectedStudentId(preselectedStudent);
+    }
+  }, [preselectedStudent, open]);
 
   const toggleExercise = (index: number) => {
     const newSelected = new Set(selectedExercises);

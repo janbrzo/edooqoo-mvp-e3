@@ -18,7 +18,7 @@ interface GroupedHomework {
   [worksheetId: string]: HomeworkAssignment[];
 }
 
-export const useAllWorksheetHomework = (worksheetIds: string[]) => {
+export const useAllWorksheetHomework = (worksheetIds: string[], studentId?: string) => {
   const [homeworkByWorksheet, setHomeworkByWorksheet] = useState<GroupedHomework>({});
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +33,7 @@ export const useAllWorksheetHomework = (worksheetIds: string[]) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('homework_assignments')
         .select(`
           id,
@@ -51,8 +51,14 @@ export const useAllWorksheetHomework = (worksheetIds: string[]) => {
           )
         `)
         .eq('teacher_id', user.user.id)
-        .in('source_worksheet_id', worksheetIds)
-        .order('created_at', { ascending: false });
+        .in('source_worksheet_id', worksheetIds);
+      
+      // Add student filter if provided
+      if (studentId) {
+        query = query.eq('student_id', studentId);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
 
