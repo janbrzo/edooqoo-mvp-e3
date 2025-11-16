@@ -61,3 +61,6 @@ verify_jwt = false
 
 [functions.send-homework-reminders]
 verify_jwt = false
+
+[functions.send-homework-email]
+verify_jwt = true
