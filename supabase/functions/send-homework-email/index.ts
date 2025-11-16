@@ -5,8 +5,9 @@ import { renderAsync } from "npm:@react-email/components@0.0.22";
 import React from "npm:react@18.3.1";
 import { HomeworkNotificationEmail } from "../_shared/email-templates/homework-notification.tsx";
 
-// Force redeploy: 2024-11-16 19:00 UTC
-// Applying verify_jwt = true from config.toml - JWT authentication required
+// Force redeploy: 2024-11-16 19:15 UTC - Using Service Role for JWT verification
+// CRITICAL FIX: Edge functions can't use auth.getUser() with session (no localStorage)
+// Must use Service Role client and verify JWT token directly
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
 
 const corsHeaders = {
@@ -45,17 +46,26 @@ serve(async (req: Request) => {
       );
     }
 
-    const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
-      global: {
-        headers: { Authorization: authHeader },
-      },
-    });
+    // CRITICAL FIX: Use Service Role client to verify JWT token
+    // Edge functions don't have localStorage, so auth.getUser() fails with session
+    // We must use Service Role client and pass the token explicitly
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "", 
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "", 
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
 
-    // Verify authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    // Extract token from "Bearer <token>" format
+    const token = authHeader.replace("Bearer ", "");
+    console.log("[send-homework-email] Verifying JWT token...");
+
+    // Verify the JWT token using Service Role client
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     console.log("[send-homework-email] User authenticated:", !!user);
     console.log("[send-homework-email] User ID:", user?.id);
@@ -69,6 +79,9 @@ serve(async (req: Request) => {
       console.error("[send-homework-email] No user found");
       throw new Error("Unauthorized: No valid user session");
     }
+
+    // Now use Service Role client for database queries (with proper user_id filtering)
+    const supabase = supabaseAdmin;
 
     const { homeworkId, studentEmail, updateStudentEmail } = (await req.json()) as SendHomeworkEmailRequest;
 

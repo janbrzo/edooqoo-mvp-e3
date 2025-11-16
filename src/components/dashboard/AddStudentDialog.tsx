@@ -136,6 +136,7 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter student's name"
               required
+              autoFocus
             />
           </div>
           <div className="space-y-2">
