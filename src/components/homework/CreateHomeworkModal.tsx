@@ -24,8 +24,10 @@ interface CreateHomeworkModalProps {
     id: string;
     name: string;
     english_level: string;
+    student_email?: string | null;
   }>;
   preselectedStudent?: string;
+  worksheetFormData?: any;
 }
 
 export function CreateHomeworkModal({
@@ -36,7 +38,8 @@ export function CreateHomeworkModal({
   exercises,
   teacherId,
   students,
-  preselectedStudent
+  preselectedStudent,
+  worksheetFormData
 }: CreateHomeworkModalProps) {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedExercises, setSelectedExercises] = useState<Set<number>>(new Set());
@@ -44,12 +47,13 @@ export function CreateHomeworkModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const [shareUrl, setShareUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
-  
-  // Email state
-  const [needsStudentEmail, setNeedsStudentEmail] = useState(false);
+  const [showSuccessView, setShowSuccessView] = useState(false);
+  const [studentEmailFromDB, setStudentEmailFromDB] = useState<string>("");
   const [studentEmailInput, setStudentEmailInput] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [createdHomeworkId, setCreatedHomeworkId] = useState<string>('');
+  
+  // Email state - removed needsStudentEmail
   
   // Set preselected student when modal opens
   useEffect(() => {
@@ -92,7 +96,7 @@ export function CreateHomeworkModal({
         body: {
           homeworkId,
           studentEmail,
-          updateStudentEmail: needsStudentEmail, // Update student's email if it was manually entered
+          updateStudentEmail: !studentEmailFromDB, // Update if email wasn't in DB
         },
       });
 
@@ -128,14 +132,14 @@ export function CreateHomeworkModal({
         .map(index => exercises[index])
         .filter(Boolean);
       
-      // Check if student has email
+      // Get student email from DB
       const { data: studentData } = await supabase
         .from('students')
         .select('student_email')
         .eq('id', selectedStudentId)
         .single();
       
-      const hasStudentEmail = !!studentData?.student_email;
+      const studentEmail = studentData?.student_email || '';
 
       // Create homework assignment
       const { data: homework, error: insertError } = await supabase
@@ -166,6 +170,9 @@ export function CreateHomeworkModal({
       const url = `${baseUrl}/homework/${tokenData}`;
       setShareUrl(url);
       setCreatedHomeworkId(homework.id);
+      setStudentEmailFromDB(studentEmail);
+      setStudentEmailInput(studentEmail); // Pre-fill email input
+      setShowSuccessView(true); // Always show success view instead of auto-sending
 
       // Emit event for other components to refresh
       window.dispatchEvent(
@@ -179,15 +186,6 @@ export function CreateHomeworkModal({
       );
 
       toast.success("Homework assignment created successfully!");
-      
-      // Check if we should prompt for email or send automatically
-      if (!hasStudentEmail) {
-        setNeedsStudentEmail(true);
-        // Don't close modal - let user enter email
-      } else {
-        // Automatically send email if student has email
-        await sendHomeworkEmail(homework.id, studentData.student_email);
-      }
     } catch (error: any) {
       console.error('Error creating homework:', error);
       toast.error(error.message || "Failed to create homework assignment");
@@ -196,14 +194,13 @@ export function CreateHomeworkModal({
     }
   };
   
-  const handleSendEmailAndClose = async () => {
+  const handleSendEmailFromSuccess = async () => {
     if (!studentEmailInput) {
       toast.error("Please enter the student's email address.");
       return;
     }
     
     await sendHomeworkEmail(createdHomeworkId, studentEmailInput);
-    handleClose();
   };
 
   const handleClose = () => {
@@ -213,7 +210,8 @@ export function CreateHomeworkModal({
     setIsGenerating(false);
     setShareUrl("");
     setCopied(false);
-    setNeedsStudentEmail(false);
+    setShowSuccessView(false);
+    setStudentEmailFromDB('');
     setStudentEmailInput('');
     setIsSendingEmail(false);
     setCreatedHomeworkId('');
@@ -227,81 +225,10 @@ export function CreateHomeworkModal({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Homework Assignment</DialogTitle>
-          {needsStudentEmail && (
-            <DialogDescription>
-              Homework created! Enter student's email to send notification.
-            </DialogDescription>
-          )}
         </DialogHeader>
 
-        {needsStudentEmail ? (
-          // Email input form
-          <div className="space-y-4 py-4">
-            <Alert>
-              <Mail className="h-4 w-4" />
-              <AlertDescription>
-                This student doesn't have an email address saved. Enter their email to send the homework notification.
-              </AlertDescription>
-            </Alert>
-            
-            <div className="space-y-2">
-              <Label htmlFor="student-email">Student Email</Label>
-              <Input
-                id="student-email"
-                type="email"
-                placeholder="student@example.com"
-                value={studentEmailInput}
-                onChange={(e) => setStudentEmailInput(e.target.value)}
-                disabled={isSendingEmail}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Shareable Link</Label>
-              <div className="flex gap-2">
-                <Input value={shareUrl} readOnly className="flex-1" />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleCopyUrl}
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                You can also share this link manually with the student.
-              </p>
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button
-                onClick={handleSendEmailAndClose}
-                disabled={isSendingEmail}
-                className="flex-1"
-              >
-                {isSendingEmail ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Mail className="mr-2 h-4 w-4" />
-                    Send Email & Close
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleClose}
-                disabled={isSendingEmail}
-              >
-                Skip Email
-              </Button>
-            </div>
-          </div>
-        ) : shareUrl ? (
-          // Success view
+        {showSuccessView ? (
+          // Success view with email option
           <div className="space-y-4 py-6">
             <div className="flex items-center justify-center text-green-500 mb-4">
               <Check className="h-16 w-16" />
@@ -326,9 +253,51 @@ export function CreateHomeworkModal({
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Copy this link to share manually with the student.
+              </p>
             </div>
 
-            <Button onClick={handleClose} className="w-full">
+            {/* Email section */}
+            <div className="space-y-2 pt-4 border-t">
+              <Label htmlFor="student-email">Send Email Notification</Label>
+              <Input
+                id="student-email"
+                type="email"
+                placeholder="student@example.com"
+                value={studentEmailInput}
+                onChange={(e) => setStudentEmailInput(e.target.value)}
+                disabled={isSendingEmail}
+              />
+              {!studentEmailFromDB && (
+                <p className="text-xs text-muted-foreground">
+                  This student doesn't have an email saved. Enter it to send notification.
+                </p>
+              )}
+              
+              <div className="flex gap-2 pt-2">
+                <Button
+                  onClick={handleSendEmailFromSuccess}
+                  disabled={isSendingEmail || !studentEmailInput}
+                  className="flex-1"
+                  variant="secondary"
+                >
+                  {isSendingEmail ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Send Email
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <Button onClick={handleClose} className="w-full" variant="outline">
               Done
             </Button>
           </div>

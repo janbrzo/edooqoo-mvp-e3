@@ -13,7 +13,7 @@ interface StudentEditDialogProps {
   student: Student;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, updates: Partial<Pick<Student, 'name' | 'english_level' | 'main_goal'>>) => Promise<any>;
+  onSave: (id: string, updates: Partial<Pick<Student, 'name' | 'english_level' | 'main_goal' | 'student_email'>>) => Promise<any>;
 }
 
 const englishLevels = [
@@ -43,6 +43,7 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
   const [name, setName] = useState(student.name);
   const [englishLevel, setEnglishLevel] = useState(student.english_level);
   const [mainGoal, setMainGoal] = useState(student.main_goal);
+  const [studentEmail, setStudentEmail] = useState(student.student_email || '');
   const [customGoal, setCustomGoal] = useState(
     mainGoals.find(goal => goal.value === student.main_goal) ? '' : student.main_goal
   );
@@ -55,7 +56,8 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
       await onSave(student.id, {
         name,
         english_level: englishLevel,
-        main_goal: goalToSave
+        main_goal: goalToSave,
+        student_email: studentEmail || null
       });
       onClose();
     } catch (error) {
@@ -70,6 +72,7 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
     setName(student.name);
     setEnglishLevel(student.english_level);
     setMainGoal(student.main_goal);
+    setStudentEmail(student.student_email || '');
     setCustomGoal(mainGoals.find(goal => goal.value === student.main_goal) ? '' : student.main_goal);
     onClose();
   };
@@ -138,6 +141,20 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
               />
             </div>
           )}
+          
+          <div className="grid gap-2">
+            <Label htmlFor="student-email">Student Email (Optional)</Label>
+            <Input
+              id="student-email"
+              type="email"
+              value={studentEmail}
+              onChange={(e) => setStudentEmail(e.target.value)}
+              placeholder="student@example.com"
+            />
+            <p className="text-xs text-muted-foreground">
+              Email will be used for homework notifications
+            </p>
+          </div>
         </div>
         
         <DialogFooter>

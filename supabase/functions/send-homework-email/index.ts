@@ -5,6 +5,7 @@ import { renderAsync } from "npm:@react-email/components@0.0.22";
 import React from "npm:react@18.3.1";
 import { HomeworkNotificationEmail } from "../_shared/email-templates/homework-notification.tsx";
 
+// Force redeploy to apply config.toml changes
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
 
 const corsHeaders = {

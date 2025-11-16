@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ExerciseSection from "@/components/worksheet/ExerciseSection";
-import { Loader2, Calendar, User, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Calendar, User, Mail, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface HomeworkData {
@@ -18,6 +19,7 @@ interface HomeworkData {
   student_name: string;
   student_english_level: string;
   source_worksheet_title: string;
+  completed_at?: string | null;
 }
 
 export default function HomeworkPage() {
@@ -25,6 +27,8 @@ export default function HomeworkPage() {
   const navigate = useNavigate();
   const [homework, setHomework] = useState<HomeworkData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -35,6 +39,12 @@ export default function HomeworkPage() {
 
     loadHomework();
   }, [token]);
+
+  useEffect(() => {
+    if (homework?.completed_at) {
+      setIsCompleted(true);
+    }
+  }, [homework]);
 
   const loadHomework = async () => {
     try {
@@ -57,6 +67,32 @@ export default function HomeworkPage() {
       navigate("/");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMarkCompleted = async () => {
+    if (!homework) return;
+
+    setIsCompleting(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id || 'anonymous';
+
+      const { data, error } = await supabase.rpc('mark_homework_completed', {
+        p_homework_id: homework.id,
+        p_user_id: userId,
+        p_is_teacher: false
+      });
+
+      if (error) throw error;
+
+      setIsCompleted(true);
+      toast.success("Homework marked as completed! Your teacher has been notified.");
+    } catch (error: any) {
+      console.error('Error marking homework as completed:', error);
+      toast.error(error.message || "Failed to mark homework as completed");
+    } finally {
+      setIsCompleting(false);
     }
   };
 
@@ -136,10 +172,43 @@ export default function HomeworkPage() {
         </div>
 
         {/* Footer Note */}
-        <div className="mt-12 p-6 bg-muted rounded-lg text-center">
-          <p className="text-sm text-muted-foreground">
-            Complete these exercises and discuss with your teacher in the next lesson.
-          </p>
+        <div className="mt-12 space-y-4">
+          {!isCompleted ? (
+            <Button 
+              onClick={handleMarkCompleted}
+              disabled={isCompleting}
+              className="w-full"
+              size="lg"
+            >
+              {isCompleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Marking as completed...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="mr-2 h-5 w-5" />
+                  Mark as Completed
+                </>
+              )}
+            </Button>
+          ) : (
+            <div className="p-6 bg-green-50 dark:bg-green-900/20 rounded-lg text-center border-2 border-green-500">
+              <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
+              <p className="text-lg font-semibold text-green-700 dark:text-green-300">
+                Homework Completed!
+              </p>
+              <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                Your teacher has been notified.
+              </p>
+            </div>
+          )}
+          
+          <div className="p-6 bg-muted rounded-lg text-center">
+            <p className="text-sm text-muted-foreground">
+              Complete these exercises and discuss with your teacher in the next lesson.
+            </p>
+          </div>
         </div>
       </div>
     </div>
