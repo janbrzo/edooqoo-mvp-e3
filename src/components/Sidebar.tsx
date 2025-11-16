@@ -1,7 +1,6 @@
 
 import { Clock, FileText, Settings, Star } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
 
 export default function Sidebar() {
   const isMobile = useIsMobile();
@@ -10,11 +9,10 @@ export default function Sidebar() {
   // ale zachowujemy pełną funkcjonalność dla desktop
   return (
     <div className="bg-worksheet-purpleLight p-6 rounded-lg h-fit mx-0 py-[24px]">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8">
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-violet-500 to-blue-500">
           English Worksheet Generator
         </h1>
-        <HomeworkNotificationBadge />
       </div>
       
       <div className="space-y-8 mt-12">

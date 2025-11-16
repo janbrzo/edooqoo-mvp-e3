@@ -12,6 +12,8 @@ export interface HomeworkAssignment {
   view_count: number;
   viewed_at: string | null;
   created_at: string;
+  completed_at: string | null;
+  completed_by_teacher: boolean | null;
 }
 
 interface GroupedHomework {
@@ -45,6 +47,8 @@ export const useAllWorksheetHomework = (worksheetIds: string[], studentId?: stri
           view_count,
           viewed_at,
           created_at,
+          completed_at,
+          completed_by_teacher,
           source_worksheet_id,
           students (
             name
@@ -80,6 +84,8 @@ export const useAllWorksheetHomework = (worksheetIds: string[], studentId?: stri
           view_count: hw.view_count,
           viewed_at: hw.viewed_at,
           created_at: hw.created_at,
+          completed_at: hw.completed_at,
+          completed_by_teacher: hw.completed_by_teacher,
         });
       });
 

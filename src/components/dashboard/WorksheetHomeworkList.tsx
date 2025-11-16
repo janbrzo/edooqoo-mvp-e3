@@ -1,4 +1,4 @@
-import { BookOpen, Copy, ExternalLink, Calendar, Eye } from 'lucide-react';
+import { BookOpen, Copy, ExternalLink, Calendar, Eye, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -47,6 +47,13 @@ export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) 
             <div className="flex items-start gap-2 mb-2">
               <BookOpen className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
+                {/* Completed Badge */}
+                {hw.completed_at && (
+                  <Badge className="mb-1 bg-green-500 text-white">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Completed
+                  </Badge>
+                )}
                 <p className="font-medium text-sm text-foreground truncate">
                   {hw.title}
                 </p>

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Check, User, GraduationCap, Zap, Users, Gift, ChevronDown, ChevronUp, Mail, FileText, DollarSign } from 'lucide-react';
+import { Check, User, GraduationCap, Zap, Users, Gift, ChevronDown, ChevronUp, Mail, FileText, DollarSign, Bell } from 'lucide-react';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { useTokenSystem } from '@/hooks/useTokenSystem';
 import { usePlanLogic } from '@/hooks/usePlanLogic';
@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { PricingCalculator } from '@/components/PricingCalculator';
 import { ConfirmDowngradeDialog } from '@/components/ConfirmDowngradeDialog';
+import { HomeworkNotificationBadge } from '@/components/homework/HomeworkNotificationBadge';
 
 const Pricing = () => {
   const { user, isRegisteredUser } = useAuthFlow();
@@ -385,6 +386,7 @@ const Pricing = () => {
           <div className="flex gap-3">
             {isRegisteredUser && (
               <>
+                <HomeworkNotificationBadge />
                 <Button asChild variant="outline">
                   <Link to="/dashboard" className="flex items-center gap-2">
                     <GraduationCap className="h-4 w-4" />
