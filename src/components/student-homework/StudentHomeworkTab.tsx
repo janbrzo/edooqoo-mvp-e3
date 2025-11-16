@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Calendar, Eye, Copy, ExternalLink, Trash2, FileText } from 'lucide-react';
+import { Plus, Calendar, Eye, Copy, ExternalLink, Trash2, FileText, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -30,7 +30,7 @@ interface StudentHomeworkTabProps {
 }
 
 export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: StudentHomeworkTabProps) => {
-  const [filterStatus, setFilterStatus] = useState<'all' | 'viewed' | 'not_viewed' | 'overdue'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed' | 'viewed' | 'not_viewed' | 'overdue'>('all');
   const [sortBy, setSortBy] = useState<'deadline' | 'created'>('deadline');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedWorksheetForHomework, setSelectedWorksheetForHomework] = useState<string>('');
@@ -53,7 +53,11 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
     let filtered = [...allHomework];
     
     // Filter by status
-    if (filterStatus === 'viewed') {
+    if (filterStatus === 'pending') {
+      filtered = filtered.filter(hw => !hw.completed_at);
+    } else if (filterStatus === 'completed') {
+      filtered = filtered.filter(hw => hw.completed_at !== null);
+    } else if (filterStatus === 'viewed') {
       filtered = filtered.filter(hw => hw.viewed_at !== null);
     } else if (filterStatus === 'not_viewed') {
       filtered = filtered.filter(hw => hw.viewed_at === null);
@@ -104,6 +108,30 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
     
     const url = `${window.location.origin}/homework/${shareToken}`;
     window.open(url, '_blank');
+  };
+  
+  const handleMarkCompleted = async (homeworkId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to mark homework as completed");
+        return;
+      }
+
+      const { data, error } = await supabase.rpc('mark_homework_completed', {
+        p_homework_id: homeworkId,
+        p_user_id: user.id,
+        p_is_teacher: true
+      });
+
+      if (error) throw error;
+
+      toast.success("Homework marked as completed!");
+      refetch(); // Refresh homework list
+    } catch (error: any) {
+      console.error('Error marking homework as completed:', error);
+      toast.error(error.message || "Failed to mark homework as completed");
+    }
   };
   
   const handleDeleteHomework = async (homeworkId: string) => {
@@ -159,6 +187,8 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Homework</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
             <SelectItem value="not_viewed">Not Viewed</SelectItem>
             <SelectItem value="viewed">Viewed</SelectItem>
             <SelectItem value="overdue">Overdue</SelectItem>
@@ -198,6 +228,14 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
               <Card key={hw.id} className="p-4">
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1 min-w-0">
+                    {/* Completed Badge */}
+                    {hw.completed_at && (
+                      <Badge className="mb-2 bg-green-500">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Completed {hw.completed_by_teacher ? 'by Teacher' : 'by Student'}
+                      </Badge>
+                    )}
+                    
                     <h3 className="font-semibold mb-2 truncate">{hw.title}</h3>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
                       <span className="flex items-center gap-1">
@@ -231,6 +269,19 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
                   </div>
                   
                   <div className="flex gap-2 flex-shrink-0">
+                    {/* Mark as Completed button */}
+                    {!hw.completed_at && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleMarkCompleted(hw.id)}
+                        title="Mark as completed"
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        Mark Done
+                      </Button>
+                    )}
+                    
                     <Button
                       variant="outline"
                       size="sm"

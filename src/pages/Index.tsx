@@ -13,7 +13,8 @@ import { TokenPaywallModal } from "@/components/TokenPaywallModal";
 import { PricingSection } from "@/components/PricingSection";
 import { FreeWeekBanner } from "@/components/FreeWeekBanner";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
-import { User, GraduationCap, DollarSign } from "lucide-react";
+import { User, GraduationCap, DollarSign, Bell } from "lucide-react";
+import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
 
 /**
  * Main Index page component that handles worksheet generation and display
@@ -171,6 +172,7 @@ const Index = () => {
       <Badge variant="outline" className="text-sm">
         Token Left: {tokenLeft}
       </Badge>
+      <HomeworkNotificationBadge />
       <Button asChild variant="outline" size="sm">
         <Link to="/dashboard">
           <GraduationCap className="h-4 w-4 mr-2" />

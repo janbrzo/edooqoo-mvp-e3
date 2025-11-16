@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ExerciseSection from "@/components/worksheet/ExerciseSection";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Loader2, Calendar, User, Mail, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -95,6 +96,43 @@ export default function HomeworkPage() {
       setIsCompleting(false);
     }
   };
+
+  // Extract media from exercises
+  const extractMediaFromExercises = (exercises: any[]) => {
+    const media = {
+      images: [] as string[],
+      audios: [] as { url: string; transcript?: string }[]
+    };
+    
+    if (!Array.isArray(exercises)) return media;
+    
+    exercises.forEach(exercise => {
+      // Extract images from picture exercises
+      if (exercise.type === 'picture' && exercise.image_url) {
+        media.images.push(exercise.image_url);
+      }
+      
+      // Extract audios from audio exercises
+      if (exercise.type === 'audio' && exercise.audio_url) {
+        media.audios.push({
+          url: exercise.audio_url,
+          transcript: exercise.audio_transcript
+        });
+      }
+      
+      // Extract from listening comprehension
+      if (exercise.type === 'listening-comprehension' && exercise.audio_url) {
+        media.audios.push({
+          url: exercise.audio_url,
+          transcript: exercise.audio_transcript
+        });
+      }
+    });
+    
+    return media;
+  };
+
+  const media = homework ? extractMediaFromExercises(homework.selected_exercises) : null;
 
   if (loading) {
     return (

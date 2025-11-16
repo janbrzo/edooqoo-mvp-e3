@@ -25,7 +25,8 @@ import {
   BookOpen,
   Clock,
   Target,
-  Coins
+  Coins,
+  Bell
 } from "lucide-react";
 import { useWorksheetStats } from "@/hooks/useWorksheetStats";
 import { DeleteWorksheetButton } from "@/components/DeleteWorksheetButton";
@@ -36,6 +37,7 @@ import { useAllWorksheetHomework } from "@/hooks/useAllWorksheetHomework";
 import { WorksheetHomeworkList } from "@/components/dashboard/WorksheetHomeworkList";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
 
 const Dashboard = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
@@ -195,6 +197,7 @@ const Dashboard = () => {
             <Badge variant="secondary" className="text-sm">
               {subscriptionType}
             </Badge>
+            <HomeworkNotificationBadge />
             <Button asChild variant="outline" size="sm">
               <Link to="/profile">
                 <User className="h-4 w-4 mr-2" />

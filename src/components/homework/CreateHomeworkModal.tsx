@@ -93,6 +93,9 @@ export function CreateHomeworkModal({
       if (!session) throw new Error('Not authenticated');
 
       const { data, error } = await supabase.functions.invoke('send-homework-email', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: {
           homeworkId,
           studentEmail,

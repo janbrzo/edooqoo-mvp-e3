@@ -536,6 +536,8 @@ export default function WorksheetDisplay({
         exercises={editableWorksheet?.exercises || []}
         teacherId={userId || ''}
         students={students}
+        preselectedStudent={studentId}
+        worksheetFormData={inputParams}
       />
     </WorksheetViewTracking>
   );
