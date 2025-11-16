@@ -47,13 +47,6 @@ export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) 
             <div className="flex items-start gap-2 mb-2">
               <BookOpen className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                {/* Completed Badge */}
-                {hw.completed_at && (
-                  <Badge className="mb-1 bg-green-500 text-white">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Completed
-                  </Badge>
-                )}
                 <p className="font-medium text-sm text-foreground truncate">
                   {hw.title}
                 </p>
@@ -64,6 +57,13 @@ export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) 
             </div>
             
             <div className="flex flex-wrap gap-2">
+              {/* Completed Badge - moved here */}
+              {hw.completed_at && (
+                <Badge className="bg-green-500 text-white text-xs">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Completed
+                </Badge>
+              )}
               {hw.deadline && (
                 <Badge variant="outline" className="text-xs">
                   <Calendar className="h-3 w-3 mr-1" />

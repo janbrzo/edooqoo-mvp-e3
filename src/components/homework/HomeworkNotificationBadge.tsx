@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ interface HomeworkNotification {
 }
 
 export function HomeworkNotificationBadge() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<HomeworkNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -142,10 +144,16 @@ export function HomeworkNotificationBadge() {
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-4 border-b border-border hover:bg-muted/50 cursor-pointer ${
+                className={`p-4 border-b border-border hover:bg-muted/50 cursor-pointer transition-colors ${
                   !notification.is_read ? 'bg-muted/30' : ''
                 }`}
-                onClick={() => !notification.is_read && markAsRead(notification.id)}
+                onClick={() => {
+                  if (!notification.is_read) {
+                    markAsRead(notification.id);
+                  }
+                  navigate(`/student/${notification.student_id}`);
+                  setIsOpen(false);
+                }}
               >
                 <div className="flex items-start gap-2">
                   <Bell className={`h-4 w-4 mt-0.5 ${!notification.is_read ? 'text-primary' : 'text-muted-foreground'}`} />
