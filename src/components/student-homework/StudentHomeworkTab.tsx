@@ -228,16 +228,15 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
               <Card key={hw.id} className="p-4">
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1 min-w-0">
-                    {/* Completed Badge */}
-                    {hw.completed_at && (
-                      <Badge className="mb-2 bg-green-500">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Completed {hw.completed_by_teacher ? 'by Teacher' : 'by Student'}
-                      </Badge>
-                    )}
-                    
                     <h3 className="font-semibold mb-2 truncate">{hw.title}</h3>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+                      {/* Completed Badge - moved here to be inline with other badges */}
+                      {hw.completed_at && (
+                        <Badge className="bg-green-500 text-white text-xs">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Completed
+                        </Badge>
+                      )}
                       <span className="flex items-center gap-1">
                         <FileText className="h-3 w-3 flex-shrink-0" />
                         Source: <Link 

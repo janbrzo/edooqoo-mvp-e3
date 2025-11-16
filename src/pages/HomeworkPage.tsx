@@ -97,36 +97,47 @@ export default function HomeworkPage() {
     }
   };
 
-  // Extract media from exercises
+  // Extract media from exercises with extensive logging
   const extractMediaFromExercises = (exercises: any[]) => {
     const media = {
       images: [] as string[],
       audios: [] as { url: string; transcript?: string }[]
     };
     
-    if (!Array.isArray(exercises)) return media;
+    if (!Array.isArray(exercises)) {
+      console.log('[HomeworkPage] No exercises array provided');
+      return media;
+    }
     
-    exercises.forEach(exercise => {
-      // Extract images from picture exercises
-      if (exercise.type === 'picture' && exercise.image_url) {
+    console.log('[HomeworkPage] Extracting media from', exercises.length, 'exercises');
+    
+    exercises.forEach((exercise, index) => {
+      console.log(`[HomeworkPage] Exercise ${index}:`, {
+        type: exercise.type,
+        hasImageUrl: !!exercise.image_url,
+        hasAudioUrl: !!exercise.audio_url,
+        keys: Object.keys(exercise)
+      });
+      
+      // Extract images from picture exercises (check multiple field names)
+      if ((exercise.type === 'picture' || exercise.type === 'image' || exercise.type === 'describe') && exercise.image_url) {
+        console.log('[HomeworkPage] Found image:', exercise.image_url);
         media.images.push(exercise.image_url);
       }
       
-      // Extract audios from audio exercises
-      if (exercise.type === 'audio' && exercise.audio_url) {
+      // Extract audios from audio exercises (multiple types)
+      if ((exercise.type === 'audio' || exercise.type === 'listening' || exercise.type === 'listening-comprehension') && exercise.audio_url) {
+        console.log('[HomeworkPage] Found audio:', exercise.audio_url);
         media.audios.push({
           url: exercise.audio_url,
           transcript: exercise.audio_transcript
         });
       }
-      
-      // Extract from listening comprehension
-      if (exercise.type === 'listening-comprehension' && exercise.audio_url) {
-        media.audios.push({
-          url: exercise.audio_url,
-          transcript: exercise.audio_transcript
-        });
-      }
+    });
+    
+    console.log('[HomeworkPage] Media extraction complete:', {
+      images: media.images.length,
+      audios: media.audios.length
     });
     
     return media;
@@ -194,8 +205,8 @@ export default function HomeworkPage() {
       </div>
 
       {/* Lesson Media Section */}
-      {media && (media.images.length > 0 || media.audios.length > 0) && (
-        <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        {media && (media.images.length > 0 || media.audios.length > 0) ? (
           <Card className="p-6">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <FileText className="h-6 w-6" />
@@ -242,8 +253,15 @@ export default function HomeworkPage() {
               </div>
             )}
           </Card>
-        </div>
-      )}
+        ) : (
+          <Card className="p-6 bg-muted/30 border-dashed">
+            <p className="text-sm text-muted-foreground text-center">
+              <FileText className="h-4 w-4 inline mr-2" />
+              No images or audio files in this homework. Check browser console for details.
+            </p>
+          </Card>
+        )}
+      </div>
 
       {/* Exercises */}
       <div className="max-w-5xl mx-auto px-4 py-8">
