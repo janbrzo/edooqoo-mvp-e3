@@ -119,7 +119,7 @@ serve(async (req: Request) => {
 
     // Send email via Resend
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: `${teacherName} <onboarding@edooqoo.com>`, // TODO: Use your verified domain
+      from: `${teacherName} <noreply@edooqoo.com>`, // TODO: Use your verified domain
       to: [studentEmail],
       subject: `New Homework: ${homework.title}`,
       html,

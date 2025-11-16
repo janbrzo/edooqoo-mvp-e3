@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
 
         // Send email via Resend
         const { data: emailData, error: emailError } = await resend.emails.send({
-          from: `${teacherName} <onboarding@edooqoo.com>`, // TODO: Use your verified domain
+          from: `${teacherName} <noreply@edooqoo.com>`, // TODO: Use your verified domain
           to: [studentEmail!],
           subject:
             daysUntilDeadline < 0
