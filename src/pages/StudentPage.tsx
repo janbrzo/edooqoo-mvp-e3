@@ -17,7 +17,7 @@ import { StudentKnowledgeEntryCard } from '@/components/student-knowledge/Studen
 import { useAllWorksheetHomework } from '@/hooks/useAllWorksheetHomework';
 import { WorksheetHomeworkSection } from '@/components/worksheet/WorksheetHomeworkSection';
 import { StudentHomeworkTab } from '@/components/student-homework/StudentHomeworkTab';
-import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { deepFixTextObjects } from '@/utils/textObjectFixer';
 import { MediaBadges } from '@/components/worksheet/MediaBadges';
@@ -253,6 +253,15 @@ const StudentPage = () => {
                     <span>{formatGoal(student.main_goal)}</span>
                   </div>
                 </div>
+                {student.student_email && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Email</label>
+                    <div className="flex items-center mt-1">
+                      <Mail className="h-4 w-4 mr-2 text-primary" />
+                      <span className="text-sm">{student.student_email}</span>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Total Worksheets</label>
                   <div className="flex items-center mt-1">

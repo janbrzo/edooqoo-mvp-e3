@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import ExerciseSection from "@/components/worksheet/ExerciseSection";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Calendar, User, Mail, CheckCircle2 } from "lucide-react";
+import { Loader2, Calendar, User, Mail, CheckCircle2, FileText } from "lucide-react";
 import { format } from "date-fns";
 
 interface HomeworkData {
@@ -192,6 +192,58 @@ export default function HomeworkPage() {
           </div>
         </div>
       </div>
+
+      {/* Lesson Media Section */}
+      {media && (media.images.length > 0 || media.audios.length > 0) && (
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <Card className="p-6">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <FileText className="h-6 w-6" />
+              Lesson Media
+            </h2>
+            
+            {/* Images */}
+            {media.images.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Images</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {media.images.map((imageUrl, idx) => (
+                    <img 
+                      key={idx}
+                      src={imageUrl} 
+                      alt={`Lesson image ${idx + 1}`}
+                      className="rounded-lg w-full object-cover max-h-96"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Audio */}
+            {media.audios.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Audio</h3>
+                <div className="space-y-4">
+                  {media.audios.map((audio, idx) => (
+                    <div key={idx} className="border rounded-lg p-4 bg-muted/30">
+                      <audio controls className="w-full mb-2">
+                        <source src={audio.url} type="audio/mpeg" />
+                        Your browser does not support audio.
+                      </audio>
+                      {audio.transcript && (
+                        <div className="text-sm text-muted-foreground mt-2 p-3 bg-background rounded">
+                          <strong>Transcript:</strong>
+                          <p className="mt-1">{audio.transcript}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
 
       {/* Exercises */}
       <div className="max-w-5xl mx-auto px-4 py-8">

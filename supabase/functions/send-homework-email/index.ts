@@ -5,7 +5,8 @@ import { renderAsync } from "npm:@react-email/components@0.0.22";
 import React from "npm:react@18.3.1";
 import { HomeworkNotificationEmail } from "../_shared/email-templates/homework-notification.tsx";
 
-// Force redeploy to apply config.toml changes
+// Force redeploy: 2024-11-16 19:00 UTC
+// Applying verify_jwt = true from config.toml - JWT authentication required
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
 
 const corsHeaders = {
@@ -26,9 +27,27 @@ serve(async (req: Request) => {
   }
 
   try {
+    // Get and validate Authorization header
+    const authHeader = req.headers.get("Authorization");
+    console.log("[send-homework-email] Auth header present:", !!authHeader);
+    
+    if (!authHeader) {
+      console.error("[send-homework-email] Missing Authorization header");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "No authorization header provided. Please ensure you're logged in." 
+        }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
     const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
       global: {
-        headers: { Authorization: req.headers.get("Authorization")! },
+        headers: { Authorization: authHeader },
       },
     });
 
@@ -37,9 +56,18 @@ serve(async (req: Request) => {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new Error("Unauthorized");
+    
+    console.log("[send-homework-email] User authenticated:", !!user);
+    console.log("[send-homework-email] User ID:", user?.id);
+    
+    if (authError) {
+      console.error("[send-homework-email] Auth error:", authError);
+      throw new Error(`Authentication failed: ${authError.message}`);
+    }
+    
+    if (!user) {
+      console.error("[send-homework-email] No user found");
+      throw new Error("Unauthorized: No valid user session");
     }
 
     const { homeworkId, studentEmail, updateStudentEmail } = (await req.json()) as SendHomeworkEmailRequest;

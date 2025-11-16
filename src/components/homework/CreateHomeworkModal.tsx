@@ -315,7 +315,6 @@ export function CreateHomeworkModal({
                 className="w-full rounded-md border border-input bg-background px-3 py-2"
                 value={selectedStudentId}
                 onChange={(e) => setSelectedStudentId(e.target.value)}
-                disabled={!!preselectedStudent}
               >
                 <option value="">Choose a student...</option>
                 {students.map((student) => (
