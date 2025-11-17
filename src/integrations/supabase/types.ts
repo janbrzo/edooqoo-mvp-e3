@@ -150,6 +150,7 @@ export type Database = {
           created_at: string
           deadline: string | null
           id: string
+          reminder_hours: number | null
           reminder_sent_at: string | null
           selected_exercises: Json
           share_expires_at: string | null
@@ -168,6 +169,7 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           id?: string
+          reminder_hours?: number | null
           reminder_sent_at?: string | null
           selected_exercises?: Json
           share_expires_at?: string | null
@@ -186,6 +188,7 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           id?: string
+          reminder_hours?: number | null
           reminder_sent_at?: string | null
           selected_exercises?: Json
           share_expires_at?: string | null

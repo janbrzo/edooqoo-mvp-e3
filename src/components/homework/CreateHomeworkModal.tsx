@@ -7,11 +7,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CalendarIcon, Loader2, Copy, Check, Mail } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarIcon, Loader2, Copy, Check, Mail, ExternalLink, Clock, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface CreateHomeworkModalProps {
   open: boolean;
@@ -44,6 +46,7 @@ export function CreateHomeworkModal({
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedExercises, setSelectedExercises] = useState<Set<number>>(new Set());
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
+  const [reminderHours, setReminderHours] = useState<string>("24");
   const [isGenerating, setIsGenerating] = useState(false);
   const [shareUrl, setShareUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
@@ -52,8 +55,8 @@ export function CreateHomeworkModal({
   const [studentEmailInput, setStudentEmailInput] = useState('');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [createdHomeworkId, setCreatedHomeworkId] = useState<string>('');
-  
-  // Email state - removed needsStudentEmail
+  const [existingHomework, setExistingHomework] = useState<any>(null);
+  const [checkingDuplicate, setCheckingDuplicate] = useState(false);
   
   // Set preselected student when modal opens
   useEffect(() => {
@@ -61,6 +64,33 @@ export function CreateHomeworkModal({
       setSelectedStudentId(preselectedStudent);
     }
   }, [preselectedStudent, open]);
+
+  // Check for existing homework when modal opens
+  useEffect(() => {
+    if (open && worksheetId) {
+      checkForExistingHomework();
+    }
+  }, [open, worksheetId]);
+
+  const checkForExistingHomework = async () => {
+    try {
+      setCheckingDuplicate(true);
+      const { data, error } = await supabase
+        .from('homework_assignments')
+        .select('id, title, share_token, created_at')
+        .eq('source_worksheet_id', worksheetId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      setExistingHomework(data);
+    } catch (error) {
+      console.error('Error checking for existing homework:', error);
+    } finally {
+      setCheckingDuplicate(false);
+    }
+  };
 
   const toggleExercise = (index: number) => {
     const newSelected = new Set(selectedExercises);
@@ -153,7 +183,8 @@ export function CreateHomeworkModal({
           source_worksheet_id: worksheetId,
           title: `${worksheetTitle} - Homework for ${student?.name}`,
           selected_exercises: exercisesData,
-          deadline: deadline?.toISOString() || null
+          deadline: deadline?.toISOString() || null,
+          reminder_hours: parseInt(reminderHours)
         })
         .select()
         .single();
@@ -205,11 +236,12 @@ export function CreateHomeworkModal({
     
     await sendHomeworkEmail(createdHomeworkId, studentEmailInput);
   };
-
+  
   const handleClose = () => {
     setSelectedStudentId("");
     setSelectedExercises(new Set());
     setDeadline(undefined);
+    setReminderHours("24");
     setIsGenerating(false);
     setShareUrl("");
     setCopied(false);
@@ -218,7 +250,14 @@ export function CreateHomeworkModal({
     setStudentEmailInput('');
     setIsSendingEmail(false);
     setCreatedHomeworkId('');
+    setExistingHomework(null);
     onOpenChange(false);
+  };
+
+  const handleOpenInNewTab = () => {
+    if (shareUrl) {
+      window.open(shareUrl, '_blank');
+    }
   };
 
   const selectedStudent = students.find(s => s.id === selectedStudentId);
@@ -228,7 +267,34 @@ export function CreateHomeworkModal({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Homework Assignment</DialogTitle>
+          <DialogDescription>
+            Create a homework assignment from "{worksheetTitle}"
+          </DialogDescription>
         </DialogHeader>
+
+        {/* Existing Homework Alert */}
+        {existingHomework && !showSuccessView && (
+          <Alert className="border-amber-500 bg-amber-50">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              This worksheet already has homework created:{" "}
+              <strong>{existingHomework.title}</strong>
+              {existingHomework.share_token && (
+                <>
+                  {" • "}
+                  <Link 
+                    to={`/homework/${existingHomework.share_token}`}
+                    target="_blank"
+                    className="underline hover:text-amber-900"
+                  >
+                    View existing homework
+                  </Link>
+                </>
+              )}
+              {" • Created: " + format(new Date(existingHomework.created_at), 'MMM dd, yyyy')}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {showSuccessView ? (
           // Success view with email option
@@ -252,12 +318,21 @@ export function CreateHomeworkModal({
                   variant="outline"
                   size="icon"
                   onClick={handleCopyUrl}
+                  title="Copy link"
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleOpenInNewTab}
+                  title="Open in new tab"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Copy this link to share manually with the student.
+                Copy this link or open homework in new tab to preview.
               </p>
             </div>
 
@@ -301,7 +376,7 @@ export function CreateHomeworkModal({
             </div>
 
             <Button onClick={handleClose} className="w-full" variant="outline">
-              Done
+              Done (skip sending email)
             </Button>
           </div>
         ) : (
@@ -378,6 +453,29 @@ export function CreateHomeworkModal({
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+
+            {/* Reminder Hours Dropdown */}
+            <div className="space-y-2">
+              <Label htmlFor="reminder-hours" className="flex items-center">
+                <Clock className="h-4 w-4 mr-2" />
+                Send Reminder Before Deadline
+              </Label>
+              <Select value={reminderHours} onValueChange={setReminderHours}>
+                <SelectTrigger id="reminder-hours">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="12">12 hours before</SelectItem>
+                  <SelectItem value="24">24 hours before (default)</SelectItem>
+                  <SelectItem value="48">2 days before</SelectItem>
+                  <SelectItem value="72">3 days before</SelectItem>
+                  <SelectItem value="96">4 days before</SelectItem>
+                  <SelectItem value="120">5 days before</SelectItem>
+                  <SelectItem value="144">6 days before</SelectItem>
+                  <SelectItem value="168">7 days before</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Action Buttons */}

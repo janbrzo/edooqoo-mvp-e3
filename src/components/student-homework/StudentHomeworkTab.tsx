@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Calendar, Eye, Copy, ExternalLink, Trash2, FileText, CheckCircle2 } from 'lucide-react';
+import { Plus, Calendar, Eye, Copy, ExternalLink, Trash2, FileText, CheckCircle2, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWorksheetHistory } from '@/hooks/useWorksheetHistory';
 import { useAllWorksheetHomework, HomeworkAssignment } from '@/hooks/useAllWorksheetHomework';
 import { CreateHomeworkModal } from '@/components/homework/CreateHomeworkModal';
+import { SendHomeworkEmailDialog } from '@/components/homework/SendHomeworkEmailDialog';
 import { useStudents } from '@/hooks/useStudents';
 import {
   AlertDialog,
@@ -35,6 +36,8 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedWorksheetForHomework, setSelectedWorksheetForHomework] = useState<string>('');
   const [deletingHomeworkId, setDeletingHomeworkId] = useState<string | null>(null);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [selectedHomeworkForEmail, setSelectedHomeworkForEmail] = useState<HomeworkAssignment | null>(null);
   
   const { students } = useStudents();
   const { worksheets } = useWorksheetHistory(studentId);
