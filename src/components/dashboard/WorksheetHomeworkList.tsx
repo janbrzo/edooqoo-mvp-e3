@@ -75,53 +75,23 @@ export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) 
       {homework.map((hw) => (
         <div
           key={hw.id}
-          className="flex items-start justify-between gap-3 p-3 rounded-lg border border-border bg-card/50 hover:bg-card/80 transition-colors"
+          className="flex flex-col gap-2 p-3 rounded-lg border border-border bg-card/50 hover:bg-card/80 transition-colors"
         >
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start gap-2 mb-2">
-              <BookOpen className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm text-foreground truncate">
-                  {hw.title}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Student: {hw.student_name}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className="text-xs">
-                Created: {format(new Date(hw.created_at), 'MMM dd, yyyy')}
-              </Badge>
-              {/* Completed Badge */}
-              {hw.completed_at && (
-                <Badge className="bg-green-500 text-white text-xs">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Completed
-                </Badge>
-              )}
-              {hw.deadline && (
-                <Badge variant="outline" className="text-xs">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  Due: {format(new Date(hw.deadline), 'MMM dd, yyyy')}
-                </Badge>
-              )}
-              {hw.view_count > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  <Eye className="h-3 w-3 mr-1" />
-                  Viewed {hw.view_count}x
-                </Badge>
-              )}
-              {hw.viewed_at && (
-                <Badge variant="secondary" className="text-xs">
-                  Last viewed: {format(new Date(hw.viewed_at), 'MMM dd')}
-                </Badge>
-              )}
+          {/* Title */}
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm text-foreground truncate">
+                {hw.title}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Student: {hw.student_name}
+              </p>
             </div>
           </div>
 
-          <div className="flex gap-1 flex-shrink-0">
+          {/* Action Buttons - NOW ON TOP */}
+          <div className="flex gap-1">
             {!hw.completed_at && (
               <Button
                 variant="ghost"
@@ -157,6 +127,19 @@ export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) 
               <ExternalLink className="h-4 w-4" />
             </Button>
           </div>
+
+          {/* Badges - ONLY Created and Completed */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="text-xs">
+              Created: {format(new Date(hw.created_at), 'MMM dd, yyyy')}
+            </Badge>
+            {hw.completed_at && (
+              <Badge className="bg-green-500 text-white text-xs">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Completed
+              </Badge>
+            )}
+          </div>
         </div>
       ))}
 
@@ -171,6 +154,7 @@ export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) 
           studentId={selectedHomeworkForEmail.student_id}
           lastSentAt={selectedHomeworkForEmail.reminder_sent_at}
           currentReminderHours={selectedHomeworkForEmail.reminder_hours || 24}
+          deadline={selectedHomeworkForEmail.deadline}
         />
       )}
     </div>

@@ -218,7 +218,7 @@ export default function HomeworkPage() {
                 <Mail className="h-4 w-4" />
                 <span>Teacher: <strong>{teacherName}</strong></span>
               </div>
-
+              
               {homework.deadline && (
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
@@ -227,6 +227,13 @@ export default function HomeworkPage() {
                   </span>
                 </div>
               )}
+              
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span>
+                  Created: <strong>{format(new Date(homework.created_at), "MMM dd, yyyy HH:mm")}</strong>
+                </span>
+              </div>
             </div>
           </div>
         </div>

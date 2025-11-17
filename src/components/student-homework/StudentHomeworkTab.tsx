@@ -108,9 +108,12 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
       toast.error("Share link not available");
       return;
     }
-    
-    const url = `${window.location.origin}/homework/${shareToken}`;
-    window.open(url, '_blank');
+    window.open(`/homework/${shareToken}`, '_blank');
+  };
+  
+  const handleOpenEmailDialog = (hw: HomeworkAssignment) => {
+    setSelectedHomeworkForEmail(hw);
+    setEmailDialogOpen(true);
   };
   
   const handleMarkCompleted = async (homeworkId: string) => {
@@ -258,6 +261,9 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
                           {isOverdue(hw.deadline) && " (Overdue)"}
                         </Badge>
                       )}
+                      <Badge variant="outline" className="text-xs">
+                        Created: {format(new Date(hw.created_at), 'MMM dd, yyyy')}
+                      </Badge>
                       <span className="flex items-center gap-1">
                         <Eye className="h-3 w-3" />
                         {hw.view_count} views
@@ -283,6 +289,15 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
                         Mark Done
                       </Button>
                     )}
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenEmailDialog(hw)}
+                      title="Send email notification"
+                    >
+                      <Mail className="h-4 w-4" />
+                    </Button>
                     
                     <Button
                       variant="outline"
@@ -352,6 +367,21 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
             english_level: s.english_level
           }))}
           preselectedStudent={studentId}
+        />
+      )}
+      
+      {/* Email Dialog */}
+      {selectedHomeworkForEmail && (
+        <SendHomeworkEmailDialog
+          open={emailDialogOpen}
+          onOpenChange={setEmailDialogOpen}
+          homeworkId={selectedHomeworkForEmail.id}
+          homeworkTitle={selectedHomeworkForEmail.title}
+          studentEmail={selectedHomeworkForEmail.student_email}
+          studentId={selectedHomeworkForEmail.student_id}
+          lastSentAt={selectedHomeworkForEmail.reminder_sent_at}
+          currentReminderHours={selectedHomeworkForEmail.reminder_hours || 24}
+          deadline={selectedHomeworkForEmail.deadline}
         />
       )}
     </div>

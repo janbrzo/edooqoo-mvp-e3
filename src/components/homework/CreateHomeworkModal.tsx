@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarIcon, Loader2, Copy, Check, Mail, ExternalLink, Clock, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -45,8 +46,12 @@ export function CreateHomeworkModal({
 }: CreateHomeworkModalProps) {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedExercises, setSelectedExercises] = useState<Set<number>>(new Set());
-  const [deadline, setDeadline] = useState<Date | undefined>(undefined);
+  const [deadline, setDeadline] = useState<Date | undefined>(
+    new Date(Date.now() + 6 * 24 * 60 * 60 * 1000) // Default: +6 days
+  );
+  const [sendReminder, setSendReminder] = useState<boolean>(true);
   const [reminderHours, setReminderHours] = useState<string>("24");
+  const [sendToTeacher, setSendToTeacher] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [shareUrl, setShareUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
@@ -184,7 +189,7 @@ export function CreateHomeworkModal({
           title: `${worksheetTitle} - Homework for ${student?.name}`,
           selected_exercises: exercisesData,
           deadline: deadline?.toISOString() || null,
-          reminder_hours: parseInt(reminderHours)
+          reminder_hours: sendReminder ? parseInt(reminderHours) : null
         })
         .select()
         .single();
@@ -240,8 +245,10 @@ export function CreateHomeworkModal({
   const handleClose = () => {
     setSelectedStudentId("");
     setSelectedExercises(new Set());
-    setDeadline(undefined);
+    setDeadline(new Date(Date.now() + 6 * 24 * 60 * 60 * 1000)); // Reset to +6 days
+    setSendReminder(true);
     setReminderHours("24");
+    setSendToTeacher(false);
     setIsGenerating(false);
     setShareUrl("");
     setCopied(false);
@@ -337,7 +344,7 @@ export function CreateHomeworkModal({
             </div>
 
             {/* Email section */}
-            <div className="space-y-2 pt-4 border-t">
+            <div className="space-y-3 pt-4 border-t">
               <Label htmlFor="student-email">Send Email Notification</Label>
               <Input
                 id="student-email"
@@ -347,6 +354,21 @@ export function CreateHomeworkModal({
                 onChange={(e) => setStudentEmailInput(e.target.value)}
                 disabled={isSendingEmail}
               />
+              
+              {/* Checkbox "send also to me" */}
+              {selectedStudent && (
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="send-to-teacher"
+                    checked={sendToTeacher}
+                    onCheckedChange={(checked) => setSendToTeacher(checked as boolean)}
+                  />
+                  <Label htmlFor="send-to-teacher" className="text-sm font-normal cursor-pointer">
+                    Send also to me ({selectedStudent.student_email || 'teacher email'})
+                  </Label>
+                </div>
+              )}
+              
               {!studentEmailFromDB && (
                 <p className="text-xs text-muted-foreground">
                   This student doesn't have an email saved. Enter it to send notification.
@@ -456,27 +478,40 @@ export function CreateHomeworkModal({
             </div>
 
             {/* Reminder Hours Dropdown */}
-            <div className="space-y-2">
-              <Label htmlFor="reminder-hours" className="flex items-center">
-                <Clock className="h-4 w-4 mr-2" />
-                Send Reminder Before Deadline
-              </Label>
-              <Select value={reminderHours} onValueChange={setReminderHours}>
-                <SelectTrigger id="reminder-hours">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="12">12 hours before</SelectItem>
-                  <SelectItem value="24">24 hours before (default)</SelectItem>
-                  <SelectItem value="48">2 days before</SelectItem>
-                  <SelectItem value="72">3 days before</SelectItem>
-                  <SelectItem value="96">4 days before</SelectItem>
-                  <SelectItem value="120">5 days before</SelectItem>
-                  <SelectItem value="144">6 days before</SelectItem>
-                  <SelectItem value="168">7 days before</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="send-reminder" 
+                    checked={sendReminder}
+                    onCheckedChange={setSendReminder}
+                  />
+                  <Label htmlFor="send-reminder" className="cursor-pointer">Send Reminder Before Deadline</Label>
+                </div>
+              </div>
+              
+              {sendReminder && (
+                <div className="space-y-2">
+                  <Label htmlFor="reminder-hours" className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Send Reminder Before Deadline
+                  </Label>
+                  <Select value={reminderHours} onValueChange={setReminderHours}>
+                    <SelectTrigger id="reminder-hours">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="12">12 hours before</SelectItem>
+                      <SelectItem value="24">24 hours before (default)</SelectItem>
+                      <SelectItem value="48">2 days before</SelectItem>
+                      <SelectItem value="72">3 days before</SelectItem>
+                      <SelectItem value="96">4 days before</SelectItem>
+                      <SelectItem value="120">5 days before</SelectItem>
+                      <SelectItem value="144">6 days before</SelectItem>
+                      <SelectItem value="168">7 days before</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4">

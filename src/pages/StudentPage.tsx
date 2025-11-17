@@ -17,7 +17,8 @@ import { StudentKnowledgeEntryCard } from '@/components/student-knowledge/Studen
 import { useAllWorksheetHomework } from '@/hooks/useAllWorksheetHomework';
 import { WorksheetHomeworkSection } from '@/components/worksheet/WorksheetHomeworkSection';
 import { StudentHomeworkTab } from '@/components/student-homework/StudentHomeworkTab';
-import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Settings } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { deepFixTextObjects } from '@/utils/textObjectFixer';
 import { MediaBadges } from '@/components/worksheet/MediaBadges';
@@ -41,6 +42,7 @@ const StudentPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [deletedCurrentPage, setDeletedCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState('overview');
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const pageSize = 10;
   
   const student = students.find(s => s.id === id);
@@ -216,22 +218,35 @@ const StudentPage = () => {
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50">
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="icon">
+                          <Settings className="h-5 w-5" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                          <AlertDialogTitle className="flex items-center gap-2">
+                            <Trash2 className="h-5 w-5 text-destructive" />
+                            Delete Student: {student.name}
+                          </AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete "{student.name}"? This action will hide the student from your list but preserve all associated worksheets.
+                            This action cannot be undone. To confirm deletion, please type the student's full name below:
                           </AlertDialogDescription>
                         </AlertDialogHeader>
+                        
+                        <div className="py-4">
+                          <Input
+                            placeholder={`Type "${student.name}" to confirm`}
+                            value={deleteConfirmName}
+                            onChange={(e) => setDeleteConfirmName(e.target.value)}
+                          />
+                        </div>
+                        
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
+                          <AlertDialogCancel onClick={() => setDeleteConfirmName('')}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
                             onClick={handleDeleteStudent}
-                            className="bg-red-500 hover:bg-red-600"
+                            disabled={deleteConfirmName !== student.name}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
                           >
                             Delete Student
                           </AlertDialogAction>
