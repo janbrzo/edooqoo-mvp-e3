@@ -1,8 +1,11 @@
-import { BookOpen, Copy, ExternalLink, Calendar, Eye, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
+import { BookOpen, Copy, ExternalLink, Calendar, Eye, CheckCircle2, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { SendHomeworkEmailDialog } from '@/components/homework/SendHomeworkEmailDialog';
 import type { HomeworkAssignment } from '@/hooks/useAllWorksheetHomework';
 
 interface WorksheetHomeworkListProps {
@@ -10,6 +13,37 @@ interface WorksheetHomeworkListProps {
 }
 
 export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) => {
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [selectedHomeworkForEmail, setSelectedHomeworkForEmail] = useState<HomeworkAssignment | null>(null);
+
+  const handleMarkDone = async (homeworkId: string, title: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase.rpc('mark_homework_completed', {
+        p_homework_id: homeworkId,
+        p_user_id: user.id,
+        p_is_teacher: true
+      });
+
+      if (error) throw error;
+
+      toast.success(`Marked "${title}" as completed`);
+      
+      // Trigger refresh
+      window.dispatchEvent(new CustomEvent('homeworkCompleted', { detail: { homeworkId } }));
+    } catch (error: any) {
+      console.error('Error marking homework as done:', error);
+      toast.error(error.message || 'Failed to mark homework as completed');
+    }
+  };
+
+  const handleOpenEmailDialog = (hw: HomeworkAssignment) => {
+    setSelectedHomeworkForEmail(hw);
+    setEmailDialogOpen(true);
+  };
+
   const handleCopyLink = (shareToken: string | null, title: string) => {
     if (!shareToken) {
       toast.error('Share link not available');
@@ -57,7 +91,10 @@ export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) 
             </div>
             
             <div className="flex flex-wrap gap-2">
-              {/* Completed Badge - moved here */}
+              <Badge variant="outline" className="text-xs">
+                Created: {format(new Date(hw.created_at), 'MMM dd, yyyy')}
+              </Badge>
+              {/* Completed Badge */}
               {hw.completed_at && (
                 <Badge className="bg-green-500 text-white text-xs">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -85,6 +122,24 @@ export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) 
           </div>
 
           <div className="flex gap-1 flex-shrink-0">
+            {!hw.completed_at && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleMarkDone(hw.id, hw.title)}
+                title="Mark as done"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleOpenEmailDialog(hw)}
+              title="Send email notification"
+            >
+              <Mail className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -104,6 +159,20 @@ export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) 
           </div>
         </div>
       ))}
+
+      {/* Email Dialog */}
+      {selectedHomeworkForEmail && (
+        <SendHomeworkEmailDialog
+          open={emailDialogOpen}
+          onOpenChange={setEmailDialogOpen}
+          homeworkId={selectedHomeworkForEmail.id}
+          homeworkTitle={selectedHomeworkForEmail.title}
+          studentEmail={selectedHomeworkForEmail.student_email}
+          studentId={selectedHomeworkForEmail.student_id}
+          lastSentAt={selectedHomeworkForEmail.reminder_sent_at}
+          currentReminderHours={selectedHomeworkForEmail.reminder_hours || 24}
+        />
+      )}
     </div>
   );
 };
