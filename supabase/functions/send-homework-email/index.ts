@@ -87,31 +87,57 @@ serve(async (req: Request) => {
 
     console.log(`Sending homework email for homework ${homeworkId} to ${studentEmail}`);
 
-    // Fetch homework details with related data
+    // Fetch homework details (simplified - no JOINs to avoid RLS issues with Service Role)
+    console.log(`[send-homework-email] Fetching homework with id: ${homeworkId} for teacher: ${user.id}`);
+    
     const { data: homework, error: homeworkError } = await supabase
       .from("homework_assignments")
-      .select(
-        `
-        *,
-        students:student_id (
-          id,
-          name,
-          english_level
-        ),
-        profiles:teacher_id (
-          first_name,
-          last_name,
-          email
-        )
-      `,
-      )
+      .select("*")
       .eq("id", homeworkId)
       .eq("teacher_id", user.id)
       .single();
 
+    console.log('[send-homework-email] Homework query result:', { 
+      found: !!homework, 
+      error: homeworkError,
+      homeworkId: homework?.id,
+      teacherId: homework?.teacher_id,
+      studentId: homework?.student_id
+    });
+
     if (homeworkError || !homework) {
+      console.error('[send-homework-email] Homework not found:', homeworkError);
       throw new Error("Homework not found or unauthorized");
     }
+
+    // Fetch related data separately
+    let student = null;
+    let teacherProfile = null;
+
+    if (homework.student_id) {
+      const { data: studentData } = await supabase
+        .from("students")
+        .select("id, name, english_level")
+        .eq("id", homework.student_id)
+        .single();
+      student = studentData;
+      console.log('[send-homework-email] Fetched student:', student);
+    }
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("first_name, last_name, email")
+      .eq("id", homework.teacher_id)
+      .single();
+    teacherProfile = profileData;
+    console.log('[send-homework-email] Fetched teacher profile:', teacherProfile);
+
+    // Build homework object with related data (matching old structure)
+    const homeworkWithRelations = {
+      ...homework,
+      students: student,
+      profiles: teacherProfile
+    };
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -120,50 +146,50 @@ serve(async (req: Request) => {
     }
 
     // Update student email if requested
-    if (updateStudentEmail && homework.students?.id) {
+    if (updateStudentEmail && homeworkWithRelations.students?.id) {
       const { error: updateError } = await supabase
         .from("students")
         .update({ student_email: studentEmail })
-        .eq("id", homework.students.id)
+        .eq("id", homeworkWithRelations.students.id)
         .eq("teacher_id", user.id);
 
       if (updateError) {
         console.error("Failed to update student email:", updateError);
         // Continue anyway - email sending is more important
       } else {
-        console.log(`Updated student ${homework.students.id} email to ${studentEmail}`);
+        console.log(`Updated student ${homeworkWithRelations.students.id} email to ${studentEmail}`);
       }
     }
 
     // Generate homework link
-    const homeworkLink = `${req.headers.get("origin") || "https://your-domain.com"}/homework/${homework.share_token}`;
+    const homeworkLink = `${req.headers.get("origin") || "https://your-domain.com"}/homework/${homeworkWithRelations.share_token}`;
 
     // Get teacher name
-    const teacherName = homework.profiles?.first_name
-      ? `${homework.profiles.first_name} ${homework.profiles.last_name || ""}`.trim()
-      : homework.profiles?.email || "Your Teacher";
+    const teacherName = homeworkWithRelations.profiles?.first_name
+      ? `${homeworkWithRelations.profiles.first_name} ${homeworkWithRelations.profiles.last_name || ""}`.trim()
+      : homeworkWithRelations.profiles?.email || "Your Teacher";
 
     // Get number of exercises
-    const selectedExercises = homework.selected_exercises as any[];
+    const selectedExercises = homeworkWithRelations.selected_exercises as any[];
     const exercisesCount = Array.isArray(selectedExercises) ? selectedExercises.length : 0;
 
     // Render email template
     const html = await renderAsync(
       React.createElement(HomeworkNotificationEmail, {
-        studentName: homework.students?.name || "Student",
+        studentName: homeworkWithRelations.students?.name || "Student",
         teacherName,
-        homeworkTitle: homework.title,
+        homeworkTitle: homeworkWithRelations.title,
         homeworkLink,
-        deadline: homework.deadline,
+        deadline: homeworkWithRelations.deadline,
         selectedExercisesCount: exercisesCount,
       }),
     );
 
     // Send email via Resend
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: `${teacherName} <noreply@edooqoo.com>`, // TODO: Use your verified domain
+      from: `${teacherName} <noreply@edooqoo.com>`,
       to: [studentEmail],
-      subject: `New Homework: ${homework.title}`,
+      subject: `New Homework: ${homeworkWithRelations.title}`,
       html,
     });
 

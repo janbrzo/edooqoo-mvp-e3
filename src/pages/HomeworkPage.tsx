@@ -21,6 +21,9 @@ interface HomeworkData {
   student_english_level: string;
   source_worksheet_title: string;
   completed_at?: string | null;
+  selected_image?: { url: string; photographer?: string; photographerUrl?: string } | null;
+  selected_audio?: { url: string; transcript?: string } | null;
+  audio_url?: string | null;
 }
 
 export default function HomeworkPage() {
@@ -61,7 +64,7 @@ export default function HomeworkPage() {
         return;
       }
 
-      setHomework(data);
+      setHomework(data as HomeworkData);
     } catch (error) {
       console.error('Error loading homework:', error);
       toast.error("Failed to load homework");
@@ -97,21 +100,41 @@ export default function HomeworkPage() {
     }
   };
 
-  // Extract media from exercises with extensive logging
-  const extractMediaFromExercises = (exercises: any[]) => {
+  // Extract media from homework (worksheet-level and exercise-level)
+  const extractMediaFromHomework = (homework: HomeworkData) => {
     const media = {
       images: [] as string[],
       audios: [] as { url: string; transcript?: string }[]
     };
     
-    if (!Array.isArray(exercises)) {
-      console.log('[HomeworkPage] No exercises array provided');
+    console.log('[HomeworkPage] Extracting media from homework:', homework);
+    
+    // First, check homework-level media (from source worksheet)
+    if (homework.selected_image?.url) {
+      console.log('[HomeworkPage] Found homework-level image:', homework.selected_image.url);
+      media.images.push(homework.selected_image.url);
+    }
+    
+    if (homework.selected_audio?.url) {
+      console.log('[HomeworkPage] Found homework-level audio (selected_audio):', homework.selected_audio.url);
+      media.audios.push({
+        url: homework.selected_audio.url,
+        transcript: homework.selected_audio.transcript
+      });
+    } else if (homework.audio_url) {
+      console.log('[HomeworkPage] Found homework-level audio (audio_url):', homework.audio_url);
+      media.audios.push({ url: homework.audio_url });
+    }
+    
+    // Then, check exercise-level media
+    if (!Array.isArray(homework.selected_exercises)) {
+      console.log('[HomeworkPage] No exercises array found');
       return media;
     }
     
-    console.log('[HomeworkPage] Extracting media from', exercises.length, 'exercises');
+    console.log('[HomeworkPage] Checking', homework.selected_exercises.length, 'exercises for media');
     
-    exercises.forEach((exercise, index) => {
+    homework.selected_exercises.forEach((exercise, index) => {
       console.log(`[HomeworkPage] Exercise ${index}:`, {
         type: exercise.type,
         hasImageUrl: !!exercise.image_url,
@@ -119,19 +142,24 @@ export default function HomeworkPage() {
         keys: Object.keys(exercise)
       });
       
-      // Extract images from picture exercises (check multiple field names)
-      if ((exercise.type === 'picture' || exercise.type === 'image' || exercise.type === 'describe') && exercise.image_url) {
-        console.log('[HomeworkPage] Found image:', exercise.image_url);
+      // Extract images from picture exercises
+      const pictureTypes = ['picture', 'image', 'describe', 'answer-questions-picture', 'describe-picture'];
+      if (pictureTypes.includes(exercise.type) && exercise.image_url && !media.images.includes(exercise.image_url)) {
+        console.log('[HomeworkPage] Found exercise image:', exercise.image_url);
         media.images.push(exercise.image_url);
       }
       
-      // Extract audios from audio exercises (multiple types)
-      if ((exercise.type === 'audio' || exercise.type === 'listening' || exercise.type === 'listening-comprehension') && exercise.audio_url) {
-        console.log('[HomeworkPage] Found audio:', exercise.audio_url);
-        media.audios.push({
-          url: exercise.audio_url,
-          transcript: exercise.audio_transcript
-        });
+      // Extract audio from listening exercises
+      const audioTypes = ['listening', 'audio', 'listening-comprehension', 'answer-questions-audio', 'true-false-audio'];
+      if (audioTypes.includes(exercise.type) && exercise.audio_url) {
+        const existingAudio = media.audios.find(a => a.url === exercise.audio_url);
+        if (!existingAudio) {
+          console.log('[HomeworkPage] Found exercise audio:', exercise.audio_url);
+          media.audios.push({
+            url: exercise.audio_url,
+            transcript: exercise.audio_transcript
+          });
+        }
       }
     });
     
@@ -143,7 +171,7 @@ export default function HomeworkPage() {
     return media;
   };
 
-  const media = homework ? extractMediaFromExercises(homework.selected_exercises) : null;
+  const media = homework ? extractMediaFromHomework(homework) : null;
 
   if (loading) {
     return (
