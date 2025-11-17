@@ -159,6 +159,9 @@ export default function WorksheetPage() {
       userId={worksheetData.teacher_id}
       studentName={studentName}
       studentId={worksheetData.student_id}
+      selectedImage={worksheetData.selected_image}
+      selectedAudio={worksheetData.selected_audio}
+      audioUrl={worksheetData.audio_url}
     />
   );
 }

@@ -64,6 +64,9 @@ interface WorksheetDisplayProps {
   studentName?: string;
   studentId?: string;
   onStudentChange?: () => void;
+  selectedImage?: any;
+  selectedAudio?: any;
+  audioUrl?: string;
 }
 
 export default function WorksheetDisplay({
@@ -81,7 +84,10 @@ export default function WorksheetDisplay({
   userId,
   studentName,
   studentId,
-  onStudentChange
+  onStudentChange,
+  selectedImage,
+  selectedAudio,
+  audioUrl
 }: WorksheetDisplayProps) {
   const [viewMode, setViewMode] = useState<'student' | 'teacher'>('student');
   const [isEditing, setIsEditing] = useState(false);
