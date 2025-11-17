@@ -6,6 +6,7 @@ export interface HomeworkAssignment {
   title: string;
   student_id: string | null;
   student_name: string | null;
+  student_email: string | null;
   selected_exercises: any;
   deadline: string | null;
   share_token: string | null;
@@ -14,6 +15,8 @@ export interface HomeworkAssignment {
   created_at: string;
   completed_at: string | null;
   completed_by_teacher: boolean | null;
+  reminder_hours: number | null;
+  reminder_sent_at: string | null;
 }
 
 interface GroupedHomework {
@@ -49,9 +52,12 @@ export const useAllWorksheetHomework = (worksheetIds: string[], studentId?: stri
           created_at,
           completed_at,
           completed_by_teacher,
+          reminder_hours,
+          reminder_sent_at,
           source_worksheet_id,
           students (
-            name
+            name,
+            student_email
           )
         `)
         .eq('teacher_id', user.user.id)
@@ -78,6 +84,7 @@ export const useAllWorksheetHomework = (worksheetIds: string[], studentId?: stri
           title: hw.title,
           student_id: hw.student_id,
           student_name: hw.students?.name || 'Unknown Student',
+          student_email: hw.students?.student_email || null,
           selected_exercises: hw.selected_exercises,
           deadline: hw.deadline,
           share_token: hw.share_token,
@@ -86,6 +93,8 @@ export const useAllWorksheetHomework = (worksheetIds: string[], studentId?: stri
           created_at: hw.created_at,
           completed_at: hw.completed_at,
           completed_by_teacher: hw.completed_by_teacher,
+          reminder_hours: hw.reminder_hours || null,
+          reminder_sent_at: hw.reminder_sent_at || null,
         });
       });
 
