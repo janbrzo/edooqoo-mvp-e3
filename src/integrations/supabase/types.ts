@@ -826,10 +826,13 @@ export type Database = {
       get_homework_by_share_token: {
         Args: { p_share_token: string }
         Returns: {
+          audio_url: string
           created_at: string
           deadline: string
           id: string
+          selected_audio: Json
           selected_exercises: Json
+          selected_image: Json
           source_worksheet_title: string
           student_english_level: string
           student_name: string

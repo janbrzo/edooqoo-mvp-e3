@@ -83,12 +83,6 @@ export const StudentCard = ({ student, onViewHistory, onOpenWorksheet, onDeleteS
           <strong>Goal:</strong> {formatGoal(student.main_goal)}
         </div>
         
-        {student.student_email && (
-          <div className="text-sm text-muted-foreground">
-            <strong>Email:</strong> {student.student_email}
-          </div>
-        )}
-        
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1 text-sm text-muted-foreground">
             <BookOpen className="h-4 w-4" />
