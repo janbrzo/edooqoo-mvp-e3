@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Mail, Loader2, Clock, CheckCircle2 } from 'lucide-react';
+import { Mail, Loader2, Clock, CheckCircle2, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -19,6 +19,7 @@ interface SendHomeworkEmailDialogProps {
   studentId?: string | null;
   lastSentAt?: string | null;
   currentReminderHours?: number;
+  deadline?: string | null;
 }
 
 export function SendHomeworkEmailDialog({
@@ -29,10 +30,11 @@ export function SendHomeworkEmailDialog({
   studentEmail: initialStudentEmail,
   studentId,
   lastSentAt,
-  currentReminderHours = 24
+  currentReminderHours = 24,
+  deadline
 }: SendHomeworkEmailDialogProps) {
   const [studentEmailInput, setStudentEmailInput] = useState(initialStudentEmail || '');
-  const [reminderHours, setReminderHours] = useState(currentReminderHours.toString());
+  const [reminderHours, setReminderHours] = useState("0"); // Default to NOW for this dialog
   const [isSending, setIsSending] = useState(false);
 
   const handleSendEmail = async () => {
@@ -47,13 +49,15 @@ export function SendHomeworkEmailDialog({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      // Update reminder_hours in database
-      const { error: updateError } = await supabase
-        .from('homework_assignments')
-        .update({ reminder_hours: parseInt(reminderHours) })
-        .eq('id', homeworkId);
+      // Update reminder_hours in database only if sendReminder is true
+      if (reminderHours !== "0") {
+        const { error: updateError } = await supabase
+          .from('homework_assignments')
+          .update({ reminder_hours: parseInt(reminderHours) })
+          .eq('id', homeworkId);
 
-      if (updateError) throw updateError;
+        if (updateError) throw updateError;
+      }
 
       // Send email
       const { data, error } = await supabase.functions.invoke('send-homework-email', {
@@ -95,6 +99,12 @@ export function SendHomeworkEmailDialog({
               </span>
             ) : (
               'Send homework notification email to student'
+            )}
+            {deadline && (
+              <div className="text-sm mt-2 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <strong>Deadline:</strong> {format(new Date(deadline), 'MMM dd, yyyy HH:mm')}
+              </div>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -140,6 +150,7 @@ export function SendHomeworkEmailDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="0">Now (immediately)</SelectItem>
                 <SelectItem value="12">12 hours before</SelectItem>
                 <SelectItem value="24">24 hours before (default)</SelectItem>
                 <SelectItem value="48">2 days before</SelectItem>
