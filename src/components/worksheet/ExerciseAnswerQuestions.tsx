@@ -78,15 +78,7 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
                     </audio>
                   )}
                 </div>
-              ) : (
-                <div className="w-64 h-48 bg-gray-200 rounded flex items-center justify-center">
-                  <p className="text-gray-500">
-                    {media_type === "video" && "🎥 Video content"}
-                    {media_type === "audio" && "🎵 Audio content"}
-                    {media_type === "image" && "📷 Image content"}
-                  </p>
-                </div>
-              )}
+              ) : null}
             </>
           )}
         </div>

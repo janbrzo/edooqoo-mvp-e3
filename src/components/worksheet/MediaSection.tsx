@@ -194,16 +194,17 @@ export default function MediaSection({
       
       {!isCollapsed && (
         <div className="space-y-3">
-          <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm max-w-3xl mx-auto">
-            {imageLoading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 min-h-[200px]">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="animate-spin h-8 w-8 border-4 border-worksheet-purple border-t-transparent rounded-full"></div>
-                  <p className="text-sm text-gray-600">Loading image...</p>
+          <div className="flex justify-center">
+            <div className="relative rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm max-w-3xl">
+              {imageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 min-h-[200px]">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin h-8 w-8 border-4 border-worksheet-purple border-t-transparent rounded-full"></div>
+                    <p className="text-sm text-gray-600">Loading image...</p>
+                  </div>
                 </div>
-              </div>
-            )}
-            <img
+              )}
+              <img
               src={imageUrl}
               alt={displayDescription}
               className="w-full h-auto object-contain max-h-[400px] cursor-pointer"
@@ -266,6 +267,7 @@ export default function MediaSection({
               </div>
             )}
           </div>
+        </div>
         
         {/* Attribution - conditional based on source */}
         {isVertexAIGenerated ? (
