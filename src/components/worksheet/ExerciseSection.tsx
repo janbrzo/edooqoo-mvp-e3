@@ -99,6 +99,8 @@ interface ExerciseSectionProps {
   // New collapse functionality
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  // New: Hide exercise-level media if Lesson Media section exists
+  hideExerciseMedia?: boolean;
 }
 
 // Helper function to normalize exercise type (removes -picture suffix for rendering logic)
@@ -154,6 +156,9 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   
   // ✅ Check BOTH sources for selected image (Unsplash OR AI-generated)
   const hasSelectedImage = originalFormData?.selectedImage || editableWorksheet?.selected_image;
+
+  // Calculate showImage: hide if hideExerciseMedia=true OR hasSelectedImage
+  const showImage = !hideExerciseMedia && !hasSelectedImage;
 
   const handleRegenerateClick = () => {
     openModal(index);

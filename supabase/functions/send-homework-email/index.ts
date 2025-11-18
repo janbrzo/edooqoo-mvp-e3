@@ -4,6 +4,7 @@ import { Resend } from "npm:resend@4.0.0";
 import { renderAsync } from "npm:@react-email/components@0.0.22";
 import React from "npm:react@18.3.1";
 import { HomeworkNotificationEmail } from "../_shared/email-templates/homework-notification.tsx";
+import { HomeworkReminderEmail } from "../_shared/email-templates/homework-reminder.tsx";
 
 // Force redeploy: 2024-11-16 19:15 UTC - Using Service Role for JWT verification
 // CRITICAL FIX: Edge functions can't use auth.getUser() with session (no localStorage)
@@ -19,6 +20,7 @@ interface SendHomeworkEmailRequest {
   homeworkId: string;
   studentEmail: string;
   updateStudentEmail?: boolean; // If true, update student's email in database
+  isReminder?: boolean; // If true, use reminder template and subject
 }
 
 serve(async (req: Request) => {
@@ -83,9 +85,9 @@ serve(async (req: Request) => {
     // Now use Service Role client for database queries (with proper user_id filtering)
     const supabase = supabaseAdmin;
 
-    const { homeworkId, studentEmail, updateStudentEmail } = (await req.json()) as SendHomeworkEmailRequest;
+    const { homeworkId, studentEmail, updateStudentEmail, isReminder } = (await req.json()) as SendHomeworkEmailRequest;
 
-    console.log(`Sending homework email for homework ${homeworkId} to ${studentEmail}`);
+    console.log(`Sending homework email for homework ${homeworkId} to ${studentEmail}, isReminder: ${isReminder || false}`);
 
     // Fetch homework details (simplified - no JOINs to avoid RLS issues with Service Role)
     console.log(`[send-homework-email] Fetching homework with id: ${homeworkId} for teacher: ${user.id}`);
@@ -173,15 +175,31 @@ serve(async (req: Request) => {
     const selectedExercises = homeworkWithRelations.selected_exercises as any[];
     const exercisesCount = Array.isArray(selectedExercises) ? selectedExercises.length : 0;
 
+    // Determine email template and subject based on isReminder flag
+    const EmailTemplate = isReminder ? HomeworkReminderEmail : HomeworkNotificationEmail;
+    const emailSubject = isReminder 
+      ? `Reminder: ${homeworkWithRelations.title}` 
+      : `New Homework: ${homeworkWithRelations.title}`;
+    
+    // Calculate days until deadline (for reminder email)
+    let daysUntilDeadline = 0;
+    if (homeworkWithRelations.deadline) {
+      const deadlineDate = new Date(homeworkWithRelations.deadline);
+      const now = new Date();
+      const diffTime = deadlineDate.getTime() - now.getTime();
+      daysUntilDeadline = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
     // Render email template
     const html = await renderAsync(
-      React.createElement(HomeworkNotificationEmail, {
+      React.createElement(EmailTemplate, {
         studentName: homeworkWithRelations.students?.name || "Student",
         teacherName,
         homeworkTitle: homeworkWithRelations.title,
         homeworkLink,
         deadline: homeworkWithRelations.deadline,
         selectedExercisesCount: exercisesCount,
+        daysUntilDeadline, // Only used by reminder template
       }),
     );
 
@@ -189,7 +207,7 @@ serve(async (req: Request) => {
     const { data: emailData, error: emailError } = await resend.emails.send({
       from: `${teacherName} <noreply@edooqoo.com>`,
       to: [studentEmail],
-      subject: `New Homework: ${homeworkWithRelations.title}`,
+      subject: emailSubject,
       html,
     });
 
@@ -199,6 +217,20 @@ serve(async (req: Request) => {
     }
 
     console.log("Email sent successfully:", emailData);
+    
+    // Update reminder_sent_at timestamp after successful email
+    const nowIso = new Date().toISOString();
+    const { error: updateError } = await supabase
+      .from('homework_assignments')
+      .update({ reminder_sent_at: nowIso })
+      .eq('id', homeworkId);
+    
+    if (updateError) {
+      console.error('[send-homework-email] Failed to update reminder_sent_at', updateError);
+      // Don't fail the whole operation - email was sent successfully
+    } else {
+      console.log('[send-homework-email] Updated reminder_sent_at to', nowIso);
+    }
 
     return new Response(
       JSON.stringify({

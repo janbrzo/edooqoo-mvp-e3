@@ -49,7 +49,7 @@ export function SendHomeworkEmailDialog({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      // Update reminder_hours in database only if sendReminder is true
+      // Update reminder_hours in database only if not NOW
       if (reminderHours !== "0") {
         const { error: updateError } = await supabase
           .from('homework_assignments')
@@ -59,7 +59,7 @@ export function SendHomeworkEmailDialog({
         if (updateError) throw updateError;
       }
 
-      // Send email
+      // Send email with isReminder=true if lastSentAt exists
       const { data, error } = await supabase.functions.invoke('send-homework-email', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -68,6 +68,7 @@ export function SendHomeworkEmailDialog({
           homeworkId,
           studentEmail: studentEmailInput,
           updateStudentEmail: !initialStudentEmail, // Update if email wasn't in DB
+          isReminder: !!lastSentAt, // Use reminder template if email was sent before
         },
       });
 
