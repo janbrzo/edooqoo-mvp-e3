@@ -137,6 +137,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   onDeleteExercise,
   isCollapsed = false,
   onToggleCollapse,
+  hideExerciseMedia = false,
 }, ref) => {
   // Use originalIndex for array operations, index for display
   const arrayIndex = originalIndex !== undefined ? originalIndex : index - 1;
