@@ -10,9 +10,10 @@ import type { HomeworkAssignment } from '@/hooks/useAllWorksheetHomework';
 
 interface WorksheetHomeworkListProps {
   homework: HomeworkAssignment[];
+  variant?: 'full' | 'simplified';
 }
 
-export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) => {
+export const WorksheetHomeworkList = ({ homework, variant = 'full' }: WorksheetHomeworkListProps) => {
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedHomeworkForEmail, setSelectedHomeworkForEmail] = useState<HomeworkAssignment | null>(null);
 
@@ -77,69 +78,158 @@ export const WorksheetHomeworkList = ({ homework }: WorksheetHomeworkListProps) 
           key={hw.id}
           className="flex flex-col gap-2 p-3 rounded-lg border border-border bg-card/50 hover:bg-card/80 transition-colors"
         >
-          {/* Title */}
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-primary flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm text-foreground truncate">
-                {hw.title}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Student: {hw.student_name}
-              </p>
-            </div>
-          </div>
+          {variant === 'full' ? (
+            // FULL VARIANT - Original layout for Dashboard and Worksheets tab
+            <>
+              {/* Title with actions on same line */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <BookOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-foreground truncate">
+                      {hw.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Student: {hw.student_name}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Action Buttons - inline */}
+                <div className="flex gap-1 flex-shrink-0">
+                  {!hw.completed_at && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleMarkDone(hw.id, hw.title)}
+                      title="Mark as done"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleOpenEmailDialog(hw)}
+                    title="Send email notification"
+                  >
+                    <Mail className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCopyLink(hw.share_token, hw.title)}
+                    title="Copy homework link"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleOpenHomework(hw.share_token)}
+                    title="Open homework"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
 
-          {/* Action Buttons - NOW ON TOP */}
-          <div className="flex gap-1">
-            {!hw.completed_at && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleMarkDone(hw.id, hw.title)}
-                title="Mark as done"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleOpenEmailDialog(hw)}
-              title="Send email notification"
-            >
-              <Mail className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleCopyLink(hw.share_token, hw.title)}
-              title="Copy homework link"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleOpenHomework(hw.share_token)}
-              title="Open homework"
-            >
-              <ExternalLink className="h-4 w-4" />
-            </Button>
-          </div>
+              {/* All Badges below */}
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="text-xs">
+                  Created: {format(new Date(hw.created_at), 'MMM dd, yyyy')}
+                </Badge>
+                {hw.completed_at && (
+                  <Badge className="bg-green-500 text-white text-xs">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Completed
+                  </Badge>
+                )}
+                {hw.deadline && (
+                  <Badge variant="secondary" className="text-xs">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Due: {format(new Date(hw.deadline), 'MMM dd, yyyy')}
+                  </Badge>
+                )}
+                <Badge variant="outline" className="text-xs">
+                  <Eye className="h-3 w-3 mr-1" />
+                  Viewed {hw.view_count}x
+                </Badge>
+                {hw.viewed_at && (
+                  <Badge variant="outline" className="text-xs">
+                    Last viewed: {format(new Date(hw.viewed_at), 'MMM dd, yyyy')}
+                  </Badge>
+                )}
+              </div>
+            </>
+          ) : (
+            // SIMPLIFIED VARIANT - For Overview tab only
+            <>
+              {/* Title */}
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm text-foreground truncate">
+                    {hw.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Student: {hw.student_name}
+                  </p>
+                </div>
+              </div>
 
-          {/* Badges - ONLY Created and Completed */}
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="text-xs">
-              Created: {format(new Date(hw.created_at), 'MMM dd, yyyy')}
-            </Badge>
-            {hw.completed_at && (
-              <Badge className="bg-green-500 text-white text-xs">
-                <CheckCircle2 className="h-3 w-3 mr-1" />
-                Completed
-              </Badge>
-            )}
-          </div>
+              {/* Action Buttons - above badges */}
+              <div className="flex gap-1">
+                {!hw.completed_at && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleMarkDone(hw.id, hw.title)}
+                    title="Mark as done"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenEmailDialog(hw)}
+                  title="Send email notification"
+                >
+                  <Mail className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleCopyLink(hw.share_token, hw.title)}
+                  title="Copy homework link"
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleOpenHomework(hw.share_token)}
+                  title="Open homework"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* ONLY Created and Completed badges */}
+              <div className="flex gap-2">
+                <Badge variant="outline" className="text-xs">
+                  Created: {format(new Date(hw.created_at), 'MMM dd, yyyy')}
+                </Badge>
+                {hw.completed_at && (
+                  <Badge className="bg-green-500 text-white text-xs">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Completed
+                  </Badge>
+                )}
+              </div>
+            </>
+          )}
         </div>
       ))}
 

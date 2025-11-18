@@ -356,6 +356,7 @@ const StudentPage = () => {
                         <WorksheetHomeworkSection 
                           worksheetId={worksheet.id}
                           compact={true}
+                          displayMode="simplified"
                         />
                       </div>
                     ))}

@@ -255,7 +255,10 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
                         </Link>
                       </span>
             {hw.deadline && (
-              <Badge variant={isOverdue(hw.deadline) ? "destructive" : "secondary"}>
+              <Badge 
+                variant="secondary"
+                className={isOverdue(hw.deadline) && !hw.completed_at ? "text-red-600 border-red-600" : ""}
+              >
                 <Calendar className="h-3 w-3 mr-1" />
                 Due: {format(new Date(hw.deadline), 'MMM dd, yyyy')}
               </Badge>

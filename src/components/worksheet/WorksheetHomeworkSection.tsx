@@ -9,12 +9,14 @@ interface WorksheetHomeworkSectionProps {
   worksheetId: string;
   homework?: HomeworkAssignment[];
   compact?: boolean;
+  displayMode?: 'full' | 'simplified';
 }
 
 export const WorksheetHomeworkSection = ({ 
   worksheetId, 
   homework: externalHomework, 
-  compact = false 
+  compact = false,
+  displayMode = 'full'
 }: WorksheetHomeworkSectionProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -57,7 +59,7 @@ export const WorksheetHomeworkSection = ({
             Loading homework...
           </div>
         ) : (
-          <WorksheetHomeworkList homework={homework} />
+          <WorksheetHomeworkList homework={homework} variant={displayMode} />
         )}
       </CollapsibleContent>
     </Collapsible>

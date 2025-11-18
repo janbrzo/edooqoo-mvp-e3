@@ -120,7 +120,7 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
           Add Student
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] max-h-[95vh] overflow-y-scroll">
+      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Student</DialogTitle>
           <DialogDescription>
