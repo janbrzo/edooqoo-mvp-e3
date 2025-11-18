@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
     console.log(`[HOMEWORK-REMINDERS] Found ${homeworkToRemind?.length || 0} homework assignments (before filtering)`);
 
     if (!homeworkToRemind || homeworkToRemind.length === 0) {
+      console.log('[HOMEWORK-REMINDERS] No homework found in database query');
       return new Response(
         JSON.stringify({
           success: true,
@@ -85,27 +86,67 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Log each homework BEFORE filtering for debugging
+    console.log('[HOMEWORK-REMINDERS] Homework details BEFORE filtering:');
+    homeworkToRemind.forEach((hw, idx) => {
+      const student = Array.isArray(hw.students) ? hw.students[0] : hw.students;
+      console.log(`  [${idx + 1}] ID: ${hw.id}, Title: "${hw.title}"`);
+      console.log(`      Student: ${student?.name || 'N/A'}, Email: ${student?.student_email || 'NONE'}`);
+      console.log(`      Deadline: ${hw.deadline}, Completed: ${hw.completed_at ? 'YES' : 'NO'}`);
+      console.log(`      Reminder hours: ${hw.reminder_hours || 24}, Last sent: ${hw.reminder_sent_at || 'NEVER'}`);
+      console.log(`      Created: ${hw.created_at}`);
+    });
+
     // Filter: only homework where student has email AND reminder should be sent based on reminder_hours
     const now = new Date();
     const filteredHomework = homeworkToRemind.filter((hw) => {
       const student = Array.isArray(hw.students) ? hw.students[0] : hw.students;
-      if (!student?.student_email) return false;
-      if (!hw.deadline) return false;
+      
+      // Check 1: Student has email
+      if (!student?.student_email) {
+        console.log(`  [FILTER] Homework "${hw.title}" (${hw.id}) - SKIP: No student email`);
+        return false;
+      }
+      
+      // Check 2: Has deadline
+      if (!hw.deadline) {
+        console.log(`  [FILTER] Homework "${hw.title}" (${hw.id}) - SKIP: No deadline`);
+        return false;
+      }
       
       const deadlineDate = new Date(hw.deadline);
       const reminderDelay = hw.reminder_hours || 24; // Default 24h if not set
       const reminderTime = new Date(deadlineDate.getTime() - reminderDelay * 60 * 60 * 1000);
       
-      // Check if it's time to send reminder
-      if (now < reminderTime) return false; // Not yet time
+      console.log(`  [FILTER] Homework "${hw.title}" (${hw.id}):`);
+      console.log(`      Deadline: ${hw.deadline}, Reminder delay: ${reminderDelay}h`);
+      console.log(`      Reminder time: ${reminderTime.toISOString()}`);
+      console.log(`      Current time: ${now.toISOString()}`);
       
-      // If no reminder sent yet, send it
-      if (!hw.reminder_sent_at) return true;
+      // Check 3: It's time to send reminder
+      if (now < reminderTime) {
+        console.log(`      SKIP: Not yet time (${Math.round((reminderTime.getTime() - now.getTime()) / (1000 * 60 * 60))}h remaining)`);
+        return false;
+      }
       
-      // Check if last reminder was sent more than reminderDelay hours ago (for resends)
+      // Check 4: If no reminder sent yet, send it
+      if (!hw.reminder_sent_at) {
+        console.log(`      ✅ PASS: First reminder, will send`);
+        return true;
+      }
+      
+      // Check 5: If last reminder was sent more than reminderDelay hours ago (for resends)
       const lastReminder = new Date(hw.reminder_sent_at);
       const hoursSinceLastReminder = (now.getTime() - lastReminder.getTime()) / (1000 * 60 * 60);
-      return hoursSinceLastReminder > reminderDelay;
+      console.log(`      Last reminder: ${hw.reminder_sent_at}, ${Math.round(hoursSinceLastReminder)}h ago`);
+      
+      if (hoursSinceLastReminder > reminderDelay) {
+        console.log(`      ✅ PASS: Time for resend`);
+        return true;
+      } else {
+        console.log(`      SKIP: Reminder already sent recently (${Math.round(reminderDelay - hoursSinceLastReminder)}h until next)`);
+        return false;
+      }
     });
 
     console.log(

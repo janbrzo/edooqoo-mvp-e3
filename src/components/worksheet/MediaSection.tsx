@@ -207,7 +207,7 @@ export default function MediaSection({
               <img
               src={imageUrl}
               alt={displayDescription}
-              className="w-full h-auto object-contain max-h-[400px] cursor-pointer"
+              className="w-full h-auto object-contain max-h-[400px] mx-auto cursor-pointer"
               onClick={onToggleFullScreen}
               onLoad={() => {
                 setImageLoading(false);

@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,7 @@ export const DeleteWorksheetButton = ({
   size = 'sm'
 }: DeleteWorksheetButtonProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
   const { toast } = useToast();
 
   const handleDelete = async () => {
@@ -73,15 +75,44 @@ export const DeleteWorksheetButton = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Worksheet</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{worksheetTitle}"? This action can be undone later if needed.
+            Type the worksheet name to confirm deletion. This action can be undone later if needed.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        
+        <div className="space-y-3 py-4">
+          <p className="text-sm text-muted-foreground">Worksheet name:</p>
+          <div className="flex gap-2">
+            <code className="flex-1 p-2 bg-muted rounded text-sm break-all">
+              {worksheetTitle}
+            </code>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(worksheetTitle);
+                toast({
+                  title: "Copied",
+                  description: "Worksheet name copied to clipboard",
+                });
+              }}
+            >
+              Copy
+            </Button>
+          </div>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="Type worksheet name here"
+            className="mt-2"
+          />
+        </div>
+        
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={() => setConfirmText('')}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            disabled={isDeleting}
+            disabled={isDeleting || confirmText !== worksheetTitle}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
           </AlertDialogAction>
