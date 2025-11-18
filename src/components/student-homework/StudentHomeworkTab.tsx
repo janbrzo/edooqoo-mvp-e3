@@ -254,13 +254,12 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
                           View Worksheet
                         </Link>
                       </span>
-                      {hw.deadline && (
-                        <Badge variant={isOverdue(hw.deadline) ? "destructive" : "secondary"}>
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {format(new Date(hw.deadline), 'MMM dd, yyyy')}
-                          {isOverdue(hw.deadline) && " (Overdue)"}
-                        </Badge>
-                      )}
+            {hw.deadline && (
+              <Badge variant={isOverdue(hw.deadline) ? "destructive" : "secondary"}>
+                <Calendar className="h-3 w-3 mr-1" />
+                Due: {format(new Date(hw.deadline), 'MMM dd, yyyy')}
+              </Badge>
+            )}
                       <Badge variant="outline" className="text-xs">
                         Created: {format(new Date(hw.created_at), 'MMM dd, yyyy')}
                       </Badge>

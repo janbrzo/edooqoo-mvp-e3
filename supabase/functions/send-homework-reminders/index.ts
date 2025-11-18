@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const { data: homeworkToRemind, error: fetchError } = await supabase
+      const { data: homeworkToRemind, error: fetchError } = await supabase
       .from("homework_assignments")
       .select(
         `
@@ -49,6 +49,8 @@ Deno.serve(async (req) => {
         student_id,
         reminder_sent_at,
         completed_at,
+        reminder_hours,
+        created_at,
         students (
           id,
           name,
@@ -63,8 +65,7 @@ Deno.serve(async (req) => {
       )
       .not("deadline", "is", null)
       .is("completed_at", null) // Not completed
-      .gt("deadline", sevenDaysAgo.toISOString()) // Deadline within last 7 days (allows overdue)
-      .lt("created_at", reminderThreshold.toISOString()); // Created more than 24h ago
+      .gt("deadline", sevenDaysAgo.toISOString()); // Deadline within last 7 days (allows overdue)
 
     if (fetchError) {
       console.error("[HOMEWORK-REMINDERS] Error fetching homework:", fetchError);
@@ -84,16 +85,27 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Filter: only homework where student has email AND (no reminder sent OR reminder sent >24h ago)
+    // Filter: only homework where student has email AND reminder should be sent based on reminder_hours
+    const now = new Date();
     const filteredHomework = homeworkToRemind.filter((hw) => {
       const student = Array.isArray(hw.students) ? hw.students[0] : hw.students;
       if (!student?.student_email) return false;
-      if (!hw.reminder_sent_at) return true; // No reminder sent yet
-
-      // Check if last reminder was sent more than 24h ago
+      if (!hw.deadline) return false;
+      
+      const deadlineDate = new Date(hw.deadline);
+      const reminderDelay = hw.reminder_hours || 24; // Default 24h if not set
+      const reminderTime = new Date(deadlineDate.getTime() - reminderDelay * 60 * 60 * 1000);
+      
+      // Check if it's time to send reminder
+      if (now < reminderTime) return false; // Not yet time
+      
+      // If no reminder sent yet, send it
+      if (!hw.reminder_sent_at) return true;
+      
+      // Check if last reminder was sent more than reminderDelay hours ago (for resends)
       const lastReminder = new Date(hw.reminder_sent_at);
-      const hoursSinceLastReminder = (Date.now() - lastReminder.getTime()) / (1000 * 60 * 60);
-      return hoursSinceLastReminder > 24;
+      const hoursSinceLastReminder = (now.getTime() - lastReminder.getTime()) / (1000 * 60 * 60);
+      return hoursSinceLastReminder > reminderDelay;
     });
 
     console.log(

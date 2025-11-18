@@ -104,6 +104,54 @@ export default function WorksheetDisplay({
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [panelMode, setPanelMode] = useState<'add' | 'view' | 'edit'>('add');
   const [selectedEntry, setSelectedEntry] = useState<StudentKnowledgeEntry | null>(null);
+
+  // CRITICAL FIX: Inject selectedImage/selectedAudio/audioUrl into editableWorksheet
+  // This ensures Lesson Media renders when opening worksheet from /student → Homework
+  useEffect(() => {
+    if (!editableWorksheet) return;
+    
+    let needsUpdate = false;
+    const updates: any = {};
+
+    // Check if we need to inject selectedImage
+    if (selectedImage && !editableWorksheet.selected_image) {
+      updates.selected_image = selectedImage;
+      needsUpdate = true;
+    }
+
+    // Check if we need to inject selectedAudio
+    if (selectedAudio && !editableWorksheet.selected_audio) {
+      updates.selected_audio = selectedAudio;
+      needsUpdate = true;
+    }
+
+    // Check if we need to inject audio_url
+    if (audioUrl && !editableWorksheet.audio_url) {
+      updates.audio_url = audioUrl;
+      // Also inject other audio fields if available from selectedAudio
+      if (selectedAudio) {
+        if (selectedAudio.transcript && !editableWorksheet.audio_transcript) {
+          updates.audio_transcript = selectedAudio.transcript;
+        }
+        if (selectedAudio.duration && !editableWorksheet.audio_duration) {
+          updates.audio_duration = selectedAudio.duration;
+        }
+        if (selectedAudio.voice && !editableWorksheet.audio_voice) {
+          updates.audio_voice = selectedAudio.voice;
+        }
+      }
+      needsUpdate = true;
+    }
+
+    // Only update if something changed
+    if (needsUpdate) {
+      console.log('[WorksheetDisplay] Injecting media into editableWorksheet:', updates);
+      setEditableWorksheet({
+        ...editableWorksheet,
+        ...updates
+      });
+    }
+  }, [selectedImage, selectedAudio, audioUrl, editableWorksheet, setEditableWorksheet]);
   const [isMiniListOpen, setIsMiniListOpen] = useState(false);
   const [miniListPage, setMiniListPage] = useState(1);
   const [miniListCategoryFilter, setMiniListCategoryFilter] = useState<KnowledgeCategory | null>(null);

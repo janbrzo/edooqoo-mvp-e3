@@ -104,7 +104,9 @@ export default function HomeworkPage() {
   const extractMediaFromHomework = (homework: HomeworkData) => {
     const media = {
       images: [] as string[],
-      audios: [] as { url: string; transcript?: string }[]
+      audios: [] as { url: string; transcript?: string }[],
+      hasImageMedia: false,
+      hasAudioMedia: false
     };
     
     console.log('[HomeworkPage] Extracting media from homework:', homework);
@@ -113,6 +115,7 @@ export default function HomeworkPage() {
     if (homework.selected_image?.url) {
       console.log('[HomeworkPage] Found homework-level image:', homework.selected_image.url);
       media.images.push(homework.selected_image.url);
+      media.hasImageMedia = true;
     }
     
     if (homework.selected_audio?.url) {
@@ -310,6 +313,7 @@ export default function HomeworkPage() {
               viewMode="student"
               editableWorksheet={{ exercises: homework.selected_exercises }}
               setEditableWorksheet={() => {}}
+              hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
             />
           ))}
         </div>

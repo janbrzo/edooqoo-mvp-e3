@@ -62,6 +62,7 @@ export function CreateHomeworkModal({
   const [createdHomeworkId, setCreatedHomeworkId] = useState<string>('');
   const [existingHomework, setExistingHomework] = useState<any>(null);
   const [checkingDuplicate, setCheckingDuplicate] = useState(false);
+  const [teacherEmail, setTeacherEmail] = useState<string | null>(null);
   
   // Set preselected student when modal opens
   useEffect(() => {
@@ -69,6 +70,24 @@ export function CreateHomeworkModal({
       setSelectedStudentId(preselectedStudent);
     }
   }, [preselectedStudent, open]);
+
+  // Fetch teacher email when modal opens
+  useEffect(() => {
+    if (open && teacherId && !teacherEmail) {
+      const fetchTeacherEmail = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', teacherId)
+          .maybeSingle();
+        
+        if (!error && data?.email) {
+          setTeacherEmail(data.email);
+        }
+      };
+      fetchTeacherEmail();
+    }
+  }, [open, teacherId, teacherEmail]);
 
   // Check for existing homework when modal opens
   useEffect(() => {
@@ -120,7 +139,7 @@ export function CreateHomeworkModal({
     }
   };
 
-  const sendHomeworkEmail = async (homeworkId: string, studentEmail: string) => {
+  const sendHomeworkEmail = async (homeworkId: string, studentEmail: string, isReminder: boolean = false) => {
     try {
       setIsSendingEmail(true);
       
@@ -135,12 +154,36 @@ export function CreateHomeworkModal({
           homeworkId,
           studentEmail,
           updateStudentEmail: !studentEmailFromDB, // Update if email wasn't in DB
+          isReminder, // Pass isReminder flag
         },
       });
 
       if (error) throw error;
 
       toast.success(`Homework notification sent to ${studentEmail}`);
+      
+      // If sendToTeacher is enabled, send email to teacher as well
+      if (sendToTeacher && teacherEmail && !isReminder) {
+        console.log('[CreateHomeworkModal] Sending email to teacher:', teacherEmail);
+        const { error: teacherEmailError } = await supabase.functions.invoke('send-homework-email', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: {
+            homeworkId,
+            studentEmail: teacherEmail,
+            updateStudentEmail: false,
+            isReminder: false,
+          },
+        });
+        
+        if (teacherEmailError) {
+          console.error('Error sending email to teacher:', teacherEmailError);
+          // Don't fail the whole operation if teacher email fails
+        } else {
+          console.log('[CreateHomeworkModal] Email sent to teacher successfully');
+        }
+      }
     } catch (error: any) {
       console.error('Error sending homework email:', error);
       toast.error(error.message || "Failed to send homework email. You can still share the link manually.");
@@ -355,8 +398,8 @@ export function CreateHomeworkModal({
                 disabled={isSendingEmail}
               />
               
-              {/* Checkbox "send also to me" */}
-              {selectedStudent && (
+              {/* Checkbox "send also to me" - show teacher email */}
+              {teacherEmail && (
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="send-to-teacher"
@@ -364,7 +407,7 @@ export function CreateHomeworkModal({
                     onCheckedChange={(checked) => setSendToTeacher(checked as boolean)}
                   />
                   <Label htmlFor="send-to-teacher" className="text-sm font-normal cursor-pointer">
-                    Send also to me ({selectedStudent.student_email || 'teacher email'})
+                    Send also to me ({teacherEmail})
                   </Label>
                 </div>
               )}
