@@ -582,7 +582,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             questions={exercise.questions}
             isEditing={isEditing}
             viewMode={viewMode}
-            showImage={!hasSelectedImage}
+            showImage={showImage}
+            hideExerciseMedia={hideExerciseMedia}
             onQuestionChange={handleQuestionChangeLocal}
             onMediaUrlChange={(url) => handleExerciseChangeLocal('media_url', url)}
             onMediaTypeChange={(type) => handleExerciseChangeLocal('media_type', type)}

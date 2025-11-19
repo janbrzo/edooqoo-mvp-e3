@@ -261,7 +261,7 @@ export default function HomeworkPage() {
                       key={idx}
                       src={imageUrl} 
                       alt={`Lesson image ${idx + 1}`}
-                      className="rounded-lg w-full object-cover max-h-96"
+                      className="rounded-lg mx-auto object-contain max-h-96 w-full md:w-auto"
                     />
                   ))}
                 </div>

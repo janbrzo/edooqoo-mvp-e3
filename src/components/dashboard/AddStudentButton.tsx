@@ -43,6 +43,7 @@ export const AddStudentButton = ({ onStudentAdded, size = 'default', variant = '
   const [englishLevel, setEnglishLevel] = useState('');
   const [mainGoal, setMainGoal] = useState('');
   const [customGoal, setCustomGoal] = useState('');
+  const [studentEmail, setStudentEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const { addStudent } = useStudents();
 
@@ -53,12 +54,13 @@ export const AddStudentButton = ({ onStudentAdded, size = 'default', variant = '
 
     setLoading(true);
     try {
-      await addStudent(name, englishLevel, finalGoal);
+      await addStudent(name, englishLevel, finalGoal, studentEmail || undefined);
       // Reset form and close dialog
       setName('');
       setEnglishLevel('');
       setMainGoal('');
       setCustomGoal('');
+      setStudentEmail('');
       setOpen(false);
       
       // Notify parent component that student was added
@@ -136,6 +138,21 @@ export const AddStudentButton = ({ onStudentAdded, size = 'default', variant = '
               />
             )}
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Student Email (Optional)</Label>
+            <Input
+              id="email"
+              type="email"
+              value={studentEmail}
+              onChange={(e) => setStudentEmail(e.target.value)}
+              placeholder="student@example.com"
+            />
+            <p className="text-xs text-muted-foreground">
+              Email will be used for homework notifications
+            </p>
+          </div>
+
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
