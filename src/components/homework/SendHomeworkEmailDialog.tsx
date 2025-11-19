@@ -20,6 +20,7 @@ interface SendHomeworkEmailDialogProps {
   lastSentAt?: string | null;
   currentReminderHours?: number;
   deadline?: string | null;
+  reminderScheduledAt?: string | null;
 }
 
 export function SendHomeworkEmailDialog({
@@ -31,7 +32,8 @@ export function SendHomeworkEmailDialog({
   studentId,
   lastSentAt,
   currentReminderHours = 24,
-  deadline
+  deadline,
+  reminderScheduledAt
 }: SendHomeworkEmailDialogProps) {
   const [studentEmailInput, setStudentEmailInput] = useState(initialStudentEmail || '');
   const [reminderHours, setReminderHours] = useState("0"); // Default to NOW for this dialog
@@ -105,6 +107,12 @@ export function SendHomeworkEmailDialog({
               <div className="text-sm mt-2 flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 <strong>Deadline:</strong> {format(new Date(deadline), 'MMM dd, yyyy HH:mm')}
+              </div>
+            )}
+            {reminderScheduledAt && (
+              <div className="text-sm mt-2 flex items-center gap-2 text-amber-600">
+                <Clock className="h-4 w-4" />
+                <strong>Reminder scheduled for:</strong> {format(new Date(reminderScheduledAt), 'MMM dd, yyyy HH:mm')}
               </div>
             )}
           </DialogDescription>
