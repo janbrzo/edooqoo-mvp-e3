@@ -46,9 +46,12 @@ export function CreateHomeworkModal({
 }: CreateHomeworkModalProps) {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedExercises, setSelectedExercises] = useState<Set<number>>(new Set());
-  const [deadline, setDeadline] = useState<Date | undefined>(
-    new Date(Date.now() + 6 * 24 * 60 * 60 * 1000) // Default: +6 days
-  );
+  const [deadline, setDeadline] = useState<Date | undefined>(() => {
+    // Default deadline: current time + 6 days (keeps current hour/minute)
+    const defaultDeadline = new Date();
+    defaultDeadline.setDate(defaultDeadline.getDate() + 6);
+    return defaultDeadline;
+  });
   const [sendReminder, setSendReminder] = useState<boolean>(true);
   const [reminderHours, setReminderHours] = useState<string>("24");
   const [sendToTeacher, setSendToTeacher] = useState<boolean>(false);
@@ -223,6 +226,21 @@ export function CreateHomeworkModal({
       const studentEmail = studentData?.student_email || '';
 
       // Create homework assignment
+      // IMPORTANT: deadline should preserve the selected time (not reset to midnight)
+      // When user picks a date in the calendar, we keep the current hour/minute
+      let finalDeadline: string | null = null;
+      if (deadline) {
+        // If the selected deadline has time 00:00:00 (from calendar picker),
+        // replace it with the current time to match created_at
+        const selectedDate = new Date(deadline);
+        if (selectedDate.getHours() === 0 && selectedDate.getMinutes() === 0 && selectedDate.getSeconds() === 0) {
+          // User picked a date from calendar - preserve current time
+          const now = new Date();
+          selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+        }
+        finalDeadline = selectedDate.toISOString();
+      }
+
       const { data: homework, error: insertError } = await supabase
         .from('homework_assignments')
         .insert({
@@ -231,7 +249,7 @@ export function CreateHomeworkModal({
           source_worksheet_id: worksheetId,
           title: `${worksheetTitle} - Homework for ${student?.name}`,
           selected_exercises: exercisesData,
-          deadline: deadline?.toISOString() || null,
+          deadline: finalDeadline,
           reminder_hours: sendReminder ? parseInt(reminderHours) : null
         })
         .select()
