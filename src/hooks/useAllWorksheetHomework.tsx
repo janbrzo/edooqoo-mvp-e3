@@ -17,6 +17,7 @@ export interface HomeworkAssignment {
   completed_by_teacher: boolean | null;
   reminder_hours: number | null;
   reminder_sent_at: string | null;
+  reminder_scheduled_at: string | null;
 }
 
 interface GroupedHomework {
@@ -54,6 +55,7 @@ export const useAllWorksheetHomework = (worksheetIds: string[], studentId?: stri
           completed_by_teacher,
           reminder_hours,
           reminder_sent_at,
+          reminder_scheduled_at,
           source_worksheet_id,
           students (
             name,
@@ -95,6 +97,7 @@ export const useAllWorksheetHomework = (worksheetIds: string[], studentId?: stri
           completed_by_teacher: hw.completed_by_teacher,
           reminder_hours: hw.reminder_hours || null,
           reminder_sent_at: hw.reminder_sent_at || null,
+          reminder_scheduled_at: hw.reminder_scheduled_at || null,
         });
       });
 

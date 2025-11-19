@@ -245,6 +245,7 @@ export const WorksheetHomeworkList = ({ homework, variant = 'full' }: WorksheetH
           lastSentAt={selectedHomeworkForEmail.reminder_sent_at}
           currentReminderHours={selectedHomeworkForEmail.reminder_hours || 24}
           deadline={selectedHomeworkForEmail.deadline}
+          reminderScheduledAt={selectedHomeworkForEmail.reminder_scheduled_at}
         />
       )}
     </div>

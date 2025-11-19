@@ -8,13 +8,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Loader2, Copy, Check, Mail, ExternalLink, Clock, AlertCircle } from "lucide-react";
+import { CalendarIcon, Loader2, Copy, Check, Mail, ExternalLink, Clock, AlertCircle, Sparkles } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { useHomeworkExerciseGeneration } from "@/hooks/useHomeworkExerciseGeneration";
 
 interface CreateHomeworkModalProps {
   open: boolean;
@@ -66,6 +67,16 @@ export function CreateHomeworkModal({
   const [existingHomework, setExistingHomework] = useState<any>(null);
   const [checkingDuplicate, setCheckingDuplicate] = useState(false);
   const [teacherEmail, setTeacherEmail] = useState<string | null>(null);
+  
+  // Initialize exercise generation hook
+  const {
+    generatedExercises,
+    isGenerating: isGeneratingExercises,
+    generateSimilarExercises,
+    toggleExerciseSelection,
+    clearGeneratedExercises,
+    getSelectedGeneratedExercises
+  } = useHomeworkExerciseGeneration();
   
   // Set preselected student when modal opens
   useEffect(() => {
@@ -211,10 +222,15 @@ export function CreateHomeworkModal({
     try {
       const student = students.find(s => s.id === selectedStudentId);
       
-      // Get selected exercises data
-      const exercisesData = Array.from(selectedExercises)
+      // Get selected exercises data from both original and generated
+      const originalExercisesData = Array.from(selectedExercises)
         .map(index => exercises[index])
         .filter(Boolean);
+      
+      const selectedGeneratedExercisesData = getSelectedGeneratedExercises();
+      
+      // Combine original and generated exercises
+      const exercisesData = [...originalExercisesData, ...selectedGeneratedExercisesData];
       
       // Get student email from DB
       const { data: studentData } = await supabase
@@ -226,19 +242,23 @@ export function CreateHomeworkModal({
       const studentEmail = studentData?.student_email || '';
 
       // Create homework assignment
-      // IMPORTANT: deadline should preserve the selected time (not reset to midnight)
-      // When user picks a date in the calendar, we keep the current hour/minute
+      // IMPORTANT: deadline time should match created_at time
       let finalDeadline: string | null = null;
       if (deadline) {
-        // If the selected deadline has time 00:00:00 (from calendar picker),
-        // replace it with the current time to match created_at
+        // Always use current local time (hour, minute, second) with selected date
+        const now = new Date();
         const selectedDate = new Date(deadline);
-        if (selectedDate.getHours() === 0 && selectedDate.getMinutes() === 0 && selectedDate.getSeconds() === 0) {
-          // User picked a date from calendar - preserve current time
-          const now = new Date();
-          selectedDate.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
-        }
+        
+        // Combine: date from calendar + time from now
+        selectedDate.setHours(
+          now.getHours(),
+          now.getMinutes(),
+          now.getSeconds(),
+          now.getMilliseconds()
+        );
+        
         finalDeadline = selectedDate.toISOString();
+        console.log('[CreateHomeworkModal] Final deadline:', finalDeadline, 'Local:', selectedDate);
       }
 
       const { data: homework, error: insertError } = await supabase
@@ -508,6 +528,60 @@ export function CreateHomeworkModal({
               </p>
             </div>
 
+            {/* Generate More Exercises Section */}
+            {worksheetFormData && (
+              <div className="space-y-2 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <Label>Generate Additional Exercises</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => generateSimilarExercises(worksheetFormData, teacherId)}
+                    disabled={isGeneratingExercises}
+                  >
+                    {isGeneratingExercises ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate Similar
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                {generatedExercises.length > 0 && (
+                  <div className="border rounded-md p-4 max-h-48 overflow-y-auto space-y-2 bg-amber-50/30">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Generated exercises (select to include):
+                    </p>
+                    {generatedExercises.map((exercise) => (
+                      <div key={exercise.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={exercise.id}
+                          checked={exercise.selected}
+                          onCheckedChange={() => toggleExerciseSelection(exercise.id)}
+                        />
+                        <Label
+                          htmlFor={exercise.id}
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {exercise.title || `${exercise.type} exercise`}
+                        </Label>
+                      </div>
+                    ))}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {getSelectedGeneratedExercises().length} generated exercise{getSelectedGeneratedExercises().length !== 1 ? 's' : ''} selected
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Deadline Selection */}
             <div className="space-y-2">
               <Label>Deadline (Optional)</Label>
@@ -586,7 +660,7 @@ export function CreateHomeworkModal({
               </Button>
               <Button
                 onClick={generateHomework}
-                disabled={isGenerating || !selectedStudentId || selectedExercises.size === 0}
+                disabled={isGenerating || !selectedStudentId || (selectedExercises.size === 0 && getSelectedGeneratedExercises().length === 0)}
                 className="flex-1"
               >
                 {isGenerating ? (
