@@ -67,6 +67,8 @@ export function CreateHomeworkModal({
   const [existingHomework, setExistingHomework] = useState<any>(null);
   const [checkingDuplicate, setCheckingDuplicate] = useState(false);
   const [teacherEmail, setTeacherEmail] = useState<string | null>(null);
+  const [selectedGeneratedTypes, setSelectedGeneratedTypes] = useState<string[]>([]);
+  const [generatedCount, setGeneratedCount] = useState<string>("1");
   
   // Initialize exercise generation hook
   const {
@@ -530,30 +532,123 @@ export function CreateHomeworkModal({
 
             {/* Generate More Exercises Section */}
             {worksheetFormData && (
-              <div className="space-y-2 border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <Label>Generate Additional Exercises</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => generateSimilarExercises(worksheetFormData, teacherId)}
-                    disabled={isGeneratingExercises}
-                  >
-                    {isGeneratingExercises ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Generate Similar
-                      </>
-                    )}
-                  </Button>
+              <div className="space-y-3 border-t pt-4">
+                <Label>Generate Additional Exercises</Label>
+                
+                {/* Exercise Type Selection */}
+                {worksheetFormData.selectedExercises && worksheetFormData.selectedExercises.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm">Select Exercise Types:</Label>
+                    <div className="border rounded-md p-3 max-h-32 overflow-y-auto space-y-1.5">
+                      {worksheetFormData.selectedExercises.map((exerciseId: string) => {
+                        const EXERCISE_TYPES_MAP: Record<string, string> = {
+                          'fill-in-blanks': 'Fill in the Blanks',
+                          'multiple-choice': 'Multiple Choice',
+                          'matching': 'Matching',
+                          'true-false': 'True/False',
+                          'word-order': 'Word Order',
+                          'gap-text': 'Gap Text',
+                          'answer-questions': 'Answer Questions',
+                          'paraphrasing': 'Paraphrasing',
+                          'sentence-transformation': 'Sentence Transformation',
+                          'odd-one-out': 'Odd One Out',
+                          'synonyms-antonyms': 'Synonyms & Antonyms',
+                          'matching-halves': 'Matching Halves',
+                          'complete-word': 'Complete Word',
+                          'categorize': 'Categorize',
+                          'negative-prefixes': 'Negative Prefixes',
+                        };
+                        const exerciseName = EXERCISE_TYPES_MAP[exerciseId] || exerciseId;
+                        
+                        return (
+                          <div key={exerciseId} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`gen-type-${exerciseId}`}
+                              checked={selectedGeneratedTypes.includes(exerciseId)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedGeneratedTypes(prev => [...prev, exerciseId]);
+                                } else {
+                                  setSelectedGeneratedTypes(prev => prev.filter(t => t !== exerciseId));
+                                }
+                              }}
+                            />
+                            <Label
+                              htmlFor={`gen-type-${exerciseId}`}
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {exerciseName}
+                            </Label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedGeneratedTypes.length} type{selectedGeneratedTypes.length !== 1 ? 's' : ''} selected
+                    </p>
+                  </div>
+                )}
+                
+                {/* Count Selection */}
+                <div className="space-y-2">
+                  <Label className="text-sm">Exercises per Type:</Label>
+                  <Select value={generatedCount} onValueChange={setGeneratedCount}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 exercise</SelectItem>
+                      <SelectItem value="2">2 exercises</SelectItem>
+                      <SelectItem value="3">3 exercises</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
+                {/* Generate Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    if (selectedGeneratedTypes.length === 0) {
+                      toast.error("Please select at least one exercise type");
+                      return;
+                    }
+                    generateSimilarExercises(worksheetFormData, teacherId, {
+                      targetTypes: selectedGeneratedTypes,
+                      countPerType: parseInt(generatedCount)
+                    });
+                  }}
+                  disabled={isGeneratingExercises || selectedGeneratedTypes.length === 0}
+                >
+                  {isGeneratingExercises ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate Selected
+                    </>
+                  )}
+                </Button>
+                
+                {/* Clear Button */}
+                {generatedExercises.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={clearGeneratedExercises}
+                  >
+                    Clear Generated
+                  </Button>
+                )}
+                
+                {/* Generated Exercises List */}
                 {generatedExercises.length > 0 && (
                   <div className="border rounded-md p-4 max-h-48 overflow-y-auto space-y-2 bg-amber-50/30">
                     <p className="text-xs text-muted-foreground mb-2">
