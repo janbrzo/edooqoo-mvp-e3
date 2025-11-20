@@ -308,7 +308,7 @@ export default function HomeworkPage() {
             <ExerciseSection
               key={index}
               exercise={exercise}
-              index={index}
+              index={index + 1}
               isEditing={false}
               viewMode="student"
               editableWorksheet={{ exercises: homework.selected_exercises }}

@@ -52,12 +52,12 @@ Deno.serve(async (req) => {
         reminder_hours,
         reminder_scheduled_at,
         created_at,
-        students (
+        students!homework_assignments_student_id_fkey (
           id,
           name,
           student_email
         ),
-        profiles (
+        teacher:profiles!homework_assignments_teacher_id_fkey (
           email,
           first_name,
           last_name
@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
     for (const homework of filteredHomework) {
       try {
         const student = Array.isArray(homework.students) ? homework.students[0] : homework.students;
-        const teacher = Array.isArray(homework.profiles) ? homework.profiles[0] : homework.profiles;
+        const teacher = homework.teacher;
 
         const studentName = student?.name || "Student";
         const studentEmail = student?.student_email;

@@ -100,17 +100,46 @@ export const useHomeworkExerciseGeneration = () => {
   };
 };
 
-function createGenerationPrompt(formData: any, targetExerciseType?: string): string {
+function createGenerationPrompt(worksheetFormData: any, targetExerciseType?: string): string {
+  const { 
+    lessonTopic, 
+    lessonGoal, 
+    englishLevel, 
+    lessonTime,
+    grammarFocus,
+    vocabularyFocus,
+    languageStyle
+  } = worksheetFormData;
+  
   const baseInfo = `
-Lesson Topic: ${formData.lessonTopic || 'Not specified'}
-Lesson Goal: ${formData.lessonGoal || 'Not specified'}
-English Level: ${formData.englishLevel || 'Not specified'}
-Lesson Duration: ${formData.lessonTime || '60min'}
+Lesson Topic: ${lessonTopic || 'Not specified'}
+Lesson Goal: ${lessonGoal || 'Not specified'}
+English Level: ${englishLevel || 'Not specified'}
+Lesson Duration: ${lessonTime || '60min'}
+Grammar Focus: ${grammarFocus || 'Not specified'}
+Vocabulary: ${vocabularyFocus || 'Not specified'}
+Language Style: ${languageStyle || 'Formal'}
 `;
 
   const instructions = targetExerciseType 
-    ? `Generate ONE exercise of type "${targetExerciseType}" that is similar in style and difficulty but with different content.`
-    : `Generate exercises similar to those in the original worksheet, with the same types but different content.`;
+    ? `Generate ONE high-quality exercise of type "${targetExerciseType}".
 
-  return `${baseInfo}\n\n${instructions}\n\nMake sure the exercises are fresh, engaging, and appropriate for the level.`;
+Requirements:
+- Must be similar in style and difficulty to other exercises in this lesson
+- Use DIFFERENT content and examples than the original worksheet
+- Maintain the same English level (${englishLevel})
+- If the exercise type uses vocabulary, incorporate words from: ${vocabularyFocus || 'lesson context'}
+- If the exercise type practices grammar, focus on: ${grammarFocus || 'lesson grammar'}
+- Make it engaging, practical, and appropriate for: ${lessonGoal || 'general learning'}
+`
+    : `Generate 2-3 exercises similar to those in the original worksheet, with the same types but different content.
+
+Requirements:
+- Match the lesson's English level and topic
+- Use different content than the original worksheet
+- If grammar focus is specified, incorporate: ${grammarFocus}
+- If vocabulary is specified, use relevant words from: ${vocabularyFocus}
+- Keep exercises engaging and contextually relevant`;
+
+  return `${baseInfo}\n\n${instructions}\n\nEnsure all exercises are fresh, contextually relevant, and pedagogically sound.`;
 }
