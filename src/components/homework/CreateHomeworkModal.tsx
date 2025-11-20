@@ -68,7 +68,6 @@ export function CreateHomeworkModal({
   const [checkingDuplicate, setCheckingDuplicate] = useState(false);
   const [teacherEmail, setTeacherEmail] = useState<string | null>(null);
   const [selectedGeneratedTypes, setSelectedGeneratedTypes] = useState<string[]>([]);
-  const [generatedCount, setGeneratedCount] = useState<string>("1");
   
   // Initialize exercise generation hook
   const {
@@ -540,7 +539,7 @@ export function CreateHomeworkModal({
                   <div className="space-y-2">
                     <Label className="text-sm">Select Exercise Types:</Label>
                     <div className="border rounded-md p-3 max-h-32 overflow-y-auto space-y-1.5">
-                      {worksheetFormData.selectedExercises.map((exerciseId: string) => {
+                      {worksheetFormData.selectedExercises.filter((id: string) => !id.endsWith('-picture') && !id.endsWith('-audio')).map((exerciseId: string) => {
                         const EXERCISE_TYPES_MAP: Record<string, string> = {
                           'fill-in-blanks': 'Fill in the Blanks',
                           'multiple-choice': 'Multiple Choice',
@@ -557,6 +556,12 @@ export function CreateHomeworkModal({
                           'complete-word': 'Complete Word',
                           'categorize': 'Categorize',
                           'negative-prefixes': 'Negative Prefixes',
+                          'dialogue': 'Dialogue Practice',
+                          'listening-comprehension': 'Listening Comprehension',
+                          'discussion': 'Discussion Questions',
+                          'error-correction': 'Error Correction',
+                          'reading': 'Reading Comprehension',
+                          'describe': 'Describe',
                         };
                         const exerciseName = EXERCISE_TYPES_MAP[exerciseId] || exerciseId;
                         
@@ -586,38 +591,23 @@ export function CreateHomeworkModal({
                     <p className="text-xs text-muted-foreground">
                       {selectedGeneratedTypes.length} type{selectedGeneratedTypes.length !== 1 ? 's' : ''} selected
                     </p>
-                  </div>
-                )}
-                
-                {/* Count Selection */}
-                <div className="space-y-2">
-                  <Label className="text-sm">Exercises per Type:</Label>
-                  <Select value={generatedCount} onValueChange={setGeneratedCount}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 exercise</SelectItem>
-                      <SelectItem value="2">2 exercises</SelectItem>
-                      <SelectItem value="3">3 exercises</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
-                
-                {/* Generate Button */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    if (selectedGeneratedTypes.length === 0) {
-                      toast.error("Please select at least one exercise type");
-                      return;
-                    }
-                    generateSimilarExercises(worksheetFormData, teacherId, {
-                      targetTypes: selectedGeneratedTypes,
-                      countPerType: parseInt(generatedCount)
+              )}
+              
+              {/* Generate Button */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  if (selectedGeneratedTypes.length === 0) {
+                    toast.error("Please select at least one exercise type");
+                    return;
+                  }
+                  generateSimilarExercises(worksheetFormData, teacherId, {
+                    targetTypes: selectedGeneratedTypes,
+                    countPerType: 1
                     });
                   }}
                   disabled={isGeneratingExercises || selectedGeneratedTypes.length === 0}
