@@ -70,26 +70,31 @@ export function SendHomeworkEmailDialog({
         if (hwRow?.reminder_scheduled_at) {
           const scheduledDate = new Date(hwRow.reminder_scheduled_at);
           console.log('[SendHomeworkEmailDialog] Updated reminder_scheduled_at:', hwRow.reminder_scheduled_at);
-          toast.success(`Reminder scheduled for: ${format(scheduledDate, 'MMM dd, yyyy HH:mm')}`);
+          toast.success(`Reminder scheduled for: ${format(scheduledDate, 'MMM dd, yyyy HH:mm')}. Email will be sent automatically.`);
         }
       }
 
-      // Send email with isReminder=true if lastSentAt exists
-      const { data, error } = await supabase.functions.invoke('send-homework-email', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: {
-          homeworkId,
-          studentEmail: studentEmailInput,
-          updateStudentEmail: !initialStudentEmail, // Update if email wasn't in DB
-          isReminder: !!lastSentAt, // Use reminder template if email was sent before
-        },
-      });
+      // Send email ONLY if reminderHours === "0" (NOW)
+      if (reminderHours === "0") {
+        const { data, error } = await supabase.functions.invoke('send-homework-email', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: {
+            homeworkId,
+            studentEmail: studentEmailInput,
+            updateStudentEmail: !initialStudentEmail, // Update if email wasn't in DB
+            isReminder: !!lastSentAt, // Use reminder template if email was sent before
+          },
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast.success(`Homework notification sent to ${studentEmailInput}`);
+        toast.success(`Homework notification sent to ${studentEmailInput}`);
+      } else {
+        // Only reminder scheduled, no immediate email
+        toast.success(`Reminder scheduled. No email sent now.`);
+      }
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error sending homework email:', error);

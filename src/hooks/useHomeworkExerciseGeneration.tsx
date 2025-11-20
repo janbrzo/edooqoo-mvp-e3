@@ -10,6 +10,15 @@ interface GeneratedExercise {
   selected: boolean;
 }
 
+// Normalize text fields that might be wrapped in {text: "..."} objects
+function normalizeExerciseField(field: any): string {
+  if (!field) return '';
+  if (typeof field === 'string') return field;
+  if (typeof field === 'object' && field.text) return field.text;
+  if (typeof field === 'object' && field.content) return field.content;
+  return JSON.stringify(field); // fallback
+}
+
 export const useHomeworkExerciseGeneration = () => {
   const [generatedExercises, setGeneratedExercises] = useState<GeneratedExercise[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -65,11 +74,14 @@ export const useHomeworkExerciseGeneration = () => {
           const result = await response.json();
           
           if (result.exercises && result.exercises.length > 0) {
-            // Add unique IDs and selection state
+            // Add unique IDs and selection state, normalize text fields
             const exercisesWithState = result.exercises.map((exercise: any, index: number) => ({
               ...exercise,
               id: `generated-${Date.now()}-${i}-${index}`,
-              selected: false
+              selected: false,
+              title: normalizeExerciseField(exercise.title),
+              instructions: normalizeExerciseField(exercise.instructions),
+              content: normalizeExerciseField(exercise.content),
             }));
             
             // APPEND to existing generated exercises
@@ -108,7 +120,10 @@ export const useHomeworkExerciseGeneration = () => {
           const exercisesWithState = result.exercises.map((exercise: any, index: number) => ({
             ...exercise,
             id: `generated-${Date.now()}-${index}`,
-            selected: false
+            selected: false,
+            title: normalizeExerciseField(exercise.title),
+            instructions: normalizeExerciseField(exercise.instructions),
+            content: normalizeExerciseField(exercise.content),
           }));
           
           setGeneratedExercises(exercisesWithState);
