@@ -59,6 +59,19 @@ export function SendHomeworkEmailDialog({
           .eq('id', homeworkId);
 
         if (updateError) throw updateError;
+        
+        // Fetch updated reminder_scheduled_at to show user
+        const { data: hwRow } = await supabase
+          .from('homework_assignments')
+          .select('reminder_scheduled_at')
+          .eq('id', homeworkId)
+          .maybeSingle();
+        
+        if (hwRow?.reminder_scheduled_at) {
+          const scheduledDate = new Date(hwRow.reminder_scheduled_at);
+          console.log('[SendHomeworkEmailDialog] Updated reminder_scheduled_at:', hwRow.reminder_scheduled_at);
+          toast.success(`Reminder scheduled for: ${format(scheduledDate, 'MMM dd, yyyy HH:mm')}`);
+        }
       }
 
       // Send email with isReminder=true if lastSentAt exists

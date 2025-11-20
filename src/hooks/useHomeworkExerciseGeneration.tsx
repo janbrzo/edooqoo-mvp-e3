@@ -17,51 +17,105 @@ export const useHomeworkExerciseGeneration = () => {
   const generateSimilarExercises = async (
     worksheetFormData: any,
     userId: string,
-    targetExerciseType?: string
+    options?: { targetTypes?: string[]; countPerType?: number }
   ) => {
     setIsGenerating(true);
     
     try {
-      console.log('🎯 Generating similar exercises for homework');
+      console.log('🎯 Generating similar exercises for homework', options);
       
-      // Use the same edge function as worksheet regeneration
-      const response = await fetch('https://bvfrkzdlklyvnhlpleck.supabase.co/functions/v1/generateWorksheet', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: createGenerationPrompt(worksheetFormData, targetExerciseType),
-          formData: {
-            ...worksheetFormData,
-            regenerationMode: true,
-            targetExerciseType: targetExerciseType || worksheetFormData.selectedExercises?.[0] || 'fill-in-blanks'
-          },
-          userId,
-          isRegeneration: true
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || 'Failed to generate exercises');
-      }
-
-      const result = await response.json();
-      
-      if (result.exercises && result.exercises.length > 0) {
-        // Add unique IDs and selection state to generated exercises
-        const exercisesWithState = result.exercises.map((exercise: any, index: number) => ({
-          ...exercise,
-          id: `generated-${Date.now()}-${index}`,
-          selected: false
-        }));
+      // If options.targetTypes is provided, generate sequentially for each type
+      if (options?.targetTypes && options.targetTypes.length > 0) {
+        const count = options.countPerType && options.countPerType > 0 ? options.countPerType : 1;
         
-        setGeneratedExercises(exercisesWithState);
-        toast.success(`Generated ${exercisesWithState.length} similar exercise(s)`);
-        console.log('✅ Generated exercises:', exercisesWithState.length);
+        // Build array of tasks: for each type, generate 'count' exercises
+        const tasks = options.targetTypes.flatMap(type => 
+          Array(count).fill(type)
+        );
+        
+        console.log(`📝 Will generate ${tasks.length} exercise(s): ${tasks.join(', ')}`);
+        
+        // Generate exercises sequentially
+        for (let i = 0; i < tasks.length; i++) {
+          const targetType = tasks[i];
+          console.log(`⏳ Generating ${i + 1}/${tasks.length}: ${targetType}`);
+          
+          const response = await fetch('https://bvfrkzdlklyvnhlpleck.supabase.co/functions/v1/generateWorksheet', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              prompt: createGenerationPrompt(worksheetFormData, targetType),
+              formData: {
+                ...worksheetFormData,
+                regenerationMode: true,
+                targetExerciseType: targetType
+              },
+              userId,
+              isRegeneration: true
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.error || `Failed to generate ${targetType}`);
+          }
+
+          const result = await response.json();
+          
+          if (result.exercises && result.exercises.length > 0) {
+            // Add unique IDs and selection state
+            const exercisesWithState = result.exercises.map((exercise: any, index: number) => ({
+              ...exercise,
+              id: `generated-${Date.now()}-${i}-${index}`,
+              selected: false
+            }));
+            
+            // APPEND to existing generated exercises
+            setGeneratedExercises(prev => [...prev, ...exercisesWithState]);
+            console.log(`✅ Generated ${exercisesWithState.length} exercise(s) for ${targetType}`);
+          }
+        }
+        
+        toast.success(`Generated ${tasks.length} exercise(s) successfully`);
       } else {
-        throw new Error('No exercises returned');
+        // Original behavior: generate 2-3 general exercises
+        const response = await fetch('https://bvfrkzdlklyvnhlpleck.supabase.co/functions/v1/generateWorksheet', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt: createGenerationPrompt(worksheetFormData),
+            formData: {
+              ...worksheetFormData,
+              regenerationMode: true,
+            },
+            userId,
+            isRegeneration: true
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error || 'Failed to generate exercises');
+        }
+
+        const result = await response.json();
+        
+        if (result.exercises && result.exercises.length > 0) {
+          const exercisesWithState = result.exercises.map((exercise: any, index: number) => ({
+            ...exercise,
+            id: `generated-${Date.now()}-${index}`,
+            selected: false
+          }));
+          
+          setGeneratedExercises(exercisesWithState);
+          toast.success(`Generated ${exercisesWithState.length} similar exercise(s)`);
+        } else {
+          throw new Error('No exercises returned');
+        }
       }
       
     } catch (error) {
