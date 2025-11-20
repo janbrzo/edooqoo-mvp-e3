@@ -68,6 +68,10 @@ export function CreateHomeworkModal({
   const [checkingDuplicate, setCheckingDuplicate] = useState(false);
   const [teacherEmail, setTeacherEmail] = useState<string | null>(null);
   
+  // ETAP A: Stany dla wyboru typu i liczby ćwiczeń
+  const [generatedTypes, setGeneratedTypes] = useState<string[]>([]);
+  const [generatedCount, setGeneratedCount] = useState<string>("1");
+  
   // Initialize exercise generation hook
   const {
     generatedExercises,
@@ -77,6 +81,30 @@ export function CreateHomeworkModal({
     clearGeneratedExercises,
     getSelectedGeneratedExercises
   } = useHomeworkExerciseGeneration();
+  
+  // ETAP A: Mapowanie typów ćwiczeń na przyjazne nazwy
+  const exerciseTypeLabels: Record<string, string> = {
+    'fill-in-blanks': 'Fill in the Blanks',
+    'multiple-choice': 'Multiple Choice',
+    'true-false': 'True/False',
+    'matching': 'Matching',
+    'dialogue': 'Dialogue',
+    'reading': 'Reading Comprehension',
+    'gap-text': 'Gap Text',
+    'word-order': 'Word Order',
+    'complete-word': 'Complete Word',
+    'sentence-transformation': 'Sentence Transformation',
+    'synonyms-antonyms': 'Synonyms & Antonyms',
+    'odd-one-out': 'Odd One Out',
+    'paraphrasing': 'Paraphrasing',
+    'describe': 'Describe',
+    'categorize': 'Categorize',
+    'matching-halves': 'Matching Halves',
+    'negative-prefixes': 'Negative Prefixes'
+  };
+  
+  // ETAP A: Dostępne typy ćwiczeń z worksheet
+  const availableExerciseTypes = worksheetFormData?.selectedExercises || [];
   
   // Set preselected student when modal opens
   useEffect(() => {
@@ -339,6 +367,9 @@ export function CreateHomeworkModal({
     setIsSendingEmail(false);
     setCreatedHomeworkId('');
     setExistingHomework(null);
+    clearGeneratedExercises(); // Wyczyść wygenerowane ćwiczenia
+    setGeneratedTypes([]); // Reset typów
+    setGeneratedCount("1"); // Reset liczby
     onOpenChange(false);
   };
 
@@ -528,17 +559,72 @@ export function CreateHomeworkModal({
               </p>
             </div>
 
-            {/* Generate More Exercises Section */}
-            {worksheetFormData && (
-              <div className="space-y-2 border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <Label>Generate Additional Exercises</Label>
+            {/* Generate More Exercises Section - ETAP A */}
+            {worksheetFormData && availableExerciseTypes.length > 0 && (
+              <div className="space-y-3 border-t pt-4">
+                <Label>Generate Additional Exercises</Label>
+                
+                {/* Wybór typów ćwiczeń */}
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Select Exercise Types:</Label>
+                  <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2">
+                    {availableExerciseTypes.map((type: string) => (
+                      <div key={type} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`gen-type-${type}`}
+                          checked={generatedTypes.includes(type)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setGeneratedTypes(prev => [...prev, type]);
+                            } else {
+                              setGeneratedTypes(prev => prev.filter(t => t !== type));
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor={`gen-type-${type}`}
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {exerciseTypeLabels[type] || type}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Wybór liczby ćwiczeń na typ */}
+                <div className="flex items-center gap-3">
+                  <Label htmlFor="gen-count" className="text-sm whitespace-nowrap">
+                    Exercises per type:
+                  </Label>
+                  <Select value={generatedCount} onValueChange={setGeneratedCount}>
+                    <SelectTrigger id="gen-count" className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Przycisk generowania */}
+                <div className="flex gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => generateSimilarExercises(worksheetFormData, teacherId)}
-                    disabled={isGeneratingExercises}
+                    onClick={() => generateSimilarExercises(
+                      worksheetFormData, 
+                      teacherId,
+                      {
+                        targetTypes: generatedTypes,
+                        countPerType: parseInt(generatedCount)
+                      }
+                    )}
+                    disabled={isGeneratingExercises || generatedTypes.length === 0}
+                    className="flex-1"
                   >
                     {isGeneratingExercises ? (
                       <>
@@ -548,12 +634,23 @@ export function CreateHomeworkModal({
                     ) : (
                       <>
                         <Sparkles className="mr-2 h-4 w-4" />
-                        Generate Similar
+                        Generate {generatedTypes.length > 0 ? `(${generatedTypes.length * parseInt(generatedCount)})` : ''}
                       </>
                     )}
                   </Button>
+                  {generatedExercises.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearGeneratedExercises}
+                    >
+                      Clear
+                    </Button>
+                  )}
                 </div>
                 
+                {/* Lista wygenerowanych ćwiczeń */}
                 {generatedExercises.length > 0 && (
                   <div className="border rounded-md p-4 max-h-48 overflow-y-auto space-y-2 bg-amber-50/30">
                     <p className="text-xs text-muted-foreground mb-2">
@@ -570,7 +667,7 @@ export function CreateHomeworkModal({
                           htmlFor={exercise.id}
                           className="text-sm font-normal cursor-pointer"
                         >
-                          {exercise.title || `${exercise.type} exercise`}
+                          {exercise.title || `${exerciseTypeLabels[exercise.type] || exercise.type}`}
                         </Label>
                       </div>
                     ))}
