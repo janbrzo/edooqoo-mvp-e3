@@ -263,7 +263,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ workshe
                   {getIconComponent(exercise.icon || 'fa-book-open')}
                 </div>
                 <h3 className="text-lg font-semibold">
-                  {exercise.title || `Exercise ${index + 1}`}
+                  Exercise {index + 1}: {exercise.title || `Untitled Exercise`}
                 </h3>
               </div>
               <div className="flex items-center bg-white/20 px-3 py-1 rounded-md">

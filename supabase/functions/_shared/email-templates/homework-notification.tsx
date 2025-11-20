@@ -129,10 +129,10 @@ const detailText = {
 
 const homeworkBox = {
   backgroundColor: '#f8fafc',
-  border: '1px solid #e2e8f0',
-  borderRadius: '8px',
-  padding: '24px',
-  margin: '24px 40px',
+            border: '1px solid #e2e8f0',
+            borderRadius: '8px',
+            padding: '24px',
+            margin: '24px 0',
 };
 
 const button = {

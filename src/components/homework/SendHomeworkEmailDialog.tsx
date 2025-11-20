@@ -109,12 +109,12 @@ export function SendHomeworkEmailDialog({
                 <strong>Deadline:</strong> {format(new Date(deadline), 'MMM dd, yyyy HH:mm')}
               </div>
             )}
-            {reminderScheduledAt && (
-              <div className="text-sm mt-2 flex items-center gap-2 text-amber-600">
-                <Clock className="h-4 w-4" />
-                <strong>Reminder scheduled for:</strong> {format(new Date(reminderScheduledAt), 'MMM dd, yyyy HH:mm')}
-              </div>
-            )}
+          {reminderScheduledAt && new Date() < new Date(reminderScheduledAt) && (
+            <div className="text-sm mt-2 flex items-center gap-2 text-amber-600">
+              <Clock className="h-4 w-4" />
+              <strong>Reminder scheduled for:</strong> {format(new Date(reminderScheduledAt), 'MMM dd, yyyy HH:mm')}
+            </div>
+          )}
           </DialogDescription>
         </DialogHeader>
 
