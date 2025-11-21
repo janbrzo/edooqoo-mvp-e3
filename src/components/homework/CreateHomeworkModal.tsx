@@ -559,7 +559,6 @@ export function CreateHomeworkModal({
                         'categorize': 'Categorize',
                         'negative-prefixes': 'Negative Prefixes',
                         'dialogue': 'Dialogue Practice',
-                        'listening-comprehension': 'Listening Comprehension',
                         'discussion': 'Discussion Questions',
                         'error-correction': 'Error Correction',
                         'reading': 'Reading Comprehension',
@@ -739,14 +738,40 @@ export function CreateHomeworkModal({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="12">12 hours before</SelectItem>
-                      <SelectItem value="24">24 hours before (default)</SelectItem>
-                      <SelectItem value="48">2 days before</SelectItem>
-                      <SelectItem value="72">3 days before</SelectItem>
-                      <SelectItem value="96">4 days before</SelectItem>
-                      <SelectItem value="120">5 days before</SelectItem>
-                      <SelectItem value="144">6 days before</SelectItem>
-                      <SelectItem value="168">7 days before</SelectItem>
+                      {(() => {
+                        const hoursUntilDeadline = deadline 
+                          ? (deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60)
+                          : null;
+                        
+                        return (
+                          <>
+                            <SelectItem value="6" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 6}>
+                              6 hours before
+                            </SelectItem>
+                            <SelectItem value="12" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 12}>
+                              12 hours before
+                            </SelectItem>
+                            <SelectItem value="23" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 23}>
+                              23 hours before
+                            </SelectItem>
+                            <SelectItem value="24" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 24}>
+                              24 hours before (default)
+                            </SelectItem>
+                            <SelectItem value="48" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 48}>
+                              2 days before
+                            </SelectItem>
+                            <SelectItem value="72" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 72}>
+                              3 days before
+                            </SelectItem>
+                            <SelectItem value="96" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 96}>
+                              4 days before
+                            </SelectItem>
+                            <SelectItem value="120" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 120}>
+                              5 days before
+                            </SelectItem>
+                          </>
+                        );
+                      })()}
                     </SelectContent>
                   </Select>
                 </div>

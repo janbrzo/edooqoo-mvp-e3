@@ -33,66 +33,66 @@ export const useHomeworkExerciseGeneration = () => {
     try {
       console.log('🎯 Generating similar exercises for homework', options);
       
-      // If options.targetTypes is provided, generate sequentially for each type
+      // If options.targetTypes is provided, use BATCH GENERATION
       if (options?.targetTypes && options.targetTypes.length > 0) {
         const count = options.countPerType && options.countPerType > 0 ? options.countPerType : 1;
         
-        // Build array of tasks: for each type, generate 'count' exercises
-        const tasks = options.targetTypes.flatMap(type => 
-          Array(count).fill(type)
-        );
+        console.log(`📝 BATCH MODE: Will generate ${options.targetTypes.length} type(s), ${count} exercise(s) each`);
+        console.log(`   Types: ${options.targetTypes.join(', ')}`);
         
-        console.log(`📝 Will generate ${tasks.length} exercise(s): ${tasks.join(', ')}`);
-        
-        // Generate exercises sequentially
-        for (let i = 0; i < tasks.length; i++) {
-          const targetType = tasks[i];
-          console.log(`⏳ Generating ${i + 1}/${tasks.length}: ${targetType}`);
-          
-          const response = await fetch('https://bvfrkzdlklyvnhlpleck.supabase.co/functions/v1/generateWorksheet', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+        // ✅ BATCH GENERATION: Send ONE request with ALL target types
+        const response = await fetch('https://bvfrkzdlklyvnhlpleck.supabase.co/functions/v1/generateWorksheet', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt: createGenerationPrompt(
+              worksheetFormData, 
+              undefined, // No single targetType - we're doing batch
+              count, 
+              options.additionalInstructions
+            ),
+            formData: {
+              ...worksheetFormData,
+              regenerationMode: true,
+              // Send all target types as an array for batch processing
+              targetExerciseTypes: options.targetTypes,
+              exerciseCountPerType: count
             },
-            body: JSON.stringify({
-              prompt: createGenerationPrompt(worksheetFormData, targetType, 1, options?.additionalInstructions),
-              formData: {
-                ...worksheetFormData,
-                regenerationMode: true,
-                targetExerciseType: targetType
-              },
-              userId,
-              isRegeneration: true
-            })
-          });
+            userId,
+            isRegeneration: true,
+            isBatchGeneration: true // Flag to indicate batch mode
+          })
+        });
 
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            throw new Error(errorData?.error || `Failed to generate ${targetType}`);
-          }
-
-          const result = await response.json();
-          
-          if (result.exercises && result.exercises.length > 0) {
-            // Add unique IDs and selection state, normalize text fields
-            const exercisesWithState = result.exercises.map((exercise: any, index: number) => ({
-              ...exercise,
-              id: `generated-${Date.now()}-${i}-${index}`,
-              selected: false,
-              title: normalizeExerciseField(exercise.title),
-              instructions: normalizeExerciseField(exercise.instructions),
-              content: normalizeExerciseField(exercise.content),
-            }));
-            
-            // APPEND to existing generated exercises
-            setGeneratedExercises(prev => [...prev, ...exercisesWithState]);
-            console.log(`✅ Generated ${exercisesWithState.length} exercise(s) for ${targetType}`);
-          }
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error || 'Failed to generate exercises');
         }
-        
-        toast.success(`Generated ${tasks.length} exercise(s) successfully`);
+
+        const data = await response.json();
+        console.log('✅ Batch generation successful:', data);
+
+        if (data.exercises && Array.isArray(data.exercises)) {
+          const exercisesWithState = data.exercises.map((exercise: any, index: number) => ({
+            ...exercise,
+            id: `generated-${Date.now()}-${index}`,
+            selected: false,
+            title: normalizeExerciseField(exercise.title),
+            instructions: normalizeExerciseField(exercise.instructions),
+            content: normalizeExerciseField(exercise.content),
+          }));
+          
+          setGeneratedExercises((prev) => [...prev, ...exercisesWithState]);
+          toast.success(`Generated ${exercisesWithState.length} exercise(s) successfully!`);
+        } else {
+          throw new Error('No exercises returned from batch generation');
+        }
       } else {
-        // Original behavior: generate 2-3 general exercises
+        // Fallback: Generate one generic exercise
+        console.log('📝 Generating generic exercise(s)');
+        
         const response = await fetch('https://bvfrkzdlklyvnhlpleck.supabase.co/functions/v1/generateWorksheet', {
           method: 'POST',
           headers: {
@@ -102,7 +102,7 @@ export const useHomeworkExerciseGeneration = () => {
             prompt: createGenerationPrompt(worksheetFormData, undefined, undefined, options?.additionalInstructions),
             formData: {
               ...worksheetFormData,
-              regenerationMode: true,
+              regenerationMode: true
             },
             userId,
             isRegeneration: true
@@ -114,10 +114,11 @@ export const useHomeworkExerciseGeneration = () => {
           throw new Error(errorData?.error || 'Failed to generate exercises');
         }
 
-        const result = await response.json();
-        
-        if (result.exercises && result.exercises.length > 0) {
-          const exercisesWithState = result.exercises.map((exercise: any, index: number) => ({
+        const data = await response.json();
+        console.log('✅ Generic generation successful');
+
+        if (data.exercises && Array.isArray(data.exercises)) {
+          const exercisesWithState = data.exercises.map((exercise: any, index: number) => ({
             ...exercise,
             id: `generated-${Date.now()}-${index}`,
             selected: false,
@@ -126,13 +127,10 @@ export const useHomeworkExerciseGeneration = () => {
             content: normalizeExerciseField(exercise.content),
           }));
           
-          setGeneratedExercises(exercisesWithState);
-          toast.success(`Generated ${exercisesWithState.length} similar exercise(s)`);
-        } else {
-          throw new Error('No exercises returned');
+          setGeneratedExercises((prev) => [...prev, ...exercisesWithState]);
+          toast.success(`Generated ${exercisesWithState.length} exercise(s)!`);
         }
       }
-      
     } catch (error) {
       console.error('❌ Error generating exercises:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to generate exercises');
