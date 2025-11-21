@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Tables } from '@/integrations/supabase/types';
 
 type Student = Tables<'students'>;
@@ -13,7 +14,7 @@ interface StudentEditDialogProps {
   student: Student;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, updates: Partial<Pick<Student, 'name' | 'english_level' | 'main_goal' | 'student_email'>>) => Promise<any>;
+  onSave: (id: string, updates: Partial<Pick<Student, 'name' | 'english_level' | 'main_goal' | 'student_email' | 'send_overdue_emails'>>) => Promise<any>;
 }
 
 const englishLevels = [
@@ -44,6 +45,7 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
   const [englishLevel, setEnglishLevel] = useState(student.english_level);
   const [mainGoal, setMainGoal] = useState(student.main_goal);
   const [studentEmail, setStudentEmail] = useState(student.student_email || '');
+  const [sendOverdueEmails, setSendOverdueEmails] = useState(student.send_overdue_emails ?? true);
   const [customGoal, setCustomGoal] = useState(
     mainGoals.find(goal => goal.value === student.main_goal) ? '' : student.main_goal
   );
@@ -57,7 +59,8 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
         name,
         english_level: englishLevel,
         main_goal: goalToSave,
-        student_email: studentEmail || null
+        student_email: studentEmail || null,
+        send_overdue_emails: sendOverdueEmails
       });
       onClose();
     } catch (error) {
@@ -154,6 +157,20 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
             <p className="text-xs text-muted-foreground">
               Email will be used for homework notifications
             </p>
+          </div>
+
+          <div className="flex items-center justify-between space-x-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="send-overdue">Send overdue homework emails</Label>
+              <p className="text-xs text-muted-foreground">
+                Automatically send reminders when homework is overdue
+              </p>
+            </div>
+            <Switch 
+              id="send-overdue" 
+              checked={sendOverdueEmails} 
+              onCheckedChange={setSendOverdueEmails} 
+            />
           </div>
         </div>
         

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useStudents } from '@/hooks/useStudents';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { Plus } from 'lucide-react';
@@ -42,6 +43,7 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
   const [mainGoal, setMainGoal] = useState('');
   const [customGoal, setCustomGoal] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
+  const [sendOverdueEmails, setSendOverdueEmails] = useState(true);
   const [loading, setLoading] = useState(false);
   const { addStudent, refetch } = useStudents();
   const { refreshProgress } = useOnboardingProgress();
@@ -53,13 +55,14 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
 
     setLoading(true);
     try {
-      await addStudent(name, englishLevel, finalGoal, studentEmail || undefined);
+      await addStudent(name, englishLevel, finalGoal, studentEmail || undefined, sendOverdueEmails);
       // Reset form and close dialog
       setName('');
       setEnglishLevel('');
       setMainGoal('');
       setCustomGoal('');
       setStudentEmail('');
+      setSendOverdueEmails(true);
       setOpen(false);
       
       // MAXIMUM-ENHANCED: Extreme aggressive refresh for INSTANT onboarding update
@@ -189,6 +192,19 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
             <p className="text-xs text-muted-foreground">
               Email will be used for homework notifications
             </p>
+          </div>
+          <div className="flex items-center justify-between space-x-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="send-overdue-new">Send overdue homework emails</Label>
+              <p className="text-xs text-muted-foreground">
+                Automatically send reminders when homework is overdue
+              </p>
+            </div>
+            <Switch 
+              id="send-overdue-new" 
+              checked={sendOverdueEmails} 
+              onCheckedChange={setSendOverdueEmails} 
+            />
           </div>
           <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

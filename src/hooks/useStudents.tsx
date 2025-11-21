@@ -44,7 +44,7 @@ export const useStudents = () => {
     }
   }, []);
 
-  const addStudent = async (name: string, englishLevel: string, mainGoal: string, studentEmail?: string) => {
+  const addStudent = async (name: string, englishLevel: string, mainGoal: string, studentEmail?: string, sendOverdueEmails: boolean = true) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -60,7 +60,8 @@ export const useStudents = () => {
           main_goal: mainGoal,
           teacher_id: user.id,
           teacher_email: userEmail,
-          student_email: studentEmail || null
+          student_email: studentEmail || null,
+          send_overdue_emails: sendOverdueEmails
         }])
         .select()
         .single();
@@ -86,7 +87,7 @@ export const useStudents = () => {
     }
   };
 
-  const updateStudent = async (id: string, updates: Partial<Pick<Student, 'name' | 'english_level' | 'main_goal' | 'student_email'>>) => {
+  const updateStudent = async (id: string, updates: Partial<Pick<Student, 'name' | 'english_level' | 'main_goal' | 'student_email' | 'send_overdue_emails'>>) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
