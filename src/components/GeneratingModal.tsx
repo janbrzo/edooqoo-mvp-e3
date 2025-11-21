@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 
@@ -10,8 +11,8 @@ interface GeneratingModalProps {
 const generationSteps = [
   "Analyzing your requirements...",
   "🎵 Generating audio recording... (40-45s)", // FRONTEND: Audio generation
-  "🎨 Creating custom AI image... (35-40s)", // FRONTEND: Image generation
-  "📝 Generating reading passage...", // BACKEND: Exercises start
+  "🎨 Creating custom AI image... (35-40s)",   // FRONTEND: Image generation
+  "📝 Generating reading passage...",           // BACKEND: Exercises start
   "✏️ Creating vocabulary exercises...",
   "📚 Developing grammar activities...",
   "🎯 Designing interactive tasks...",
@@ -20,7 +21,7 @@ const generationSteps = [
   "📄 Finalizing worksheet layout...",
   "✅ Quality checking exercises...",
   "📦 Preparing downloadable content...",
-  "🎉 Almost ready...",
+  "🎉 Almost ready..."
 ];
 
 export default function GeneratingModal({ isOpen }: GeneratingModalProps) {
@@ -38,7 +39,7 @@ export default function GeneratingModal({ isOpen }: GeneratingModalProps) {
 
     // More realistic progress - slower and more variable
     const progressInterval = setInterval(() => {
-      setProgress((prev) => {
+      setProgress(prev => {
         if (prev >= 95) {
           // Slow down significantly near the end
           return Math.min(prev + Math.random() * 0.5, 99);
@@ -56,21 +57,18 @@ export default function GeneratingModal({ isOpen }: GeneratingModalProps) {
     }, 800); // Slower interval
 
     // Realistic step progression - varies between 3-8 seconds per step
-    const stepInterval = setInterval(
-      () => {
-        setCurrentStep((prev) => {
-          if (prev >= generationSteps.length - 1) {
-            return Math.floor(Math.random() * 3) + generationSteps.length - 3; // Stay in last 3 steps
-          }
-          return prev + 1;
-        });
-      },
-      Math.random() * 5000 + 3000,
-    ); // Between 3-8 seconds
+    const stepInterval = setInterval(() => {
+      setCurrentStep(prev => {
+        if (prev >= generationSteps.length - 1) {
+          return Math.floor(Math.random() * 3) + generationSteps.length - 3; // Stay in last 3 steps
+        }
+        return prev + 1;
+      });
+    }, Math.random() * 5000 + 3000); // Between 3-8 seconds
 
     // Timer - counts real time
     const timerInterval = setInterval(() => {
-      setElapsedTime((prev) => prev + 1);
+      setElapsedTime(prev => prev + 1);
     }, 1000);
 
     return () => {
@@ -85,7 +83,7 @@ export default function GeneratingModal({ isOpen }: GeneratingModalProps) {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
   return (
@@ -94,23 +92,25 @@ export default function GeneratingModal({ isOpen }: GeneratingModalProps) {
         <h2 className="text-2xl font-semibold text-center bg-gradient-to-r from-pink-500 via-violet-500 to-blue-500 bg-clip-text text-transparent">
           Generating Your Worksheet
         </h2>
-
-        <Progress
-          value={progress}
-          className="h-3 bg-gray-200"
-          indicatorClassName="bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500"
+        
+        <Progress 
+          value={progress} 
+          className="h-3 bg-gray-200" 
+          indicatorClassName="bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 to-purple-500" 
         />
-
+        
         <div className="flex justify-between items-center text-sm text-gray-500">
           <span>Time: {formatTime(elapsedTime)}</span>
           <span>{Math.round(progress)}%</span>
         </div>
-
+        
         <p className="text-center min-h-[24px] animate-pulse font-normal text-sky-400">
           {generationSteps[currentStep]}
         </p>
-
-        <p className="text-center text-xs text-gray-400">It can take up to 1:30 min. (2:30 media enchanced)</p>
+        
+        <p className="text-center text-xs text-gray-400">
+          It can take up to 1:30 min
+        </p>
       </div>
     </div>
   );
