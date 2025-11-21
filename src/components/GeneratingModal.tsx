@@ -3,51 +3,30 @@ import { Progress } from "@/components/ui/progress";
 
 interface GeneratingModalProps {
   isOpen: boolean;
-  hasAudio?: boolean;
-  hasImage?: boolean;
 }
 
-// Dynamic generation steps based on selected media
-const getGenerationSteps = (hasAudio: boolean, hasImage: boolean) => {
-  const steps = ["Analyzing your requirements..."];
-  
-  // Add media steps only if selected
-  if (hasAudio) {
-    steps.push("🎵 Generating audio recording... (40-45s)");
-  }
-  if (hasImage) {
-    steps.push("🎨 Creating custom AI image... (35-40s)");
-  }
-  
-  // Add core steps (always)
-  steps.push(
-    "📝 Generating reading passage...",
-    "✏️ Creating vocabulary exercises...",
-    "📚 Developing grammar activities...",
-    "🎯 Designing interactive tasks...",
-    "👨‍🏫 Adding teacher guidance...",
-    "⚙️ Optimizing content difficulty...",
-    "📄 Finalizing worksheet layout...",
-    "✅ Quality checking exercises...",
-    "📦 Preparing downloadable content...",
-    "🎉 Almost ready..."
-  );
-  
-  return steps;
-};
+// NEW: More realistic generation steps that reflect actual backend process
+// Media generation happens FIRST (frontend), then exercises (backend)
+const generationSteps = [
+  "Analyzing your requirements...",
+  "🎵 Generating audio recording... (40-45s)", // FRONTEND: Audio generation
+  "🎨 Creating custom AI image... (35-40s)", // FRONTEND: Image generation
+  "📝 Generating reading passage...", // BACKEND: Exercises start
+  "✏️ Creating vocabulary exercises...",
+  "📚 Developing grammar activities...",
+  "🎯 Designing interactive tasks...",
+  "👨‍🏫 Adding teacher guidance...",
+  "⚙️ Optimizing content difficulty...",
+  "📄 Finalizing worksheet layout...",
+  "✅ Quality checking exercises...",
+  "📦 Preparing downloadable content...",
+  "🎉 Almost ready...",
+];
 
-export default function GeneratingModal({ 
-  isOpen, 
-  hasAudio = false,
-  hasImage = false
-}: GeneratingModalProps) {
+export default function GeneratingModal({ isOpen }: GeneratingModalProps) {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
-
-  // Dynamic steps and duration based on media
-  const generationSteps = getGenerationSteps(hasAudio, hasImage);
-  const totalDuration = (hasAudio || hasImage) ? 150 : 90; // 150s with media, 90s without
 
   useEffect(() => {
     if (!isOpen) {
@@ -57,22 +36,24 @@ export default function GeneratingModal({
       return;
     }
 
-    // Adaptive progress based on totalDuration
+    // More realistic progress - slower and more variable
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
-        const targetSpeed = 99 / totalDuration; // Fill 99% in totalDuration seconds
-        
         if (prev >= 95) {
-          return Math.min(prev + targetSpeed * 0.2, 99); // Slower at end
+          // Slow down significantly near the end
+          return Math.min(prev + Math.random() * 0.5, 99);
         } else if (prev >= 80) {
-          return prev + targetSpeed * 0.5;
+          // Slow down at 80%
+          return prev + Math.random() * 1;
         } else if (prev >= 60) {
-          return prev + targetSpeed * 0.7;
+          // Medium speed at 60%
+          return prev + Math.random() * 2;
         } else {
-          return prev + targetSpeed; // Normal speed
+          // Faster at the beginning
+          return prev + Math.random() * 3;
         }
       });
-    }, 1000); // Every 1 second
+    }, 800); // Slower interval
 
     // Realistic step progression - varies between 3-8 seconds per step
     const stepInterval = setInterval(
@@ -97,7 +78,7 @@ export default function GeneratingModal({
       clearInterval(stepInterval);
       clearInterval(timerInterval);
     };
-  }, [isOpen, totalDuration, generationSteps.length]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -129,9 +110,7 @@ export default function GeneratingModal({
           {generationSteps[currentStep]}
         </p>
 
-        <p className="text-center text-xs text-gray-400">
-          It can take up to {(hasAudio || hasImage) ? '2:30 min. (media enhanced)' : '1:30 min.'}
-        </p>
+        <p className="text-center text-xs text-gray-400">It can take up to 1:30 min. (2:30 media enchanced)</p>
       </div>
     </div>
   );

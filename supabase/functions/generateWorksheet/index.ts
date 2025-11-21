@@ -121,7 +121,7 @@ serve(async (req) => {
             { role: "system", content: batchSystemMessage },
             { role: "user", content: sanitizedPrompt }
           ],
-          max_completion_tokens: 8000, // ⚡ Optimized for faster response
+          max_completion_tokens: 20000,
         });
         
         const batchContent = batchResponse.choices[0].message.content;
@@ -257,57 +257,27 @@ serve(async (req) => {
     console.log("🔵 HEARTBEAT: Starting OpenAI API call", {
       timestamp: new Date().toISOString(),
       elapsedSinceStart: Math.round((openaiStartTime - generationStartTime) / 1000) + "s",
-      model: "gpt-5-mini-2025-08-07",
+      model: "gpt-5-mini-2025-08-07", //gpt-4.1-2025-04-14
       exerciseCount,
       promptLength: sanitizedPrompt.length,
     });
 
-    // 🛡️ OPTIMIZATION: Soft timeout to prevent 546 errors
-    const controller = new AbortController();
-    const OPENAI_TIMEOUT_MS = 55_000; // 55s (before 60s platform limit)
-
-    const timeoutId = setTimeout(() => {
-      console.error('❌ OpenAI timeout after 55s - aborting request');
-      controller.abort();
-    }, OPENAI_TIMEOUT_MS);
-
-    let aiResponse;
-    try {
-      // Generate worksheet using OpenAI with complete prompt structure
-      aiResponse = await openai.chat.completions.create({
-        model: "gpt-5-mini-2025-08-07",
-        temperature: 1,
-        messages: [
-          {
-            role: "system",
-            content: systemMessage,
-          },
-          {
-            role: "user",
-            content: sanitizedPrompt,
-          },
-        ],
-        max_completion_tokens: 8000, // ⚡ Reduced from 20000 to optimize response time
-        signal: controller.signal, // 🛡️ Enable timeout abort
-      });
-    } catch (err) {
-      clearTimeout(timeoutId);
-      
-      if (err instanceof Error && err.name === 'AbortError') {
-        console.error('❌ OpenAI request timed out after 55 seconds');
-        return new Response(
-          JSON.stringify({ 
-            error: "Worksheet generation timed out. Please try again with slightly simpler parameters or shorter audio content." 
-          }),
-          { status: 504, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Re-throw other errors to be caught by outer try-catch
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    // Generate worksheet using OpenAI with complete prompt structure
+    const aiResponse = await openai.chat.completions.create({
+      model: "gpt-5-mini-2025-08-07", // gpt-4.1-2025-04-14 Changed back to gpt-4o i można gpt-4.1-2025-04-14
+      temperature: 1, //0.2
+      messages: [
+        {
+          role: "system",
+          content: systemMessage,
+        },
+        {
+          role: "user",
+          content: sanitizedPrompt,
+        },
+      ],
+      max_completion_tokens: 20000, // nowa nazwa parametru  max_completion_tokens: 7500
+    });
 
     // HEARTBEAT LOG: After OpenAI API call
     const openaiEndTime = Date.now();

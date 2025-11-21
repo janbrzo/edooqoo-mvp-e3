@@ -20,8 +20,6 @@ export const useWorksheetGeneration = (
 ) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [startGenerationTime, setStartGenerationTime] = useState<number>(0);
-  const [hasMediaAudio, setHasMediaAudio] = useState(false);
-  const [hasMediaImage, setHasMediaImage] = useState(false);
   const { toast } = useToast();
   const { trackEvent } = useEventTracking(userId);
   const { tokenLeft, hasTokens, isDemo, consumeToken } = useTokenSystem(userId);
@@ -120,10 +118,6 @@ export const useWorksheetGeneration = (
       );
       
       console.log('🔍 Media requirements:', { requiresAudio, requiresPicture, hasAudio: !!selectedAudio, hasImage: !!selectedImage });
-      
-      // Set media flags for progress indicator
-      setHasMediaAudio(requiresAudio);
-      setHasMediaImage(requiresPicture);
       
       // Generate media BEFORE worksheet (if needed and not already provided)
       if (requiresAudio && !selectedAudio) {
@@ -387,8 +381,6 @@ export const useWorksheetGeneration = (
     generateWorksheetHandler,
     tokenLeft,
     hasTokens,
-    isDemo,
-    hasMediaAudio,
-    hasMediaImage
+    isDemo
   };
 };
