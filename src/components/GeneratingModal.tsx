@@ -6,21 +6,22 @@ interface GeneratingModalProps {
   isOpen: boolean;
 }
 
+// NEW: More realistic generation steps that reflect actual backend process
+// Media generation happens FIRST (frontend), then exercises (backend)
 const generationSteps = [
   "Analyzing your requirements...",
-  "Researching topic-specific content...", 
-  "Creating exercise structure...",
-  "🎨 Generating custom AI image...", // NEW: Image generation step
-  "Generating reading comprehension...",
-  "Creating vocabulary exercises...",
-  "Developing grammar activities...",
-  "Designing interactive tasks...",
-  "Adding teacher guidance...",
-  "Optimizing content difficulty...",
-  "Finalizing worksheet layout...",
-  "Quality checking exercises...",
-  "Preparing downloadable content...",
-  "Almost ready..."
+  "🎵 Generating audio recording... (40-45s)", // FRONTEND: Audio generation
+  "🎨 Creating custom AI image... (35-40s)",   // FRONTEND: Image generation
+  "📝 Generating reading passage...",           // BACKEND: Exercises start
+  "✏️ Creating vocabulary exercises...",
+  "📚 Developing grammar activities...",
+  "🎯 Designing interactive tasks...",
+  "👨‍🏫 Adding teacher guidance...",
+  "⚙️ Optimizing content difficulty...",
+  "📄 Finalizing worksheet layout...",
+  "✅ Quality checking exercises...",
+  "📦 Preparing downloadable content...",
+  "🎉 Almost ready..."
 ];
 
 export default function GeneratingModal({ isOpen }: GeneratingModalProps) {

@@ -203,162 +203,18 @@ serve(async (req) => {
     });
 
     // ============================================================
-    // OPTYMALIZACJA 1: RÓWNOLEGŁE GENEROWANIE IMAGE + AUDIO
+    // MEDIA HANDLING - Now pre-generated on frontend
     // ============================================================
+    // Media is now generated on the frontend BEFORE this function is called.
+    // This reduces backend execution time from 60s+ to <30s, preventing 546 WORKER_LIMIT errors.
     
-    let selectedImage = formData?.selectedImage || null;
-    let selectedAudio = formData?.selectedAudio || null;
+    const selectedImage = formData?.selectedImage || null;
+    const selectedAudio = formData?.selectedAudio || null;
     
-    // DEBUGGING: Log received media from formData
-    console.log('📸🎵 [MEDIA-CHECK] Initial media state:', {
-      hasSelectedImage: !!selectedImage,
-      hasSelectedAudio: !!selectedAudio,
-      requiresPicture,
-      requiresAudio,
+    console.log('📸🎵 [MEDIA-CHECK] Received pre-generated media:', {
+      hasImage: !!selectedImage,
+      hasAudio: !!selectedAudio,
     });
-
-    // Prepare media generation promises for parallel execution
-    const mediaGenerationPromises: Array<{
-      type: 'image' | 'audio';
-      promise: Promise<any>;
-    }> = [];
-
-    // Add IMAGE generation promise if needed
-    if (requiresPicture && !selectedImage) {
-      console.log("🎨 [IMAGE-PARALLEL] Queuing image generation");
-      
-      const imagePromise = (async () => {
-        const startTime = Date.now();
-        try {
-          const topic = formData?.lessonTopic || formData?.topic || "general English lesson";
-          const englishLevel = formData?.englishLevel || "B1/B2";
-
-          console.log("🎨 [IMAGE-PARALLEL] Starting image generation:", { topic, englishLevel });
-
-          const imageGenResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-image`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
-            },
-            body: JSON.stringify({ topic, englishLevel }),
-          });
-
-          if (!imageGenResponse.ok) {
-            const errorText = await imageGenResponse.text();
-            console.error("🎨 [IMAGE-PARALLEL] Generation failed:", errorText);
-            throw new Error(`Image generation failed: ${imageGenResponse.status}`);
-          }
-
-          const imageGenData = await imageGenResponse.json();
-          const duration = Math.round((Date.now() - startTime) / 1000);
-
-          if (imageGenData.success && imageGenData.image) {
-            console.log("🎨 [IMAGE-PARALLEL] Image generated successfully in " + duration + "s");
-            return { success: true, data: imageGenData.image };
-          } else {
-            throw new Error("Invalid response from generate-image function");
-          }
-        } catch (imageError) {
-          const duration = Math.round((Date.now() - startTime) / 1000);
-          console.error("🎨 [IMAGE-PARALLEL] Failed after " + duration + "s:", imageError);
-          return { success: false, error: imageError };
-        }
-      })();
-
-      mediaGenerationPromises.push({ type: 'image', promise: imagePromise });
-    }
-
-    // Add AUDIO generation promise if needed
-    if (requiresAudio && !selectedAudio) {
-      console.log("🎵 [AUDIO-PARALLEL] Queuing audio generation");
-
-      const audioPromise = (async () => {
-        const startTime = Date.now();
-        try {
-          const topic = formData?.lessonTopic || "general English lesson";
-          const englishLevel = formData?.englishLevel || "B1/B2";
-          const lessonFocus = formData?.lessonGoal || "";
-          const additionalInformation = formData?.additionalInformation || "";
-          const grammarFocus = formData?.teachingPreferences || "";
-
-          console.log("🎵 [AUDIO-PARALLEL] Starting audio generation:", { 
-            topic, 
-            englishLevel, 
-            lessonFocus 
-          });
-
-          const audioGenResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-audio`, {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              topic,
-              englishLevel,
-              lessonFocus,
-              additionalInformation,
-              grammarFocus,
-              duration: 90
-            }),
-          });
-
-          if (audioGenResponse.ok) {
-            const audioData = await audioGenResponse.json();
-            const duration = Math.round((Date.now() - startTime) / 1000);
-            console.log("🎵 [AUDIO-PARALLEL] Audio generated successfully in " + duration + "s");
-            return { success: true, data: audioData.audioData };
-          } else {
-            const errorText = await audioGenResponse.text();
-            console.error("🎵 [AUDIO-PARALLEL] Generation failed:", errorText);
-            throw new Error("Audio generation failed");
-          }
-        } catch (audioError) {
-          const duration = Math.round((Date.now() - startTime) / 1000);
-          console.error("🎵 [AUDIO-PARALLEL] Failed after " + duration + "s:", audioError);
-          return { success: false, error: audioError };
-        }
-      })();
-
-      mediaGenerationPromises.push({ type: 'audio', promise: audioPromise });
-    }
-
-    // EXECUTE ALL MEDIA GENERATION IN PARALLEL
-    if (mediaGenerationPromises.length > 0) {
-      const parallelStartTime = Date.now();
-      console.log(`⚡ [PARALLEL-MEDIA] Starting ${mediaGenerationPromises.length} media generation(s) in parallel`);
-
-      const results = await Promise.allSettled(
-        mediaGenerationPromises.map(item => item.promise)
-      );
-
-      const parallelDuration = Math.round((Date.now() - parallelStartTime) / 1000);
-      console.log(`⚡ [PARALLEL-MEDIA] All media generation completed in ${parallelDuration}s`);
-
-      // Process results
-      results.forEach((result, index) => {
-        const mediaType = mediaGenerationPromises[index].type;
-        
-        if (result.status === 'fulfilled') {
-          const { success, data } = result.value;
-          if (success && data) {
-            if (mediaType === 'image') {
-              selectedImage = data;
-              console.log("✅ [PARALLEL-MEDIA] Image assigned successfully");
-            } else if (mediaType === 'audio') {
-              selectedAudio = data;
-              console.log("✅ [PARALLEL-MEDIA] Audio assigned successfully");
-            }
-          } else {
-            console.log(`⚠️ [PARALLEL-MEDIA] ${mediaType} generation returned no data, continuing without`);
-          }
-        } else {
-          console.error(`❌ [PARALLEL-MEDIA] ${mediaType} generation rejected:`, result.reason);
-          console.log(`⚠️ Continuing worksheet generation without ${mediaType}`);
-        }
-      });
-    }
 
     const hasAudioMedia = selectedAudio !== null;
 

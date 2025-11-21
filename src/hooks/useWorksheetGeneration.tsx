@@ -78,7 +78,7 @@ export const useWorksheetGeneration = (
     });
     
     try {
-      console.log('📡 Calling generateWorksheet API...');
+      console.log('📡 Starting worksheet generation...');
       
       // NEW: Create full prompt for ChatGPT and save it to database
       const fullPrompt = formatPromptForAI(data);
@@ -90,9 +90,92 @@ export const useWorksheetGeneration = (
         throw new Error("You must be logged in to generate worksheets");
       }
       
-      // Pass the full prompt to the API
+      // ============================================================
+      // KROK 1: PRE-GENERATE MEDIA (if needed)
+      // This prevents 546 WORKER_LIMIT errors by moving media generation
+      // to frontend, reducing backend execution time from 60s+ to <30s
+      // ============================================================
+      let selectedAudio = data.selectedAudio || null;
+      let selectedImage = data.selectedImage || null;
+      
+      // Import media service
+      const { generateAudioForWorksheet, generateImageForWorksheet } = await import('@/services/mediaService');
+      
+      // Check if exercises require audio
+      const audioRequiredExercises = [
+        "listening-comprehension", "multiple-choice-audio", 
+        "true-false-audio", "fill-in-blanks-audio", "answer-questions-audio"
+      ];
+      const requiresAudio = data.selectedExercises?.some(ex => 
+        audioRequiredExercises.some(reqEx => ex.includes(reqEx))
+      );
+      
+      // Check if exercises require picture
+      const pictureRequiredExercises = [
+        "describe-picture", "answer-questions-picture",
+        "true-false-picture", "multiple-choice-picture"
+      ];
+      const requiresPicture = data.selectedExercises?.some(ex => 
+        pictureRequiredExercises.some(reqEx => ex.includes(reqEx))
+      );
+      
+      console.log('🔍 Media requirements:', { requiresAudio, requiresPicture, hasAudio: !!selectedAudio, hasImage: !!selectedImage });
+      
+      // Generate media BEFORE worksheet (if needed and not already provided)
+      if (requiresAudio && !selectedAudio) {
+        console.log('🎵 Pre-generating audio...');
+        toast({
+          title: "Generating audio...",
+          description: "This may take up to 45 seconds",
+        });
+        
+        try {
+          selectedAudio = await generateAudioForWorksheet(data);
+          console.log('✅ Audio pre-generated successfully');
+        } catch (error) {
+          console.error('❌ Audio generation failed:', error);
+          toast({
+            title: "Audio generation failed",
+            description: "Continuing without audio",
+            variant: "destructive"
+          });
+        }
+      }
+      
+      if (requiresPicture && !selectedImage) {
+        console.log('🎨 Pre-generating image...');
+        toast({
+          title: "Generating image...",
+          description: "This may take up to 40 seconds",
+        });
+        
+        try {
+          selectedImage = await generateImageForWorksheet(data);
+          console.log('✅ Image pre-generated successfully');
+        } catch (error) {
+          console.error('❌ Image generation failed:', error);
+          toast({
+            title: "Image generation failed",
+            description: "Continuing without image",
+            variant: "destructive"
+          });
+        }
+      }
+      
+      // ============================================================
+      // KROK 2: GENERATE WORKSHEET (now with pre-generated media)
+      // Backend execution time should now be <30s, preventing 546 errors
+      // ============================================================
+      console.log('📝 Generating worksheet with pre-generated media...');
+      toast({
+        title: "Generating exercises...",
+        description: "Creating your personalized worksheet",
+      });
+      
       const worksheetResult = await generateWorksheet({ 
-        ...data, 
+        ...data,
+        selectedAudio,    // ← Pre-generated or user-provided
+        selectedImage,    // ← Pre-generated or user-provided
         fullPrompt,
         formDataForStorage,
         studentId
