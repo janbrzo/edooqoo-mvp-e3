@@ -3,7 +3,11 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Calendar, Eye, Copy, ExternalLink, Trash2, FileText, CheckCircle2, Mail } from 'lucide-react';
+import { Plus, Calendar, Eye, Copy, ExternalLink, Trash2, FileText, CheckCircle2, Mail, Clock } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -38,6 +42,7 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
   const [deletingHomeworkId, setDeletingHomeworkId] = useState<string | null>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedHomeworkForEmail, setSelectedHomeworkForEmail] = useState<HomeworkAssignment | null>(null);
+  const [editingDeadline, setEditingDeadline] = useState<{id: string, date: Date, time: string} | null>(null);
   
   const { students } = useStudents();
   const { worksheets } = useWorksheetHistory(studentId);
@@ -159,6 +164,30 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
     }
   };
   
+  const handleUpdateDeadline = async (homeworkId: string, newDate: Date, newTime: string) => {
+    try {
+      // Combine date and time
+      const [hours, minutes] = newTime.split(':');
+      const combinedDateTime = new Date(newDate);
+      combinedDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      const { error } = await supabase
+        .from('homework_assignments')
+        .update({ deadline: combinedDateTime.toISOString() })
+        .eq('id', homeworkId)
+        .eq('teacher_id', teacherId);
+      
+      if (error) throw error;
+      
+      toast.success("Deadline updated successfully!");
+      refetch();
+      setEditingDeadline(null);
+    } catch (error) {
+      console.error('Error updating deadline:', error);
+      toast.error("Failed to update deadline");
+    }
+  };
+  
   const handleCreateNew = () => {
     if (worksheets.length === 0) {
       toast.error("No worksheets available. Create a worksheet first.");
@@ -255,13 +284,61 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
                         </Link>
                       </span>
             {hw.deadline && (
-              <Badge 
-                variant="secondary"
-                className={isOverdue(hw.deadline) && !hw.completed_at ? "text-red-600 border-red-600" : ""}
-              >
-                <Calendar className="h-3 w-3 mr-1" />
-                Due: {format(new Date(hw.deadline), 'MMM dd, yyyy')}
-              </Badge>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Badge 
+                    variant="secondary"
+                    className={`cursor-pointer hover:bg-secondary/80 ${isOverdue(hw.deadline) && !hw.completed_at ? "text-red-600 border-red-600" : ""}`}
+                  >
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Due: {format(new Date(hw.deadline), 'MMM dd, yyyy HH:mm')}
+                  </Badge>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <div className="p-3">
+                    <Label className="text-sm font-medium mb-2 block">Change Deadline</Label>
+                    <CalendarComponent
+                      mode="single"
+                      selected={editingDeadline?.id === hw.id ? editingDeadline.date : new Date(hw.deadline)}
+                      onSelect={(date) => {
+                        if (date) {
+                          const currentTime = editingDeadline?.id === hw.id 
+                            ? editingDeadline.time 
+                            : format(new Date(hw.deadline), 'HH:mm');
+                          setEditingDeadline({ id: hw.id, date, time: currentTime });
+                        }
+                      }}
+                      className="rounded-md border"
+                    />
+                    <div className="mt-3 space-y-2">
+                      <Label htmlFor={`time-${hw.id}`} className="text-sm">Time</Label>
+                      <Input 
+                        id={`time-${hw.id}`}
+                        type="time" 
+                        value={editingDeadline?.id === hw.id ? editingDeadline.time : format(new Date(hw.deadline), 'HH:mm')}
+                        onChange={(e) => {
+                          const currentDate = editingDeadline?.id === hw.id 
+                            ? editingDeadline.date 
+                            : new Date(hw.deadline);
+                          setEditingDeadline({ id: hw.id, date: currentDate, time: e.target.value });
+                        }}
+                      />
+                      <Button 
+                        onClick={() => {
+                          if (editingDeadline?.id === hw.id) {
+                            handleUpdateDeadline(hw.id, editingDeadline.date, editingDeadline.time);
+                          }
+                        }}
+                        className="w-full mt-2"
+                        size="sm"
+                      >
+                        <Clock className="h-4 w-4 mr-2" />
+                        Update Deadline
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             )}
                       <Badge variant="outline" className="text-xs">
                         Created: {format(new Date(hw.created_at), 'MMM dd, yyyy')}

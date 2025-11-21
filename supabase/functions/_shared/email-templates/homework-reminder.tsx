@@ -81,7 +81,7 @@ export const HomeworkReminderEmail = ({
             </Text>
             {!isOverdue && daysUntilDeadline <= 2 && (
               <Text style={urgentText}>
-                ⚡ {daysUntilDeadline === 0 ? 'Due today!' : `Only ${daysUntilDeadline} day${daysUntilDeadline !== 1 ? 's' : ''} left!`}
+                ⚡ {daysUntilDeadline === 0 ? 'Due today!' : daysUntilDeadline === 1 ? 'Only 1 day left!' : `Only ${daysUntilDeadline} days left!`}
               </Text>
             )}
           </div>
