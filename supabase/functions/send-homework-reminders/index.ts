@@ -55,7 +55,8 @@ Deno.serve(async (req) => {
         students!homework_assignments_student_id_fkey (
           id,
           name,
-          student_email
+          student_email,
+          send_overdue_emails
         ),
         teacher:profiles!homework_assignments_teacher_id_fkey (
           email,
@@ -121,15 +122,37 @@ Deno.serve(async (req) => {
         console.log(`  [FILTER] Homework "${hw.title}" (${hw.id}) - SKIP: No reminder scheduled`);
         return false;
       }
-      
+
+      const deadline = new Date(hw.deadline);
       const reminderTime = new Date(hw.reminder_scheduled_at);
-      const reminderDelay = hw.reminder_hours || 24; // Default 24h if not set
+      const reminderDelay = hw.reminder_hours || 24;
+      const isOverdue = now > deadline;
       
       console.log(`  [FILTER] Homework "${hw.title}" (${hw.id}):`);
       console.log(`      Deadline: ${hw.deadline}, Reminder delay: ${reminderDelay}h`);
       console.log(`      Reminder scheduled at: ${hw.reminder_scheduled_at}`);
       console.log(`      Current time: ${now.toISOString()}`);
+      console.log(`      Is overdue: ${isOverdue}`);
       
+      // OVERDUE LOGIC: Special handling for overdue homework
+      if (isOverdue) {
+        // Check 4a: Student has overdue emails enabled
+        if (student.send_overdue_emails === false) {
+          console.log(`      SKIP: Overdue emails disabled for this student`);
+          return false;
+        }
+        
+        // Check 4b: Overdue email not sent yet (send only ONCE)
+        if (hw.reminder_sent_at) {
+          console.log(`      SKIP: Overdue email already sent at ${hw.reminder_sent_at}`);
+          return false;
+        }
+        
+        console.log(`      ✅ PASS: Overdue homework, will send overdue email (first time)`);
+        return true;
+      }
+      
+      // REGULAR REMINDER LOGIC: Before deadline
       // Check 4: It's time to send reminder (current time >= scheduled time)
       if (now < reminderTime) {
         const hoursRemaining = Math.round((reminderTime.getTime() - now.getTime()) / (1000 * 60 * 60));

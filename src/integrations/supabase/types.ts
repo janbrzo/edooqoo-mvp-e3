@@ -458,6 +458,7 @@ export type Database = {
           id: string
           main_goal: string
           name: string
+          send_overdue_emails: boolean | null
           student_email: string | null
           teacher_email: string | null
           teacher_id: string
@@ -470,6 +471,7 @@ export type Database = {
           id?: string
           main_goal: string
           name: string
+          send_overdue_emails?: boolean | null
           student_email?: string | null
           teacher_email?: string | null
           teacher_id: string
@@ -482,6 +484,7 @@ export type Database = {
           id?: string
           main_goal?: string
           name?: string
+          send_overdue_emails?: boolean | null
           student_email?: string | null
           teacher_email?: string | null
           teacher_id?: string
