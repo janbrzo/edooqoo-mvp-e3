@@ -11,6 +11,7 @@ import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { useEventTracking } from "@/hooks/useEventTracking";
 import { useTokenSystem } from "@/hooks/useTokenSystem";
 import { supabase } from "@/integrations/supabase/client";
+import { generateAudioForWorksheet, generateImageForWorksheet } from '@/services/mediaService';
 
 export const useWorksheetGeneration = (
   userId: string | null,
@@ -97,9 +98,6 @@ export const useWorksheetGeneration = (
       // ============================================================
       let selectedAudio = data.selectedAudio || null;
       let selectedImage = data.selectedImage || null;
-      
-      // Import media service
-      const { generateAudioForWorksheet, generateImageForWorksheet } = await import('@/services/mediaService');
       
       // Check if exercises require audio
       const audioRequiredExercises = [
