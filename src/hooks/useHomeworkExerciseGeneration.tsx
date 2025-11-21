@@ -26,7 +26,7 @@ export const useHomeworkExerciseGeneration = () => {
   const generateSimilarExercises = async (
     worksheetFormData: any,
     userId: string,
-    options?: { targetTypes?: string[]; countPerType?: number }
+    options?: { targetTypes?: string[]; countPerType?: number; additionalInstructions?: string }
   ) => {
     setIsGenerating(true);
     
@@ -55,7 +55,7 @@ export const useHomeworkExerciseGeneration = () => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              prompt: createGenerationPrompt(worksheetFormData, targetType),
+              prompt: createGenerationPrompt(worksheetFormData, targetType, 1, options?.additionalInstructions),
               formData: {
                 ...worksheetFormData,
                 regenerationMode: true,
@@ -99,7 +99,7 @@ export const useHomeworkExerciseGeneration = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            prompt: createGenerationPrompt(worksheetFormData),
+            prompt: createGenerationPrompt(worksheetFormData, undefined, undefined, options?.additionalInstructions),
             formData: {
               ...worksheetFormData,
               regenerationMode: true,
@@ -169,7 +169,12 @@ export const useHomeworkExerciseGeneration = () => {
   };
 };
 
-function createGenerationPrompt(worksheetFormData: any, targetExerciseType?: string): string {
+function createGenerationPrompt(
+  worksheetFormData: any, 
+  targetExerciseType?: string, 
+  count?: number,
+  additionalInstructions?: string
+): string {
   const { 
     lessonTopic, 
     lessonGoal, 
@@ -190,8 +195,11 @@ Vocabulary: ${vocabularyFocus || 'Not specified'}
 Language Style: ${languageStyle || 'Formal'}
 `;
 
+  const countText = count === 1 ? 'ONE' : count ? `${count}` : '2-3';
+  const exercisesWord = count === 1 ? 'exercise' : 'exercises';
+  
   const instructions = targetExerciseType 
-    ? `Generate ONE high-quality exercise of type "${targetExerciseType}".
+    ? `Generate ${countText} high-quality ${exercisesWord} of type "${targetExerciseType}".
 
 Requirements:
 - Must be similar in style and difficulty to other exercises in this lesson
@@ -201,7 +209,7 @@ Requirements:
 - If the exercise type practices grammar, focus on: ${grammarFocus || 'lesson grammar'}
 - Make it engaging, practical, and appropriate for: ${lessonGoal || 'general learning'}
 `
-    : `Generate 2-3 exercises similar to those in the original worksheet, with the same types but different content.
+    : `Generate ${countText} ${exercisesWord} similar to those in the original worksheet, with the same types but different content.
 
 Requirements:
 - Match the lesson's English level and topic
@@ -210,5 +218,9 @@ Requirements:
 - If vocabulary is specified, use relevant words from: ${vocabularyFocus}
 - Keep exercises engaging and contextually relevant`;
 
-  return `${baseInfo}\n\n${instructions}\n\nEnsure all exercises are fresh, contextually relevant, and pedagogically sound.`;
+  const instructionsSection = additionalInstructions 
+    ? `\n\nTeacher's Additional Instructions:\n${additionalInstructions}`
+    : '';
+
+  return `${baseInfo}\n\n${instructions}${instructionsSection}\n\nEnsure all exercises are fresh, contextually relevant, and pedagogically sound.`;
 }

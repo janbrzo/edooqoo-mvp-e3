@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarIcon, Loader2, Copy, Check, Mail, ExternalLink, Clock, AlertCircle, Sparkles } from "lucide-react";
@@ -68,6 +69,7 @@ export function CreateHomeworkModal({
   const [checkingDuplicate, setCheckingDuplicate] = useState(false);
   const [teacherEmail, setTeacherEmail] = useState<string | null>(null);
   const [selectedGeneratedTypes, setSelectedGeneratedTypes] = useState<string[]>([]);
+  const [additionalInstructions, setAdditionalInstructions] = useState<string>('');
   
   // Initialize exercise generation hook
   const {
@@ -534,65 +536,81 @@ export function CreateHomeworkModal({
               <div className="space-y-3 border-t pt-4">
                 <Label>Generate Additional Exercises</Label>
                 
-                {/* Exercise Type Selection */}
-                {worksheetFormData.selectedExercises && worksheetFormData.selectedExercises.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="text-sm">Select Exercise Types:</Label>
-                    <div className="border rounded-md p-3 max-h-32 overflow-y-auto space-y-1.5">
-                      {worksheetFormData.selectedExercises.filter((id: string) => !id.endsWith('-picture') && !id.endsWith('-audio')).map((exerciseId: string) => {
-                        const EXERCISE_TYPES_MAP: Record<string, string> = {
-                          'fill-in-blanks': 'Fill in the Blanks',
-                          'multiple-choice': 'Multiple Choice',
-                          'matching': 'Matching',
-                          'true-false': 'True/False',
-                          'word-order': 'Word Order',
-                          'gap-text': 'Gap Text',
-                          'answer-questions': 'Answer Questions',
-                          'paraphrasing': 'Paraphrasing',
-                          'sentence-transformation': 'Sentence Transformation',
-                          'odd-one-out': 'Odd One Out',
-                          'synonyms-antonyms': 'Synonyms & Antonyms',
-                          'matching-halves': 'Matching Halves',
-                          'complete-word': 'Complete Word',
-                          'categorize': 'Categorize',
-                          'negative-prefixes': 'Negative Prefixes',
-                          'dialogue': 'Dialogue Practice',
-                          'listening-comprehension': 'Listening Comprehension',
-                          'discussion': 'Discussion Questions',
-                          'error-correction': 'Error Correction',
-                          'reading': 'Reading Comprehension',
-                          'describe': 'Describe',
-                        };
-                        const exerciseName = EXERCISE_TYPES_MAP[exerciseId] || exerciseId;
-                        
-                        return (
-                          <div key={exerciseId} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`gen-type-${exerciseId}`}
-                              checked={selectedGeneratedTypes.includes(exerciseId)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedGeneratedTypes(prev => [...prev, exerciseId]);
-                                } else {
-                                  setSelectedGeneratedTypes(prev => prev.filter(t => t !== exerciseId));
-                                }
-                              }}
-                            />
-                            <Label
-                              htmlFor={`gen-type-${exerciseId}`}
-                              className="text-sm font-normal cursor-pointer"
-                            >
-                              {exerciseName}
-                            </Label>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedGeneratedTypes.length} type{selectedGeneratedTypes.length !== 1 ? 's' : ''} selected
-                    </p>
+                {/* Exercise Type Selection - SHOW ALL 21 TYPES */}
+                <div className="space-y-2">
+                  <Label className="text-sm">Select Exercise Types:</Label>
+                  <div className="border rounded-md p-3 max-h-32 overflow-y-auto space-y-1.5">
+                    {(() => {
+                      // ALL 21 exercise types (excluding -picture and -audio variants)
+                      const EXERCISE_TYPES_MAP: Record<string, string> = {
+                        'fill-in-blanks': 'Fill in the Blanks',
+                        'multiple-choice': 'Multiple Choice',
+                        'matching': 'Matching',
+                        'true-false': 'True/False',
+                        'word-order': 'Word Order',
+                        'gap-text': 'Gap Text',
+                        'answer-questions': 'Answer Questions',
+                        'paraphrasing': 'Paraphrasing',
+                        'sentence-transformation': 'Sentence Transformation',
+                        'odd-one-out': 'Odd One Out',
+                        'synonyms-antonyms': 'Synonyms & Antonyms',
+                        'matching-halves': 'Matching Halves',
+                        'complete-word': 'Complete Word',
+                        'categorize': 'Categorize',
+                        'negative-prefixes': 'Negative Prefixes',
+                        'dialogue': 'Dialogue Practice',
+                        'listening-comprehension': 'Listening Comprehension',
+                        'discussion': 'Discussion Questions',
+                        'error-correction': 'Error Correction',
+                        'reading': 'Reading Comprehension',
+                        'describe': 'Describe',
+                      };
+                      
+                      return Object.entries(EXERCISE_TYPES_MAP).map(([exerciseId, exerciseName]) => (
+                        <div key={exerciseId} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`gen-type-${exerciseId}`}
+                            checked={selectedGeneratedTypes.includes(exerciseId)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedGeneratedTypes(prev => [...prev, exerciseId]);
+                              } else {
+                                setSelectedGeneratedTypes(prev => prev.filter(t => t !== exerciseId));
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor={`gen-type-${exerciseId}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            {exerciseName}
+                          </Label>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedGeneratedTypes.length} type{selectedGeneratedTypes.length !== 1 ? 's' : ''} selected
+                  </p>
                 </div>
-              )}
+                
+                {/* Additional Instructions Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="additionalInstructions">
+                    Additional Instructions for AI (Optional)
+                  </Label>
+                  <Textarea
+                    id="additionalInstructions"
+                    placeholder="e.g., Focus more on business vocabulary, include idioms, make exercises more challenging..."
+                    value={additionalInstructions}
+                    onChange={(e) => setAdditionalInstructions(e.target.value)}
+                    rows={3}
+                    className="resize-none"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Provide specific instructions to customize generated exercises
+                  </p>
+                </div>
               
               {/* Generate Button */}
               <Button
@@ -607,7 +625,8 @@ export function CreateHomeworkModal({
                   }
                   generateSimilarExercises(worksheetFormData, teacherId, {
                     targetTypes: selectedGeneratedTypes,
-                    countPerType: 1
+                    countPerType: 1,
+                    additionalInstructions: additionalInstructions.trim() || undefined
                     });
                   }}
                   disabled={isGeneratingExercises || selectedGeneratedTypes.length === 0}

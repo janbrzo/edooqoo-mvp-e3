@@ -177,9 +177,9 @@ Deno.serve(async (req) => {
 
         const deadline = new Date(homework.deadline);
         const now = new Date();
-        const daysUntilDeadline = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const daysUntilDeadline = Math.floor((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-        const homeworkUrl = `${req.headers.get("origin") || supabaseUrl}/homework/${homework.share_token}`;
+        const homeworkUrl = `https://preview--edooqoo-mvp-e3.lovable.app/homework/${homework.share_token}`;
 
         console.log(`[HOMEWORK-REMINDERS] Sending reminder for homework "${homework.title}" to ${studentEmail}`);
 
