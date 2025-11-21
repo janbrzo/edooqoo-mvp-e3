@@ -480,7 +480,7 @@ serve(async (req) => {
   
   🔹 Phase Breakdown:
      • Geolocation:        ${geoDuration}ms
-     • Media Generation:   ${mediaGenerationPromises.length > 0 ? 'See parallel logs above' : 'Skipped (no media required)'}
+     • Media Generation:   ${selectedImage || selectedAudio ? 'Pre-generated on frontend' : 'Skipped (no media required)'}
      • OpenAI API Call:    ${openaiDuration}s
      • JSON Parsing:       Fast (< 100ms)
      • Database Save:      ${!isRegeneration ? 'See DB logs above' : 'Skipped (regeneration)'}
