@@ -22,12 +22,18 @@ export async function generateWorksheetAPI(prompt: WorksheetFormData & { fullPro
       teachingPreferences: prompt.teachingPreferences,
       englishLevel: prompt.englishLevel || null,
       lessonTime: prompt.lessonTime,
-      selectedImage: prompt.selectedImage || null  // ETAP 1: Przekazujemy selectedImage do backendu
+      selectedImage: prompt.selectedImage || null,  // ETAP 1: Przekazujemy selectedImage do backendu
+      selectedAudio: prompt.selectedAudio || null   // ✅ Przekazujemy selectedAudio do backendu
     };
     
     // ETAP 2: Fallback - upewnij się że selectedImage jest zawsze przekazany
     if (!formData.selectedImage && prompt.selectedImage) {
       formData.selectedImage = prompt.selectedImage;
+    }
+    
+    // ETAP 4: Fallback - upewnij się że selectedAudio jest zawsze przekazany
+    if (!formData.selectedAudio && prompt.selectedAudio) {
+      formData.selectedAudio = prompt.selectedAudio;
     }
     
     // ETAP 3: Logowanie dla weryfikacji przekazywania selectedImage
@@ -36,6 +42,15 @@ export async function generateWorksheetAPI(prompt: WorksheetFormData & { fullPro
       imageUrl: formData.selectedImage?.url,
       imageId: formData.selectedImage?.id,
       photographer: formData.selectedImage?.photographer
+    });
+    
+    // ETAP 5: Logowanie dla weryfikacji przekazywania selectedAudio
+    console.log('🎵 [API-SERVICE] selectedAudio being sent to backend:', {
+      hasSelectedAudio: !!formData.selectedAudio,
+      audioUrl: formData.selectedAudio?.url,
+      transcriptLength: formData.selectedAudio?.transcript?.length,
+      duration: formData.selectedAudio?.duration,
+      voice: formData.selectedAudio?.voice
     });
     
     console.log('Sending formatted prompt to API:', formattedPrompt);

@@ -3,27 +3,40 @@ import { Progress } from "@/components/ui/progress";
 
 interface GeneratingModalProps {
   isOpen: boolean;
+  hasAudio?: boolean;  // ✅ Nowy prop
+  hasImage?: boolean;  // ✅ Nowy prop
 }
 
-// NEW: More realistic generation steps that reflect actual backend process
-// Media generation happens FIRST (frontend), then exercises (backend)
-const generationSteps = [
-  "Analyzing your requirements...",
-  "🎵 Generating audio recording... (40-45s)", // FRONTEND: Audio generation
-  "🎨 Creating custom AI image... (35-40s)", // FRONTEND: Image generation
-  "📝 Generating reading passage...", // BACKEND: Exercises start
-  "✏️ Creating vocabulary exercises...",
-  "📚 Developing grammar activities...",
-  "🎯 Designing interactive tasks...",
-  "👨‍🏫 Adding teacher guidance...",
-  "⚙️ Optimizing content difficulty...",
-  "📄 Finalizing worksheet layout...",
-  "✅ Quality checking exercises...",
-  "📦 Preparing downloadable content...",
-  "🎉 Almost ready...",
-];
+// NEW: Dynamic generation steps based on selected media
+const getGenerationSteps = (hasAudio: boolean, hasImage: boolean) => {
+  const steps = ["Analyzing your requirements..."];
+  
+  // Add media steps only if media is selected
+  if (hasAudio) {
+    steps.push("🎵 Generating audio recording... (40-45s)");
+  }
+  if (hasImage) {
+    steps.push("🎨 Creating custom AI image... (35-40s)");
+  }
+  
+  // Always add exercise generation steps
+  steps.push(
+    "📝 Generating reading passage...",
+    "✏️ Creating vocabulary exercises...",
+    "📚 Developing grammar activities...",
+    "🎯 Designing interactive tasks...",
+    "👨‍🏫 Adding teacher guidance...",
+    "⚙️ Optimizing content difficulty...",
+    "📄 Finalizing worksheet layout...",
+    "✅ Quality checking exercises...",
+    "📦 Preparing downloadable content...",
+    "🎉 Almost ready..."
+  );
+  
+  return steps;
+};
 
-export default function GeneratingModal({ isOpen }: GeneratingModalProps) {
+export default function GeneratingModal({ isOpen, hasAudio = false, hasImage = false }: GeneratingModalProps) {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -36,24 +49,26 @@ export default function GeneratingModal({ isOpen }: GeneratingModalProps) {
       return;
     }
 
-    // More realistic progress - slower and more variable
+    // Dynamic total duration: 150s with media, 90s without
+    const totalDuration = (hasAudio || hasImage) ? 150 : 90;
+    const progressIncrement = 100 / totalDuration; // Rozproszone na całkowity czas
+
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 95) {
-          // Slow down significantly near the end
-          return Math.min(prev + Math.random() * 0.5, 99);
+          return Math.min(prev + progressIncrement * 0.1, 99); // Bardzo wolno pod koniec
         } else if (prev >= 80) {
-          // Slow down at 80%
-          return prev + Math.random() * 1;
+          return prev + progressIncrement * 0.3; // Wolno
         } else if (prev >= 60) {
-          // Medium speed at 60%
-          return prev + Math.random() * 2;
+          return prev + progressIncrement * 0.5; // Średnio
         } else {
-          // Faster at the beginning
-          return prev + Math.random() * 3;
+          return prev + progressIncrement; // Normalnie
         }
       });
-    }, 800); // Slower interval
+    }, 1000); // Co sekundę
+
+    // Get dynamic steps based on media selection
+    const generationSteps = getGenerationSteps(hasAudio, hasImage);
 
     // Realistic step progression - varies between 3-8 seconds per step
     const stepInterval = setInterval(
@@ -78,7 +93,7 @@ export default function GeneratingModal({ isOpen }: GeneratingModalProps) {
       clearInterval(stepInterval);
       clearInterval(timerInterval);
     };
-  }, [isOpen]);
+  }, [isOpen, hasAudio, hasImage]);
 
   if (!isOpen) return null;
 
@@ -107,10 +122,14 @@ export default function GeneratingModal({ isOpen }: GeneratingModalProps) {
         </div>
 
         <p className="text-center min-h-[24px] animate-pulse font-normal text-sky-400">
-          {generationSteps[currentStep]}
+          {getGenerationSteps(hasAudio, hasImage)[currentStep]}
         </p>
 
-        <p className="text-center text-xs text-gray-400">It can take up to 1:30 min. (2:30 media enchanced)</p>
+        <p className="text-center text-xs text-gray-400">
+          {(hasAudio || hasImage) 
+            ? "It can take up to 2:30 min. (media enhanced)" 
+            : "It can take up to 1:30 min."}
+        </p>
       </div>
     </div>
   );
