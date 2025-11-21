@@ -243,7 +243,11 @@ const Index = () => {
         />
       )}
       
-      <GeneratingModal isOpen={isGenerating} />
+      <GeneratingModal 
+        isOpen={isGenerating} 
+        hasAudio={!!worksheetState.inputParams?.selectedAudio} 
+        hasImage={!!worksheetState.inputParams?.selectedImage} 
+      />
       
       <TokenPaywallModal
         isOpen={showTokenModal}
