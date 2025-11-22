@@ -380,7 +380,7 @@ export default function WorksheetForm({
                     <div className="p-2.5">
                       {/* Card Header with Title and Mode Selection Tiles in Same Line */}
                       <div className="flex items-center justify-between">
-                         <h3 className="font-semibold text-gray-800">Exercise Types (NEW: image & audio)</h3>
+                         <h3 className="font-semibold text-gray-800">Exercise Types (image & audio)</h3>
                         
                         {/* Mode Selection Tiles - Always Visible, Beside Title */}
                         <div className="flex gap-1">
