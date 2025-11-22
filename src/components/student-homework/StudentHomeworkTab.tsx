@@ -43,6 +43,7 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedHomeworkForEmail, setSelectedHomeworkForEmail] = useState<HomeworkAssignment | null>(null);
   const [editingDeadline, setEditingDeadline] = useState<{id: string, date: Date, time: string} | null>(null);
+  const [openDeadlinePopoverId, setOpenDeadlinePopoverId] = useState<string | null>(null);
   
   const { students } = useStudents();
   const { worksheets } = useWorksheetHistory(studentId);
@@ -284,7 +285,13 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
                         </Link>
                       </span>
             {hw.deadline && (
-              <Popover>
+              <Popover 
+                open={openDeadlinePopoverId === hw.id} 
+                onOpenChange={(open) => {
+                  console.log('[HomeworkTab] Popover open change', { hwId: hw.id, open });
+                  setOpenDeadlinePopoverId(open ? hw.id : null);
+                }}
+              >
                 <PopoverTrigger asChild>
                   <Badge 
                     variant="secondary"

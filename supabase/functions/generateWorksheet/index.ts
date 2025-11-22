@@ -29,7 +29,7 @@ serve(async (req) => {
   const generationStartTime = Date.now();
 
   try {
-    const { prompt, formData, userId, studentId, isRegeneration } = await req.json();
+    const { prompt, formData, userId, studentId, isRegeneration, isBatchGeneration } = await req.json();
     const ip =
       req.headers.get("x-forwarded-for") ||
       req.headers.get("cf-connecting-ip") ||
@@ -93,7 +93,7 @@ serve(async (req) => {
     // ============================================================
     // BATCH GENERATION MODE - Generate multiple exercise types in one call
     // ============================================================
-    if (formData?.isBatchGeneration && formData?.targetExerciseTypes && Array.isArray(formData.targetExerciseTypes)) {
+    if (isBatchGeneration && formData?.targetExerciseTypes && Array.isArray(formData.targetExerciseTypes)) {
       console.log('🔄 [BATCH-MODE] Batch generation requested for types:', formData.targetExerciseTypes);
       
       const exerciseCountPerType = formData.exerciseCountPerType || 1;

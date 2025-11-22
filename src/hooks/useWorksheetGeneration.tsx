@@ -160,6 +160,14 @@ export const useWorksheetGeneration = (
         }
       }
       
+      // Update inputParams with generated media BEFORE worksheet generation
+      // This ensures GeneratingModal shows correct duration (150s vs 90s) and media info
+      worksheetState.setInputParams({
+        ...data,
+        selectedAudio,
+        selectedImage,
+      });
+      
       // ============================================================
       // KROK 2: GENERATE WORKSHEET (now with pre-generated media)
       // Backend execution time should now be <30s, preventing 546 errors
