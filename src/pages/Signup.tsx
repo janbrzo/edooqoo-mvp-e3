@@ -4,10 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { EmailConfirmationModal } from '@/components/EmailConfirmationModal';
 import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { DashboardPreviewBackground } from '@/components/DashboardPreviewBackground';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -99,110 +101,118 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-worksheet-purple/20 to-worksheet-teal/20 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
-          <CardDescription className="text-center">
-            Create Worksheets Tailored to your students. In seconds.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <GoogleSignInButton mode="signup" disabled={loading} />
-            
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
+    <>
+      {/* Dashboard Preview Background */}
+      <DashboardPreviewBackground />
+      
+      {/* Signup Modal Dialog */}
+      <Dialog open={true}>
+        <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto">
+          <Card className="border-0 shadow-none">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
+              <CardDescription className="text-center">
+                Create Worksheets Tailored to your students. In seconds.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <GoogleSignInButton mode="signup" disabled={loading} />
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
 
-            <form onSubmit={handleSignup} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+                <form onSubmit={handleSignup} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Input
+                        type="text"
+                        placeholder="First Name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        type="text"
+                        placeholder="Last Name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
                   <Input
-                    type="text"
-                    placeholder="First Name"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                    type="email"
+                    placeholder="Email Address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                   />
-                </div>
-                <div>
+                  
                   <Input
                     type="text"
-                    placeholder="Last Name"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="School/Institution (Optional)"
+                    value={schoolInstitution}
+                    onChange={(e) => setSchoolInstitution(e.target.value)}
+                  />
+                  
+                  <Input
+                    type="password"
+                    placeholder="Password (min. 6 characters)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                  
+                  <Input
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                   />
-                </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-worksheet-purple hover:bg-worksheet-purpleDark"
+                    disabled={loading}
+                  >
+                    {loading ? 'Creating Account...' : 'Create Account'}
+                  </Button>
+                </form>
               </div>
               
-              <Input
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              
-              <Input
-                type="text"
-                placeholder="School/Institution (Optional)"
-                value={schoolInstitution}
-                onChange={(e) => setSchoolInstitution(e.target.value)}
-              />
-              
-              <Input
-                type="password"
-                placeholder="Password (min. 6 characters)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-              
-              <Input
-                type="password"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-worksheet-purple hover:bg-worksheet-purpleDark"
-                disabled={loading}
-              >
-                {loading ? 'Creating Account...' : 'Create Account'}
-              </Button>
-            </form>
-          </div>
-          
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link to="/login" className="text-worksheet-purple hover:underline font-medium">
-                Sign in here
-              </Link>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+              <div className="mt-4 text-center">
+                <p className="text-sm text-gray-600">
+                  Already have an account?{' '}
+                  <Link to="/login" className="text-worksheet-purple hover:underline font-medium">
+                    Sign in here
+                  </Link>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </DialogContent>
+      </Dialog>
 
       <EmailConfirmationModal
         isOpen={showEmailModal}
         onClose={() => setShowEmailModal(false)}
         email={registeredEmail}
       />
-    </div>
+    </>
   );
 };
 
