@@ -294,7 +294,7 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
                     Due: {format(new Date(hw.deadline), 'MMM dd, yyyy HH:mm')}
                   </Badge>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 z-50" align="start">
                   <div className="p-3">
                     <Label className="text-sm font-medium mb-2 block">Change Deadline</Label>
                     <CalendarComponent

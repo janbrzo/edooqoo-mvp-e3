@@ -410,7 +410,7 @@ const MANUAL_EXERCISES_60MIN_AUDIO = [
   'fill-in-blanks-audio',
   'multiple-choice',
   'dialogue',
-  'answer-questions',
+  'dialogue', // ✅ Changed from 'answer-questions' to avoid image icon in audio mode
   'matching'
 ];
 const MANUAL_EXERCISES_45MIN_AUDIO = [

@@ -55,15 +55,8 @@ export default function GeneratingModal({ isOpen, hasAudio = false, hasImage = f
 
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 95) {
-          return Math.min(prev + progressIncrement * 0.1, 99); // Bardzo wolno pod koniec
-        } else if (prev >= 80) {
-          return prev + progressIncrement * 0.3; // Wolno
-        } else if (prev >= 60) {
-          return prev + progressIncrement * 0.5; // Średnio
-        } else {
-          return prev + progressIncrement; // Normalnie
-        }
+        const newProgress = prev + progressIncrement;
+        return Math.min(newProgress, 99); // Maksymalnie 99% do zakończenia
       });
     }, 1000); // Co sekundę
 
@@ -127,7 +120,7 @@ export default function GeneratingModal({ isOpen, hasAudio = false, hasImage = f
 
         <p className="text-center text-xs text-gray-400">
           {(hasAudio || hasImage) 
-            ? "It can take up to 2:30 min. (media enhanced)" 
+            ? `It can take up to 2:30 min. (with ${hasAudio && hasImage ? 'audio & image' : hasAudio ? 'audio' : 'image'})` 
             : "It can take up to 1:30 min."}
         </p>
       </div>
