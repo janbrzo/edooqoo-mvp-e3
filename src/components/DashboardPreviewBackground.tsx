@@ -1,5 +1,5 @@
-import React from 'react';
-import { FileText, Users, Calendar, Sparkles } from 'lucide-react';
+import React from "react";
+import { FileText, Users, Calendar, Sparkles } from "lucide-react";
 
 /**
  * DashboardPreviewBackground - Static dashboard-like background for auth pages
@@ -16,20 +16,12 @@ export const DashboardPreviewBackground = () => {
             <FileText className="h-6 w-6 text-primary" />
             <span className="text-lg font-semibold">WorksheetAI</span>
           </div>
-          
+
           <nav className="space-y-2">
-            <div className="px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium">
-              Dashboard
-            </div>
-            <div className="px-3 py-2 rounded-lg text-muted-foreground">
-              My Worksheets
-            </div>
-            <div className="px-3 py-2 rounded-lg text-muted-foreground">
-              Students
-            </div>
-            <div className="px-3 py-2 rounded-lg text-muted-foreground">
-              Homework
-            </div>
+            <div className="px-3 py-2 rounded-lg bg-primary/10 text-primary font-medium">Dashboard</div>
+            <div className="px-3 py-2 rounded-lg text-muted-foreground">My Worksheets</div>
+            <div className="px-3 py-2 rounded-lg text-muted-foreground">Students</div>
+            <div className="px-3 py-2 rounded-lg text-muted-foreground">Homework</div>
           </nav>
         </div>
       </div>
@@ -151,7 +143,7 @@ export const DashboardPreviewBackground = () => {
       </div>
 
       {/* Blur Overlay - makes everything blurred and darkened */}
-      <div className="absolute inset-0 backdrop-blur-md bg-black/40" />
+      <div className="absolute inset-0 backdrop-blur-md bg-black/10" />
     </div>
   );
 };
