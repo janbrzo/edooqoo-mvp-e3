@@ -104,13 +104,18 @@ serve(async (req) => {
         
         // Use the existing system message composer with this specific exercise type
         const batchSystemMessage = composeSystemMessage(
-          false, // hasGrammarFocus
-          null,  // grammarFocus
-          { ...formData, selectedExercises: [exerciseType] },
+          hasGrammarFocus, // ✅ Use actual grammar focus from formData
+          grammarFocus,     // ✅ Use actual grammar focus content
+          { 
+            ...formData, 
+            selectedExercises: [exerciseType],
+            selectedImage: null, // ❌ No image in batch mode
+            selectedAudio: null  // ❌ No audio in batch mode
+          },
           exerciseCountPerType,
           [exerciseType],
-          formData?.selectedImage || null,
-          formData?.selectedAudio || null
+          null, // ❌ No image in batch mode
+          null  // ❌ No audio in batch mode
         );
         
         // Generate exercise(s) for this type

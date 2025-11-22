@@ -8,7 +8,7 @@ import { FileText, Users, Calendar, Sparkles } from "lucide-react";
  */
 export const DashboardPreviewBackground = () => {
   return (
-    <div className="fixed inset-0 bg-background overflow-hidden">
+    <div className="fixed inset-0 bg-background overflow-hidden light">
       {/* Sidebar Mock */}
       <div className="fixed left-0 top-0 bottom-0 w-64 bg-sidebar border-r border-border">
         <div className="p-6">
@@ -143,7 +143,7 @@ export const DashboardPreviewBackground = () => {
       </div>
 
       {/* Blur Overlay - makes everything blurred and darkened */}
-      <div className="absolute inset-0 backdrop-blur-md bg-black/1" />
+      <div className="absolute inset-0 backdrop-blur-sm bg-black/5" />
     </div>
   );
 };
