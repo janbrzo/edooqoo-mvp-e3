@@ -16,9 +16,7 @@ import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shuffle, Brain, MousePointer, ChevronDown } from "lucide-react";
 import type { MediaType } from './types';
-
 export type { FormData };
-
 interface ImageSuggestion {
   id: string;
   url: string;
@@ -27,13 +25,18 @@ interface ImageSuggestion {
   photographer: string;
   photographerUrl: string;
 }
-
 interface ExtendedWorksheetFormProps extends WorksheetFormProps {
   onStudentChange?: (studentId: string | null) => void;
-  preSelectedStudent?: { id: string; name: string } | null;
+  preSelectedStudent?: {
+    id: string;
+    name: string;
+  } | null;
 }
-
-export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedStudent }: ExtendedWorksheetFormProps) {
+export default function WorksheetForm({
+  onSubmit,
+  onStudentChange,
+  preSelectedStudent
+}: ExtendedWorksheetFormProps) {
   const [lessonTime, setLessonTime] = useState<LessonTime>("60min");
   const [lessonTopic, setLessonTopic] = useState("");
   const [lessonGoal, setLessonGoal] = useState("");
@@ -42,31 +45,38 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const [englishLevel, setEnglishLevel] = useState<EnglishLevel>("B1/B2");
   const [languageStyle, setLanguageStyle] = useState<number>(3); // Default neutral style
   const [selectedStudentId, setSelectedStudentId] = useState<string>("no-student");
-  
+
   // Initialize selectedExercises based on lessonTime and selectionMode
   const getInitialExercises = (): string[] => {
     const MANUAL_EXERCISES_60MIN = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
     const MANUAL_EXERCISES_45MIN = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out'];
     return lessonTime === '45min' ? MANUAL_EXERCISES_45MIN : MANUAL_EXERCISES_60MIN;
   };
-  
   const [selectedExercises, setSelectedExercises] = useState<string[]>(getInitialExercises());
   const [selectionMode, setSelectionMode] = useState<ExerciseSelectionMode>('manual');
   const [selectedMediaTypes, setSelectedMediaTypes] = useState<MediaType[]>([]);
   const [selectedImage, setSelectedImage] = useState<any>(null);
-
   const [currentPlaceholders, setCurrentPlaceholders] = useState<PlaceholderSet>(getRandomPlaceholderSet());
   const [currentSuggestions, setCurrentSuggestions] = useState<SuggestionSet[]>([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [activeTab, setActiveTab] = useState<'exercises' | 'advanced' | null>(null);
   const [showMoreFields, setShowMoreFields] = useState(false);
-
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const isMobile = useIsMobile();
-  const { trackEvent } = useEventTracking();
-  const { userId } = useAnonymousAuth();
-  const { students } = useStudents();
-  const { refreshProgress } = useOnboardingProgress();
+  const {
+    trackEvent
+  } = useEventTracking();
+  const {
+    userId
+  } = useAnonymousAuth();
+  const {
+    students
+  } = useStudents();
+  const {
+    refreshProgress
+  } = useOnboardingProgress();
 
   // REMOVED: Backup initialization to avoid race condition with ExerciseSelector
   // ExerciseSelector is now solely responsible for initialization
@@ -76,7 +86,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       setSelectedStudentId(preSelectedStudent.id);
     }
   }, [preSelectedStudent]);
-
   useEffect(() => {
     if (selectedStudentId && selectedStudentId !== "no-student") {
       const selectedStudent = students.find(s => s.id === selectedStudentId);
@@ -92,19 +101,16 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       }
     }
   }, [selectedStudentId, students]);
-
   useEffect(() => {
     if (onStudentChange) {
       const studentId = selectedStudentId === "no-student" ? null : selectedStudentId;
       onStudentChange(studentId);
     }
   }, [selectedStudentId, onStudentChange]);
-
   useEffect(() => {
     if (isInitialLoad) {
       const matchingSet = getSuggestionSetMatchingPlaceholder(currentPlaceholders);
       const randomSets = getRandomSuggestionSets(1);
-      
       if (matchingSet) {
         setCurrentSuggestions([matchingSet, randomSets[0]]);
       } else {
@@ -113,10 +119,8 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       setIsInitialLoad(false);
     }
   }, [currentPlaceholders, isInitialLoad]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!lessonTopic) {
       toast({
         title: "Missing information",
@@ -129,35 +133,27 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
     // Proceed with form submission - image generation handled in backend
     submitForm();
   };
-
   const submitForm = () => {
     // Auto-complete exercises if not enough are selected in manual mode
     const maxExercises = lessonTime === '45min' ? 6 : 8;
     let finalExercises = [...selectedExercises];
-    
     if (!finalExercises || finalExercises.length < maxExercises) {
       console.log(`🔧 [WORKSHEET-FORM] Auto-completing exercises: ${finalExercises.length} < ${maxExercises}`);
-      
+
       // Get available exercises (excluding coming soon ones)
-      const availableExercises = [
-        'reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 
-        'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms', 'antonyms',
-        'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 
-        'categorize', 'paraphrasing', 'complete-word', 'matching-halves'
-      ];
-      
+      const availableExercises = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms', 'antonyms', 'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 'categorize', 'paraphrasing', 'complete-word', 'matching-halves'];
+
       // Add random exercises to reach the target count
       const remainingSlots = maxExercises - finalExercises.length;
       const unusedExercises = availableExercises.filter(ex => !finalExercises.includes(ex));
       const shuffledUnused = [...unusedExercises].sort(() => Math.random() - 0.5);
       const autoSelected = shuffledUnused.slice(0, remainingSlots);
-      
       finalExercises = [...finalExercises, ...autoSelected];
       console.log(`🔧 [WORKSHEET-FORM] Auto-completed exercises:`, finalExercises);
-      
+
       // Update the form state
       setSelectedExercises(finalExercises);
-      
+
       // Notify user about auto-completion
       if (autoSelected.length > 0) {
         toast({
@@ -167,7 +163,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
         });
       }
     }
-
     trackEvent({
       eventType: 'form_submit',
       eventData: {
@@ -181,7 +176,6 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
         timestamp: new Date().toISOString()
       }
     });
-
     const formData = {
       lessonTime,
       lessonTopic,
@@ -201,10 +195,8 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
     refreshProgress();
     setTimeout(refreshProgress, 1000);
     setTimeout(refreshProgress, 2000);
-    
     onSubmit(formData);
   };
-
   const refreshSuggestions = () => {
     setCurrentPlaceholders(getRandomPlaceholderSet());
     setCurrentSuggestions(getRandomSuggestionSets(2));
@@ -214,59 +206,41 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
   const handleModeChange = (mode: ExerciseSelectionMode) => {
     console.log(`🔧 [WORKSHEET-FORM] Changing mode to: ${mode}`);
     console.log(`🔧 [WORKSHEET-FORM] Current selectedMediaTypes:`, selectedMediaTypes);
-    
     setSelectionMode(mode);
     setActiveTab('exercises');
-    
     const maxExercises = lessonTime === '45min' ? 6 : 8;
     const isPictureMode = selectedMediaTypes.includes('picture');
     const isAudioMode = selectedMediaTypes.includes('audio');
-    
     let newExercises: string[];
-    
     if (mode === 'manual') {
       // Manual mode - use predefined defaults based on media
       if (isPictureMode) {
-        newExercises = lessonTime === '45min' 
-          ? ['describe-picture', 'answer-questions-picture', 'fill-in-blanks', 'dialogue', 'matching', 'true-false']
-          : ['describe-picture', 'answer-questions-picture', 'true-false-picture', 'fill-in-blanks', 'multiple-choice', 'matching', 'dialogue', 'answer-questions'];
+        newExercises = lessonTime === '45min' ? ['describe-picture', 'answer-questions-picture', 'fill-in-blanks', 'dialogue', 'matching', 'true-false'] : ['describe-picture', 'answer-questions-picture', 'true-false-picture', 'fill-in-blanks', 'multiple-choice', 'matching', 'dialogue', 'answer-questions'];
       } else if (isAudioMode) {
-        newExercises = lessonTime === '45min'
-          ? ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'fill-in-blanks', 'multiple-choice-audio', 'matching']
-          : ['listening-comprehension', 'answer-questions-audio', 'true-false', 'fill-in-blanks-audio', 'multiple-choice', 'dialogue', 'answer-questions', 'matching'];
+        newExercises = lessonTime === '45min' ? ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'fill-in-blanks', 'multiple-choice-audio', 'matching'] : ['listening-comprehension', 'answer-questions-audio', 'true-false', 'fill-in-blanks-audio', 'multiple-choice', 'dialogue', 'answer-questions', 'matching'];
       } else {
-        newExercises = lessonTime === '45min' 
-          ? ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out']
-          : ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
+        newExercises = lessonTime === '45min' ? ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out'] : ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
       }
     } else if (mode === 'random') {
       // Random mode - CRITICAL FIX: Prioritize media exercises
-      
+
       const PICTURE_EXERCISES = ['describe-picture', 'answer-questions-picture', 'true-false-picture', 'multiple-choice-picture'];
       const AUDIO_EXERCISES = ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'multiple-choice-audio', 'fill-in-blanks-audio'];
-      const GENERAL_EXERCISES = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 
-        'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms', 'antonyms',
-        'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 
-        'categorize', 'paraphrasing', 'complete-word', 'matching-halves'];
-      
+      const GENERAL_EXERCISES = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms', 'antonyms', 'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 'categorize', 'paraphrasing', 'complete-word', 'matching-halves'];
       if (isPictureMode) {
         // Always select 2 picture exercises + fill rest with general
         const shuffledPicture = [...PICTURE_EXERCISES].sort(() => Math.random() - 0.5);
         const selectedPicture = shuffledPicture.slice(0, Math.min(2, PICTURE_EXERCISES.length));
-        
         const shuffledGeneral = [...GENERAL_EXERCISES].sort(() => Math.random() - 0.5);
         const selectedGeneral = shuffledGeneral.slice(0, maxExercises - selectedPicture.length);
-        
         newExercises = [...selectedPicture, ...selectedGeneral];
         console.log('🎲 [RANDOM-PICTURE] Selected exercises:', newExercises);
       } else if (isAudioMode) {
         // Always select 2 audio exercises + fill rest with general
         const shuffledAudio = [...AUDIO_EXERCISES].sort(() => Math.random() - 0.5);
         const selectedAudio = shuffledAudio.slice(0, Math.min(2, AUDIO_EXERCISES.length));
-        
         const shuffledGeneral = [...GENERAL_EXERCISES].sort(() => Math.random() - 0.5);
         const selectedGeneral = shuffledGeneral.slice(0, maxExercises - selectedAudio.length);
-        
         newExercises = [...selectedAudio, ...selectedGeneral];
         console.log('🎲 [RANDOM-AUDIO] Selected exercises:', newExercises);
       } else {
@@ -277,24 +251,18 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
       }
     } else {
       // Smart mode - use manual defaults for now
-      newExercises = lessonTime === '45min' 
-        ? ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out']
-        : ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
+      newExercises = lessonTime === '45min' ? ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out'] : ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
     }
-    
     console.log(`🔧 [WORKSHEET-FORM] Setting exercises for ${mode} mode:`, newExercises);
     setSelectedExercises(newExercises);
   };
-
   const createSuggestionTiles = (field: 'lessonTopic' | 'lessonFocus' | 'additionalInformation' | 'grammarFocus') => {
     return currentSuggestions.map((set, index) => ({
       id: `${set.id}-${field}-${index}`,
       title: set[field]
     }));
   };
-
-  return (
-    <div className={`w-full ${isMobile ? 'py-2' : 'py-[24px]'}`}>
+  return <div className={`w-full ${isMobile ? 'py-2' : 'py-[24px]'}`}>
       <Card className="bg-white shadow-sm">
         <CardContent className={`${isMobile ? 'p-3' : 'p-8'}`}>
           <form onSubmit={handleSubmit}>
@@ -312,22 +280,10 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                 <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-14'}`}>
                   <div className={`flex flex-col ${isMobile ? 'items-center' : 'items-start'}`}>
                     <div className={`flex gap-2 ${isMobile ? 'justify-center' : 'w-32'}`}>
-                      <Button 
-                        type="button"
-                        variant={lessonTime === "45min" ? "default" : "outline"} 
-                        onClick={() => setLessonTime("45min")} 
-                        className={lessonTime === "45min" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""}
-                        size={isMobile ? "sm" : "sm"}
-                      >
+                      <Button type="button" variant={lessonTime === "45min" ? "default" : "outline"} onClick={() => setLessonTime("45min")} className={lessonTime === "45min" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""} size={isMobile ? "sm" : "sm"}>
                         45 min
                       </Button>
-                      <Button 
-                        type="button"
-                        variant={lessonTime === "60min" ? "default" : "outline"} 
-                        onClick={() => setLessonTime("60min")} 
-                        className={lessonTime === "60min" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""}
-                        size={isMobile ? "sm" : "sm"}
-                      >
+                      <Button type="button" variant={lessonTime === "60min" ? "default" : "outline"} onClick={() => setLessonTime("60min")} className={lessonTime === "60min" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""} size={isMobile ? "sm" : "sm"}>
                         60 min
                       </Button>
                     </div>
@@ -338,31 +294,13 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                   
                   <div className={`flex flex-col ${isMobile ? 'items-center' : 'items-end w-80'}`}>
                     <div className={`flex gap-1 mb-1 ${isMobile ? 'flex-wrap justify-center' : ''}`}>
-                      <Button 
-                        type="button"
-                        variant={englishLevel === "A1/A2" ? "default" : "outline"} 
-                        onClick={() => setEnglishLevel("A1/A2")} 
-                        className={englishLevel === "A1/A2" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""}
-                        size={isMobile ? "sm" : "sm"}
-                      >
+                      <Button type="button" variant={englishLevel === "A1/A2" ? "default" : "outline"} onClick={() => setEnglishLevel("A1/A2")} className={englishLevel === "A1/A2" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""} size={isMobile ? "sm" : "sm"}>
                         A1/A2
                       </Button>
-                      <Button 
-                        type="button"
-                        variant={englishLevel === "B1/B2" ? "default" : "outline"} 
-                        onClick={() => setEnglishLevel("B1/B2")} 
-                        className={englishLevel === "B1/B2" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""}
-                        size={isMobile ? "sm" : "sm"}
-                      >
+                      <Button type="button" variant={englishLevel === "B1/B2" ? "default" : "outline"} onClick={() => setEnglishLevel("B1/B2")} className={englishLevel === "B1/B2" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""} size={isMobile ? "sm" : "sm"}>
                         B1/B2
                       </Button>
-                      <Button 
-                        type="button"
-                        variant={englishLevel === "C1/C2" ? "default" : "outline"} 
-                        onClick={() => setEnglishLevel("C1/C2")} 
-                        className={englishLevel === "C1/C2" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""}
-                        size={isMobile ? "sm" : "sm"}
-                      >
+                      <Button type="button" variant={englishLevel === "C1/C2" ? "default" : "outline"} onClick={() => setEnglishLevel("C1/C2")} className={englishLevel === "C1/C2" ? "bg-worksheet-purple hover:bg-worksheet-purpleDark" : ""} size={isMobile ? "sm" : "sm"}>
                         C1/C2
                       </Button>
                     </div>
@@ -375,37 +313,16 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
 
               {/* Lesson Topic - Always Visible, with Lesson Focus appearing next to it */}
               <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : showMoreFields ? 'md:grid-cols-2 gap-6' : ''} mb-6`}>
-                <FormField 
-                  label="Lesson topic: General theme or real‑life scenario"
-                  placeholder={currentPlaceholders.lessonTopic}
-                  value={lessonTopic}
-                  onChange={setLessonTopic}
-                  suggestions={createSuggestionTiles('lessonTopic')}
-                  isRequired={true}
-                />
+                <FormField label="Lesson topic: General theme or real‑life scenario" placeholder={currentPlaceholders.lessonTopic} value={lessonTopic} onChange={setLessonTopic} suggestions={createSuggestionTiles('lessonTopic')} isRequired={true} />
                 
                 {/* Lesson Focus appears next to Lesson Topic when expanded */}
-                {showMoreFields && (
-                  <FormField 
-                    label="Lesson focus: What should your student achieve by the end of the lesson?"
-                    placeholder={currentPlaceholders.lessonFocus}
-                    value={lessonGoal}
-                    onChange={setLessonGoal}
-                    suggestions={createSuggestionTiles('lessonFocus')}
-                    isOptional={true}
-                  />
-                )}
+                {showMoreFields && <FormField label="Lesson focus: What should your student achieve by the end of the lesson?" placeholder={currentPlaceholders.lessonFocus} value={lessonGoal} onChange={setLessonGoal} suggestions={createSuggestionTiles('lessonFocus')} isOptional={true} />}
               </div>
 
               {/* Show More Link with Preview - button UNDER the blurred preview */}
-              {!showMoreFields && (
-                <div className="mb-6">
+              {!showMoreFields && <div className="mb-6">
                   {/* Preview with light blur effect showing only field names - CLICKABLE */}
-                  <div 
-                    className="relative overflow-hidden mb-4 py-2 cursor-pointer hover:bg-accent/50 transition-colors rounded-md px-2"
-                    onClick={() => setShowMoreFields(true)}
-                    title="Click to expand additional fields"
-                  >
+                  <div className="relative overflow-hidden mb-4 py-2 cursor-pointer hover:bg-accent/50 transition-colors rounded-md px-2" onClick={() => setShowMoreFields(true)} title="Click to expand additional fields">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-foreground/60 cursor-pointer">
@@ -424,40 +341,19 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                   </div>
                   
                   {/* Button under the preview */}
-                  <button
-                    type="button"
-                    onClick={() => setShowMoreFields(true)}
-                    className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 underline decoration-2 underline-offset-4 transition-colors flex items-center justify-center gap-2"
-                  >
+                  <button type="button" onClick={() => setShowMoreFields(true)} className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 underline decoration-2 underline-offset-4 transition-colors flex items-center justify-center gap-2">
                     <ChevronDown className="h-4 w-4" />
                     Fill more info - get more accurate
                     <ChevronDown className="h-4 w-4" />
                   </button>
-                </div>
-              )}
+                </div>}
 
               {/* Additional Fields - Second Row when expanded */}
-              {showMoreFields && (
-                <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'md:grid-cols-2 gap-6'} mb-6`}>
-                  <FormField 
-                    label="Additional Information: Extra context & personal or situational details"
-                    placeholder={currentPlaceholders.additionalInformation}
-                    value={additionalInformation}
-                    onChange={setAdditionalInformation}
-                    suggestions={createSuggestionTiles('additionalInformation')}
-                    isOptional={true}
-                  />
+              {showMoreFields && <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : 'md:grid-cols-2 gap-6'} mb-6`}>
+                  <FormField label="Additional Information: Extra context & personal or situational details" placeholder={currentPlaceholders.additionalInformation} value={additionalInformation} onChange={setAdditionalInformation} suggestions={createSuggestionTiles('additionalInformation')} isOptional={true} />
 
-                  <FormField 
-                    label="Grammar focus"
-                    placeholder={currentPlaceholders.grammarFocus}
-                    value={grammarFocus}
-                    onChange={setGrammarFocus}
-                    suggestions={createSuggestionTiles('grammarFocus')}
-                    isOptional={true}
-                  />
-                </div>
-              )}
+                  <FormField label="Grammar focus" placeholder={currentPlaceholders.grammarFocus} value={grammarFocus} onChange={setGrammarFocus} suggestions={createSuggestionTiles('grammarFocus')} isOptional={true} />
+                </div>}
 
               {/* Exercise Selection Cards */}
               <div className="mb-6">
@@ -465,52 +361,33 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                 <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-3'} mb-4 items-stretch`}>
                   
                   {/* Student Selection Dropdown - only for authenticated users */}
-                  {userId && students.length > 0 && (
-                    <div className={`${isMobile ? 'w-full' : 'w-[23%]'} flex items-center`}>
+                  {userId && students.length > 0 && <div className={`${isMobile ? 'w-full' : 'w-[23%]'} flex items-center`}>
                       <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
                         <SelectTrigger className="w-full h-full">
                           <SelectValue placeholder="No specific student" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="no-student">No specific student</SelectItem>
-                          {students.map((student) => (
-                            <SelectItem key={student.id} value={student.id}>
+                          {students.map(student => <SelectItem key={student.id} value={student.id}>
                               {student.name} ({student.english_level})
-                            </SelectItem>
-                          ))}
+                            </SelectItem>)}
                         </SelectContent>
                       </Select>
-                    </div>
-                  )}
+                    </div>}
                   
                   {/* Exercise Types Card Header */}
-                  <Card 
-                    className={`border-2 cursor-pointer transition-colors ${isMobile ? 'w-full' : 'flex-1'} ${
-                      activeTab === 'exercises' 
-                        ? 'border-worksheet-purple bg-worksheet-purpleLight' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => setActiveTab(activeTab === 'exercises' ? null : 'exercises')}
-                  >
+                  <Card className={`border-2 cursor-pointer transition-colors ${isMobile ? 'w-full' : 'flex-1'} ${activeTab === 'exercises' ? 'border-worksheet-purple bg-worksheet-purpleLight' : 'border-gray-200 hover:border-gray-300'}`} onClick={() => setActiveTab(activeTab === 'exercises' ? null : 'exercises')}>
                     <div className="p-2.5">
                       {/* Card Header with Title and Mode Selection Tiles in Same Line */}
                       <div className="flex items-center justify-between">
-                         <h3 className="font-semibold text-gray-800">Exercise Types (20)</h3>
+                         <h3 className="font-semibold text-gray-800">Exercise Types (NEW: image & audio)</h3>
                         
                         {/* Mode Selection Tiles - Always Visible, Beside Title */}
                         <div className="flex gap-1">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleModeChange('manual');
-                            }}
-                            className={`relative flex items-center gap-1 px-2 py-1 rounded-lg border transition-all text-center group ${
-                              selectionMode === 'manual'
-                                ? 'border-worksheet-purple bg-worksheet-purple text-white'
-                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                            }`}
-                          >
+                          <button type="button" onClick={e => {
+                          e.stopPropagation();
+                          handleModeChange('manual');
+                        }} className={`relative flex items-center gap-1 px-2 py-1 rounded-lg border transition-all text-center group ${selectionMode === 'manual' ? 'border-worksheet-purple bg-worksheet-purple text-white' : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'}`}>
                             <MousePointer className="h-3 w-3" />
                             <span className="text-xs font-medium">Manual</span>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
@@ -518,18 +395,10 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                             </div>
                           </button>
                           
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleModeChange('random');
-                            }}
-                            className={`relative flex items-center gap-1 px-2 py-1 rounded-lg border transition-all text-center group ${
-                              selectionMode === 'random'
-                                ? 'border-worksheet-purple bg-worksheet-purple text-white'
-                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                            }`}
-                          >
+                          <button type="button" onClick={e => {
+                          e.stopPropagation();
+                          handleModeChange('random');
+                        }} className={`relative flex items-center gap-1 px-2 py-1 rounded-lg border transition-all text-center group ${selectionMode === 'random' ? 'border-worksheet-purple bg-worksheet-purple text-white' : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'}`}>
                             <Shuffle className="h-3 w-3" />
                             <span className="text-xs font-medium">Random</span>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
@@ -537,12 +406,7 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                             </div>
                           </button>
                           
-                          <button
-                            type="button"
-                            onClick={(e) => e.stopPropagation()}
-                            disabled
-                            className="relative flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 bg-gray-100 text-center group cursor-not-allowed opacity-50"
-                          >
+                          <button type="button" onClick={e => e.stopPropagation()} disabled className="relative flex items-center gap-1 px-2 py-1 rounded-lg border border-gray-200 bg-gray-100 text-center group cursor-not-allowed opacity-50">
                             <Brain className="h-3 w-3 text-gray-400" />
                             <span className="text-xs font-medium text-gray-400">Smart</span>
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
@@ -555,46 +419,25 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
                   </Card>
 
                   {/* Advanced Options Card Header */}
-                  <Card 
-                    className={`border-2 cursor-pointer transition-colors ${isMobile ? 'w-full' : 'w-[23%]'} ${
-                      activeTab === 'advanced' 
-                        ? 'border-worksheet-purple bg-worksheet-purpleLight' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => setActiveTab(activeTab === 'advanced' ? null : 'advanced')}
-                  >
+                  <Card className={`border-2 cursor-pointer transition-colors ${isMobile ? 'w-full' : 'w-[23%]'} ${activeTab === 'advanced' ? 'border-worksheet-purple bg-worksheet-purpleLight' : 'border-gray-200 hover:border-gray-300'}`} onClick={() => setActiveTab(activeTab === 'advanced' ? null : 'advanced')}>
                     <div className="p-2.5">
-                      <h3 className="font-semibold text-gray-800">Advanced Options</h3>
+                      <h3 className="font-semibold text-gray-800 text-base">Language Style</h3>
                     </div>
                   </Card>
                 </div>
 
                 {/* Card Content - Full Width Below Headers */}
-                {activeTab === 'exercises' && (
-                  <Card className="border-2 border-worksheet-purple">
+                {activeTab === 'exercises' && <Card className="border-2 border-worksheet-purple">
                     <div className="p-4">
-                      <ExerciseSelector 
-                        lessonTime={lessonTime}
-                        selectedExercises={selectedExercises}
-                        onChange={setSelectedExercises}
-                        selectionMode={selectionMode}
-                        selectedMediaTypes={selectedMediaTypes}
-                        onMediaTypesChange={setSelectedMediaTypes}
-                      />
+                      <ExerciseSelector lessonTime={lessonTime} selectedExercises={selectedExercises} onChange={setSelectedExercises} selectionMode={selectionMode} selectedMediaTypes={selectedMediaTypes} onMediaTypesChange={setSelectedMediaTypes} />
                     </div>
-                  </Card>
-                )}
+                  </Card>}
 
-                {activeTab === 'advanced' && (
-                  <Card className="border-2 border-worksheet-purple">
+                {activeTab === 'advanced' && <Card className="border-2 border-worksheet-purple">
                     <div className="p-4">
-                      <AdvancedOptions 
-                        languageStyle={languageStyle}
-                        onLanguageStyleChange={setLanguageStyle}
-                      />
+                      <AdvancedOptions languageStyle={languageStyle} onLanguageStyleChange={setLanguageStyle} />
                     </div>
-                  </Card>
-                )}
+                  </Card>}
               </div>
 
               <div className={`mb-6 ${isMobile ? 'text-center' : ''}`}>
@@ -604,20 +447,10 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
               </div>
 
               <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between'} pt-4`}>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={refreshSuggestions} 
-                  className={`border-worksheet-purple text-worksheet-purple hover:bg-worksheet-purpleLight ${isMobile ? 'w-full' : ''}`}
-                  size={isMobile ? "sm" : "default"}
-                >
+                <Button type="button" variant="outline" onClick={refreshSuggestions} className={`border-worksheet-purple text-worksheet-purple hover:bg-worksheet-purpleLight ${isMobile ? 'w-full' : ''}`} size={isMobile ? "sm" : "default"}>
                   Refresh Suggestions
                 </Button>
-                <Button 
-                  type="submit" 
-                  className={`bg-worksheet-purple hover:bg-worksheet-purpleDark ${isMobile ? 'w-full' : ''}`}
-                  size={isMobile ? "sm" : "default"}
-                >
+                <Button type="submit" className={`bg-worksheet-purple hover:bg-worksheet-purpleDark ${isMobile ? 'w-full' : ''}`} size={isMobile ? "sm" : "default"}>
                   Generate Custom Worksheet
                 </Button>
               </div>
@@ -625,6 +458,5 @@ export default function WorksheetForm({ onSubmit, onStudentChange, preSelectedSt
           </form>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 }
