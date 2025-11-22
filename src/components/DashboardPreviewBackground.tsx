@@ -143,7 +143,7 @@ export const DashboardPreviewBackground = () => {
       </div>
 
       {/* Blur Overlay - makes everything blurred and darkened */}
-      <div className="absolute inset-0 backdrop-blur-md bg-black/10" />
+      <div className="absolute inset-0 backdrop-blur-md bg-black/1" />
     </div>
   );
 };
