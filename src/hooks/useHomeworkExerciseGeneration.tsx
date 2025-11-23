@@ -22,6 +22,7 @@ function normalizeExerciseField(field: any): string {
 export const useHomeworkExerciseGeneration = () => {
   const [generatedExercises, setGeneratedExercises] = useState<GeneratedExercise[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [lastPrompt, setLastPrompt] = useState<string>('');
 
   const generateSimilarExercises = async (
     worksheetFormData: any,
@@ -39,6 +40,15 @@ export const useHomeworkExerciseGeneration = () => {
         
         console.log(`📝 BATCH MODE: Will generate ${options.targetTypes.length} type(s), ${count} exercise(s) each`);
         console.log(`   Types: ${options.targetTypes.join(', ')}`);
+
+        // Create and store prompt
+        const prompt = createGenerationPrompt(
+          worksheetFormData, 
+          undefined, // No single targetType - we're doing batch
+          count, 
+          options.additionalInstructions
+        );
+        setLastPrompt(prompt);
         
         // ✅ BATCH GENERATION: Send ONE request with ALL target types
         const response = await fetch('https://bvfrkzdlklyvnhlpleck.supabase.co/functions/v1/generateWorksheet', {
@@ -47,12 +57,7 @@ export const useHomeworkExerciseGeneration = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            prompt: createGenerationPrompt(
-              worksheetFormData, 
-              undefined, // No single targetType - we're doing batch
-              count, 
-              options.additionalInstructions
-            ),
+            prompt: prompt,
             formData: {
               ...worksheetFormData,
               regenerationMode: true,
@@ -92,6 +97,9 @@ export const useHomeworkExerciseGeneration = () => {
       } else {
         // Fallback: Generate one generic exercise
         console.log('📝 Generating generic exercise(s)');
+
+        const prompt = createGenerationPrompt(worksheetFormData, undefined, undefined, options?.additionalInstructions);
+        setLastPrompt(prompt);
         
         const response = await fetch('https://bvfrkzdlklyvnhlpleck.supabase.co/functions/v1/generateWorksheet', {
           method: 'POST',
@@ -99,7 +107,7 @@ export const useHomeworkExerciseGeneration = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            prompt: createGenerationPrompt(worksheetFormData, undefined, undefined, options?.additionalInstructions),
+            prompt: prompt,
             formData: {
               ...worksheetFormData,
               regenerationMode: true
@@ -163,7 +171,8 @@ export const useHomeworkExerciseGeneration = () => {
     generateSimilarExercises,
     toggleExerciseSelection,
     clearGeneratedExercises,
-    getSelectedGeneratedExercises
+    getSelectedGeneratedExercises,
+    lastPrompt: lastPrompt
   };
 };
 

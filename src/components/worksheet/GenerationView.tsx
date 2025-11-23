@@ -30,11 +30,22 @@ export default function GenerationView({
 }: GenerationViewProps) {
   const { toast } = useToast();
   const { students } = useStudents();
+  const [originalWorksheet] = React.useState(() => 
+    JSON.parse(JSON.stringify(generatedWorksheet))
+  );
 
   // Find student name if studentId is provided in inputParams
   const studentName = inputParams?.studentId 
     ? students.find(s => s.id === inputParams.studentId)?.name 
     : undefined;
+
+  const handleDiscardChanges = () => {
+    setEditableWorksheet(JSON.parse(JSON.stringify(originalWorksheet)));
+    toast({
+      title: "Changes Discarded",
+      description: "Your edits have been reverted to the original worksheet.",
+    });
+  };
 
   const handleFeedbackSubmit = async (rating: number, feedback: string) => {
     if (!worksheetId) {
@@ -78,6 +89,7 @@ export default function GenerationView({
         worksheet={generatedWorksheet}
         editableWorksheet={editableWorksheet}
         setEditableWorksheet={setEditableWorksheet}
+        onDiscardChanges={handleDiscardChanges}
         inputParams={inputParams}
         generationTime={generationTime}
         sourceCount={sourceCount}

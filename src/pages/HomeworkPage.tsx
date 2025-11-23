@@ -238,7 +238,7 @@ export default function HomeworkPage() {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   <span>
-                    Deadline: <strong>{format(new Date(homework.deadline), "PPP")}</strong>
+                    Deadline: <strong>{format(new Date(homework.deadline), "PPP HH:mm")}</strong>
                   </span>
                 </div>
               )}

@@ -22,6 +22,7 @@ interface WorksheetToolbarProps {
   isSaving?: boolean;
   handleEdit: () => void;
   handleSave: () => void;
+  onDiscardChanges?: () => void;
   worksheetId?: string | null;
   userIp?: string | null;
   isDownloadUnlocked?: boolean;
@@ -42,6 +43,7 @@ const WorksheetToolbar = ({
   isSaving = false,
   handleEdit,
   handleSave,
+  onDiscardChanges,
   worksheetId,
   userIp,
   isDownloadUnlocked = false,
@@ -244,21 +246,34 @@ const WorksheetToolbar = ({
               </>
             )}
             {isEditing && (
-              <Button
-                onClick={handleSave}
-                disabled={isSaving}
-                className={`bg-green-600 hover:bg-green-700 ${isMobile ? '' : 'mr-2'}`}
-                size="sm"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save Changes'
+              <>
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className={`bg-green-600 hover:bg-green-700 ${isMobile ? '' : 'mr-2'}`}
+                  size="sm"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
+                {onDiscardChanges && (
+                  <Button
+                    onClick={onDiscardChanges}
+                    disabled={isSaving}
+                    variant="outline"
+                    className={`border-red-500 text-red-500 hover:bg-red-50 ${isMobile ? '' : 'mr-2'}`}
+                    size="sm"
+                  >
+                    Discard Changes
+                  </Button>
                 )}
-              </Button>
+              </>
             )}
             <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-2'}`}>
               <Tooltip>
