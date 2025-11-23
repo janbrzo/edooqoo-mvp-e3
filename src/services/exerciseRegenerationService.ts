@@ -24,6 +24,9 @@ class ExerciseRegenerationService {
   ) {
     try {
       console.log('📤 Sending regeneration request to Edge Function');
+      console.log('📝 Exercise type:', currentExercise.type);
+      console.log('📝 Has audio_transcript:', !!originalFormData.audio_transcript);
+      console.log('📝 Has image description:', !!originalFormData.selected_image?.description);
 
       // Create a specific prompt for single exercise regeneration
       const regenerationPrompt = this.createRegenerationPrompt(
@@ -32,7 +35,7 @@ class ExerciseRegenerationService {
         additionalGuidelines
       );
 
-      console.log('🔄 Regeneration prompt:', regenerationPrompt);
+      console.log('🔄 Regeneration prompt (length:', regenerationPrompt.length, 'chars)');
 
       const response = await fetch(REGENERATE_EXERCISE_URL, {
         method: 'POST',
@@ -105,6 +108,29 @@ English Level: ${originalFormData.englishLevel || 'Not specified'}
 Lesson Duration: ${originalFormData.lessonTime || '60min'}
 `;
 
+    // ✅ Add audio transcript if exercise is audio-related
+    let mediaContext = '';
+    const isAudioExercise = currentExercise.type?.includes('audio') || 
+                           currentExercise.type === 'listening-comprehension' ||
+                           currentExercise.type === 'true-false-audio';
+    const isImageExercise = currentExercise.type?.includes('picture') || 
+                           currentExercise.type === 'describe-picture' ||
+                           currentExercise.type === 'answer-questions-picture';
+
+    if (isAudioExercise && originalFormData.audio_transcript) {
+      mediaContext += `
+AUDIO TRANSCRIPT (use this as base for audio-related exercises):
+${originalFormData.audio_transcript}
+`;
+    }
+
+    if (isImageExercise && originalFormData.selected_image?.description) {
+      mediaContext += `
+IMAGE DESCRIPTION (use this as base for image-related exercises):
+${originalFormData.selected_image.description}
+`;
+    }
+
     const exerciseInfo = `
 REGENERATE SINGLE EXERCISE:
 - Exercise Type: ${currentExercise.type}
@@ -119,10 +145,11 @@ REGENERATE SINGLE EXERCISE:
     const regenerationInstructions = `
 IMPORTANT: Generate ONLY ONE exercise of type "${currentExercise.type}". 
 The exercise should be completely new and different from the current one, but maintain the same structure and quality standards.
+${mediaContext ? 'Use the provided audio transcript or image description as the base content for this exercise.' : ''}
 Return the response in the same JSON format as a full worksheet, but with only one exercise in the exercises array.
 `;
 
-    return baseInfo + exerciseInfo + guidelines + regenerationInstructions;
+    return baseInfo + mediaContext + exerciseInfo + guidelines + regenerationInstructions;
   }
 
   // Regenerate Warmup Section
