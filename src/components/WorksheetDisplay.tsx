@@ -95,6 +95,12 @@ export default function WorksheetDisplay({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [expandAllRef, setExpandAllRef] = useState<(() => void) | null>(null);
+  
+  // ✅ Wrap onDiscardChanges to ALSO exit edit mode
+  const handleDiscardChanges = () => {
+    onDiscardChanges?.();
+    setIsEditing(false); // Exit edit mode immediately after discarding changes
+  };
   const [closeSidebarRef, setCloseSidebarRef] = useState<(() => void) | null>(null);
   const [isPinned, setIsPinned] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -550,7 +556,7 @@ export default function WorksheetDisplay({
             isSaving={isSaving}
             handleEdit={handleEdit}
             handleSave={handleSave}
-            onDiscardChanges={onDiscardChanges}
+            onDiscardChanges={handleDiscardChanges}
             worksheetId={worksheetId}
             userIp={userIp}
             isDownloadUnlocked={isDownloadUnlocked}
