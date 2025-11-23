@@ -70,6 +70,7 @@ export function CreateHomeworkModal({
   const [teacherEmail, setTeacherEmail] = useState<string | null>(null);
   const [selectedGeneratedTypes, setSelectedGeneratedTypes] = useState<string[]>([]);
   const [additionalInstructions, setAdditionalInstructions] = useState<string>('');
+  const [generationSeconds, setGenerationSeconds] = useState(0);
   
   // Initialize exercise generation hook
   const {
@@ -78,7 +79,8 @@ export function CreateHomeworkModal({
     generateSimilarExercises,
     toggleExerciseSelection,
     clearGeneratedExercises,
-    getSelectedGeneratedExercises
+    getSelectedGeneratedExercises,
+    lastPrompt
   } = useHomeworkExerciseGeneration();
   
   // Set preselected student when modal opens
@@ -105,6 +107,20 @@ export function CreateHomeworkModal({
       fetchTeacherEmail();
     }
   }, [open, teacherId, teacherEmail]);
+
+  // Timer for generation
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isGeneratingExercises) {
+      setGenerationSeconds(0);
+      interval = setInterval(() => {
+        setGenerationSeconds(prev => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isGeneratingExercises]);
 
   // Check for existing homework when modal opens
   useEffect(() => {
@@ -277,7 +293,8 @@ export function CreateHomeworkModal({
           title: `${worksheetTitle} - Homework for ${student?.name}`,
           selected_exercises: exercisesData,
           deadline: finalDeadline,
-          reminder_hours: sendReminder ? parseInt(reminderHours) : null
+          reminder_hours: sendReminder ? parseInt(reminderHours) : null,
+          prompt: lastPrompt || null
         })
         .select()
         .single();
@@ -637,7 +654,7 @@ export function CreateHomeworkModal({
                   {isGeneratingExercises ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating...
+                      Generating... ({generationSeconds}s)
                     </>
                   ) : (
                     <>

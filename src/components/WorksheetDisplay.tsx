@@ -60,6 +60,7 @@ interface WorksheetDisplayProps {
   onFeedbackSubmit?: (rating: number, feedback: string) => void;
   editableWorksheet: any;
   setEditableWorksheet: (worksheet: any) => void;
+  onDiscardChanges?: () => void;
   userId?: string;
   studentName?: string;
   studentId?: string;
@@ -81,6 +82,7 @@ export default function WorksheetDisplay({
   onFeedbackSubmit,
   editableWorksheet,
   setEditableWorksheet,
+  onDiscardChanges,
   userId,
   studentName,
   studentId,
@@ -548,6 +550,7 @@ export default function WorksheetDisplay({
             isSaving={isSaving}
             handleEdit={handleEdit}
             handleSave={handleSave}
+            onDiscardChanges={onDiscardChanges}
             worksheetId={worksheetId}
             userIp={userIp}
             isDownloadUnlocked={isDownloadUnlocked}

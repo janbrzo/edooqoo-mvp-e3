@@ -90,75 +90,80 @@ serve(async (req) => {
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
 
-    // ============================================================
-    // BATCH GENERATION MODE - Generate multiple exercise types in ONE request
-    // ============================================================
-    if (isBatchGeneration && formData?.targetExerciseTypes && Array.isArray(formData.targetExerciseTypes)) {
-      console.log('🔄 [BATCH-MODE] Batch generation requested for types:', formData.targetExerciseTypes);
-      console.log('🔄 [BATCH-MODE] Exercise count per type:', formData.exerciseCountPerType || 1);
-      
-      const exerciseCountPerType = formData.exerciseCountPerType || 1;
-      const totalExerciseCount = formData.targetExerciseTypes.length * exerciseCountPerType;
-      
-      // Build ONE system message for ALL exercise types
-      const batchSystemMessage = composeSystemMessage(
-        hasGrammarFocus,
-        grammarFocus,
-        { 
-          ...formData, 
-          selectedExercises: formData.targetExerciseTypes, // Pass ALL types
-          selectedImage: null, // ❌ No image in batch mode
-          selectedAudio: null  // ❌ No audio in batch mode
-        },
-        totalExerciseCount, // Total count of ALL exercises
-        formData.targetExerciseTypes, // ALL types at once
-        null, // ❌ No image in batch mode
-        null  // ❌ No audio in batch mode
-      );
-      
-      console.log(`🔄 [BATCH-MODE] Making ONE OpenAI request for ${totalExerciseCount} exercises across ${formData.targetExerciseTypes.length} types`);
-      
-      // ONE request to OpenAI for all exercises
-      const batchResponse = await openai.chat.completions.create({
-        model: "gpt-5-mini-2025-08-07",
-        temperature: 1,
-        messages: [
-          { role: "system", content: batchSystemMessage },
-          { role: "user", content: sanitizedPrompt }
-        ],
-        max_completion_tokens: 20000,
-      });
-      
-      const batchContent = batchResponse.choices[0].message.content;
-      
-      if (!batchContent) {
-        throw new Error("No content received from OpenAI in batch mode");
-      }
-      
-      try {
-        const batchData = parseAIResponse(batchContent);
-        if (!batchData.exercises || !Array.isArray(batchData.exercises)) {
-          throw new Error("Invalid exercises structure in batch response");
-        }
-        
-        console.log(`✅ [BATCH-MODE] Generated ${batchData.exercises.length} exercises in ONE request`);
-        
-        // Return batch exercises directly
-        return new Response(
-          JSON.stringify({ 
-            exercises: batchData.exercises,
-            success: true 
-          }),
-          { 
-            status: 200, 
-            headers: { ...corsHeaders, "Content-Type": "application/json" } 
-          }
-        );
-      } catch (error) {
-        console.error(`❌ [BATCH-MODE] Failed to parse batch response:`, error);
-        throw error;
-      }
+  // ============================================================
+  // BATCH GENERATION MODE - Generate multiple exercise types in ONE request
+  // ============================================================
+  if (isBatchGeneration && formData?.targetExerciseTypes && Array.isArray(formData.targetExerciseTypes)) {
+    const batchStartTime = Date.now();
+    console.log('🔄 [BATCH-MODE] Batch generation requested for types:', formData.targetExerciseTypes);
+    console.log('🔄 [BATCH-MODE] Exercise count per type:', formData.exerciseCountPerType || 1);
+    
+    const exerciseCountPerType = formData.exerciseCountPerType || 1;
+    const totalExerciseCount = formData.targetExerciseTypes.length * exerciseCountPerType;
+    
+    // Build ONE system message for ALL exercise types
+    const batchSystemMessage = composeSystemMessage(
+      hasGrammarFocus,
+      grammarFocus,
+      { 
+        ...formData, 
+        selectedExercises: formData.targetExerciseTypes, // Pass ALL types
+        selectedImage: null, // ❌ No image in batch mode
+        selectedAudio: null  // ❌ No audio in batch mode
+      },
+      totalExerciseCount, // Total count of ALL exercises
+      formData.targetExerciseTypes, // ALL types at once
+      null, // ❌ No image in batch mode
+      null  // ❌ No audio in batch mode
+    );
+    
+    console.log(`🔄 [BATCH-MODE] Making ONE OpenAI request for ${totalExerciseCount} exercises across ${formData.targetExerciseTypes.length} types`);
+    
+    // ONE request to OpenAI for all exercises
+    const batchResponse = await openai.chat.completions.create({
+      model: "gpt-5-mini-2025-08-07",
+      temperature: 1,
+      messages: [
+        { role: "system", content: batchSystemMessage },
+        { role: "user", content: sanitizedPrompt }
+      ],
+      max_completion_tokens: 20000,
+    });
+    
+    const batchGenerationTime = ((Date.now() - batchStartTime) / 1000).toFixed(2);
+    console.log(`✅ [BATCH-MODE] OpenAI responded in ${batchGenerationTime}s`);
+    
+    const batchContent = batchResponse.choices[0].message.content;
+    
+    if (!batchContent) {
+      throw new Error("No content received from OpenAI in batch mode");
     }
+    
+    try {
+      const batchData = parseAIResponse(batchContent);
+      if (!batchData.exercises || !Array.isArray(batchData.exercises)) {
+        throw new Error("Invalid exercises structure in batch response");
+      }
+      
+      console.log(`✅ [BATCH-MODE] Generated ${batchData.exercises.length} exercises in ONE request`);
+      console.log(`⏱️  [BATCH-MODE] Total batch generation time: ${batchGenerationTime} seconds`);
+      
+      // Return batch exercises directly
+      return new Response(
+        JSON.stringify({ 
+          exercises: batchData.exercises,
+          success: true 
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    } catch (error) {
+      console.error(`❌ [BATCH-MODE] Failed to parse batch response:`, error);
+      throw error;
+    }
+  }
 
     // Determine exercise count from lesson duration
     let exerciseCount = 8; // Default for 60+ minutes

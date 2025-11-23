@@ -15,6 +15,7 @@ export default function WorksheetPage() {
   const [parsedWorksheet, setParsedWorksheet] = useState<any>(null);
   const [studentName, setStudentName] = useState<string>('');
   const [editableWorksheet, setEditableWorksheet] = useState<any>(null);
+  const [originalWorksheet, setOriginalWorksheet] = useState<any>(null);
 
   useEffect(() => {
     const fetchWorksheet = async () => {
@@ -101,6 +102,7 @@ export default function WorksheetPage() {
         setWorksheetData(worksheet);
         setParsedWorksheet(parsed);
         setEditableWorksheet(parsed);
+        setOriginalWorksheet(parsed);
 
         // Fetch student name if student_id exists
         if (worksheet.student_id) {
@@ -131,6 +133,16 @@ export default function WorksheetPage() {
     fetchWorksheet();
   }, [id, navigate, toast]);
 
+  const handleDiscardChanges = () => {
+    if (originalWorksheet) {
+      setEditableWorksheet(JSON.parse(JSON.stringify(originalWorksheet)));
+      toast({
+        title: "Changes Discarded",
+        description: "Your edits have been reverted to the original worksheet.",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -156,6 +168,7 @@ export default function WorksheetPage() {
       worksheetId={worksheetData.id}
       editableWorksheet={editableWorksheet}
       setEditableWorksheet={setEditableWorksheet}
+      onDiscardChanges={handleDiscardChanges}
       userId={worksheetData.teacher_id}
       studentName={studentName}
       studentId={worksheetData.student_id}

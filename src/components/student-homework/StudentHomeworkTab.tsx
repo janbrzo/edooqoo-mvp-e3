@@ -36,7 +36,7 @@ interface StudentHomeworkTabProps {
 
 export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: StudentHomeworkTabProps) => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed' | 'viewed' | 'not_viewed' | 'overdue'>('all');
-  const [sortBy, setSortBy] = useState<'deadline' | 'created'>('deadline');
+  const [sortBy, setSortBy] = useState<'deadline' | 'created'>('created');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedWorksheetForHomework, setSelectedWorksheetForHomework] = useState<string>('');
   const [deletingHomeworkId, setDeletingHomeworkId] = useState<string | null>(null);
@@ -377,6 +377,66 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
                     >
                       <Mail className="h-4 w-4" />
                     </Button>
+
+                    {/* Calendar Icon for Deadline Edit */}
+                    {hw.deadline && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            title="Edit deadline"
+                          >
+                            <Calendar className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 z-50" align="start">
+                          <div className="p-3 space-y-3">
+                            <div>
+                              <Label className="text-sm font-medium">Deadline Date</Label>
+                              <CalendarComponent
+                                mode="single"
+                                selected={editingDeadline?.id === hw.id ? editingDeadline.date : new Date(hw.deadline)}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    const currentTime = editingDeadline?.id === hw.id 
+                                      ? editingDeadline.time 
+                                      : format(new Date(hw.deadline), 'HH:mm');
+                                    setEditingDeadline({ id: hw.id, date, time: currentTime });
+                                  }
+                                }}
+                                initialFocus
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium">Time</Label>
+                              <Input
+                                type="time"
+                                value={editingDeadline?.id === hw.id ? editingDeadline.time : format(new Date(hw.deadline), 'HH:mm')}
+                                onChange={(e) => {
+                                  const currentDate = editingDeadline?.id === hw.id 
+                                    ? editingDeadline.date 
+                                    : new Date(hw.deadline);
+                                  setEditingDeadline({ id: hw.id, date: currentDate, time: e.target.value });
+                                }}
+                                className="mt-1"
+                              />
+                            </div>
+                            <Button
+                              onClick={() => {
+                                if (editingDeadline?.id === hw.id) {
+                                  handleUpdateDeadline(hw.id, editingDeadline.date, editingDeadline.time);
+                                }
+                              }}
+                              className="w-full"
+                              size="sm"
+                            >
+                              Update Deadline
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    )}
                     
                     <Button
                       variant="outline"

@@ -97,7 +97,7 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={question.text}
+                      value={question.text ?? question.question ?? ''}
                       onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
                       className="w-full border p-1 editable-content"
                     />

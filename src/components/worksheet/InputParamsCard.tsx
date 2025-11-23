@@ -111,20 +111,18 @@ const getLanguageStyleDescription = (value: number): string => {
 
 const InputParamsCard = ({ inputParams, selectedExercises }: InputParamsCardProps) => {
   const [expandedFields, setExpandedFields] = useState<Record<string, boolean>>({});
+  const MAX_CHARS = 180;
 
-  // Helper to render text with truncate and "Show more" button
+  // Helper to render text with truncate and "Show more" button (character-based)
   const renderTruncatableText = (fieldKey: string, text: string) => {
     if (!text) return null;
 
     const isExpanded = expandedFields[fieldKey];
-    const lines = text.split('\n');
+    const needsToggle = text.length > MAX_CHARS;
     
-    // Show first 3 lines if not expanded
-    const displayText = !isExpanded && lines.length > 3
-      ? lines.slice(0, 3).join('\n')
+    const displayText = !isExpanded && needsToggle
+      ? text.slice(0, MAX_CHARS) + '…'
       : text;
-
-    const needsToggle = lines.length > 3;
 
     return (
       <div className="space-y-1">
