@@ -79,6 +79,15 @@ export const useHomeworkExerciseGeneration = () => {
         const data = await response.json();
         console.log('✅ Batch generation successful:', data);
 
+        // ✅ CRITICAL: Use FULL system prompt returned from edge function
+        // This contains the complete prompt sent to ChatGPT, not just the simplified version
+        if (data.fullPrompt) {
+          console.log('📝 Received full prompt from edge function (length:', data.fullPrompt.length, 'characters)');
+          setLastPrompt(data.fullPrompt);
+        } else {
+          console.warn('⚠️ No fullPrompt in response, using simplified prompt');
+        }
+
         if (data.exercises && Array.isArray(data.exercises)) {
           const exercisesWithState = data.exercises.map((exercise: any, index: number) => ({
             ...exercise,

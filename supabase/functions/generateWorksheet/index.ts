@@ -148,10 +148,11 @@ serve(async (req) => {
       console.log(`✅ [BATCH-MODE] Generated ${batchData.exercises.length} exercises in ONE request`);
       console.log(`⏱️  [BATCH-MODE] Total batch generation time: ${batchGenerationTime} seconds`);
       
-      // Return batch exercises directly
+      // Return batch exercises directly WITH FULL PROMPT for storage in homework_assignments.prompt
       return new Response(
         JSON.stringify({ 
           exercises: batchData.exercises,
+          fullPrompt: batchSystemMessage, // ✅ Return complete system message for homework_assignments.prompt
           success: true 
         }),
         { 
