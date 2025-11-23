@@ -23,10 +23,15 @@ class ExerciseRegenerationService {
     userId: string
   ) {
     try {
-      console.log('📤 Sending regeneration request to Edge Function');
-      console.log('📝 Exercise type:', currentExercise.type);
-      console.log('📝 Has audio_transcript:', !!originalFormData.audio_transcript);
-      console.log('📝 Has image description:', !!originalFormData.selected_image?.description);
+      console.log('📤 [REGENERATE] Sending regeneration request to Edge Function');
+      console.log('📝 [REGENERATE] Worksheet ID:', worksheetId);
+      console.log('📝 [REGENERATE] Exercise index:', exerciseIndex);
+      console.log('📝 [REGENERATE] Exercise type:', currentExercise.type);
+      console.log('📝 [REGENERATE] Exercise title:', currentExercise.title);
+      console.log('📝 [REGENERATE] Additional guidelines:', additionalGuidelines || '(none)');
+      console.log('📝 [REGENERATE] Has audio_transcript:', !!originalFormData.audio_transcript);
+      console.log('📝 [REGENERATE] Has image description:', !!originalFormData.selected_image?.description);
+      console.log('📝 [REGENERATE] User ID:', userId);
 
       // Create a specific prompt for single exercise regeneration
       const regenerationPrompt = this.createRegenerationPrompt(
@@ -37,30 +42,48 @@ class ExerciseRegenerationService {
 
       console.log('🔄 Regeneration prompt (length:', regenerationPrompt.length, 'chars)');
 
+      const requestBody = {
+        prompt: regenerationPrompt,
+        formData: {
+          ...originalFormData,
+          regenerationMode: true,
+          targetExerciseType: currentExercise.type,
+          exerciseIndex
+        },
+        userId,
+        isRegeneration: true
+      };
+      
+      console.log('📤 [REGENERATE] Request body:', {
+        promptLength: regenerationPrompt.length,
+        formDataKeys: Object.keys(requestBody.formData),
+        targetExerciseType: currentExercise.type,
+        exerciseIndex,
+        isRegeneration: true
+      });
+
       const response = await fetch(REGENERATE_EXERCISE_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          prompt: regenerationPrompt,
-          formData: {
-            ...originalFormData,
-            regenerationMode: true,
-            targetExerciseType: currentExercise.type,
-            exerciseIndex
-          },
-          userId,
-          isRegeneration: true
-        })
+        body: JSON.stringify(requestBody)
       });
+      
+      console.log('📥 [REGENERATE] Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
+        console.error('❌ [REGENERATE] Error response:', errorData);
         throw new Error(errorData?.error || `Failed to regenerate exercise: ${response.statusText}`);
       }
 
       const result = await response.json();
+      console.log('📦 [REGENERATE] Response data:', {
+        hasExercises: !!result.exercises,
+        exercisesCount: result.exercises?.length || 0,
+        firstExerciseType: result.exercises?.[0]?.type
+      });
       
       // Extract the single exercise from the response
       if (result.exercises && result.exercises.length > 0) {
@@ -69,14 +92,23 @@ class ExerciseRegenerationService {
         // Ensure the exercise has the correct index-based title
         newExercise.title = `Exercise ${exerciseIndex + 1}: ${newExercise.type.charAt(0).toUpperCase() + newExercise.type.slice(1).replace(/-/g, ' ')}`;
         
-        console.log('✅ Exercise regenerated successfully:', newExercise.type);
+        console.log('✅ [REGENERATE] Exercise regenerated successfully:', {
+          type: newExercise.type,
+          title: newExercise.title,
+          hasInstructions: !!newExercise.instructions,
+          hasContent: !!newExercise.content
+        });
         return newExercise;
       } else {
+        console.error('❌ [REGENERATE] No exercises in response:', result);
         throw new Error('No exercises returned from regeneration');
       }
 
     } catch (error) {
-      console.error('❌ Error in exercise regeneration:', error);
+      console.error('❌ [REGENERATE] Error in exercise regeneration:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
       throw error;
     }
   }

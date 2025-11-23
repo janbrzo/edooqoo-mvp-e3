@@ -174,7 +174,15 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   const showImage = !hideExerciseMedia && !hasSelectedImage;
 
   const handleRegenerateClick = () => {
-    openModal(index);
+    console.log('🔄 [REGENERATE] Opening modal:', { 
+      displayIndex: index, 
+      arrayIndex, 
+      exerciseType: exercise.type,
+      worksheetId,
+      hasOriginalFormData: !!originalFormData,
+      hasUserId: !!userId
+    });
+    openModal(arrayIndex); // FIXED: Use arrayIndex instead of index
   };
 
   const handleRegenerateConfirm = async () => {
