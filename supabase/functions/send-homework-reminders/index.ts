@@ -133,6 +133,7 @@ Deno.serve(async (req) => {
       console.log(`      Reminder scheduled at: ${hw.reminder_scheduled_at}`);
       console.log(`      Current time: ${now.toISOString()}`);
       console.log(`      Is overdue: ${isOverdue}`);
+      console.log(`      Last reminder sent: ${hw.reminder_sent_at || 'NEVER'}`);
       
       // OVERDUE LOGIC: Special handling for overdue homework
       if (isOverdue) {
@@ -142,13 +143,21 @@ Deno.serve(async (req) => {
           return false;
         }
         
-        // Check 4b: Overdue email not sent yet (send only ONCE)
+        // Check 4b: Overdue email not sent yet AFTER deadline
+        // If reminder was sent BEFORE deadline, we still need to send overdue email
         if (hw.reminder_sent_at) {
-          console.log(`      SKIP: Overdue email already sent at ${hw.reminder_sent_at}`);
-          return false;
+          const lastReminderDate = new Date(hw.reminder_sent_at);
+          // If last reminder was sent AFTER deadline, skip (overdue already sent)
+          if (lastReminderDate > deadline) {
+            console.log(`      SKIP: Overdue email already sent at ${hw.reminder_sent_at} (after deadline)`);
+            return false;
+          }
+          // If last reminder was sent BEFORE deadline, we SHOULD send overdue now
+          console.log(`      ✅ PASS: Last reminder was before deadline, sending overdue email now`);
+        } else {
+          console.log(`      ✅ PASS: No reminder sent yet, sending overdue email`);
         }
         
-        console.log(`      ✅ PASS: Overdue homework, will send overdue email (first time)`);
         return true;
       }
       

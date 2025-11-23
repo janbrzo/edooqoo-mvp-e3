@@ -54,6 +54,11 @@ export function CreateHomeworkModal({
     defaultDeadline.setDate(defaultDeadline.getDate() + 6);
     return defaultDeadline;
   });
+  const [deadlineTime, setDeadlineTime] = useState<string>(() => {
+    // Default time: current hour and minute (e.g., "14:30")
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  });
   const [sendReminder, setSendReminder] = useState<boolean>(true);
   const [reminderHours, setReminderHours] = useState<string>("24");
   const [sendToTeacher, setSendToTeacher] = useState<boolean>(false);
@@ -265,23 +270,17 @@ export function CreateHomeworkModal({
       const studentEmail = studentData?.student_email || '';
 
       // Create homework assignment
-      // IMPORTANT: deadline time should match created_at time
+      // IMPORTANT: deadline time from user's time picker
       let finalDeadline: string | null = null;
-      if (deadline) {
-        // Always use current local time (hour, minute, second) with selected date
-        const now = new Date();
+      if (deadline && deadlineTime) {
+        // Combine: date from calendar + time from time picker
         const selectedDate = new Date(deadline);
+        const [hours, minutes] = deadlineTime.split(':').map(Number);
         
-        // Combine: date from calendar + time from now
-        selectedDate.setHours(
-          now.getHours(),
-          now.getMinutes(),
-          now.getSeconds(),
-          now.getMilliseconds()
-        );
+        selectedDate.setHours(hours, minutes, 0, 0);
         
         finalDeadline = selectedDate.toISOString();
-        console.log('[CreateHomeworkModal] Final deadline:', finalDeadline, 'Local:', selectedDate);
+        console.log('[CreateHomeworkModal] Final deadline:', finalDeadline, 'Local:', selectedDate, 'Time:', deadlineTime);
       }
 
       const { data: homework, error: insertError } = await supabase
@@ -663,6 +662,11 @@ export function CreateHomeworkModal({
                     </>
                   )}
                 </Button>
+                {isGeneratingExercises && (
+                  <p className="text-xs text-muted-foreground text-center mt-2">
+                    Expected time: ~{selectedGeneratedTypes.length * 30}s ({selectedGeneratedTypes.length} exercise{selectedGeneratedTypes.length !== 1 ? 's' : ''} × 30s each)
+                  </p>
+                )}
                 
                 {/* Clear Button */}
                 {generatedExercises.length > 0 && (
@@ -709,31 +713,44 @@ export function CreateHomeworkModal({
             {/* Deadline Selection */}
             <div className="space-y-2">
               <Label>Deadline (Optional)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !deadline && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {deadline ? format(deadline, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={deadline}
-                    onSelect={setDeadline}
-                    disabled={(date) =>
-                      date < new Date(new Date().setHours(0, 0, 0, 0))
-                    }
-                    initialFocus
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "flex-1 justify-start text-left font-normal",
+                        !deadline && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {deadline ? format(deadline, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={deadline}
+                      onSelect={setDeadline}
+                      disabled={(date) =>
+                        date < new Date(new Date().setHours(0, 0, 0, 0))
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                {/* Time Picker */}
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="time"
+                    value={deadlineTime}
+                    onChange={(e) => setDeadlineTime(e.target.value)}
+                    className="w-32"
                   />
-                </PopoverContent>
-              </Popover>
+                </div>
+              </div>
             </div>
 
             {/* Reminder Hours Dropdown */}
