@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Calendar, User, Mail, CheckCircle2, FileText } from "lucide-react";
 import { format } from "date-fns";
+import { deepFixTextObjects } from "@/utils/textObjectFixer";
 
 interface HomeworkData {
   id: string;
@@ -64,7 +65,18 @@ export default function HomeworkPage() {
         return;
       }
 
-      setHomework(data as HomeworkData);
+      // Fix nested {text: "..."} objects that cause React error #31
+      const fixedData = {
+        ...data,
+        selected_exercises: deepFixTextObjects(data.selected_exercises, 'homework.selected_exercises')
+      };
+
+      console.log('[HomeworkPage] Loaded and fixed homework data:', {
+        id: fixedData.id,
+        exerciseCount: Array.isArray(fixedData.selected_exercises) ? fixedData.selected_exercises.length : 0
+      });
+
+      setHomework(fixedData as HomeworkData);
     } catch (error) {
       console.error('Error loading homework:', error);
       toast.error("Failed to load homework");

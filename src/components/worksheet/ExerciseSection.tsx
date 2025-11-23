@@ -155,6 +155,18 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   // Normalize exercise type for conditional rendering (handle both standard and -picture types)
   const normalizedType = normalizeExerciseType(exercise.type);
   
+  // DEBUG: Log structure for answer-questions-picture to diagnose editing issues
+  if (exercise.type === 'answer-questions-picture') {
+    console.log('[DEBUG] Answer Questions Picture exercise structure:', {
+      type: exercise.type,
+      hasQuestions: !!exercise.questions,
+      questionsType: Array.isArray(exercise.questions) ? 'array' : typeof exercise.questions,
+      questionsSample: Array.isArray(exercise.questions) ? exercise.questions[0] : exercise.questions,
+      keys: Object.keys(exercise),
+      fullExercise: exercise
+    });
+  }
+  
   // ✅ Check BOTH sources for selected image (Unsplash OR AI-generated)
   const hasSelectedImage = originalFormData?.selectedImage || editableWorksheet?.selected_image;
 
