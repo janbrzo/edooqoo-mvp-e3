@@ -664,7 +664,7 @@ export function CreateHomeworkModal({
                 </Button>
                 {isGeneratingExercises && (
                   <p className="text-xs text-muted-foreground text-center mt-2">
-                    Expected time: ~{selectedGeneratedTypes.length * 30}s ({selectedGeneratedTypes.length} exercise{selectedGeneratedTypes.length !== 1 ? 's' : ''} × 30s each)
+                    Expected time: ~{50 + selectedGeneratedTypes.length * 10}s (60s for first + {selectedGeneratedTypes.length - 1 > 0 ? `${(selectedGeneratedTypes.length - 1) * 10}s for ${selectedGeneratedTypes.length - 1} more` : '0s'})
                   </p>
                 )}
                 
