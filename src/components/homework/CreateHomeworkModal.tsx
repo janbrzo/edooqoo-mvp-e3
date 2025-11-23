@@ -215,8 +215,12 @@ export function CreateHomeworkModal({
       return;
     }
 
-    if (selectedExercises.size === 0) {
-      toast.error("Please select at least one exercise");
+    // Check if at least one exercise (original OR generated) is selected
+    const hasOriginalExercises = selectedExercises.size > 0;
+    const hasGeneratedExercises = getSelectedGeneratedExercises().length > 0;
+    
+    if (!hasOriginalExercises && !hasGeneratedExercises) {
+      toast.error("Please select at least one exercise (original or generated)");
       return;
     }
 
@@ -739,36 +743,47 @@ export function CreateHomeworkModal({
                     </SelectTrigger>
                     <SelectContent>
                       {(() => {
+                        // Calculate hours until deadline using effective deadline (selected date + current time)
                         const hoursUntilDeadline = deadline 
-                          ? Math.floor((deadline.getTime() - new Date().getTime()) / (1000 * 60 * 60))
+                          ? (() => {
+                              const now = new Date();
+                              const effectiveDeadline = new Date(deadline);
+                              effectiveDeadline.setHours(
+                                now.getHours(),
+                                now.getMinutes(),
+                                now.getSeconds(),
+                                now.getMilliseconds()
+                              );
+                              return Math.floor((effectiveDeadline.getTime() - now.getTime()) / (1000 * 60 * 60));
+                            })()
                           : null;
                         
                         return (
                           <>
-                            <SelectItem value="6" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 6}>
-                              6 hours before
-                            </SelectItem>
-                            <SelectItem value="12" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 12}>
-                              12 hours before
-                            </SelectItem>
-                            <SelectItem value="23" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 23}>
-                              23 hours before
-                            </SelectItem>
-                            <SelectItem value="24" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 24}>
-                              24 hours before (default)
-                            </SelectItem>
-                            <SelectItem value="48" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 48}>
-                              2 days before
-                            </SelectItem>
-                            <SelectItem value="72" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 72}>
-                              3 days before
-                            </SelectItem>
-                            <SelectItem value="96" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 96}>
-                              4 days before
-                            </SelectItem>
-                            <SelectItem value="120" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 120}>
-                              5 days before
-                            </SelectItem>
+                    <SelectItem value="6" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 6}>
+                      6 hours before
+                    </SelectItem>
+                    <SelectItem value="12" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 12}>
+                      12 hours before
+                    </SelectItem>
+                    <SelectItem value="23" disabled={hoursUntilDeadline !== null && hoursUntilDeadline < 23}>
+                      23 hours before
+                    </SelectItem>
+                    <SelectItem value="24" disabled={hoursUntilDeadline !== null && hoursUntilDeadline <= 24}>
+                      24 hours before (default)
+                    </SelectItem>
+                    <SelectItem value="48" disabled={hoursUntilDeadline !== null && hoursUntilDeadline <= 48}>
+                      2 days before
+                    </SelectItem>
+                    <SelectItem value="72" disabled={hoursUntilDeadline !== null && hoursUntilDeadline <= 72}>
+                      3 days before
+                    </SelectItem>
+                    <SelectItem value="96" disabled={hoursUntilDeadline !== null && hoursUntilDeadline <= 96}>
+                      4 days before
+                    </SelectItem>
+                    <SelectItem value="120" disabled={hoursUntilDeadline !== null && hoursUntilDeadline <= 120}>
+                      5 days before
+                    </SelectItem>
                           </>
                         );
                       })()}

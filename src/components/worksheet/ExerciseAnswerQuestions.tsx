@@ -34,8 +34,8 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
 }) => {
   return (
     <div className="space-y-4">
-      {/* Media section - only show if showImage is true and hideExerciseMedia is false */}
-      {showImage && !hideExerciseMedia && (
+      {/* Media section - only show if showImage is true and hideExerciseMedia is false AND (isEditing OR media_url exists) */}
+      {showImage && !hideExerciseMedia && (isEditing || media_url) && (
         <div className="flex justify-center">
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
           {isEditing && onMediaUrlChange && onMediaTypeChange ? (
