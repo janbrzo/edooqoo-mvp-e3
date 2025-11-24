@@ -4,16 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
-import { ChevronUp, ChevronDown, Check, User, FileText, Share2, X } from 'lucide-react';
+import { ChevronUp, ChevronDown, Check, User, FileText, Share2, X, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Confetti from 'react-confetti';
+import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
 
 export const OnboardingChecklist = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [completionAnimation, setCompletionAnimation] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isTemporarilyDismissed, setIsTemporarilyDismissed] = useState(false);
-  const { progress, loading, dismissOnboarding, getCompletionPercentage, shouldShow } = useOnboardingProgress();
+  const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
+  const { progress, loading, dismissOnboarding, getCompletionPercentage, shouldShow, refreshProgress } = useOnboardingProgress();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export const OnboardingChecklist = () => {
       label: 'Add your first student',
       icon: User,
       completed: progress.steps.add_student,
-      action: () => navigate('/dashboard')
+      action: () => setAddStudentModalOpen(true)
     },
     {
       key: 'generate_worksheet',
@@ -61,6 +63,13 @@ export const OnboardingChecklist = () => {
       label: 'Share the worksheet',
       icon: Share2,
       completed: progress.steps.share_worksheet,
+      action: () => navigate('/dashboard')
+    },
+    {
+      key: 'create_homework',
+      label: 'Create homework assignment',
+      icon: BookOpen,
+      completed: progress.steps.create_homework,
       action: () => navigate('/dashboard')
     }
   ];
@@ -168,7 +177,7 @@ export const OnboardingChecklist = () => {
                           onClick={step.action}
                           className="h-8 text-xs"
                         >
-                          Start
+                          {step.key === 'add_student' ? 'Add' : 'Start'}
                         </Button>
                       )}
                     </div>
@@ -191,6 +200,17 @@ export const OnboardingChecklist = () => {
             </CardContent>
           )}
         </Card>
+        
+        {/* Add Student Modal - controlled externally */}
+        <AddStudentDialog 
+          triggerButton={false}
+          open={addStudentModalOpen}
+          onOpenChange={setAddStudentModalOpen}
+          onStudentAdded={() => {
+            setAddStudentModalOpen(false);
+            refreshProgress();
+          }}
+        />
       </div>
     </>
   );

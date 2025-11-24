@@ -4,6 +4,7 @@ import { FormData as WorksheetFormData } from '@/components/WorksheetForm';
 import { generateWorksheetAPI } from './apiService';
 import { submitFeedbackAPI, updateFeedbackAPI } from './feedbackService';
 import { trackWorksheetEventAPI } from './trackingService';
+import { duplicateWorksheetAPI } from './duplicateService';
 
 /**
  * Main service export for worksheet functionality
@@ -12,7 +13,8 @@ export {
   generateWorksheet,
   submitFeedback, 
   updateFeedback, 
-  trackWorksheetEvent 
+  trackWorksheetEvent,
+  duplicateWorksheet
 };
 
 /**
@@ -58,4 +60,11 @@ async function updateFeedback(id: string, comment: string, userId: string) {
  */
 async function trackWorksheetEvent(type: string, worksheetId: string, userId: string, metadata: any = {}) {
   return trackWorksheetEventAPI(type, worksheetId, userId, metadata);
+}
+
+/**
+ * Duplicates a worksheet with a new student assignment
+ */
+async function duplicateWorksheet(originalWorksheetId: string, newStudentId: string | null, userId: string) {
+  return duplicateWorksheetAPI(originalWorksheetId, newStudentId, userId);
 }

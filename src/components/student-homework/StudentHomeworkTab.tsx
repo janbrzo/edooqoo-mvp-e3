@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,15 +46,46 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
   
   const { students } = useStudents();
   const { worksheets } = useWorksheetHistory(studentId);
-  const worksheetIds = worksheets.map(w => w.id);
   
-  // Fetch homework for this student's worksheets, filtered by studentId
-  const { homeworkByWorksheet, loading, refetch } = useAllWorksheetHomework(worksheetIds, studentId);
+  // Fetch homework directly for this student, regardless of worksheet assignment
+  const [allHomework, setAllHomework] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Flatten to single list
-  const allHomework = useMemo(() => {
-    return Object.values(homeworkByWorksheet).flat();
-  }, [homeworkByWorksheet]);
+  const fetchHomework = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('homework_assignments')
+        .select(`
+          *,
+          students!inner(name, student_email)
+        `)
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Transform data to include student info at root level
+      const transformedData = (data || []).map((hw: any) => ({
+        ...hw,
+        student_name: hw.students?.name || '',
+        student_email: hw.students?.student_email || null
+      }));
+      
+      setAllHomework(transformedData);
+    } catch (error) {
+      console.error('Error fetching homework:', error);
+      setAllHomework([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchHomework();
+  }, [studentId]);
+  
+  const refetch = fetchHomework;
   
   // Apply filters and sorting
   const filteredHomework = useMemo(() => {
@@ -257,7 +288,7 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
       ) : (
         <div className="space-y-3">
           {filteredHomework.map((hw) => {
-            const worksheet = worksheets.find(w => w.id === hw.selected_exercises);
+            const worksheet = worksheets.find(w => w.id === hw.source_worksheet_id);
             
             return (
               <Card key={hw.id} className="p-4">
@@ -272,17 +303,17 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
                           Completed
                         </Badge>
                       )}
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3 w-3 flex-shrink-0" />
-                        Source: <Link 
-                          to={`/worksheet/${worksheetIds.find(id => 
-                            homeworkByWorksheet[id]?.some(h => h.id === hw.id)
-                          )}`} 
-                          className="text-primary hover:underline"
-                        >
-                          View Worksheet
-                        </Link>
-                      </span>
+                      {hw.source_worksheet_id && (
+                        <span className="flex items-center gap-1">
+                          <FileText className="h-3 w-3 flex-shrink-0" />
+                          Source: <Link 
+                            to={`/worksheet/${hw.source_worksheet_id}`} 
+                            className="text-primary hover:underline"
+                          >
+                            View Worksheet
+                          </Link>
+                        </span>
+                      )}
             {hw.deadline && (
               <Popover>
                 <PopoverTrigger asChild>

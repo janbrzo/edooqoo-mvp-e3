@@ -9,7 +9,8 @@ import { useStudents } from '@/hooks/useStudents';
 import { useWorksheetHistory } from '@/hooks/useWorksheetHistory';
 import { useDeletedWorksheets } from '@/hooks/useDeletedWorksheets';
 import { StudentEditDialog } from '@/components/StudentEditDialog';
-import { DeleteWorksheetButton } from '@/components/DeleteWorksheetButton';
+import { DeleteWorksheetButton } from "@/components/DeleteWorksheetButton";
+import { DuplicateWorksheetButton } from "@/components/DuplicateWorksheetButton";
 import { StudentSelector } from '@/components/StudentSelector';
 import { StudentKnowledgeSection } from '@/components/student-knowledge/StudentKnowledgeSection';
 import { useStudentKnowledge } from '@/hooks/useStudentKnowledge';
@@ -505,6 +506,11 @@ const StudentPage = () => {
                                     {format(new Date(worksheet.created_at), 'HH:mm')}
                                   </div>
                                 </div>
+                                <DuplicateWorksheetButton
+                                  worksheetId={worksheet.id}
+                                  worksheetTitle={worksheet.title || 'Untitled Worksheet'}
+                                  onDuplicate={refetchWorksheets}
+                                />
                                 <StudentSelector
                                   worksheetId={worksheet.id}
                                   currentStudentId={worksheet.student_id}
