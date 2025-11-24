@@ -19,7 +19,7 @@ export const OnboardingChecklist = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const tempDismissed = localStorage.getItem('onboarding-temp-dismissed') === 'true';
+    const tempDismissed = sessionStorage.getItem('onboarding-temp-dismissed') === 'true';
     setIsTemporarilyDismissed(tempDismissed);
   }, []);
 
@@ -38,7 +38,7 @@ export const OnboardingChecklist = () => {
 
   const handleTemporaryDismiss = () => {
     setIsTemporarilyDismissed(true);
-    localStorage.setItem('onboarding-temp-dismissed', 'true');
+    sessionStorage.setItem('onboarding-temp-dismissed', 'true');
   };
 
   const completionPercentage = getCompletionPercentage();
@@ -85,46 +85,62 @@ export const OnboardingChecklist = () => {
           gravity={0.3}
         />
       )}
-      <div className={`fixed bottom-6 left-6 z-50 w-80 transition-opacity duration-1000 ${
+      <div className={`fixed bottom-6 left-6 z-50 transition-opacity duration-1000 ${
         progress.completed && completionAnimation ? 'opacity-100' : 'animate-fade-in opacity-100'
       }`}>
         <Card className="shadow-lg border-2 border-primary/20 bg-white/95 backdrop-blur-sm">
-          <CardHeader 
-            className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center flex-1 min-w-0">
-                <CardTitle className="text-sm whitespace-nowrap truncate">Get started with Edooqoo 🚀</CardTitle>
-              </div>
-              <div className="flex items-center flex-shrink-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleTemporaryDismiss();
-                  }}
-                  className="h-6 w-6 p-0 mr-2 hover:bg-destructive/20"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                >
-                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <Progress value={completionPercentage} className="h-2 flex-1" />
-              <Badge variant="secondary" className="text-xs ml-2 flex-shrink-0">
+          {!isExpanded ? (
+            // Minimized view - compact with only icon and percentage
+            <div 
+              className="p-3 flex items-center gap-2 cursor-pointer hover:bg-muted/50 transition-colors rounded-lg" 
+              onClick={() => setIsExpanded(true)}
+            >
+              <span className="text-2xl">🚀</span>
+              <Badge variant="secondary" className="text-sm font-semibold">
                 {completionPercentage}%
               </Badge>
             </div>
-          </CardHeader>
+          ) : (
+            // Expanded view - full content
+            <>
+              <CardHeader 
+                className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center flex-1 min-w-0">
+                    <CardTitle className="text-sm whitespace-nowrap truncate">Get started with Edooqoo 🚀</CardTitle>
+                  </div>
+                  <div className="flex items-center flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTemporaryDismiss();
+                      }}
+                      className="h-6 w-6 p-0 mr-2 hover:bg-destructive/20"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Progress value={completionPercentage} className="h-2 flex-1" />
+                  <Badge variant="secondary" className="text-xs ml-2 flex-shrink-0">
+                    {completionPercentage}%
+                  </Badge>
+                </div>
+              </CardHeader>
+            </>
+          )}
 
           {isExpanded && (
             <CardContent className="pt-0 animate-accordion-down">

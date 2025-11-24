@@ -13,6 +13,23 @@ const logStep = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${timestamp} ${step}${detailsStr}`);
 };
 
+const safeTimestamp = (timestamp: number | null | undefined): string => {
+  if (!timestamp) {
+    console.warn('[STRIPE-WEBHOOK] Missing timestamp, using current time');
+    return new Date().toISOString();
+  }
+  try {
+    const date = new Date(timestamp * 1000);
+    if (isNaN(date.getTime())) {
+      throw new Error(`Invalid timestamp: ${timestamp}`);
+    }
+    return date.toISOString();
+  } catch (error) {
+    console.error('[STRIPE-WEBHOOK] Timestamp parsing error:', { timestamp, error });
+    return new Date().toISOString();
+  }
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -214,6 +231,13 @@ serve(async (req) => {
     }
 
     // CRITICAL FIX: Also update subscriptions table directly
+    logStep('Preparing subscription data', {
+      rawStart: subscription.current_period_start,
+      rawEnd: subscription.current_period_end,
+      hasStart: !!subscription.current_period_start,
+      hasEnd: !!subscription.current_period_end
+    });
+
     const subscriptionUpsertData = {
       teacher_id: profile.id,
       email: email,
@@ -222,8 +246,8 @@ serve(async (req) => {
       subscription_type: finalSubscriptionType,
       subscription_status: subscriptionStatus,
       monthly_limit: event.type === 'customer.subscription.deleted' ? 0 : monthlyLimit,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_start: safeTimestamp(subscription.current_period_start),
+      current_period_end: safeTimestamp(subscription.current_period_end),
       updated_at: new Date().toISOString()
     };
 
