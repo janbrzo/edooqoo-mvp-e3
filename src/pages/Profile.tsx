@@ -14,12 +14,14 @@ import { ConfirmDowngradeDialog } from '@/components/ConfirmDowngradeDialog';
 import { toast } from '@/hooks/use-toast';
 import { User, Coins, CreditCard, Calendar, Zap, GraduationCap, Users, Mail } from 'lucide-react';
 import { FreeWeekBanner } from '@/components/FreeWeekBanner';
+import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 const Profile = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
   const { profile, loading: profileLoading, refetch } = useProfile();
   const { tokenLeft } = useTokenSystem(user?.id);
   const { currentPlan, plans, canUpgradeTo, getUpgradePrice, getUpgradeTokens, getRecommendedFullTimePlan } = usePlanLogic(profile?.subscription_type);
+  const { resetOnboarding } = useOnboardingProgress();
   const navigate = useNavigate();
   
   // FIXED: Use ref to track if user manually selected a plan
@@ -706,6 +708,20 @@ const Profile = () => {
                   >
                     <GraduationCap className="h-4 w-4 mr-2" />
                     Dashboard
+                  </Button>
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={async () => {
+                      await resetOnboarding();
+                      toast({
+                        title: "Onboarding Reset",
+                        description: "The onboarding checklist will appear again when you visit the dashboard.",
+                      });
+                    }}
+                    size="sm"
+                  >
+                    Reset Onboarding
                   </Button>
                   <Button 
                     className="w-full" 
