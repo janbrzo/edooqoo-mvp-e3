@@ -34,10 +34,26 @@ const MAIN_GOALS = [
 
 interface AddStudentDialogProps {
   onStudentAdded?: () => void;
+  triggerButton?: boolean;  // New: controls if trigger button should be rendered
+  open?: boolean;            // New: for external control of dialog state
+  onOpenChange?: (open: boolean) => void; // New: callback for external state changes
+  size?: 'sm' | 'default';   // For trigger button size
+  variant?: 'default' | 'outline'; // For trigger button variant
 }
 
-export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const AddStudentDialog = ({ 
+  onStudentAdded, 
+  triggerButton = true,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
+  size = 'default',
+  variant = 'default'
+}: AddStudentDialogProps) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   const [name, setName] = useState('');
   const [englishLevel, setEnglishLevel] = useState('');
   const [mainGoal, setMainGoal] = useState('');
@@ -117,12 +133,14 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="hidden">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Student
-        </Button>
-      </DialogTrigger>
+      {triggerButton && (
+        <DialogTrigger asChild>
+          <Button size={size} variant={variant}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Student
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Student</DialogTitle>

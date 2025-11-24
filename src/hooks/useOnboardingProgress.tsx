@@ -8,6 +8,7 @@ interface OnboardingStep {
   add_student: boolean;
   generate_worksheet: boolean;
   share_worksheet: boolean;
+  create_homework: boolean;
 }
 
 interface OnboardingProgress {
@@ -20,7 +21,8 @@ const defaultProgress: OnboardingProgress = {
   steps: {
     add_student: false,
     generate_worksheet: false,
-    share_worksheet: false
+    share_worksheet: false,
+    create_homework: false
   },
   completed: false,
   dismissed: false
@@ -112,11 +114,26 @@ export const useOnboardingProgress = () => {
         total: worksheetsCount, 
         shared: sharedWorksheetsCount 
       });
+      
+      // Check homework
+      const { data: dbHomework, error: homeworkError } = await supabase
+        .from('homework_assignments')
+        .select('id')
+        .eq('teacher_id', profile.id)
+        .limit(1);
+        
+      if (homeworkError) {
+        console.error('[Onboarding] Error checking homework from DB:', homeworkError);
+      }
+      
+      const homeworkCount = dbHomework?.length || 0;
+      console.log('[Onboarding] Direct DB check - homework count:', homeworkCount);
 
       const newSteps: OnboardingStep = {
         add_student: studentsCount > 0,
         generate_worksheet: worksheetsCount > 0,
-        share_worksheet: sharedWorksheetsCount > 0
+        share_worksheet: sharedWorksheetsCount > 0,
+        create_homework: homeworkCount > 0
       };
 
       const allCompleted = Object.values(newSteps).every(step => step);

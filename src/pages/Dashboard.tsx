@@ -8,7 +8,7 @@ import { useAuthFlow } from "@/hooks/useAuthFlow";
 import { useTokenSystem } from "@/hooks/useTokenSystem";
 import { useStudents } from "@/hooks/useStudents";
 import { useWorksheetHistory } from "@/hooks/useWorksheetHistory";
-import { AddStudentButton } from "@/components/dashboard/AddStudentButton";
+import { AddStudentDialog } from "@/components/dashboard/AddStudentDialog";
 import { supabase } from '@/integrations/supabase/client';
 import { StudentCard } from "@/components/dashboard/StudentCard";
 import { StudentSelector } from "@/components/StudentSelector";
@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useWorksheetStats } from "@/hooks/useWorksheetStats";
 import { DeleteWorksheetButton } from "@/components/DeleteWorksheetButton";
+import { DuplicateWorksheetButton } from "@/components/DuplicateWorksheetButton";
 import { FreeWeekBanner } from "@/components/FreeWeekBanner";
 import { MediaBadges } from '@/components/worksheet/MediaBadges';
 import { hasImage, hasAudio } from '@/utils/worksheetUtils';
@@ -272,7 +273,7 @@ const Dashboard = () => {
                   <Users className="h-5 w-5" />
                   Students ({students.length})
                 </CardTitle>
-                <AddStudentButton 
+                <AddStudentDialog 
                   size="sm" 
                   onStudentAdded={refetchStudents}
                 />
@@ -286,7 +287,7 @@ const Dashboard = () => {
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground mb-4">No students yet</p>
-                  <AddStudentButton onStudentAdded={refetchStudents} />
+                  <AddStudentDialog onStudentAdded={refetchStudents} />
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -374,6 +375,13 @@ const Dashboard = () => {
                             </div>
                             
                             <div className="flex items-center gap-2">
+                              <DuplicateWorksheetButton 
+                                worksheetId={worksheet.id}
+                                worksheetTitle={formatWorksheetTitle(worksheet)}
+                                onDuplicate={refetchWorksheets}
+                                variant="ghost"
+                                size="sm"
+                              />
                               <StudentSelector 
                                 worksheetId={worksheet.id}
                                 currentStudentId={worksheet.student_id}

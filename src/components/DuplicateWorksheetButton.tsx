@@ -1,0 +1,48 @@
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Copy } from 'lucide-react';
+import { DuplicateWorksheetModal } from './DuplicateWorksheetModal';
+
+interface DuplicateWorksheetButtonProps {
+  worksheetId: string;
+  worksheetTitle: string;
+  onDuplicate: () => void;
+  variant?: 'default' | 'outline' | 'ghost';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
+}
+
+export const DuplicateWorksheetButton = ({ 
+  worksheetId, 
+  worksheetTitle, 
+  onDuplicate,
+  variant = 'ghost',
+  size = 'sm'
+}: DuplicateWorksheetButtonProps) => {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering parent onClick handlers
+    setModalOpen(true);
+  };
+
+  return (
+    <>
+      <Button
+        variant={variant}
+        size={size}
+        onClick={handleClick}
+        title="Duplicate worksheet"
+      >
+        <Copy className="h-4 w-4" />
+      </Button>
+      
+      <DuplicateWorksheetModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        worksheetId={worksheetId}
+        worksheetTitle={worksheetTitle}
+        onSuccess={onDuplicate}
+      />
+    </>
+  );
+};
