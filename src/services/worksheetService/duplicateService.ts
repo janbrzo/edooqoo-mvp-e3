@@ -42,7 +42,8 @@ export async function duplicateWorksheetAPI(
       ...worksheetData,
       student_id: newStudentId,
       teacher_id: userId,
-      title: original.title ? `${original.title} (Copy)` : 'Untitled Worksheet (Copy)',
+      title: original.title,
+      status: 'copy',
       // Reset download count and share token for the copy
       download_count: 0,
       share_token: null,

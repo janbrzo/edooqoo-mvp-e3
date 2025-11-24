@@ -48,6 +48,7 @@ const Dashboard = () => {
   const { worksheets, loading: historyLoading, refetch: refetchWorksheets, deleteWorksheet } = useWorksheetHistory(undefined, true, true);
   const { thisMonthCount, loading: statsLoading } = useWorksheetStats();
   const { profile: userProfile } = useProfile();
+  const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
   const navigate = useNavigate();
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("month");
   
@@ -287,7 +288,12 @@ const Dashboard = () => {
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground mb-4">No students yet</p>
-                  <AddStudentDialog onStudentAdded={refetchStudents} />
+                  <AddStudentDialog 
+                    triggerButton={true}
+                    open={addStudentModalOpen}
+                    onOpenChange={setAddStudentModalOpen}
+                    onStudentAdded={refetchStudents}
+                  />
                 </div>
               ) : (
                 <div className="space-y-3">
