@@ -274,10 +274,13 @@ const Dashboard = () => {
                   <Users className="h-5 w-5" />
                   Students ({students.length})
                 </CardTitle>
-                <AddStudentDialog 
-                  size="sm" 
-                  onStudentAdded={refetchStudents}
-                />
+                <Button
+                  size="sm"
+                  onClick={() => setAddStudentModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Student
+                </Button>
               </div>
               <CardDescription>
                 Manage your students and generate worksheets for them
@@ -288,12 +291,12 @@ const Dashboard = () => {
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground mb-4">No students yet</p>
-                  <AddStudentDialog 
-                    triggerButton={true}
-                    open={addStudentModalOpen}
-                    onOpenChange={setAddStudentModalOpen}
-                    onStudentAdded={refetchStudents}
-                  />
+                  <Button
+                    onClick={() => setAddStudentModalOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Student
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -448,6 +451,17 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Add Student Modal - controlled externally */}
+      <AddStudentDialog 
+        triggerButton={false}
+        open={addStudentModalOpen}
+        onOpenChange={setAddStudentModalOpen}
+        onStudentAdded={() => {
+          setAddStudentModalOpen(false);
+          refetchStudents();
+        }}
+      />
     </div>
   );
 };

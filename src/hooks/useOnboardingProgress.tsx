@@ -327,6 +327,23 @@ export const useOnboardingProgress = () => {
     checkSteps();
   }, [checkSteps]);
 
+  // NEW: Reset onboarding to show it again
+  const resetOnboarding = async () => {
+    const newProgress: OnboardingProgress = {
+      ...defaultProgress,
+      dismissed: false,
+      completed: false
+    };
+    
+    setProgress(newProgress);
+    await saveProgress(newProgress);
+    
+    // Clear session storage
+    sessionStorage.removeItem('onboarding-temp-dismissed');
+    
+    console.log('[Onboarding] Reset completed - onboarding will show again');
+  };
+
   return {
     progress,
     loading,
@@ -334,6 +351,7 @@ export const useOnboardingProgress = () => {
     getCompletionPercentage,
     shouldShow,
     saveProgress,
-    refreshProgress
+    refreshProgress,
+    resetOnboarding
   };
 };
