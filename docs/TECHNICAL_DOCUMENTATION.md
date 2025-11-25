@@ -14,6 +14,7 @@ The English Worksheet Generator is a full-featured SaaS platform built on React,
 - **Exercise Type "describe-picture"**: ✅ FIXED - Changed all frontend references from `'describe'` to `'describe-picture'` (ExerciseSelector, WorksheetForm, InputParamsCard, SharedWorksheetContent, ExerciseSection, worksheetUtils, mockNewExercisesData), ensuring backend finds correct template function `getDescribePictureExercise()` and includes prompt guidelines in ChatGPT requests
 - **Validator for "odd-one-out"**: ✅ FIXED - Changed validator structure from `groups` to `questions` (matching frontend ExerciseOddOneOut.tsx component), validating `questions` array with `options` and `correct_answer` fields; added 2 questions to template (8→10) to match requirements; changed final-requirements from "groups" to "questions" terminology
 - **Technical Fixes**: Added `normalizeExerciseType` helper function to handle `-picture` and `-audio` suffixes, preventing duplicate rendering
+- **Onboarding & Add Student Modal**: Add Student dialog now persists in-progress form data across browser tab switches (using `sessionStorage`), shared consistently between Dashboard and Onboarding checklist flows.
 
 ## Architecture Stack
 

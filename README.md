@@ -56,7 +56,7 @@ No registration required for basic use.
 - ✅ Event tracking
 - ✅ Mobile responsive
 - ✅ Quality content generation
-- ✅ **Latest fix**: Audio and picture exercises in shared worksheets, PDF margins optimized
+- ✅ **Latest fixes**: Audio and picture exercises in shared worksheets, PDF margins optimized, and Add Student modal form data persisting across browser tab switches.
 
 ## 🗺 Development Roadmap
 

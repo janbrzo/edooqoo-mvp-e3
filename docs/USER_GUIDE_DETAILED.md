@@ -14,10 +14,11 @@
 
 ## Getting Started
 
-**Latest Fix:** Critical improvements to shared worksheets, PDF export, and exercise selection:
+**Latest Fix:** Critical improvements to shared worksheets, PDF export, exercise selection, and onboarding forms:
 - **Shared Worksheets**: All audio/picture exercises display correctly without duplication. Lesson Media section now included with fallback support.
 - **PDF Export**: Margins optimized (1cm sides, 0.5cm top/bottom) for professional printing using correct `.container` class targeting.
 - **Random Mode**: Fixed to always select 2 media-specific exercises (Audio/Picture) even when shuffling, maintaining media priority throughout worksheet generation.
+- **Add Student Form**: In-progress data in the "Add Student" modal is now preserved across browser tab switches and re-openings until you successfully add the student.
 
 ### Account Creation (Required)
 - **Registration required**: You must create an account to generate worksheets
