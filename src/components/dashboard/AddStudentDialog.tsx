@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { useStudents } from '@/hooks/useStudents';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { Plus } from 'lucide-react';
+import { NATIVE_LANGUAGES } from '@/types/flashcards';
 
 const ENGLISH_LEVELS = [
   { value: 'A1', label: 'A1 (Beginner)' },
@@ -62,6 +63,7 @@ export const AddStudentDialog = ({
   const [customGoal, setCustomGoal] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
   const [sendOverdueEmails, setSendOverdueEmails] = useState(true);
+  const [nativeLanguage, setNativeLanguage] = useState('Spanish');
   const [loading, setLoading] = useState(false);
   const { addStudent, refetch } = useStudents();
   const { refreshProgress } = useOnboardingProgress();
@@ -77,6 +79,7 @@ export const AddStudentDialog = ({
         mainGoal?: string;
         customGoal?: string;
         studentEmail?: string;
+        nativeLanguage?: string;
         sendOverdueEmails?: boolean;
       };
 
@@ -85,6 +88,7 @@ export const AddStudentDialog = ({
       if (draft.mainGoal) setMainGoal(draft.mainGoal);
       if (draft.customGoal) setCustomGoal(draft.customGoal);
       if (draft.studentEmail) setStudentEmail(draft.studentEmail);
+      if (draft.nativeLanguage) setNativeLanguage(draft.nativeLanguage);
       if (typeof draft.sendOverdueEmails === 'boolean') {
         setSendOverdueEmails(draft.sendOverdueEmails);
       }
@@ -115,6 +119,7 @@ export const AddStudentDialog = ({
         mainGoal,
         customGoal,
         studentEmail,
+        nativeLanguage,
         sendOverdueEmails,
       };
 
@@ -131,7 +136,7 @@ export const AddStudentDialog = ({
 
     setLoading(true);
     try {
-      await addStudent(name, englishLevel, finalGoal, studentEmail || undefined, sendOverdueEmails);
+      await addStudent(name, englishLevel, finalGoal, studentEmail || undefined, sendOverdueEmails, nativeLanguage);
       // Reset form and close dialog
       setName('');
       setEnglishLevel('');
@@ -139,6 +144,7 @@ export const AddStudentDialog = ({
       setCustomGoal('');
       setStudentEmail('');
       setSendOverdueEmails(true);
+      setNativeLanguage('Spanish');
       sessionStorage.removeItem(ADD_STUDENT_DRAFT_KEY);
       setOpen(false);
       

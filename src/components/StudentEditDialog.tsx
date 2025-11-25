@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tables } from '@/integrations/supabase/types';
+import { NATIVE_LANGUAGES } from '@/types/flashcards';
 
 type Student = Tables<'students'>;
 
@@ -14,7 +15,7 @@ interface StudentEditDialogProps {
   student: Student;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, updates: Partial<Pick<Student, 'name' | 'english_level' | 'main_goal' | 'student_email' | 'send_overdue_emails'>>) => Promise<any>;
+  onSave: (id: string, updates: Partial<Pick<Student, 'name' | 'english_level' | 'main_goal' | 'student_email' | 'send_overdue_emails' | 'native_language'>>) => Promise<any>;
 }
 
 const englishLevels = [
@@ -46,6 +47,7 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
   const [mainGoal, setMainGoal] = useState(student.main_goal);
   const [studentEmail, setStudentEmail] = useState(student.student_email || '');
   const [sendOverdueEmails, setSendOverdueEmails] = useState(student.send_overdue_emails ?? true);
+  const [nativeLanguage, setNativeLanguage] = useState(student.native_language || 'Spanish');
   const [customGoal, setCustomGoal] = useState(
     mainGoals.find(goal => goal.value === student.main_goal) ? '' : student.main_goal
   );
@@ -60,7 +62,8 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
         english_level: englishLevel,
         main_goal: goalToSave,
         student_email: studentEmail || null,
-        send_overdue_emails: sendOverdueEmails
+        send_overdue_emails: sendOverdueEmails,
+        native_language: nativeLanguage
       });
       onClose();
     } catch (error) {
@@ -76,6 +79,7 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
     setEnglishLevel(student.english_level);
     setMainGoal(student.main_goal);
     setStudentEmail(student.student_email || '');
+    setNativeLanguage(student.native_language || 'Spanish');
     setCustomGoal(mainGoals.find(goal => goal.value === student.main_goal) ? '' : student.main_goal);
     onClose();
   };

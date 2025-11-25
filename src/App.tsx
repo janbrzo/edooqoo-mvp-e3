@@ -24,6 +24,7 @@ import TestExercises from "./pages/TestExercises";
 import AllWorksheetsPage from "./pages/AllWorksheetsPage";
 import WorksheetPage from "./pages/WorksheetPage";
 import HomeworkPage from "./pages/HomeworkPage";
+import FlashcardsLearning from "./pages/FlashcardsLearning";
 import CookieBanner from "./components/CookieBanner";
 import GlobalFooter from "./components/GlobalFooter";
 import OnboardingChecklist from "./components/OnboardingChecklist";
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/worksheets" element={<AllWorksheetsPage />} />
               <Route path="/worksheet/:id" element={<WorksheetPage />} />
               <Route path="/homework/:token" element={<HomeworkPage />} />
+              <Route path="/flashcards/:token" element={<FlashcardsLearning />} />
               <Route path="/success" element={<PaymentSuccess />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/shared/:token" element={<SharedWorksheet />} />
