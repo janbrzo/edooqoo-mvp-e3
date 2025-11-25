@@ -233,9 +233,25 @@ export const AddStudentDialog = ({
                     {level.label}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="native-language">Native Language</Label>
+          <Select value={nativeLanguage} onValueChange={setNativeLanguage}>
+            <SelectTrigger id="native-language" className="mt-1.5">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {NATIVE_LANGUAGES.map((lang) => (
+                <SelectItem key={lang.value} value={lang.value}>
+                  {lang.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
           <div className="space-y-2">
             <Label htmlFor="goal">Main Goal</Label>
             <Select value={mainGoal} onValueChange={setMainGoal} required>
