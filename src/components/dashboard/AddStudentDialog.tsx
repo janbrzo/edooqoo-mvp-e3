@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,8 @@ const MAIN_GOALS = [
   { value: 'travel-practical', label: 'Travel & Practical English' },
   { value: 'custom', label: 'Custom Goal (enter below)' }
 ];
+
+const ADD_STUDENT_DRAFT_KEY = 'add-student-dialog-draft';
 
 interface AddStudentDialogProps {
   onStudentAdded?: () => void;
@@ -64,6 +66,64 @@ export const AddStudentDialog = ({
   const { addStudent, refetch } = useStudents();
   const { refreshProgress } = useOnboardingProgress();
 
+  // Load draft from sessionStorage on mount so data survives tab switches / remounts
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(ADD_STUDENT_DRAFT_KEY);
+      if (!stored) return;
+      const draft = JSON.parse(stored) as {
+        name?: string;
+        englishLevel?: string;
+        mainGoal?: string;
+        customGoal?: string;
+        studentEmail?: string;
+        sendOverdueEmails?: boolean;
+      };
+
+      if (draft.name) setName(draft.name);
+      if (draft.englishLevel) setEnglishLevel(draft.englishLevel);
+      if (draft.mainGoal) setMainGoal(draft.mainGoal);
+      if (draft.customGoal) setCustomGoal(draft.customGoal);
+      if (draft.studentEmail) setStudentEmail(draft.studentEmail);
+      if (typeof draft.sendOverdueEmails === 'boolean') {
+        setSendOverdueEmails(draft.sendOverdueEmails);
+      }
+    } catch (error) {
+      console.error('[AddStudentDialog] Failed to load draft from sessionStorage', error);
+    }
+  }, []);
+
+  // Persist draft to sessionStorage whenever fields change
+  useEffect(() => {
+    try {
+      const isPristine =
+        !name &&
+        !englishLevel &&
+        !mainGoal &&
+        !customGoal &&
+        !studentEmail &&
+        sendOverdueEmails === true;
+
+      if (isPristine) {
+        sessionStorage.removeItem(ADD_STUDENT_DRAFT_KEY);
+        return;
+      }
+
+      const draft = {
+        name,
+        englishLevel,
+        mainGoal,
+        customGoal,
+        studentEmail,
+        sendOverdueEmails,
+      };
+
+      sessionStorage.setItem(ADD_STUDENT_DRAFT_KEY, JSON.stringify(draft));
+    } catch (error) {
+      console.error('[AddStudentDialog] Failed to save draft to sessionStorage', error);
+    }
+  }, [name, englishLevel, mainGoal, customGoal, studentEmail, sendOverdueEmails]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalGoal = mainGoal === 'custom' ? customGoal : mainGoal;
@@ -79,6 +139,7 @@ export const AddStudentDialog = ({
       setCustomGoal('');
       setStudentEmail('');
       setSendOverdueEmails(true);
+      sessionStorage.removeItem(ADD_STUDENT_DRAFT_KEY);
       setOpen(false);
       
       // MAXIMUM-ENHANCED: Extreme aggressive refresh for INSTANT onboarding update

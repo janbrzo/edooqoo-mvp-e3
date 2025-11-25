@@ -12,6 +12,7 @@
 - ✅ Skorygowano marginesy PDF: 1cm boki, 0.5cm góra/dół (wcześniej 1.5cm boki powodowało nadmierne białe przestrzenie)
 - ✅ **NAPRAWIONO "describe-picture"**: Zmieniono wszystkie referencje frontend z `'describe'` na `'describe-picture'` (8 plików: ExerciseSelector, WorksheetForm, InputParamsCard, SharedWorksheetContent, ExerciseSection, worksheetUtils, mockNewExercisesData), dzięki czemu backend znajduje właściwą funkcję template i dołącza wytyczne do promptu ChatGPT
 - ✅ **NAPRAWIONO "odd-one-out" validator**: Zmieniono strukturę z `groups` na `questions` (zgodnie z frontendem ExerciseOddOneOut.tsx), walidacja sprawdza `questions` array z polami `options` i `correct_answer`; dodano 2 pytania do template (8→10 zgodnie z requirements); zmieniono terminologię w final-requirements z "groups" na "questions"
+- ✅ **UX: Add Student Modal**: Formularz "Add New Student" (Dashboard + Onboarding) zachowuje teraz wpisane dane podczas przełączania kart przeglądarki – dane znikają dopiero po poprawnym zapisaniu studenta.
 
 ## Wygląd i Interface
 

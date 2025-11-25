@@ -14,6 +14,8 @@
 - Anonymous user support
 - Mobile-responsive design
 - Multiple choice answers fix
+- Shared worksheet media + PDF margin fixes
+- Add Student modal UX fix (form data persistence across browser tab switches)
 
 ---
 

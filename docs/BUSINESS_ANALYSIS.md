@@ -251,3 +251,5 @@
 ---
 
 *This business analysis provides a foundation for strategic decision-making and growth planning. Regular updates based on actual performance data will refine these projections and strategies.*
+
+**Latest UX Improvement (Jan 2025):** Add Student onboarding flow was hardened so teachers never lose partially entered student data when briefly switching browser tabs.
