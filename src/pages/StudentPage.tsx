@@ -18,6 +18,7 @@ import { StudentKnowledgeEntryCard } from '@/components/student-knowledge/Studen
 import { useAllWorksheetHomework } from '@/hooks/useAllWorksheetHomework';
 import { WorksheetHomeworkSection } from '@/components/worksheet/WorksheetHomeworkSection';
 import { StudentHomeworkTab } from '@/components/student-homework/StudentHomeworkTab';
+import { FlashcardSetsSection } from '@/components/flashcards/FlashcardSetsSection';
 import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
@@ -672,23 +673,12 @@ const StudentPage = () => {
 
           {/* Flashcards Tab */}
           <TabsContent value="flashcards">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <GraduationCap className="h-5 w-5 mr-2" />
-                  Flashcards
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <GraduationCap className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground text-lg">Flashcards feature coming soon!</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Create and manage flashcards for vocabulary practice
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <FlashcardSetsSection
+              studentId={id || ''}
+              teacherId={student.teacher_id}
+              studentName={student.name}
+              studentNativeLanguage={student.native_language || 'Spanish'}
+            />
           </TabsContent>
         </Tabs>
 
