@@ -133,6 +133,22 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
             </Select>
           </div>
 
+          <div>
+            <Label htmlFor="native-language">Native Language</Label>
+            <Select value={nativeLanguage} onValueChange={setNativeLanguage}>
+              <SelectTrigger id="native-language" className="mt-1.5">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {NATIVE_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {mainGoal === 'custom' && (
             <div className="grid gap-2">
               <Label htmlFor="custom-goal">Custom Goal</Label>

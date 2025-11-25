@@ -119,6 +119,186 @@ export type Database = {
         }
         Relationships: []
       }
+      flashcard_cards: {
+        Row: {
+          back_text: string
+          card_position: number
+          created_at: string | null
+          deleted_at: string | null
+          front_example: string | null
+          front_text: string
+          id: string
+          set_id: string
+          source_type: string
+          source_worksheet_id: string | null
+        }
+        Insert: {
+          back_text: string
+          card_position?: number
+          created_at?: string | null
+          deleted_at?: string | null
+          front_example?: string | null
+          front_text: string
+          id?: string
+          set_id: string
+          source_type?: string
+          source_worksheet_id?: string | null
+        }
+        Update: {
+          back_text?: string
+          card_position?: number
+          created_at?: string | null
+          deleted_at?: string | null
+          front_example?: string | null
+          front_text?: string
+          id?: string
+          set_id?: string
+          source_type?: string
+          source_worksheet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_cards_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flashcard_cards_source_worksheet_id_fkey"
+            columns: ["source_worksheet_id"]
+            isOneToOne: false
+            referencedRelation: "worksheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_progress: {
+        Row: {
+          card_id: string
+          correct_count: number | null
+          created_at: string | null
+          direction: number
+          easiness_factor: number | null
+          id: string
+          incorrect_count: number | null
+          interval_days: number | null
+          last_reviewed_at: string | null
+          learner_identifier: string
+          next_review_date: string | null
+          repetition: number | null
+          set_id: string
+          total_reviews: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          card_id: string
+          correct_count?: number | null
+          created_at?: string | null
+          direction?: number
+          easiness_factor?: number | null
+          id?: string
+          incorrect_count?: number | null
+          interval_days?: number | null
+          last_reviewed_at?: string | null
+          learner_identifier: string
+          next_review_date?: string | null
+          repetition?: number | null
+          set_id: string
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          card_id?: string
+          correct_count?: number | null
+          created_at?: string | null
+          direction?: number
+          easiness_factor?: number | null
+          id?: string
+          incorrect_count?: number | null
+          interval_days?: number | null
+          last_reviewed_at?: string | null
+          learner_identifier?: string
+          next_review_date?: string | null
+          repetition?: number | null
+          set_id?: string
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_progress_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flashcard_progress_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcard_sets: {
+        Row: {
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          is_bidirectional: boolean | null
+          share_expires_at: string | null
+          share_token: string | null
+          student_id: string
+          teacher_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_bidirectional?: boolean | null
+          share_expires_at?: string | null
+          share_token?: string | null
+          student_id: string
+          teacher_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          is_bidirectional?: boolean | null
+          share_expires_at?: string | null
+          share_token?: string | null
+          student_id?: string
+          teacher_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_sets_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flashcard_sets_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geolocation_cache: {
         Row: {
           city: string | null
@@ -461,6 +641,7 @@ export type Database = {
           id: string
           main_goal: string
           name: string
+          native_language: string | null
           send_overdue_emails: boolean | null
           student_email: string | null
           teacher_email: string | null
@@ -474,6 +655,7 @@ export type Database = {
           id?: string
           main_goal: string
           name: string
+          native_language?: string | null
           send_overdue_emails?: boolean | null
           student_email?: string | null
           teacher_email?: string | null
@@ -487,6 +669,7 @@ export type Database = {
           id?: string
           main_goal?: string
           name?: string
+          native_language?: string | null
           send_overdue_emails?: boolean | null
           student_email?: string | null
           teacher_email?: string | null
@@ -830,6 +1013,14 @@ export type Database = {
         Args: { p_teacher_id: string; p_worksheet_id: string }
         Returns: boolean
       }
+      generate_flashcard_share_token: {
+        Args: {
+          p_expires_hours?: number
+          p_set_id: string
+          p_teacher_id: string
+        }
+        Returns: string
+      }
       generate_homework_share_token: {
         Args: { p_homework_id: string; p_teacher_id: string }
         Returns: string
@@ -841,6 +1032,40 @@ export type Database = {
           p_worksheet_id: string
         }
         Returns: string
+      }
+      get_flashcard_cards_for_learning: {
+        Args: { p_learner_identifier: string; p_set_id: string }
+        Returns: {
+          back_text: string
+          card_id: string
+          card_position: number
+          correct_count: number
+          direction: number
+          easiness_factor: number
+          front_example: string
+          front_text: string
+          incorrect_count: number
+          interval_days: number
+          next_review_date: string
+          repetition: number
+          total_reviews: number
+        }[]
+      }
+      get_flashcard_set_by_share_token: {
+        Args: { p_share_token: string }
+        Returns: {
+          cards_count: number
+          created_at: string
+          description: string
+          id: string
+          is_bidirectional: boolean
+          student_name: string
+          student_native_language: string
+          teacher_email: string
+          teacher_first_name: string
+          teacher_last_name: string
+          title: string
+        }[]
       }
       get_homework_by_share_token: {
         Args: { p_share_token: string }
@@ -956,6 +1181,10 @@ export type Database = {
         Returns: boolean
       }
       should_show_onboarding: { Args: { user_id: string }; Returns: boolean }
+      soft_delete_flashcard_set: {
+        Args: { p_set_id: string; p_teacher_id: string }
+        Returns: boolean
+      }
       soft_delete_knowledge_entry: {
         Args: { p_entry_id: string; p_teacher_id: string }
         Returns: boolean
