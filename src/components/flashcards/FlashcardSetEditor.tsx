@@ -129,8 +129,11 @@ export function FlashcardSetEditor({
       )}
 
       <AddFlashcardModal
-        open={isAddModalOpen}
-        onOpenChange={setIsAddModalOpen}
+        open={isAddModalOpen || !!editingCardId}
+        onOpenChange={(open) => {
+          setIsAddModalOpen(open);
+          if (!open) setEditingCardId(null);
+        }}
         setId={set.id}
         onAdd={addCard}
         studentNativeLanguage={studentNativeLanguage}
@@ -144,6 +147,10 @@ export function FlashcardSetEditor({
         onOpenChange={setIsImportModalOpen}
         setId={set.id}
         studentId={set.student_id}
+        onImportComplete={() => {
+          // Refetch cards after import
+          window.location.reload();
+        }}
       />
 
       <ShareFlashcardSetModal

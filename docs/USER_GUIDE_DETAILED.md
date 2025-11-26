@@ -224,4 +224,63 @@ This ensures proper margins (0.5cm top/bottom, 1cm sides) in the final PDF.
 - **Re-download capability**: Access previous worksheets anytime
 - **Progress monitoring**: Track teaching materials over time
 
+## Flashcards System
+
+### Overview
+The flashcards system uses **Spaced Repetition** with the **SM-2 algorithm** to optimize learning and memory retention. Students access flashcard sets via shared links and track their progress automatically.
+
+### How Spaced Repetition Works (SM-2 Algorithm)
+
+The SM-2 (SuperMemo 2) algorithm schedules card reviews based on how well you know them:
+
+1. **New Cards**: Start with a 1-day interval
+2. **Correct Answer**: Interval increases (1 day → 6 days → multiplied by easiness factor)
+3. **Wrong Answer**: Card resets to 1-day interval
+4. **Easiness Factor**: Adjusts based on review quality (2.5 default, range 1.3-2.5)
+
+### Review Quality Impact
+
+When reviewing a card, you choose from 2 options:
+- **😰 Again** (Quality 0): Complete failure - resets to 1-day interval
+- **✅ I Know This** (Quality 2): Correct answer - increases interval significantly
+
+### Next Review Date (`flashcard_progress.next_review_date`)
+
+This column stores when each card should appear again for review:
+- **Calculation**: `current_date + interval_days`
+- **Automatic filtering**: Only cards with `next_review_date <= today` appear in learning sessions
+- **Dynamic adjustment**: Recalculated after every review based on your answer quality
+
+### Bidirectional Cards
+
+If **Bidirectional Cards** is enabled when creating a set:
+- Each card creates **two learning directions**:
+  - Direction 1: English → Native Language
+  - Direction 2: Native Language → English
+- Progress tracked separately for each direction
+- Doubles the learning opportunities
+
+### Translation vs Definition
+
+When creating a flashcard set, choose the back side content type:
+- **Translation to native language**: Back shows word translation (e.g., Spanish: "perro")
+- **English definition**: Back shows English explanation (e.g., "a domesticated animal")
+
+### Student Learning Experience
+
+1. **Access**: Teacher shares link → Student enters email
+2. **Session Start**: System loads cards due for review + new cards
+3. **Study**: Card flips on click, student rates difficulty
+4. **Progress Saved**: Automatically tracked by email
+5. **Completion**: Summary shows stats and allows restart
+6. **Return**: Next session shows only due cards based on SM-2 schedule
+
+### Teacher Features
+
+- **Create Sets**: From scratch or import from worksheet vocabulary
+- **Manage Cards**: Add, edit, delete, reorder flashcards
+- **Share Links**: Generate links valid for 1 year
+- **Language Settings**: Set student's native language
+- **Bidirectional**: Enable/disable two-way learning
+
 *This guide reflects the current application state after ETAP 2 implementation - MVP Accounts and Subscriptions.*

@@ -21,7 +21,7 @@ export function FlashcardDisplay({ card, onReview, nativeLanguage }: FlashcardDi
     <div className="w-full max-w-2xl">
       <Card
         className="cursor-pointer transition-all duration-300 hover:shadow-lg min-h-[300px]"
-        onClick={() => !isFlipped && setIsFlipped(true)}
+        onClick={() => setIsFlipped(!isFlipped)}
       >
         <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
           {!isFlipped ? (
@@ -48,30 +48,22 @@ export function FlashcardDisplay({ card, onReview, nativeLanguage }: FlashcardDi
                   <Button
                     variant="outline"
                     className="flex-1 border-red-200 hover:bg-red-50"
-                    onClick={() => handleReview(0)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReview(0);
+                    }}
                   >
                     😰 Again
                   </Button>
                   <Button
                     variant="outline"
-                    className="flex-1 border-orange-200 hover:bg-orange-50"
-                    onClick={() => handleReview(1)}
-                  >
-                    😐 Hard
-                  </Button>
-                  <Button
-                    variant="outline"
                     className="flex-1 border-green-200 hover:bg-green-50"
-                    onClick={() => handleReview(2)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReview(2);
+                    }}
                   >
-                    🙂 Good
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 border-blue-200 hover:bg-blue-50"
-                    onClick={() => handleReview(3)}
-                  >
-                    😎 Easy
+                    ✅ I Know This
                   </Button>
                 </div>
               </div>

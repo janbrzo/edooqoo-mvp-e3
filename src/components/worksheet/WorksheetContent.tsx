@@ -486,6 +486,10 @@ export default function WorksheetContent({
             viewMode={viewMode}
             editableWorksheet={editableWorksheet}
             setEditableWorksheet={setEditableWorksheet}
+            studentId={editableWorksheet?.student_id}
+            teacherId={editableWorksheet?.teacher_id || userId}
+            worksheetId={editableWorksheet?.id}
+            nativeLanguage={inputParams?.studentNativeLanguage || 'Spanish'}
           />
         </div>
       )}

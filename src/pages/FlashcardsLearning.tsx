@@ -112,11 +112,20 @@ export default function FlashcardsLearning() {
 
   if (learning.isSessionComplete) {
     return (
-      <SessionSummary
-        stats={learning.sessionStats}
-        onRestart={learning.restartSession}
-        setTitle={setData.title}
-      />
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-2xl">
+          <SessionSummary
+            stats={learning.sessionStats}
+            onRestart={learning.restartSession}
+            setTitle={setData.title}
+          />
+          <div className="mt-4 text-center">
+            <p className="text-muted-foreground text-sm">
+              Great job! All due cards completed. Practice all cards again?
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 
