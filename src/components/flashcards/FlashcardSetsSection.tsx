@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Plus, Globe } from 'lucide-react';
+import { Plus, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useFlashcardSets } from '@/hooks/useFlashcardSets';
+import { FlashcardSet, NATIVE_LANGUAGES } from '@/types/flashcards';
 import { FlashcardSetCard } from './FlashcardSetCard';
 import { CreateFlashcardSetModal } from './CreateFlashcardSetModal';
-import { FlashcardSetEditor } from './FlashcardSetEditor';
 import { DeleteFlashcardSetModal } from './DeleteFlashcardSetModal';
+import { FlashcardSetEditor } from './FlashcardSetEditor';
+import { useFlashcardSets } from '@/hooks/useFlashcardSets';
+import { useStudents } from '@/hooks/useStudents';
 import {
   Select,
   SelectContent,
@@ -13,8 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { NATIVE_LANGUAGES } from '@/types/flashcards';
-import { useStudents } from '@/hooks/useStudents';
 
 interface FlashcardSetsSectionProps {
   studentId: string;
@@ -30,15 +30,17 @@ export function FlashcardSetsSection({
   studentNativeLanguage,
 }: FlashcardSetsSectionProps) {
   const { sets, loading, createSet, updateSet, deleteSet, generateShareToken } = useFlashcardSets(teacherId, studentId);
-  const { updateStudent } = useStudents();
+  const { students, updateStudent } = useStudents();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingSetId, setEditingSetId] = useState<string | null>(null);
   const [deleteSetId, setDeleteSetId] = useState<string | null>(null);
   const [deleteSetTitle, setDeleteSetTitle] = useState<string>('');
 
-  const handleDeleteClick = (setId: string, setTitle: string) => {
-    setDeleteSetId(setId);
-    setDeleteSetTitle(setTitle);
+  const student = students.find(s => s.id === studentId);
+
+  const handleDeleteClick = (set: FlashcardSet) => {
+    setDeleteSetId(set.id);
+    setDeleteSetTitle(set.title);
   };
 
   const handleConfirmDelete = async () => {
@@ -51,7 +53,6 @@ export function FlashcardSetsSection({
 
   const handleLanguageChange = async (newLanguage: string) => {
     await updateStudent(studentId, { native_language: newLanguage });
-    window.location.reload(); // Refresh to show updated language
   };
 
   if (editingSetId) {
@@ -69,25 +70,37 @@ export function FlashcardSetsSection({
     }
   }
 
+  const selectedLanguage = NATIVE_LANGUAGES.find(
+    lang => lang.value === (student?.native_language || studentNativeLanguage || 'Spanish')
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Flashcard Sets</h2>
-          <p className="text-muted-foreground">
-            Create flashcard sets for {studentName} to practice vocabulary
-          </p>
+        <div className="flex items-center gap-3">
+          <BookOpen className="w-5 h-5 text-primary" />
+          <h2 className="text-2xl font-semibold">Flashcard Sets for {studentName}</h2>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={studentNativeLanguage} onValueChange={handleLanguageChange}>
-            <SelectTrigger className="w-[180px]">
-              <Globe className="w-4 h-4 mr-2" />
-              <SelectValue />
+          <Select 
+            value={student?.native_language || studentNativeLanguage || 'Spanish'}
+            onValueChange={handleLanguageChange}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{selectedLanguage?.flag || '🌐'}</span>
+                  <span>{selectedLanguage?.label || 'Spanish'}</span>
+                </div>
+              </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-[300px]">
               {NATIVE_LANGUAGES.map((lang) => (
                 <SelectItem key={lang.value} value={lang.value}>
-                  {lang.label}
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{lang.flag}</span>
+                    <span>{lang.label}</span>
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -125,8 +138,9 @@ export function FlashcardSetsSection({
               key={set.id}
               set={set}
               onEdit={() => setEditingSetId(set.id)}
-              onDelete={() => handleDeleteClick(set.id, set.title)}
+              onDelete={() => handleDeleteClick(set)}
               onShare={() => generateShareToken(set.id)}
+              onAddCard={() => setEditingSetId(set.id)}
             />
           ))}
         </div>

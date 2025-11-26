@@ -51,7 +51,7 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
   });
   const { toast } = useToast();
 
-  const loadSession = useCallback(async (includeAll = false) => {
+  const loadSession = useCallback(async (includeAll = false, mistakesOnly = false) => {
     if (!setId || !learnerEmail) return;
 
     setLoading(true);
@@ -63,22 +63,48 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
 
       if (error) throw error;
 
-      const learningCards: LearningCard[] = (data || []).map((card: any) => ({
+      let learningCards: LearningCard[] = (data || []).map((card: any) => ({
         ...card,
         isNew: card.total_reviews === 0,
         isDueForReview: new Date(card.next_review_date) <= new Date(),
       }));
 
-      // Filter to show only new cards or cards due for review (unless includeAll is true)
-      const filteredCards = includeAll 
-        ? learningCards 
-        : learningCards.filter(card => card.isNew || card.isDueForReview);
+      // Filter logic
+      if (mistakesOnly) {
+        // Only cards with more incorrect than correct answers
+        learningCards = learningCards.filter(card => 
+          card.incorrect_count > card.correct_count || card.easiness_factor < 2.0
+        );
+      } else if (!includeAll) {
+        // Default: new or due for review
+        learningCards = learningCards.filter(card => card.isNew || card.isDueForReview);
+      }
+      // else: includeAll = true means load all cards
 
-      setCards(filteredCards);
+      // Fetch set data to check if bidirectional
+      const { data: setData } = await supabase
+        .from('flashcard_sets')
+        .select('is_bidirectional')
+        .eq('id', setId)
+        .single();
+
+      // Duplicate cards for bidirectional (direction 1 and 2)
+      if (setData?.is_bidirectional) {
+        const reversedCards = learningCards.map(card => ({
+          ...card,
+          direction: 2 as const, // Mark as reversed
+        }));
+        learningCards = [...learningCards, ...reversedCards];
+      }
+
+      // Shuffle cards randomly (Problem 8)
+      const shuffledCards = learningCards.sort(() => Math.random() - 0.5);
+
+      setCards(shuffledCards);
       setCurrentIndex(0);
       setSessionStats({
-        totalCards: filteredCards.length,
-        newCards: filteredCards.filter(c => c.isNew).length,
+        totalCards: shuffledCards.length,
+        newCards: shuffledCards.filter(c => c.isNew).length,
         reviewedCards: 0,
         correctAnswers: 0,
         incorrectAnswers: 0,
@@ -161,9 +187,12 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
 
   const isSessionComplete = () => currentIndex >= cards.length;
 
-  const restartSession = () => {
-    setCurrentIndex(0);
-    loadSession(true); // Load ALL cards for practice
+  const restartSession = (mode: 'all' | 'mistakes' = 'all') => {
+    if (mode === 'all') {
+      loadSession(true, false); // includeAll=true, mistakesOnly=false
+    } else {
+      loadSession(false, true); // includeAll=false, mistakesOnly=true
+    }
   };
 
   return {

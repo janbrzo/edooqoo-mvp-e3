@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { CreateFlashcardCard, UpdateFlashcardCard, FlashcardCard } from '@/types/flashcards';
+import { useFlashcardTranslation } from '@/hooks/useFlashcardTranslation';
+import { Loader2 } from 'lucide-react';
 
 interface AddFlashcardModalProps {
   open: boolean;
@@ -12,6 +14,7 @@ interface AddFlashcardModalProps {
   setId: string;
   onAdd: (data: CreateFlashcardCard) => Promise<void>;
   studentNativeLanguage: string;
+  backType?: 'translation' | 'definition';
   editingCard?: FlashcardCard;
   onUpdate?: (updates: UpdateFlashcardCard) => Promise<void>;
   onCloseEdit?: () => void;
@@ -23,6 +26,7 @@ export function AddFlashcardModal({
   setId,
   onAdd,
   studentNativeLanguage,
+  backType = 'translation',
   editingCard,
   onUpdate,
   onCloseEdit,
@@ -33,6 +37,12 @@ export function AddFlashcardModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditMode = !!editingCard;
+
+  // Auto-translation hook (only for non-edit mode and translation type)
+  const { translation, isTranslating, translateText } = useFlashcardTranslation({
+    targetLanguage: studentNativeLanguage,
+    enabled: !isEditMode && backType === 'translation',
+  });
 
   useEffect(() => {
     if (editingCard) {
@@ -45,6 +55,20 @@ export function AddFlashcardModal({
       setBackText('');
     }
   }, [editingCard, open]);
+
+  // Auto-translate when frontText changes (debounced in hook)
+  useEffect(() => {
+    if (!isEditMode && backType === 'translation' && frontText.trim()) {
+      translateText(frontText);
+    }
+  }, [frontText, isEditMode, backType, translateText]);
+
+  // Update backText when translation is ready
+  useEffect(() => {
+    if (!isEditMode && translation && !backText) {
+      setBackText(translation);
+    }
+  }, [translation, isEditMode, backText]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,15 +142,33 @@ export function AddFlashcardModal({
           </div>
 
           <div>
-            <Label htmlFor="back">{studentNativeLanguage} Translation *</Label>
-            <Input
-              id="back"
-              value={backText}
-              onChange={(e) => setBackText(e.target.value)}
-              placeholder={`Translation in ${studentNativeLanguage}...`}
-              required
-              className="mt-1.5"
-            />
+            <Label htmlFor="back">
+              {backType === 'translation' ? `${studentNativeLanguage} Translation *` : 'English Definition *'}
+            </Label>
+            <div className="relative">
+              <Input
+                id="back"
+                value={backText}
+                onChange={(e) => setBackText(e.target.value)}
+                placeholder={
+                  backType === 'translation'
+                    ? `Translation in ${studentNativeLanguage}...`
+                    : 'Definition in English...'
+                }
+                required
+                className="mt-1.5"
+              />
+              {isTranslating && !isEditMode && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
+            </div>
+            {!isEditMode && backType === 'translation' && translation && (
+              <p className="text-xs text-muted-foreground mt-1">
+                💡 Auto-suggested translation
+              </p>
+            )}
           </div>
 
           <div className="bg-muted/50 p-3 rounded-lg">

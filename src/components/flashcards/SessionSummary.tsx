@@ -5,7 +5,7 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 
 interface SessionSummaryProps {
   stats: LearningSessionStats;
-  onRestart: () => void;
+  onRestart: (mode: 'all' | 'mistakes') => void;
   setTitle: string;
 }
 
@@ -50,9 +50,19 @@ export function SessionSummary({ stats, onRestart, setTitle }: SessionSummaryPro
           </div>
 
           <div className="space-y-2">
-            <Button onClick={onRestart} className="w-full" size="lg">
-              Study Again
+            <Button onClick={() => onRestart('all')} className="w-full" size="lg">
+              🔄 Study All Again
             </Button>
+            {stats.incorrectAnswers > 0 && (
+              <Button 
+                onClick={() => onRestart('mistakes')} 
+                className="w-full" 
+                size="lg"
+                variant="outline"
+              >
+                📝 Study Mistakes Only ({stats.incorrectAnswers})
+              </Button>
+            )}
             <Button
               variant="outline"
               className="w-full"

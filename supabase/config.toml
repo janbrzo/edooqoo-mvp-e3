@@ -67,3 +67,9 @@ verify_jwt = false
 
 [functions.send-homework-email]
 verify_jwt = true
+
+[functions.translate-flashcard]
+verify_jwt = true
+
+[functions.send-flashcard-email]
+verify_jwt = true

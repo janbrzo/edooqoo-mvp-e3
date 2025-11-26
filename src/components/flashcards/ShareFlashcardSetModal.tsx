@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Copy, ExternalLink, Check } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Copy, ExternalLink, Check, Mail, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ShareFlashcardSetModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   shareToken: string | null;
   setTitle: string;
+  studentEmail?: string;
+  teacherName?: string;
 }
 
 export function ShareFlashcardSetModal({
@@ -17,9 +21,17 @@ export function ShareFlashcardSetModal({
   onOpenChange,
   shareToken,
   setTitle,
+  studentEmail = '',
+  teacherName = '',
 }: ShareFlashcardSetModalProps) {
   const [copied, setCopied] = useState(false);
+  const [email, setEmail] = useState(studentEmail);
+  const [sending, setSending] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setEmail(studentEmail);
+  }, [studentEmail, open]);
 
   const shareUrl = shareToken 
     ? `${window.location.origin}/flashcards/${shareToken}`
@@ -48,6 +60,37 @@ export function ShareFlashcardSetModal({
   const handleOpenInNewTab = () => {
     if (!shareUrl) return;
     window.open(shareUrl, '_blank');
+  };
+
+  const handleSendEmail = async () => {
+    if (!email.trim() || !shareToken) return;
+
+    setSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-flashcard-email', {
+        body: {
+          shareToken,
+          recipientEmail: email,
+          setTitle,
+          teacherName,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Email sent!',
+        description: `Flashcard link sent to ${email}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: 'Failed to send email',
+        variant: 'destructive',
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -88,6 +131,33 @@ export function ShareFlashcardSetModal({
                 title="Open in new tab"
               >
                 <ExternalLink className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-3 border-t pt-4">
+            <Label htmlFor="student-email">Send by Email (Optional)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="student-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="student@example.com"
+              />
+              <Button
+                variant="outline"
+                onClick={handleSendEmail}
+                disabled={!email.trim() || sending}
+              >
+                {sending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Send
+                  </>
+                )}
               </Button>
             </div>
           </div>
