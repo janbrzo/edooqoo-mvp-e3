@@ -1,10 +1,20 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFlashcardSets } from '@/hooks/useFlashcardSets';
 import { FlashcardSetCard } from './FlashcardSetCard';
 import { CreateFlashcardSetModal } from './CreateFlashcardSetModal';
 import { FlashcardSetEditor } from './FlashcardSetEditor';
+import { DeleteFlashcardSetModal } from './DeleteFlashcardSetModal';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { NATIVE_LANGUAGES } from '@/types/flashcards';
+import { useStudents } from '@/hooks/useStudents';
 
 interface FlashcardSetsSectionProps {
   studentId: string;
@@ -20,8 +30,29 @@ export function FlashcardSetsSection({
   studentNativeLanguage,
 }: FlashcardSetsSectionProps) {
   const { sets, loading, createSet, updateSet, deleteSet, generateShareToken } = useFlashcardSets(teacherId, studentId);
+  const { updateStudent } = useStudents();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingSetId, setEditingSetId] = useState<string | null>(null);
+  const [deleteSetId, setDeleteSetId] = useState<string | null>(null);
+  const [deleteSetTitle, setDeleteSetTitle] = useState<string>('');
+
+  const handleDeleteClick = (setId: string, setTitle: string) => {
+    setDeleteSetId(setId);
+    setDeleteSetTitle(setTitle);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteSetId) {
+      await deleteSet(deleteSetId);
+      setDeleteSetId(null);
+      setDeleteSetTitle('');
+    }
+  };
+
+  const handleLanguageChange = async (newLanguage: string) => {
+    await updateStudent(studentId, { native_language: newLanguage });
+    window.location.reload(); // Refresh to show updated language
+  };
 
   if (editingSetId) {
     const set = sets.find(s => s.id === editingSetId);
@@ -47,10 +78,25 @@ export function FlashcardSetsSection({
             Create flashcard sets for {studentName} to practice vocabulary
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create New Set
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select value={studentNativeLanguage} onValueChange={handleLanguageChange}>
+            <SelectTrigger className="w-[180px]">
+              <Globe className="w-4 h-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {NATIVE_LANGUAGES.map((lang) => (
+                <SelectItem key={lang.value} value={lang.value}>
+                  {lang.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create New Set
+          </Button>
+        </div>
       </div>
 
       {loading && (
@@ -79,7 +125,7 @@ export function FlashcardSetsSection({
               key={set.id}
               set={set}
               onEdit={() => setEditingSetId(set.id)}
-              onDelete={() => deleteSet(set.id)}
+              onDelete={() => handleDeleteClick(set.id, set.title)}
               onShare={() => generateShareToken(set.id)}
             />
           ))}
@@ -92,6 +138,18 @@ export function FlashcardSetsSection({
         studentId={studentId}
         studentName={studentName}
         onCreate={createSet}
+      />
+
+      <DeleteFlashcardSetModal
+        open={!!deleteSetId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteSetId(null);
+            setDeleteSetTitle('');
+          }
+        }}
+        setTitle={deleteSetTitle}
+        onConfirmDelete={handleConfirmDelete}
       />
     </div>
   );

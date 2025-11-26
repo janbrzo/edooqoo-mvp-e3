@@ -244,6 +244,7 @@ export type Database = {
       }
       flashcard_sets: {
         Row: {
+          back_type: string | null
           created_at: string | null
           deleted_at: string | null
           description: string | null
@@ -257,6 +258,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          back_type?: string | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null
@@ -270,6 +272,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          back_type?: string | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null

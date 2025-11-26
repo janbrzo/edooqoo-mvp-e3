@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { CreateFlashcardSet } from '@/types/flashcards';
 
 interface CreateFlashcardSetModalProps {
@@ -25,6 +26,7 @@ export function CreateFlashcardSetModal({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [isBidirectional, setIsBidirectional] = useState(true);
+  const [backType, setBackType] = useState<'translation' | 'definition'>('translation');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,12 +39,14 @@ export function CreateFlashcardSetModal({
       title: title.trim(),
       description: description.trim() || undefined,
       is_bidirectional: isBidirectional,
+      back_type: backType,
     });
 
     if (result) {
       setTitle('');
       setDescription('');
       setIsBidirectional(true);
+      setBackType('translation');
       onOpenChange(false);
     }
     setIsSubmitting(false);
@@ -90,6 +94,24 @@ export function CreateFlashcardSetModal({
               rows={3}
               className="mt-1.5"
             />
+          </div>
+
+          <div className="space-y-3">
+            <Label>Back Side Content Type</Label>
+            <RadioGroup value={backType} onValueChange={(val) => setBackType(val as 'translation' | 'definition')}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="translation" id="translation" />
+                <Label htmlFor="translation" className="font-normal cursor-pointer">
+                  Translation to native language
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="definition" id="definition" />
+                <Label htmlFor="definition" className="font-normal cursor-pointer">
+                  English definition
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
 
           <div className="flex items-center justify-between py-2">

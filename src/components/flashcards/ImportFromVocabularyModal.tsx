@@ -13,6 +13,7 @@ interface ImportFromVocabularyModalProps {
   onOpenChange: (open: boolean) => void;
   setId: string;
   studentId: string;
+  onImportComplete?: () => void;
 }
 
 export function ImportFromVocabularyModal({
@@ -20,6 +21,7 @@ export function ImportFromVocabularyModal({
   onOpenChange,
   setId,
   studentId,
+  onImportComplete,
 }: ImportFromVocabularyModalProps) {
   const [worksheets, setWorksheets] = useState<any[]>([]);
   const [selectedWorksheet, setSelectedWorksheet] = useState<string | null>(null);
@@ -115,6 +117,7 @@ export function ImportFromVocabularyModal({
       : { title: parsed.vocabulary_sheet.title, words: itemsToImport };
 
     await bulkAddFromVocabulary(setId, selectedWorksheet, vocabData);
+    onImportComplete?.(); // Trigger refetch
     onOpenChange(false);
     setSelectedWorksheet(null);
     setVocabularyItems([]);

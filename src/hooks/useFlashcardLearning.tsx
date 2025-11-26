@@ -51,7 +51,7 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
   });
   const { toast } = useToast();
 
-  const loadSession = useCallback(async () => {
+  const loadSession = useCallback(async (includeAll = false) => {
     if (!setId || !learnerEmail) return;
 
     setLoading(true);
@@ -69,10 +69,10 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
         isDueForReview: new Date(card.next_review_date) <= new Date(),
       }));
 
-      // Filter to show only new cards or cards due for review
-      const filteredCards = learningCards.filter(
-        card => card.isNew || card.isDueForReview
-      );
+      // Filter to show only new cards or cards due for review (unless includeAll is true)
+      const filteredCards = includeAll 
+        ? learningCards 
+        : learningCards.filter(card => card.isNew || card.isDueForReview);
 
       setCards(filteredCards);
       setCurrentIndex(0);
@@ -163,7 +163,7 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
 
   const restartSession = () => {
     setCurrentIndex(0);
-    loadSession();
+    loadSession(true); // Load ALL cards for practice
   };
 
   return {
