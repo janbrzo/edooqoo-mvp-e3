@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFlashcardCards } from '@/hooks/useFlashcardCards';
 import { normalizeVocabularySheet } from '@/types/flashcards';
@@ -13,6 +14,8 @@ interface ImportFromVocabularyModalProps {
   onOpenChange: (open: boolean) => void;
   setId: string;
   studentId: string;
+  backType?: 'translation' | 'definition';
+  nativeLanguage?: string;
   onImportComplete?: () => void;
 }
 
@@ -21,6 +24,8 @@ export function ImportFromVocabularyModal({
   onOpenChange,
   setId,
   studentId,
+  backType = 'translation',
+  nativeLanguage = 'Spanish',
   onImportComplete,
 }: ImportFromVocabularyModalProps) {
   const [worksheets, setWorksheets] = useState<any[]>([]);
@@ -108,20 +113,58 @@ export function ImportFromVocabularyModal({
     const worksheet = worksheets.find(w => w.id === selectedWorksheet);
     if (!worksheet) return;
 
-    const parsed = JSON.parse(worksheet.ai_response);
-    const itemsToImport = vocabularyItems.filter((_, i) => selectedItems.has(i));
+    setLoading(true);
+    try {
+      const parsed = JSON.parse(worksheet.ai_response);
+      const itemsToImport = vocabularyItems.filter((_, i) => selectedItems.has(i));
 
-    // Create vocabulary data in original format for bulkAddFromVocabulary
-    const vocabData = Array.isArray(parsed.vocabulary_sheet)
-      ? itemsToImport.map(item => ({ term: item.word, meaning: item.definition }))
-      : { title: parsed.vocabulary_sheet.title, words: itemsToImport };
+      // If backType is 'translation', auto-translate definitions
+      let processedItems = itemsToImport;
+      if (backType === 'translation' && nativeLanguage) {
+        console.log('[ImportFromVocabularyModal] Auto-translating to', nativeLanguage);
+        
+        // Translate each definition
+        const translationPromises = itemsToImport.map(async (item) => {
+          try {
+            const { data, error } = await supabase.functions.invoke('translate-flashcard', {
+              body: {
+                text: item.definition,
+                target_language: nativeLanguage,
+              },
+            });
+            
+            if (error) throw error;
+            
+            return {
+              ...item,
+              definition: data?.translation || item.definition,
+            };
+          } catch (error) {
+            console.error('[ImportFromVocabularyModal] Translation error:', error);
+            // Fallback to original definition if translation fails
+            return item;
+          }
+        });
 
-    await bulkAddFromVocabulary(setId, selectedWorksheet, vocabData);
-    onImportComplete?.(); // Trigger refetch
-    onOpenChange(false);
-    setSelectedWorksheet(null);
-    setVocabularyItems([]);
-    setSelectedItems(new Set());
+        processedItems = await Promise.all(translationPromises);
+      }
+
+      // Create vocabulary data in original format for bulkAddFromVocabulary
+      const vocabData = Array.isArray(parsed.vocabulary_sheet)
+        ? processedItems.map(item => ({ term: item.word, meaning: item.definition }))
+        : { title: parsed.vocabulary_sheet.title, words: processedItems };
+
+      await bulkAddFromVocabulary(setId, selectedWorksheet, vocabData);
+      onImportComplete?.(); // Trigger refetch
+      onOpenChange(false);
+      setSelectedWorksheet(null);
+      setVocabularyItems([]);
+      setSelectedItems(new Set());
+    } catch (error) {
+      console.error('[ImportFromVocabularyModal] Import error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -213,12 +256,20 @@ export function ImportFromVocabularyModal({
                 >
                   Back
                 </Button>
-                <Button
-                  onClick={handleImport}
-                  disabled={selectedItems.size === 0}
-                >
-                  Import {selectedItems.size} Cards
-                </Button>
+              <Button
+                variant="outline"
+                onClick={handleImport}
+                disabled={selectedItems.size === 0 || loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  `Import ${selectedItems.size} Cards`
+                )}
+              </Button>
               </div>
             </>
           )}

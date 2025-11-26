@@ -1,4 +1,4 @@
-import { Edit, Share2, Trash2, BookOpen } from 'lucide-react';
+import { Edit, Share2, Trash2, BookOpen, Plus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,9 +11,10 @@ interface FlashcardSetCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onShare: () => Promise<string | null>;
+  onAddCard?: () => void;
 }
 
-export function FlashcardSetCard({ set, onEdit, onDelete, onShare }: FlashcardSetCardProps) {
+export function FlashcardSetCard({ set, onEdit, onDelete, onShare, onAddCard }: FlashcardSetCardProps) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(set.share_token);
 
@@ -31,7 +32,12 @@ export function FlashcardSetCard({ set, onEdit, onDelete, onShare }: FlashcardSe
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <CardTitle className="text-lg line-clamp-2">{set.title}</CardTitle>
+              <CardTitle 
+                className="text-lg line-clamp-2 cursor-pointer hover:text-primary transition-colors"
+                onClick={onEdit}
+              >
+                {set.title}
+              </CardTitle>
               {set.description && (
                 <CardDescription className="line-clamp-2 mt-1">
                   {set.description}
@@ -71,6 +77,17 @@ export function FlashcardSetCard({ set, onEdit, onDelete, onShare }: FlashcardSe
                 <Share2 className="w-3 h-3 mr-1" />
                 Share
               </Button>
+              {onAddCard && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onAddCard}
+                  className="flex-1"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"

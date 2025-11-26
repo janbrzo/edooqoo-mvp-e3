@@ -12,6 +12,13 @@ interface FlashcardDisplayProps {
 export function FlashcardDisplay({ card, onReview, nativeLanguage }: FlashcardDisplayProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
+  // Handle bidirectional: swap front/back if direction === 2
+  const displayFront = card.direction === 2 ? card.back_text : card.front_text;
+  const displayBack = card.direction === 2 ? card.front_text : card.back_text;
+  const frontLabel = card.direction === 2 ? nativeLanguage : 'English';
+  const backLabel = card.direction === 2 ? 'English' : nativeLanguage;
+  const frontExample = card.direction === 2 ? undefined : card.front_example;
+
   const handleReview = (quality: ReviewQuality) => {
     onReview(card.card_id, quality);
     setIsFlipped(false);
@@ -26,11 +33,11 @@ export function FlashcardDisplay({ card, onReview, nativeLanguage }: FlashcardDi
         <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
           {!isFlipped ? (
             <div className="text-center space-y-4">
-              <div className="text-sm text-muted-foreground mb-2">English</div>
-              <div className="text-3xl font-bold">{card.front_text}</div>
-              {card.front_example && (
+              <div className="text-sm text-muted-foreground mb-2">{frontLabel}</div>
+              <div className="text-3xl font-bold">{displayFront}</div>
+              {frontExample && (
                 <div className="text-lg text-muted-foreground italic mt-4">
-                  "{card.front_example}"
+                  "{frontExample}"
                 </div>
               )}
               <div className="text-sm text-muted-foreground mt-8">
@@ -39,8 +46,8 @@ export function FlashcardDisplay({ card, onReview, nativeLanguage }: FlashcardDi
             </div>
           ) : (
             <div className="text-center space-y-4 w-full">
-              <div className="text-sm text-muted-foreground mb-2">{nativeLanguage}</div>
-              <div className="text-3xl font-bold">{card.back_text}</div>
+              <div className="text-sm text-muted-foreground mb-2">{backLabel}</div>
+              <div className="text-3xl font-bold">{displayBack}</div>
               
               <div className="pt-8 space-y-3">
                 <p className="text-sm text-muted-foreground">How well did you know this?</p>

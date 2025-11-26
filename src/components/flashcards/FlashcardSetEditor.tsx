@@ -23,7 +23,7 @@ export function FlashcardSetEditor({
   generateShareToken,
   studentNativeLanguage,
 }: FlashcardSetEditorProps) {
-  const { cards, addCard, updateCard, deleteCard } = useFlashcardCards(set.id);
+  const { cards, addCard, updateCard, deleteCard, refetch } = useFlashcardCards(set.id);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -128,7 +128,7 @@ export function FlashcardSetEditor({
         </div>
       )}
 
-      <AddFlashcardModal
+        <AddFlashcardModal
         open={isAddModalOpen || !!editingCardId}
         onOpenChange={(open) => {
           setIsAddModalOpen(open);
@@ -137,6 +137,7 @@ export function FlashcardSetEditor({
         setId={set.id}
         onAdd={addCard}
         studentNativeLanguage={studentNativeLanguage}
+        backType={set.back_type || 'translation'}
         editingCard={editingCardId ? cards.find(c => c.id === editingCardId) : undefined}
         onUpdate={editingCardId ? (updates) => updateCard(editingCardId, updates) : undefined}
         onCloseEdit={() => setEditingCardId(null)}
@@ -147,9 +148,11 @@ export function FlashcardSetEditor({
         onOpenChange={setIsImportModalOpen}
         setId={set.id}
         studentId={set.student_id}
+        backType={set.back_type || 'translation'}
+        nativeLanguage={studentNativeLanguage}
         onImportComplete={() => {
           // Refetch cards after import
-          window.location.reload();
+          refetch();
         }}
       />
 
@@ -158,6 +161,8 @@ export function FlashcardSetEditor({
         onOpenChange={setIsShareModalOpen}
         shareToken={shareToken}
         setTitle={set.title}
+        studentEmail={set.student_email}
+        teacherName={set.teacher_name}
       />
     </div>
   );
