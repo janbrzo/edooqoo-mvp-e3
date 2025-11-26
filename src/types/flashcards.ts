@@ -18,6 +18,8 @@ export interface FlashcardSet {
   mastered_count?: number;
   student_name?: string;
   student_native_language?: string;
+  student_email?: string;
+  teacher_name?: string;
 }
 
 export interface FlashcardCard {

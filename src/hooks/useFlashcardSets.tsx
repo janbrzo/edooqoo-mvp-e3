@@ -17,7 +17,8 @@ export const useFlashcardSets = (teacherId?: string, studentId?: string) => {
         .from('flashcard_sets')
         .select(`
           *,
-          student:students(name, native_language),
+          student:students(name, native_language, student_email),
+          teacher:profiles!flashcard_sets_teacher_id_fkey(first_name, last_name),
           cards:flashcard_cards(id)
         `)
         .eq('teacher_id', teacherId)
@@ -36,6 +37,8 @@ export const useFlashcardSets = (teacherId?: string, studentId?: string) => {
         ...set,
         student_name: set.student?.name,
         student_native_language: set.student?.native_language,
+        student_email: set.student?.student_email,
+        teacher_name: set.teacher ? `${set.teacher.first_name || ''} ${set.teacher.last_name || ''}`.trim() : undefined,
         cards_count: set.cards?.length || 0,
       }));
 
