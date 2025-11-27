@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -12,8 +12,9 @@ export const useFlashcardTranslation = ({ targetLanguage, enabled }: UseFlashcar
   const [isTranslating, setIsTranslating] = useState(false);
   const { toast } = useToast();
 
-  // In-memory cache to avoid duplicate API calls
-  const cache = new Map<string, string>();
+  // Use useRef for persistent cache across renders
+  const cacheRef = useRef<Map<string, string>>(new Map());
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const translateText = useCallback(
     async (englishText: string) => {
@@ -22,41 +23,53 @@ export const useFlashcardTranslation = ({ targetLanguage, enabled }: UseFlashcar
         return;
       }
 
-      // Check cache first
-      const cacheKey = `${englishText}_${targetLanguage}`;
-      if (cache.has(cacheKey)) {
-        setTranslation(cache.get(cacheKey)!);
-        return;
+      // Clear any existing debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
 
-      setIsTranslating(true);
-      try {
-        const { data, error } = await supabase.functions.invoke('translate-flashcard', {
-          body: {
-            text: englishText,
-            target_language: targetLanguage,
-          },
-        });
+      // Debounce translation by 800ms
+      debounceTimerRef.current = setTimeout(async () => {
+        const cacheKey = `${englishText}_${targetLanguage}`;
+        
+        // Check cache first
+        if (cacheRef.current.has(cacheKey)) {
+          setTranslation(cacheRef.current.get(cacheKey)!);
+          return;
+        }
 
-        if (error) throw error;
+        setIsTranslating(true);
+        try {
+          const { data, error } = await supabase.functions.invoke('translate-flashcard', {
+            body: {
+              text: englishText,
+              target_language: targetLanguage,
+            },
+          });
 
-        const translatedText = data?.translation || '';
-        setTranslation(translatedText);
-        cache.set(cacheKey, translatedText);
-      } catch (error: any) {
-        console.error('Translation error:', error);
-        // Don't show error toast for translation failures - just silently fail
-        setTranslation('');
-      } finally {
-        setIsTranslating(false);
-      }
+          if (error) throw error;
+
+          const translatedText = data?.translation || '';
+          setTranslation(translatedText);
+          cacheRef.current.set(cacheKey, translatedText);
+        } catch (error: any) {
+          console.error('Translation error:', error);
+          // Don't show error toast for translation failures - just silently fail
+          setTranslation('');
+        } finally {
+          setIsTranslating(false);
+        }
+      }, 800); // 800ms debounce
     },
     [targetLanguage, enabled, toast]
   );
 
-  const clearTranslation = () => {
+  const clearTranslation = useCallback(() => {
     setTranslation('');
-  };
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+  }, []);
 
   return {
     translation,

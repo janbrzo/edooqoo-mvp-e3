@@ -106,6 +106,8 @@ export function FlashcardSetCard({ set, onEdit, onDelete, onShare, onAddCard }: 
         onOpenChange={setIsShareModalOpen}
         shareToken={shareToken}
         setTitle={set.title}
+        studentEmail={set.student_email}
+        teacherName={set.teacher_name}
       />
     </>
   );

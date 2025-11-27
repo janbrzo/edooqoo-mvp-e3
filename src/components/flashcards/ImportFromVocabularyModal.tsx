@@ -128,7 +128,7 @@ export function ImportFromVocabularyModal({
           try {
             const { data, error } = await supabase.functions.invoke('translate-flashcard', {
               body: {
-                text: item.definition,
+                text: item.word,
                 target_language: nativeLanguage,
               },
             });
