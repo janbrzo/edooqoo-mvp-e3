@@ -6,7 +6,9 @@ import { FlashcardSetCard } from './FlashcardSetCard';
 import { CreateFlashcardSetModal } from './CreateFlashcardSetModal';
 import { DeleteFlashcardSetModal } from './DeleteFlashcardSetModal';
 import { FlashcardSetEditor } from './FlashcardSetEditor';
+import { AddFlashcardModal } from './AddFlashcardModal';
 import { useFlashcardSets } from '@/hooks/useFlashcardSets';
+import { useFlashcardCards } from '@/hooks/useFlashcardCards';
 import { useStudents } from '@/hooks/useStudents';
 import {
   Select,
@@ -35,8 +37,13 @@ export function FlashcardSetsSection({
   const [editingSetId, setEditingSetId] = useState<string | null>(null);
   const [deleteSetId, setDeleteSetId] = useState<string | null>(null);
   const [deleteSetTitle, setDeleteSetTitle] = useState<string>('');
+  const [addCardForSetId, setAddCardForSetId] = useState<string | null>(null);
 
   const student = students.find(s => s.id === studentId);
+
+  // Get cards hook for the set we're adding to
+  const addCardSet = sets.find(s => s.id === addCardForSetId);
+  const { addCard } = useFlashcardCards(addCardForSetId || '');
 
   const handleDeleteClick = (set: FlashcardSet) => {
     setDeleteSetId(set.id);
@@ -140,7 +147,7 @@ export function FlashcardSetsSection({
               onEdit={() => setEditingSetId(set.id)}
               onDelete={() => handleDeleteClick(set)}
               onShare={() => generateShareToken(set.id)}
-              onAddCard={() => setEditingSetId(set.id)}
+              onAddCard={() => setAddCardForSetId(set.id)}
             />
           ))}
         </div>
@@ -165,6 +172,19 @@ export function FlashcardSetsSection({
         setTitle={deleteSetTitle}
         onConfirmDelete={handleConfirmDelete}
       />
+
+      {addCardSet && (
+        <AddFlashcardModal
+          open={!!addCardForSetId}
+          onOpenChange={(open) => {
+            if (!open) setAddCardForSetId(null);
+          }}
+          setId={addCardForSetId!}
+          onAdd={addCard}
+          studentNativeLanguage={studentNativeLanguage}
+          backType={addCardSet.back_type as 'translation' | 'definition'}
+        />
+      )}
     </div>
   );
 }

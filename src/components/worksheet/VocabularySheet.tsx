@@ -42,8 +42,8 @@ const VocabularySheet = ({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedWords, setSelectedWords] = useState<number[]>([]);
   
-  // Show flashcard buttons only for teacher view with required IDs
-  const canAddFlashcards = viewMode === 'teacher' && studentId && teacherId && worksheetId && !isEditing;
+  // Show flashcard buttons when all required IDs are present
+  const canAddFlashcards = studentId && teacherId && worksheetId && !isEditing;
 
   const handleAddSingleWord = (index: number) => {
     setSelectedWords([index]);

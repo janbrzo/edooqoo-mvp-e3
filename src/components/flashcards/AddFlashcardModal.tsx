@@ -35,26 +35,32 @@ export function AddFlashcardModal({
   const [frontExample, setFrontExample] = useState('');
   const [backText, setBackText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userEditedBackText, setUserEditedBackText] = useState(false);
 
   const isEditMode = !!editingCard;
 
   // Auto-translation hook (only for non-edit mode and translation type)
-  const { translation, isTranslating, translateText } = useFlashcardTranslation({
+  const { translation, isTranslating, translateText, clearTranslation } = useFlashcardTranslation({
     targetLanguage: studentNativeLanguage,
     enabled: !isEditMode && backType === 'translation',
   });
 
+  // Reset form when modal opens/closes or editing card changes
   useEffect(() => {
     if (editingCard) {
       setFrontText(editingCard.front_text);
       setFrontExample(editingCard.front_example || '');
       setBackText(editingCard.back_text);
-    } else {
+      setUserEditedBackText(false);
+    } else if (open) {
+      // Clear everything when opening modal for new card
       setFrontText('');
       setFrontExample('');
       setBackText('');
+      setUserEditedBackText(false);
+      clearTranslation();
     }
-  }, [editingCard, open]);
+  }, [editingCard, open, clearTranslation]);
 
   // Auto-translate when frontText changes (debounced in hook)
   useEffect(() => {
@@ -63,12 +69,12 @@ export function AddFlashcardModal({
     }
   }, [frontText, isEditMode, backType, translateText]);
 
-  // Update backText when translation is ready
+  // Update backText when translation is ready, but only if user hasn't edited it
   useEffect(() => {
-    if (!isEditMode && translation && !backText) {
+    if (!isEditMode && translation && !userEditedBackText) {
       setBackText(translation);
     }
-  }, [translation, isEditMode, backText]);
+  }, [translation, isEditMode, userEditedBackText]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,7 +155,10 @@ export function AddFlashcardModal({
               <Input
                 id="back"
                 value={backText}
-                onChange={(e) => setBackText(e.target.value)}
+                onChange={(e) => {
+                  setBackText(e.target.value);
+                  setUserEditedBackText(true);
+                }}
                 placeholder={
                   backType === 'translation'
                     ? `Translation in ${studentNativeLanguage}...`
