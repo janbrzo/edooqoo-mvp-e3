@@ -580,6 +580,7 @@ export default function WorksheetDisplay({
             isDownloadUnlocked={isDownloadUnlocked}
             inputParams={inputParams}
             userId={userId}
+            studentId={studentId}
             onExpandAll={(expandFn: () => void) => setExpandAllRef(() => expandFn)}
             onCloseSidebar={(closeFn: () => void) => setCloseSidebarRef(() => closeFn)}
             isPinned={isPinned}

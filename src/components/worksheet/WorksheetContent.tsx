@@ -28,6 +28,7 @@ interface WorksheetContentProps {
   isDownloadUnlocked: boolean;
   inputParams?: any;
   userId?: string;
+  studentId?: string;
   onExpandAll?: (expandAllFn: () => void) => void;
   onCloseSidebar?: (closeSidebarFn: () => void) => void;
   isPinned?: boolean;
@@ -46,6 +47,7 @@ export default function WorksheetContent({
   isDownloadUnlocked,
   inputParams,
   userId,
+  studentId,
   onExpandAll,
   onCloseSidebar,
   isPinned = false,
@@ -486,9 +488,9 @@ export default function WorksheetContent({
             viewMode={viewMode}
             editableWorksheet={editableWorksheet}
             setEditableWorksheet={setEditableWorksheet}
-            studentId={editableWorksheet?.student_id}
-            teacherId={editableWorksheet?.teacher_id || userId}
-            worksheetId={editableWorksheet?.id}
+            studentId={studentId}
+            teacherId={userId}
+            worksheetId={worksheetId || undefined}
             nativeLanguage={inputParams?.studentNativeLanguage || 'Spanish'}
           />
         </div>
