@@ -123,12 +123,12 @@ export function ImportFromVocabularyModal({
       if (backType === 'translation' && nativeLanguage) {
         console.log('[ImportFromVocabularyModal] Auto-translating to', nativeLanguage);
         
-        // Translate each definition
+        // Translate each word (term), NOT the definition
         const translationPromises = itemsToImport.map(async (item) => {
           try {
             const { data, error } = await supabase.functions.invoke('translate-flashcard', {
               body: {
-                text: item.word,
+                text: item.word, // FIXED: Translate the word (term), not definition
                 target_language: nativeLanguage,
               },
             });
@@ -137,7 +137,7 @@ export function ImportFromVocabularyModal({
             
             return {
               ...item,
-              definition: data?.translation || item.definition,
+              definition: data?.translation || item.definition, // Back text is translation of the word
             };
           } catch (error) {
             console.error('[ImportFromVocabularyModal] Translation error:', error);
@@ -148,6 +148,7 @@ export function ImportFromVocabularyModal({
 
         processedItems = await Promise.all(translationPromises);
       }
+      // For 'definition' mode - use definition as-is, no translation
 
       // Create vocabulary data in original format for bulkAddFromVocabulary
       const vocabData = Array.isArray(parsed.vocabulary_sheet)

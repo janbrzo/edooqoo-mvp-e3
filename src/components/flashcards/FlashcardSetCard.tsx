@@ -49,13 +49,16 @@ export function FlashcardSetCard({ set, onEdit, onDelete, onShare, onAddCard }: 
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="secondary">
                 {set.cards_count || 0} cards
               </Badge>
               {set.is_bidirectional && (
                 <Badge variant="outline">Bidirectional</Badge>
               )}
+              <Badge variant="outline" className="text-xs">
+                {set.back_type === 'translation' ? '🌐 Native' : '📖 Definition'}
+              </Badge>
             </div>
 
             <div className="flex items-center gap-2">

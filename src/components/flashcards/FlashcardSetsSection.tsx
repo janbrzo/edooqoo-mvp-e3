@@ -10,6 +10,7 @@ import { AddFlashcardModal } from './AddFlashcardModal';
 import { useFlashcardSets } from '@/hooks/useFlashcardSets';
 import { useFlashcardCards } from '@/hooks/useFlashcardCards';
 import { useStudents } from '@/hooks/useStudents';
+import { toast } from '@/hooks/use-toast';
 import {
   Select,
   SelectContent,
@@ -31,13 +32,14 @@ export function FlashcardSetsSection({
   studentName,
   studentNativeLanguage,
 }: FlashcardSetsSectionProps) {
-  const { sets, loading, createSet, updateSet, deleteSet, generateShareToken } = useFlashcardSets(teacherId, studentId);
+  const { sets, loading, createSet, updateSet, deleteSet, generateShareToken, refetch } = useFlashcardSets(teacherId, studentId);
   const { students, updateStudent } = useStudents();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingSetId, setEditingSetId] = useState<string | null>(null);
   const [deleteSetId, setDeleteSetId] = useState<string | null>(null);
   const [deleteSetTitle, setDeleteSetTitle] = useState<string>('');
   const [addCardForSetId, setAddCardForSetId] = useState<string | null>(null);
+  const [currentLanguage, setCurrentLanguage] = useState(studentNativeLanguage);
 
   const student = students.find(s => s.id === studentId);
 
@@ -59,7 +61,22 @@ export function FlashcardSetsSection({
   };
 
   const handleLanguageChange = async (newLanguage: string) => {
-    await updateStudent(studentId, { native_language: newLanguage });
+    try {
+      await updateStudent(studentId, { native_language: newLanguage });
+      setCurrentLanguage(newLanguage); // Update local state immediately for instant UI update
+      toast({
+        title: 'Success',
+        description: 'Student language updated',
+      });
+      refetch(); // Refresh sets to reflect new language
+    } catch (error) {
+      console.error('Error updating language:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update language',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (editingSetId) {
@@ -78,7 +95,7 @@ export function FlashcardSetsSection({
   }
 
   const selectedLanguage = NATIVE_LANGUAGES.find(
-    lang => lang.value === (student?.native_language || studentNativeLanguage || 'Spanish')
+    lang => lang.value === (currentLanguage || studentNativeLanguage || 'Spanish')
   );
 
   return (
@@ -90,7 +107,7 @@ export function FlashcardSetsSection({
         </div>
         <div className="flex items-center gap-2">
           <Select 
-            value={student?.native_language || studentNativeLanguage || 'Spanish'}
+            value={currentLanguage || studentNativeLanguage || 'Spanish'}
             onValueChange={handleLanguageChange}
           >
             <SelectTrigger className="w-[200px]">

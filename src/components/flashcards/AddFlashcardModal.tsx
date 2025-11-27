@@ -41,8 +41,8 @@ export function AddFlashcardModal({
 
   // Auto-translation hook (only for non-edit mode and translation type)
   const { translation, isTranslating, translateText, clearTranslation } = useFlashcardTranslation({
-    targetLanguage: studentNativeLanguage,
-    enabled: !isEditMode && backType === 'translation',
+    targetLanguage: backType === 'translation' ? studentNativeLanguage : undefined,
+    enabled: backType === 'translation' && !isEditMode && !!studentNativeLanguage,
   });
 
   // Reset form when modal opens/closes or editing card changes
@@ -64,17 +64,17 @@ export function AddFlashcardModal({
 
   // Auto-translate when frontText changes (debounced in hook)
   useEffect(() => {
-    if (!isEditMode && backType === 'translation' && frontText.trim()) {
+    if (!isEditMode && backType === 'translation' && studentNativeLanguage && frontText.trim().length > 2 && !userEditedBackText) {
       translateText(frontText);
     }
-  }, [frontText, isEditMode, backType, translateText]);
+  }, [frontText, isEditMode, backType, studentNativeLanguage, translateText, userEditedBackText]);
 
-  // Update backText when translation is ready, but only if user hasn't edited it
+  // Update backText when translation is ready, but only if user hasn't edited it and in translation mode
   useEffect(() => {
-    if (!isEditMode && translation && !userEditedBackText) {
+    if (!isEditMode && translation && !userEditedBackText && backType === 'translation') {
       setBackText(translation);
     }
-  }, [translation, isEditMode, userEditedBackText]);
+  }, [translation, isEditMode, userEditedBackText, backType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
