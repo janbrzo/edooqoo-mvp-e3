@@ -24,7 +24,12 @@ const Index = () => {
   const worksheetState = useWorksheetState(authLoading);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [preSelectedStudent, setPreSelectedStudent] = useState<{id: string, name: string} | null>(null);
-  const { isGenerating, generateWorksheetHandler } = useWorksheetGeneration(user?.id || null, worksheetState, selectedStudentId);
+  const { 
+    isGenerating, 
+    generateWorksheetHandler, 
+    streamProgress, 
+    cancelGeneration 
+  } = useWorksheetGeneration(user?.id || null, worksheetState, selectedStudentId);
   const { tokenLeft, hasTokens, isDemo, profile } = useTokenSystem(user?.id || null);
   const [showTokenModal, setShowTokenModal] = useState(false);
 
@@ -246,7 +251,9 @@ const Index = () => {
       <GeneratingModal 
         isOpen={isGenerating} 
         hasAudio={!!worksheetState.inputParams?.selectedAudio} 
-        hasImage={!!worksheetState.inputParams?.selectedImage} 
+        hasImage={!!worksheetState.inputParams?.selectedImage}
+        streamProgress={streamProgress}
+        onCancel={cancelGeneration}
       />
       
       <TokenPaywallModal

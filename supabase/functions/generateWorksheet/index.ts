@@ -7,6 +7,7 @@ import { isValidUUID, sanitizeInput, validatePrompt } from "./security.ts";
 import { RateLimiter } from "./rateLimiter.ts";
 import { getGeolocation } from "./geolocation.ts";
 import { composeSystemMessage } from "./prompts/prompt-composer.ts";
+import { createSSEStream, countExercisesInPartialJSON, getExpectedExerciseCount as getExpectedCount } from "./streaming.ts";
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 
@@ -29,12 +30,16 @@ serve(async (req) => {
   const generationStartTime = Date.now();
 
   try {
-    const { prompt, formData, userId, studentId, isRegeneration, isBatchGeneration } = await req.json();
+    const { prompt, formData, userId, studentId, isRegeneration, isBatchGeneration, enableStreaming } = await req.json();
     const ip =
       req.headers.get("x-forwarded-for") ||
       req.headers.get("cf-connecting-ip") ||
       req.headers.get("x-real-ip") ||
       "unknown";
+    
+    // Check if streaming is requested
+    const useStreaming = enableStreaming === true;
+    console.log('🔍 Streaming mode:', useStreaming ? 'ENABLED' : 'DISABLED');
 
     // Input validation
     const promptValidation = validatePrompt(prompt);
@@ -274,6 +279,163 @@ serve(async (req) => {
       promptLength: sanitizedPrompt.length,
     });
 
+    // ============================================================
+    // STREAMING MODE: Real-time progress via SSE
+    // ============================================================
+    if (useStreaming) {
+      console.log('🌊 Starting STREAMING mode...');
+      
+      const { readable, send, close } = createSSEStream();
+      
+      // Immediately return SSE response to client
+      const responsePromise = new Response(readable, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        }
+      });
+      
+      // Background: Generate with streaming
+      (async () => {
+        try {
+          send('start', { message: 'Starting generation...' });
+          
+          const expectedTotal = getExpectedCount(formData?.lessonTime);
+          
+          // OpenAI STREAMING call
+          console.log('🔵 Starting OpenAI streaming...');
+          const stream = await openai.chat.completions.create({
+            model: "gpt-5-mini-2025-08-07",
+            temperature: 1,
+            messages: [
+              { role: "system", content: systemMessage },
+              { role: "user", content: sanitizedPrompt }
+            ],
+            max_completion_tokens: 20000,
+            stream: true  // ← KEY: Enable streaming
+          });
+          
+          let fullContent = '';
+          let lastExerciseCount = 0;
+          
+          // Process stream chunks
+          for await (const chunk of stream) {
+            const delta = chunk.choices[0]?.delta?.content || '';
+            fullContent += delta;
+            
+            // Detect completed exercises
+            const newCount = countExercisesInPartialJSON(fullContent);
+            if (newCount > lastExerciseCount) {
+              lastExerciseCount = newCount;
+              send('progress', { 
+                exercisesGenerated: newCount,
+                expectedTotal
+              });
+            }
+          }
+          
+          console.log('✅ OpenAI streaming completed, parsing final JSON...');
+          
+          // Parse final JSON
+          const worksheetData = parseAIResponse(fullContent);
+          
+          if (!worksheetData.title || !worksheetData.exercises || !Array.isArray(worksheetData.exercises)) {
+            throw new Error("Invalid worksheet structure returned from AI");
+          }
+          
+          // Make sure exercise titles have correct sequential numbering
+          worksheetData.exercises.forEach((exercise: any, index: number) => {
+            const exerciseNumber = index + 1;
+            const exerciseType = exercise.type.charAt(0).toUpperCase() + exercise.type.slice(1).replace(/-/g, " ");
+            exercise.title = `Exercise ${exerciseNumber}: ${exerciseType}`;
+          });
+          
+          const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);
+          worksheetData.sourceCount = sourceCount;
+          
+          // Calculate generation time
+          const generationTimeSeconds = Math.round((Date.now() - generationStartTime) / 1000);
+          
+          // Save to database
+          console.log('💾 Saving worksheet to database...');
+          const fullPrompt = `SYSTEM MESSAGE:\n${systemMessage}\n\nUSER MESSAGE:\n${sanitizedPrompt}`;
+          const sanitizedFormData = formData ? JSON.parse(JSON.stringify(formData)) : {};
+          
+          // Remove base64 data before saving
+          const sanitizedImage = selectedImage ? {
+            ...selectedImage,
+            url: selectedImage.url?.startsWith('data:') ? null : selectedImage.url,
+            ai_generated_url: selectedImage.ai_generated_url?.startsWith('data:') ? null : selectedImage.ai_generated_url,
+            thumbnail: selectedImage.thumbnail?.startsWith('data:') ? null : selectedImage.thumbnail
+          } : null;
+
+          const sanitizedAudio = selectedAudio ? {
+            ...selectedAudio,
+            url: selectedAudio.url?.startsWith('data:') ? null : selectedAudio.url,
+            ai_generated_audio_url: selectedAudio.ai_generated_audio_url?.startsWith('data:') ? null : selectedAudio.ai_generated_audio_url
+          } : null;
+          
+          const { data: worksheet, error: worksheetError } = await supabase
+            .from("worksheets")
+            .insert({
+              prompt: fullPrompt,
+              form_data: sanitizedFormData,
+              ai_response: fullContent?.substring(0, 50000) || "",
+              html_content: JSON.stringify(worksheetData),
+              user_id: userId || null,
+              teacher_id: userId || null,
+              teacher_email: teacherEmail,
+              student_id: studentId || null,
+              selected_image: sanitizedImage,
+              selected_audio: sanitizedAudio,
+              audio_url: selectedAudio?.ai_generated_audio_url || selectedAudio?.url || null,
+              audio_transcript: selectedAudio?.transcript || null,
+              audio_duration: selectedAudio?.duration || null,
+              audio_voice: selectedAudio?.voice || null,
+              ip_address: ip,
+              status: "created",
+              title: worksheetData.title?.substring(0, 255) || "Generated Worksheet",
+              generation_time_seconds: generationTimeSeconds,
+              country: geoData.country || null,
+              city: geoData.city || null,
+            })
+            .select("id, created_at, title");
+          
+          if (worksheetError) {
+            throw new Error(`Database save failed: ${worksheetError.message}`);
+          }
+          
+          const worksheetId = worksheet?.[0]?.id;
+          if (!worksheetId) {
+            throw new Error('No worksheet ID returned from database');
+          }
+          
+          worksheetData.id = worksheetId;
+          
+          console.log('✅ Streaming generation complete, sending done event');
+          send('done', { 
+            worksheetId,
+            worksheet: worksheetData
+          });
+          
+        } catch (error) {
+          console.error('❌ Streaming error:', error);
+          send('error', { message: error instanceof Error ? error.message : 'Unknown error' });
+        } finally {
+          close();
+        }
+      })();
+      
+      return responsePromise;
+    }
+    
+    // ============================================================
+    // REGULAR MODE: Non-streaming (backward compatibility)
+    // ============================================================
+    console.log('📄 Using REGULAR (non-streaming) mode');
+    
     // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-5-mini-2025-08-07", // gpt-4.1-2025-04-14 Changed back to gpt-4o i można gpt-4.1-2025-04-14

@@ -3,8 +3,13 @@ import { Progress } from "@/components/ui/progress";
 
 interface GeneratingModalProps {
   isOpen: boolean;
-  hasAudio?: boolean;  // ✅ Nowy prop
-  hasImage?: boolean;  // ✅ Nowy prop
+  hasAudio?: boolean;
+  hasImage?: boolean;
+  streamProgress?: {  // ✅ NEW: Real-time streaming progress
+    exercisesGenerated: number;
+    expectedTotal: number;
+  } | null;
+  onCancel?: () => void;  // ✅ NEW: Cancellation callback
 }
 
 // NEW: Dynamic generation steps based on selected media
@@ -36,7 +41,13 @@ const getGenerationSteps = (hasAudio: boolean, hasImage: boolean) => {
   return steps;
 };
 
-export default function GeneratingModal({ isOpen, hasAudio = false, hasImage = false }: GeneratingModalProps) {
+export default function GeneratingModal({ 
+  isOpen, 
+  hasAudio = false, 
+  hasImage = false,
+  streamProgress = null,
+  onCancel 
+}: GeneratingModalProps) {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -114,15 +125,43 @@ export default function GeneratingModal({ isOpen, hasAudio = false, hasImage = f
           <span>{Math.round(progress)}%</span>
         </div>
 
-        <p className="text-center min-h-[24px] animate-pulse font-normal text-sky-400">
-          {getGenerationSteps(hasAudio, hasImage)[currentStep]}
-        </p>
+        {streamProgress ? (
+          <div className="space-y-2 bg-blue-50 p-4 rounded-lg">
+            <div className="flex justify-between items-center text-sm">
+              <span className="font-medium text-blue-700">Exercises generated:</span>
+              <span className="font-bold text-blue-900 text-lg">
+                {streamProgress.exercisesGenerated} / {streamProgress.expectedTotal}
+              </span>
+            </div>
+            <Progress 
+              value={(streamProgress.exercisesGenerated / streamProgress.expectedTotal) * 100} 
+              className="h-3 bg-blue-100"
+              indicatorClassName="bg-gradient-to-r from-blue-500 to-green-500"
+            />
+            <p className="text-xs text-blue-600 text-center">
+              Real-time streaming progress
+            </p>
+          </div>
+        ) : (
+          <p className="text-center min-h-[24px] animate-pulse font-normal text-sky-400">
+            {getGenerationSteps(hasAudio, hasImage)[currentStep]}
+          </p>
+        )}
 
         <p className="text-center text-xs text-gray-400">
           {(hasAudio || hasImage) 
             ? `It can take up to 2:30 min. (with ${hasAudio && hasImage ? 'audio & image' : hasAudio ? 'audio' : 'image'})` 
             : "It can take up to 1:30 min."}
         </p>
+        
+        {onCancel && (
+          <button
+            onClick={onCancel}
+            className="w-full mt-4 px-4 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-200"
+          >
+            Cancel Generation
+          </button>
+        )}
       </div>
     </div>
   );

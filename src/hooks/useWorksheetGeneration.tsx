@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { generateWorksheet } from "@/services/worksheetService";
 import { FormData } from "@/components/WorksheetForm";
@@ -12,6 +12,7 @@ import { useEventTracking } from "@/hooks/useEventTracking";
 import { useTokenSystem } from "@/hooks/useTokenSystem";
 import { supabase } from "@/integrations/supabase/client";
 import { generateAudioForWorksheet, generateImageForWorksheet } from '@/services/mediaService';
+import { streamWorksheetGeneration } from '@/services/worksheetStreamService';
 
 export const useWorksheetGeneration = (
   userId: string | null,
@@ -20,6 +21,11 @@ export const useWorksheetGeneration = (
 ) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [startGenerationTime, setStartGenerationTime] = useState<number>(0);
+  const [streamProgress, setStreamProgress] = useState<{
+    exercisesGenerated: number;
+    expectedTotal: number;
+  } | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const { trackEvent } = useEventTracking(userId);
   const { tokenLeft, hasTokens, isDemo, consumeToken } = useTokenSystem(userId);
@@ -170,22 +176,66 @@ export const useWorksheetGeneration = (
       
       // ============================================================
       // KROK 2: GENERATE WORKSHEET (now with pre-generated media)
-      // Backend execution time should now be <30s, preventing 546 errors
+      // WITH STREAMING for real-time progress
       // ============================================================
-      console.log('📝 Generating worksheet with pre-generated media...');
-      toast({
-        title: "Generating exercises...",
-        description: "Creating your personalized worksheet",
-      });
+      console.log('📝 Generating worksheet with STREAMING enabled...');
       
-      const worksheetResult = await generateWorksheet({ 
-        ...data,
-        selectedAudio,    // ← Pre-generated or user-provided
-        selectedImage,    // ← Pre-generated or user-provided
-        fullPrompt,
-        formDataForStorage,
-        studentId
-      }, userId);
+      let worksheetResult: any = null;
+      
+      // Use streaming for generation
+      abortControllerRef.current = streamWorksheetGeneration(
+        { 
+          prompt: fullPrompt,
+          formData: {
+            ...formDataForStorage,
+            selectedAudio,
+            selectedImage,
+          },
+          studentId
+        },
+        userId,
+        {
+          onStart: () => {
+            console.log('🚀 Streaming started');
+            const expectedTotal = getExpectedExerciseCount(data.lessonTime);
+            setStreamProgress({ exercisesGenerated: 0, expectedTotal });
+            
+            toast({
+              title: "Generating exercises...",
+              description: "Creating your personalized worksheet",
+            });
+          },
+          onProgress: (progress) => {
+            console.log(`📝 Progress: ${progress.exercisesGenerated}/${progress.expectedTotal}`);
+            setStreamProgress(progress);
+            
+            // Toast for each exercise
+            toast({
+              title: `Generated exercise ${progress.exercisesGenerated}/${progress.expectedTotal}`,
+              description: "Real-time progress",
+              duration: 2000,
+            });
+          },
+          onDone: async (result) => {
+            console.log('✅ Streaming complete:', result.worksheetId);
+            worksheetResult = result.worksheet;
+            worksheetResult.id = result.worksheetId;
+            setStreamProgress(null);
+            
+            // Continue with existing completion logic
+            await handleWorksheetCompletion(worksheetResult, data, startTime);
+          },
+          onError: (error) => {
+            console.error('❌ Stream error:', error);
+            setStreamProgress(null);
+            throw error;
+          }
+        }
+      );
+      
+      // Wait for streaming to complete
+      // The actual completion is handled in onDone callback
+      return;
 
       console.log("✅ Generated worksheet result received:", {
         hasData: !!worksheetResult,
@@ -384,11 +434,153 @@ export const useWorksheetGeneration = (
     }
   };
 
+  // Helper function to handle worksheet completion (extracted for reuse)
+  const handleWorksheetCompletion = async (worksheetResult: any, data: FormData, startTime: number) => {
+    console.log("✅ Generated worksheet result received:", {
+      hasData: !!worksheetResult,
+      hasId: !!worksheetResult?.id,
+      realId: worksheetResult?.id,
+      exerciseCount: worksheetResult?.exercises?.length || 0,
+      hasTitle: !!worksheetResult?.title,
+      hasVocabulary: !!worksheetResult?.vocabulary_sheet
+    });
+
+    const finalWorksheetId = worksheetResult?.id;
+    
+    if (!finalWorksheetId) {
+      console.error('❌ CRITICAL: No valid ID received from backend!');
+      throw new Error("Failed to save worksheet to database - no ID returned");
+    }
+
+    // Consume token for authenticated users AFTER successful generation
+    console.log('🎯 TOKEN CONSUMPTION CHECK:', {
+      isDemo,
+      userId,
+      hasUserId: !!userId,
+      willConsumeToken: !isDemo && !!userId,
+      finalWorksheetId
+    });
+    
+    if (!isDemo && userId) {
+      console.log('✅ Attempting to consume token for user:', userId);
+      const tokenConsumed = await consumeToken(finalWorksheetId);
+      console.log('🔍 Token consumption result:', tokenConsumed);
+      if (!tokenConsumed) {
+        console.warn('⚠️ Failed to consume token, but worksheet was generated');
+      } else {
+        console.log('✅ Token consumed successfully');
+      }
+    }
+    
+    const actualGenerationTime = Math.round((Date.now() - startTime) / 1000);
+    console.log('⏱️ Generation time:', actualGenerationTime, 'seconds');
+    
+    worksheetState.setGenerationTime(actualGenerationTime);
+    worksheetState.setSourceCount(worksheetResult.sourceCount || Math.floor(Math.random() * (90 - 65) + 65));
+    
+    const expectedExerciseCount = getExpectedExerciseCount(data.lessonTime);
+    console.log(`🎯 Expected ${expectedExerciseCount} exercises for ${data.lessonTime}`);
+    
+    console.log('🔍 Starting worksheet validation...');
+    if (validateWorksheet(worksheetResult, expectedExerciseCount)) {
+      console.log('✅ Worksheet validation passed, processing exercises...');
+      
+      // CRITICAL: Deep fix the entire worksheet before processing
+      console.log('🔧 DEEP FIXING entire worksheet before processing...');
+      const deepFixedWorksheet = deepFixTextObjects(worksheetResult, 'worksheet');
+      console.log('🔧 Worksheet after deep fix:', deepFixedWorksheet);
+      
+      // Trim exercises if more than expected are returned
+      if (deepFixedWorksheet.exercises.length > expectedExerciseCount) {
+        console.log(`✂️ Trimming exercises from ${deepFixedWorksheet.exercises.length} to ${expectedExerciseCount}`);
+        deepFixedWorksheet.exercises = deepFixedWorksheet.exercises.slice(0, expectedExerciseCount);
+      }
+      
+      // FIXED: Pass correct lessonTime and hasGrammar parameters
+      const hasGrammar = !!(data.teachingPreferences && data.teachingPreferences.trim());
+      console.log('🔧 Processing exercises with parameters:', { 
+        lessonTime: data.lessonTime, 
+        hasGrammar,
+        exerciseCount: deepFixedWorksheet.exercises.length 
+      });
+      
+      deepFixedWorksheet.exercises = processExercises(deepFixedWorksheet.exercises, data.lessonTime, hasGrammar);
+      
+      // CRITICAL: Set the correct worksheet ID on the worksheet object
+      deepFixedWorksheet.id = finalWorksheetId;
+      
+      if (!deepFixedWorksheet.vocabulary_sheet || deepFixedWorksheet.vocabulary_sheet.length === 0) {
+        console.log('📝 Creating sample vocabulary sheet...');
+        deepFixedWorksheet.vocabulary_sheet = createSampleVocabulary(15);
+      }
+      
+      console.log('💾 CRITICAL FIX: Setting worksheet ID FIRST, then worksheet data');
+      
+      // CRITICAL FIX: Set the worksheet ID FIRST before setting worksheet data
+      worksheetState.setWorksheetId(finalWorksheetId);
+      
+      // CRITICAL FIX: Add small delay to ensure state is updated
+      setTimeout(() => {
+        console.log('💾 Now setting both worksheets in state with final ID:', finalWorksheetId);
+        worksheetState.setGeneratedWorksheet(deepFixedWorksheet);
+        worksheetState.setEditableWorksheet(deepFixedWorksheet);
+        
+        // Mark generation as complete
+        setIsGenerating(false);
+      }, 100);
+      
+      // Track successful worksheet generation
+      trackEvent({
+        eventType: 'worksheet_generation_complete',
+        eventData: {
+          worksheetId: finalWorksheetId,
+          success: true,
+          generationTimeSeconds: actualGenerationTime,
+          timestamp: new Date().toISOString()
+        }
+      });
+      
+      console.log('🎉 Worksheet generation completed successfully with ID:', finalWorksheetId);
+      toast({
+        title: "Worksheet generated successfully!",
+        description: "Your custom worksheet is now ready to use.",
+        className: "bg-white border-l-4 border-l-green-500 shadow-lg rounded-xl"
+      });
+      
+      // Update student activity if studentId is provided
+      if (studentId) {
+        console.log('🔄 FINAL STEP: Updating student activity for:', studentId);
+        
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('studentUpdated', { 
+            detail: { studentId } 
+          }));
+          
+          console.log('🔄 StudentUpdated event dispatched AFTER generation completed for:', studentId);
+        }, 500);
+      }
+    } else {
+      console.log('❌ Worksheet validation failed');
+      throw new Error("Generated worksheet data is incomplete or invalid");
+    }
+  };
+
   return {
     isGenerating,
     generateWorksheetHandler,
     tokenLeft,
     hasTokens,
-    isDemo
+    isDemo,
+    streamProgress,
+    cancelGeneration: () => {
+      console.log('🛑 Cancelling generation...');
+      abortControllerRef.current?.abort();
+      setIsGenerating(false);
+      setStreamProgress(null);
+      toast({
+        title: "Generation cancelled",
+        description: "Worksheet generation was stopped",
+      });
+    }
   };
 };
