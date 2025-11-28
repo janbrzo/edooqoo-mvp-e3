@@ -162,6 +162,38 @@ export function ShareFlashcardSetModal({
             </div>
           </div>
 
+          <div className="space-y-2 border-t pt-4">
+            <Label>Or share all flashcard sets for this student:</Label>
+            <div className="flex gap-2">
+              <Input
+                value={studentEmail ? `${window.location.origin}/my-flashcards/${encodeURIComponent(studentEmail)}` : 'Student email not set'}
+                readOnly
+                className="font-mono text-sm"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  const portalUrl = studentEmail ? `${window.location.origin}/my-flashcards/${encodeURIComponent(studentEmail)}` : '';
+                  if (portalUrl) {
+                    navigator.clipboard.writeText(portalUrl);
+                    toast({
+                      title: 'Link copied!',
+                      description: 'Student portal link copied to clipboard',
+                    });
+                  }
+                }}
+                title="Copy student portal link"
+                disabled={!studentEmail}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This link shows all flashcard sets for this student
+            </p>
+          </div>
+
           <div className="bg-muted/50 p-3 rounded-lg text-sm text-muted-foreground">
             <p className="font-medium mb-1">📌 Note:</p>
             <ul className="space-y-1 text-xs">

@@ -88,7 +88,7 @@ export function FlashcardSetsSection({
           onBack={() => setEditingSetId(null)}
           onUpdate={updateSet}
           generateShareToken={generateShareToken}
-          studentNativeLanguage={studentNativeLanguage}
+          studentNativeLanguage={currentLanguage || studentNativeLanguage}
         />
       );
     }
@@ -198,7 +198,7 @@ export function FlashcardSetsSection({
           }}
           setId={addCardForSetId!}
           onAdd={addCard}
-          studentNativeLanguage={studentNativeLanguage}
+          studentNativeLanguage={currentLanguage || studentNativeLanguage}
           backType={addCardSet.back_type as 'translation' | 'definition'}
         />
       )}

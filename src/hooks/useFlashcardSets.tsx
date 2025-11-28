@@ -71,6 +71,7 @@ export const useFlashcardSets = (teacherId?: string, studentId?: string) => {
           title: data.title,
           description: data.description,
           is_bidirectional: data.is_bidirectional ?? true,
+          back_type: data.back_type ?? 'translation',
         })
         .select()
         .single();

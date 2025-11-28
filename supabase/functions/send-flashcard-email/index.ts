@@ -38,7 +38,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Worksheet Generator <notifications@worksheetgenerator.lovable.app>',
+        from: 'Worksheet Generator <noreply@edooqoo.com>',
         to: [recipientEmail],
         subject: `${teacherName || 'Your teacher'} shared flashcards with you: ${setTitle}`,
         html: `
