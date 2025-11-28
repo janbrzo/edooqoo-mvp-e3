@@ -111,7 +111,8 @@ export function QuickImportToFlashcardsModal({
         const newSet = await createSet({
           student_id: studentId,
           title: newSetTitle,
-          is_bidirectional: true
+          is_bidirectional: true,
+          back_type: 'translation',
         });
 
         if (!newSet) {

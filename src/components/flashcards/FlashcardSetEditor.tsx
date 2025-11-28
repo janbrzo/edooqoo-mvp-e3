@@ -80,7 +80,12 @@ export function FlashcardSetEditor({
       {cards.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between mb-2">
-            <Badge variant="secondary">{cards.length} cards</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{cards.length} cards</Badge>
+              <Badge variant="outline" className="text-xs">
+                {set.back_type === 'translation' ? '🌐 Native' : '📖 Definition'}
+              </Badge>
+            </div>
             <span className="text-sm text-muted-foreground">
               English ⇄ {studentNativeLanguage}
             </span>
