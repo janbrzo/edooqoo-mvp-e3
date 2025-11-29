@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { CreateFlashcardCard, UpdateFlashcardCard, FlashcardCard } from '@/types/flashcards';
 import { useFlashcardTranslation } from '@/hooks/useFlashcardTranslation';
+import { useFlashcardDefinition } from '@/hooks/useFlashcardDefinition';
 import { Loader2 } from 'lucide-react';
 
 interface AddFlashcardModalProps {
@@ -45,6 +46,11 @@ export function AddFlashcardModal({
     enabled: backType === 'translation' && !isEditMode && !!studentNativeLanguage,
   });
 
+  // Auto-definition hook (only for non-edit mode and definition type)
+  const { definition, isLoadingDefinition, fetchDefinition, clearDefinition } = useFlashcardDefinition({
+    enabled: backType === 'definition' && !isEditMode,
+  });
+
   // Reset form when modal opens/closes or editing card changes
   useEffect(() => {
     if (editingCard) {
@@ -59,8 +65,9 @@ export function AddFlashcardModal({
       setBackText('');
       setUserEditedBackText(false);
       clearTranslation();
+      clearDefinition();
     }
-  }, [editingCard, open, clearTranslation]);
+  }, [editingCard, open, clearTranslation, clearDefinition]);
 
   // Auto-translate when frontText changes (debounced in hook)
   useEffect(() => {
@@ -69,12 +76,26 @@ export function AddFlashcardModal({
     }
   }, [frontText, isEditMode, backType, studentNativeLanguage, translateText, userEditedBackText]);
 
+  // Auto-fetch definition when frontText changes (debounced in hook)
+  useEffect(() => {
+    if (!isEditMode && backType === 'definition' && frontText.trim().length > 2 && !userEditedBackText) {
+      fetchDefinition(frontText);
+    }
+  }, [frontText, isEditMode, backType, fetchDefinition, userEditedBackText]);
+
   // Update backText when translation is ready, but only if user hasn't edited it and in translation mode
   useEffect(() => {
     if (!isEditMode && translation && !userEditedBackText && backType === 'translation') {
       setBackText(translation);
     }
   }, [translation, isEditMode, userEditedBackText, backType]);
+
+  // Update backText when definition is ready, but only if user hasn't edited it and in definition mode
+  useEffect(() => {
+    if (!isEditMode && definition && !userEditedBackText && backType === 'definition') {
+      setBackText(definition);
+    }
+  }, [definition, isEditMode, userEditedBackText, backType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,7 +188,7 @@ export function AddFlashcardModal({
                 required
                 className="mt-1.5"
               />
-              {isTranslating && !isEditMode && (
+              {(isTranslating || isLoadingDefinition) && !isEditMode && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                 </div>
@@ -176,6 +197,11 @@ export function AddFlashcardModal({
             {!isEditMode && backType === 'translation' && translation && (
               <p className="text-xs text-muted-foreground mt-1">
                 💡 Auto-suggested translation
+              </p>
+            )}
+            {!isEditMode && backType === 'definition' && definition && (
+              <p className="text-xs text-muted-foreground mt-1">
+                💡 Auto-suggested definition
               </p>
             )}
           </div>

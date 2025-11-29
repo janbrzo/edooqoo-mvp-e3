@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { useFlashcardSets } from '@/hooks/useFlashcardSets';
 import { useFlashcardCards } from '@/hooks/useFlashcardCards';
 import { toast } from '@/hooks/use-toast';
-import { Plus } from 'lucide-react';
+import { Plus, Globe, BookOpen } from 'lucide-react';
+import { NATIVE_LANGUAGES } from '@/types/flashcards';
 
 interface QuickImportToFlashcardsModalProps {
   open: boolean;
@@ -33,14 +35,19 @@ export function QuickImportToFlashcardsModal({
   vocabularyItems,
   nativeLanguage
 }: QuickImportToFlashcardsModalProps) {
-  const [step, setStep] = useState<'select-set' | 'select-items'>('select-set');
-  const [selectedSetId, setSelectedSetId] = useState<string>('new');
-  const [newSetTitle, setNewSetTitle] = useState('');
+  const [step, setStep] = useState<'select-set' | 'create-set' | 'select-items'>('select-set');
+  const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   
+  // New set creation fields
+  const [newSetTitle, setNewSetTitle] = useState('');
+  const [newSetDescription, setNewSetDescription] = useState('');
+  const [newSetBackType, setNewSetBackType] = useState<'translation' | 'definition'>('translation');
+  const [newSetBidirectional, setNewSetBidirectional] = useState(true);
+  
   const { sets, refetch, createSet } = useFlashcardSets(teacherId, studentId);
-  const { bulkAddFromVocabulary } = useFlashcardCards(selectedSetId);
+  const { bulkAddFromVocabulary } = useFlashcardCards(selectedSetId || undefined);
 
   const studentSets = sets;
 
@@ -72,8 +79,24 @@ export function QuickImportToFlashcardsModal({
     }
   };
 
-  const handleSetSelected = () => {
-    if (selectedSetId === 'new' && !newSetTitle.trim()) {
+  const handleSetSelected = (setId: string) => {
+    setSelectedSetId(setId);
+    
+    // If single item, import immediately
+    if (vocabularyItems.length === 1) {
+      handleImport(setId);
+    } else {
+      // Multiple items - show selection step
+      setStep('select-items');
+    }
+  };
+
+  const handleNewSetClick = () => {
+    setStep('create-set');
+  };
+
+  const handleCreateSet = async () => {
+    if (!newSetTitle.trim()) {
       toast({
         title: "Error",
         description: "Please enter a title for the new flashcard set",
@@ -82,52 +105,46 @@ export function QuickImportToFlashcardsModal({
       return;
     }
 
+    const newSet = await createSet({
+      student_id: studentId,
+      title: newSetTitle.trim(),
+      description: newSetDescription.trim() || undefined,
+      is_bidirectional: newSetBidirectional,
+      back_type: newSetBackType,
+    });
+
+    if (!newSet) {
+      toast({
+        title: "Error",
+        description: "Failed to create flashcard set",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSelectedSetId(newSet.id);
+    
     // If single item, import immediately
     if (vocabularyItems.length === 1) {
-      handleImport();
+      handleImport(newSet.id);
     } else {
       // Multiple items - show selection step
       setStep('select-items');
     }
   };
 
-  const handleImport = async () => {
+  const handleImport = async (targetSetId?: string) => {
+    const setIdToUse = targetSetId || selectedSetId;
+    if (!setIdToUse) return;
+    
     setImporting(true);
     try {
-      let targetSetId = selectedSetId;
-
-      // Create new set if needed
-      if (selectedSetId === 'new') {
-        if (!newSetTitle.trim()) {
-          toast({
-            title: "Error",
-            description: "Please enter a title for the new flashcard set",
-            variant: "destructive"
-          });
-          setImporting(false);
-          return;
-        }
-
-        const newSet = await createSet({
-          student_id: studentId,
-          title: newSetTitle,
-          is_bidirectional: true,
-          back_type: 'translation',
-        });
-
-        if (!newSet) {
-          throw new Error('Failed to create flashcard set');
-        }
-
-        targetSetId = newSet.id;
-      }
-
       // Filter selected items
       const itemsToImport = vocabularyItems.filter((_, index) => selectedItems.has(index));
 
       // Import vocabulary items
       await bulkAddFromVocabulary(
-        targetSetId,
+        setIdToUse,
         worksheetId,
         itemsToImport
       );
@@ -138,10 +155,7 @@ export function QuickImportToFlashcardsModal({
       });
 
       onOpenChange(false);
-      setSelectedSetId('new');
-      setNewSetTitle('');
-      setStep('select-set');
-      setSelectedItems(new Set());
+      resetModal();
     } catch (error: any) {
       console.error('Error importing to flashcards:', error);
       toast({
@@ -154,99 +168,165 @@ export function QuickImportToFlashcardsModal({
     }
   };
 
+  const resetModal = () => {
+    setStep('select-set');
+    setSelectedSetId(null);
+    setSelectedItems(new Set());
+    setNewSetTitle('');
+    setNewSetDescription('');
+    setNewSetBackType('translation');
+    setNewSetBidirectional(true);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(open) => {
       if (!open) {
-        setStep('select-set');
-        setSelectedItems(new Set());
-        setSelectedSetId('new');
-        setNewSetTitle('');
+        resetModal();
       }
       onOpenChange(open);
     }}>
-      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {step === 'select-set' ? 'Add to Flashcards' : 'Select Vocabulary Items'}
+            {step === 'select-set' && 'Add to Flashcards'}
+            {step === 'create-set' && 'Create New Flashcard Set'}
+            {step === 'select-items' && 'Select Vocabulary Items'}
           </DialogTitle>
           <DialogDescription>
-            {step === 'select-set' 
-              ? 'Choose a flashcard set or create a new one'
-              : `Select which items to add (${selectedItems.size} of ${vocabularyItems.length} selected)`
-            }
+            {step === 'select-set' && 'Choose an existing flashcard set or create a new one'}
+            {step === 'create-set' && 'Set up your new flashcard set'}
+            {step === 'select-items' && `Select which items to add (${selectedItems.size} of ${vocabularyItems.length} selected)`}
           </DialogDescription>
         </DialogHeader>
 
-        {step === 'select-set' ? (
+        {step === 'select-set' && (
           <div className="space-y-4 py-4">
-            {/* Preview of selected words */}
-            <div>
-              <Label className="text-sm font-medium mb-2">
-                Selected Words ({vocabularyItems.length})
-              </Label>
-              <div className="max-h-32 overflow-y-auto border rounded-md p-2 bg-muted/30">
-                {vocabularyItems.map((item, idx) => (
-                  <div key={idx} className="text-sm py-1">
-                    <span className="font-medium">{item.word}</span>
-                    {' → '}
-                    <span className="text-muted-foreground">{item.definition}</span>
+            <Label className="text-base font-semibold">Select a Flashcard Set</Label>
+            
+            {/* Existing sets as tiles */}
+            <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto">
+              {studentSets.map(set => (
+                <button
+                  key={set.id}
+                  onClick={() => handleSetSelected(set.id)}
+                  className="flex flex-col items-start p-4 border-2 rounded-lg hover:border-primary hover:bg-accent/50 transition-colors text-left"
+                >
+                  <div className="font-semibold text-sm mb-1 line-clamp-2">{set.title}</div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    <span>{set.cards_count || 0} cards</span>
+                    <span>•</span>
+                    {set.back_type === 'translation' ? (
+                      <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> Native</span>
+                    ) : (
+                      <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> Definition</span>
+                    )}
                   </div>
-                ))}
-              </div>
+                </button>
+              ))}
+              
+              {/* New Set Button */}
+              <button
+                onClick={handleNewSetClick}
+                className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg hover:border-primary hover:bg-accent/50 transition-colors min-h-[90px]"
+              >
+                <Plus className="w-6 h-6 mb-2 text-muted-foreground" />
+                <span className="text-sm font-medium">New Set</span>
+              </button>
             </div>
-
-            {/* Set selection */}
-            <div className="space-y-2">
-              <Label htmlFor="flashcard-set">Flashcard Set</Label>
-              <Select value={selectedSetId} onValueChange={setSelectedSetId}>
-                <SelectTrigger id="flashcard-set">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">
-                    <div className="flex items-center">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create New Set
-                    </div>
-                  </SelectItem>
-                  {studentSets.map(set => (
-                    <SelectItem key={set.id} value={set.id}>
-                      {set.title} ({set.cards_count || 0} cards)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* New set title input */}
-            {selectedSetId === 'new' && (
-              <div className="space-y-2">
-                <Label htmlFor="new-set-title">New Set Title</Label>
-                <Input
-                  id="new-set-title"
-                  value={newSetTitle}
-                  onChange={(e) => setNewSetTitle(e.target.value)}
-                  placeholder="e.g. Past Simple Vocabulary"
-                  autoFocus
-                />
-              </div>
-            )}
           </div>
-        ) : (
+        )}
+
+        {step === 'create-set' && (
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-title">Title *</Label>
+              <Input
+                id="new-title"
+                value={newSetTitle}
+                onChange={(e) => setNewSetTitle(e.target.value)}
+                placeholder="e.g., Business English Vocabulary"
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new-description">Description (optional)</Label>
+              <Textarea
+                id="new-description"
+                value={newSetDescription}
+                onChange={(e) => setNewSetDescription(e.target.value)}
+                placeholder="What topics does this set cover?"
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Back Side Type</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setNewSetBackType('translation')}
+                  className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-colors ${
+                    newSetBackType === 'translation' 
+                      ? 'border-primary bg-primary/10' 
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <Globe className="w-5 h-5" />
+                  <div className="text-left">
+                    <div className="font-medium text-sm">Translation</div>
+                    <div className="text-xs text-muted-foreground">Native language</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setNewSetBackType('definition')}
+                  className={`flex items-center gap-2 p-3 border-2 rounded-lg transition-colors ${
+                    newSetBackType === 'definition' 
+                      ? 'border-primary bg-primary/10' 
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  <BookOpen className="w-5 h-5" />
+                  <div className="text-left">
+                    <div className="font-medium text-sm">Definition</div>
+                    <div className="text-xs text-muted-foreground">English only</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div>
+                <Label htmlFor="bidirectional" className="cursor-pointer">Bidirectional Learning</Label>
+                <p className="text-xs text-muted-foreground">Practice both EN→{nativeLanguage} and {nativeLanguage}→EN</p>
+              </div>
+              <Switch
+                id="bidirectional"
+                checked={newSetBidirectional}
+                onCheckedChange={setNewSetBidirectional}
+              />
+            </div>
+          </div>
+        )}
+
+        {step === 'select-items' && (
           <div className="space-y-4 py-4">
             {/* Select All / Deselect All */}
             <div className="flex items-center justify-between">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={toggleAll}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleAll();
+                }}
               >
                 {selectedItems.size === vocabularyItems.length ? 'Deselect All' : 'Select All'}
               </Button>
             </div>
 
-            {/* Vocabulary items with checkboxes */}
-            <div className="border rounded-lg divide-y max-h-96 overflow-y-auto">
+            {/* Vocabulary items with checkboxes - REDUCED HEIGHT */}
+            <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
               {vocabularyItems.map((item, index) => (
                 <div
                   key={index}
@@ -268,7 +348,15 @@ export function QuickImportToFlashcardsModal({
           </div>
         )}
 
-        <DialogFooter>
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          {step === 'create-set' && (
+            <Button
+              variant="outline"
+              onClick={() => setStep('select-set')}
+            >
+              Back
+            </Button>
+          )}
           {step === 'select-items' && (
             <Button
               variant="outline"
@@ -284,18 +372,27 @@ export function QuickImportToFlashcardsModal({
           >
             Cancel
           </Button>
-          <Button
-            onClick={step === 'select-set' ? handleSetSelected : handleImport}
-            disabled={importing || (step === 'select-items' && selectedItems.size === 0)}
-          >
-            {importing 
-              ? 'Importing...' 
-              : step === 'select-set'
-                ? (vocabularyItems.length === 1 ? 'Add to Flashcards' : 'Next')
+          {step === 'select-set' && null}
+          {step === 'create-set' && (
+            <Button
+              onClick={handleCreateSet}
+              disabled={!newSetTitle.trim()}
+            >
+              Create & Continue
+            </Button>
+          )}
+          {step === 'select-items' && (
+            <Button
+              onClick={() => handleImport()}
+              disabled={importing || selectedItems.size === 0}
+            >
+              {importing 
+                ? 'Importing...' 
                 : `Send ${selectedItems.size} Card${selectedItems.size !== 1 ? 's' : ''}`
-            }
-          </Button>
-        </DialogFooter>
+              }
+            </Button>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

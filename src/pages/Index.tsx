@@ -253,7 +253,6 @@ const Index = () => {
         hasAudio={!!worksheetState.inputParams?.selectedAudio} 
         hasImage={!!worksheetState.inputParams?.selectedImage}
         streamProgress={streamProgress}
-        onCancel={cancelGeneration}
       />
       
       <TokenPaywallModal
