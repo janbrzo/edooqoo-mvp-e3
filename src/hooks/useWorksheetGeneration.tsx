@@ -39,6 +39,9 @@ export const useWorksheetGeneration = (
       studentId
     });
 
+    // FLAG: Track if streaming has started to prevent premature modal close
+    let streamingStarted = false;
+
     // CRITICAL ADDITION: Sync subscription status before generation
     // This ensures expired subscriptions are detected before allowing worksheet generation
     if (userId) {
@@ -182,6 +185,10 @@ export const useWorksheetGeneration = (
       
       let worksheetResult: any = null;
       
+      // CRITICAL: Mark that streaming has started
+      streamingStarted = true;
+      console.log('🚦 Streaming flag set to TRUE - modal will stay open');
+      
       // Use streaming for generation
       abortControllerRef.current = streamWorksheetGeneration(
         { 
@@ -228,6 +235,7 @@ export const useWorksheetGeneration = (
           onError: (error) => {
             console.error('❌ Stream error:', error);
             setStreamProgress(null);
+            setIsGenerating(false); // Close modal on streaming error
             throw error;
           }
         }
@@ -236,139 +244,6 @@ export const useWorksheetGeneration = (
       // Wait for streaming to complete
       // The actual completion is handled in onDone callback
       return;
-
-      console.log("✅ Generated worksheet result received:", {
-        hasData: !!worksheetResult,
-        hasId: !!worksheetResult?.id,
-        realId: worksheetResult?.id,
-        hasBackendId: !!worksheetResult?.backendId,
-        backendId: worksheetResult?.backendId,
-        exerciseCount: worksheetResult?.exercises?.length || 0,
-        hasTitle: !!worksheetResult?.title,
-        hasVocabulary: !!worksheetResult?.vocabulary_sheet
-      });
-
-      // CRITICAL FIX: Use the correct ID from backend response
-      let finalWorksheetId: string;
-      
-      // First priority: use 'id' field from worksheetResult
-      if (worksheetResult?.id) {
-        finalWorksheetId = worksheetResult.id;
-        console.log('✅ Using primary backend ID:', finalWorksheetId);
-      } 
-      // Fallback: use 'backendId' field if 'id' doesn't exist
-      else if (worksheetResult?.backendId) {
-        finalWorksheetId = worksheetResult.backendId;
-        console.log('✅ Using fallback backend ID:', finalWorksheetId);
-      } 
-      // Error case: no valid ID from backend
-      else {
-        console.error('❌ CRITICAL: No valid ID received from backend!');
-        throw new Error("Failed to save worksheet to database - no ID returned");
-      }
-
-      // Consume token for authenticated users AFTER successful generation
-      console.log('🎯 TOKEN CONSUMPTION CHECK:', {
-        isDemo,
-        userId,
-        hasUserId: !!userId,
-        willConsumeToken: !isDemo && !!userId,
-        finalWorksheetId
-      });
-      
-      if (!isDemo && userId) {
-        console.log('✅ Attempting to consume token for user:', userId);
-        const tokenConsumed = await consumeToken(finalWorksheetId);
-        console.log('🔍 Token consumption result:', tokenConsumed);
-        if (!tokenConsumed) {
-          console.warn('⚠️ Failed to consume token, but worksheet was generated');
-        } else {
-          console.log('✅ Token consumed successfully');
-        }
-      } else {
-        console.warn('❌ Token consumption SKIPPED:', {
-          reason: !userId ? 'No userId' : 'isDemo=true',
-          isDemo,
-          userId
-        });
-      }
-      
-      const actualGenerationTime = Math.round((Date.now() - startTime) / 1000);
-      console.log('⏱️ Generation time:', actualGenerationTime, 'seconds');
-      
-      worksheetState.setGenerationTime(actualGenerationTime);
-      worksheetState.setSourceCount(worksheetResult.sourceCount || Math.floor(Math.random() * (90 - 65) + 65));
-      
-      const expectedExerciseCount = getExpectedExerciseCount(data.lessonTime);
-      console.log(`🎯 Expected ${expectedExerciseCount} exercises for ${data.lessonTime}`);
-      
-      console.log('🔍 Starting worksheet validation...');
-      if (validateWorksheet(worksheetResult, expectedExerciseCount)) {
-        console.log('✅ Worksheet validation passed, processing exercises...');
-        
-        // CRITICAL: Deep fix the entire worksheet before processing
-        console.log('🔧 DEEP FIXING entire worksheet before processing...');
-        const deepFixedWorksheet = deepFixTextObjects(worksheetResult, 'worksheet');
-        console.log('🔧 Worksheet after deep fix:', deepFixedWorksheet);
-        
-        // Trim exercises if more than expected are returned
-        if (deepFixedWorksheet.exercises.length > expectedExerciseCount) {
-          console.log(`✂️ Trimming exercises from ${deepFixedWorksheet.exercises.length} to ${expectedExerciseCount}`);
-          deepFixedWorksheet.exercises = deepFixedWorksheet.exercises.slice(0, expectedExerciseCount);
-        }
-        
-        // FIXED: Pass correct lessonTime and hasGrammar parameters
-        const hasGrammar = !!(data.teachingPreferences && data.teachingPreferences.trim());
-        console.log('🔧 Processing exercises with parameters:', { 
-          lessonTime: data.lessonTime, 
-          hasGrammar,
-          exerciseCount: deepFixedWorksheet.exercises.length 
-        });
-        
-        deepFixedWorksheet.exercises = processExercises(deepFixedWorksheet.exercises, data.lessonTime, hasGrammar);
-        
-        // CRITICAL: Set the correct worksheet ID on the worksheet object
-        deepFixedWorksheet.id = finalWorksheetId;
-        
-        if (!deepFixedWorksheet.vocabulary_sheet || deepFixedWorksheet.vocabulary_sheet.length === 0) {
-          console.log('📝 Creating sample vocabulary sheet...');
-          deepFixedWorksheet.vocabulary_sheet = createSampleVocabulary(15);
-        }
-        
-        console.log('💾 CRITICAL FIX: Setting worksheet ID FIRST, then worksheet data');
-        
-        // CRITICAL FIX: Set the worksheet ID FIRST before setting worksheet data
-        // This ensures that when WorksheetDisplay tries to save, it has the correct ID
-        worksheetState.setWorksheetId(finalWorksheetId);
-        
-        // CRITICAL FIX: Add small delay to ensure state is updated
-        setTimeout(() => {
-          console.log('💾 Now setting both worksheets in state with final ID:', finalWorksheetId);
-          worksheetState.setGeneratedWorksheet(deepFixedWorksheet);
-          worksheetState.setEditableWorksheet(deepFixedWorksheet);
-        }, 100);
-        
-        // Track successful worksheet generation
-        trackEvent({
-          eventType: 'worksheet_generation_complete',
-          eventData: {
-            worksheetId: finalWorksheetId,
-            success: true,
-            generationTimeSeconds: actualGenerationTime,
-            timestamp: new Date().toISOString()
-          }
-        });
-        
-        console.log('🎉 Worksheet generation completed successfully with ID:', finalWorksheetId);
-        toast({
-          title: "Worksheet generated successfully!",
-          description: "Your custom worksheet is now ready to use.",
-          className: "bg-white border-l-4 border-l-green-500 shadow-lg rounded-xl"
-        });
-      } else {
-        console.log('❌ Worksheet validation failed');
-        throw new Error("Generated worksheet data is incomplete or invalid");
-      }
     } catch (error) {
       console.error("💥 Worksheet generation error:", error);
       
@@ -415,7 +290,15 @@ export const useWorksheetGeneration = (
       // Don't clear the form data - user stays on form with preserved data
     } finally {
       console.log('🏁 Finishing generation process...');
-      setIsGenerating(false);
+      
+      // CRITICAL FIX: Only close modal if streaming hasn't started
+      // If streaming started, it will close modal in onDone/onError callbacks
+      if (!streamingStarted) {
+        console.log('🚪 Closing modal - streaming never started (error before streaming)');
+        setIsGenerating(false);
+      } else {
+        console.log('🔄 Modal stays open - streaming in progress (will close in callbacks)');
+      }
       
       // MOVED HERE: Update student activity if studentId is provided - AT THE VERY END
       if (studentId) {
