@@ -72,7 +72,35 @@ export const useWorksheetGeneration = (
     const temporaryWorksheetId = uuidv4();
     console.log('🆔 Generated temporary worksheet ID (for fallback only):', temporaryWorksheetId);
 
-    worksheetState.setInputParams(data);
+    // CRITICAL: Calculate media/grammar requirements BEFORE opening modal
+    // This ensures GeneratingModal shows correct duration and icons from the start
+    const audioRequiredExercises = [
+      "listening-comprehension", "multiple-choice-audio", 
+      "true-false-audio", "fill-in-blanks-audio", "answer-questions-audio"
+    ];
+    const requiresAudio = data.selectedExercises?.some(ex => 
+      audioRequiredExercises.some(reqEx => ex.includes(reqEx))
+    );
+    
+    const pictureRequiredExercises = [
+      "describe-picture", "answer-questions-picture",
+      "true-false-picture", "multiple-choice-picture"
+    ];
+    const requiresImage = data.selectedExercises?.some(ex => 
+      pictureRequiredExercises.some(reqEx => ex.includes(reqEx))
+    );
+    
+    const hasGrammar = !!(data.teachingPreferences && data.teachingPreferences.trim());
+    
+    console.log('🔍 Media/Grammar requirements calculated:', { requiresAudio, requiresImage, hasGrammar });
+    
+    // Set inputParams with requirements BEFORE opening modal
+    worksheetState.setInputParams({
+      ...data,
+      requiresAudio,
+      requiresImage,
+      hasGrammar
+    });
     setIsGenerating(true);
     
     const startTime = Date.now();
@@ -108,25 +136,7 @@ export const useWorksheetGeneration = (
       let selectedAudio = data.selectedAudio || null;
       let selectedImage = data.selectedImage || null;
       
-      // Check if exercises require audio
-      const audioRequiredExercises = [
-        "listening-comprehension", "multiple-choice-audio", 
-        "true-false-audio", "fill-in-blanks-audio", "answer-questions-audio"
-      ];
-      const requiresAudio = data.selectedExercises?.some(ex => 
-        audioRequiredExercises.some(reqEx => ex.includes(reqEx))
-      );
-      
-      // Check if exercises require picture
-      const pictureRequiredExercises = [
-        "describe-picture", "answer-questions-picture",
-        "true-false-picture", "multiple-choice-picture"
-      ];
-      const requiresPicture = data.selectedExercises?.some(ex => 
-        pictureRequiredExercises.some(reqEx => ex.includes(reqEx))
-      );
-      
-      console.log('🔍 Media requirements:', { requiresAudio, requiresPicture, hasAudio: !!selectedAudio, hasImage: !!selectedImage });
+      console.log('🔍 Using pre-calculated media requirements:', { requiresAudio, requiresImage, hasAudio: !!selectedAudio, hasImage: !!selectedImage });
       
       // Generate media BEFORE worksheet (if needed and not already provided)
       if (requiresAudio && !selectedAudio) {
@@ -149,7 +159,7 @@ export const useWorksheetGeneration = (
         }
       }
       
-      if (requiresPicture && !selectedImage) {
+      if (requiresImage && !selectedImage) {
         console.log('🎨 Pre-generating image...');
         toast({
           title: "Generating image...",

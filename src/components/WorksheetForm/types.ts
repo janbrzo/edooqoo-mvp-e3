@@ -23,6 +23,10 @@ export interface FormData {
   selectedExercises?: string[]; // Optional array of exercise types
   selectionMode?: ExerciseSelectionMode; // New field for future use
   selectedMediaTypes?: MediaType[]; // New field for future media integration
+  // NEW: Pre-calculated requirements for GeneratingModal
+  requiresAudio?: boolean;  // Whether audio is required by selected exercises
+  requiresImage?: boolean;  // Whether image is required by selected exercises
+  hasGrammar?: boolean;     // Whether grammar focus was provided
   selectedImage?: {
     id: string;
     url: string;
