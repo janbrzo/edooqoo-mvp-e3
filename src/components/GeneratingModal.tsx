@@ -12,33 +12,34 @@ interface GeneratingModalProps {
   onCancel?: () => void;  // ✅ NEW: Cancellation callback
 }
 
-// NEW: Dynamic generation steps based on selected media
-const getGenerationSteps = (hasAudio: boolean, hasImage: boolean) => {
-  const steps = ["Analyzing your requirements..."];
+// Section completion status
+interface SectionStatus {
+  label: string;
+  icon: string;
+  status: 'pending' | 'generating' | 'done';
+}
+
+// Dynamic generation sections based on selected media
+const getGenerationSections = (hasAudio: boolean, hasImage: boolean): SectionStatus[] => {
+  const sections: SectionStatus[] = [];
   
-  // Add media steps only if media is selected
+  // Media first (if selected)
   if (hasAudio) {
-    steps.push("🎵 Generating audio recording... (40-45s)");
+    sections.push({ label: 'Audio', icon: '🎵', status: 'pending' });
   }
   if (hasImage) {
-    steps.push("🎨 Creating custom AI image... (35-40s)");
+    sections.push({ label: 'Image', icon: '🖼️', status: 'pending' });
   }
   
-  // Always add exercise generation steps
-  steps.push(
-    "📝 Generating reading passage...",
-    "✏️ Creating vocabulary exercises...",
-    "📚 Developing grammar activities...",
-    "🎯 Designing interactive tasks...",
-    "👨‍🏫 Adding teacher guidance...",
-    "⚙️ Optimizing content difficulty...",
-    "📄 Finalizing worksheet layout...",
-    "✅ Quality checking exercises...",
-    "📦 Preparing downloadable content...",
-    "🎉 Almost ready..."
+  // Core sections (always present)
+  sections.push(
+    { label: 'Warmup', icon: '🔥', status: 'pending' },
+    { label: 'Grammar Rules', icon: '📘', status: 'pending' },
+    { label: 'Exercises', icon: '📝', status: 'pending' },
+    { label: 'Vocabulary Sheet', icon: '📚', status: 'pending' }
   );
   
-  return steps;
+  return sections;
 };
 
 export default function GeneratingModal({ 
@@ -46,46 +47,32 @@ export default function GeneratingModal({
   hasAudio = false, 
   hasImage = false,
   streamProgress = null,
-  onCancel 
 }: GeneratingModalProps) {
   const [progress, setProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [sections, setSections] = useState<SectionStatus[]>([]);
 
   useEffect(() => {
     if (!isOpen) {
       setProgress(0);
-      setCurrentStep(0);
       setElapsedTime(0);
+      setSections([]);
       return;
     }
 
+    // Initialize sections
+    setSections(getGenerationSections(hasAudio, hasImage));
+
     // Dynamic total duration: 150s with media, 90s without
     const totalDuration = (hasAudio || hasImage) ? 150 : 90;
-    const progressIncrement = 100 / totalDuration; // Rozproszone na całkowity czas
+    const progressIncrement = 100 / totalDuration;
 
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         const newProgress = prev + progressIncrement;
-        return Math.min(newProgress, 99); // Maksymalnie 99% do zakończenia
+        return Math.min(newProgress, 99);
       });
-    }, 1000); // Co sekundę
-
-    // Get dynamic steps based on media selection
-    const generationSteps = getGenerationSteps(hasAudio, hasImage);
-
-    // Realistic step progression - varies between 3-8 seconds per step
-    const stepInterval = setInterval(
-      () => {
-        setCurrentStep((prev) => {
-          if (prev >= generationSteps.length - 1) {
-            return Math.floor(Math.random() * 3) + generationSteps.length - 3; // Stay in last 3 steps
-          }
-          return prev + 1;
-        });
-      },
-      Math.random() * 5000 + 3000,
-    ); // Between 3-8 seconds
+    }, 1000);
 
     // Timer - counts real time
     const timerInterval = setInterval(() => {
@@ -94,10 +81,41 @@ export default function GeneratingModal({
 
     return () => {
       clearInterval(progressInterval);
-      clearInterval(stepInterval);
       clearInterval(timerInterval);
     };
   }, [isOpen, hasAudio, hasImage]);
+
+  // Update sections based on streaming progress
+  useEffect(() => {
+    if (!streamProgress || sections.length === 0) return;
+
+    setSections(prev => {
+      const updated = [...prev];
+      const exerciseIndex = updated.findIndex(s => s.label === 'Exercises');
+      
+      if (exerciseIndex !== -1) {
+        // Mark all sections before exercises as done
+        for (let i = 0; i < exerciseIndex; i++) {
+          if (updated[i].status !== 'done') {
+            updated[i].status = 'done';
+          }
+        }
+        // Mark exercises as generating
+        updated[exerciseIndex].status = 'generating';
+        
+        // If exercises complete, mark vocabulary as generating
+        if (streamProgress.exercisesGenerated >= streamProgress.expectedTotal) {
+          updated[exerciseIndex].status = 'done';
+          const vocabIndex = updated.findIndex(s => s.label === 'Vocabulary Sheet');
+          if (vocabIndex !== -1) {
+            updated[vocabIndex].status = 'generating';
+          }
+        }
+      }
+      
+      return updated;
+    });
+  }, [streamProgress, sections.length]);
 
   if (!isOpen) return null;
 
@@ -109,7 +127,7 @@ export default function GeneratingModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-[450px] space-y-6">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-[480px] space-y-6">
         <h2 className="text-2xl font-semibold text-center bg-gradient-to-r from-pink-500 via-violet-500 to-blue-500 bg-clip-text text-transparent">
           Generating Your Worksheet
         </h2>
@@ -125,43 +143,50 @@ export default function GeneratingModal({
           <span>{Math.round(progress)}%</span>
         </div>
 
-        {streamProgress ? (
-          <div className="space-y-2 bg-blue-50 p-4 rounded-lg">
-            <div className="flex justify-between items-center text-sm">
-              <span className="font-medium text-blue-700">Exercises generated:</span>
-              <span className="font-bold text-blue-900 text-lg">
-                {streamProgress.exercisesGenerated} / {streamProgress.expectedTotal}
-              </span>
+        {/* Section Status */}
+        <div className="space-y-3 bg-muted/30 p-4 rounded-lg">
+          {sections.map((section, index) => (
+            <div key={index} className="flex items-center gap-3">
+              <div className={`text-2xl transition-all duration-300 ${
+                section.status === 'done' 
+                  ? 'scale-100 opacity-100' 
+                  : section.status === 'generating'
+                    ? 'animate-bounce scale-110'
+                    : 'opacity-40 grayscale'
+              }`}>
+                {section.status === 'done' ? '✅' : section.icon}
+              </div>
+              <div className="flex-1">
+                <div className={`font-medium text-sm ${
+                  section.status === 'generating' 
+                    ? 'text-primary' 
+                    : section.status === 'done'
+                      ? 'text-green-600'
+                      : 'text-muted-foreground'
+                }`}>
+                  {section.label}
+                  {section.label === 'Exercises' && streamProgress && (
+                    <span className="ml-2 font-bold">
+                      ({streamProgress.exercisesGenerated}/{streamProgress.expectedTotal})
+                    </span>
+                  )}
+                </div>
+              </div>
+              {section.status === 'generating' && (
+                <div className="text-xs text-primary animate-pulse">Generating...</div>
+              )}
+              {section.status === 'done' && (
+                <div className="text-xs text-green-600">Done</div>
+              )}
             </div>
-            <Progress 
-              value={(streamProgress.exercisesGenerated / streamProgress.expectedTotal) * 100} 
-              className="h-3 bg-blue-100"
-              indicatorClassName="bg-gradient-to-r from-blue-500 to-green-500"
-            />
-            <p className="text-xs text-blue-600 text-center">
-              Real-time streaming progress
-            </p>
-          </div>
-        ) : (
-          <p className="text-center min-h-[24px] animate-pulse font-normal text-sky-400">
-            {getGenerationSteps(hasAudio, hasImage)[currentStep]}
-          </p>
-        )}
+          ))}
+        </div>
 
         <p className="text-center text-xs text-gray-400">
           {(hasAudio || hasImage) 
-            ? `It can take up to 2:30 min. (with ${hasAudio && hasImage ? 'audio & image' : hasAudio ? 'audio' : 'image'})` 
-            : "It can take up to 1:30 min."}
+            ? `Expected time: ~2:30 min (with ${hasAudio && hasImage ? 'audio & image' : hasAudio ? 'audio' : 'image'})` 
+            : "Expected time: ~1:30 min"}
         </p>
-        
-        {onCancel && (
-          <button
-            onClick={onCancel}
-            className="w-full mt-4 px-4 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-red-200"
-          >
-            Cancel Generation
-          </button>
-        )}
       </div>
     </div>
   );

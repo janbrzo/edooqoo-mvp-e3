@@ -182,16 +182,18 @@ export const NATIVE_LANGUAGES = [
 ] as const;
 
 // Helper to normalize vocabulary sheet format
-export function normalizeVocabularySheet(vocab: VocabularySheet) {
+export function normalizeVocabularySheet(vocab: VocabularySheet | any) {
   if (Array.isArray(vocab)) {
-    // Old format: [{ term, meaning }]
+    // Old format: [{ term, meaning }] or new array format [{ word, definition }]
     return vocab.map(item => ({
-      word: item.term,
-      definition: item.meaning,
-      example: undefined
+      word: item.word || item.term || '',
+      definition: item.definition || item.meaning || '',
+      example: item.example || undefined
     }));
-  } else {
+  } else if (vocab?.words) {
     // New format: { title, words: [{ word, definition, example }] }
     return vocab.words;
   }
+  // Fallback for unexpected format
+  return [];
 }

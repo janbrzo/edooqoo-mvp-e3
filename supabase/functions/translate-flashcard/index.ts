@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, target_language } = await req.json();
+    const { text, target_language, mode = 'translation' } = await req.json();
 
     if (!text || !target_language) {
       return new Response(
@@ -24,7 +24,15 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[translate-flashcard] Translating "${text}" to ${target_language}`);
+    console.log(`[translate-flashcard] Mode: ${mode}, Processing "${text}" for ${target_language}`);
+
+    // Determine system prompt based on mode
+    let systemPrompt = '';
+    if (mode === 'definition') {
+      systemPrompt = `You are an English language teacher. Provide a clear, concise definition of the English word or phrase. Write the definition in simple English that an ESL student can understand. Provide ONLY the definition, nothing else. Keep it under 20 words.`;
+    } else {
+      systemPrompt = `You are a professional translator. Translate the given English text to ${target_language}. Provide ONLY the translation, nothing else. Keep it natural and conversational.`;
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -37,7 +45,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a professional translator. Translate the given English text to ${target_language}. Provide ONLY the translation, nothing else. Keep it natural and conversational.`
+            content: systemPrompt
           },
           {
             role: 'user',
@@ -53,12 +61,12 @@ serve(async (req) => {
     
     if (!response.ok) {
       console.error('[translate-flashcard] OpenAI error:', data);
-      throw new Error(data.error?.message || 'Translation failed');
+      throw new Error(data.error?.message || 'OpenAI request failed');
     }
 
     const translation = data.choices[0]?.message?.content?.trim() || '';
 
-    console.log(`[translate-flashcard] Translation: "${translation}"`);
+    console.log(`[translate-flashcard] Result: "${translation}"`);
 
     return new Response(
       JSON.stringify({ translation }),

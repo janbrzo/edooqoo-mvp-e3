@@ -188,6 +188,20 @@ export function ShareFlashcardSetModal({
               >
                 <Copy className="w-4 h-4" />
               </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  const portalUrl = studentEmail ? `${window.location.origin}/my-flashcards/${encodeURIComponent(studentEmail)}` : '';
+                  if (portalUrl) {
+                    window.open(portalUrl, '_blank');
+                  }
+                }}
+                title="Open student portal in new tab"
+                disabled={!studentEmail}
+              >
+                <ExternalLink className="w-4 h-4" />
+              </Button>
             </div>
             <p className="text-xs text-muted-foreground">
               This link shows all flashcard sets for this student
