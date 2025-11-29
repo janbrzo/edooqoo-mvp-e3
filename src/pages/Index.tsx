@@ -250,8 +250,9 @@ const Index = () => {
       
       <GeneratingModal 
         isOpen={isGenerating} 
-        hasAudio={!!worksheetState.inputParams?.selectedAudio} 
-        hasImage={!!worksheetState.inputParams?.selectedImage}
+        requiresAudio={!!worksheetState.inputParams?.requiresAudio}
+        requiresImage={!!worksheetState.inputParams?.requiresImage}
+        hasGrammar={!!worksheetState.inputParams?.hasGrammar}
         streamProgress={streamProgress}
       />
       

@@ -3,13 +3,14 @@ import { Progress } from "@/components/ui/progress";
 
 interface GeneratingModalProps {
   isOpen: boolean;
-  hasAudio?: boolean;
-  hasImage?: boolean;
-  streamProgress?: {  // ✅ NEW: Real-time streaming progress
+  requiresAudio?: boolean;  // Whether audio is REQUIRED (not if it exists)
+  requiresImage?: boolean;  // Whether image is REQUIRED (not if it exists)
+  hasGrammar?: boolean;     // Whether grammar was selected in form
+  streamProgress?: {        // Real-time streaming progress
     exercisesGenerated: number;
     expectedTotal: number;
   } | null;
-  onCancel?: () => void;  // ✅ NEW: Cancellation callback
+  onCancel?: () => void;
 }
 
 // Section completion status
@@ -19,22 +20,31 @@ interface SectionStatus {
   status: 'pending' | 'generating' | 'done';
 }
 
-// Dynamic generation sections based on selected media
-const getGenerationSections = (hasAudio: boolean, hasImage: boolean): SectionStatus[] => {
+// Dynamic generation sections based on selected media and grammar
+const getGenerationSections = (
+  requiresAudio: boolean, 
+  requiresImage: boolean, 
+  hasGrammar: boolean
+): SectionStatus[] => {
   const sections: SectionStatus[] = [];
   
-  // Media first (if selected)
-  if (hasAudio) {
+  // Media first (if required by exercises)
+  if (requiresAudio) {
     sections.push({ label: 'Audio', icon: '🎵', status: 'pending' });
   }
-  if (hasImage) {
+  if (requiresImage) {
     sections.push({ label: 'Image', icon: '🖼️', status: 'pending' });
   }
   
-  // Core sections (always present)
+  // Core sections
+  sections.push({ label: 'Warmup', icon: '🔥', status: 'pending' });
+  
+  // Grammar Rules - only if selected in form
+  if (hasGrammar) {
+    sections.push({ label: 'Grammar Rules', icon: '📘', status: 'pending' });
+  }
+  
   sections.push(
-    { label: 'Warmup', icon: '🔥', status: 'pending' },
-    { label: 'Grammar Rules', icon: '📘', status: 'pending' },
     { label: 'Exercises', icon: '📝', status: 'pending' },
     { label: 'Vocabulary Sheet', icon: '📚', status: 'pending' }
   );
@@ -44,8 +54,9 @@ const getGenerationSections = (hasAudio: boolean, hasImage: boolean): SectionSta
 
 export default function GeneratingModal({ 
   isOpen, 
-  hasAudio = false, 
-  hasImage = false,
+  requiresAudio = false, 
+  requiresImage = false,
+  hasGrammar = true,  // Default true for backward compatibility
   streamProgress = null,
 }: GeneratingModalProps) {
   const [progress, setProgress] = useState(0);
@@ -60,11 +71,11 @@ export default function GeneratingModal({
       return;
     }
 
-    // Initialize sections
-    setSections(getGenerationSections(hasAudio, hasImage));
+    // Initialize sections with grammar condition
+    setSections(getGenerationSections(requiresAudio, requiresImage, hasGrammar));
 
     // Dynamic total duration: 150s with media, 90s without
-    const totalDuration = (hasAudio || hasImage) ? 150 : 90;
+    const totalDuration = (requiresAudio || requiresImage) ? 150 : 90;
     const progressIncrement = 100 / totalDuration;
 
     const progressInterval = setInterval(() => {
@@ -83,7 +94,7 @@ export default function GeneratingModal({
       clearInterval(progressInterval);
       clearInterval(timerInterval);
     };
-  }, [isOpen, hasAudio, hasImage]);
+  }, [isOpen, requiresAudio, requiresImage, hasGrammar]);
 
   // Update sections based on streaming progress
   useEffect(() => {
@@ -93,8 +104,9 @@ export default function GeneratingModal({
       const updated = [...prev];
       const exerciseIndex = updated.findIndex(s => s.label === 'Exercises');
       
-      if (exerciseIndex !== -1) {
-        // Mark all sections before exercises as done
+      if (exerciseIndex !== -1 && streamProgress.exercisesGenerated > 0) {
+        // FIXED: Only mark sections as done when streaming actually produces exercises
+        // Mark all sections before exercises as done (media + warmup + grammar)
         for (let i = 0; i < exerciseIndex; i++) {
           if (updated[i].status !== 'done') {
             updated[i].status = 'done';
@@ -183,8 +195,8 @@ export default function GeneratingModal({
         </div>
 
         <p className="text-center text-xs text-gray-400">
-          {(hasAudio || hasImage) 
-            ? `Expected time: ~2:30 min (with ${hasAudio && hasImage ? 'audio & image' : hasAudio ? 'audio' : 'image'})` 
+          {(requiresAudio || requiresImage) 
+            ? `Expected time: ~2:30 min (with ${requiresAudio && requiresImage ? 'audio & image' : requiresAudio ? 'audio' : 'image'})` 
             : "Expected time: ~1:30 min"}
         </p>
       </div>
