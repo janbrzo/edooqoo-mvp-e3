@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -8,8 +8,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { useFlashcardSets } from '@/hooks/useFlashcardSets';
 import { useFlashcardCards } from '@/hooks/useFlashcardCards';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Globe, BookOpen } from 'lucide-react';
+import { Plus, Globe, BookOpen, Loader2 } from 'lucide-react';
 import { NATIVE_LANGUAGES } from '@/types/flashcards';
 
 interface QuickImportToFlashcardsModalProps {
@@ -35,10 +36,13 @@ export function QuickImportToFlashcardsModal({
   vocabularyItems,
   nativeLanguage
 }: QuickImportToFlashcardsModalProps) {
-  const [step, setStep] = useState<'select-set' | 'create-set' | 'select-items'>('select-set');
+  const [step, setStep] = useState<'select-set' | 'create-set' | 'select-items' | 'edit-translations'>('select-set');
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
+  const [selectedSetBackType, setSelectedSetBackType] = useState<'translation' | 'definition'>('definition');
   const [importing, setImporting] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+  const [translations, setTranslations] = useState<Record<number, string>>({});
+  const justOpened = useRef(false);
   
   // New set creation fields
   const [newSetTitle, setNewSetTitle] = useState('');
@@ -51,13 +55,18 @@ export function QuickImportToFlashcardsModal({
 
   const studentSets = sets;
 
+  // FIX PROBLEM 3: Remove vocabularyItems from dependency to prevent checkbox re-renders
   useEffect(() => {
-    if (open && teacherId) {
+    if (open && !justOpened.current) {
+      justOpened.current = true;
       refetch();
       // Pre-select all items when modal opens
       setSelectedItems(new Set(vocabularyItems.map((_, i) => i)));
     }
-  }, [open, teacherId, vocabularyItems]);
+    if (!open) {
+      justOpened.current = false;
+    }
+  }, [open, teacherId, refetch]);
 
   const toggleItem = (index: number) => {
     setSelectedItems(prev => {
@@ -82,9 +91,19 @@ export function QuickImportToFlashcardsModal({
   const handleSetSelected = (setId: string) => {
     setSelectedSetId(setId);
     
+    // Find the selected set to check its back_type
+    const selectedSet = studentSets.find(s => s.id === setId);
+    const backType = selectedSet?.back_type || 'definition';
+    setSelectedSetBackType(backType);
+    
     // If single item, import immediately
     if (vocabularyItems.length === 1) {
-      handleImport(setId);
+      // For translation sets, go to edit-translations step
+      if (backType === 'translation') {
+        setStep('edit-translations');
+      } else {
+        handleImport(setId);
+      }
     } else {
       // Multiple items - show selection step
       setStep('select-items');
@@ -123,39 +142,61 @@ export function QuickImportToFlashcardsModal({
     }
 
     setSelectedSetId(newSet.id);
+    setSelectedSetBackType(newSetBackType);
     
     // If single item, import immediately
     if (vocabularyItems.length === 1) {
-      handleImport(newSet.id);
+      // For translation sets, go to edit-translations step
+      if (newSetBackType === 'translation') {
+        setStep('edit-translations');
+      } else {
+        handleImport(newSet.id);
+      }
     } else {
       // Multiple items - show selection step
       setStep('select-items');
     }
   };
 
+  // FIX PROBLEM 5: Close modal immediately, import in background
   const handleImport = async (targetSetId?: string) => {
     const setIdToUse = targetSetId || selectedSetId;
     if (!setIdToUse) return;
     
+    // Close modal immediately
+    onOpenChange(false);
+    
+    // Save items to import before resetting
+    const itemsToImport = vocabularyItems.filter((_, index) => selectedItems.has(index));
+    
+    // For translation sets, apply translations to back_text
+    const processedItems = selectedSetBackType === 'translation'
+      ? itemsToImport.map((item, originalIndex) => {
+          const index = vocabularyItems.findIndex((v, i) => 
+            selectedItems.has(i) && vocabularyItems.indexOf(item) === vocabularyItems.filter((_, i) => selectedItems.has(i)).indexOf(item)
+          );
+          return {
+            ...item,
+            definition: translations[index] || item.definition
+          };
+        })
+      : itemsToImport;
+    
+    resetModal();
+    
+    // Import in background
     setImporting(true);
     try {
-      // Filter selected items
-      const itemsToImport = vocabularyItems.filter((_, index) => selectedItems.has(index));
-
-      // Import vocabulary items
       await bulkAddFromVocabulary(
         setIdToUse,
         worksheetId,
-        itemsToImport
+        processedItems
       );
 
       toast({
         title: "Success",
-        description: `${itemsToImport.length} word(s) added to flashcards!`
+        description: `${processedItems.length} word(s) added to flashcards!`
       });
-
-      onOpenChange(false);
-      resetModal();
     } catch (error: any) {
       console.error('Error importing to flashcards:', error);
       toast({
@@ -171,11 +212,42 @@ export function QuickImportToFlashcardsModal({
   const resetModal = () => {
     setStep('select-set');
     setSelectedSetId(null);
+    setSelectedSetBackType('definition');
     setSelectedItems(new Set());
+    setTranslations({});
     setNewSetTitle('');
     setNewSetDescription('');
     setNewSetBackType('translation');
     setNewSetBidirectional(true);
+  };
+
+  const handleProceedToTranslations = async () => {
+    setStep('edit-translations');
+    
+    // Trigger auto-translation for each selected item
+    const itemsToTranslate = vocabularyItems.filter((_, index) => selectedItems.has(index));
+    
+    // Bulk translate using direct Supabase call
+    for (const item of itemsToTranslate) {
+      const originalIndex = vocabularyItems.findIndex(v => v.word === item.word && v.definition === item.definition);
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('translate-flashcard', {
+          body: {
+            text: item.definition,
+            target_language: nativeLanguage,
+          },
+        });
+
+        if (!error && data?.translation) {
+          setTranslations(prev => ({ ...prev, [originalIndex]: data.translation }));
+        }
+      } catch (error) {
+        console.error('Translation error for:', item.word, error);
+        // Fallback to original definition
+        setTranslations(prev => ({ ...prev, [originalIndex]: item.definition }));
+      }
+    }
   };
 
   return (
@@ -191,11 +263,13 @@ export function QuickImportToFlashcardsModal({
             {step === 'select-set' && 'Add to Flashcards'}
             {step === 'create-set' && 'Create New Flashcard Set'}
             {step === 'select-items' && 'Select Vocabulary Items'}
+            {step === 'edit-translations' && 'Edit Translations'}
           </DialogTitle>
           <DialogDescription>
             {step === 'select-set' && 'Choose an existing flashcard set or create a new one'}
             {step === 'create-set' && 'Set up your new flashcard set'}
             {step === 'select-items' && `Select which items to add (${selectedItems.size} of ${vocabularyItems.length} selected)`}
+            {step === 'edit-translations' && `Review and edit translations to ${nativeLanguage}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -203,13 +277,22 @@ export function QuickImportToFlashcardsModal({
           <div className="space-y-4 py-4">
             <Label className="text-base font-semibold">Select a Flashcard Set</Label>
             
-            {/* Existing sets as tiles */}
+            {/* Existing sets as tiles - FIX PROBLEM 2 */}
             <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto">
+              {/* FIX PROBLEM 2: New Set Button FIRST */}
+              <button
+                onClick={handleNewSetClick}
+                className="flex flex-col items-center justify-center p-2.5 border-2 border-dashed rounded-lg hover:border-primary hover:bg-accent/50 transition-colors min-h-[80px]"
+              >
+                <Plus className="w-6 h-6 mb-2 text-muted-foreground" />
+                <span className="text-sm font-medium">New Set</span>
+              </button>
+              
               {studentSets.map(set => (
                 <button
                   key={set.id}
                   onClick={() => handleSetSelected(set.id)}
-                  className="flex flex-col items-start p-4 border-2 rounded-lg hover:border-primary hover:bg-accent/50 transition-colors text-left"
+                  className="flex flex-col items-start p-2.5 border-2 rounded-lg hover:border-primary hover:bg-accent/50 transition-colors text-left"
                 >
                   <div className="font-semibold text-sm mb-1 line-clamp-2">{set.title}</div>
                   <div className="text-xs text-muted-foreground flex items-center gap-2">
@@ -223,15 +306,6 @@ export function QuickImportToFlashcardsModal({
                   </div>
                 </button>
               ))}
-              
-              {/* New Set Button */}
-              <button
-                onClick={handleNewSetClick}
-                className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg hover:border-primary hover:bg-accent/50 transition-colors min-h-[90px]"
-              >
-                <Plus className="w-6 h-6 mb-2 text-muted-foreground" />
-                <span className="text-sm font-medium">New Set</span>
-              </button>
             </div>
           </div>
         )}
@@ -348,6 +422,43 @@ export function QuickImportToFlashcardsModal({
           </div>
         )}
 
+        {/* FIX PROBLEM 6: Edit Translations Step */}
+        {step === 'edit-translations' && (
+          <div className="space-y-4 py-4">
+            <div className="text-sm text-muted-foreground mb-3">
+              Review and edit the translations before adding to your flashcard set
+            </div>
+            
+            <div className="border rounded-lg divide-y max-h-96 overflow-y-auto">
+              {vocabularyItems
+                .filter((_, index) => selectedItems.has(index))
+                .map((item, displayIndex) => {
+                  const originalIndex = vocabularyItems.findIndex(v => v.word === item.word && v.definition === item.definition);
+                  return (
+                    <div key={originalIndex} className="p-3 space-y-2">
+                      <div className="font-medium text-sm">{item.word}</div>
+                      <div className="text-xs text-muted-foreground mb-2">{item.definition}</div>
+                      <div className="space-y-1">
+                        <Label htmlFor={`translation-${originalIndex}`} className="text-xs">
+                          Translation ({nativeLanguage})
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id={`translation-${originalIndex}`}
+                            value={translations[originalIndex] || ''}
+                            onChange={(e) => setTranslations(prev => ({ ...prev, [originalIndex]: e.target.value }))}
+                            placeholder={`Enter ${nativeLanguage} translation`}
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end gap-2 pt-4 border-t">
           {step === 'create-set' && (
             <Button
@@ -361,6 +472,14 @@ export function QuickImportToFlashcardsModal({
             <Button
               variant="outline"
               onClick={() => setStep('select-set')}
+            >
+              Back
+            </Button>
+          )}
+          {step === 'edit-translations' && (
+            <Button
+              variant="outline"
+              onClick={() => setStep('select-items')}
             >
               Back
             </Button>
@@ -382,6 +501,26 @@ export function QuickImportToFlashcardsModal({
             </Button>
           )}
           {step === 'select-items' && (
+            <Button
+              onClick={() => {
+                // For translation sets, go to edit-translations
+                if (selectedSetBackType === 'translation') {
+                  handleProceedToTranslations();
+                } else {
+                  handleImport();
+                }
+              }}
+              disabled={importing || selectedItems.size === 0}
+            >
+              {selectedSetBackType === 'translation' 
+                ? 'Next: Edit Translations' 
+                : (importing 
+                    ? 'Importing...' 
+                    : `Send ${selectedItems.size} Card${selectedItems.size !== 1 ? 's' : ''}`)
+              }
+            </Button>
+          )}
+          {step === 'edit-translations' && (
             <Button
               onClick={() => handleImport()}
               disabled={importing || selectedItems.size === 0}
