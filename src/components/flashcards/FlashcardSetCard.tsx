@@ -59,6 +59,26 @@ export function FlashcardSetCard({ set, onEdit, onDelete, onShare, onAddCard }: 
               <Badge variant="outline" className="text-xs">
                 {set.back_type === 'translation' ? '🌐 Native' : '📖 Definition'}
               </Badge>
+              {/* FAZA 6: Stats badges */}
+              {(set.mastered_count > 0 || set.study_sessions_count > 0 || set.last_studied_at) && (
+                <>
+                  {set.mastered_count > 0 && (
+                    <Badge variant="outline" className="text-xs bg-green-50">
+                      ✅ {set.mastered_count}/{set.cards_count} mastered
+                    </Badge>
+                  )}
+                  {set.study_sessions_count > 0 && (
+                    <Badge variant="outline" className="text-xs bg-blue-50">
+                      📚 {set.study_sessions_count} session{set.study_sessions_count > 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                  {set.last_studied_at && (
+                    <Badge variant="outline" className="text-xs bg-amber-50">
+                      🕒 {new Date(set.last_studied_at).toLocaleDateString()}
+                    </Badge>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-2">

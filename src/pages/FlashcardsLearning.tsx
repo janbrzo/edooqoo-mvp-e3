@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { X } from 'lucide-react';
 import { FlashcardDisplay } from '@/components/flashcards/FlashcardDisplay';
 import { LearningProgress } from '@/components/flashcards/LearningProgress';
 import { SessionSummary } from '@/components/flashcards/SessionSummary';
@@ -11,10 +13,13 @@ import { useFlashcardLearning } from '@/hooks/useFlashcardLearning';
 
 export default function FlashcardsLearning() {
   const { token } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode') || 'study'; // 'study' or 'browse'
   const [setData, setSetData] = useState<any>(null);
   const [learnerEmail, setLearnerEmail] = useState('');
   const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [allCards, setAllCards] = useState<any[]>([]);
 
   const learning = useFlashcardLearning(
     setData?.id || '',
@@ -36,6 +41,11 @@ export default function FlashcardsLearning() {
       if (error) throw error;
       if (data && data.length > 0) {
         setSetData(data[0]);
+        
+        // For browse mode, fetch all cards
+        if (mode === 'browse') {
+          await fetchAllCards(data[0].id);
+        }
       }
     } catch (error) {
       console.error('Error fetching flashcard set:', error);
@@ -44,12 +54,35 @@ export default function FlashcardsLearning() {
     }
   };
 
+  const fetchAllCards = async (setId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('flashcard_cards')
+        .select('*')
+        .eq('set_id', setId)
+        .is('deleted_at', null)
+        .order('card_position', { ascending: true });
+
+      if (error) throw error;
+      setAllCards(data || []);
+    } catch (error) {
+      console.error('Error fetching cards:', error);
+    }
+  };
+
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (learnerEmail.trim()) {
       setEmailSubmitted(true);
-      learning.loadSession();
+      if (mode === 'study') {
+        learning.loadSession();
+      }
     }
+  };
+
+  const handleQuit = () => {
+    const studentEmail = setData?.student_email || learnerEmail;
+    window.location.href = `/my-flashcards/${encodeURIComponent(studentEmail)}`;
   };
 
   if (loading) {
@@ -110,12 +143,55 @@ export default function FlashcardsLearning() {
     );
   }
 
+  // Browse mode - show all cards as grid
+  if (mode === 'browse' && emailSubmitted) {
+    return (
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">{setData.title}</h1>
+            <Button variant="outline" onClick={handleQuit}>
+              <X className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {allCards.map((card) => (
+              <Card key={card.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1">Front:</p>
+                      <p className="text-lg font-semibold">{card.front_text}</p>
+                      {card.front_example && (
+                        <p className="text-sm text-muted-foreground italic mt-1">
+                          {card.front_example}
+                        </p>
+                      )}
+                    </div>
+                    <div className="border-t pt-4">
+                      <p className="text-sm text-muted-foreground mb-1">Back:</p>
+                      <p className="text-lg">{card.back_text}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Study mode
   if (learning.isSessionComplete) {
     return (
       <SessionSummary
         stats={learning.sessionStats}
         onRestart={learning.restartSession}
         setTitle={setData.title}
+        studentEmail={setData?.student_email || learnerEmail}
       />
     );
   }
@@ -123,11 +199,17 @@ export default function FlashcardsLearning() {
   return (
     <div className="min-h-screen flex flex-col">
       <div className="container mx-auto px-4 py-6 flex-1 flex flex-col">
-        <LearningProgress
-          current={learning.currentIndex + 1}
-          total={learning.cards.length}
-          stats={learning.sessionStats}
-        />
+        <div className="flex items-center justify-between mb-4">
+          <LearningProgress
+            current={learning.currentIndex + 1}
+            total={learning.cards.length}
+            stats={learning.sessionStats}
+          />
+          <Button variant="outline" size="sm" onClick={handleQuit}>
+            <X className="w-4 h-4 mr-2" />
+            Quit
+          </Button>
+        </div>
 
         <div className="flex-1 flex items-center justify-center py-8">
           {learning.currentCard && (

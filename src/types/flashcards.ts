@@ -16,6 +16,8 @@ export interface FlashcardSet {
   // Computed fields (from queries)
   cards_count?: number;
   mastered_count?: number;
+  study_sessions_count?: number;
+  last_studied_at?: string | null;
   student_name?: string;
   student_native_language?: string;
   student_email?: string;

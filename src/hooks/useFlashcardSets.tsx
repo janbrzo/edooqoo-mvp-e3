@@ -19,7 +19,13 @@ export const useFlashcardSets = (teacherId?: string, studentId?: string) => {
           *,
           student:students(name, native_language, student_email),
           teacher:profiles!flashcard_sets_teacher_id_fkey(first_name, last_name),
-          cards:flashcard_cards(id)
+          cards:flashcard_cards(id),
+          progress:flashcard_progress(
+            card_id,
+            repetition,
+            last_reviewed_at,
+            learner_identifier
+          )
         `)
         .eq('teacher_id', teacherId)
         .is('deleted_at', null)
@@ -33,14 +39,42 @@ export const useFlashcardSets = (teacherId?: string, studentId?: string) => {
 
       if (error) throw error;
 
-      const formattedSets = data.map((set: any) => ({
-        ...set,
-        student_name: set.student?.name,
-        student_native_language: set.student?.native_language,
-        student_email: set.student?.student_email,
-        teacher_name: set.teacher ? `${set.teacher.first_name || ''} ${set.teacher.last_name || ''}`.trim() : undefined,
-        cards_count: set.cards?.length || 0,
-      }));
+      const formattedSets = data.map((set: any) => {
+        // Calculate stats from progress data
+        const progressRecords = set.progress || [];
+        const uniqueLearners = new Set(progressRecords.map((p: any) => p.learner_identifier));
+        
+        // Mastered count: cards with repetition >= 4
+        const masteredCount = progressRecords.filter((p: any) => p.repetition >= 4).length;
+        
+        // Study sessions: unique dates when cards were reviewed
+        const reviewDates = new Set(
+          progressRecords
+            .filter((p: any) => p.last_reviewed_at)
+            .map((p: any) => new Date(p.last_reviewed_at).toDateString())
+        );
+        const studySessionsCount = reviewDates.size;
+        
+        // Last studied: most recent review timestamp
+        const allReviewTimestamps = progressRecords
+          .filter((p: any) => p.last_reviewed_at)
+          .map((p: any) => new Date(p.last_reviewed_at).getTime());
+        const lastStudiedAt = allReviewTimestamps.length > 0 
+          ? new Date(Math.max(...allReviewTimestamps)).toISOString()
+          : null;
+        
+        return {
+          ...set,
+          student_name: set.student?.name,
+          student_native_language: set.student?.native_language,
+          student_email: set.student?.student_email,
+          teacher_name: set.teacher ? `${set.teacher.first_name || ''} ${set.teacher.last_name || ''}`.trim() : undefined,
+          cards_count: set.cards?.length || 0,
+          mastered_count: masteredCount,
+          study_sessions_count: studySessionsCount,
+          last_studied_at: lastStudiedAt,
+        };
+      });
 
       setSets(formattedSets);
     } catch (error: any) {
