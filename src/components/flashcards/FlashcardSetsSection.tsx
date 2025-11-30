@@ -11,6 +11,7 @@ import { ShareAllFlashcardSetsModal } from './ShareAllFlashcardSetsModal';
 import { useFlashcardSets } from '@/hooks/useFlashcardSets';
 import { useFlashcardCards } from '@/hooks/useFlashcardCards';
 import { useStudents } from '@/hooks/useStudents';
+import { useProfile } from '@/hooks/useProfile';
 import { toast } from '@/hooks/use-toast';
 import {
   Select,
@@ -35,6 +36,7 @@ export function FlashcardSetsSection({
 }: FlashcardSetsSectionProps) {
   const { sets, loading, createSet, updateSet, deleteSet, generateShareToken, refetch } = useFlashcardSets(teacherId, studentId);
   const { students, updateStudent } = useStudents();
+  const { profile } = useProfile();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingSetId, setEditingSetId] = useState<string | null>(null);
   const [deleteSetId, setDeleteSetId] = useState<string | null>(null);
@@ -217,7 +219,7 @@ export function FlashcardSetsSection({
         onOpenChange={setIsShareAllModalOpen}
         studentEmail={student?.student_email}
         studentName={studentName}
-        teacherName={`${student?.teacher_email || ''}`}
+        teacherName={profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : ''}
       />
     </div>
   );
