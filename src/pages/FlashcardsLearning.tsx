@@ -117,41 +117,58 @@ export default function FlashcardsLearning() {
     );
   }
 
-  // Skip email modal if email is in URL
+  // Render email input if not submitted yet and no email in URL
   if (!emailSubmitted && !emailFromUrl) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-2">{setData.title}</h1>
-            {setData.description && (
-              <p className="text-muted-foreground">{setData.description}</p>
-            )}
-            <p className="text-sm text-muted-foreground mt-4">
-              By {setData.teacher_first_name} {setData.teacher_last_name}
-            </p>
+      <div className="min-h-screen relative">
+        {/* Blurred background preview */}
+        <div className="absolute inset-0 blur-sm opacity-40 pointer-events-none overflow-hidden">
+          <div className="container mx-auto px-4 py-6">
+            <h1 className="text-3xl font-bold mb-4">{setData.title}</h1>
+            <p className="text-muted-foreground mb-8">{setData.description}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Sample placeholder cards */}
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-32 bg-muted/50 rounded-lg" />
+              ))}
+            </div>
           </div>
-
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Your Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={learnerEmail}
-                onChange={(e) => setLearnerEmail(e.target.value)}
-                placeholder="Enter your email to track progress"
-                required
-                className="mt-1.5"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                We'll save your progress using this email
+        </div>
+        
+        {/* Modal overlay with form */}
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10 p-4">
+          <div className="bg-background rounded-lg shadow-xl p-6 w-full max-w-md space-y-6">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold mb-2">{setData.title}</h1>
+              {setData.description && (
+                <p className="text-muted-foreground">{setData.description}</p>
+              )}
+              <p className="text-sm text-muted-foreground mt-4">
+                By {setData.teacher_first_name} {setData.teacher_last_name}
               </p>
             </div>
-            <Button type="submit" className="w-full" size="lg">
-              Start Learning ({setData.cards_count} cards)
-            </Button>
-          </form>
+
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="email">Your Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={learnerEmail}
+                  onChange={(e) => setLearnerEmail(e.target.value)}
+                  placeholder="Enter your email to track progress"
+                  required
+                  className="mt-1.5"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  We'll save your progress using this email
+                </p>
+              </div>
+              <Button type="submit" className="w-full" size="lg">
+                Start Learning ({setData.cards_count} cards)
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
     );

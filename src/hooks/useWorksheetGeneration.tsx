@@ -143,10 +143,6 @@ export const useWorksheetGeneration = (
       if (requiresAudio && !selectedAudio) {
         console.log('🎵 Pre-generating audio...');
         setMediaGenerating(true);
-        toast({
-          title: "Generating audio...",
-          description: "This may take up to 45 seconds",
-        });
         
         try {
           selectedAudio = await generateAudioForWorksheet(data);
@@ -166,10 +162,6 @@ export const useWorksheetGeneration = (
       if (requiresImage && !selectedImage) {
         console.log('🎨 Pre-generating image...');
         setMediaGenerating(true);
-        toast({
-          title: "Generating image...",
-          description: "This may take up to 40 seconds",
-        });
         
         try {
           selectedImage = await generateImageForWorksheet(data);
@@ -226,22 +218,10 @@ export const useWorksheetGeneration = (
             console.log('🚀 Streaming started');
             const expectedTotal = getExpectedExerciseCount(data.lessonTime);
             setStreamProgress({ exercisesGenerated: 0, expectedTotal });
-            
-            toast({
-              title: "Generating exercises...",
-              description: "Creating your personalized worksheet",
-            });
           },
           onProgress: (progress) => {
             console.log(`📝 Progress: ${progress.exercisesGenerated}/${progress.expectedTotal}`);
             setStreamProgress(progress);
-            
-            // Toast for each exercise
-            toast({
-              title: `Generated exercise ${progress.exercisesGenerated}/${progress.expectedTotal}`,
-              description: "Real-time progress",
-              duration: 2000,
-            });
           },
           onDone: async (result) => {
             console.log('✅ Streaming complete:', result.worksheetId);

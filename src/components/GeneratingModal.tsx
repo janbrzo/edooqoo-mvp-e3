@@ -98,18 +98,20 @@ export default function GeneratingModal({
     };
   }, [isOpen, requiresAudio, requiresImage, hasGrammar]);
 
-  // Update sections based on mediaGenerating and streaming progress
+  // Update sections based on progress - SEQUENTIAL ACTIVATION
   useEffect(() => {
     if (sections.length === 0) return;
 
     setSections(prev => {
       const updated = [...prev];
       const hasMedia = requiresAudio || requiresImage;
+      const warmupIndex = updated.findIndex(s => s.label === 'Warmup');
+      const grammarIndex = updated.findIndex(s => s.label === 'Grammar Rules');
       const exerciseIndex = updated.findIndex(s => s.label === 'Exercises');
+      const vocabIndex = updated.findIndex(s => s.label === 'Vocabulary Sheet');
       
-      // PHASE 1: Media generation (if media is required)
+      // PHASE 1: Media generating
       if (hasMedia && mediaGenerating) {
-        // Set media icons to 'generating' with bounce animation
         for (let i = 0; i < updated.length; i++) {
           if (updated[i].label === 'Audio' || updated[i].label === 'Image') {
             updated[i].status = 'generating';
@@ -118,55 +120,38 @@ export default function GeneratingModal({
         return updated;
       }
       
-      // PHASE 2: Media generation complete (mediaGenerating false but exercises not started)
-      if (hasMedia && !mediaGenerating && (!streamProgress || streamProgress.exercisesGenerated === 0)) {
-        // Mark media as done
+      // PHASE 2A: Media done OR no media - Warmup+Grammar generating
+      // (before first exercise)
+      if ((!hasMedia || !mediaGenerating) && (!streamProgress || streamProgress.exercisesGenerated === 0)) {
+        // Mark media as done (if exists)
         for (let i = 0; i < updated.length; i++) {
           if (updated[i].label === 'Audio' || updated[i].label === 'Image') {
             updated[i].status = 'done';
           }
         }
+        // Activate Warmup + Grammar (they generate before exercises)
+        if (warmupIndex !== -1) updated[warmupIndex].status = 'generating';
+        if (grammarIndex !== -1) updated[grammarIndex].status = 'generating';
         return updated;
       }
       
-      // PHASE 3+: Sequential activation based on exercisesGenerated
+      // PHASE 3: Exercises generating (exercisesGenerated > 0)
       if (streamProgress && streamProgress.exercisesGenerated > 0) {
-        const warmupIndex = updated.findIndex(s => s.label === 'Warmup');
-        const grammarIndex = updated.findIndex(s => s.label === 'Grammar Rules');
-        
-        // Media is done at this point
+        // All prior sections done
         for (let i = 0; i < updated.length; i++) {
-          if (updated[i].label === 'Audio' || updated[i].label === 'Image') {
+          if (['Audio', 'Image', 'Warmup', 'Grammar Rules'].includes(updated[i].label)) {
             updated[i].status = 'done';
           }
         }
+        // Exercises generating
+        if (exerciseIndex !== -1) {
+          updated[exerciseIndex].status = 'generating';
+        }
         
-        // exercisesGenerated === 1: Warmup generating
-        if (streamProgress.exercisesGenerated === 1) {
-          if (warmupIndex !== -1) updated[warmupIndex].status = 'generating';
-        }
-        // exercisesGenerated === 2: Warmup done, Grammar generating (if exists)
-        else if (streamProgress.exercisesGenerated === 2) {
-          if (warmupIndex !== -1) updated[warmupIndex].status = 'done';
-          if (grammarIndex !== -1) {
-            updated[grammarIndex].status = 'generating';
-          } else {
-            // No grammar, start exercises
-            if (exerciseIndex !== -1) updated[exerciseIndex].status = 'generating';
-          }
-        }
-        // exercisesGenerated >= 3: Grammar done (if exists), Exercises generating
-        else if (streamProgress.exercisesGenerated >= 3) {
-          if (warmupIndex !== -1) updated[warmupIndex].status = 'done';
-          if (grammarIndex !== -1) updated[grammarIndex].status = 'done';
-          if (exerciseIndex !== -1) updated[exerciseIndex].status = 'generating';
-          
-          // All exercises done: Vocabulary generating
-          if (streamProgress.exercisesGenerated >= streamProgress.expectedTotal) {
-            if (exerciseIndex !== -1) updated[exerciseIndex].status = 'done';
-            const vocabIndex = updated.findIndex(s => s.label === 'Vocabulary Sheet');
-            if (vocabIndex !== -1) updated[vocabIndex].status = 'generating';
-          }
+        // If all exercises done - Vocabulary generating
+        if (streamProgress.exercisesGenerated >= streamProgress.expectedTotal) {
+          if (exerciseIndex !== -1) updated[exerciseIndex].status = 'done';
+          if (vocabIndex !== -1) updated[vocabIndex].status = 'generating';
         }
       }
       

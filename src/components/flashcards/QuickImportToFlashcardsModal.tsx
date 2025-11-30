@@ -172,15 +172,16 @@ export function QuickImportToFlashcardsModal({
     // Save items to import before resetting
     const itemsToImport = vocabularyItems.filter((_, index) => selectedItems.has(index));
     
-    // For translation sets, apply translations to back_text
+    // FIX PROBLEM 2: Map translations back to items - correct index mapping
     const processedItems = selectedSetBackType === 'translation'
-      ? itemsToImport.map((item, originalIndex) => {
-          const index = vocabularyItems.findIndex((v, i) => 
-            selectedItems.has(i) && vocabularyItems.indexOf(item) === vocabularyItems.filter((_, i) => selectedItems.has(i)).indexOf(item)
+      ? itemsToImport.map((item) => {
+          // Find original index by matching word and definition
+          const originalIndex = vocabularyItems.findIndex(v => 
+            v.word === item.word && v.definition === item.definition
           );
           return {
             ...item,
-            definition: translations[index] || item.definition
+            definition: translations[originalIndex] || item.definition
           };
         })
       : itemsToImport;
