@@ -21,6 +21,7 @@ export const useWorksheetGeneration = (
 ) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [startGenerationTime, setStartGenerationTime] = useState<number>(0);
+  const [mediaGenerating, setMediaGenerating] = useState(false);
   const [streamProgress, setStreamProgress] = useState<{
     exercisesGenerated: number;
     expectedTotal: number;
@@ -141,6 +142,7 @@ export const useWorksheetGeneration = (
       // Generate media BEFORE worksheet (if needed and not already provided)
       if (requiresAudio && !selectedAudio) {
         console.log('🎵 Pre-generating audio...');
+        setMediaGenerating(true);
         toast({
           title: "Generating audio...",
           description: "This may take up to 45 seconds",
@@ -156,11 +158,14 @@ export const useWorksheetGeneration = (
             description: "Continuing without audio",
             variant: "destructive"
           });
+        } finally {
+          setMediaGenerating(false);
         }
       }
       
       if (requiresImage && !selectedImage) {
         console.log('🎨 Pre-generating image...');
+        setMediaGenerating(true);
         toast({
           title: "Generating image...",
           description: "This may take up to 40 seconds",
@@ -176,6 +181,8 @@ export const useWorksheetGeneration = (
             description: "Continuing without image",
             variant: "destructive"
           });
+        } finally {
+          setMediaGenerating(false);
         }
       }
       
@@ -468,11 +475,13 @@ export const useWorksheetGeneration = (
     hasTokens,
     isDemo,
     streamProgress,
+    mediaGenerating,
     cancelGeneration: () => {
       console.log('🛑 Cancelling generation...');
       abortControllerRef.current?.abort();
       setIsGenerating(false);
       setStreamProgress(null);
+      setMediaGenerating(false);
       toast({
         title: "Generation cancelled",
         description: "Worksheet generation was stopped",

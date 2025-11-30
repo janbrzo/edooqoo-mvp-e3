@@ -42,6 +42,7 @@ export function QuickImportToFlashcardsModal({
   const [importing, setImporting] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [translations, setTranslations] = useState<Record<number, string>>({});
+  const [translationsLoading, setTranslationsLoading] = useState(0); // NEW: Track pending translations
   const justOpened = useRef(false);
   
   // New set creation fields
@@ -217,6 +218,7 @@ export function QuickImportToFlashcardsModal({
     setSelectedSetBackType('definition');
     setSelectedItems(new Set());
     setTranslations({});
+    setTranslationsLoading(0);  // Reset loading counter
     setNewSetTitle('');
     setNewSetDescription('');
     setNewSetBackType('translation');
@@ -228,6 +230,9 @@ export function QuickImportToFlashcardsModal({
     
     // Trigger auto-translation for each selected item
     const itemsToTranslate = vocabularyItems.filter((_, index) => selectedItems.has(index));
+    
+    // Set loading count
+    setTranslationsLoading(itemsToTranslate.length);
     
     // Bulk translate using direct Supabase call
     // FIX PROBLEM 3B: Translate word (term) instead of definition
@@ -249,6 +254,9 @@ export function QuickImportToFlashcardsModal({
         console.error('Translation error for:', item.word, error);
         // Fallback to original word
         setTranslations(prev => ({ ...prev, [originalIndex]: item.word }));
+      } finally {
+        // Decrement loading count
+        setTranslationsLoading(prev => Math.max(0, prev - 1));
       }
     }
   };
@@ -554,11 +562,13 @@ export function QuickImportToFlashcardsModal({
           {step === 'edit-translations' && (
             <Button
               onClick={() => handleImport()}
-              disabled={importing || selectedItems.size === 0}
+              disabled={importing || selectedItems.size === 0 || translationsLoading > 0}
             >
-              {importing 
-                ? 'Importing...' 
-                : `Send ${selectedItems.size} Card${selectedItems.size !== 1 ? 's' : ''}`
+              {translationsLoading > 0
+                ? `Translating... (${translationsLoading} remaining)`
+                : importing 
+                  ? 'Importing...' 
+                  : `Send ${selectedItems.size} Card${selectedItems.size !== 1 ? 's' : ''}`
               }
             </Button>
           )}

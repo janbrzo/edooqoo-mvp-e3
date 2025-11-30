@@ -15,6 +15,7 @@ export default function FlashcardsLearning() {
   const { token } = useParams<{ token: string }>();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') || 'study'; // 'study' or 'browse'
+  const emailFromUrl = searchParams.get('email'); // NEW: Get email from URL
   const [setData, setSetData] = useState<any>(null);
   const [learnerEmail, setLearnerEmail] = useState('');
   const [emailSubmitted, setEmailSubmitted] = useState(false);
@@ -25,6 +26,18 @@ export default function FlashcardsLearning() {
     setData?.id || '',
     learnerEmail
   );
+
+  // NEW: Auto-set email from URL if available
+  useEffect(() => {
+    if (emailFromUrl) {
+      setLearnerEmail(emailFromUrl);
+      setEmailSubmitted(true);
+      // Load session only in study mode
+      if (mode === 'study' && setData?.id) {
+        learning.loadSession();
+      }
+    }
+  }, [emailFromUrl, mode, setData?.id]);
 
   useEffect(() => {
     if (token) {
@@ -104,7 +117,8 @@ export default function FlashcardsLearning() {
     );
   }
 
-  if (!emailSubmitted) {
+  // Skip email modal if email is in URL
+  if (!emailSubmitted && !emailFromUrl) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-6">

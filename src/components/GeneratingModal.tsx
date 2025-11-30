@@ -10,6 +10,7 @@ interface GeneratingModalProps {
     exercisesGenerated: number;
     expectedTotal: number;
   } | null;
+  mediaGenerating?: boolean; // NEW: Whether media is currently being generated
   onCancel?: () => void;
 }
 
@@ -58,6 +59,7 @@ export default function GeneratingModal({
   requiresImage = false,
   hasGrammar = true,  // Default true for backward compatibility
   streamProgress = null,
+  mediaGenerating = false,
 }: GeneratingModalProps) {
   const [progress, setProgress] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -96,46 +98,81 @@ export default function GeneratingModal({
     };
   }, [isOpen, requiresAudio, requiresImage, hasGrammar]);
 
-  // Update sections based on streaming progress
+  // Update sections based on mediaGenerating and streaming progress
   useEffect(() => {
-    if (!streamProgress || sections.length === 0) return;
+    if (sections.length === 0) return;
 
     setSections(prev => {
       const updated = [...prev];
+      const hasMedia = requiresAudio || requiresImage;
       const exerciseIndex = updated.findIndex(s => s.label === 'Exercises');
       
-      // Only update sections when exercises actually start generating (exercisesGenerated > 0)
-      if (exerciseIndex !== -1 && streamProgress.exercisesGenerated > 0) {
-        // Mark media sections as done when streaming starts (they were generated earlier)
-        for (let i = 0; i < exerciseIndex; i++) {
-          if ((updated[i].label === 'Audio' || updated[i].label === 'Image')) {
-            updated[i].status = 'done';
-          }
-          // Mark Warmup and Grammar as generating (they come with first exercise)
-          if ((updated[i].label === 'Warmup' || updated[i].label === 'Grammar Rules')) {
+      // PHASE 1: Media generation (if media is required)
+      if (hasMedia && mediaGenerating) {
+        // Set media icons to 'generating' with bounce animation
+        for (let i = 0; i < updated.length; i++) {
+          if (updated[i].label === 'Audio' || updated[i].label === 'Image') {
             updated[i].status = 'generating';
           }
         }
-        
-        // Mark exercises as generating
-        updated[exerciseIndex].status = 'generating';
-        
-        // If exercises complete, mark previous as done and vocabulary as generating
-        if (streamProgress.exercisesGenerated >= streamProgress.expectedTotal) {
-          for (let i = 0; i < exerciseIndex; i++) {
+        return updated;
+      }
+      
+      // PHASE 2: Media generation complete (mediaGenerating false but exercises not started)
+      if (hasMedia && !mediaGenerating && (!streamProgress || streamProgress.exercisesGenerated === 0)) {
+        // Mark media as done
+        for (let i = 0; i < updated.length; i++) {
+          if (updated[i].label === 'Audio' || updated[i].label === 'Image') {
             updated[i].status = 'done';
           }
-          updated[exerciseIndex].status = 'done';
-          const vocabIndex = updated.findIndex(s => s.label === 'Vocabulary Sheet');
-          if (vocabIndex !== -1) {
-            updated[vocabIndex].status = 'generating';
+        }
+        return updated;
+      }
+      
+      // PHASE 3+: Sequential activation based on exercisesGenerated
+      if (streamProgress && streamProgress.exercisesGenerated > 0) {
+        const warmupIndex = updated.findIndex(s => s.label === 'Warmup');
+        const grammarIndex = updated.findIndex(s => s.label === 'Grammar Rules');
+        
+        // Media is done at this point
+        for (let i = 0; i < updated.length; i++) {
+          if (updated[i].label === 'Audio' || updated[i].label === 'Image') {
+            updated[i].status = 'done';
+          }
+        }
+        
+        // exercisesGenerated === 1: Warmup generating
+        if (streamProgress.exercisesGenerated === 1) {
+          if (warmupIndex !== -1) updated[warmupIndex].status = 'generating';
+        }
+        // exercisesGenerated === 2: Warmup done, Grammar generating (if exists)
+        else if (streamProgress.exercisesGenerated === 2) {
+          if (warmupIndex !== -1) updated[warmupIndex].status = 'done';
+          if (grammarIndex !== -1) {
+            updated[grammarIndex].status = 'generating';
+          } else {
+            // No grammar, start exercises
+            if (exerciseIndex !== -1) updated[exerciseIndex].status = 'generating';
+          }
+        }
+        // exercisesGenerated >= 3: Grammar done (if exists), Exercises generating
+        else if (streamProgress.exercisesGenerated >= 3) {
+          if (warmupIndex !== -1) updated[warmupIndex].status = 'done';
+          if (grammarIndex !== -1) updated[grammarIndex].status = 'done';
+          if (exerciseIndex !== -1) updated[exerciseIndex].status = 'generating';
+          
+          // All exercises done: Vocabulary generating
+          if (streamProgress.exercisesGenerated >= streamProgress.expectedTotal) {
+            if (exerciseIndex !== -1) updated[exerciseIndex].status = 'done';
+            const vocabIndex = updated.findIndex(s => s.label === 'Vocabulary Sheet');
+            if (vocabIndex !== -1) updated[vocabIndex].status = 'generating';
           }
         }
       }
       
       return updated;
     });
-  }, [streamProgress, sections.length]);
+  }, [streamProgress, mediaGenerating, sections.length, requiresAudio, requiresImage]);
 
   if (!isOpen) return null;
 

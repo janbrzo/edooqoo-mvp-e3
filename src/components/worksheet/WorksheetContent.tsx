@@ -244,6 +244,8 @@ export default function WorksheetContent({
           isAllExpanded={navigation.isAllExpanded}
           isOpen={sidebarOpen}
           setIsOpen={setSidebarOpen}
+          hasGrammar={hasGrammar}
+          hasVocabulary={!!editableWorksheet?.vocabulary_sheet}
         />
       )}
 
@@ -480,7 +482,7 @@ export default function WorksheetContent({
         })()}
 
       {editableWorksheet.vocabulary_sheet && editableWorksheet.vocabulary_sheet.length > 0 && (
-        <div className="relative">
+        <div className="relative" id="vocabulary-sheet-section" data-section="vocabulary">
           {!isDownloadUnlocked && <DemoWatermark />}
           <VocabularySheet
             vocabularySheet={editableWorksheet.vocabulary_sheet}
