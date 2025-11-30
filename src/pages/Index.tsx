@@ -27,7 +27,8 @@ const Index = () => {
   const { 
     isGenerating, 
     generateWorksheetHandler, 
-    streamProgress, 
+    streamProgress,
+    mediaGenerating,
     cancelGeneration 
   } = useWorksheetGeneration(user?.id || null, worksheetState, selectedStudentId);
   const { tokenLeft, hasTokens, isDemo, profile } = useTokenSystem(user?.id || null);
@@ -254,6 +255,7 @@ const Index = () => {
         requiresImage={!!worksheetState.inputParams?.requiresImage}
         hasGrammar={!!worksheetState.inputParams?.hasGrammar}
         streamProgress={streamProgress}
+        mediaGenerating={mediaGenerating}
       />
       
       <TokenPaywallModal

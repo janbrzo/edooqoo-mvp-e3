@@ -55,12 +55,26 @@ export default function StudentPortal() {
 
       if (setsError) throw setsError;
 
+      // Fetch progress for mastered count
+      const { data: progressData } = await supabase
+        .from('flashcard_progress')
+        .select('set_id, repetition')
+        .eq('learner_identifier', studentEmail || '')
+        .gte('repetition', 4);  // Mastered = repetition >= 4
+
+      // Calculate mastered count per set
+      const masteredBySet: Record<string, number> = {};
+      progressData?.forEach((p) => {
+        masteredBySet[p.set_id] = (masteredBySet[p.set_id] || 0) + 1;
+      });
+
       const formattedSets = setsData?.map((set: any) => ({
         ...set,
         student_name: set.student?.name,
         student_native_language: set.student?.native_language,
         teacher_name: set.teacher ? `${set.teacher.first_name || ''} ${set.teacher.last_name || ''}`.trim() : undefined,
         cards_count: set.cards?.length || 0,
+        mastered_count: masteredBySet[set.id] || 0,  // NEW: Add mastered count
       })) || [];
 
       setSets(formattedSets);
@@ -76,7 +90,7 @@ export default function StudentPortal() {
       console.error('No share token available');
       return;
     }
-    navigate(`/flashcards/${token}?mode=browse`);
+    navigate(`/flashcards/${token}?mode=browse&email=${encodeURIComponent(studentEmail || '')}`);
   };
 
   const handleStudySet = (token: string | null) => {
@@ -84,7 +98,7 @@ export default function StudentPortal() {
       console.error('No share token available');
       return;
     }
-    navigate(`/flashcards/${token}`);
+    navigate(`/flashcards/${token}?email=${encodeURIComponent(studentEmail || '')}`);
   };
 
   if (loading) {
@@ -161,6 +175,12 @@ export default function StudentPortal() {
                       <Badge variant="outline" className="text-xs">
                         {set.back_type === 'translation' ? '🌐 Native' : '📖 Definition'}
                       </Badge>
+                      {/* NEW: Mastered badge */}
+                      {set.mastered_count > 0 && (
+                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-300">
+                          ✅ {set.mastered_count}/{set.cards_count} mastered
+                        </Badge>
+                      )}
                     </div>
 
                     {set.teacher_name && (
