@@ -104,19 +104,27 @@ export default function GeneratingModal({
       const updated = [...prev];
       const exerciseIndex = updated.findIndex(s => s.label === 'Exercises');
       
+      // Only update sections when exercises actually start generating (exercisesGenerated > 0)
       if (exerciseIndex !== -1 && streamProgress.exercisesGenerated > 0) {
-        // FIXED: Only mark sections as done when streaming actually produces exercises
-        // Mark all sections before exercises as done (media + warmup + grammar)
+        // Mark media sections as done when streaming starts (they were generated earlier)
         for (let i = 0; i < exerciseIndex; i++) {
-          if (updated[i].status !== 'done') {
+          if ((updated[i].label === 'Audio' || updated[i].label === 'Image')) {
             updated[i].status = 'done';
           }
+          // Mark Warmup and Grammar as generating (they come with first exercise)
+          if ((updated[i].label === 'Warmup' || updated[i].label === 'Grammar Rules')) {
+            updated[i].status = 'generating';
+          }
         }
+        
         // Mark exercises as generating
         updated[exerciseIndex].status = 'generating';
         
-        // If exercises complete, mark vocabulary as generating
+        // If exercises complete, mark previous as done and vocabulary as generating
         if (streamProgress.exercisesGenerated >= streamProgress.expectedTotal) {
+          for (let i = 0; i < exerciseIndex; i++) {
+            updated[i].status = 'done';
+          }
           updated[exerciseIndex].status = 'done';
           const vocabIndex = updated.findIndex(s => s.label === 'Vocabulary Sheet');
           if (vocabIndex !== -1) {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, BookOpen } from 'lucide-react';
+import { Plus, BookOpen, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FlashcardSet, NATIVE_LANGUAGES } from '@/types/flashcards';
 import { FlashcardSetCard } from './FlashcardSetCard';
@@ -7,6 +7,7 @@ import { CreateFlashcardSetModal } from './CreateFlashcardSetModal';
 import { DeleteFlashcardSetModal } from './DeleteFlashcardSetModal';
 import { FlashcardSetEditor } from './FlashcardSetEditor';
 import { AddFlashcardModal } from './AddFlashcardModal';
+import { ShareAllFlashcardSetsModal } from './ShareAllFlashcardSetsModal';
 import { useFlashcardSets } from '@/hooks/useFlashcardSets';
 import { useFlashcardCards } from '@/hooks/useFlashcardCards';
 import { useStudents } from '@/hooks/useStudents';
@@ -40,6 +41,7 @@ export function FlashcardSetsSection({
   const [deleteSetTitle, setDeleteSetTitle] = useState<string>('');
   const [addCardForSetId, setAddCardForSetId] = useState<string | null>(null);
   const [currentLanguage, setCurrentLanguage] = useState(studentNativeLanguage);
+  const [isShareAllModalOpen, setIsShareAllModalOpen] = useState(false);
 
   const student = students.find(s => s.id === studentId);
 
@@ -129,6 +131,13 @@ export function FlashcardSetsSection({
               ))}
             </SelectContent>
           </Select>
+          <Button 
+            variant="outline"
+            onClick={() => setIsShareAllModalOpen(true)}
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            Share all sets
+          </Button>
           <Button onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Create New Set
@@ -202,6 +211,14 @@ export function FlashcardSetsSection({
           backType={addCardSet.back_type as 'translation' | 'definition'}
         />
       )}
+
+      <ShareAllFlashcardSetsModal
+        open={isShareAllModalOpen}
+        onOpenChange={setIsShareAllModalOpen}
+        studentEmail={student?.student_email}
+        studentName={studentName}
+        teacherName={`${student?.teacher_email || ''}`}
+      />
     </div>
   );
 }

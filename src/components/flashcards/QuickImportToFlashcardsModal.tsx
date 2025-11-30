@@ -88,19 +88,21 @@ export function QuickImportToFlashcardsModal({
     }
   };
 
-  const handleSetSelected = (setId: string) => {
+  const handleSetSelected = async (setId: string) => {
     setSelectedSetId(setId);
     
     // Find the selected set to check its back_type
     const selectedSet = studentSets.find(s => s.id === setId);
     const backType = selectedSet?.back_type || 'definition';
-    setSelectedSetBackType(backType);
+    setSelectedSetBackType(backType as 'translation' | 'definition');
     
-    // If single item, import immediately
+    // If single item, import immediately or go to translation step
     if (vocabularyItems.length === 1) {
-      // For translation sets, go to edit-translations step
+      // For translation sets, go to edit-translations step with auto-fetch
       if (backType === 'translation') {
         setStep('edit-translations');
+        // FIX PROBLEM 3A: Auto-fetch translation for single item
+        await fetchSingleTranslation(0);
       } else {
         handleImport(setId);
       }
@@ -228,13 +230,14 @@ export function QuickImportToFlashcardsModal({
     const itemsToTranslate = vocabularyItems.filter((_, index) => selectedItems.has(index));
     
     // Bulk translate using direct Supabase call
+    // FIX PROBLEM 3B: Translate word (term) instead of definition
     for (const item of itemsToTranslate) {
       const originalIndex = vocabularyItems.findIndex(v => v.word === item.word && v.definition === item.definition);
       
       try {
         const { data, error } = await supabase.functions.invoke('translate-flashcard', {
           body: {
-            text: item.definition,
+            text: item.word,  // ← FIX: Tłumaczyć term, nie definition
             target_language: nativeLanguage,
           },
         });
@@ -244,9 +247,32 @@ export function QuickImportToFlashcardsModal({
         }
       } catch (error) {
         console.error('Translation error for:', item.word, error);
-        // Fallback to original definition
-        setTranslations(prev => ({ ...prev, [originalIndex]: item.definition }));
+        // Fallback to original word
+        setTranslations(prev => ({ ...prev, [originalIndex]: item.word }));
       }
+    }
+  };
+
+  // Helper function for single item translation (FIX PROBLEM 3A)
+  const fetchSingleTranslation = async (index: number) => {
+    const item = vocabularyItems[index];
+    if (!item) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('translate-flashcard', {
+        body: {
+          text: item.word,  // ← FIX: Tłumaczyć term, nie definition
+          target_language: nativeLanguage,
+        },
+      });
+
+      if (!error && data?.translation) {
+        setTranslations(prev => ({ ...prev, [index]: data.translation }));
+      }
+    } catch (error) {
+      console.error('Translation error for:', item.word, error);
+      // Fallback to original word
+      setTranslations(prev => ({ ...prev, [index]: item.word }));
     }
   };
 
@@ -279,32 +305,37 @@ export function QuickImportToFlashcardsModal({
             
             {/* Existing sets as tiles - FIX PROBLEM 2 */}
             <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto">
-              {/* FIX PROBLEM 2: New Set Button FIRST */}
-              <button
-                onClick={handleNewSetClick}
-                className="flex flex-col items-center justify-center p-2.5 border-2 border-dashed rounded-lg hover:border-primary hover:bg-accent/50 transition-colors min-h-[80px]"
+              {/* FIX PROBLEM 2: New Set Button FIRST, smaller tiles */}
+              <Button
+                variant={selectedSetId === 'new' ? 'default' : 'outline'}
+                className="h-auto p-2 flex flex-col items-center justify-center min-h-[65px]"
+                onClick={() => {
+                  setSelectedSetId('new');
+                  setStep('create-set');
+                }}
               >
-                <Plus className="w-6 h-6 mb-2 text-muted-foreground" />
-                <span className="text-sm font-medium">New Set</span>
-              </button>
+                <Plus className="w-5 h-5 mb-1" />
+                <span className="text-xs font-medium">New Set</span>
+              </Button>
               
               {studentSets.map(set => (
-                <button
+                <Button
                   key={set.id}
+                  variant={selectedSetId === set.id ? 'default' : 'outline'}
+                  className="h-auto p-2 flex flex-col items-start text-left min-h-[65px] justify-between"
                   onClick={() => handleSetSelected(set.id)}
-                  className="flex flex-col items-start p-2.5 border-2 rounded-lg hover:border-primary hover:bg-accent/50 transition-colors text-left"
                 >
-                  <div className="font-semibold text-sm mb-1 line-clamp-2">{set.title}</div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <div className="font-semibold text-xs mb-1 line-clamp-2 w-full">{set.title}</div>
+                  <div className="text-[10px] text-muted-foreground flex items-center gap-2 w-full">
                     <span>{set.cards_count || 0} cards</span>
                     <span>•</span>
                     {set.back_type === 'translation' ? (
-                      <span className="flex items-center gap-1"><Globe className="w-3 h-3" /> Native</span>
+                      <span className="flex items-center gap-1"><Globe className="w-2.5 h-2.5" /> Native</span>
                     ) : (
-                      <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> Definition</span>
+                      <span className="flex items-center gap-1"><BookOpen className="w-2.5 h-2.5" /> Definition</span>
                     )}
                   </div>
-                </button>
+                </Button>
               ))}
             </div>
           </div>

@@ -185,6 +185,9 @@ export const useWorksheetGeneration = (
         ...data,
         selectedAudio,
         selectedImage,
+        requiresAudio,  // ← Zachowujemy dla modala
+        requiresImage,  // ← Zachowujemy dla modala
+        hasGrammar,     // ← Zachowujemy dla modala
       });
       
       // ============================================================

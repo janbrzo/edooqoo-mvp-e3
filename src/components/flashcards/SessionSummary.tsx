@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LearningSessionStats } from "@/types/flashcards";
@@ -7,10 +8,16 @@ interface SessionSummaryProps {
   stats: LearningSessionStats;
   onRestart: (mode: "all" | "mistakes") => void;
   setTitle: string;
+  studentEmail: string;
 }
 
-export function SessionSummary({ stats, onRestart, setTitle }: SessionSummaryProps) {
+export function SessionSummary({ stats, onRestart, setTitle, studentEmail }: SessionSummaryProps) {
+  const navigate = useNavigate();
   const accuracy = stats.reviewedCards > 0 ? Math.round((stats.correctAnswers / stats.reviewedCards) * 100) : 0;
+
+  const handleBackToDashboard = () => {
+    navigate(`/my-flashcards/${encodeURIComponent(studentEmail)}`);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -50,8 +57,8 @@ export function SessionSummary({ stats, onRestart, setTitle }: SessionSummaryPro
                 📝 Study To Practice Only ({stats.incorrectAnswers})
               </Button>
             )}
-            <Button variant="outline" className="w-full" onClick={() => window.close()}>
-              Done
+            <Button variant="outline" className="w-full" onClick={handleBackToDashboard}>
+              Back to Dashboard
             </Button>
           </div>
         </CardContent>
