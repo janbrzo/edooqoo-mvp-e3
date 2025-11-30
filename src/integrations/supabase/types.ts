@@ -465,6 +465,101 @@ export type Database = {
           },
         ]
       }
+      homework_student_answers: {
+        Row: {
+          answers: Json
+          exercise_index: number
+          exercise_type: string
+          homework_id: string
+          id: string
+          is_submitted: boolean
+          last_saved_at: string
+          started_at: string
+          student_email: string
+          submitted_at: string | null
+        }
+        Insert: {
+          answers?: Json
+          exercise_index: number
+          exercise_type: string
+          homework_id: string
+          id?: string
+          is_submitted?: boolean
+          last_saved_at?: string
+          started_at?: string
+          student_email: string
+          submitted_at?: string | null
+        }
+        Update: {
+          answers?: Json
+          exercise_index?: number
+          exercise_type?: string
+          homework_id?: string
+          id?: string
+          is_submitted?: boolean
+          last_saved_at?: string
+          started_at?: string
+          student_email?: string
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_student_answers_homework_id_fkey"
+            columns: ["homework_id"]
+            isOneToOne: false
+            referencedRelation: "homework_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homework_teacher_comments: {
+        Row: {
+          comment_text: string
+          created_at: string
+          exercise_index: number
+          homework_id: string
+          id: string
+          student_email: string
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment_text: string
+          created_at?: string
+          exercise_index: number
+          homework_id: string
+          id?: string
+          student_email: string
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment_text?: string
+          created_at?: string
+          exercise_index?: number
+          homework_id?: string
+          id?: string
+          student_email?: string
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_teacher_comments_homework_id_fkey"
+            columns: ["homework_id"]
+            isOneToOne: false
+            referencedRelation: "homework_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homework_teacher_comments_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processed_upgrade_sessions: {
         Row: {
           email: string | null
@@ -1089,6 +1184,29 @@ export type Database = {
           title: string
         }[]
       }
+      get_homework_comments: {
+        Args: { p_homework_id: string; p_student_email: string }
+        Returns: {
+          comment_text: string
+          created_at: string
+          exercise_index: number
+          id: string
+          updated_at: string
+        }[]
+      }
+      get_student_homework_answers: {
+        Args: { p_homework_id: string; p_student_email: string }
+        Returns: {
+          answers: Json
+          exercise_index: number
+          exercise_type: string
+          id: string
+          is_submitted: boolean
+          last_saved_at: string
+          started_at: string
+          submitted_at: string
+        }[]
+      }
       get_student_tags: {
         Args: { p_student_id: string; p_teacher_id: string }
         Returns: string[]
@@ -1183,6 +1301,26 @@ export type Database = {
         Args: { user_email: string }
         Returns: boolean
       }
+      save_homework_answer: {
+        Args: {
+          p_answers: Json
+          p_exercise_index: number
+          p_exercise_type: string
+          p_homework_id: string
+          p_student_email: string
+        }
+        Returns: string
+      }
+      save_teacher_comment: {
+        Args: {
+          p_comment_text: string
+          p_exercise_index: number
+          p_homework_id: string
+          p_student_email: string
+          p_teacher_id: string
+        }
+        Returns: string
+      }
       should_show_onboarding: { Args: { user_id: string }; Returns: boolean }
       soft_delete_flashcard_set: {
         Args: { p_set_id: string; p_teacher_id: string }
@@ -1199,6 +1337,10 @@ export type Database = {
       soft_delete_user_account: { Args: { user_id: string }; Returns: boolean }
       soft_delete_worksheet: {
         Args: { p_teacher_id: string; p_worksheet_id: string }
+        Returns: boolean
+      }
+      submit_homework_answers: {
+        Args: { p_homework_id: string; p_student_email: string }
         Returns: boolean
       }
       track_user_event: {
