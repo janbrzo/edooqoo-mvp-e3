@@ -1,6 +1,8 @@
 import React from "react";
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { Textarea } from "@/components/ui/textarea";
 
-interface ExerciseDescribeProps {
+interface ExerciseDescribeProps extends Partial<InteractiveExerciseProps> {
   image_url?: string;
   questions?: any[];
   showImage?: boolean;
@@ -17,7 +19,11 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
   isEditing,
   viewMode,
   onQuestionChange,
-  onImageUrlChange
+  onImageUrlChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange
 }) => {
   return (
     <div className="space-y-4">
@@ -48,6 +54,18 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
               </p>
             </div>
           ))}
+        </div>
+      )}
+
+      {isInteractive && (
+        <div className="mt-4">
+          <h4 className="font-medium mb-2">Describe the image:</h4>
+          <Textarea
+            value={studentAnswers[0] || ''}
+            onChange={(e) => onAnswerChange?.(0, e.target.value)}
+            placeholder="Write your description here..."
+            className="min-h-[150px]"
+          />
         </div>
       )}
     </div>

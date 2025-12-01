@@ -1,6 +1,8 @@
 import React from "react";
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface ExerciseCategorizeProps {
+interface ExerciseCategorizeProps extends Partial<InteractiveExerciseProps> {
   items?: string[];
   words?: string[];
   categories: any[];
@@ -11,7 +13,18 @@ interface ExerciseCategorizeProps {
 }
 
 const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
-  items = [], words = [], categories = [], isEditing, viewMode, onWordsChange, onCategoryChange
+  items = [],
+  words = [],
+  categories = [],
+  isEditing,
+  viewMode,
+  onWordsChange,
+  onCategoryChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   // Use items if available, otherwise fall back to words
   const actualWords = items && items.length > 0 ? items : words;
@@ -42,23 +55,60 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
     <div>
       {/* Words section */}
       <div className="mb-4">
-        <h4 className="font-medium text-gray-700 mb-2">Words:</h4>
-        <div className="flex flex-wrap gap-2">
-          {actualWords.map((word, wIndex) => (
-            <div key={wIndex} className="bg-blue-100 px-3 py-1 rounded-md">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={word || ''}
-                  onChange={e => handleWordChange(wIndex, e.target.value)}
-                  className="border p-1 editable-content w-20"
-                />
-              ) : (
-                word || 'Word'
-              )}
-            </div>
-          ))}
-        </div>
+        <h4 className="font-medium text-gray-700 mb-2">Words to categorize:</h4>
+        {isInteractive ? (
+          <div className="space-y-2">
+            {actualWords.map((word, wIndex) => {
+              const studentAnswer = studentAnswers[wIndex];
+              const correctCategory = categories.findIndex(cat => 
+                cat.correct_items?.includes(word) || cat.words?.includes(word)
+              );
+              const isCorrect = showCorrectAnswers && studentAnswer !== undefined && parseInt(studentAnswer) === correctCategory;
+              const isIncorrect = showCorrectAnswers && studentAnswer !== undefined && parseInt(studentAnswer) !== correctCategory;
+
+              return (
+                <div key={wIndex} className="flex items-center gap-2 p-2 border rounded">
+                  <span className="flex-grow font-medium">{word}</span>
+                  <Select
+                    value={studentAnswer?.toString() || ''}
+                    onValueChange={(value) => onAnswerChange?.(wIndex, value)}
+                  >
+                    <SelectTrigger className={`w-48 ${isCorrect ? 'border-green-500 bg-green-50' : isIncorrect ? 'border-red-500 bg-red-50' : ''}`}>
+                      <SelectValue placeholder="Select category..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat, cIndex) => (
+                        <SelectItem key={cIndex} value={cIndex.toString()}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {showCorrectAnswers && correctCategory >= 0 && (
+                    <span className="text-green-600 text-sm">({categories[correctCategory]?.name})</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {actualWords.map((word, wIndex) => (
+              <div key={wIndex} className="bg-blue-100 px-3 py-1 rounded-md">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={word || ''}
+                    onChange={e => handleWordChange(wIndex, e.target.value)}
+                    className="border p-1 editable-content w-20"
+                  />
+                ) : (
+                  word || 'Word'
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Categories section */}

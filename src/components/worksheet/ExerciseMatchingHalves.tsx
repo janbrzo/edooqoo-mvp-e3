@@ -1,6 +1,8 @@
 import React from "react";
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface ExerciseMatchingHalvesProps {
+interface ExerciseMatchingHalvesProps extends Partial<InteractiveExerciseProps> {
   sentence_halves: any[];
   isEditing: boolean;
   viewMode: "student" | "teacher";
@@ -8,7 +10,15 @@ interface ExerciseMatchingHalvesProps {
 }
 
 const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
-  sentence_halves = [], isEditing, viewMode, onHalvesChange
+  sentence_halves = [],
+  isEditing,
+  viewMode,
+  onHalvesChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   // Process sentence halves to add dots if missing
   const processedHalves = React.useMemo(() => {
@@ -93,22 +103,56 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
 
         <div className="md:col-span-7 space-y-2">
           <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence endings</h4>
-          {shuffledIndices.map((originalIndex, displayIndex) => {
-            const item = processedHalves[originalIndex];
-            return (
-              <div key={`shuffled-${displayIndex}`} className="p-2 border rounded-md bg-white">
-                <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + displayIndex)}.</span>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={item?.second_half || ''}
-                    onChange={e => handleSecondHalfChange(originalIndex, e.target.value)}
-                    className="border p-1 editable-content w-full"
-                  />
-                ) : (item?.second_half || 'Missing second half')}
-              </div>
-            );
-          })}
+          {isInteractive ? (
+            processedHalves.map((half, hIndex) => {
+              const studentAnswer = studentAnswers[hIndex];
+              const correctAnswer = String.fromCharCode(65 + shuffledSecondHalves.findIndex(s => s.second_half === half.second_half));
+              const isCorrect = showCorrectAnswers && studentAnswer === correctAnswer;
+              const isIncorrect = showCorrectAnswers && studentAnswer && studentAnswer !== correctAnswer;
+
+              return (
+                <div key={hIndex} className="p-2 border rounded-md bg-white flex items-center gap-2">
+                  <span className="text-worksheet-purple font-medium">{hIndex + 1}.</span>
+                  <span className="flex-grow">{half.first_half}</span>
+                  <Select
+                    value={studentAnswer || ''}
+                    onValueChange={(value) => onAnswerChange?.(hIndex, value)}
+                  >
+                    <SelectTrigger className={`w-20 ${isCorrect ? 'border-green-500 bg-green-50' : isIncorrect ? 'border-red-500 bg-red-50' : ''}`}>
+                      <SelectValue placeholder="?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shuffledSecondHalves.map((_, idx) => (
+                        <SelectItem key={idx} value={String.fromCharCode(65 + idx)}>
+                          {String.fromCharCode(65 + idx)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {showCorrectAnswers && (
+                    <span className="text-green-600 text-sm">({correctAnswer})</span>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            shuffledIndices.map((originalIndex, displayIndex) => {
+              const item = processedHalves[originalIndex];
+              return (
+                <div key={`shuffled-${displayIndex}`} className="p-2 border rounded-md bg-white">
+                  <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + displayIndex)}.</span>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={item?.second_half || ''}
+                      onChange={e => handleSecondHalfChange(originalIndex, e.target.value)}
+                      className="border p-1 editable-content w-full"
+                    />
+                  ) : (item?.second_half || 'Missing second half')}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

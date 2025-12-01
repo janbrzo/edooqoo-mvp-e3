@@ -1,4 +1,7 @@
 import React from 'react';
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface Option {
   label: string;
@@ -11,7 +14,7 @@ interface Question {
   options: Option[];
 }
 
-interface ExerciseMultipleChoiceAudioProps {
+interface ExerciseMultipleChoiceAudioProps extends Partial<InteractiveExerciseProps> {
   questions?: Question[];
   audio_url?: string;
   isEditing: boolean;
@@ -24,7 +27,12 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
   audio_url,
   isEditing,
   viewMode,
-  onQuestionChange
+  onQuestionChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   return (
     <div>
@@ -49,54 +57,88 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
                 <>{qIndex + 1}. {question.text}</>
               )}
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-              {question.options?.map((option: any, oIndex: number) => (
-                <div
-                  key={oIndex}
-                  className={`
-                    p-2 border rounded-md flex items-center gap-2 multiple-choice-option
-                    ${viewMode === 'teacher' && option.correct ? 'bg-green-50 border-green-200' : 'bg-white'}
-                  `}
-                >
+            {isInteractive ? (
+              <RadioGroup
+                value={studentAnswers[qIndex]?.toString() || ''}
+                onValueChange={(value) => onAnswerChange?.(qIndex, parseInt(value))}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {question.options?.map((option: any, oIndex: number) => {
+                    const isSelected = studentAnswers[qIndex] === oIndex;
+                    const isCorrect = showCorrectAnswers && isSelected && option.correct;
+                    const isIncorrect = showCorrectAnswers && isSelected && !option.correct;
+                    const shouldShowAsCorrect = showCorrectAnswers && option.correct;
+
+                    return (
+                      <div
+                        key={oIndex}
+                        className={`
+                          p-2 border rounded-md flex items-center gap-2
+                          ${isCorrect ? 'bg-green-50 border-green-500' : ''}
+                          ${isIncorrect ? 'bg-red-50 border-red-500' : ''}
+                          ${shouldShowAsCorrect && !isSelected ? 'bg-green-50/30 border-green-300' : ''}
+                        `}
+                      >
+                        <RadioGroupItem value={oIndex.toString()} id={`q${qIndex}-o${oIndex}`} />
+                        <Label htmlFor={`q${qIndex}-o${oIndex}`} className="flex-grow cursor-pointer">
+                          {option.label}. {option.text}
+                        </Label>
+                        {shouldShowAsCorrect && <span className="text-green-600 text-sm">✓</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </RadioGroup>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                {question.options?.map((option: any, oIndex: number) => (
                   <div
+                    key={oIndex}
                     className={`
-                      w-5 h-5 rounded-md border flex items-center justify-center option-icon
-                      ${viewMode === 'teacher' && option.correct ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}
+                      p-2 border rounded-md flex items-center gap-2 multiple-choice-option
+                      ${viewMode === 'teacher' && option.correct ? 'bg-green-50 border-green-200' : 'bg-white'}
                     `}
                   >
-                    {viewMode === 'teacher' && option.correct && <span>✓</span>}
-                  </div>
-                  <span>
-                    {isEditing ? (
+                    <div
+                      className={`
+                        w-5 h-5 rounded-md border flex items-center justify-center option-icon
+                        ${viewMode === 'teacher' && option.correct ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}
+                      `}
+                    >
+                      {viewMode === 'teacher' && option.correct && <span>✓</span>}
+                    </div>
+                    <span>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={option.text}
+                          onChange={e => {
+                            const newOptions = [...question.options];
+                            newOptions[oIndex] = { ...option, text: e.target.value };
+                            onQuestionChange(qIndex, 'options', newOptions);
+                          }}
+                          className="border p-1 editable-content ml-1"
+                        />
+                      ) : (
+                        <>{option.label}. {option.text}</>
+                      )}
+                    </span>
+                    {isEditing && (
                       <input
-                        type="text"
-                        value={option.text}
+                        type="checkbox"
+                        checked={option.correct}
                         onChange={e => {
                           const newOptions = [...question.options];
-                          newOptions[oIndex] = { ...option, text: e.target.value };
+                          newOptions[oIndex] = { ...option, correct: e.target.checked };
                           onQuestionChange(qIndex, 'options', newOptions);
                         }}
-                        className="border p-1 editable-content ml-1"
+                        className="ml-auto"
                       />
-                    ) : (
-                      <>{option.label}. {option.text}</>
                     )}
-                  </span>
-                  {isEditing && (
-                    <input
-                      type="checkbox"
-                      checked={option.correct}
-                      onChange={e => {
-                        const newOptions = [...question.options];
-                        newOptions[oIndex] = { ...option, correct: e.target.checked };
-                        onQuestionChange(qIndex, 'options', newOptions);
-                      }}
-                      className="ml-auto"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
