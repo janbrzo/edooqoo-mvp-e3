@@ -1,11 +1,13 @@
 import React from 'react';
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Question {
   question: string;
   focus: string;
 }
 
-interface ExerciseAnswerQuestionsAudioProps {
+interface ExerciseAnswerQuestionsAudioProps extends Partial<InteractiveExerciseProps> {
   questions?: Question[];
   audio_url?: string;
   isEditing: boolean;
@@ -18,7 +20,11 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
   audio_url,
   isEditing,
   viewMode,
-  onQuestionChange
+  onQuestionChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange
 }) => {
   return (
     <div className="space-y-0.5">
@@ -29,7 +35,7 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
       )}
       
       {questions.map((q, qIndex) => (
-        <div key={qIndex} className="border-b pb-1">
+        <div key={qIndex} className="border-b pb-3 space-y-2">
           <div className="flex flex-row items-start">
             <div className="flex-grow">
               <p className="font-medium leading-snug">
@@ -60,6 +66,14 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
               </div>
             )}
           </div>
+          {isInteractive && (
+            <Textarea
+              value={studentAnswers[qIndex] || ''}
+              onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+              placeholder="Type your answer here..."
+              className="min-h-[80px]"
+            />
+          )}
         </div>
       ))}
     </div>

@@ -1,7 +1,9 @@
 
 import React from "react";
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { Textarea } from "@/components/ui/textarea";
 
-interface ExerciseDialogueProps {
+interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   dialogue: any[];
   expressions?: string[];
   expression_instruction?: string;
@@ -20,7 +22,11 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
   viewMode,
   onDialogueChange,
   onExpressionChange,
-  onExpressionInstructionChange
+  onExpressionInstructionChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange
 }) => {
   return (
     <div>
@@ -54,6 +60,18 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
           </div>
         ))}
       </div>
+
+      {isInteractive && (
+        <div className="mt-4">
+          <p className="font-medium mb-2">Practice the dialogue:</p>
+          <Textarea
+            value={studentAnswers[0] || ''}
+            onChange={(e) => onAnswerChange?.(0, e.target.value)}
+            placeholder="Type your practice dialogue here..."
+            className="min-h-[120px]"
+          />
+        </div>
+      )}
 
       {expressions && (
         <div>

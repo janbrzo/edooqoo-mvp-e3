@@ -1,11 +1,14 @@
 import React from 'react';
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface Statement {
   text: string;
   isTrue: boolean;
 }
 
-interface ExerciseTrueFalseAudioProps {
+interface ExerciseTrueFalseAudioProps extends Partial<InteractiveExerciseProps> {
   statements?: Statement[];
   audio_url?: string;
   isEditing: boolean;
@@ -18,7 +21,12 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
   audio_url,
   isEditing,
   viewMode,
-  onStatementChange
+  onStatementChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   return (
     <div className="space-y-4">
@@ -29,55 +37,83 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
       )}
       
       <div className="space-y-2">
-        {statements.map((statement, sIndex) => (
-          <div key={sIndex} className="border-b pb-2">
-            <div className="flex flex-row items-start">
-              <div className="flex-grow">
-                <p className="leading-snug">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={statement.text}
-                      onChange={e => onStatementChange(sIndex, 'text', e.target.value)}
-                      className="w-full border p-1 editable-content"
-                    />
-                  ) : (
-                    <>{sIndex + 1}. {statement.text}</>
-                  )}
-                </p>
-              </div>
-              <div className="ml-4 flex space-x-4">
-                {viewMode === 'student' ? (
-                  <div className="flex space-x-4">
-                    <label className="inline-flex items-center">
-                      <input type="radio" name={`statement-audio-${sIndex}`} className="form-radio h-4 w-4" disabled={!isEditing} />
-                      <span className="ml-2">True</span>
-                    </label>
-                    <label className="inline-flex items-center">
-                      <input type="radio" name={`statement-audio-${sIndex}`} className="form-radio h-4 w-4" disabled={!isEditing} />
-                      <span className="ml-2">False</span>
-                    </label>
-                  </div>
-                ) : (
-                  <div className="text-green-600 italic ml-3 text-sm">
+        {statements.map((statement, sIndex) => {
+          const studentAnswer = studentAnswers[sIndex];
+          const isCorrect = showCorrectAnswers && studentAnswer !== undefined && studentAnswer === statement.isTrue;
+          const isIncorrect = showCorrectAnswers && studentAnswer !== undefined && studentAnswer !== statement.isTrue;
+
+          return (
+            <div key={sIndex} className="border-b pb-2">
+              <div className="flex flex-col gap-2">
+                <div className="flex-grow">
+                  <p className="leading-snug">
                     {isEditing ? (
-                      <select
-                        value={statement.isTrue ? "true" : "false"}
-                        onChange={e => onStatementChange(sIndex, 'isTrue', e.target.value === "true")}
-                        className="border p-1 editable-content"
-                      >
-                        <option value="true">True</option>
-                        <option value="false">False</option>
-                      </select>
+                      <input
+                        type="text"
+                        value={statement.text}
+                        onChange={e => onStatementChange(sIndex, 'text', e.target.value)}
+                        className="w-full border p-1 editable-content"
+                      />
                     ) : (
-                      <span>({statement.isTrue ? "True" : "False"})</span>
+                      <>{sIndex + 1}. {statement.text}</>
                     )}
+                  </p>
+                </div>
+                {isInteractive ? (
+                  <RadioGroup
+                    value={studentAnswer === true ? 'true' : studentAnswer === false ? 'false' : ''}
+                    onValueChange={(value) => onAnswerChange?.(sIndex, value === 'true')}
+                    className="flex gap-4"
+                  >
+                    <div className={`flex items-center space-x-2 ${isCorrect && studentAnswer === true ? 'text-green-600' : isIncorrect && studentAnswer === true ? 'text-red-600' : ''}`}>
+                      <RadioGroupItem value="true" id={`true-${sIndex}`} />
+                      <Label htmlFor={`true-${sIndex}`}>True</Label>
+                    </div>
+                    <div className={`flex items-center space-x-2 ${isCorrect && studentAnswer === false ? 'text-green-600' : isIncorrect && studentAnswer === false ? 'text-red-600' : ''}`}>
+                      <RadioGroupItem value="false" id={`false-${sIndex}`} />
+                      <Label htmlFor={`false-${sIndex}`}>False</Label>
+                    </div>
+                  </RadioGroup>
+                ) : (
+                  <div className="ml-4 flex space-x-4">
+                    {viewMode === 'student' ? (
+                      <div className="flex space-x-4">
+                        <label className="inline-flex items-center">
+                          <input type="radio" name={`statement-audio-${sIndex}`} className="form-radio h-4 w-4" disabled={!isEditing} />
+                          <span className="ml-2">True</span>
+                        </label>
+                        <label className="inline-flex items-center">
+                          <input type="radio" name={`statement-audio-${sIndex}`} className="form-radio h-4 w-4" disabled={!isEditing} />
+                          <span className="ml-2">False</span>
+                        </label>
+                      </div>
+                    ) : (
+                      <div className="text-green-600 italic ml-3 text-sm">
+                        {isEditing ? (
+                          <select
+                            value={statement.isTrue ? "true" : "false"}
+                            onChange={e => onStatementChange(sIndex, 'isTrue', e.target.value === "true")}
+                            className="border p-1 editable-content"
+                          >
+                            <option value="true">True</option>
+                            <option value="false">False</option>
+                          </select>
+                        ) : (
+                          <span>({statement.isTrue ? "True" : "False"})</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {(viewMode === 'teacher' || showCorrectAnswers) && (
+                  <div className="text-green-600 italic text-sm">
+                    Answer: {statement.isTrue ? "True" : "False"}
                   </div>
                 )}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

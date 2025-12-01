@@ -1,6 +1,8 @@
 import React from "react";
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { Input } from "@/components/ui/input";
 
-interface ExerciseCompleteWordProps {
+interface ExerciseCompleteWordProps extends Partial<InteractiveExerciseProps> {
   words: any[];
   isEditing: boolean;
   viewMode: "student" | "teacher";
@@ -8,7 +10,12 @@ interface ExerciseCompleteWordProps {
 }
 
 const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
-  words = [], isEditing, viewMode, onWordChange
+  words = [], isEditing, viewMode, onWordChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   if (!words || words.length === 0) {
     return <div className="text-gray-500 italic">No words available for this exercise.</div>;
@@ -19,53 +26,73 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
       <p className="mb-3 font-medium">Complete the words using the definitions:</p>
       
       <div className="space-y-2">
-        {words.map((wordItem, wIndex) => (
-          <div key={wIndex} className="border-b pb-1">
-            <div className="flex flex-row items-start gap-4">
-              <div className="flex-grow">
-                <p className="leading-snug">
-                  <span className="font-medium">{wIndex + 1}. </span>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={wordItem?.partial || wordItem?.incomplete_word || ''}
-                      onChange={e => onWordChange(wIndex, 'partial', e.target.value)}
-                      className="border p-1 editable-content font-mono"
-                    />
-                  ) : (
-                    <span className="font-mono font-bold text-lg">{wordItem?.partial || wordItem?.incomplete_word || 'Missing word'}</span>
-                  )}
-                  <span className="ml-2">–</span>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={wordItem?.clue || wordItem?.definition || ''}
-                      onChange={e => onWordChange(wIndex, 'clue', e.target.value)}
-                      className="ml-2 border p-1 editable-content flex-grow"
-                    />
-                  ) : (
-                    <span className="ml-2 text-gray-600">{wordItem?.clue || wordItem?.definition || 'Missing definition'}</span>
-                  )}
-                </p>
-              </div>
-              
-              {viewMode === 'teacher' && (
-                <div className="text-green-600 italic text-sm min-w-0 flex-shrink-0">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={wordItem?.complete || wordItem?.complete_word || ''}
-                      onChange={e => onWordChange(wIndex, 'complete', e.target.value)}
-                      className="border p-1 editable-content w-full"
-                    />
-                  ) : (
-                    <span>({wordItem?.complete || wordItem?.complete_word || 'No answer'})</span>
-                  )}
+        {words.map((wordItem, wIndex) => {
+          const studentAnswer = studentAnswers[wIndex] || '';
+          const correctAnswer = wordItem?.complete || wordItem?.complete_word || '';
+          const isCorrect = showCorrectAnswers && studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+          const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
+
+          return (
+            <div key={wIndex} className="border-b pb-2">
+              <div className="flex flex-col gap-2">
+                <div className="flex-grow">
+                  <p className="leading-snug">
+                    <span className="font-medium">{wIndex + 1}. </span>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={wordItem?.partial || wordItem?.incomplete_word || ''}
+                        onChange={e => onWordChange(wIndex, 'partial', e.target.value)}
+                        className="border p-1 editable-content font-mono"
+                      />
+                    ) : (
+                      <span className="font-mono font-bold text-lg">{wordItem?.partial || wordItem?.incomplete_word || 'Missing word'}</span>
+                    )}
+                    <span className="ml-2">–</span>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={wordItem?.clue || wordItem?.definition || ''}
+                        onChange={e => onWordChange(wIndex, 'clue', e.target.value)}
+                        className="ml-2 border p-1 editable-content flex-grow"
+                      />
+                    ) : (
+                      <span className="ml-2 text-gray-600">{wordItem?.clue || wordItem?.definition || 'Missing definition'}</span>
+                    )}
+                  </p>
                 </div>
-              )}
+
+                {isInteractive && (
+                  <Input
+                    type="text"
+                    value={studentAnswer}
+                    onChange={(e) => onAnswerChange?.(wIndex, e.target.value)}
+                    placeholder="Complete the word..."
+                    className={`
+                      ${isCorrect ? 'border-green-500 bg-green-50' : ''}
+                      ${isIncorrect ? 'border-red-500 bg-red-50' : ''}
+                    `}
+                  />
+                )}
+                
+                {(viewMode === 'teacher' || showCorrectAnswers) && (
+                  <div className="text-green-600 italic text-sm">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={correctAnswer}
+                        onChange={e => onWordChange(wIndex, 'complete', e.target.value)}
+                        className="border p-1 editable-content w-full"
+                      />
+                    ) : (
+                      <span>({correctAnswer || 'No answer'})</span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
