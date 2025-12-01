@@ -1,7 +1,9 @@
 
 import React, { useMemo } from "react";
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface ExerciseMatchingProps {
+interface ExerciseMatchingProps extends Partial<InteractiveExerciseProps> {
   items: any[];
   isEditing: boolean;
   viewMode: "student" | "teacher";
@@ -20,7 +22,16 @@ function shuffleArray(array: any[]) {
 }
 
 const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
-  items, isEditing, viewMode, getMatchedItems, onItemChange
+  items, 
+  isEditing, 
+  viewMode, 
+  getMatchedItems, 
+  onItemChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   // Use useMemo to prevent re-shuffling on every render
   // Create a stable key based on the terms to ensure consistent shuffling
@@ -33,24 +44,57 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">
       <div className="md:col-span-5 space-y-2">
         <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Terms</h4>
-        {items.map((item, iIndex) => (
-          <div key={iIndex} className="p-2 border rounded-md bg-white">
-            <span className="text-worksheet-purple font-medium mr-2">{iIndex + 1}.</span>
-            {viewMode === 'teacher' ? (
-              <span className="teacher-answer">{String.fromCharCode(65 + shuffledDefinitions.findIndex(i => i.term === item.term))}</span>
-            ) : (
-              <span className="student-answer-blank"></span>
-            )}
-            {isEditing ? (
-              <input
-                type="text"
-                value={item.term}
-                onChange={e => onItemChange(iIndex, 'term', e.target.value)}
-                className="border p-1 editable-content w-full"
-              />
-            ) : item.term}
-          </div>
-        ))}
+        {items.map((item, iIndex) => {
+          const selectedAnswer = studentAnswers[iIndex];
+          const correctLetter = String.fromCharCode(65 + shuffledDefinitions.findIndex(i => i.term === item.term));
+          const isCorrect = showCorrectAnswers && selectedAnswer === correctLetter;
+          const isIncorrect = showCorrectAnswers && selectedAnswer && !isCorrect;
+
+          return (
+            <div key={iIndex} className={`p-2 border rounded-md bg-white ${isCorrect ? 'border-green-500' : ''} ${isIncorrect ? 'border-red-500' : ''}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-worksheet-purple font-medium">{iIndex + 1}.</span>
+                
+                {isInteractive ? (
+                  <Select 
+                    value={selectedAnswer || ""} 
+                    onValueChange={(value) => onAnswerChange?.(iIndex, value)}
+                  >
+                    <SelectTrigger className="w-[80px]">
+                      <SelectValue placeholder="?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shuffledDefinitions.map((_, idx) => (
+                        <SelectItem key={idx} value={String.fromCharCode(65 + idx)}>
+                          {String.fromCharCode(65 + idx)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : viewMode === 'teacher' ? (
+                  <span className="teacher-answer font-bold text-green-600">{correctLetter}</span>
+                ) : (
+                  <span className="student-answer-blank">___</span>
+                )}
+
+                <span className="flex-1">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={item.term}
+                      onChange={e => onItemChange(iIndex, 'term', e.target.value)}
+                      className="border p-1 editable-content w-full"
+                    />
+                  ) : item.term}
+                </span>
+
+                {showCorrectAnswers && (
+                  <span className="text-sm text-green-600">({correctLetter})</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="md:col-span-7 space-y-2">
