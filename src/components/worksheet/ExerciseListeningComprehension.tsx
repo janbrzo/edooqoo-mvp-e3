@@ -1,6 +1,7 @@
 import React from 'react';
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 
-interface ExerciseListeningComprehensionProps {
+interface ExerciseListeningComprehensionProps extends Partial<InteractiveExerciseProps> {
   questions?: Array<{ text: string; answer: string }>;
   audio_url?: string;
   isEditing: boolean;
@@ -13,7 +14,12 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
   audio_url,
   isEditing,
   viewMode,
-  onQuestionChange
+  onQuestionChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   return (
     <div className="space-y-0.5">
@@ -23,40 +29,54 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
         </div>
       )}
       
-      {questions.map((q, qIndex) => (
-        <div key={qIndex} className="border-b pb-1">
-          <div className="flex flex-row items-start">
-            <div className="flex-grow">
-              <p className="font-medium leading-snug">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={q.text}
-                    onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
-                    className="w-full border p-1 editable-content"
-                  />
-                ) : (
-                  <>{qIndex + 1}. {q.text}</>
-                )}
-              </p>
-            </div>
-            {viewMode === 'teacher' && (
-              <div className="text-green-600 italic ml-3 text-sm">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={q.answer}
-                    onChange={e => onQuestionChange(qIndex, 'answer', e.target.value)}
-                    className="border p-1 editable-content w-full"
-                  />
-                ) : (
-                  <span>({q.answer})</span>
-                )}
+      {questions.map((q, qIndex) => {
+        const studentAnswer = studentAnswers[qIndex] || '';
+
+        return (
+          <div key={qIndex} className="border-b pb-1">
+            <div className="flex flex-col gap-2">
+              <div className="flex-grow">
+                <p className="font-medium leading-snug">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={q.text}
+                      onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
+                      className="w-full border p-1 editable-content"
+                    />
+                  ) : (
+                    <>{qIndex + 1}. {q.text}</>
+                  )}
+                </p>
               </div>
-            )}
+              {isInteractive && (
+                <textarea
+                  value={studentAnswer}
+                  onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                  onBlur={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                  placeholder="Type your answer..."
+                  className="w-full border p-2 rounded min-h-[60px]"
+                  rows={2}
+                />
+              )}
+              {(viewMode === 'teacher' || showCorrectAnswers) && (
+                <div className="text-green-600 italic text-sm">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={q.answer}
+                      onChange={e => onQuestionChange(qIndex, 'answer', e.target.value)}
+                      className="border p-1 editable-content w-full"
+                    />
+                  ) : (
+                    <span>Suggested answer: {q.answer}</span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

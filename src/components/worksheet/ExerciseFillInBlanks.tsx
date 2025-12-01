@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 
-interface ExerciseFillInBlanksProps {
+interface ExerciseFillInBlanksProps extends Partial<InteractiveExerciseProps> {
   word_bank?: string[];
   sentences: any[];
   isEditing: boolean;
@@ -10,7 +11,17 @@ interface ExerciseFillInBlanksProps {
 }
 
 const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
-  word_bank, sentences, isEditing, viewMode, onWordBankChange, onSentenceChange
+  word_bank, 
+  sentences, 
+  isEditing, 
+  viewMode, 
+  onWordBankChange, 
+  onSentenceChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   // Shuffle word bank randomly for student view, but keep original order for editing
   const shuffledWordBank = useMemo(() => {
@@ -48,40 +59,61 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
         </div>
       )}
       <div className="space-y-0.5">
-        {sentences.map((sentence, sIndex) => (
-          <div key={sIndex} className="border-b pb-1">
-            <div className="flex flex-row items-start">
-              <div className="flex-grow">
-                <p className="leading-snug">
-                  {isEditing ? (
+        {sentences.map((sentence, sIndex) => {
+          const studentAnswer = studentAnswers[sIndex] || '';
+          const correctAnswer = sentence.answer;
+          const isCorrect = showCorrectAnswers && studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+          const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
+
+          return (
+            <div key={sIndex} className="border-b pb-1">
+              <div className="flex flex-row items-start gap-2">
+                <div className="flex-grow">
+                  <p className="leading-snug mb-1">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={sentence.text}
+                        onChange={e => onSentenceChange(sIndex, 'text', e.target.value)}
+                        className="w-full border p-1 editable-content"
+                      />
+                    ) : (
+                      <>{sIndex + 1}. {sentence.text.replace(/_+/g, "_______________")}</>
+                    )}
+                  </p>
+                  {isInteractive && (
                     <input
                       type="text"
-                      value={sentence.text}
-                      onChange={e => onSentenceChange(sIndex, 'text', e.target.value)}
-                      className="w-full border p-1 editable-content"
+                      value={studentAnswer}
+                      onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
+                      onBlur={(e) => onAnswerChange?.(sIndex, e.target.value)}
+                      placeholder="Type your answer..."
+                      className={`
+                        w-full border p-2 rounded
+                        ${isCorrect ? 'border-green-500 bg-green-50' : ''}
+                        ${isIncorrect ? 'border-red-500 bg-red-50' : ''}
+                      `}
                     />
-                  ) : (
-                    <>{sIndex + 1}. {sentence.text.replace(/_+/g, "_______________")}</>
-                  )}
-                </p>
-              </div>
-              {viewMode === 'teacher' && (
-                <div className="text-green-600 italic ml-3 text-sm">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={sentence.answer}
-                      onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
-                      className="border p-1 editable-content w-full"
-                    />
-                  ) : (
-                    <span>({sentence.answer})</span>
                   )}
                 </div>
-              )}
+                {(viewMode === 'teacher' || showCorrectAnswers) && (
+                  <div className="text-green-600 italic text-sm min-w-[120px]">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={sentence.answer}
+                        onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
+                        className="border p-1 editable-content w-full"
+                      />
+                    ) : (
+                      <span>({correctAnswer})</span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

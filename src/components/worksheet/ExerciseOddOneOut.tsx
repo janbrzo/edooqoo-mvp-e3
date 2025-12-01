@@ -1,6 +1,7 @@
 import React from "react";
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 
-interface ExerciseOddOneOutProps {
+interface ExerciseOddOneOutProps extends Partial<InteractiveExerciseProps> {
   questions: any[];
   isEditing: boolean;
   viewMode: "student" | "teacher";
@@ -8,7 +9,15 @@ interface ExerciseOddOneOutProps {
 }
 
 const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
-  questions = [], isEditing, viewMode, onQuestionChange
+  questions = [], 
+  isEditing, 
+  viewMode, 
+  onQuestionChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   // Randomize options (not in edit mode)
   const questionsWithShuffledOptions = React.useMemo(() => {
@@ -51,45 +60,66 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
   return (
     <div>
       <div className="space-y-3">
-        {questionsWithShuffledOptions.map((question, qIndex) => (
-          <div key={qIndex} className="border-b pb-2">
-            <div className="flex items-center gap-3">
-              <span className="font-medium">{qIndex + 1}.</span>
-              
-              <div className="flex flex-wrap gap-2 flex-grow">
-                {(question?.options || []).map((option: string, oIndex: number) => (
-                  <div key={oIndex} className="border rounded px-3 py-1 text-center bg-gray-50">
+        {questionsWithShuffledOptions.map((question, qIndex) => {
+          const selectedAnswer = studentAnswers[qIndex];
+          const correctAnswer = question?.correct_answer;
+
+          return (
+            <div key={qIndex} className="border-b pb-2">
+              <div className="flex items-center gap-3">
+                <span className="font-medium">{qIndex + 1}.</span>
+                
+                <div className="flex flex-wrap gap-2 flex-grow">
+                  {(question?.options || []).map((option: string, oIndex: number) => {
+                    const isSelected = isInteractive && selectedAnswer === option;
+                    const showAsCorrect = showCorrectAnswers && option === correctAnswer;
+                    const showAsIncorrect = showCorrectAnswers && isSelected && option !== correctAnswer;
+
+                    return (
+                      <div 
+                        key={oIndex} 
+                        onClick={() => isInteractive && onAnswerChange?.(qIndex, option)}
+                        className={`
+                          border rounded px-3 py-1 text-center
+                          ${isInteractive ? 'cursor-pointer hover:bg-gray-100' : 'bg-gray-50'}
+                          ${isSelected ? 'bg-blue-100 border-blue-500' : ''}
+                          ${showAsCorrect ? 'bg-green-100 border-green-500' : ''}
+                          ${showAsIncorrect ? 'bg-red-100 border-red-500' : ''}
+                        `}
+                      >
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={option || ''}
+                            onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)}
+                            className="w-16 border-0 bg-transparent text-center editable-content"
+                          />
+                        ) : (
+                          <span>{option || 'Option'}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {(viewMode === 'teacher' || showCorrectAnswers) && (
+                  <div className="text-green-600 italic text-sm">
                     {isEditing ? (
                       <input
                         type="text"
-                        value={option || ''}
-                        onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)}
-                        className="w-16 border-0 bg-transparent text-center editable-content"
+                        value={correctAnswer || ''}
+                        onChange={e => handleCorrectAnswerChange(qIndex, e.target.value)}
+                        className="border p-1 editable-content w-20"
                       />
                     ) : (
-                      <span>{option || 'Option'}</span>
+                      <span>({correctAnswer || 'No answer'})</span>
                     )}
                   </div>
-                ))}
+                )}
               </div>
-
-              {viewMode === 'teacher' && (
-                <div className="text-green-600 italic text-sm">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={question?.correct_answer || ''}
-                      onChange={e => handleCorrectAnswerChange(qIndex, e.target.value)}
-                      className="border p-1 editable-content w-20"
-                    />
-                  ) : (
-                    <span>({question?.correct_answer || 'No answer'})</span>
-                  )}
-                </div>
-              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
