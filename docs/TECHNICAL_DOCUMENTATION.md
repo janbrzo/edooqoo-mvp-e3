@@ -557,7 +557,42 @@ const saveWorksheetChanges = async (updatedWorksheet: any) => {
 
 ---
 
-**Current Version**: ETAP 2+ - Exercise Management System  
-**Last Updated**: Exercise Management Implementation  
+## Interactive Homework System (Phase 5-6)
+
+### Overview
+Students can now complete homework exercises interactively through the shared homework link. All exercise types support interactive input fields, auto-saving, and submission to the teacher.
+
+### Key Components
+
+#### useInteractiveHomework Hook (`src/hooks/useInteractiveHomework.tsx`)
+- Email verification against student_email in database
+- Auto-save with 5-second debounce + immediate save on blur
+- Progress tracking (answered/total exercises)
+- Homework submission with teacher notification
+
+#### Interactive Exercise Props
+All 18 exercise components support:
+- `isInteractive`: Enables input fields for students
+- `studentAnswers`: Record of student responses
+- `onAnswerChange`: Callback for answer updates  
+- `showCorrectAnswers`: Shows correct answers (teacher view)
+
+#### Submission Flow
+1. Student completes exercises → auto-saved every 5s
+2. Student clicks "Submit Homework"
+3. `submit_homework_answers` RPC sets `is_submitted=true` AND `completed_at` in `homework_assignments`
+4. Email notification sent to teacher via `send-homework-email` edge function
+5. Teacher sees "Completed" status in Homework tab
+
+### Database Functions Updated
+- `submit_homework_answers`: Now also sets `completed_at` in `homework_assignments` table
+
+### Email Templates
+- `homework-submission.tsx`: Notification to teacher when student submits
+
+---
+
+**Current Version**: ETAP 2+ - Interactive Homework System  
+**Last Updated**: December 2024  
 **Next Major Release**: ETAP 3 - Advanced Features  
 **Maintenance Schedule**: Continuous deployment with weekly reviews

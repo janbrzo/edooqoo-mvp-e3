@@ -43,8 +43,7 @@ import {
   handleDialogueChange,
   handleStatementChange,
   getMatchedItems,
-  renderOtherExerciseTypes,
-  renderTrueFalseExercise
+  renderOtherExerciseTypes
 } from "./ExerciseSectionUtils";
 
 interface Exercise {
@@ -381,6 +380,9 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             onDialogueChange={handleDialogueChangeLocal}
             onExpressionChange={handleExpressionChangeLocal}
             onExpressionInstructionChange={val => handleExerciseChangeLocal('expression_instruction', val)}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
           />
         )}
 
@@ -421,8 +423,19 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         {(normalizedType === 'error-correction' || normalizedType === 'word-formation') && 
           exercise.sentences && renderOtherExerciseTypes(exercise, isEditing, viewMode, handleSentenceChangeLocal)}
         
-        {normalizedType === 'true-false' && exercise.statements && 
-          renderTrueFalseExercise(exercise, isEditing, viewMode, handleStatementChangeLocal)}
+        {normalizedType === 'true-false' && exercise.statements && (
+          <ExerciseTrueFalseAudio
+            statements={exercise.statements}
+            audio_url={undefined}
+            isEditing={isEditing}
+            viewMode={viewMode}
+            onStatementChange={handleStatementChangeLocal}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
+          />
+        )}
 
         {/* New Phase 1 exercises */}
         {normalizedType === 'odd-one-out' && exercise.questions && (
@@ -431,6 +444,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isEditing={isEditing}
             viewMode={viewMode}
             onQuestionChange={handleQuestionChangeLocal}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -441,6 +458,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             viewMode={viewMode}
             onItemChange={handleItemChangeLocal}
             exerciseType={normalizedType}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -450,6 +471,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isEditing={isEditing}
             viewMode={viewMode}
             onSentenceChange={handleSentenceChangeLocal}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -459,6 +484,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isEditing={isEditing}
             viewMode={viewMode}
             onSentenceChange={handleSentenceChangeLocal}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -468,6 +497,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isEditing={isEditing}
             viewMode={viewMode}
             onSentenceChange={handleSentenceChangeLocal}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -492,6 +525,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 exercises: updatedExercises
               });
             }}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -531,6 +568,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 exercises: updatedExercises
               });
             }}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -540,6 +581,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isEditing={isEditing}
             viewMode={viewMode}
             onSentenceChange={handleSentenceChangeLocal}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -564,6 +609,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 exercises: updatedExercises
               });
             }}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -588,6 +637,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 exercises: updatedExercises
               });
             }}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -618,6 +671,9 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
               });
             }}
             onImageUrlChange={(url) => handleExerciseChangeLocal('image_url', url)}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
           />
         )}
 
@@ -633,6 +689,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             onQuestionChange={handleQuestionChangeLocal}
             onMediaUrlChange={(url) => handleExerciseChangeLocal('media_url', url)}
             onMediaTypeChange={(type) => handleExerciseChangeLocal('media_type', type)}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -644,6 +704,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isEditing={isEditing}
             viewMode={viewMode}
             onQuestionChange={handleQuestionChangeLocal}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -654,6 +718,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isEditing={isEditing}
             viewMode={viewMode}
             onQuestionChange={handleQuestionChangeLocal}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -664,6 +732,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isEditing={isEditing}
             viewMode={viewMode}
             onStatementChange={handleStatementChangeLocal}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -703,6 +775,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 exercises: updatedExercises
               });
             }}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -713,6 +789,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isEditing={isEditing}
             viewMode={viewMode}
             onQuestionChange={handleQuestionChangeLocal}
+            isInteractive={isInteractive}
+            studentAnswers={studentAnswers}
+            onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
