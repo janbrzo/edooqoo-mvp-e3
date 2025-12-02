@@ -193,6 +193,23 @@ export const useInteractiveHomework = ({
       setIsSubmitted(true);
       setSubmittedAt(new Date());
 
+      // Send email notification to teacher about submission
+      try {
+        const answeredCount = Object.keys(answers).length;
+        await supabase.functions.invoke('send-homework-email', {
+          body: {
+            homeworkId,
+            studentEmail,
+            isSubmissionNotification: true,
+            answeredExercisesCount: answeredCount
+          }
+        });
+        console.log('[submitHomework] Teacher notification email sent');
+      } catch (emailError) {
+        console.error('[submitHomework] Failed to send teacher notification:', emailError);
+        // Don't fail the whole submission if email fails
+      }
+
       toast({
         title: "Homework submitted!",
         description: "Your teacher has been notified.",
@@ -210,7 +227,7 @@ export const useInteractiveHomework = ({
     } finally {
       setIsSaving(false);
     }
-  }, [homeworkId, studentEmail]);
+  }, [homeworkId, studentEmail, answers]);
 
   // Calculate progress
   const getProgress = useCallback((): HomeworkProgress => {

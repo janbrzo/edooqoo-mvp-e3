@@ -1,6 +1,8 @@
 import React from 'react';
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { Input } from "@/components/ui/input";
 
-interface ExerciseFillInBlanksAudioProps {
+interface ExerciseFillInBlanksAudioProps extends Partial<InteractiveExerciseProps> {
   word_bank?: string[];
   sentences?: any[];
   transcript_with_blanks?: string;
@@ -25,7 +27,12 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
   onTranscriptChange,
   onAnswersChange,
   onWordBankChange,
-  onSentenceChange
+  onSentenceChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   // Use new structure if available, fallback to old
   const useNewStructure = sentences && sentences.length > 0;
@@ -60,41 +67,71 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
           </div>
         )}
         
-        <div className="space-y-0.5">
-          {sentences!.map((sentence, sIndex) => (
-            <div key={sIndex} className="border-b pb-1">
-              <div className="flex flex-row items-start">
-                <div className="flex-grow">
-                  <p className="leading-snug">
-                    {isEditing && onSentenceChange ? (
-                      <input
-                        type="text"
-                        value={sentence.text}
-                        onChange={e => onSentenceChange(sIndex, 'text', e.target.value)}
-                        className="w-full border p-1 editable-content"
-                      />
-                    ) : (
-                      <>{sIndex + 1}. {sentence.text.replace(/_+/g, "_______________")}</>
-                    )}
-                  </p>
-                </div>
-                {viewMode === 'teacher' && (
-                  <div className="text-green-600 italic ml-3 text-sm">
-                    {isEditing && onSentenceChange ? (
-                      <input
-                        type="text"
-                        value={sentence.answer}
-                        onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
-                        className="border p-1 editable-content w-full"
-                      />
-                    ) : (
-                      <span>({sentence.answer})</span>
-                    )}
+        <div className="space-y-2">
+          {sentences!.map((sentence, sIndex) => {
+            const studentAnswer = studentAnswers[sIndex];
+            const correctAnswer = sentence.answer;
+            const isCorrect = showCorrectAnswers && studentAnswer?.toLowerCase().trim() === correctAnswer?.toLowerCase().trim();
+            const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
+
+            return (
+              <div key={sIndex} className="border-b pb-2">
+                <div className="flex flex-row items-start gap-2">
+                  <div className="flex-grow">
+                    <p className="leading-snug">
+                      {isEditing && onSentenceChange ? (
+                        <input
+                          type="text"
+                          value={sentence.text}
+                          onChange={e => onSentenceChange(sIndex, 'text', e.target.value)}
+                          className="w-full border p-1 editable-content"
+                        />
+                      ) : isInteractive ? (
+                        <span>
+                          {sIndex + 1}. {sentence.text.split(/_+/).map((part: string, pIndex: number, arr: string[]) => (
+                            <React.Fragment key={pIndex}>
+                              {part}
+                              {pIndex < arr.length - 1 && (
+                                <Input
+                                  value={studentAnswer || ''}
+                                  onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
+                                  className={`inline-block w-32 mx-1 h-7 ${
+                                    isCorrect ? 'border-green-500 bg-green-50' : ''
+                                  } ${isIncorrect ? 'border-red-500 bg-red-50' : ''}`}
+                                  placeholder="..."
+                                />
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </span>
+                      ) : (
+                        <>{sIndex + 1}. {sentence.text.replace(/_+/g, "_______________")}</>
+                      )}
+                    </p>
                   </div>
-                )}
+                  {(viewMode === 'teacher' || showCorrectAnswers) && !isInteractive && (
+                    <div className="text-green-600 italic ml-3 text-sm">
+                      {isEditing && onSentenceChange ? (
+                        <input
+                          type="text"
+                          value={sentence.answer}
+                          onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
+                          className="border p-1 editable-content w-full"
+                        />
+                      ) : (
+                        <span>({sentence.answer})</span>
+                      )}
+                    </div>
+                  )}
+                  {showCorrectAnswers && isInteractive && (
+                    <div className={`text-sm ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+                      {isCorrect ? '✓' : `(${correctAnswer})`}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );

@@ -5,6 +5,7 @@ import { renderAsync } from "npm:@react-email/components@0.0.22";
 import React from "npm:react@18.3.1";
 import { HomeworkNotificationEmail } from "../_shared/email-templates/homework-notification.tsx";
 import { HomeworkReminderEmail } from "../_shared/email-templates/homework-reminder.tsx";
+import { HomeworkSubmissionEmail } from "../_shared/email-templates/homework-submission.tsx";
 
 // Force redeploy: 2024-11-16 19:15 UTC - Using Service Role for JWT verification
 // CRITICAL FIX: Edge functions can't use auth.getUser() with session (no localStorage)
@@ -21,6 +22,8 @@ interface SendHomeworkEmailRequest {
   studentEmail: string;
   updateStudentEmail?: boolean; // If true, update student's email in database
   isReminder?: boolean; // If true, use reminder template and subject
+  isSubmissionNotification?: boolean; // If true, send to teacher about student submission
+  answeredExercisesCount?: number; // Number of exercises answered by student
 }
 
 serve(async (req: Request) => {
@@ -85,9 +88,9 @@ serve(async (req: Request) => {
     // Now use Service Role client for database queries (with proper user_id filtering)
     const supabase = supabaseAdmin;
 
-    const { homeworkId, studentEmail, updateStudentEmail, isReminder } = (await req.json()) as SendHomeworkEmailRequest;
+    const { homeworkId, studentEmail, updateStudentEmail, isReminder, isSubmissionNotification, answeredExercisesCount } = (await req.json()) as SendHomeworkEmailRequest;
 
-    console.log(`Sending homework email for homework ${homeworkId} to ${studentEmail}, isReminder: ${isReminder || false}`);
+    console.log(`Sending homework email for homework ${homeworkId} to ${studentEmail}, isReminder: ${isReminder || false}, isSubmissionNotification: ${isSubmissionNotification || false}`);
 
     // Fetch homework details (simplified - no JOINs to avoid RLS issues with Service Role)
     console.log(`[send-homework-email] Fetching homework with id: ${homeworkId} for teacher: ${user.id}`);
@@ -175,11 +178,29 @@ serve(async (req: Request) => {
     const selectedExercises = homeworkWithRelations.selected_exercises as any[];
     const exercisesCount = Array.isArray(selectedExercises) ? selectedExercises.length : 0;
 
-    // Determine email template and subject based on isReminder flag
-    const EmailTemplate = isReminder ? HomeworkReminderEmail : HomeworkNotificationEmail;
-    const emailSubject = isReminder 
-      ? `Reminder: ${homeworkWithRelations.title}` 
-      : `New Homework: ${homeworkWithRelations.title}`;
+    // Determine email template and subject based on flags
+    let EmailTemplate: any;
+    let emailSubject: string;
+    let recipientEmail: string;
+    
+    if (isSubmissionNotification) {
+      // Submission notification goes to teacher
+      EmailTemplate = HomeworkSubmissionEmail;
+      emailSubject = `✅ ${homeworkWithRelations.students?.name || 'Student'} submitted: ${homeworkWithRelations.title}`;
+      recipientEmail = homeworkWithRelations.profiles?.email || '';
+      
+      if (!recipientEmail) {
+        throw new Error("Teacher email not found");
+      }
+    } else if (isReminder) {
+      EmailTemplate = HomeworkReminderEmail;
+      emailSubject = `Reminder: ${homeworkWithRelations.title}`;
+      recipientEmail = studentEmail;
+    } else {
+      EmailTemplate = HomeworkNotificationEmail;
+      emailSubject = `New Homework: ${homeworkWithRelations.title}`;
+      recipientEmail = studentEmail;
+    }
     
     // Calculate days until deadline (for reminder email)
     let daysUntilDeadline = 0;
@@ -190,23 +211,39 @@ serve(async (req: Request) => {
       daysUntilDeadline = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
 
-    // Render email template
-    const html = await renderAsync(
-      React.createElement(EmailTemplate, {
-        studentName: homeworkWithRelations.students?.name || "Student",
-        teacherName,
-        homeworkTitle: homeworkWithRelations.title,
-        homeworkLink,
-        deadline: homeworkWithRelations.deadline,
-        selectedExercisesCount: exercisesCount,
-        daysUntilDeadline, // Only used by reminder template
-      }),
-    );
+    // Render email template with appropriate props
+    let html: string;
+    if (isSubmissionNotification) {
+      html = await renderAsync(
+        React.createElement(HomeworkSubmissionEmail, {
+          studentName: homeworkWithRelations.students?.name || "Student",
+          teacherName,
+          homeworkTitle: homeworkWithRelations.title,
+          homeworkLink,
+          submittedAt: new Date().toISOString(),
+          answeredExercisesCount: answeredExercisesCount || exercisesCount,
+        }),
+      );
+    } else {
+      html = await renderAsync(
+        React.createElement(EmailTemplate, {
+          studentName: homeworkWithRelations.students?.name || "Student",
+          teacherName,
+          homeworkTitle: homeworkWithRelations.title,
+          homeworkLink,
+          deadline: homeworkWithRelations.deadline,
+          selectedExercisesCount: exercisesCount,
+          daysUntilDeadline,
+        }),
+      );
+    }
 
     // Send email via Resend
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: `${teacherName} <noreply@edooqoo.com>`,
-      to: [studentEmail],
+      from: isSubmissionNotification 
+        ? `Homework System <noreply@edooqoo.com>` 
+        : `${teacherName} <noreply@edooqoo.com>`,
+      to: [recipientEmail],
       subject: emailSubject,
       html,
     });

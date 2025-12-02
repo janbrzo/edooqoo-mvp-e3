@@ -1,4 +1,6 @@
 import React from "react";
+import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Question {
   text?: string;          // Old format (reading exercises)
@@ -7,7 +9,7 @@ interface Question {
   focus?: string;         // New format (grammar focus)
 }
 
-interface ExerciseAnswerQuestionsProps {
+interface ExerciseAnswerQuestionsProps extends Partial<InteractiveExerciseProps> {
   media_url?: string;
   media_type?: "video" | "audio" | "image";
   questions: Question[];
@@ -30,7 +32,12 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
   viewMode,
   onQuestionChange,
   onMediaUrlChange,
-  onMediaTypeChange
+  onMediaTypeChange,
+  // Interactive props
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   return (
     <div className="space-y-4">
@@ -88,47 +95,72 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
       )}
 
       {/* Questions */}
-      <div className="space-y-2">
-        {questions.map((question, qIndex) => (
-          <div key={qIndex} className="border-b pb-2">
-            <div className="flex flex-row items-start">
-              <div className="flex-grow">
-                <p className="font-medium leading-snug">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={question.text ?? question.question ?? ''}
-                      onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
-                      className="w-full border p-1 editable-content"
-                    />
-                  ) : (
-                    <>{qIndex + 1}. {question.text || question.question}</>
-                  )}
-                </p>
+      <div className="space-y-4">
+        {questions.map((question, qIndex) => {
+          const studentAnswer = studentAnswers[qIndex];
+          const correctAnswer = question.answer || question.focus;
+          const showAsCorrect = showCorrectAnswers && studentAnswer && correctAnswer;
+
+          return (
+            <div key={qIndex} className="border-b pb-3">
+              <div className="flex flex-row items-start mb-2">
+                <div className="flex-grow">
+                  <p className="font-medium leading-snug">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={question.text ?? question.question ?? ''}
+                        onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
+                        className="w-full border p-1 editable-content"
+                      />
+                    ) : (
+                      <>{qIndex + 1}. {question.text || question.question}</>
+                    )}
+                  </p>
+                </div>
+                {viewMode === 'teacher' && (question.answer || question.focus) && !isInteractive && (
+                  <div className="text-green-600 italic ml-3 text-sm">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={question.answer || question.focus || ''}
+                        onChange={e => onQuestionChange(qIndex, question.answer ? 'answer' : 'focus', e.target.value)}
+                        className="border p-1 editable-content w-full"
+                      />
+                    ) : (
+                      <span>
+                        {question.answer 
+                          ? `(${question.answer})` 
+                          : question.focus 
+                          ? `Focus: ${question.focus}` 
+                          : ''}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
-              {viewMode === 'teacher' && (question.answer || question.focus) && (
-                <div className="text-green-600 italic ml-3 text-sm">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={question.answer || question.focus || ''}
-                      onChange={e => onQuestionChange(qIndex, question.answer ? 'answer' : 'focus', e.target.value)}
-                      className="border p-1 editable-content w-full"
-                    />
-                  ) : (
-                    <span>
-                      {question.answer 
-                        ? `(${question.answer})` 
-                        : question.focus 
-                        ? `Focus: ${question.focus}` 
-                        : ''}
-                    </span>
+
+              {/* Interactive answer input */}
+              {isInteractive && (
+                <div className="ml-4">
+                  <Textarea
+                    value={studentAnswer || ''}
+                    onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                    placeholder="Type your answer here..."
+                    className={`min-h-[80px] ${
+                      showAsCorrect ? 'border-green-500' : ''
+                    }`}
+                  />
+                  {showCorrectAnswers && correctAnswer && (
+                    <p className="text-green-600 text-sm mt-1 italic">
+                      Suggested answer: {correctAnswer}
+                    </p>
                   )}
                 </div>
               )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
