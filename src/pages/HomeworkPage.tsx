@@ -5,9 +5,12 @@ import { toast } from "sonner";
 import ExerciseSection from "@/components/worksheet/ExerciseSection";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Calendar, User, Mail, CheckCircle2, FileText } from "lucide-react";
+import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send } from "lucide-react";
 import { format } from "date-fns";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
+import { useInteractiveHomework } from "@/hooks/useInteractiveHomework";
+import { StudentEmailVerification } from "@/components/homework/StudentEmailVerification";
+import { HomeworkProgressBar } from "@/components/homework/HomeworkProgressBar";
 
 interface HomeworkData {
   id: string;
@@ -34,6 +37,30 @@ export default function HomeworkPage() {
   const [loading, setLoading] = useState(true);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+
+  // Interactive homework hook - only active after email verification
+  const totalExercises = Array.isArray(homework?.selected_exercises) 
+    ? homework.selected_exercises.length 
+    : 0;
+
+  const {
+    answers,
+    isLoading: answersLoading,
+    isSaving,
+    lastSavedAt,
+    isSubmitted,
+    submittedAt,
+    updateAnswer,
+    saveOnBlur,
+    submitHomework,
+    verifyStudentEmail,
+    getProgress
+  } = useInteractiveHomework({
+    homeworkId: homework?.id || '',
+    studentEmail: verifiedEmail || '',
+    totalExercises
+  });
 
   useEffect(() => {
     if (!token) {
@@ -89,6 +116,16 @@ export default function HomeworkPage() {
   const handleMarkCompleted = async () => {
     if (!homework) return;
 
+    // If we have interactive answers, use submitHomework instead
+    if (verifiedEmail) {
+      const success = await submitHomework();
+      if (success) {
+        setIsCompleted(true);
+      }
+      return;
+    }
+
+    // Fallback to original behavior for non-interactive mode
     setIsCompleting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -110,6 +147,17 @@ export default function HomeworkPage() {
     } finally {
       setIsCompleting(false);
     }
+  };
+
+  // Handle answer change for interactive mode
+  const handleAnswerChange = (exerciseIndex: number, exerciseType: string) => 
+    (questionIndex: number, value: any) => {
+      updateAnswer(exerciseIndex, exerciseType, questionIndex, value);
+    };
+
+  // Handle blur for immediate save
+  const handleExerciseBlur = (exerciseIndex: number, exerciseType: string) => () => {
+    saveOnBlur(exerciseIndex, exerciseType);
   };
 
   // Extract media from homework (worksheet-level and exercise-level)
@@ -204,8 +252,33 @@ export default function HomeworkPage() {
     ? `${homework.teacher_first_name} ${homework.teacher_last_name}`
     : homework.teacher_email;
 
+  // Show email verification screen if not verified yet
+  if (!verifiedEmail) {
+    return (
+      <StudentEmailVerification
+        homeworkId={homework.id}
+        studentName={homework.student_name}
+        teacherName={teacherName}
+        verifyEmail={verifyStudentEmail}
+        onVerified={setVerifiedEmail}
+      />
+    );
+  }
+
+  // Get progress for progress bar
+  const progress = getProgress();
+  const finalIsSubmitted = isSubmitted || isCompleted;
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Progress Bar */}
+      <HomeworkProgressBar
+        progress={progress}
+        isSaving={isSaving}
+        lastSavedAt={lastSavedAt}
+        isSubmitted={finalIsSubmitted}
+      />
+
       {/* Header */}
       <div className="bg-card border-b border-border">
         <div className="max-w-5xl mx-auto px-4 py-6">
@@ -317,37 +390,46 @@ export default function HomeworkPage() {
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="space-y-8">
           {Array.isArray(homework.selected_exercises) && homework.selected_exercises.map((exercise, index) => (
-            <ExerciseSection
-              key={index}
-              exercise={exercise}
-              index={index + 1}
-              isEditing={false}
-              viewMode="student"
-              editableWorksheet={{ exercises: homework.selected_exercises }}
-              setEditableWorksheet={() => {}}
-              hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
-            />
+            <div 
+              key={index} 
+              onBlur={handleExerciseBlur(index, exercise.type)}
+            >
+              <ExerciseSection
+                exercise={exercise}
+                index={index + 1}
+                isEditing={false}
+                viewMode="student"
+                editableWorksheet={{ exercises: homework.selected_exercises }}
+                setEditableWorksheet={() => {}}
+                hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
+                // Interactive props
+                isInteractive={true}
+                studentAnswers={(answers[index] || {}) as any}
+                onAnswerChange={handleAnswerChange(index, exercise.type)}
+                showCorrectAnswers={finalIsSubmitted}
+              />
+            </div>
           ))}
         </div>
 
         {/* Footer Note */}
         <div className="mt-12 space-y-4">
-          {!isCompleted ? (
+          {!finalIsSubmitted ? (
             <Button 
               onClick={handleMarkCompleted}
-              disabled={isCompleting}
+              disabled={isCompleting || isSaving}
               className="w-full"
               size="lg"
             >
-              {isCompleting ? (
+              {isCompleting || isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Marking as completed...
+                  {isSaving ? 'Saving...' : 'Submitting...'}
                 </>
               ) : (
                 <>
-                  <CheckCircle2 className="mr-2 h-5 w-5" />
-                  Mark as Completed
+                  <Send className="mr-2 h-5 w-5" />
+                  Submit Homework
                 </>
               )}
             </Button>
@@ -355,17 +437,19 @@ export default function HomeworkPage() {
             <div className="p-6 bg-green-50 dark:bg-green-900/20 rounded-lg text-center border-2 border-green-500">
               <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
               <p className="text-lg font-semibold text-green-700 dark:text-green-300">
-                Homework Completed!
+                Homework Submitted!
               </p>
               <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                Your teacher has been notified.
+                Your teacher has been notified and can now review your answers.
               </p>
             </div>
           )}
           
           <div className="p-6 bg-muted rounded-lg text-center">
             <p className="text-sm text-muted-foreground">
-              Complete these exercises and discuss with your teacher in the next lesson.
+              {finalIsSubmitted 
+                ? "Your answers have been submitted. You can discuss them with your teacher in the next lesson."
+                : "Your answers are automatically saved. Click 'Submit Homework' when you're done."}
             </p>
           </div>
         </div>
