@@ -16,6 +16,17 @@ The English Worksheet Generator is a full-featured SaaS platform built on React,
 - **Technical Fixes**: Added `normalizeExerciseType` helper function to handle `-picture` and `-audio` suffixes, preventing duplicate rendering
 - **Onboarding & Add Student Modal**: Add Student dialog now persists in-progress form data across browser tab switches (using `sessionStorage`), shared consistently between Dashboard and Onboarding checklist flows.
 
+**Latest Update (December 2025) - Interactive Worksheets:**
+- **Student Interactive Homework**: Students can now answer exercises interactively via `/homework/:token` route with email verification
+- **Auto-save**: Answers are automatically saved every 5 seconds with debounce + immediate save on blur
+- **Progress Tracking**: Progress bar shows X/Y exercises completed (only counts exercise when ALL questions answered)
+- **Teacher Review System**: New `/homework/:id/review` route for teachers to review student answers, add comments per exercise, and send review back
+- **Notifications**: Bell icon notifications (`homework_notifications` table) when student submits homework (no email spam)
+- **View Count**: Homework `view_count` increments when student opens link (via updated `get_homework_by_share_token` RPC)
+- **Review Workflow**: Student sees correct answers ONLY after teacher sends review (`reviewed_at` column in `homework_assignments`)
+- **Exercise Types**: All 18 exercise types support interactive input (Input fields, Textareas, Radio buttons, Select dropdowns)
+- **Input Heights**: All text inputs standardized to single-line height (`h-10`) for consistent UX
+
 ## Architecture Stack
 
 ### Frontend

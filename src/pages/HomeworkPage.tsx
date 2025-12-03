@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import ExerciseSection from "@/components/worksheet/ExerciseSection";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send } from "lucide-react";
+import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { useInteractiveHomework } from "@/hooks/useInteractiveHomework";
@@ -25,6 +25,7 @@ interface HomeworkData {
   student_english_level: string;
   source_worksheet_title: string;
   completed_at?: string | null;
+  reviewed_at?: string | null;
   selected_image?: { url: string; photographer?: string; photographerUrl?: string } | null;
   selected_audio?: { url: string; transcript?: string } | null;
   audio_url?: string | null;
@@ -117,6 +118,21 @@ export default function HomeworkPage() {
       });
 
       setHomework(fixedData as HomeworkData);
+      
+      // Fetch reviewed_at status separately (not in RPC)
+      const { data: homeworkStatus } = await supabase
+        .from('homework_assignments')
+        .select('reviewed_at, completed_at')
+        .eq('id', fixedData.id)
+        .single();
+      
+      if (homeworkStatus) {
+        setHomework(prev => prev ? {
+          ...prev,
+          reviewed_at: homeworkStatus.reviewed_at,
+          completed_at: homeworkStatus.completed_at
+        } : null);
+      }
     } catch (error) {
       console.error('Error loading homework:', error);
       toast.error("Failed to load homework");
@@ -281,6 +297,9 @@ export default function HomeworkPage() {
   // Get progress for progress bar
   const progress = getProgress();
   const finalIsSubmitted = isSubmitted || isCompleted;
+  
+  // Student sees correct answers only after teacher has reviewed
+  const showCorrectAnswersToStudent = !!homework.reviewed_at;
 
   return (
     <div className="min-h-screen bg-background">
@@ -419,7 +438,7 @@ export default function HomeworkPage() {
                 isInteractive={true}
                 studentAnswers={(answers[index] || {}) as any}
                 onAnswerChange={handleAnswerChange(index, exercise.type)}
-                showCorrectAnswers={finalIsSubmitted}
+                showCorrectAnswers={showCorrectAnswersToStudent}
               />
             </div>
           ))}
@@ -446,14 +465,24 @@ export default function HomeworkPage() {
                 </>
               )}
             </Button>
-          ) : (
+          ) : showCorrectAnswersToStudent ? (
             <div className="p-6 bg-green-50 dark:bg-green-900/20 rounded-lg text-center border-2 border-green-500">
               <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
               <p className="text-lg font-semibold text-green-700 dark:text-green-300">
-                Homework Submitted!
+                Homework Reviewed!
               </p>
               <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                Your teacher has been notified and can now review your answers.
+                Your teacher has reviewed your work. Check the correct answers above.
+              </p>
+            </div>
+          ) : (
+            <div className="p-6 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-center border-2 border-amber-500">
+              <Clock className="h-12 w-12 text-amber-500 mx-auto mb-2" />
+              <p className="text-lg font-semibold text-amber-700 dark:text-amber-300">
+                Homework Submitted!
+              </p>
+              <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                Waiting for your teacher to review your answers...
               </p>
             </div>
           )}
@@ -461,7 +490,9 @@ export default function HomeworkPage() {
           <div className="p-6 bg-muted rounded-lg text-center">
             <p className="text-sm text-muted-foreground">
               {finalIsSubmitted 
-                ? "Your answers have been submitted. You can discuss them with your teacher in the next lesson."
+                ? showCorrectAnswersToStudent 
+                  ? "Your teacher has reviewed your homework. Discuss any questions in your next lesson."
+                  : "Your answers have been submitted. Your teacher will review them soon."
                 : "Your answers are automatically saved. Click 'Submit Homework' when you're done."}
             </p>
           </div>

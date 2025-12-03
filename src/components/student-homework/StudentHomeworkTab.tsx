@@ -294,13 +294,32 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
               <Card key={hw.id} className="p-4">
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold mb-2 truncate">{hw.title}</h3>
+                    <Link 
+                      to={`/homework/${hw.id}/review`}
+                      className="font-semibold mb-2 truncate block hover:text-primary hover:underline transition-colors"
+                    >
+                      {hw.title}
+                    </Link>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-                      {/* Completed Badge - moved here to be inline with other badges */}
-                      {hw.completed_at && (
+                      {/* Needs Review Badge - show when completed but not reviewed */}
+                      {hw.completed_at && !hw.reviewed_at && (
+                        <Badge className="bg-amber-500 text-white text-xs">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Needs Review
+                        </Badge>
+                      )}
+                      {/* Reviewed Badge */}
+                      {hw.reviewed_at && (
                         <Badge className="bg-green-500 text-white text-xs">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Completed
+                          Reviewed
+                        </Badge>
+                      )}
+                      {/* Completed but not reviewed - also show completed badge */}
+                      {hw.completed_at && (
+                        <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Submitted
                         </Badge>
                       )}
                       {hw.source_worksheet_id && (
