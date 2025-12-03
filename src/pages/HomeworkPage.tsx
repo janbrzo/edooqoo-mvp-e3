@@ -44,6 +44,18 @@ export default function HomeworkPage() {
     ? homework.selected_exercises.length 
     : 0;
 
+  // Calculate question counts for each exercise (for progress tracking)
+  const exerciseQuestionCounts: Record<number, number> = {};
+  if (Array.isArray(homework?.selected_exercises)) {
+    homework.selected_exercises.forEach((ex: any, idx: number) => {
+      const count = ex.questions?.length || ex.sentences?.length || 
+                    ex.statements?.length || ex.items?.length || 
+                    ex.pairs?.length || ex.words?.length ||
+                    ex.expressions?.length || ex.prompts?.length || 1;
+      exerciseQuestionCounts[idx] = count;
+    });
+  }
+
   const {
     answers,
     isLoading: answersLoading,
@@ -59,7 +71,8 @@ export default function HomeworkPage() {
   } = useInteractiveHomework({
     homeworkId: homework?.id || '',
     studentEmail: verifiedEmail || '',
-    totalExercises
+    totalExercises,
+    exerciseQuestionCounts
   });
 
   useEffect(() => {
