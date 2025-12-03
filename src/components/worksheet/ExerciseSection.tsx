@@ -383,6 +383,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 
@@ -674,6 +675,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
+            showCorrectAnswers={showCorrectAnswers}
           />
         )}
 

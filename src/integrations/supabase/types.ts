@@ -337,6 +337,8 @@ export type Database = {
           reminder_hours: number | null
           reminder_scheduled_at: string | null
           reminder_sent_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           selected_exercises: Json
           share_expires_at: string | null
           share_token: string | null
@@ -358,6 +360,8 @@ export type Database = {
           reminder_hours?: number | null
           reminder_scheduled_at?: string | null
           reminder_sent_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           selected_exercises?: Json
           share_expires_at?: string | null
           share_token?: string | null
@@ -379,6 +383,8 @@ export type Database = {
           reminder_hours?: number | null
           reminder_scheduled_at?: string | null
           reminder_sent_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           selected_exercises?: Json
           share_expires_at?: string | null
           share_token?: string | null

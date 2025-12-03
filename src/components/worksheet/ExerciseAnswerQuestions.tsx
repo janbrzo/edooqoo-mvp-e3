@@ -1,6 +1,6 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 interface Question {
   text?: string;          // Old format (reading exercises)
@@ -140,16 +140,14 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
                 )}
               </div>
 
-              {/* Interactive answer input */}
+              {/* Interactive answer input - single line */}
               {isInteractive && (
-                <div className="ml-4">
-                  <Textarea
+                <div className="ml-4 mt-1">
+                  <Input
                     value={studentAnswer || ''}
                     onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
-                    placeholder="Type your answer here..."
-                    className={`min-h-[80px] ${
-                      showAsCorrect ? 'border-green-500' : ''
-                    }`}
+                    placeholder="Your answer..."
+                    className={`h-10 ${showAsCorrect ? 'border-green-500' : ''}`}
                   />
                   {showCorrectAnswers && correctAnswer && (
                     <p className="text-green-600 text-sm mt-1 italic">

@@ -1,7 +1,6 @@
-
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   dialogue: any[];
@@ -26,10 +25,12 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
-  onAnswerChange
+  onAnswerChange,
+  showCorrectAnswers = false
 }) => {
   return (
     <div>
+      {/* Dialogue section */}
       <div className="mb-4 p-4 bg-gray-50 rounded-md dialogue-section">
         {dialogue.map((line, lIndex) => (
           <div key={lIndex} className="mb-1 dialogue-line">
@@ -61,18 +62,7 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
         ))}
       </div>
 
-      {isInteractive && (
-        <div className="mt-4">
-          <p className="font-medium mb-2">Practice the dialogue:</p>
-          <Textarea
-            value={studentAnswers[0] || ''}
-            onChange={(e) => onAnswerChange?.(0, e.target.value)}
-            placeholder="Type your practice dialogue here..."
-            className="min-h-[120px]"
-          />
-        </div>
-      )}
-
+      {/* Expressions section with interactive input under EACH expression */}
       {expressions && (
         <div>
           <p className="font-medium mb-2">
@@ -85,20 +75,42 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
               />
             ) : expression_instruction}
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-            {expressions.map((expr, eIndex) => (
-              <div key={eIndex} className="p-2 border rounded-md bg-white">
-                <span className="text-worksheet-purple font-medium mr-2">{eIndex + 1}.</span>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={expr}
-                    onChange={e => onExpressionChange(eIndex, e.target.value)}
-                    className="border p-1 editable-content w-full"
-                  />
-                ) : expr}
-              </div>
-            ))}
+          <div className="space-y-3">
+            {expressions.map((expr, eIndex) => {
+              const studentAnswer = studentAnswers[eIndex];
+              
+              return (
+                <div key={eIndex} className="p-2 border rounded-md bg-white">
+                  <div className="flex items-start">
+                    <span className="text-worksheet-purple font-medium mr-2">{eIndex + 1}.</span>
+                    <div className="flex-grow">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={expr}
+                          onChange={e => onExpressionChange(eIndex, e.target.value)}
+                          className="border p-1 editable-content w-full"
+                        />
+                      ) : (
+                        <span>{expr}</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Interactive answer input under each expression */}
+                  {isInteractive && (
+                    <div className="mt-2 ml-5">
+                      <Input
+                        value={studentAnswer || ''}
+                        onChange={(e) => onAnswerChange?.(eIndex, e.target.value)}
+                        placeholder="Use this expression in a sentence..."
+                        className="h-10"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -107,4 +119,3 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
 };
 
 export default ExerciseDialogue;
-

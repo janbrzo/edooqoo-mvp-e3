@@ -11,12 +11,14 @@ interface UseInteractiveHomeworkProps {
   homeworkId: string;
   studentEmail: string;
   totalExercises: number;
+  exerciseQuestionCounts?: Record<number, number>;
 }
 
 export const useInteractiveHomework = ({
   homeworkId,
   studentEmail,
-  totalExercises
+  totalExercises,
+  exerciseQuestionCounts = {}
 }: UseInteractiveHomeworkProps) => {
   const [answers, setAnswers] = useState<Record<number, ExerciseAnswers>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -178,7 +180,7 @@ export const useInteractiveHomework = ({
     }
   }, [answers, saveAnswer]);
 
-  // Submit all homework
+  // Submit all homework - creates notification in homework_notifications table (bell icon)
   const submitHomework = useCallback(async () => {
     try {
       setIsSaving(true);
@@ -193,21 +195,28 @@ export const useInteractiveHomework = ({
       setIsSubmitted(true);
       setSubmittedAt(new Date());
 
-      // Send email notification to teacher about submission
+      // Create notification for teacher in homework_notifications table (bell icon)
       try {
-        const answeredCount = Object.keys(answers).length;
-        await supabase.functions.invoke('send-homework-email', {
-          body: {
-            homeworkId,
-            studentEmail,
-            isSubmissionNotification: true,
-            answeredExercisesCount: answeredCount
-          }
-        });
-        console.log('[submitHomework] Teacher notification email sent');
-      } catch (emailError) {
-        console.error('[submitHomework] Failed to send teacher notification:', emailError);
-        // Don't fail the whole submission if email fails
+        const { data: homeworkData } = await supabase
+          .from('homework_assignments')
+          .select('teacher_id, student_id, title, students(name)')
+          .eq('id', homeworkId)
+          .single();
+
+        if (homeworkData) {
+          // @ts-ignore
+          const studentName = homeworkData.students?.name || 'Student';
+          
+          await supabase.from('homework_notifications').insert({
+            teacher_id: homeworkData.teacher_id,
+            homework_id: homeworkId,
+            student_id: homeworkData.student_id,
+            notification_type: 'submission',
+            message: `${studentName} submitted homework: ${homeworkData.title}`
+          });
+        }
+      } catch (notifError) {
+        console.error('[submitHomework] Failed to create notification:', notifError);
       }
 
       toast({
@@ -227,11 +236,26 @@ export const useInteractiveHomework = ({
     } finally {
       setIsSaving(false);
     }
-  }, [homeworkId, studentEmail, answers]);
+  }, [homeworkId, studentEmail]);
 
-  // Calculate progress
+  // Calculate progress - exercise is "answered" only when ALL questions have answers
   const getProgress = useCallback((): HomeworkProgress => {
-    const answeredExercises = Object.keys(answers).length;
+    let answeredExercises = 0;
+    
+    Object.keys(answers).forEach(exerciseIndexStr => {
+      const exerciseIndex = parseInt(exerciseIndexStr);
+      const exerciseAnswers = answers[exerciseIndex];
+      const questionCount = exerciseQuestionCounts[exerciseIndex] || 1;
+      
+      const answeredQuestionsCount = Object.values(exerciseAnswers || {})
+        .filter(answer => answer !== null && answer !== undefined && answer !== '')
+        .length;
+      
+      if (answeredQuestionsCount >= questionCount) {
+        answeredExercises++;
+      }
+    });
+
     const percentageComplete = totalExercises > 0 
       ? Math.round((answeredExercises / totalExercises) * 100) 
       : 0;
@@ -241,7 +265,7 @@ export const useInteractiveHomework = ({
       answeredExercises,
       percentageComplete
     };
-  }, [answers, totalExercises]);
+  }, [answers, totalExercises, exerciseQuestionCounts]);
 
   // Load answers on mount
   useEffect(() => {
