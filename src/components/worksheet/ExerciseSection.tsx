@@ -105,6 +105,7 @@ interface ExerciseSectionProps {
   studentAnswers?: Record<number, any>;
   onAnswerChange?: (questionIndex: number, value: any) => void;
   showCorrectAnswers?: boolean;
+  showStudentAnswers?: boolean; // NEW: Display student answers in teacher review view
 }
 
 // Helper function to normalize exercise type (removes -picture suffix for rendering logic)
@@ -147,6 +148,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   studentAnswers = {},
   onAnswerChange,
   showCorrectAnswers = false,
+  showStudentAnswers = false,
 }, ref) => {
   // Use originalIndex for array operations, index for display
   const arrayIndex = originalIndex !== undefined ? originalIndex : index - 1;
