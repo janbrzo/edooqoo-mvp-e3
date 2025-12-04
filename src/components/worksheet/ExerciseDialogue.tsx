@@ -62,7 +62,7 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
         ))}
       </div>
 
-      {/* Expressions section with interactive input under EACH expression */}
+      {/* Expressions section with interactive input under EACH expression - 2 columns */}
       {expressions && (
         <div>
           <p className="font-medium mb-2">
@@ -75,12 +75,13 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
               />
             ) : expression_instruction}
           </p>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {expressions.map((expr, eIndex) => {
-              const studentAnswer = studentAnswers[eIndex];
+              const studentAnswer = studentAnswers[eIndex] || '';
+              const hasNoAnswer = showCorrectAnswers && !studentAnswer;
               
               return (
-                <div key={eIndex} className="p-2 border rounded-md bg-white">
+                <div key={eIndex} className="p-3 border rounded-md bg-white">
                   <div className="flex items-start">
                     <span className="text-worksheet-purple font-medium mr-2">{eIndex + 1}.</span>
                     <div className="flex-grow">
@@ -99,12 +100,12 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
                   
                   {/* Interactive answer input under each expression */}
                   {isInteractive && (
-                    <div className="mt-2 ml-5">
+                    <div className="mt-2">
                       <Input
-                        value={studentAnswer || ''}
+                        value={studentAnswer}
                         onChange={(e) => onAnswerChange?.(eIndex, e.target.value)}
                         placeholder="Use this expression in a sentence..."
-                        className="h-10"
+                        className={`h-10 ${hasNoAnswer ? 'border-2 border-red-400 bg-red-100' : ''}`}
                       />
                     </div>
                   )}
