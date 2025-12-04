@@ -6,10 +6,9 @@ import React from "npm:react@18.3.1";
 import { HomeworkNotificationEmail } from "../_shared/email-templates/homework-notification.tsx";
 import { HomeworkReminderEmail } from "../_shared/email-templates/homework-reminder.tsx";
 import { HomeworkSubmissionEmail } from "../_shared/email-templates/homework-submission.tsx";
+import { HomeworkReviewNotificationEmail } from "../_shared/email-templates/homework-review-notification.tsx";
 
-// Force redeploy: 2024-11-16 19:15 UTC - Using Service Role for JWT verification
-// CRITICAL FIX: Edge functions can't use auth.getUser() with session (no localStorage)
-// Must use Service Role client and verify JWT token directly
+// Force redeploy: 2024-12-04 - Added review notification support
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
 
 const corsHeaders = {
@@ -20,10 +19,11 @@ const corsHeaders = {
 interface SendHomeworkEmailRequest {
   homeworkId: string;
   studentEmail: string;
-  updateStudentEmail?: boolean; // If true, update student's email in database
-  isReminder?: boolean; // If true, use reminder template and subject
-  isSubmissionNotification?: boolean; // If true, send to teacher about student submission
-  answeredExercisesCount?: number; // Number of exercises answered by student
+  updateStudentEmail?: boolean;
+  isReminder?: boolean;
+  isSubmissionNotification?: boolean;
+  isReviewNotification?: boolean; // NEW: Send to student when teacher reviews
+  answeredExercisesCount?: number;
 }
 
 serve(async (req: Request) => {
@@ -88,9 +88,9 @@ serve(async (req: Request) => {
     // Now use Service Role client for database queries (with proper user_id filtering)
     const supabase = supabaseAdmin;
 
-    const { homeworkId, studentEmail, updateStudentEmail, isReminder, isSubmissionNotification, answeredExercisesCount } = (await req.json()) as SendHomeworkEmailRequest;
+    const { homeworkId, studentEmail, updateStudentEmail, isReminder, isSubmissionNotification, isReviewNotification, answeredExercisesCount } = (await req.json()) as SendHomeworkEmailRequest;
 
-    console.log(`Sending homework email for homework ${homeworkId} to ${studentEmail}, isReminder: ${isReminder || false}, isSubmissionNotification: ${isSubmissionNotification || false}`);
+    console.log(`Sending homework email for homework ${homeworkId} to ${studentEmail}, isReminder: ${isReminder || false}, isSubmissionNotification: ${isSubmissionNotification || false}, isReviewNotification: ${isReviewNotification || false}`);
 
     // Fetch homework details (simplified - no JOINs to avoid RLS issues with Service Role)
     console.log(`[send-homework-email] Fetching homework with id: ${homeworkId} for teacher: ${user.id}`);
@@ -192,6 +192,11 @@ serve(async (req: Request) => {
       if (!recipientEmail) {
         throw new Error("Teacher email not found");
       }
+    } else if (isReviewNotification) {
+      // Review notification goes to student
+      EmailTemplate = HomeworkReviewNotificationEmail;
+      emailSubject = `✅ Homework Reviewed: ${homeworkWithRelations.title}`;
+      recipientEmail = studentEmail;
     } else if (isReminder) {
       EmailTemplate = HomeworkReminderEmail;
       emailSubject = `Reminder: ${homeworkWithRelations.title}`;
@@ -222,6 +227,16 @@ serve(async (req: Request) => {
           homeworkLink,
           submittedAt: new Date().toISOString(),
           answeredExercisesCount: answeredExercisesCount || exercisesCount,
+        }),
+      );
+    } else if (isReviewNotification) {
+      html = await renderAsync(
+        React.createElement(HomeworkReviewNotificationEmail, {
+          studentName: homeworkWithRelations.students?.name || "Student",
+          teacherName,
+          homeworkTitle: homeworkWithRelations.title,
+          homeworkLink,
+          reviewedAt: homeworkWithRelations.reviewed_at || new Date().toISOString(),
         }),
       );
     } else {
