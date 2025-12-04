@@ -41,6 +41,7 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
       };
     });
   }, [questions, isEditing, viewMode]);
+
   const handleOptionChange = (qIndex: number, oIndex: number, value: string) => {
     const question = questions[qIndex];
     if (!question) return;
@@ -63,6 +64,7 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
         {questionsWithShuffledOptions.map((question, qIndex) => {
           const selectedAnswer = studentAnswers[qIndex];
           const correctAnswer = question?.correct_answer;
+          const hasNoAnswer = showCorrectAnswers && !selectedAnswer;
 
           return (
             <div key={qIndex} className="border-b pb-2">
@@ -82,9 +84,9 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
                         className={`
                           border rounded px-3 py-1 text-center
                           ${isInteractive ? 'cursor-pointer hover:bg-gray-100' : 'bg-gray-50'}
-                          ${isSelected ? 'bg-blue-100 border-blue-500' : ''}
-                          ${showAsCorrect ? 'bg-green-100 border-green-500' : ''}
-                          ${showAsIncorrect ? 'bg-red-100 border-red-500' : ''}
+                          ${isSelected && !showCorrectAnswers ? 'bg-blue-100 border-blue-500' : ''}
+                          ${showAsCorrect ? 'bg-green-200 border-2 border-green-600 font-semibold' : ''}
+                          ${showAsIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
                         `}
                       >
                         {isEditing ? (
@@ -100,6 +102,9 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
                       </div>
                     );
                   })}
+                  {hasNoAnswer && (
+                    <span className="text-red-500 text-sm italic">No answer selected</span>
+                  )}
                 </div>
 
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
