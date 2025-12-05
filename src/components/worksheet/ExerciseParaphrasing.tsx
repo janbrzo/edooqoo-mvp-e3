@@ -1,5 +1,6 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { Input } from "@/components/ui/input";
 
 interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
   sentences: any[];
@@ -24,9 +25,10 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
       <div className="space-y-3">
         {sentences.map((sentence, sIndex) => {
           const studentAnswer = studentAnswers[sIndex] || '';
+          const isEmpty = showCorrectAnswers && !studentAnswer;
 
           return (
-            <div key={sIndex} className="border-b pb-2">
+            <div key={sIndex} className="border rounded-lg p-3 bg-white">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{sIndex + 1}.</span>
@@ -55,13 +57,11 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                 </div>
 
                 {isInteractive && (
-                  <textarea
+                  <Input
                     value={studentAnswer}
                     onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
-                    onBlur={(e) => onAnswerChange?.(sIndex, e.target.value)}
                     placeholder="Write your paraphrased sentence..."
-                    className="w-full border p-2 rounded min-h-[60px]"
-                    rows={2}
+                    className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}`}
                   />
                 )}
                 

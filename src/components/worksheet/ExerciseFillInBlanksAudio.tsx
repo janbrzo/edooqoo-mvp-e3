@@ -73,12 +73,13 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
             const correctAnswer = sentence.answer;
             const isCorrect = showCorrectAnswers && studentAnswer?.toLowerCase().trim() === correctAnswer?.toLowerCase().trim();
             const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
+            const isEmpty = showCorrectAnswers && !studentAnswer;
 
             return (
-              <div key={sIndex} className="border-b pb-2">
+              <div key={sIndex} className="border rounded-lg p-3 bg-white">
                 <div className="flex flex-row items-start gap-2">
                   <div className="flex-grow">
-                    <p className="leading-snug">
+                    <p className="leading-snug mb-2">
                       {isEditing && onSentenceChange ? (
                         <input
                           type="text"
@@ -95,9 +96,11 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
                                 <Input
                                   value={studentAnswer || ''}
                                   onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
-                                  className={`inline-block w-32 mx-1 h-7 ${
-                                    isCorrect ? 'border-green-500 bg-green-50' : ''
-                                  } ${isIncorrect ? 'border-red-500 bg-red-50' : ''}`}
+                                  className={`inline-block w-32 mx-1 h-7 
+                                    ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
+                                    ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
+                                    ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                                  `}
                                   placeholder="..."
                                 />
                               )}

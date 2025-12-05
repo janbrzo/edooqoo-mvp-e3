@@ -388,36 +388,50 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         )}
 
         {normalizedType === 'discussion' && exercise.questions && (
-          <div className="space-y-0.5">
+          <div className="space-y-3">
             <h3 className="font-medium text-gray-700 mb-2">Discussion Questions:</h3>
-            {exercise.questions.map((question: string, qIndex: number) => (
-              <div key={qIndex} className="p-1 border-b">
-                <p className="leading-snug">
-                  {isEditing ? (
+            {exercise.questions.map((question: string, qIndex: number) => {
+              const studentAnswer = studentAnswers[qIndex] || '';
+              const isEmpty = showCorrectAnswers && !studentAnswer;
+              
+              return (
+                <div key={qIndex} className="border rounded-lg p-3 bg-white">
+                  <p className="leading-snug mb-2">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={question}
+                        onChange={e => {
+                          const updatedExercises = [...editableWorksheet.exercises];
+                          const newQuestions = [...exercise.questions!];
+                          newQuestions[qIndex] = e.target.value;
+                          updatedExercises[arrayIndex] = {
+                            ...updatedExercises[arrayIndex],
+                            questions: newQuestions
+                          };
+                          setEditableWorksheet({
+                            ...editableWorksheet,
+                            exercises: updatedExercises
+                          });
+                        }}
+                        className="w-full border p-1 editable-content"
+                      />
+                    ) : (
+                      <>{qIndex + 1}. {question}</>
+                    )}
+                  </p>
+                  {isInteractive && (
                     <input
                       type="text"
-                      value={question}
-                      onChange={e => {
-                        const updatedExercises = [...editableWorksheet.exercises];
-                        const newQuestions = [...exercise.questions!];
-                        newQuestions[qIndex] = e.target.value;
-                        updatedExercises[arrayIndex] = {
-                          ...updatedExercises[arrayIndex],
-                          questions: newQuestions
-                        };
-                        setEditableWorksheet({
-                          ...editableWorksheet,
-                          exercises: updatedExercises
-                        });
-                      }}
-                      className="w-full border p-1 editable-content"
+                      value={studentAnswer}
+                      onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                      placeholder="Type your answer..."
+                      className={`w-full border p-2 rounded h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}`}
                     />
-                  ) : (
-                    <>{qIndex + 1}. {question}</>
                   )}
-                </p>
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         )}
 
