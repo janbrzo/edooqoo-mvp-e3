@@ -25,15 +25,16 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
     <div>
       <p className="mb-3 font-medium">Complete the words using the definitions:</p>
       
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {words.map((wordItem, wIndex) => {
           const studentAnswer = studentAnswers[wIndex] || '';
           const correctAnswer = wordItem?.complete || wordItem?.complete_word || '';
           const isCorrect = showCorrectAnswers && studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
+          const hasNoAnswer = showCorrectAnswers && !studentAnswer;
 
           return (
-            <div key={wIndex} className="border-b pb-2">
+            <div key={wIndex} className="border rounded-lg p-3 bg-white">
               <div className="flex flex-col gap-2">
                 <div className="flex-grow">
                   <p className="leading-snug">
@@ -68,9 +69,10 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
                     value={studentAnswer}
                     onChange={(e) => onAnswerChange?.(wIndex, e.target.value)}
                     placeholder="Complete the word..."
-                    className={`
-                      ${isCorrect ? 'border-green-500 bg-green-50' : ''}
-                      ${isIncorrect ? 'border-red-500 bg-red-50' : ''}
+                    className={`h-10
+                      ${isCorrect ? 'border-2 border-green-600 bg-green-200' : ''}
+                      ${isIncorrect ? 'border-2 border-red-600 bg-red-200' : ''}
+                      ${hasNoAnswer ? 'border-2 border-red-400 bg-red-100' : ''}
                     `}
                   />
                 )}
