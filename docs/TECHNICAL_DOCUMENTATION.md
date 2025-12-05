@@ -20,12 +20,19 @@ The English Worksheet Generator is a full-featured SaaS platform built on React,
 - **Student Interactive Homework**: Students can now answer exercises interactively via `/homework/:token` route with email verification
 - **Auto-save**: Answers are automatically saved every 5 seconds with debounce + immediate save on blur
 - **Progress Tracking**: Progress bar shows X/Y exercises completed (only counts exercise when ALL questions answered)
-- **Teacher Review System**: New `/homework/:id/review` route for teachers to review student answers, add comments per exercise, and send review back
-- **Notifications**: Bell icon notifications (`homework_notifications` table) when student submits homework (no email spam)
-- **View Count**: Homework `view_count` increments when student opens link (via updated `get_homework_by_share_token` RPC)
-- **Review Workflow**: Student sees correct answers ONLY after teacher sends review (`reviewed_at` column in `homework_assignments`)
-- **Exercise Types**: All 18 exercise types support interactive input (Input fields, Textareas, Radio buttons, Select dropdowns)
-- **Input Heights**: All text inputs standardized to single-line height (`h-10`) for consistent UX
+- **Teacher View**: Teachers access homework via same `/homework/:token` link, auto-detected without email verification
+- **Notifications**: Bell icon notifications (`homework_notifications` table) when student submits homework
+- **Immediate Answer Display**: Students see correct answers immediately after submitting (no review wait)
+- **View Count**: Homework `view_count` increments when student opens link
+- **Exercise Types**: All 18 exercise types support interactive input (Input fields h-10, Radio buttons, Select dropdowns)
+- **Input Field Fixes**: Reading/Listening/Paraphrasing use single-line Input (h-10), not textarea
+- **Layout Fixes**: Reading/CompleteWord/Dialogue in 2-column grid, Categorize words in 3-column grid
+- **Answer Colors**: Strong visual feedback - green-200 border-green-600 for correct, red-200 border-red-600 for incorrect
+- **Empty Field Marking**: Unanswered fields marked red after submission
+- **Incomplete Submission Modal**: Confirmation dialog when submitting with progress < 100%
+- **Navigation Sidebar**: Exercise navigation (numbered buttons) on homework pages like worksheets
+- **Floating Media**: Pinned image/audio buttons appear when scrolling past media section
+- **Scroll-Up Button**: Quick return to top button appears after scrolling
 
 ## Architecture Stack
 

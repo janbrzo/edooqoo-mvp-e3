@@ -1,16 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ExerciseSection from "@/components/worksheet/ExerciseSection";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock } from "lucide-react";
+import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock, ArrowUp, Volume2, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { useInteractiveHomework } from "@/hooks/useInteractiveHomework";
 import { StudentEmailVerification } from "@/components/homework/StudentEmailVerification";
 import { HomeworkProgressBar } from "@/components/homework/HomeworkProgressBar";
+import { ExerciseNavSidebar } from "@/components/worksheet/ExerciseNavSidebar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface HomeworkData {
   id: string;
@@ -39,6 +50,15 @@ export default function HomeworkPage() {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+  const [isTeacher, setIsTeacher] = useState(false);
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  
+  // Navigation state
+  const [activeExercise, setActiveExercise] = useState<number | null>(null);
+  const [collapsedExercises, setCollapsedExercises] = useState<Map<number, boolean>>(new Map());
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showPinnedMedia, setShowPinnedMedia] = useState(false);
+  const exerciseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Interactive homework hook - only active after email verification
   const totalExercises = Array.isArray(homework?.selected_exercises) 
@@ -92,6 +112,92 @@ export default function HomeworkPage() {
     }
   }, [homework]);
 
+  // Check if logged-in user is the teacher (skip email verification)
+  useEffect(() => {
+    const checkTeacher = async () => {
+      if (!homework) return;
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Fetch teacher_id from homework
+        const { data: homeworkData } = await supabase
+          .from('homework_assignments')
+          .select('teacher_id')
+          .eq('id', homework.id)
+          .single();
+        
+        if (homeworkData && homeworkData.teacher_id === user.id) {
+          console.log('[HomeworkPage] Logged-in user is teacher, skipping email verification');
+          setIsTeacher(true);
+          setVerifiedEmail('teacher');
+        }
+      }
+    };
+    
+    checkTeacher();
+  }, [homework?.id]);
+
+  // Scroll tracking for navigation and scroll-up button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+      
+      // Show pinned media after scrolling past the media section
+      const mediaSection = document.querySelector('.lesson-media-section');
+      if (mediaSection) {
+        const rect = mediaSection.getBoundingClientRect();
+        setShowPinnedMedia(rect.bottom < 0);
+      }
+      
+      // Track active exercise
+      exerciseRefs.current.forEach((ref, index) => {
+        if (ref) {
+          const rect = ref.getBoundingClientRect();
+          if (rect.top <= 150 && rect.bottom > 150) {
+            setActiveExercise(index);
+          }
+        }
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Navigation functions
+  const scrollToExercise = useCallback((index: number) => {
+    const ref = exerciseRefs.current[index];
+    if (ref) {
+      ref.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setActiveExercise(index);
+    }
+  }, []);
+
+  const toggleExercise = useCallback((index: number) => {
+    setCollapsedExercises(prev => {
+      const newMap = new Map(prev);
+      newMap.set(index, !prev.get(index));
+      return newMap;
+    });
+  }, []);
+
+  const collapseAll = useCallback(() => {
+    if (!homework?.selected_exercises) return;
+    const newMap = new Map<number, boolean>();
+    homework.selected_exercises.forEach((_: any, index: number) => {
+      newMap.set(index, true);
+    });
+    setCollapsedExercises(newMap);
+  }, [homework?.selected_exercises]);
+
+  const expandAll = useCallback(() => {
+    setCollapsedExercises(new Map());
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const loadHomework = async () => {
     try {
       const { data, error } = await supabase
@@ -142,11 +248,21 @@ export default function HomeworkPage() {
     }
   };
 
+  // Check if homework is incomplete before submitting
+  const handleSubmitClick = () => {
+    const progress = getProgress();
+    if (progress.percentageComplete < 100) {
+      setShowIncompleteModal(true);
+    } else {
+      handleMarkCompleted();
+    }
+  };
+
   const handleMarkCompleted = async () => {
     if (!homework) return;
 
     // If we have interactive answers, use submitHomework instead
-    if (verifiedEmail) {
+    if (verifiedEmail && verifiedEmail !== 'teacher') {
       const success = await submitHomework();
       if (success) {
         setIsCompleted(true);
@@ -154,7 +270,7 @@ export default function HomeworkPage() {
       return;
     }
 
-    // Fallback to original behavior for non-interactive mode
+    // Fallback to original behavior for non-interactive mode or teacher
     setIsCompleting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -163,13 +279,13 @@ export default function HomeworkPage() {
       const { data, error } = await supabase.rpc('mark_homework_completed', {
         p_homework_id: homework.id,
         p_user_id: userId,
-        p_is_teacher: false
+        p_is_teacher: isTeacher
       });
 
       if (error) throw error;
 
       setIsCompleted(true);
-      toast.success("Homework marked as completed! Your teacher has been notified.");
+      toast.success("Homework marked as completed!");
     } catch (error: any) {
       console.error('Error marking homework as completed:', error);
       toast.error(error.message || "Failed to mark homework as completed");
@@ -281,8 +397,8 @@ export default function HomeworkPage() {
     ? `${homework.teacher_first_name} ${homework.teacher_last_name}`
     : homework.teacher_email;
 
-  // Show email verification screen if not verified yet
-  if (!verifiedEmail) {
+  // Show email verification screen if not verified yet (skip for teachers)
+  if (!verifiedEmail && !isTeacher) {
     return (
       <StudentEmailVerification
         homeworkId={homework.id}
@@ -293,6 +409,19 @@ export default function HomeworkPage() {
       />
     );
   }
+  
+  // Prepare exercises for nav sidebar
+  const exercisesForNav = Array.isArray(homework.selected_exercises) 
+    ? homework.selected_exercises.map((ex: any) => ({
+        title: ex.title || ex.type || 'Exercise',
+        icon: ex.icon || 'FileText',
+        estimated_time: ex.estimated_time
+      }))
+    : [];
+    
+  const isAllCollapsed = exercisesForNav.length > 0 && 
+    exercisesForNav.every((_: any, idx: number) => collapsedExercises.get(idx));
+  const isAllExpanded = collapsedExercises.size === 0;
 
   // Get progress for progress bar
   const progress = getProgress();
@@ -359,8 +488,23 @@ export default function HomeworkPage() {
         </div>
       </div>
 
+      {/* Exercise Navigation Sidebar */}
+      {exercisesForNav.length > 0 && (
+        <ExerciseNavSidebar
+          exercises={exercisesForNav}
+          activeExercise={activeExercise}
+          collapsedExercises={collapsedExercises}
+          onScrollToExercise={scrollToExercise}
+          onToggleExercise={toggleExercise}
+          onCollapseAll={collapseAll}
+          onExpandAll={expandAll}
+          isAllCollapsed={isAllCollapsed}
+          isAllExpanded={isAllExpanded}
+        />
+      )}
+
       {/* Lesson Media Section */}
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8 lesson-media-section">
         {media && (media.images.length > 0 || media.audios.length > 0) ? (
           <Card className="p-6">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
@@ -424,18 +568,20 @@ export default function HomeworkPage() {
           {Array.isArray(homework.selected_exercises) && homework.selected_exercises.map((exercise, index) => (
             <div 
               key={index} 
+              ref={el => exerciseRefs.current[index] = el}
               onBlur={handleExerciseBlur(index, exercise.type)}
+              data-exercise-index={index}
             >
               <ExerciseSection
                 exercise={exercise}
                 index={index + 1}
                 isEditing={false}
-                viewMode="student"
+                viewMode={isTeacher ? "teacher" : "student"}
                 editableWorksheet={{ exercises: homework.selected_exercises }}
                 setEditableWorksheet={() => {}}
                 hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
-                // Interactive props
-                isInteractive={true}
+                // Interactive props - only for students, not teachers
+                isInteractive={!isTeacher}
                 studentAnswers={(answers[index] || {}) as any}
                 onAnswerChange={handleAnswerChange(index, exercise.type)}
                 showCorrectAnswers={showCorrectAnswersToStudent}
@@ -446,9 +592,10 @@ export default function HomeworkPage() {
 
         {/* Footer Note */}
         <div className="mt-12 space-y-4">
-          {!finalIsSubmitted ? (
+          {/* Submit button - only for students */}
+          {!isTeacher && !finalIsSubmitted && (
             <Button 
-              onClick={handleMarkCompleted}
+              onClick={handleSubmitClick}
               disabled={isCompleting || isSaving}
               className="w-full"
               size="lg"
@@ -465,39 +612,113 @@ export default function HomeworkPage() {
                 </>
               )}
             </Button>
-          ) : showCorrectAnswersToStudent ? (
+          )}
+          
+          {/* Teacher view badge */}
+          {isTeacher && (
+            <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center border-2 border-blue-500">
+              <User className="h-12 w-12 text-blue-500 mx-auto mb-2" />
+              <p className="text-lg font-semibold text-blue-700 dark:text-blue-300">
+                Teacher View
+              </p>
+              <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                You are viewing this homework as the teacher. Students will see interactive exercises.
+              </p>
+            </div>
+          )}
+          
+          {/* Submitted state for students */}
+          {!isTeacher && finalIsSubmitted && (
             <div className="p-6 bg-green-50 dark:bg-green-900/20 rounded-lg text-center border-2 border-green-500">
               <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-2" />
               <p className="text-lg font-semibold text-green-700 dark:text-green-300">
-                Homework Reviewed!
-              </p>
-              <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                Your teacher has reviewed your work. Check the correct answers above.
-              </p>
-            </div>
-          ) : (
-            <div className="p-6 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-center border-2 border-amber-500">
-              <Clock className="h-12 w-12 text-amber-500 mx-auto mb-2" />
-              <p className="text-lg font-semibold text-amber-700 dark:text-amber-300">
                 Homework Submitted!
               </p>
-              <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-                Waiting for your teacher to review your answers...
+              <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                Check the correct answers above. Discuss any questions with your teacher.
               </p>
             </div>
           )}
           
           <div className="p-6 bg-muted rounded-lg text-center">
             <p className="text-sm text-muted-foreground">
-              {finalIsSubmitted 
-                ? showCorrectAnswersToStudent 
-                  ? "Your teacher has reviewed your homework. Discuss any questions in your next lesson."
-                  : "Your answers have been submitted. Your teacher will review them soon."
-                : "Your answers are automatically saved. Click 'Submit Homework' when you're done."}
+              {isTeacher 
+                ? "This is a preview of the student homework. Click exercise titles to navigate."
+                : finalIsSubmitted 
+                  ? "Your homework is complete. Review the correct answers above."
+                  : "Your answers are automatically saved. Click 'Submit Homework' when you're done."}
             </p>
           </div>
         </div>
       </div>
+
+      {/* Floating UI Elements */}
+      {/* Scroll to top button */}
+      {showScrollTop && (
+        <Button
+          onClick={scrollToTop}
+          className="fixed bottom-4 right-4 z-50 rounded-full w-12 h-12 p-0 shadow-lg"
+          variant="secondary"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </Button>
+      )}
+
+      {/* Pinned Media (floating) - show when scrolled past media section */}
+      {showPinnedMedia && media && (media.images.length > 0 || media.audios.length > 0) && (
+        <div className="fixed bottom-20 right-4 z-40 flex flex-col gap-2">
+          {/* Pinned Image Thumbnail */}
+          {media.images.length > 0 && (
+            <button
+              onClick={() => {
+                const mediaSection = document.querySelector('.lesson-media-section');
+                mediaSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-16 h-16 rounded-lg shadow-lg border-2 border-background overflow-hidden bg-background hover:scale-110 transition-transform"
+              title="Click to view image"
+            >
+              <img 
+                src={media.images[0]} 
+                alt="Lesson image" 
+                className="w-full h-full object-cover"
+              />
+            </button>
+          )}
+          
+          {/* Pinned Audio Button */}
+          {media.audios.length > 0 && (
+            <button
+              onClick={() => {
+                const mediaSection = document.querySelector('.lesson-media-section');
+                mediaSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="w-16 h-16 rounded-lg shadow-lg border-2 border-background bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors"
+              title="Click to play audio"
+            >
+              <Volume2 className="h-6 w-6 text-primary" />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Incomplete Homework Modal */}
+      <AlertDialog open={showIncompleteModal} onOpenChange={setShowIncompleteModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Not all exercises completed</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have only completed {progress.answeredExercises} out of {progress.totalExercises} exercises ({progress.percentageComplete}%). 
+              Are you sure you want to submit your homework now?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continue Working</AlertDialogCancel>
+            <AlertDialogAction onClick={handleMarkCompleted}>
+              Submit Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

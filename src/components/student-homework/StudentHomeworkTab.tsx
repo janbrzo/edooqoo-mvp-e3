@@ -293,13 +293,19 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
             return (
               <Card key={hw.id} className="p-4">
                 <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1 min-w-0">
-                    <Link 
-                      to={`/homework/${hw.id}/review`}
-                      className="font-semibold mb-2 truncate block hover:text-primary hover:underline transition-colors"
-                    >
-                      {hw.title}
-                    </Link>
+                <div className="flex-1 min-w-0">
+                    {hw.share_token ? (
+                      <Link 
+                        to={`/homework/${hw.share_token}`}
+                        className="font-semibold mb-2 truncate block hover:text-primary hover:underline transition-colors"
+                      >
+                        {hw.title}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold mb-2 truncate block">
+                        {hw.title}
+                      </span>
+                    )}
                     <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
                       {/* Needs Review Badge - show when completed but not reviewed */}
                       {hw.completed_at && !hw.reviewed_at && (
