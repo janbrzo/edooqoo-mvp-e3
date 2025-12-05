@@ -25,7 +25,6 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
           const correctAnswer = sentence?.transformed || '';
           const isCorrect = showCorrectAnswers && studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
-          const hasNoAnswer = showCorrectAnswers && !studentAnswer;
 
           return (
             <div key={sIndex} className="border-b pb-2">
@@ -62,10 +61,9 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                     value={studentAnswer}
                     onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
                     placeholder="Transform the sentence..."
-                    className={`h-10
-                      ${isCorrect ? 'border-2 border-green-600 bg-green-200' : ''}
-                      ${isIncorrect ? 'border-2 border-red-600 bg-red-200' : ''}
-                      ${hasNoAnswer ? 'border-2 border-red-400 bg-red-100' : ''}
+                    className={`
+                      ${isCorrect ? 'border-green-500 bg-green-50' : ''}
+                      ${isIncorrect ? 'border-red-500 bg-red-50' : ''}
                     `}
                   />
                 ) : (

@@ -1,6 +1,5 @@
 import React from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { Input } from "@/components/ui/input";
 
 interface ExerciseListeningComprehensionProps extends Partial<InteractiveExerciseProps> {
   questions?: Array<{ text: string; answer: string }>;
@@ -23,7 +22,7 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
   showCorrectAnswers = false
 }) => {
   return (
-    <div className="space-y-2">
+    <div className="space-y-0.5">
       {!audio_url && (
         <div className="text-center text-sm text-muted-foreground py-2 bg-blue-50 border border-blue-200 rounded-lg mb-2">
           🎧 Listen to the audio in the Lesson Media section above before answering
@@ -32,10 +31,9 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
       
       {questions.map((q, qIndex) => {
         const studentAnswer = studentAnswers[qIndex] || '';
-        const hasNoAnswer = showCorrectAnswers && !studentAnswer;
 
         return (
-          <div key={qIndex} className="border-b pb-2">
+          <div key={qIndex} className="border-b pb-1">
             <div className="flex flex-col gap-2">
               <div className="flex-grow">
                 <p className="font-medium leading-snug">
@@ -52,12 +50,13 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                 </p>
               </div>
               {isInteractive && (
-                <Input
+                <textarea
                   value={studentAnswer}
                   onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
                   onBlur={(e) => onAnswerChange?.(qIndex, e.target.value)}
                   placeholder="Type your answer..."
-                  className={`h-10 ${hasNoAnswer ? 'border-2 border-red-400 bg-red-100' : ''}`}
+                  className="w-full border p-2 rounded min-h-[60px]"
+                  rows={2}
                 />
               )}
               {(viewMode === 'teacher' || showCorrectAnswers) && (
