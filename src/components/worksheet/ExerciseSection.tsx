@@ -436,7 +436,16 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         )}
 
         {(normalizedType === 'error-correction' || normalizedType === 'word-formation') && 
-          exercise.sentences && renderOtherExerciseTypes(exercise, isEditing, viewMode, handleSentenceChangeLocal)}
+          exercise.sentences && renderOtherExerciseTypes(
+            exercise, 
+            isEditing, 
+            viewMode, 
+            handleSentenceChangeLocal,
+            isInteractive,
+            studentAnswers,
+            onAnswerChange,
+            showCorrectAnswers
+          )}
         
         {normalizedType === 'true-false' && exercise.statements && (
           <ExerciseTrueFalseAudio

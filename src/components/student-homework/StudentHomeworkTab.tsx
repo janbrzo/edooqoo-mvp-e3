@@ -307,25 +307,11 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
                       </span>
                     )}
                     <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-                      {/* Needs Review Badge - show when completed but not reviewed */}
-                      {hw.completed_at && !hw.reviewed_at && (
-                        <Badge className="bg-amber-500 text-white text-xs">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Needs Review
-                        </Badge>
-                      )}
-                      {/* Reviewed Badge */}
-                      {hw.reviewed_at && (
+                      {/* Completed Badge - only one badge, shown when homework is submitted */}
+                      {hw.completed_at && (
                         <Badge className="bg-green-500 text-white text-xs">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Reviewed
-                        </Badge>
-                      )}
-                      {/* Completed but not reviewed - also show completed badge */}
-                      {hw.completed_at && (
-                        <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Submitted
+                          Completed
                         </Badge>
                       )}
                       {hw.source_worksheet_id && (
