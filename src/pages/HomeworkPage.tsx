@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import ExerciseSection from "@/components/worksheet/ExerciseSection";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock, ArrowUp, Volume2, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
@@ -576,7 +577,7 @@ export default function HomeworkPage() {
                 exercise={exercise}
                 index={index + 1}
                 isEditing={false}
-                viewMode={isTeacher ? "teacher" : "student"}
+                viewMode="student"
                 editableWorksheet={{ exercises: homework.selected_exercises }}
                 setEditableWorksheet={() => {}}
                 hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
@@ -664,39 +665,49 @@ export default function HomeworkPage() {
         </Button>
       )}
 
-      {/* Pinned Media (floating) - show when scrolled past media section */}
+      {/* Pinned Media (floating) - actual inline player/image in bottom right */}
       {showPinnedMedia && media && (media.images.length > 0 || media.audios.length > 0) && (
-        <div className="fixed bottom-20 right-4 z-40 flex flex-col gap-2">
-          {/* Pinned Image Thumbnail */}
-          {media.images.length > 0 && (
-            <button
-              onClick={() => {
-                const mediaSection = document.querySelector('.lesson-media-section');
-                mediaSection?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="w-16 h-16 rounded-lg shadow-lg border-2 border-background overflow-hidden bg-background hover:scale-110 transition-transform"
-              title="Click to view image"
-            >
-              <img 
-                src={media.images[0]} 
-                alt="Lesson image" 
-                className="w-full h-full object-cover"
-              />
-            </button>
+        <div className="fixed bottom-20 right-4 z-40 flex flex-col gap-3 max-w-xs">
+          {/* Floating Audio Player */}
+          {media.audios.length > 0 && (
+            <div className="bg-background border rounded-lg shadow-xl p-3 w-64">
+              <div className="flex items-center gap-2 mb-2">
+                <Volume2 className="h-4 w-4 text-primary" />
+                <span className="text-xs font-medium">Lesson Audio</span>
+              </div>
+              <audio controls className="w-full h-10">
+                <source src={media.audios[0].url} type="audio/mpeg" />
+              </audio>
+            </div>
           )}
           
-          {/* Pinned Audio Button */}
-          {media.audios.length > 0 && (
-            <button
-              onClick={() => {
-                const mediaSection = document.querySelector('.lesson-media-section');
-                mediaSection?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="w-16 h-16 rounded-lg shadow-lg border-2 border-background bg-primary/10 hover:bg-primary/20 flex items-center justify-center transition-colors"
-              title="Click to play audio"
-            >
-              <Volume2 className="h-6 w-6 text-primary" />
-            </button>
+          {/* Floating Image with expand dialog */}
+          {media.images.length > 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="w-20 h-20 rounded-lg shadow-xl border-2 border-background overflow-hidden bg-background hover:scale-105 transition-transform"
+                  title="Click to enlarge"
+                >
+                  <img 
+                    src={media.images[0]} 
+                    alt="Lesson image" 
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent 
+                side="left" 
+                align="end" 
+                className="w-auto max-w-md p-2"
+              >
+                <img 
+                  src={media.images[0]} 
+                  alt="Lesson image enlarged" 
+                  className="rounded-lg max-h-80 object-contain"
+                />
+              </PopoverContent>
+            </Popover>
           )}
         </div>
       )}

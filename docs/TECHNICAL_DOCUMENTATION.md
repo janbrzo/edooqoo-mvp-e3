@@ -16,23 +16,25 @@ The English Worksheet Generator is a full-featured SaaS platform built on React,
 - **Technical Fixes**: Added `normalizeExerciseType` helper function to handle `-picture` and `-audio` suffixes, preventing duplicate rendering
 - **Onboarding & Add Student Modal**: Add Student dialog now persists in-progress form data across browser tab switches (using `sessionStorage`), shared consistently between Dashboard and Onboarding checklist flows.
 
-**Latest Update (December 2025) - Interactive Worksheets:**
+**Latest Update (December 2025) - Interactive Worksheets v2:**
 - **Student Interactive Homework**: Students can now answer exercises interactively via `/homework/:token` route with email verification
 - **Auto-save**: Answers are automatically saved every 5 seconds with debounce + immediate save on blur
 - **Progress Tracking**: Progress bar shows X/Y exercises completed (only counts exercise when ALL questions answered)
-- **Teacher View**: Teachers access homework via same `/homework/:token` link, auto-detected without email verification
-- **Notifications**: Bell icon notifications (`homework_notifications` table) when student submits homework
+- **Teacher View**: Teachers access homework via same `/homework/:token` link, see EXACTLY same view as students (no `teacher` viewMode)
+- **Notifications Fixed**: Bell icon notifications now work using `insert_homework_submission_notification` RPC function with SECURITY DEFINER (bypasses RLS for anonymous students)
 - **Immediate Answer Display**: Students see correct answers immediately after submitting (no review wait)
 - **View Count**: Homework `view_count` increments when student opens link
 - **Exercise Types**: All 18 exercise types support interactive input (Input fields h-10, Radio buttons, Select dropdowns)
+- **Error Correction/Word Formation Fixed**: Now have input fields for student answers (previously missing)
 - **Input Field Fixes**: Reading/Listening/Paraphrasing use single-line Input (h-10), not textarea
 - **Layout Fixes**: Reading/CompleteWord/Dialogue in 2-column grid, Categorize words in 3-column grid
 - **Answer Colors**: Strong visual feedback - green-200 border-green-600 for correct, red-200 border-red-600 for incorrect
 - **Empty Field Marking**: Unanswered fields marked red after submission
 - **Incomplete Submission Modal**: Confirmation dialog when submitting with progress < 100%
 - **Navigation Sidebar**: Exercise navigation (numbered buttons) on homework pages like worksheets
-- **Floating Media**: Pinned image/audio buttons appear when scrolling past media section
+- **Floating Pinned Media**: Inline audio player and expandable image in bottom-right corner (not scroll-to button)
 - **Scroll-Up Button**: Quick return to top button appears after scrolling
+- **Simplified Badges**: Homework tab shows only "Completed" badge (removed "Needs Review", "Reviewed", "Submitted")
 
 ## Architecture Stack
 
