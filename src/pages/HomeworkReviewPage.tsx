@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { 
   Loader2, Calendar, User, Mail, CheckCircle2, FileText, 
-  Send, ArrowLeft, MessageSquare, Clock, Eye, Check
+  Send, ArrowLeft, MessageSquare, Clock, Eye
 } from "lucide-react";
 import { format } from "date-fns";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
@@ -57,10 +57,7 @@ export default function HomeworkReviewPage() {
   const [teacherComments, setTeacherComments] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
-  
-  // Auto-save state
-  const [savingComments, setSavingComments] = useState<Record<number, 'saving' | 'saved' | null>>({});
-  const saveTimeoutsRef = useRef<Record<number, NodeJS.Timeout>>({});
+  const [savingComment, setSavingComment] = useState<number | null>(null);
 
   // Check if user is authenticated teacher
   useEffect(() => {
@@ -84,13 +81,6 @@ export default function HomeworkReviewPage() {
     }
     loadHomework();
   }, [id]);
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(saveTimeoutsRef.current).forEach(clearTimeout);
-    };
-  }, []);
 
   const loadHomework = async () => {
     try {
@@ -165,32 +155,11 @@ export default function HomeworkReviewPage() {
     }
   };
 
-  // Auto-save teacher comment with debounce (5 seconds)
-  const handleCommentChange = useCallback((exerciseIndex: number, commentText: string) => {
-    // Update local state immediately
-    setTeacherComments(prev => ({
-      ...prev,
-      [exerciseIndex]: commentText
-    }));
-
-    // Clear existing timeout
-    if (saveTimeoutsRef.current[exerciseIndex]) {
-      clearTimeout(saveTimeoutsRef.current[exerciseIndex]);
-    }
-
-    // Mark as saving
-    setSavingComments(prev => ({ ...prev, [exerciseIndex]: 'saving' }));
-
-    // Schedule save after 5 seconds
-    saveTimeoutsRef.current[exerciseIndex] = setTimeout(async () => {
-      await saveComment(exerciseIndex, commentText);
-    }, 5000);
-  }, [homework]);
-
-  // Save comment to database
+  // Save teacher comment for an exercise
   const saveComment = useCallback(async (exerciseIndex: number, commentText: string) => {
     if (!homework?.students?.student_email) return;
 
+    setSavingComment(exerciseIndex);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -203,32 +172,16 @@ export default function HomeworkReviewPage() {
         p_comment_text: commentText
       });
 
-      setSavingComments(prev => ({ ...prev, [exerciseIndex]: 'saved' }));
-      
-      // Clear "saved" indicator after 3 seconds
-      setTimeout(() => {
-        setSavingComments(prev => ({ ...prev, [exerciseIndex]: null }));
-      }, 3000);
+      toast.success("Comment saved");
     } catch (error) {
       console.error('Error saving comment:', error);
       toast.error("Failed to save comment");
-      setSavingComments(prev => ({ ...prev, [exerciseIndex]: null }));
+    } finally {
+      setSavingComment(null);
     }
   }, [homework]);
 
-  // Save comment immediately on blur
-  const handleCommentBlur = useCallback((exerciseIndex: number) => {
-    // Clear pending timeout
-    if (saveTimeoutsRef.current[exerciseIndex]) {
-      clearTimeout(saveTimeoutsRef.current[exerciseIndex]);
-    }
-    
-    // Save immediately
-    const commentText = teacherComments[exerciseIndex] || '';
-    saveComment(exerciseIndex, commentText);
-  }, [teacherComments, saveComment]);
-
-  // Send review to student (mark as reviewed + send email)
+  // Send review to student (mark as reviewed)
   const sendReviewToStudent = async () => {
     if (!homework) return;
 
@@ -248,36 +201,7 @@ export default function HomeworkReviewPage() {
 
       if (error) throw error;
 
-      // Send email notification to student
-      const studentEmail = homework.students?.student_email;
-      if (studentEmail) {
-        try {
-          const { data: sessionData } = await supabase.auth.getSession();
-          const accessToken = sessionData?.session?.access_token;
-
-          const response = await supabase.functions.invoke('send-homework-email', {
-            body: {
-              homeworkId: homework.id,
-              studentEmail: studentEmail,
-              isReviewNotification: true
-            },
-            headers: accessToken ? {
-              Authorization: `Bearer ${accessToken}`
-            } : undefined
-          });
-
-          if (response.error) {
-            console.error('[sendReviewToStudent] Email error:', response.error);
-            // Don't fail the whole operation - review was saved
-          } else {
-            console.log('[sendReviewToStudent] Email sent successfully');
-          }
-        } catch (emailError) {
-          console.error('[sendReviewToStudent] Failed to send email:', emailError);
-          // Continue - review was still saved
-        }
-      }
-
+      // Create notification for student (optional - could be email)
       toast.success("Review sent to student! They can now see correct answers and your comments.");
       
       // Reload to reflect changes
@@ -443,11 +367,10 @@ export default function HomeworkReviewPage() {
           {Array.isArray(homework.selected_exercises) && homework.selected_exercises.map((exercise, index) => {
             const studentAnswer = getStudentAnswerForExercise(index);
             const hasAnswer = Object.keys(studentAnswer).length > 0;
-            const saveStatus = savingComments[index];
             
             return (
               <div key={index} className="space-y-4">
-                {/* Exercise with student answers displayed */}
+                {/* Exercise */}
                 <ExerciseSection
                   exercise={exercise}
                   index={index + 1}
@@ -456,47 +379,46 @@ export default function HomeworkReviewPage() {
                   editableWorksheet={{ exercises: homework.selected_exercises }}
                   setEditableWorksheet={() => {}}
                   hideExerciseMedia={false}
-                  // Show student answers in read-only mode with correct answers visible
+                  // Show student answers in read-only mode
                   isInteractive={false}
                   studentAnswers={studentAnswer as any}
                   showCorrectAnswers={true}
-                  showStudentAnswers={true}
                 />
                 
-                {/* Teacher comment section with auto-save */}
+                {/* Teacher comment section */}
                 <Card className="p-4 bg-muted/30 border-dashed">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4 text-primary" />
-                        <Label className="font-medium">Your Comment for Exercise {index + 1}</Label>
-                        {!hasAnswer && (
-                          <Badge variant="secondary" className="text-xs">No student answer yet</Badge>
-                        )}
-                      </div>
-                      
-                      {/* Auto-save status indicator */}
-                      {saveStatus === 'saving' && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Saving...
-                        </span>
-                      )}
-                      {saveStatus === 'saved' && (
-                        <span className="text-xs text-green-600 flex items-center gap-1">
-                          <Check className="h-3 w-3" />
-                          Saved
-                        </span>
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                      <Label className="font-medium">Your Comment for Exercise {index + 1}</Label>
+                      {!hasAnswer && (
+                        <Badge variant="secondary" className="text-xs">No student answer yet</Badge>
                       )}
                     </div>
                     
                     <Textarea
                       placeholder="Add feedback for the student about this exercise..."
                       value={teacherComments[index] || ''}
-                      onChange={(e) => handleCommentChange(index, e.target.value)}
-                      onBlur={() => handleCommentBlur(index)}
+                      onChange={(e) => setTeacherComments(prev => ({
+                        ...prev,
+                        [index]: e.target.value
+                      }))}
                       className="min-h-[80px]"
                     />
+                    
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => saveComment(index, teacherComments[index] || '')}
+                      disabled={savingComment === index}
+                    >
+                      {savingComment === index ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                      )}
+                      Save Comment
+                    </Button>
                   </div>
                 </Card>
               </div>

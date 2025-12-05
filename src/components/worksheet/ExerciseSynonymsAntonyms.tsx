@@ -74,24 +74,16 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
             const correctAnswer = String.fromCharCode(65 + shuffledDefinitions.findIndex(d => d.definition === item.definition));
             const isCorrect = showCorrectAnswers && studentAnswer === correctAnswer;
             const isIncorrect = showCorrectAnswers && studentAnswer && studentAnswer !== correctAnswer;
-            const hasNoAnswer = showCorrectAnswers && !studentAnswer;
 
             return (
-              <div 
-                key={iIndex} 
-                className={`p-2 border rounded-md bg-white flex items-center gap-2
-                  ${isCorrect ? 'border-2 border-green-600 bg-green-200' : ''}
-                  ${isIncorrect ? 'border-2 border-red-600 bg-red-200' : ''}
-                  ${hasNoAnswer ? 'border-2 border-red-400 bg-red-100' : ''}
-                `}
-              >
+              <div key={iIndex} className="p-2 border rounded-md bg-white flex items-center gap-2">
                 <span className="text-worksheet-purple font-medium">{iIndex + 1}.</span>
                 <span className="flex-grow">{item.term}</span>
                 <Select
                   value={studentAnswer || ''}
                   onValueChange={(value) => onAnswerChange?.(iIndex, value)}
                 >
-                  <SelectTrigger className="w-20">
+                  <SelectTrigger className={`w-20 ${isCorrect ? 'border-green-500 bg-green-50' : isIncorrect ? 'border-red-500 bg-red-50' : ''}`}>
                     <SelectValue placeholder="?" />
                   </SelectTrigger>
                   <SelectContent>

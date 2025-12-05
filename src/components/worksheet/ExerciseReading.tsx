@@ -1,7 +1,6 @@
 
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { Input } from "@/components/ui/input";
 
 interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   questions: any[];
@@ -21,13 +20,12 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
   onAnswerChange,
   showCorrectAnswers = false
 }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div className="space-y-0.5">
     {questions.map((question, qIndex) => {
       const studentAnswer = studentAnswers[qIndex] || '';
-      const hasNoAnswer = showCorrectAnswers && !studentAnswer;
       
       return (
-        <div key={qIndex} className="border rounded-lg p-3 bg-white">
+        <div key={qIndex} className="border-b pb-1">
           <div className="flex flex-col gap-2">
             <div className="flex-grow">
               <p className="font-medium leading-snug">
@@ -44,12 +42,13 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
               </p>
             </div>
             {isInteractive && (
-              <Input
+              <textarea
                 value={studentAnswer}
                 onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
                 onBlur={(e) => onAnswerChange?.(qIndex, e.target.value)}
                 placeholder="Type your answer..."
-                className={`h-10 ${hasNoAnswer ? 'border-2 border-red-400 bg-red-100' : ''}`}
+                className="w-full border p-2 rounded min-h-[60px]"
+                rows={2}
               />
             )}
             {(viewMode === 'teacher' || showCorrectAnswers) && (

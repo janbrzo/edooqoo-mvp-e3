@@ -1,6 +1,5 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { Input } from "@/components/ui/input";
 
 interface ExerciseNegativePrefixesProps extends Partial<InteractiveExerciseProps> {
   words: any[];
@@ -28,10 +27,9 @@ const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
           const correctAnswer = wordItem?.answer || '';
           const isCorrect = showCorrectAnswers && studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
-          const hasNoAnswer = showCorrectAnswers && !studentAnswer;
 
           return (
-            <div key={wIndex} className="border rounded-lg p-3 bg-white">
+            <div key={wIndex} className="border-b pb-1">
               <div className="flex flex-col gap-2">
                 <div className="flex-grow">
                   <p className="leading-snug">
@@ -48,16 +46,16 @@ const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
                   </p>
                 </div>
                 {isInteractive && (
-                  <Input
+                  <input
                     type="text"
                     value={studentAnswer}
                     onChange={(e) => onAnswerChange?.(wIndex, e.target.value)}
                     onBlur={(e) => onAnswerChange?.(wIndex, e.target.value)}
                     placeholder="Type the negative form..."
-                    className={`h-10
-                      ${isCorrect ? 'border-2 border-green-600 bg-green-200' : ''}
-                      ${isIncorrect ? 'border-2 border-red-600 bg-red-200' : ''}
-                      ${hasNoAnswer ? 'border-2 border-red-400 bg-red-100' : ''}
+                    className={`
+                      w-full border p-2 rounded
+                      ${isCorrect ? 'border-green-500 bg-green-50' : ''}
+                      ${isIncorrect ? 'border-red-500 bg-red-50' : ''}
                     `}
                   />
                 )}

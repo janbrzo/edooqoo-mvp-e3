@@ -1,28 +1,16 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ExerciseSection from "@/components/worksheet/ExerciseSection";
-import { ExerciseNavSidebar } from "@/components/worksheet/ExerciseNavSidebar";
-import { useWorksheetNavigation } from "@/hooks/useWorksheetNavigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock, MessageSquare, Image, Volume2, X } from "lucide-react";
+import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { useInteractiveHomework } from "@/hooks/useInteractiveHomework";
 import { StudentEmailVerification } from "@/components/homework/StudentEmailVerification";
 import { HomeworkProgressBar } from "@/components/homework/HomeworkProgressBar";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface HomeworkData {
   id: string;
@@ -43,11 +31,6 @@ interface HomeworkData {
   audio_url?: string | null;
 }
 
-interface TeacherComment {
-  exercise_index: number;
-  comment_text: string;
-}
-
 export default function HomeworkPage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -56,11 +39,6 @@ export default function HomeworkPage() {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
-  const [showConfirmSubmitModal, setShowConfirmSubmitModal] = useState(false);
-  const [teacherComments, setTeacherComments] = useState<Record<number, string>>({});
-  
-  // Pinned media state
-  const [showPinnedMedia, setShowPinnedMedia] = useState(true);
 
   // Interactive homework hook - only active after email verification
   const totalExercises = Array.isArray(homework?.selected_exercises) 
@@ -98,27 +76,6 @@ export default function HomeworkPage() {
     exerciseQuestionCounts
   });
 
-  // Navigation hook for exercises
-  const exercises = Array.isArray(homework?.selected_exercises) 
-    ? homework.selected_exercises.map((ex: any, idx: number) => ({
-        title: ex.title || `Exercise ${idx + 1}`,
-        icon: ex.icon || 'BookOpen',
-        estimated_time: ex.time ? `${ex.time} min` : undefined
-      }))
-    : [];
-
-  const {
-    collapsedExercises,
-    activeExercise,
-    exerciseRefs,
-    toggleExercise,
-    collapseAll,
-    expandAll,
-    scrollToExercise,
-    isAllCollapsed,
-    isAllExpanded
-  } = useWorksheetNavigation({ exercises });
-
   useEffect(() => {
     if (!token) {
       toast.error("Invalid homework link");
@@ -134,13 +91,6 @@ export default function HomeworkPage() {
       setIsCompleted(true);
     }
   }, [homework]);
-
-  // Load teacher comments when homework is reviewed
-  useEffect(() => {
-    if (homework?.reviewed_at && verifiedEmail) {
-      loadTeacherComments();
-    }
-  }, [homework?.reviewed_at, verifiedEmail]);
 
   const loadHomework = async () => {
     try {
@@ -192,44 +142,7 @@ export default function HomeworkPage() {
     }
   };
 
-  // Load teacher comments for reviewed homework
-  const loadTeacherComments = async () => {
-    if (!homework?.id || !verifiedEmail) return;
-
-    try {
-      const { data, error } = await supabase.rpc('get_homework_comments', {
-        p_homework_id: homework.id,
-        p_student_email: verifiedEmail
-      });
-
-      if (error) throw error;
-
-      if (data) {
-        const commentsMap: Record<number, string> = {};
-        data.forEach((c: any) => {
-          commentsMap[c.exercise_index] = c.comment_text;
-        });
-        setTeacherComments(commentsMap);
-      }
-    } catch (error) {
-      console.error('Error loading teacher comments:', error);
-    }
-  };
-
   const handleMarkCompleted = async () => {
-    if (!homework) return;
-
-    // Check if progress < 100% and show confirmation modal
-    const progress = getProgress();
-    if (progress.percentageComplete < 100) {
-      setShowConfirmSubmitModal(true);
-      return;
-    }
-
-    await performSubmit();
-  };
-
-  const performSubmit = async () => {
     if (!homework) return;
 
     // If we have interactive answers, use submitHomework instead
@@ -300,11 +213,9 @@ export default function HomeworkPage() {
         url: homework.selected_audio.url,
         transcript: homework.selected_audio.transcript
       });
-      media.hasAudioMedia = true;
     } else if (homework.audio_url) {
       console.log('[HomeworkPage] Found homework-level audio (audio_url):', homework.audio_url);
       media.audios.push({ url: homework.audio_url });
-      media.hasAudioMedia = true;
     }
     
     // Then, check exercise-level media
@@ -353,7 +264,6 @@ export default function HomeworkPage() {
   };
 
   const media = homework ? extractMediaFromHomework(homework) : null;
-  const hasMedia = media && (media.images.length > 0 || media.audios.length > 0);
 
   if (loading) {
     return (
@@ -393,21 +303,6 @@ export default function HomeworkPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation Sidebar */}
-      {exercises.length > 0 && (
-        <ExerciseNavSidebar
-          exercises={exercises}
-          activeExercise={activeExercise}
-          collapsedExercises={collapsedExercises}
-          onScrollToExercise={scrollToExercise}
-          onToggleExercise={toggleExercise}
-          onCollapseAll={collapseAll}
-          onExpandAll={expandAll}
-          isAllCollapsed={isAllCollapsed}
-          isAllExpanded={isAllExpanded}
-        />
-      )}
-
       {/* Progress Bar */}
       <HomeworkProgressBar
         progress={progress}
@@ -466,7 +361,7 @@ export default function HomeworkPage() {
 
       {/* Lesson Media Section */}
       <div className="max-w-5xl mx-auto px-4 py-8">
-        {hasMedia ? (
+        {media && (media.images.length > 0 || media.audios.length > 0) ? (
           <Card className="p-6">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <FileText className="h-6 w-6" />
@@ -526,51 +421,27 @@ export default function HomeworkPage() {
       {/* Exercises */}
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="space-y-8">
-          {Array.isArray(homework.selected_exercises) && homework.selected_exercises.map((exercise, index) => {
-            const teacherComment = teacherComments[index];
-            
-            return (
-              <div 
-                key={index} 
-                ref={el => { if (exerciseRefs.current) exerciseRefs.current[index] = el; }}
-                onBlur={handleExerciseBlur(index, exercise.type)}
-              >
-                <ExerciseSection
-                  exercise={exercise}
-                  index={index + 1}
-                  isEditing={false}
-                  viewMode="student"
-                  editableWorksheet={{ exercises: homework.selected_exercises }}
-                  setEditableWorksheet={() => {}}
-                  hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
-                  isCollapsed={collapsedExercises.get(index) || false}
-                  onToggleCollapse={() => toggleExercise(index)}
-                  // Interactive props
-                  isInteractive={!finalIsSubmitted}
-                  studentAnswers={(answers[index] || {}) as any}
-                  onAnswerChange={handleAnswerChange(index, exercise.type)}
-                  showCorrectAnswers={showCorrectAnswersToStudent}
-                />
-                
-                {/* Teacher comment (shown after review) */}
-                {showCorrectAnswersToStudent && teacherComment && (
-                  <Card className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-                    <div className="flex items-start gap-3">
-                      <MessageSquare className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium text-blue-700 dark:text-blue-300 text-sm mb-1">
-                          Teacher's Comment:
-                        </p>
-                        <p className="text-blue-600 dark:text-blue-400 text-sm whitespace-pre-wrap">
-                          {teacherComment}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                )}
-              </div>
-            );
-          })}
+          {Array.isArray(homework.selected_exercises) && homework.selected_exercises.map((exercise, index) => (
+            <div 
+              key={index} 
+              onBlur={handleExerciseBlur(index, exercise.type)}
+            >
+              <ExerciseSection
+                exercise={exercise}
+                index={index + 1}
+                isEditing={false}
+                viewMode="student"
+                editableWorksheet={{ exercises: homework.selected_exercises }}
+                setEditableWorksheet={() => {}}
+                hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
+                // Interactive props
+                isInteractive={true}
+                studentAnswers={(answers[index] || {}) as any}
+                onAnswerChange={handleAnswerChange(index, exercise.type)}
+                showCorrectAnswers={showCorrectAnswersToStudent}
+              />
+            </div>
+          ))}
         </div>
 
         {/* Footer Note */}
@@ -627,92 +498,6 @@ export default function HomeworkPage() {
           </div>
         </div>
       </div>
-
-      {/* Floating Pinned Media Button */}
-      {hasMedia && (
-        <div className="fixed bottom-4 right-4 z-40">
-          {showPinnedMedia ? (
-            <Card className="w-72 shadow-lg">
-              <div className="flex items-center justify-between p-2 border-b">
-                <span className="text-sm font-medium">Lesson Media</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-6 w-6 p-0"
-                  onClick={() => setShowPinnedMedia(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="p-2 max-h-64 overflow-y-auto space-y-2">
-                {media.images.length > 0 && (
-                  <img 
-                    src={media.images[0]} 
-                    alt="Lesson image"
-                    className="rounded w-full object-contain max-h-32"
-                  />
-                )}
-                {media.audios.length > 0 && (
-                  <audio controls className="w-full h-10">
-                    <source src={media.audios[0].url} type="audio/mpeg" />
-                  </audio>
-                )}
-              </div>
-            </Card>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {media.images.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-10 h-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm"
-                  onClick={() => setShowPinnedMedia(true)}
-                  title="Show Image"
-                >
-                  <Image className="h-4 w-4" />
-                </Button>
-              )}
-              {media.audios.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-10 h-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm"
-                  onClick={() => setShowPinnedMedia(true)}
-                  title="Show Audio"
-                >
-                  <Volume2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Confirmation Modal for Incomplete Submission */}
-      <AlertDialog open={showConfirmSubmitModal} onOpenChange={setShowConfirmSubmitModal}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Submit Incomplete Homework?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You haven't completed all exercises yet. Your progress is {progress.percentageComplete}% ({progress.answeredExercises}/{progress.totalExercises} exercises).
-              <br /><br />
-              Are you sure you want to submit now? You won't be able to make changes after submitting.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Continue Working</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => {
-                setShowConfirmSubmitModal(false);
-                performSubmit();
-              }}
-              className="bg-amber-600 hover:bg-amber-700"
-            >
-              Submit Anyway
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

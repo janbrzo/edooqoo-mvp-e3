@@ -105,7 +105,6 @@ interface ExerciseSectionProps {
   studentAnswers?: Record<number, any>;
   onAnswerChange?: (questionIndex: number, value: any) => void;
   showCorrectAnswers?: boolean;
-  showStudentAnswers?: boolean; // NEW: Display student answers in teacher review view
 }
 
 // Helper function to normalize exercise type (removes -picture suffix for rendering logic)
@@ -148,7 +147,6 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   studentAnswers = {},
   onAnswerChange,
   showCorrectAnswers = false,
-  showStudentAnswers = false,
 }, ref) => {
   // Use originalIndex for array operations, index for display
   const arrayIndex = originalIndex !== undefined ? originalIndex : index - 1;
@@ -390,50 +388,36 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         )}
 
         {normalizedType === 'discussion' && exercise.questions && (
-          <div className="space-y-2">
+          <div className="space-y-0.5">
             <h3 className="font-medium text-gray-700 mb-2">Discussion Questions:</h3>
-            {exercise.questions.map((question: string, qIndex: number) => {
-              const studentAnswer = studentAnswers[qIndex] || '';
-              const hasNoAnswer = showCorrectAnswers && !studentAnswer;
-              
-              return (
-                <div key={qIndex} className="p-2 border rounded-lg bg-white">
-                  <p className="leading-snug font-medium mb-2">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={question}
-                        onChange={e => {
-                          const updatedExercises = [...editableWorksheet.exercises];
-                          const newQuestions = [...exercise.questions!];
-                          newQuestions[qIndex] = e.target.value;
-                          updatedExercises[arrayIndex] = {
-                            ...updatedExercises[arrayIndex],
-                            questions: newQuestions
-                          };
-                          setEditableWorksheet({
-                            ...editableWorksheet,
-                            exercises: updatedExercises
-                          });
-                        }}
-                        className="w-full border p-1 editable-content"
-                      />
-                    ) : (
-                      <>{qIndex + 1}. {question}</>
-                    )}
-                  </p>
-                  {isInteractive && (
+            {exercise.questions.map((question: string, qIndex: number) => (
+              <div key={qIndex} className="p-1 border-b">
+                <p className="leading-snug">
+                  {isEditing ? (
                     <input
                       type="text"
-                      value={studentAnswer}
-                      onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
-                      placeholder="Type your answer..."
-                      className={`w-full border p-2 rounded h-10 ${hasNoAnswer ? 'border-2 border-red-400 bg-red-100' : ''}`}
+                      value={question}
+                      onChange={e => {
+                        const updatedExercises = [...editableWorksheet.exercises];
+                        const newQuestions = [...exercise.questions!];
+                        newQuestions[qIndex] = e.target.value;
+                        updatedExercises[arrayIndex] = {
+                          ...updatedExercises[arrayIndex],
+                          questions: newQuestions
+                        };
+                        setEditableWorksheet({
+                          ...editableWorksheet,
+                          exercises: updatedExercises
+                        });
+                      }}
+                      className="w-full border p-1 editable-content"
                     />
+                  ) : (
+                    <>{qIndex + 1}. {question}</>
                   )}
-                </div>
-              );
-            })}
+                </p>
+              </div>
+            ))}
           </div>
         )}
 
