@@ -170,52 +170,71 @@ export const renderOtherExerciseTypes = (
   exercise: any, 
   isEditing: boolean, 
   viewMode: 'student' | 'teacher',
-  handleSentenceChange: (sentenceIndex: number, field: string, value: string) => void
+  handleSentenceChange: (sentenceIndex: number, field: string, value: string) => void,
+  // Interactive props
+  isInteractive: boolean = false,
+  studentAnswers: Record<number, any> = {},
+  onAnswerChange?: (questionIndex: number, value: any) => void,
+  showCorrectAnswers: boolean = false
 ) => (
   <div>
-    <div className="space-y-0.5">
-      {exercise.sentences.map((sentence: any, sIndex: number) => (
-        <div key={sIndex} className="border-b pb-1">
-          <div className="flex flex-row items-start">
-            <div className="flex-grow">
-              <p className="leading-snug">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={sentence.text}
-                    onChange={e => handleSentenceChange(sIndex, 'text', e.target.value)}
-                    className="w-full border p-1 editable-content"
-                  />
-                ) : (
-                  <>{sIndex + 1}. {
-                    exercise.type === 'word-formation' 
-                      ? sentence.text.replace(/_+/g, "_______________") 
-                      : sentence.text
-                  }</>
-                )}
-              </p>
-            </div>
-            {viewMode === 'teacher' && (
-              <div className="text-green-600 italic ml-3 text-sm">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={sentence.answer || sentence.correction}
-                    onChange={e => handleSentenceChange(
-                      sIndex, 
-                      exercise.type === 'error-correction' ? 'correction' : 'answer', 
-                      e.target.value
-                    )}
-                    className="border p-1 editable-content w-full"
-                  />
-                ) : (
-                  <span>({sentence.answer || sentence.correction})</span>
-                )}
+    <div className="space-y-2">
+      {exercise.sentences.map((sentence: any, sIndex: number) => {
+        const studentAnswer = studentAnswers[sIndex] || '';
+        const isEmpty = showCorrectAnswers && !studentAnswer;
+        
+        return (
+          <div key={sIndex} className="border rounded-lg p-3 bg-white">
+            <div className="flex flex-col gap-2">
+              <div className="flex-grow">
+                <p className="leading-snug">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={sentence.text}
+                      onChange={e => handleSentenceChange(sIndex, 'text', e.target.value)}
+                      className="w-full border p-1 editable-content"
+                    />
+                  ) : (
+                    <>{sIndex + 1}. {
+                      exercise.type === 'word-formation' 
+                        ? sentence.text.replace(/_+/g, "_______________") 
+                        : sentence.text
+                    }</>
+                  )}
+                </p>
               </div>
-            )}
+              {isInteractive && (
+                <input
+                  type="text"
+                  value={studentAnswer}
+                  onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
+                  placeholder={exercise.type === 'error-correction' ? "Write the corrected sentence..." : "Type your answer..."}
+                  className={`w-full border p-2 rounded h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}`}
+                />
+              )}
+              {(viewMode === 'teacher' || showCorrectAnswers) && (
+                <div className="text-green-600 italic text-sm">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={sentence.answer || sentence.correction}
+                      onChange={e => handleSentenceChange(
+                        sIndex, 
+                        exercise.type === 'error-correction' ? 'correction' : 'answer', 
+                        e.target.value
+                      )}
+                      className="border p-1 editable-content w-full"
+                    />
+                  ) : (
+                    <span>({sentence.answer || sentence.correction})</span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   </div>
 );

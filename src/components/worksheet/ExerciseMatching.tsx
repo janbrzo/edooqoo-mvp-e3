@@ -49,9 +49,14 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
           const correctLetter = String.fromCharCode(65 + shuffledDefinitions.findIndex(i => i.term === item.term));
           const isCorrect = showCorrectAnswers && selectedAnswer === correctLetter;
           const isIncorrect = showCorrectAnswers && selectedAnswer && !isCorrect;
+          const isEmpty = showCorrectAnswers && !selectedAnswer;
 
           return (
-            <div key={iIndex} className={`p-2 border rounded-md bg-white ${isCorrect ? 'border-green-500' : ''} ${isIncorrect ? 'border-red-500' : ''}`}>
+            <div key={iIndex} className={`p-2 border rounded-md bg-white 
+              ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''} 
+              ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
+              ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+            `}>
               <div className="flex items-center gap-2">
                 <span className="text-worksheet-purple font-medium">{iIndex + 1}.</span>
                 

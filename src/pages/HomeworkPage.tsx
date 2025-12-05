@@ -298,8 +298,8 @@ export default function HomeworkPage() {
   const progress = getProgress();
   const finalIsSubmitted = isSubmitted || isCompleted;
   
-  // Student sees correct answers only after teacher has reviewed
-  const showCorrectAnswersToStudent = !!homework.reviewed_at;
+  // Student sees correct answers immediately after submitting
+  const showCorrectAnswersToStudent = finalIsSubmitted;
 
   return (
     <div className="min-h-screen bg-background">
