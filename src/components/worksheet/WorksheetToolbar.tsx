@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen } from "lucide-react";
+import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen, Copy } from "lucide-react";
 import { isFreeCustomDemoWeek } from "@/utils/promoUtils";
 import PaymentPopup from "@/components/PaymentPopup";
 import ShareWorksheetModal from "@/components/ShareWorksheetModal";
+import { DuplicateWorksheetButton } from "@/components/DuplicateWorksheetButton";
 import { exportAsHTML } from "@/utils/htmlExport";
 import { trackWorksheetEvent } from "@/services/worksheetService";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -34,6 +35,7 @@ interface WorksheetToolbarProps {
   onExpandAll?: () => void;
   onCloseSidebar?: () => void;
   onCreateHomework?: () => void;
+  onDuplicateSuccess?: () => void;
 }
 
 const WorksheetToolbar = ({
@@ -55,6 +57,7 @@ const WorksheetToolbar = ({
   onExpandAll,
   onCloseSidebar,
   onCreateHomework,
+  onDuplicateSuccess,
 }: WorksheetToolbarProps) => {
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -219,6 +222,17 @@ const WorksheetToolbar = ({
                 >
                   <Edit className="mr-2 h-4 w-4" /> Edit Worksheet
                 </Button>
+                
+                {/* Duplicate Worksheet Button (Problem 5) */}
+                {worksheetId && (
+                  <DuplicateWorksheetButton
+                    worksheetId={worksheetId}
+                    worksheetTitle={editableWorksheet?.title || 'Worksheet'}
+                    onDuplicate={onDuplicateSuccess || (() => {})}
+                    variant="outline"
+                    size="sm"
+                  />
+                )}
                 
                 {canShareWorksheet && (
                   <>

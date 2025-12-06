@@ -530,7 +530,9 @@ export const getDescribePictureExercise = () => `    {
         "How would you describe the mood or feeling this image conveys?",
         "What details in the image are most interesting or unusual?",
         "If you were in this scene, what would you notice first?",
-        "What story could you tell based on what you see in the image?"
+        "What story could you tell based on what you see in the image?",
+        "What questions would you ask about what's happening in the picture?",
+        "Compare this scene to a similar one from your own experience."
       ],
       "useful_vocabulary": ["visible", "prominent", "background", "foreground", "detailed", "noticeable", "apparent", "striking", "distinctive", "characteristic"],
       "teacher_tip": "Encourage students to use descriptive adjectives and specific details from the image. Ask follow-up questions to extend their descriptions and practice new vocabulary. NOTE: If an image URL is provided in the exercise data, reference that specific image in your instructions and prompts."
