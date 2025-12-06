@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import ExerciseSection from "@/components/worksheet/ExerciseSection";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock, ArrowUp, Volume2, ImageIcon, X } from "lucide-react";
+import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock, ArrowUp, Volume2, ImageIcon, X, Unlock, Save, RotateCcw, Maximize2 } from "lucide-react";
 import { format } from "date-fns";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { useInteractiveHomework } from "@/hooks/useInteractiveHomework";
@@ -54,12 +54,21 @@ export default function HomeworkPage() {
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [studentEmailForTeacher, setStudentEmailForTeacher] = useState<string | null>(null);
   
+  // Teacher edit mode state (Problem 2)
+  const [teacherEditMode, setTeacherEditMode] = useState(false);
+  const [originalAnswers, setOriginalAnswers] = useState<Record<number, any>>({});
+  const [isSavingTeacherEdits, setIsSavingTeacherEdits] = useState(false);
+  
   // Navigation state
   const [activeExercise, setActiveExercise] = useState<number | null>(null);
   const [collapsedExercises, setCollapsedExercises] = useState<Map<number, boolean>>(new Map());
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [showPinnedMedia, setShowPinnedMedia] = useState(false);
-  const [showPinnedImage, setShowPinnedImage] = useState(false);
+  
+  // Pinned media state (Problem 3) - separate states for audio and image panels
+  const [showPinnedAudioPanel, setShowPinnedAudioPanel] = useState(false);
+  const [showPinnedImagePanel, setShowPinnedImagePanel] = useState(false);
+  const [isImageFullScreen, setIsImageFullScreen] = useState(false);
+  
   const exerciseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Interactive homework hook - only active after email verification
@@ -156,17 +165,10 @@ export default function HomeworkPage() {
     checkTeacher();
   }, [homework?.id]);
 
-  // Scroll tracking for navigation and scroll-up button
+  // Scroll tracking for navigation and scroll-up button (Problem 3: removed auto-show media on scroll)
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
-      
-      // Show pinned media after scrolling past the media section
-      const mediaSection = document.querySelector('.lesson-media-section');
-      if (mediaSection) {
-        const rect = mediaSection.getBoundingClientRect();
-        setShowPinnedMedia(rect.bottom < 0);
-      }
       
       // Track active exercise
       exerciseRefs.current.forEach((ref, index) => {
@@ -182,6 +184,51 @@ export default function HomeworkPage() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Teacher edit mode handlers (Problem 2)
+  const handleTeacherUnlockEdit = () => {
+    // Save original answers for potential discard
+    setOriginalAnswers(JSON.parse(JSON.stringify(answers)));
+    setTeacherEditMode(true);
+    toast.info("Edit mode enabled. You can now modify student answers.");
+  };
+
+  const handleTeacherSaveChanges = async () => {
+    if (!homework || !studentEmailForTeacher) return;
+    
+    setIsSavingTeacherEdits(true);
+    try {
+      // Save all modified answers to database
+      for (const [exerciseIndex, exerciseAnswers] of Object.entries(answers)) {
+        const exercise = homework.selected_exercises[Number(exerciseIndex)];
+        if (exercise) {
+          await supabase.rpc('save_homework_answer', {
+            p_homework_id: homework.id,
+            p_student_email: studentEmailForTeacher,
+            p_exercise_index: Number(exerciseIndex),
+            p_exercise_type: exercise.type,
+            p_answers: JSON.parse(JSON.stringify(exerciseAnswers))
+          });
+        }
+      }
+      
+      setTeacherEditMode(false);
+      toast.success("Changes saved successfully!");
+    } catch (error) {
+      console.error('Error saving teacher edits:', error);
+      toast.error("Failed to save changes");
+    } finally {
+      setIsSavingTeacherEdits(false);
+    }
+  };
+
+  const handleTeacherDiscardChanges = () => {
+    // Restore original answers - this requires reloading the page or answers
+    setTeacherEditMode(false);
+    toast.info("Changes discarded. Refreshing answers...");
+    // Reload the page to get original answers
+    window.location.reload();
+  };
 
   // Navigation functions
   const scrollToExercise = useCallback((index: number) => {
@@ -599,10 +646,10 @@ export default function HomeworkPage() {
                 editableWorksheet={{ exercises: homework.selected_exercises }}
                 setEditableWorksheet={() => {}}
                 hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
-                // Interactive props - teacher sees student answers in read-only mode
+                // Interactive props - teacher can edit when teacherEditMode is ON
                 isInteractive={true}
                 studentAnswers={(answers[index] || {}) as any}
-                onAnswerChange={isTeacher ? () => () => {} : handleAnswerChange(index, exercise.type)}
+                onAnswerChange={(isTeacher && !teacherEditMode) ? () => () => {} : handleAnswerChange(index, exercise.type)}
                 showCorrectAnswers={isTeacher || showCorrectAnswersToStudent}
               />
             </div>
@@ -633,15 +680,58 @@ export default function HomeworkPage() {
             </Button>
           )}
           
-          {/* Teacher view badge */}
+          {/* Teacher view section with Edit controls (Problem 2) */}
           {isTeacher && (
-            <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center border-2 border-blue-500">
-              <User className="h-12 w-12 text-blue-500 mx-auto mb-2" />
-              <p className="text-lg font-semibold text-blue-700 dark:text-blue-300">
-                Teacher View
-              </p>
-              <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                You are viewing this homework as the teacher. Students will see interactive exercises.
+            <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-500">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <User className="h-8 w-8 text-blue-500" />
+                <p className="text-lg font-semibold text-blue-700 dark:text-blue-300">
+                  Teacher View
+                </p>
+              </div>
+              
+              {/* Teacher Edit Mode Buttons */}
+              <div className="flex flex-wrap justify-center gap-3 mb-4">
+                {!teacherEditMode ? (
+                  <Button 
+                    onClick={handleTeacherUnlockEdit}
+                    variant="outline"
+                    className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Unlock className="h-4 w-4 mr-2" />
+                    Unlock Editing
+                  </Button>
+                ) : (
+                  <>
+                    <Button 
+                      onClick={handleTeacherSaveChanges}
+                      disabled={isSavingTeacherEdits}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {isSavingTeacherEdits ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Save Changes
+                    </Button>
+                    <Button 
+                      onClick={handleTeacherDiscardChanges}
+                      disabled={isSavingTeacherEdits}
+                      variant="outline"
+                      className="border-red-500 text-red-600 hover:bg-red-50"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Discard Changes
+                    </Button>
+                  </>
+                )}
+              </div>
+              
+              <p className="text-sm text-blue-600 dark:text-blue-400 text-center">
+                {teacherEditMode 
+                  ? "Edit mode ON. Modify answers and click 'Save Changes' when done."
+                  : "You are viewing student's answers. Click 'Unlock Editing' to make changes."}
               </p>
             </div>
           )}
@@ -683,56 +773,93 @@ export default function HomeworkPage() {
         </Button>
       )}
 
-      {/* Pinned Media (floating) - actual inline player/image in bottom right */}
-      {showPinnedMedia && media && (media.images.length > 0 || media.audios.length > 0) && (
-        <div className="fixed bottom-20 right-4 z-40 flex flex-col gap-3">
-          {/* Floating Audio Player - larger with visible timeline and close button */}
+      {/* Fixed Media Buttons - always visible in bottom right (Problem 3) */}
+      {media && (media.images.length > 0 || media.audios.length > 0) && (
+        <div className="fixed bottom-20 right-4 z-40 flex flex-col gap-2">
           {media.audios.length > 0 && (
-            <div className="bg-background border-2 border-primary/20 rounded-lg shadow-2xl p-4 w-80">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Volume2 className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-semibold">Lesson Audio</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPinnedMedia(false)}
-                  className="h-7 w-7 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <audio controls className="w-full" style={{ height: '40px' }}>
-                <source src={media.audios[0].url} type="audio/mpeg" />
-              </audio>
-            </div>
-          )}
-          
-          {/* Floating Image thumbnail - opens full screen on click */}
-          {media.images.length > 0 && (
-            <button
-              onClick={() => setShowPinnedImage(true)}
-              className="w-24 h-24 rounded-lg shadow-2xl border-2 border-primary/20 overflow-hidden bg-background hover:scale-105 transition-transform"
-              title="Click to enlarge"
+            <Button
+              onClick={() => setShowPinnedAudioPanel(!showPinnedAudioPanel)}
+              className={`rounded-full w-12 h-12 p-0 shadow-lg ${showPinnedAudioPanel ? 'bg-primary' : 'bg-secondary'}`}
+              variant="secondary"
+              title="Toggle Audio Player"
             >
-              <img 
-                src={media.images[0]} 
-                alt="Lesson image" 
-                className="w-full h-full object-cover"
-              />
-            </button>
+              <Volume2 className="h-5 w-5" />
+            </Button>
+          )}
+          {media.images.length > 0 && (
+            <Button
+              onClick={() => setShowPinnedImagePanel(!showPinnedImagePanel)}
+              className={`rounded-full w-12 h-12 p-0 shadow-lg ${showPinnedImagePanel ? 'bg-primary' : 'bg-secondary'}`}
+              variant="secondary"
+              title="Toggle Image"
+            >
+              <ImageIcon className="h-5 w-5" />
+            </Button>
           )}
         </div>
       )}
 
-      {/* Full screen image modal - closes only with X button */}
-      {showPinnedImage && media && media.images.length > 0 && (
+      {/* Pinned Audio Panel - shows only on button click */}
+      {showPinnedAudioPanel && media && media.audios.length > 0 && (
+        <div className="fixed bottom-20 right-20 z-50 bg-background border-2 border-primary/20 rounded-lg shadow-2xl p-4 w-80">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Volume2 className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold">Lesson Audio</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPinnedAudioPanel(false)}
+              className="h-7 w-7 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <audio controls className="w-full" style={{ height: '40px' }}>
+            <source src={media.audios[0].url} type="audio/mpeg" />
+          </audio>
+        </div>
+      )}
+
+      {/* Pinned Image Panel - medium size with X and Maximize buttons */}
+      {showPinnedImagePanel && !isImageFullScreen && media && media.images.length > 0 && (
+        <div className="fixed bottom-20 right-20 z-50 bg-background border-2 border-primary/20 rounded-lg shadow-2xl p-2 max-w-md">
+          <div className="flex justify-end gap-1 mb-1">
+            <Button 
+              onClick={() => setIsImageFullScreen(true)} 
+              size="sm" 
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              title="Fullscreen"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+            <Button 
+              onClick={() => setShowPinnedImagePanel(false)} 
+              size="sm" 
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              title="Close"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <img 
+            src={media.images[0]} 
+            alt="Lesson image" 
+            className="max-w-full max-h-80 object-contain rounded mx-auto"
+          />
+        </div>
+      )}
+
+      {/* Full screen image modal */}
+      {isImageFullScreen && media && media.images.length > 0 && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowPinnedImage(false)}
+            onClick={() => setIsImageFullScreen(false)}
             className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white h-10 w-10 rounded-full"
           >
             <X className="h-6 w-6" />

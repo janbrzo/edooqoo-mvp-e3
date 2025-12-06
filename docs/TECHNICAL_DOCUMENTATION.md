@@ -5,18 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2025):** Fixed critical issues with shared worksheets, PDF export, exercise selection, and backend validation:
-- **Shared Worksheets**: All audio exercises (Listening Comprehension, Answer Questions Audio, True/False Audio, Multiple Choice Audio, Fill in Blanks Audio) now display correctly without duplication in /shared routes
-- **Picture Exercises**: All picture exercises (Answer Questions Picture, True/False Picture, Describe Picture, Multiple Choice Picture) render correctly in shared worksheets
-- **PDF Margins**: Export margins corrected to professional standards (1cm sides, 0.5cm top/bottom) using `.container` class targeting in print CSS
-- **Lesson Media Section**: Added to shared worksheets with fallback support for multiple data structure formats (`selected_audio/image` or `media.audio_url/image_url`)
-- **Random Exercise Selection**: Fixed to maintain 2 media-specific exercises (Audio/Picture) when shuffling in Random mode, ensuring media priority is preserved
-- **Exercise Type "describe-picture"**: ✅ FIXED - Changed all frontend references from `'describe'` to `'describe-picture'` (ExerciseSelector, WorksheetForm, InputParamsCard, SharedWorksheetContent, ExerciseSection, worksheetUtils, mockNewExercisesData), ensuring backend finds correct template function `getDescribePictureExercise()` and includes prompt guidelines in ChatGPT requests
-- **Validator for "odd-one-out"**: ✅ FIXED - Changed validator structure from `groups` to `questions` (matching frontend ExerciseOddOneOut.tsx component), validating `questions` array with `options` and `correct_answer` fields; added 2 questions to template (8→10) to match requirements; changed final-requirements from "groups" to "questions" terminology
-- **Technical Fixes**: Added `normalizeExerciseType` helper function to handle `-picture` and `-audio` suffixes, preventing duplicate rendering
-- **Onboarding & Add Student Modal**: Add Student dialog now persists in-progress form data across browser tab switches (using `sessionStorage`), shared consistently between Dashboard and Onboarding checklist flows.
+**Latest Update (December 2025) - Interactive Worksheets v3:**
+- **Homework Notifications Fixed**: Changed `notification_type` from `'submission'` to `'completed'` in `insert_homework_submission_notification` SQL function to match database CHECK constraint
+- **Teacher Edit Mode**: Teachers can now unlock editing on homework view, modify student answers, and save/discard changes
+- **Pinned Media Redesigned**: Audio/Image panels now open only via fixed buttons (no auto-show on scroll), with proper X close buttons and Maximize for images
+- **Describe Picture Exercise**: Now generates 10 prompts instead of 8
+- **Duplicate Worksheet Button**: Added to WorksheetToolbar next to Edit Worksheet button
 
-**Latest Update (December 2025) - Interactive Worksheets v2:**
+**Previous Update (December 2025) - Interactive Worksheets v2:**
 - **Student Interactive Homework**: Students can now answer exercises interactively via `/homework/:token` route with email verification
 - **Auto-save**: Answers are automatically saved every 5 seconds with debounce + immediate save on blur
 - **Progress Tracking**: Progress bar shows X/Y exercises completed (only counts exercise when ALL questions answered)
