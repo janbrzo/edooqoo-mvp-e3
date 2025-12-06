@@ -126,7 +126,7 @@ export const useInteractiveHomework = ({
     }
   }, [homeworkId, studentEmail]);
 
-  // Debounced auto-save function (5 seconds)
+  // Debounced auto-save function (Problem 3: reduced from 5 seconds to 1.5 seconds)
   const scheduleAutoSave = useCallback((exerciseIndex: number, exerciseType: string, exerciseAnswers: ExerciseAnswers) => {
     // Clear existing timeout
     if (saveTimeoutRef.current) {
@@ -137,10 +137,10 @@ export const useInteractiveHomework = ({
     pendingSavesRef.current.add(exerciseIndex);
     setIsSaving(true);
 
-    // Schedule new save
+    // Schedule new save (1.5 seconds for faster feedback)
     saveTimeoutRef.current = setTimeout(() => {
       saveAnswer(exerciseIndex, exerciseType, exerciseAnswers);
-    }, 5000);
+    }, 1500);
   }, [saveAnswer]);
 
   // Update answer and schedule auto-save
