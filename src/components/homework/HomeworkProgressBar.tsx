@@ -1,6 +1,7 @@
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CheckCircle2, Clock, Loader2, Unlock, Save, RotateCcw } from 'lucide-react';
 import { HomeworkProgress } from '@/types/interactiveHomework';
 
 interface HomeworkProgressBarProps {
@@ -8,13 +9,27 @@ interface HomeworkProgressBarProps {
   isSaving: boolean;
   lastSavedAt: Date | null;
   isSubmitted: boolean;
+  // Teacher edit mode props
+  isTeacher?: boolean;
+  teacherEditMode?: boolean;
+  isSavingTeacherEdits?: boolean;
+  onUnlockEdit?: () => void;
+  onSaveChanges?: () => void;
+  onDiscardChanges?: () => void;
 }
 
 export const HomeworkProgressBar = ({
   progress,
   isSaving,
   lastSavedAt,
-  isSubmitted
+  isSubmitted,
+  // Teacher edit mode
+  isTeacher = false,
+  teacherEditMode = false,
+  isSavingTeacherEdits = false,
+  onUnlockEdit,
+  onSaveChanges,
+  onDiscardChanges
 }: HomeworkProgressBarProps) => {
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -38,6 +53,49 @@ export const HomeworkProgressBar = ({
               <Progress value={progress.percentageComplete} className="h-2" />
             </div>
           </div>
+
+          {/* Teacher Edit Mode Buttons (Problem 2) */}
+          {isTeacher && (
+            <div className="flex items-center gap-2">
+              {!teacherEditMode ? (
+                <Button 
+                  onClick={onUnlockEdit}
+                  variant="outline"
+                  size="sm"
+                  className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                >
+                  <Unlock className="h-3 w-3 mr-1" />
+                  Unlock Editing
+                </Button>
+              ) : (
+                <>
+                  <Button 
+                    onClick={onSaveChanges}
+                    disabled={isSavingTeacherEdits}
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {isSavingTeacherEdits ? (
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    ) : (
+                      <Save className="h-3 w-3 mr-1" />
+                    )}
+                    Save
+                  </Button>
+                  <Button 
+                    onClick={onDiscardChanges}
+                    disabled={isSavingTeacherEdits}
+                    variant="outline"
+                    size="sm"
+                    className="border-red-500 text-red-600 hover:bg-red-50"
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Discard
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Status indicators */}
           <div className="flex items-center gap-2">

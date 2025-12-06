@@ -56,7 +56,8 @@ export default function HomeworkPage() {
   
   // Teacher edit mode state (Problem 2)
   const [teacherEditMode, setTeacherEditMode] = useState(false);
-  const [originalAnswers, setOriginalAnswers] = useState<Record<number, any>>({});
+  const [teacherLocalAnswers, setTeacherLocalAnswers] = useState<Record<number, any>>({});
+  const [originalAnswersSnapshot, setOriginalAnswersSnapshot] = useState<Record<number, any>>({});
   const [isSavingTeacherEdits, setIsSavingTeacherEdits] = useState(false);
   
   // Navigation state
@@ -185,21 +186,35 @@ export default function HomeworkPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Teacher edit mode handlers (Problem 2)
+  // Teacher edit mode handlers (Problem 2) - uses LOCAL state to prevent auto-save until Save clicked
   const handleTeacherUnlockEdit = () => {
-    // Save original answers for potential discard
-    setOriginalAnswers(JSON.parse(JSON.stringify(answers)));
+    // Save a deep copy of current answers for potential discard
+    const snapshot = JSON.parse(JSON.stringify(answers));
+    setOriginalAnswersSnapshot(snapshot);
+    setTeacherLocalAnswers(snapshot);
     setTeacherEditMode(true);
-    toast.info("Edit mode enabled. You can now modify student answers.");
+    toast.info("Edit mode enabled. Changes won't be saved until you click 'Save'.");
   };
+
+  // Teacher's local answer change handler (does NOT trigger auto-save)
+  const handleTeacherLocalAnswerChange = (exerciseIndex: number, exerciseType: string) => 
+    (questionIndex: number, value: any) => {
+      setTeacherLocalAnswers(prev => ({
+        ...prev,
+        [exerciseIndex]: {
+          ...(prev[exerciseIndex] || {}),
+          [questionIndex]: value
+        }
+      }));
+    };
 
   const handleTeacherSaveChanges = async () => {
     if (!homework || !studentEmailForTeacher) return;
     
     setIsSavingTeacherEdits(true);
     try {
-      // Save all modified answers to database
-      for (const [exerciseIndex, exerciseAnswers] of Object.entries(answers)) {
+      // Save all modified answers from teacher's LOCAL state to database
+      for (const [exerciseIndex, exerciseAnswers] of Object.entries(teacherLocalAnswers)) {
         const exercise = homework.selected_exercises[Number(exerciseIndex)];
         if (exercise) {
           await supabase.rpc('save_homework_answer', {
@@ -214,6 +229,8 @@ export default function HomeworkPage() {
       
       setTeacherEditMode(false);
       toast.success("Changes saved successfully!");
+      // Reload page to refresh answers from DB
+      window.location.reload();
     } catch (error) {
       console.error('Error saving teacher edits:', error);
       toast.error("Failed to save changes");
@@ -223,11 +240,11 @@ export default function HomeworkPage() {
   };
 
   const handleTeacherDiscardChanges = () => {
-    // Restore original answers - this requires reloading the page or answers
+    // Simply exit edit mode - local changes are discarded, DB unchanged
+    setTeacherLocalAnswers({});
+    setOriginalAnswersSnapshot({});
     setTeacherEditMode(false);
-    toast.info("Changes discarded. Refreshing answers...");
-    // Reload the page to get original answers
-    window.location.reload();
+    toast.info("Changes discarded.");
   };
 
   // Navigation functions
@@ -498,12 +515,18 @@ export default function HomeworkPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Progress Bar */}
+      {/* Progress Bar with Teacher Edit Controls */}
       <HomeworkProgressBar
         progress={progress}
         isSaving={isSaving}
         lastSavedAt={lastSavedAt}
         isSubmitted={finalIsSubmitted}
+        isTeacher={isTeacher}
+        teacherEditMode={teacherEditMode}
+        isSavingTeacherEdits={isSavingTeacherEdits}
+        onUnlockEdit={handleTeacherUnlockEdit}
+        onSaveChanges={handleTeacherSaveChanges}
+        onDiscardChanges={handleTeacherDiscardChanges}
       />
 
       {/* Header */}
@@ -646,10 +669,18 @@ export default function HomeworkPage() {
                 editableWorksheet={{ exercises: homework.selected_exercises }}
                 setEditableWorksheet={() => {}}
                 hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
-                // Interactive props - teacher can edit when teacherEditMode is ON
+                // Interactive props - teacher uses LOCAL state when editing
                 isInteractive={true}
-                studentAnswers={(answers[index] || {}) as any}
-                onAnswerChange={(isTeacher && !teacherEditMode) ? () => () => {} : handleAnswerChange(index, exercise.type)}
+                studentAnswers={
+                  isTeacher && teacherEditMode 
+                    ? (teacherLocalAnswers[index] || answers[index] || {}) as any
+                    : (answers[index] || {}) as any
+                }
+                onAnswerChange={
+                  isTeacher 
+                    ? (teacherEditMode ? handleTeacherLocalAnswerChange(index, exercise.type) : () => () => {})
+                    : handleAnswerChange(index, exercise.type)
+                }
                 showCorrectAnswers={isTeacher || showCorrectAnswersToStudent}
               />
             </div>

@@ -16,6 +16,7 @@ interface HomeworkNotification {
   notification_type: string;
   created_at: string;
   is_read: boolean;
+  share_token?: string;
 }
 
 export function HomeworkNotificationBadge() {
@@ -56,17 +57,27 @@ export function HomeworkNotificationBadge() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Fetch notifications with homework share_token for navigation
       const { data, error } = await supabase
         .from('homework_notifications')
-        .select('*')
+        .select(`
+          *,
+          homework_assignments!homework_notifications_homework_id_fkey(share_token)
+        `)
         .eq('teacher_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
 
       if (error) throw error;
 
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.is_read).length || 0);
+      // Map share_token from joined data
+      const notificationsWithToken = (data || []).map(n => ({
+        ...n,
+        share_token: (n as any).homework_assignments?.share_token || null
+      }));
+
+      setNotifications(notificationsWithToken);
+      setUnreadCount(notificationsWithToken.filter(n => !n.is_read).length || 0);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
@@ -151,7 +162,12 @@ export function HomeworkNotificationBadge() {
                   if (!notification.is_read) {
                     markAsRead(notification.id);
                   }
-                  navigate(`/student/${notification.student_id}`);
+                  // Navigate to homework page if share_token exists, otherwise fallback to student page
+                  if (notification.share_token) {
+                    navigate(`/homework/${notification.share_token}`);
+                  } else {
+                    navigate(`/student/${notification.student_id}`);
+                  }
                   setIsOpen(false);
                 }}
               >

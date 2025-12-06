@@ -181,6 +181,45 @@ export const processExercises = (exercises: any[], lessonTime: string = '45min',
       });
       console.log(`🔧 Processed negative-prefixes exercise with ${exercise.words.length} words`);
     }
+
+    // PROBLEM 4 FIX: Process describe-picture exercises to ensure prompts exist
+    if (exercise.type === 'describe-picture' || exercise.type === 'describe') {
+      const prompts = exercise.prompts || exercise.questions || [];
+      console.log(`🔧 Processing describe-picture exercise, found ${prompts.length} prompts`);
+      
+      // If no prompts/questions exist, generate default guiding questions
+      if (prompts.length === 0) {
+        exercise.prompts = [
+          "What do you see in the image? Describe the main elements.",
+          "What is happening in the scene? Describe any actions or activities.",
+          "What colors, shapes, or patterns can you identify?",
+          "How would you describe the mood or atmosphere of this image?",
+          "What might have happened before this moment? Make a prediction.",
+          "What might happen next? Use your imagination.",
+          "If you could step into this image, what would you hear, smell, or feel?",
+          "How does this image make you feel? Explain your emotional response.",
+          "What questions would you ask about this image?",
+          "Create a short story or narrative inspired by this image."
+        ];
+        console.log(`🔧 Added 10 default prompts to describe-picture exercise`);
+      } else if (prompts.length < 5) {
+        // Ensure at least 5 prompts
+        const additionalPrompts = [
+          "What additional details can you observe in the image?",
+          "How would you describe the setting or location?",
+          "What is the most interesting element in this image and why?",
+          "Compare and contrast different elements you see.",
+          "What title would you give this image and why?"
+        ];
+        while (exercise.prompts && exercise.prompts.length < 5 && additionalPrompts.length > 0) {
+          exercise.prompts.push(additionalPrompts.shift()!);
+        }
+        console.log(`🔧 Padded describe-picture prompts to ${exercise.prompts.length}`);
+      } else {
+        // Prompts exist - ensure they're in the right field
+        exercise.prompts = prompts;
+      }
+    }
     
     if (exercise.type === 'reading' && exercise.content) {
       const wordCount = exercise.content.split(/\s+/).filter(Boolean).length;

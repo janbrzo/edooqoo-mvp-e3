@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Interactive Worksheets v3:**
+**Latest Update (December 2025) - Interactive Worksheets v4:**
+- **Homework Notifications Navigate to Homework**: Clicking notification bell now navigates to `/homework/:share_token` instead of student profile
+- **Teacher Edit Mode Improved**: Uses LOCAL state - changes are NOT auto-saved until "Save" clicked. "Discard" truly discards without saving.
+- **Auto-save Speed**: Reduced debounce from 5 seconds to 1.5 seconds for faster feedback on Multiple Choice and other exercises
+- **Progress Bar Controls**: Unlock/Save/Discard buttons now also appear on sticky progress bar at top of page
+- **Describe Picture Fallback**: ExerciseProcessor now generates 10 default prompts if ChatGPT returns empty prompts array
+
+**Previous Update (December 2025) - Interactive Worksheets v3:**
 - **Homework Notifications Fixed**: Changed `notification_type` from `'submission'` to `'completed'` in `insert_homework_submission_notification` SQL function to match database CHECK constraint
 - **Teacher Edit Mode**: Teachers can now unlock editing on homework view, modify student answers, and save/discard changes
 - **Pinned Media Redesigned**: Audio/Image panels now open only via fixed buttons (no auto-show on scroll), with proper X close buttons and Maximize for images
