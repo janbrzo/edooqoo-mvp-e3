@@ -195,30 +195,17 @@ export const useInteractiveHomework = ({
       setIsSubmitted(true);
       setSubmittedAt(new Date());
 
-      // Create notification for teacher using SECURITY DEFINER function (bypasses RLS)
+      // Create notification for teacher using SECURITY DEFINER function
+      // The SQL function fetches all data internally, so anonymous students don't need RLS access
       try {
-        const { data: homeworkData } = await supabase
-          .from('homework_assignments')
-          .select('title, students(name)')
-          .eq('id', homeworkId)
-          .single();
-
-        if (homeworkData) {
-          // @ts-ignore
-          const studentName = homeworkData.students?.name || 'Student';
-          const message = `${studentName} submitted homework: ${homeworkData.title}`;
-          
-          // Use RPC function with SECURITY DEFINER to bypass RLS for anonymous students
-          const { error: notifError } = await supabase.rpc('insert_homework_submission_notification', {
-            p_homework_id: homeworkId,
-            p_message: message
-          });
-          
-          if (notifError) {
-            console.error('[submitHomework] RPC notification error:', notifError);
-          } else {
-            console.log('[submitHomework] Notification created successfully');
-          }
+        const { error: notifError } = await supabase.rpc('insert_homework_submission_notification', {
+          p_homework_id: homeworkId
+        });
+        
+        if (notifError) {
+          console.error('[submitHomework] RPC notification error:', notifError);
+        } else {
+          console.log('[submitHomework] Notification created successfully');
         }
       } catch (notifError) {
         console.error('[submitHomework] Failed to create notification:', notifError);
