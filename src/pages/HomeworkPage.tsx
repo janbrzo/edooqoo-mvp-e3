@@ -5,8 +5,7 @@ import { toast } from "sonner";
 import ExerciseSection from "@/components/worksheet/ExerciseSection";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock, ArrowUp, Volume2, ImageIcon } from "lucide-react";
+import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock, ArrowUp, Volume2, ImageIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { useInteractiveHomework } from "@/hooks/useInteractiveHomework";
@@ -53,12 +52,14 @@ export default function HomeworkPage() {
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   const [isTeacher, setIsTeacher] = useState(false);
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  const [studentEmailForTeacher, setStudentEmailForTeacher] = useState<string | null>(null);
   
   // Navigation state
   const [activeExercise, setActiveExercise] = useState<number | null>(null);
   const [collapsedExercises, setCollapsedExercises] = useState<Map<number, boolean>>(new Map());
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showPinnedMedia, setShowPinnedMedia] = useState(false);
+  const [showPinnedImage, setShowPinnedImage] = useState(false);
   const exerciseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Interactive homework hook - only active after email verification
@@ -78,6 +79,9 @@ export default function HomeworkPage() {
     });
   }
 
+  // For teacher: use student's email to load their answers. For student: use verified email
+  const emailForAnswers = isTeacher ? (studentEmailForTeacher || '') : (verifiedEmail || '');
+  
   const {
     answers,
     isLoading: answersLoading,
@@ -92,7 +96,7 @@ export default function HomeworkPage() {
     getProgress
   } = useInteractiveHomework({
     homeworkId: homework?.id || '',
-    studentEmail: verifiedEmail || '',
+    studentEmail: emailForAnswers,
     totalExercises,
     exerciseQuestionCounts
   });
@@ -113,17 +117,17 @@ export default function HomeworkPage() {
     }
   }, [homework]);
 
-  // Check if logged-in user is the teacher (skip email verification)
+  // Check if logged-in user is the teacher (skip email verification) and get student email for answer loading
   useEffect(() => {
     const checkTeacher = async () => {
       if (!homework) return;
       
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Fetch teacher_id from homework
+        // Fetch teacher_id and student info from homework
         const { data: homeworkData } = await supabase
           .from('homework_assignments')
-          .select('teacher_id')
+          .select('teacher_id, student_id')
           .eq('id', homework.id)
           .single();
         
@@ -131,6 +135,20 @@ export default function HomeworkPage() {
           console.log('[HomeworkPage] Logged-in user is teacher, skipping email verification');
           setIsTeacher(true);
           setVerifiedEmail('teacher');
+          
+          // Fetch student email so teacher can see student's answers
+          if (homeworkData.student_id) {
+            const { data: studentData } = await supabase
+              .from('students')
+              .select('student_email')
+              .eq('id', homeworkData.student_id)
+              .single();
+            
+            if (studentData?.student_email) {
+              console.log('[HomeworkPage] Loaded student email for teacher view:', studentData.student_email);
+              setStudentEmailForTeacher(studentData.student_email);
+            }
+          }
         }
       }
     };
@@ -581,11 +599,11 @@ export default function HomeworkPage() {
                 editableWorksheet={{ exercises: homework.selected_exercises }}
                 setEditableWorksheet={() => {}}
                 hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
-                // Interactive props - only for students, not teachers
-                isInteractive={!isTeacher}
+                // Interactive props - teacher sees student answers in read-only mode
+                isInteractive={true}
                 studentAnswers={(answers[index] || {}) as any}
-                onAnswerChange={handleAnswerChange(index, exercise.type)}
-                showCorrectAnswers={showCorrectAnswersToStudent}
+                onAnswerChange={isTeacher ? () => () => {} : handleAnswerChange(index, exercise.type)}
+                showCorrectAnswers={isTeacher || showCorrectAnswersToStudent}
               />
             </div>
           ))}
@@ -667,48 +685,63 @@ export default function HomeworkPage() {
 
       {/* Pinned Media (floating) - actual inline player/image in bottom right */}
       {showPinnedMedia && media && (media.images.length > 0 || media.audios.length > 0) && (
-        <div className="fixed bottom-20 right-4 z-40 flex flex-col gap-3 max-w-xs">
-          {/* Floating Audio Player */}
+        <div className="fixed bottom-20 right-4 z-40 flex flex-col gap-3">
+          {/* Floating Audio Player - larger with visible timeline and close button */}
           {media.audios.length > 0 && (
-            <div className="bg-background border rounded-lg shadow-xl p-3 w-64">
-              <div className="flex items-center gap-2 mb-2">
-                <Volume2 className="h-4 w-4 text-primary" />
-                <span className="text-xs font-medium">Lesson Audio</span>
+            <div className="bg-background border-2 border-primary/20 rounded-lg shadow-2xl p-4 w-80">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Volume2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Lesson Audio</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPinnedMedia(false)}
+                  className="h-7 w-7 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <audio controls className="w-full h-10">
+              <audio controls className="w-full" style={{ height: '40px' }}>
                 <source src={media.audios[0].url} type="audio/mpeg" />
               </audio>
             </div>
           )}
           
-          {/* Floating Image with expand dialog */}
+          {/* Floating Image thumbnail - opens full screen on click */}
           {media.images.length > 0 && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  className="w-20 h-20 rounded-lg shadow-xl border-2 border-background overflow-hidden bg-background hover:scale-105 transition-transform"
-                  title="Click to enlarge"
-                >
-                  <img 
-                    src={media.images[0]} 
-                    alt="Lesson image" 
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent 
-                side="left" 
-                align="end" 
-                className="w-auto max-w-md p-2"
-              >
-                <img 
-                  src={media.images[0]} 
-                  alt="Lesson image enlarged" 
-                  className="rounded-lg max-h-80 object-contain"
-                />
-              </PopoverContent>
-            </Popover>
+            <button
+              onClick={() => setShowPinnedImage(true)}
+              className="w-24 h-24 rounded-lg shadow-2xl border-2 border-primary/20 overflow-hidden bg-background hover:scale-105 transition-transform"
+              title="Click to enlarge"
+            >
+              <img 
+                src={media.images[0]} 
+                alt="Lesson image" 
+                className="w-full h-full object-cover"
+              />
+            </button>
           )}
+        </div>
+      )}
+
+      {/* Full screen image modal - closes only with X button */}
+      {showPinnedImage && media && media.images.length > 0 && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowPinnedImage(false)}
+            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white h-10 w-10 rounded-full"
+          >
+            <X className="h-6 w-6" />
+          </Button>
+          <img 
+            src={media.images[0]} 
+            alt="Lesson image enlarged" 
+            className="max-w-full max-h-full object-contain rounded-lg"
+          />
         </div>
       )}
 

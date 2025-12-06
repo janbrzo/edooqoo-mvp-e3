@@ -1244,7 +1244,7 @@ export type Database = {
         Returns: number
       }
       insert_homework_submission_notification: {
-        Args: { p_homework_id: string; p_message: string }
+        Args: { p_homework_id: string; p_message?: string }
         Returns: undefined
       }
       insert_worksheet_bypass_limit:
