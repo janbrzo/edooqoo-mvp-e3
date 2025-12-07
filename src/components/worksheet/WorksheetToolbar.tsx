@@ -262,31 +262,45 @@ const WorksheetToolbar = ({
             )}
             {isEditing && (
               <>
-                <Button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className={`bg-green-600 hover:bg-green-700 ${isMobile ? '' : 'mr-2'}`}
-                  size="sm"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Save Changes'
-                  )}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className={`bg-green-600 hover:bg-green-700 ${isMobile ? '' : 'mr-2'}`}
+                      size="sm"
+                    >
+                      {isSaving ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save Changes'
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Ctrl+S / Cmd+S</p>
+                  </TooltipContent>
+                </Tooltip>
                 {onDiscardChanges && (
-                  <Button
-                    onClick={onDiscardChanges}
-                    disabled={isSaving}
-                    variant="outline"
-                    className={`border-red-500 text-red-500 hover:bg-red-50 ${isMobile ? '' : 'mr-2'}`}
-                    size="sm"
-                  >
-                    Discard Changes
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={onDiscardChanges}
+                        disabled={isSaving}
+                        variant="outline"
+                        className={`border-red-500 text-red-500 hover:bg-red-50 ${isMobile ? '' : 'mr-2'}`}
+                        size="sm"
+                      >
+                        Discard Changes
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Press Escape</p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </>
             )}

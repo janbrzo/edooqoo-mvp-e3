@@ -25,7 +25,7 @@ export const StudentKnowledgeToggleButton = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="fixed top-[calc(50%+35px)] right-6 z-40">
+          <div className="fixed top-[calc(50%+65px)] right-6 z-40">
             <Button
               onClick={onClick}
               size="icon"
