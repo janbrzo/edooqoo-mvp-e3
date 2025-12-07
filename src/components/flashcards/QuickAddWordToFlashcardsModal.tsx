@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,9 +47,13 @@ export const QuickAddWordToFlashcardsModal = ({
   const { sets, loading: setsLoading, createSet, refetch } = useFlashcardSets(teacherId, studentId);
   const { addCard } = useFlashcardCards(selectedSetId || '');
   
-  // Reset state when modal opens
+  // Ref to prevent multiple refetch calls on re-renders (fixes flickering modal issue)
+  const justOpened = useRef(false);
+  
+  // Reset state when modal opens - using useRef to prevent infinite loop
   useEffect(() => {
-    if (open) {
+    if (open && !justOpened.current) {
+      justOpened.current = true;
       setStep('select-set');
       setSelectedSetId(null);
       setSelectedSetBackType('definition');
@@ -60,6 +64,9 @@ export const QuickAddWordToFlashcardsModal = ({
       setNewSetBackType('translation');
       setNewSetBidirectional(true);
       refetch();
+    }
+    if (!open) {
+      justOpened.current = false;
     }
   }, [open, initialWord, refetch]);
   
