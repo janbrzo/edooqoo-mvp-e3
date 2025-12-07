@@ -134,7 +134,12 @@ export const StudentKnowledgeFloatingPanel = ({
         <CardHeader className="border-b">
           <div className="flex items-start justify-between">
             <div>
-              <CardTitle>{getTitle()}</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {getTitle()}
+                {mode === 'add' && (
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded font-normal">Press N</span>
+                )}
+              </CardTitle>
               <CardDescription>{getDescription()}</CardDescription>
             </div>
             <Button

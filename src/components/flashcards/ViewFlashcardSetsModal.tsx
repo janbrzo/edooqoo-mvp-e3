@@ -20,7 +20,7 @@ export const ViewFlashcardSetsModal = ({
   teacherId,
   studentName
 }: ViewFlashcardSetsModalProps) => {
-  const { sets, loading } = useFlashcardSets(studentId, teacherId);
+  const { sets, loading } = useFlashcardSets(teacherId, studentId);
   
   const handleOpenInNewTab = () => {
     window.open(`/student/${studentId}?tab=flashcards`, '_blank');

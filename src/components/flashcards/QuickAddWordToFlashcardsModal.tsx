@@ -35,7 +35,7 @@ export const QuickAddWordToFlashcardsModal = ({
   const [isTranslating, setIsTranslating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  const { sets, loading: setsLoading, refetch: refetchSets } = useFlashcardSets(studentId, teacherId);
+  const { sets, loading: setsLoading, refetch: refetchSets } = useFlashcardSets(teacherId, studentId);
   const { addCard } = useFlashcardCards(selectedSetId || '');
   
   // Reset state when modal opens
@@ -131,6 +131,7 @@ export const QuickAddWordToFlashcardsModal = ({
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5 text-green-600" />
             Quick Add Word to Flashcards
+            <span className="ml-auto text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Press F</span>
           </DialogTitle>
         </DialogHeader>
         

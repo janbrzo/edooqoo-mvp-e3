@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useDownloadTracking } from "@/hooks/useDownloadTracking";
 import { usePaymentTracking } from "@/hooks/usePaymentTracking";
@@ -17,12 +17,14 @@ import { StudentKnowledgeToggleButton } from "@/components/student-knowledge/Stu
 import { StudentKnowledgeFloatingPanel } from "@/components/student-knowledge/StudentKnowledgeFloatingPanel";
 import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
 import { useStudents } from "@/hooks/useStudents";
+import { useFlashcardSets } from "@/hooks/useFlashcardSets";
 import { CreateHomeworkModal } from "@/components/homework/CreateHomeworkModal";
 import { QuickAddWordToFlashcardsModal } from "@/components/flashcards/QuickAddWordToFlashcardsModal";
 import { ViewFlashcardSetsModal } from "@/components/flashcards/ViewFlashcardSetsModal";
 import { SelectWordMode } from "@/components/worksheet/SelectWordMode";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import { Plus, TextSelect, Layers } from "lucide-react";
 import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry, KnowledgeCategory } from "@/types/studentKnowledge";
 
@@ -97,7 +99,7 @@ export default function WorksheetDisplay({
   selectedAudio,
   audioUrl
 }: WorksheetDisplayProps) {
-  const [viewMode, setViewMode] = useState<'student' | 'teacher'>('student');
+  const [viewMode, setViewMode] = useState<'student' | 'teacher'>('teacher');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [expandAllRef, setExpandAllRef] = useState<(() => void) | null>(null);
@@ -186,6 +188,10 @@ export default function WorksheetDisplay({
     studentId: studentId || '',
     teacherId: userId || ''
   });
+  
+  // Fetch flashcard sets count for badge
+  const { sets: flashcardSets } = useFlashcardSets(userId || '', studentId || '');
+  const flashcardSetsCount = flashcardSets?.length || 0;
   
   const shouldShowMiniList = shouldShowFAB && (studentKnowledge.entries?.length || 0) > 0;
   
@@ -307,6 +313,60 @@ export default function WorksheetDisplay({
       document.head.removeChild(style);
     };
   }, [userId, worksheetId, checkTokenGeneratedWorksheet]);
+  
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in input/textarea
+      const target = e.target as HTMLElement;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) {
+        return;
+      }
+      
+      // Don't intercept if modals are open
+      if (isPanelOpen || showHomeworkModal || showQuickAddWordModal || showViewSetsModal) {
+        // Only handle Escape to close modals
+        if (e.key === 'Escape') {
+          if (showQuickAddWordModal) setShowQuickAddWordModal(false);
+          else if (showViewSetsModal) setShowViewSetsModal(false);
+          else if (showHomeworkModal) setShowHomeworkModal(false);
+          else if (isPanelOpen) handleClosePanel();
+        }
+        return;
+      }
+
+      // Ctrl/Cmd + S - Save when editing
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        if (isEditing) handleSave();
+        return;
+      }
+      
+      // Escape - Exit edit mode
+      if (e.key === 'Escape') {
+        if (isEditing && onDiscardChanges) handleDiscardChanges();
+        return;
+      }
+      
+      // N - Add Student Note (quick add)
+      if (e.key.toLowerCase() === 'n' && shouldShowFAB) {
+        e.preventDefault();
+        handleAddNote();
+        return;
+      }
+      
+      // F - Quick Add Word to Flashcards
+      if (e.key.toLowerCase() === 'f' && shouldShowFAB) {
+        e.preventDefault();
+        setSelectedWordForFlashcard('');
+        setShowQuickAddWordModal(true);
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isEditing, isPanelOpen, showHomeworkModal, showQuickAddWordModal, showViewSetsModal, shouldShowFAB, onDiscardChanges]);
   
   const validateWorksheetStructure = () => {
     if (!worksheet) {
@@ -495,22 +555,32 @@ export default function WorksheetDisplay({
         onCancel={() => setIsSelectWordMode(false)}
       />
       
-      {/* Flashcard FAB Buttons (Problem 4) - Above Student Knowledge FAB */}
+      {/* Flashcard FAB Buttons - Green group (top) */}
       {shouldShowFAB && (
         <>
-          {/* View Flashcard Sets */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={() => setShowViewSetsModal(true)}
-                size="icon"
-                className="fixed top-[calc(50%-90px)] right-6 p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white z-50"
+          {/* View Flashcard Sets - with badge */}
+          <div className="fixed top-[calc(50%-135px)] right-6 z-50">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => setShowViewSetsModal(true)}
+                  size="icon"
+                  className="p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white"
+                >
+                  <Layers className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">View Flashcard Sets</TooltipContent>
+            </Tooltip>
+            {flashcardSetsCount > 0 && (
+              <Badge 
+                variant="secondary" 
+                className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 text-xs bg-green-600 text-white border-2 border-background shadow-md z-10"
               >
-                <Layers className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">View Flashcard Sets</TooltipContent>
-          </Tooltip>
+                {flashcardSetsCount > 9 ? '9+' : flashcardSetsCount}
+              </Badge>
+            )}
+          </div>
           
           {/* Select Word from Worksheet */}
           <Tooltip>
@@ -518,7 +588,7 @@ export default function WorksheetDisplay({
               <Button
                 onClick={() => setIsSelectWordMode(true)}
                 size="icon"
-                className="fixed top-[calc(50%-45px)] right-6 p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white z-50"
+                className="fixed top-[calc(50%-90px)] right-6 p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white z-50"
               >
                 <TextSelect className="h-5 w-5" />
               </Button>
@@ -535,12 +605,12 @@ export default function WorksheetDisplay({
                   setShowQuickAddWordModal(true);
                 }}
                 size="icon"
-                className="fixed top-[calc(50%)] right-6 p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white z-50"
+                className="fixed top-[calc(50%-45px)] right-6 p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white z-50"
               >
                 <Plus className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">Quick Add Word to Flashcards</TooltipContent>
+            <TooltipContent side="left">Quick Add Word to Flashcards (F)</TooltipContent>
           </Tooltip>
         </>
       )}
