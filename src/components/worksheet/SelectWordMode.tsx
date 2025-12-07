@@ -25,6 +25,21 @@ export const SelectWordMode = ({
     }
   }, [isActive, onWordSelected]);
   
+  // Handle Escape key to cancel
+  useEffect(() => {
+    if (!isActive) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCancel();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isActive, onCancel]);
+  
   useEffect(() => {
     if (isActive) {
       document.addEventListener('mouseup', handleMouseUp);
@@ -46,6 +61,7 @@ export const SelectWordMode = ({
       <div className="absolute top-0 left-0 right-0 bg-green-600 text-white py-3 px-4 flex items-center justify-center gap-3 pointer-events-auto shadow-lg">
         <MousePointer2 className="h-5 w-5 animate-pulse" />
         <span className="font-medium">Select a word or phrase from the worksheet</span>
+        <span className="text-green-200 text-sm">(Press S to start, Escape to cancel)</span>
         <Button
           variant="ghost"
           size="sm"

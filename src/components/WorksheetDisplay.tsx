@@ -323,7 +323,7 @@ export default function WorksheetDisplay({
         return;
       }
       
-      // Don't intercept if modals are open
+      // Don't intercept if modals are open (except for Escape)
       if (isPanelOpen || showHomeworkModal || showQuickAddWordModal || showViewSetsModal) {
         // Only handle Escape to close modals
         if (e.key === 'Escape') {
@@ -332,6 +332,11 @@ export default function WorksheetDisplay({
           else if (showHomeworkModal) setShowHomeworkModal(false);
           else if (isPanelOpen) handleClosePanel();
         }
+        return;
+      }
+      
+      // Don't intercept if select word mode is active (Escape handled there)
+      if (isSelectWordMode) {
         return;
       }
 
@@ -362,11 +367,18 @@ export default function WorksheetDisplay({
         setShowQuickAddWordModal(true);
         return;
       }
+      
+      // S - Select Word Mode
+      if (e.key.toLowerCase() === 's' && shouldShowFAB && !isSelectWordMode) {
+        e.preventDefault();
+        setIsSelectWordMode(true);
+        return;
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEditing, isPanelOpen, showHomeworkModal, showQuickAddWordModal, showViewSetsModal, shouldShowFAB, onDiscardChanges]);
+  }, [isEditing, isPanelOpen, showHomeworkModal, showQuickAddWordModal, showViewSetsModal, shouldShowFAB, onDiscardChanges, isSelectWordMode]);
   
   const validateWorksheetStructure = () => {
     if (!worksheet) {
@@ -593,7 +605,7 @@ export default function WorksheetDisplay({
                 <TextSelect className="h-5 w-5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">Select Word to Add</TooltipContent>
+            <TooltipContent side="left">Select Word to Add (S)</TooltipContent>
           </Tooltip>
           
           {/* Quick Add Word */}

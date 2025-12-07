@@ -483,19 +483,6 @@ export default function HomeworkPage() {
     ? `${homework.teacher_first_name} ${homework.teacher_last_name}`
     : homework.teacher_email;
 
-  // Show email verification screen if not verified yet (skip for teachers)
-  if (!verifiedEmail && !isTeacher) {
-    return (
-      <StudentEmailVerification
-        homeworkId={homework.id}
-        studentName={homework.student_name}
-        teacherName={teacherName}
-        verifyEmail={verifyStudentEmail}
-        onVerified={setVerifiedEmail}
-      />
-    );
-  }
-  
   // Prepare exercises for nav sidebar
   const exercisesForNav = Array.isArray(homework.selected_exercises) 
     ? homework.selected_exercises.map((ex: any) => ({
@@ -515,9 +502,25 @@ export default function HomeworkPage() {
   
   // Student sees correct answers immediately after submitting
   const showCorrectAnswersToStudent = finalIsSubmitted;
+  
+  // Check if email verification is needed
+  const needsEmailVerification = !verifiedEmail && !isTeacher;
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Email verification overlay - homework visible behind with blur */}
+      {needsEmailVerification && (
+        <StudentEmailVerification
+          homeworkId={homework.id}
+          studentName={homework.student_name}
+          teacherName={teacherName}
+          verifyEmail={verifyStudentEmail}
+          onVerified={setVerifiedEmail}
+        />
+      )}
+      
+      {/* Main homework content - blocked when verification needed */}
+      <div className={needsEmailVerification ? 'pointer-events-none' : ''}>
       {/* Progress Bar with Teacher Edit Controls */}
       <HomeworkProgressBar
         progress={progress}
@@ -926,6 +929,7 @@ export default function HomeworkPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </div>
   );
 }
