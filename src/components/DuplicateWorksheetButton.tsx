@@ -9,6 +9,7 @@ interface DuplicateWorksheetButtonProps {
   onDuplicate: () => void;
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg' | 'icon';
+  className?: string;
 }
 
 export const DuplicateWorksheetButton = ({ 
@@ -16,7 +17,8 @@ export const DuplicateWorksheetButton = ({
   worksheetTitle, 
   onDuplicate,
   variant = 'ghost',
-  size = 'sm'
+  size = 'sm',
+  className = ''
 }: DuplicateWorksheetButtonProps) => {
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -32,8 +34,10 @@ export const DuplicateWorksheetButton = ({
         size={size}
         onClick={handleClick}
         title="Duplicate worksheet"
+        className={className}
       >
-        <Copy className="h-4 w-4" />
+        <Copy className="h-4 w-4 mr-1" />
+        Duplicate
       </Button>
       
       <DuplicateWorksheetModal

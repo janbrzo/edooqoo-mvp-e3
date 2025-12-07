@@ -199,7 +199,7 @@ const WorksheetToolbar = ({
               size="sm"
             >
               <User className="mr-2 h-4 w-4" />
-              Student View
+              Student
             </Button>
             <Button
               variant={viewMode === 'teacher' ? 'default' : 'outline'}
@@ -208,7 +208,7 @@ const WorksheetToolbar = ({
               size="sm"
             >
               <Lightbulb className="mr-2 h-4 w-4" />
-              Teacher View
+              Teacher
             </Button>
           </div>
           <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center'}`}>
@@ -220,7 +220,7 @@ const WorksheetToolbar = ({
                   className={`border-worksheet-purple text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
                   size="sm"
                 >
-                  <Edit className="mr-2 h-4 w-4" /> Edit Worksheet
+                  <Edit className="mr-2 h-4 w-4" /> Edit
                 </Button>
                 
                 {/* Duplicate Worksheet Button (Problem 5) */}
@@ -231,6 +231,7 @@ const WorksheetToolbar = ({
                     onDuplicate={onDuplicateSuccess || (() => {})}
                     variant="outline"
                     size="sm"
+                    className="border-worksheet-purple text-worksheet-purple mr-2"
                   />
                 )}
                 
@@ -242,7 +243,7 @@ const WorksheetToolbar = ({
                       className={`border-worksheet-purple text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
                       size="sm"
                     >
-                      <Share2 className="mr-2 h-4 w-4" /> Share Worksheet
+                      <Share2 className="mr-2 h-4 w-4" /> Share
                     </Button>
                     
                     {onCreateHomework && (

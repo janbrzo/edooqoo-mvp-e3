@@ -18,6 +18,12 @@ import { StudentKnowledgeFloatingPanel } from "@/components/student-knowledge/St
 import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
 import { useStudents } from "@/hooks/useStudents";
 import { CreateHomeworkModal } from "@/components/homework/CreateHomeworkModal";
+import { QuickAddWordToFlashcardsModal } from "@/components/flashcards/QuickAddWordToFlashcardsModal";
+import { ViewFlashcardSetsModal } from "@/components/flashcards/ViewFlashcardSetsModal";
+import { SelectWordMode } from "@/components/worksheet/SelectWordMode";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Plus, TextSelect, Layers } from "lucide-react";
 import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry, KnowledgeCategory } from "@/types/studentKnowledge";
 
 interface Exercise {
@@ -166,6 +172,11 @@ export default function WorksheetDisplay({
   const MINI_LIST_PAGE_SIZE = 8;
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
   
+  // Flashcard FAB buttons state (Problem 4)
+  const [showQuickAddWordModal, setShowQuickAddWordModal] = useState(false);
+  const [showViewSetsModal, setShowViewSetsModal] = useState(false);
+  const [isSelectWordMode, setIsSelectWordMode] = useState(false);
+  const [selectedWordForFlashcard, setSelectedWordForFlashcard] = useState('');
   // Fetch all students for homework creation
   const { students } = useStudents();
   
@@ -467,8 +478,73 @@ export default function WorksheetDisplay({
   const totalEntries = studentKnowledge.entries?.length || 0;
   const hasMoreEntries = totalEntries >= miniListPage * MINI_LIST_PAGE_SIZE;
 
+  // Get native language from student data
+  const currentStudent = students.find(s => s.id === studentId);
+  const nativeLanguage = currentStudent?.native_language || 'Spanish';
+
   return (
     <WorksheetViewTracking worksheetId={worksheetId} userId={userId}>
+      {/* Select Word Mode Overlay */}
+      <SelectWordMode
+        isActive={isSelectWordMode}
+        onWordSelected={(word) => {
+          setSelectedWordForFlashcard(word);
+          setIsSelectWordMode(false);
+          setShowQuickAddWordModal(true);
+        }}
+        onCancel={() => setIsSelectWordMode(false)}
+      />
+      
+      {/* Flashcard FAB Buttons (Problem 4) - Above Student Knowledge FAB */}
+      {shouldShowFAB && (
+        <>
+          {/* View Flashcard Sets */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => setShowViewSetsModal(true)}
+                size="icon"
+                className="fixed top-[calc(50%-90px)] right-6 p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white z-50"
+              >
+                <Layers className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">View Flashcard Sets</TooltipContent>
+          </Tooltip>
+          
+          {/* Select Word from Worksheet */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => setIsSelectWordMode(true)}
+                size="icon"
+                className="fixed top-[calc(50%-45px)] right-6 p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white z-50"
+              >
+                <TextSelect className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Select Word to Add</TooltipContent>
+          </Tooltip>
+          
+          {/* Quick Add Word */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={() => {
+                  setSelectedWordForFlashcard('');
+                  setShowQuickAddWordModal(true);
+                }}
+                size="icon"
+                className="fixed top-[calc(50%)] right-6 p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white z-50"
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">Quick Add Word to Flashcards</TooltipContent>
+          </Tooltip>
+        </>
+      )}
+      
       {/* Student Knowledge FAB, Toggle Button, and Mini List */}
       {shouldShowFAB && (
         <>
@@ -510,6 +586,28 @@ export default function WorksheetDisplay({
           suggestedTags={studentKnowledge.suggestedTags || []}
           onEdit={() => setPanelMode('edit')}
         />
+      )}
+      
+      {/* Flashcard Modals (Problem 4) */}
+      {shouldShowFAB && (
+        <>
+          <QuickAddWordToFlashcardsModal
+            open={showQuickAddWordModal}
+            onOpenChange={setShowQuickAddWordModal}
+            studentId={studentId!}
+            teacherId={userId!}
+            worksheetId={worksheetId || undefined}
+            nativeLanguage={nativeLanguage}
+            initialWord={selectedWordForFlashcard}
+          />
+          <ViewFlashcardSetsModal
+            open={showViewSetsModal}
+            onOpenChange={setShowViewSetsModal}
+            studentId={studentId!}
+            teacherId={userId!}
+            studentName={studentName}
+          />
+        </>
       )}
       
       <WorksheetContainer
