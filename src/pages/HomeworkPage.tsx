@@ -53,6 +53,7 @@ export default function HomeworkPage() {
   const [isTeacher, setIsTeacher] = useState(false);
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [studentEmailForTeacher, setStudentEmailForTeacher] = useState<string | null>(null);
+  const [studentIdForTeacher, setStudentIdForTeacher] = useState<string | null>(null);
   
   // Teacher edit mode state (Problem 2)
   const [teacherEditMode, setTeacherEditMode] = useState(false);
@@ -148,6 +149,8 @@ export default function HomeworkPage() {
           
           // Fetch student email so teacher can see student's answers
           if (homeworkData.student_id) {
+            setStudentIdForTeacher(homeworkData.student_id);
+            
             const { data: studentData } = await supabase
               .from('students')
               .select('student_email')
@@ -527,6 +530,8 @@ export default function HomeworkPage() {
         onUnlockEdit={handleTeacherUnlockEdit}
         onSaveChanges={handleTeacherSaveChanges}
         onDiscardChanges={handleTeacherDiscardChanges}
+        studentName={homework.student_name}
+        studentId={studentIdForTeacher || undefined}
       />
 
       {/* Header */}

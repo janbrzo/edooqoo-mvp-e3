@@ -367,7 +367,7 @@ const Dashboard = () => {
                           {/* First line: Title + Student Badge + Media + Actions */}
                           <div className="flex items-center justify-between mb-2">
                             <div 
-                              className="flex items-center gap-2 flex-1 cursor-pointer hover:text-primary transition-colors"
+                              className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer hover:text-primary transition-colors"
                               onClick={() => handleWorksheetOpen(worksheet)}
                             >
                               <h3 className="font-semibold text-base truncate">

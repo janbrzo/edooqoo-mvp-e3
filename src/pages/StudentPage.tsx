@@ -19,7 +19,7 @@ import { useAllWorksheetHomework } from '@/hooks/useAllWorksheetHomework';
 import { WorksheetHomeworkSection } from '@/components/worksheet/WorksheetHomeworkSection';
 import { StudentHomeworkTab } from '@/components/student-homework/StudentHomeworkTab';
 import { FlashcardSetsSection } from '@/components/flashcards/FlashcardSetsSection';
-import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Settings } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { deepFixTextObjects } from '@/utils/textObjectFixer';
@@ -221,7 +221,7 @@ const StudentPage = () => {
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="icon">
-                          <Settings className="h-5 w-5" />
+                          <Trash2 className="h-5 w-5 text-destructive" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
@@ -279,6 +279,22 @@ const StudentPage = () => {
                     </div>
                   </div>
                 )}
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Native Language</label>
+                  <div className="flex items-center mt-1">
+                    <Globe className="h-4 w-4 mr-2 text-primary" />
+                    <span>{student.native_language || 'Not set'}</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Overdue Homework Emails</label>
+                  <div className="flex items-center mt-1">
+                    <Mail className="h-4 w-4 mr-2 text-primary" />
+                    <Badge variant={student.send_overdue_emails !== false ? 'default' : 'secondary'}>
+                      {student.send_overdue_emails !== false ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </div>
+                </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Total Worksheets</label>
                   <div className="flex items-center mt-1">

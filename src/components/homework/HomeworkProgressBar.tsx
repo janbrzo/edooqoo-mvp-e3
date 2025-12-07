@@ -1,8 +1,9 @@
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Clock, Loader2, Unlock, Save, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Clock, Loader2, Unlock, Save, RotateCcw, ArrowLeft, Home, User } from 'lucide-react';
 import { HomeworkProgress } from '@/types/interactiveHomework';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface HomeworkProgressBarProps {
   progress: HomeworkProgress;
@@ -16,6 +17,9 @@ interface HomeworkProgressBarProps {
   onUnlockEdit?: () => void;
   onSaveChanges?: () => void;
   onDiscardChanges?: () => void;
+  // Navigation props (Problem 3)
+  studentName?: string;
+  studentId?: string;
 }
 
 export const HomeworkProgressBar = ({
@@ -29,8 +33,12 @@ export const HomeworkProgressBar = ({
   isSavingTeacherEdits = false,
   onUnlockEdit,
   onSaveChanges,
-  onDiscardChanges
+  onDiscardChanges,
+  // Navigation props (Problem 3)
+  studentName,
+  studentId
 }: HomeworkProgressBarProps) => {
+  const navigate = useNavigate();
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
@@ -54,7 +62,43 @@ export const HomeworkProgressBar = ({
             </div>
           </div>
 
-          {/* Teacher Edit Mode Buttons (Problem 2) */}
+          {/* Teacher Navigation Buttons (Problem 3) */}
+          {isTeacher && (
+            <div className="flex items-center gap-2 mr-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(-1)}
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+              >
+                <Link to="/dashboard">
+                  <Home className="h-4 w-4 mr-1" />
+                  Dashboard
+                </Link>
+              </Button>
+              {studentId && studentName && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  asChild
+                >
+                  <Link to={`/student/${studentId}`}>
+                    <User className="h-4 w-4 mr-1" />
+                    {studentName}
+                  </Link>
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Teacher Edit Mode Buttons */}
           {isTeacher && (
             <div className="flex items-center gap-2">
               {!teacherEditMode ? (

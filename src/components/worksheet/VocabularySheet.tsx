@@ -70,7 +70,7 @@ const VocabularySheet = ({
               variant="secondary"
               size="sm"
               onClick={handleAddAllWords}
-              className="bg-white/20 hover:bg-white/30 text-white border-0"
+              className="bg-green-500 hover:bg-green-600 text-white border-0"
             >
               <Plus className="h-4 w-4 mr-1" />
               Add All to Flashcards
@@ -91,10 +91,10 @@ const VocabularySheet = ({
                     variant="ghost"
                     size="sm"
                     onClick={() => handleAddSingleWord(index)}
-                    className="absolute top-2 right-2 h-6 w-6 p-0 hover:bg-worksheet-purple/10"
+                    className="absolute top-2 right-2 h-6 w-6 p-0 hover:bg-green-100"
                     title="Add to flashcards"
                   >
-                    <Plus className="h-4 w-4 text-worksheet-purple" />
+                    <Plus className="h-4 w-4 text-green-600" />
                   </Button>
                 )}
                 <p className="font-semibold text-worksheet-purple pr-8">
