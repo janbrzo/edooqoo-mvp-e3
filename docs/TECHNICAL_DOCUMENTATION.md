@@ -5,7 +5,17 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Interactive Worksheets v4:**
+**Latest Update (December 2025) - Interactive Shared Worksheets:**
+- **Interactive Shared Worksheets**: Students can now complete exercises interactively on shared worksheets (`/shared/:token`) - identical to homework functionality
+- **Study Mode**: Big "Study" button on shared worksheets enables interactive answering with auto-save
+- **Email Verification**: Students verify email before accessing study mode (same as homework)
+- **Share Worksheet Modal Enhancement**: New recipient email field with "Save for verification" option
+- **Live Session Mode**: Teacher can enable "Live Session" to see student answers in real-time via Supabase Realtime
+- **Send Worksheet Email**: New Edge Function `send-worksheet-email` to send worksheet links via email
+- **Database Tables**: New `worksheet_student_answers` table for storing student answers on shared worksheets
+- **All 18 Exercise Types**: Full interactive support in SharedWorksheetContent.tsx
+
+**Previous Update (December 2025) - Interactive Worksheets v4:**
 - **Homework Notifications Navigate to Homework**: Clicking notification bell now navigates to `/homework/:share_token` instead of student profile
 - **Teacher Edit Mode Improved**: Uses LOCAL state - changes are NOT auto-saved until "Save" clicked. "Discard" truly discards without saving.
 - **Auto-save Speed**: Reduced debounce from 5 seconds to 1.5 seconds for faster feedback on Multiple Choice and other exercises
