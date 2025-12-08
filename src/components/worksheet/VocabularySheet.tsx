@@ -18,7 +18,7 @@ interface Worksheet {
 interface VocabularySheetProps {
   vocabularySheet: { term: string; meaning: string }[];
   isEditing: boolean;
-  viewMode: "student" | "teacher";
+  viewMode: "student" | "teacher" | "live-session";
   editableWorksheet: Worksheet;
   setEditableWorksheet: (worksheet: Worksheet) => void;
   // Optional flashcard props

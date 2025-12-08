@@ -84,7 +84,7 @@ interface ExerciseSectionProps {
   index: number;
   originalIndex?: number;
   isEditing: boolean;
-  viewMode: "student" | "teacher";
+  viewMode: "student" | "teacher" | "live-session";
   editableWorksheet: any;
   setEditableWorksheet: React.Dispatch<React.SetStateAction<any>>;
   worksheetId?: string;
@@ -150,6 +150,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 }, ref) => {
   // Use originalIndex for array operations, index for display
   const arrayIndex = originalIndex !== undefined ? originalIndex : index - 1;
+  
+  // Convert viewMode to exercise-compatible mode (live-session behaves like teacher view)
+  const exerciseViewMode: "student" | "teacher" = viewMode === 'live-session' ? 'teacher' : viewMode;
+  
   const {
     isModalOpen,
     isLoading,
@@ -290,7 +294,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseReading
             questions={exercise.questions}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onQuestionChange={handleQuestionChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -303,8 +307,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseMatching
             items={exercise.items}
             isEditing={isEditing}
-            viewMode={viewMode}
-            getMatchedItems={() => getMatchedItems(exercise.items, viewMode)}
+            viewMode={exerciseViewMode}
+            getMatchedItems={() => getMatchedItems(exercise.items, exerciseViewMode)}
             onItemChange={handleItemChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -318,7 +322,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             word_bank={exercise.word_bank}
             sentences={exercise.sentences}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onWordBankChange={(wIndex, value) => {
               const newWordBank = [...exercise.word_bank!];
               newWordBank[wIndex] = value;
@@ -344,7 +348,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseMultipleChoice
             questions={exercise.questions}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onQuestionTextChange={(qIndex, value) => handleQuestionChangeLocal(qIndex, 'text', value)}
             onOptionTextChange={(qIndex, oIndex, value) => {
               const updatedExercises = [...editableWorksheet.exercises];
@@ -376,7 +380,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             expressions={exercise.expressions}
             expression_instruction={exercise.expression_instruction}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onDialogueChange={handleDialogueChangeLocal}
             onExpressionChange={handleExpressionChangeLocal}
             onExpressionInstructionChange={val => handleExerciseChangeLocal('expression_instruction', val)}
@@ -439,7 +443,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           exercise.sentences && renderOtherExerciseTypes(
             exercise, 
             isEditing, 
-            viewMode, 
+            exerciseViewMode, 
             handleSentenceChangeLocal,
             isInteractive,
             studentAnswers,
@@ -452,7 +456,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             statements={exercise.statements}
             audio_url={undefined}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onStatementChange={handleStatementChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -466,7 +470,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseOddOneOut
             questions={exercise.questions}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onQuestionChange={handleQuestionChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -479,7 +483,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseSynonymsAntonyms
             items={exercise.items}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onItemChange={handleItemChangeLocal}
             exerciseType={normalizedType}
             isInteractive={isInteractive}
@@ -493,7 +497,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseSentenceTransformation
             sentences={exercise.sentences}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onSentenceChange={handleSentenceChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -506,7 +510,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseWordOrder
             sentences={exercise.sentences}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onSentenceChange={handleSentenceChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -519,7 +523,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseGapText
             sentences={exercise.sentences}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onSentenceChange={handleSentenceChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -532,7 +536,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseNegativePrefixes
             words={exercise.words}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onWordChange={(wIndex, field, value) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newWords = [...exercise.words];
@@ -563,7 +567,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             words={exercise.words}
             categories={exercise.categories}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onWordsChange={(words) => {
               const updatedExercises = [...editableWorksheet.exercises];
               updatedExercises[arrayIndex] = {
@@ -603,7 +607,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseParaphrasing
             sentences={exercise.sentences}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onSentenceChange={handleSentenceChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -616,7 +620,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseCompleteWord
             words={exercise.words}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onWordChange={(wIndex, field, value) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newWords = [...exercise.words];
@@ -644,7 +648,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <ExerciseMatchingHalves
             sentence_halves={exercise.sentence_halves}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onHalvesChange={(hIndex, field, value) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newHalves = [...exercise.sentence_halves];
@@ -674,7 +678,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             image_url={exercise.image_url || hasSelectedImage?.unsplash_url || hasSelectedImage?.ai_generated_url}
             questions={exercise.prompts || exercise.questions || []}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             showImage={true}
             onQuestionChange={(qIndex, field, value) => {
               const updatedExercises = [...editableWorksheet.exercises];
@@ -708,7 +712,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             media_type={exercise.media_type}
             questions={exercise.questions}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             showImage={showImage}
             hideExerciseMedia={hideExerciseMedia}
             onQuestionChange={handleQuestionChangeLocal}
@@ -727,7 +731,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             questions={exercise.questions}
             audio_url={exercise.audio_url}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onQuestionChange={handleQuestionChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -741,7 +745,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             questions={exercise.questions}
             audio_url={exercise.audio_url}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onQuestionChange={handleQuestionChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -755,7 +759,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             statements={exercise.statements}
             audio_url={exercise.audio_url}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onStatementChange={handleStatementChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -772,7 +776,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             answers={exercise.answers}
             audio_url={exercise.audio_url}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onWordBankChange={(wIndex, value) => {
               const newWordBank = [...(exercise.word_bank || [])];
               newWordBank[wIndex] = value;
@@ -812,7 +816,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             questions={exercise.questions}
             audio_url={exercise.audio_url}
             isEditing={isEditing}
-            viewMode={viewMode}
+            viewMode={exerciseViewMode}
             onQuestionChange={handleQuestionChangeLocal}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
@@ -826,7 +830,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           tip={exercise.teacher_tip}
           isEditing={isEditing}
           onChange={handleTeacherTipChangeLocal}
-          viewMode={viewMode}
+          viewMode={exerciseViewMode}
         />
             </div>
           </CollapsibleContent>

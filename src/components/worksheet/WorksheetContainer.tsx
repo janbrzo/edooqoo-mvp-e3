@@ -11,7 +11,7 @@ interface WorksheetContainerProps {
   worksheetId?: string | null;
   onDownload?: () => void;
   isDownloadUnlocked: boolean;
-  viewMode: "student" | "teacher";
+  viewMode: "student" | "teacher" | "live-session";
   editableWorksheet: any;
   selectedImage?: {
     id: string;

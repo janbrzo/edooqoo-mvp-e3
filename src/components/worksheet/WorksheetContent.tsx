@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 interface WorksheetContentProps {
   editableWorksheet: any;
   isEditing: boolean;
-  viewMode: "student" | "teacher";
+  viewMode: "student" | "teacher" | "live-session";
   setEditableWorksheet: (worksheet: any) => void;
   worksheetId?: string | null;
   onFeedbackSubmit?: (rating: number, feedback: string) => void;

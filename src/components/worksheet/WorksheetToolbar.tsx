@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen, Copy } from "lucide-react";
+import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen, Copy, Radio } from "lucide-react";
 import { isFreeCustomDemoWeek } from "@/utils/promoUtils";
 import PaymentPopup from "@/components/PaymentPopup";
 import ShareWorksheetModal from "@/components/ShareWorksheetModal";
@@ -17,8 +17,9 @@ import {
 } from "@/components/ui/tooltip";
 
 interface WorksheetToolbarProps {
-  viewMode: "student" | "teacher";
-  setViewMode: (mode: "student" | "teacher") => void;
+  viewMode: "student" | "teacher" | "live-session";
+  setViewMode: (mode: "student" | "teacher" | "live-session") => void;
+  hasLiveSessionData?: boolean;
   isEditing: boolean;
   isSaving?: boolean;
   handleEdit: () => void;
@@ -41,6 +42,7 @@ interface WorksheetToolbarProps {
 const WorksheetToolbar = ({
   viewMode,
   setViewMode,
+  hasLiveSessionData = false,
   isEditing,
   isSaving = false,
   handleEdit,
@@ -191,7 +193,7 @@ const WorksheetToolbar = ({
     <>
       <div className="sticky top-0 z-10 bg-white border-b mb-6 py-3 px-4">
         <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'} max-w-[98%] mx-auto`}>
-          <div className={`flex ${isMobile ? 'justify-center' : ''} space-x-2`}>
+          <div className={`flex ${isMobile ? 'justify-center flex-wrap' : ''} space-x-2`}>
             <Button
               variant={viewMode === 'student' ? 'default' : 'outline'}
               onClick={() => setViewMode('student')}
@@ -210,6 +212,25 @@ const WorksheetToolbar = ({
               <Lightbulb className="mr-2 h-4 w-4" />
               Teacher
             </Button>
+            {/* Live Session button - only visible when shared worksheet has student answers */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={viewMode === 'live-session' ? 'default' : 'outline'}
+                  onClick={() => setViewMode('live-session')}
+                  className={`${viewMode === 'live-session' 
+                    ? 'bg-blue-600 hover:bg-blue-700' 
+                    : 'border-blue-600 text-blue-600 hover:bg-blue-50'} ${hasLiveSessionData ? 'animate-pulse' : ''}`}
+                  size="sm"
+                >
+                  <Radio className="mr-2 h-4 w-4" />
+                  Live Session
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View student answers in real-time</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className={`flex ${isMobile ? 'flex-col gap-2' : 'items-center'}`}>
             {!isEditing && (
