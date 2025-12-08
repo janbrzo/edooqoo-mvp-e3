@@ -99,7 +99,7 @@ export default function WorksheetDisplay({
   selectedAudio,
   audioUrl
 }: WorksheetDisplayProps) {
-  const [viewMode, setViewMode] = useState<'student' | 'teacher'>('teacher');
+  const [viewMode, setViewMode] = useState<'student' | 'teacher' | 'live-session'>('teacher');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [expandAllRef, setExpandAllRef] = useState<(() => void) | null>(null);
