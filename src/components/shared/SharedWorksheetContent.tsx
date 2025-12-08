@@ -36,6 +36,11 @@ interface SharedWorksheetContentProps {
     selected_audio?: any;
     audio_url?: string;
   };
+  // Interactive mode props
+  isInteractive?: boolean;
+  studentAnswers?: Record<number, any>;
+  onAnswerChange?: (exerciseIndex: number, exerciseType: string, questionIndex: number, value: any) => void;
+  onBlur?: (exerciseIndex: number, exerciseType: string) => void;
 }
 
 // Helper function to normalize exercise type (removes -picture and -audio suffixes)
@@ -43,7 +48,13 @@ const normalizeExerciseType = (type: string): string => {
   return type.replace('-picture', '').replace('-audio', '');
 };
 
-const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ worksheet }) => {
+const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ 
+  worksheet,
+  isInteractive = false,
+  studentAnswers = {},
+  onAnswerChange,
+  onBlur
+}) => {
   console.log('🔧 SharedWorksheetContent: Starting data parsing...');
   console.log('🔧 ai_response length:', worksheet.ai_response?.length || 0);
   console.log('🔧 html_content length:', worksheet.html_content?.length || 0);
