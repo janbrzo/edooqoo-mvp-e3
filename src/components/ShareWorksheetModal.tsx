@@ -1,9 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Share2, ExternalLink, Loader2 } from 'lucide-react';
+import { Copy, Share2, ExternalLink, Loader2, Mail, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { isValidUUID } from '@/utils/securityUtils';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
@@ -13,13 +16,38 @@ interface ShareWorksheetModalProps {
   onClose: () => void;
   worksheetId: string;
   worksheetTitle: string;
+  studentEmail?: string; // Pre-fill from student profile if available
 }
 
-const ShareWorksheetModal = ({ isOpen, onClose, worksheetId, worksheetTitle }: ShareWorksheetModalProps) => {
+const ShareWorksheetModal = ({ 
+  isOpen, 
+  onClose, 
+  worksheetId, 
+  worksheetTitle,
+  studentEmail: initialStudentEmail 
+}: ShareWorksheetModalProps) => {
   const [shareUrl, setShareUrl] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState(initialStudentEmail || '');
+  const [saveEmailForVerification, setSaveEmailForVerification] = useState(true);
   const { toast } = useToast();
   const { refreshProgress } = useOnboardingProgress();
+
+  // Update recipient email when initialStudentEmail changes
+  useEffect(() => {
+    if (initialStudentEmail) {
+      setRecipientEmail(initialStudentEmail);
+    }
+  }, [initialStudentEmail]);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (!isOpen) {
+      setShareUrl('');
+      setIsSendingEmail(false);
+    }
+  }, [isOpen]);
 
   const generateShareLink = async () => {
     setIsGenerating(true);
@@ -86,8 +114,8 @@ const ShareWorksheetModal = ({ isOpen, onClose, worksheetId, worksheetTitle }: S
       // ENHANCED: Immediate onboarding refresh after sharing with multiple triggers
       console.log('[ShareWorksheet] Triggering onboarding refresh after share link generation');
       refreshProgress();
-      setTimeout(refreshProgress, 500);   // Additional refresh after 500ms
-      setTimeout(refreshProgress, 1500);  // Another refresh after 1.5s
+      setTimeout(refreshProgress, 500);
+      setTimeout(refreshProgress, 1500);
       
       toast({
         title: "Share link generated",
@@ -135,6 +163,66 @@ const ShareWorksheetModal = ({ isOpen, onClose, worksheetId, worksheetTitle }: S
     window.open(shareUrl, '_blank');
   };
 
+  const sendEmail = async () => {
+    if (!recipientEmail) {
+      toast({
+        title: "Email required",
+        description: "Please enter a recipient email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(recipientEmail)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSendingEmail(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('You must be logged in to send emails');
+      }
+
+      const response = await supabase.functions.invoke('send-worksheet-email', {
+        body: {
+          worksheetId,
+          studentEmail: recipientEmail.toLowerCase(),
+          updateShareRecipientEmail: saveEmailForVerification
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to send email');
+      }
+
+      toast({
+        title: "Email sent!",
+        description: `Worksheet link sent to ${recipientEmail}`,
+        className: "bg-green-50 border-green-200"
+      });
+
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      toast({
+        title: "Failed to send email",
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: "destructive"
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -172,7 +260,8 @@ const ShareWorksheetModal = ({ isOpen, onClose, worksheetId, worksheetTitle }: S
           )}
 
           {shareUrl && (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* Share Link Section */}
               <div>
                 <p className="text-sm text-gray-600 mb-2">Share this link:</p>
                 <div className="flex items-center gap-2 p-3 bg-gray-50 rounded border">
@@ -210,8 +299,60 @@ const ShareWorksheetModal = ({ isOpen, onClose, worksheetId, worksheetTitle }: S
                 </Button>
               </div>
 
+              {/* Email Section */}
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Mail className="h-4 w-4 text-gray-500" />
+                  <p className="text-sm font-medium">Send via Email</p>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="recipientEmail" className="text-sm">Student Email</Label>
+                    <Input
+                      id="recipientEmail"
+                      type="email"
+                      placeholder="student@example.com"
+                      value={recipientEmail}
+                      onChange={(e) => setRecipientEmail(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="saveEmail" 
+                      checked={saveEmailForVerification}
+                      onCheckedChange={(checked) => setSaveEmailForVerification(checked as boolean)}
+                    />
+                    <Label htmlFor="saveEmail" className="text-xs text-gray-600">
+                      Save this email for student verification access
+                    </Label>
+                  </div>
+
+                  <Button
+                    onClick={sendEmail}
+                    disabled={isSendingEmail || !recipientEmail}
+                    variant="outline"
+                    className="w-full border-worksheet-purple text-worksheet-purple hover:bg-worksheet-purple/5"
+                  >
+                    {isSendingEmail ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Send Email
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
               <p className="text-xs text-gray-500 text-center">
-                Link expires in 7 days • Recipients can view but not edit
+                Link expires in 7 days • Student will verify email to access
               </p>
             </div>
           )}

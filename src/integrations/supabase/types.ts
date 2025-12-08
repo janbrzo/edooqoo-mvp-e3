@@ -956,6 +956,53 @@ export type Database = {
         }
         Relationships: []
       }
+      worksheet_student_answers: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          exercise_index: number
+          exercise_type: string
+          id: string
+          is_completed: boolean
+          last_saved_at: string
+          started_at: string
+          student_email: string
+          worksheet_id: string
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string | null
+          exercise_index: number
+          exercise_type: string
+          id?: string
+          is_completed?: boolean
+          last_saved_at?: string
+          started_at?: string
+          student_email: string
+          worksheet_id: string
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          exercise_index?: number
+          exercise_type?: string
+          id?: string
+          is_completed?: boolean
+          last_saved_at?: string
+          started_at?: string
+          student_email?: string
+          worksheet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worksheet_student_answers_worksheet_id_fkey"
+            columns: ["worksheet_id"]
+            isOneToOne: false
+            referencedRelation: "worksheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       worksheets: {
         Row: {
           ai_response: string
@@ -982,6 +1029,7 @@ export type Database = {
           sequence_number: number
           session_id: string | null
           share_expires_at: string | null
+          share_recipient_email: string | null
           share_token: string | null
           status: string
           student_id: string | null
@@ -1016,6 +1064,7 @@ export type Database = {
           sequence_number?: number
           session_id?: string | null
           share_expires_at?: string | null
+          share_recipient_email?: string | null
           share_token?: string | null
           status?: string
           student_id?: string | null
@@ -1050,6 +1099,7 @@ export type Database = {
           sequence_number?: number
           session_id?: string | null
           share_expires_at?: string | null
+          share_recipient_email?: string | null
           share_token?: string | null
           status?: string
           student_id?: string | null
@@ -1232,6 +1282,30 @@ export type Database = {
           title: string
         }[]
       }
+      get_worksheet_live_answers: {
+        Args: { p_worksheet_id: string }
+        Returns: {
+          answers: Json
+          exercise_index: number
+          exercise_type: string
+          id: string
+          last_saved_at: string
+          student_email: string
+        }[]
+      }
+      get_worksheet_student_answers: {
+        Args: { p_student_email: string; p_worksheet_id: string }
+        Returns: {
+          answers: Json
+          completed_at: string
+          exercise_index: number
+          exercise_type: string
+          id: string
+          is_completed: boolean
+          last_saved_at: string
+          started_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1331,6 +1405,16 @@ export type Database = {
         }
         Returns: string
       }
+      save_worksheet_answer: {
+        Args: {
+          p_answers: Json
+          p_exercise_index: number
+          p_exercise_type: string
+          p_student_email: string
+          p_worksheet_id: string
+        }
+        Returns: string
+      }
       should_show_onboarding: { Args: { user_id: string }; Returns: boolean }
       soft_delete_flashcard_set: {
         Args: { p_set_id: string; p_teacher_id: string }
@@ -1363,6 +1447,10 @@ export type Database = {
           p_user_identifier: string
         }
         Returns: string
+      }
+      verify_worksheet_student_email: {
+        Args: { p_email: string; p_worksheet_id: string }
+        Returns: boolean
       }
     }
     Enums: {

@@ -1,22 +1,15 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, AlertCircle, FileText, ArrowUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import SharedWorksheetContent from '@/components/shared/SharedWorksheetContent';
-
-interface SharedWorksheetData {
-  id: string;
-  title: string;
-  ai_response: string;
-  html_content: string;
-  created_at: string;
-  teacher_email: string;
-  selected_image?: any;
-  selected_audio?: any;
-  audio_url?: string;
-}
+import { SharedWorksheetEmailVerification } from '@/components/shared/SharedWorksheetEmailVerification';
+import { StudyModeButton } from '@/components/shared/StudyModeButton';
+import { SharedWorksheetProgressBar } from '@/components/shared/SharedWorksheetProgressBar';
+import { useInteractiveSharedWorksheet } from '@/hooks/useInteractiveSharedWorksheet';
+import type { SharedWorksheetData } from '@/types/interactiveSharedWorksheet';
 
 const SharedWorksheet = () => {
   const { token } = useParams<{ token: string }>();
@@ -26,6 +19,46 @@ const SharedWorksheet = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const { toast } = useToast();
 
+  // Interactive shared worksheet state
+  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+  const [isTeacher, setIsTeacher] = useState(false);
+  const [isStudyMode, setIsStudyMode] = useState(false);
+  const [needsStudentAssignment, setNeedsStudentAssignment] = useState(false);
+
+  // Parse exercises count from worksheet data
+  const worksheetData = useMemo(() => {
+    if (!worksheet?.ai_response) return null;
+    try {
+      return JSON.parse(worksheet.ai_response);
+    } catch {
+      return null;
+    }
+  }, [worksheet?.ai_response]);
+
+  const totalExercises = worksheetData?.exercises?.length || 0;
+  
+  // Calculate exercise question counts for progress
+  const exerciseQuestionCounts = useMemo(() => {
+    if (!worksheetData?.exercises) return {};
+    const counts: Record<number, number> = {};
+    worksheetData.exercises.forEach((exercise: any, index: number) => {
+      counts[index] = exercise.questions?.length || 
+                      exercise.items?.length || 
+                      exercise.sentences?.length ||
+                      exercise.statements?.length ||
+                      exercise.words?.length || 1;
+    });
+    return counts;
+  }, [worksheetData]);
+
+  // Initialize interactive hook (only when verified)
+  const interactiveHook = useInteractiveSharedWorksheet({
+    worksheetId: worksheet?.id || '',
+    studentEmail: verifiedEmail || '',
+    totalExercises,
+    exerciseQuestionCounts
+  });
+
   useEffect(() => {
     if (!token) {
       setError('Invalid share token');
@@ -34,6 +67,7 @@ const SharedWorksheet = () => {
     }
 
     loadSharedWorksheet();
+    checkIfTeacher();
   }, [token]);
 
   // Handle scroll-to-top button visibility
@@ -53,6 +87,28 @@ const SharedWorksheet = () => {
     });
   };
 
+  const checkIfTeacher = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && !user.is_anonymous) {
+        // Check if user is the teacher who owns this worksheet
+        const { data: worksheetData } = await supabase
+          .from('worksheets')
+          .select('teacher_id')
+          .eq('share_token', token)
+          .single();
+        
+        if (worksheetData && worksheetData.teacher_id === user.id) {
+          console.log('[SharedWorksheet] User is the teacher - bypassing email verification');
+          setIsTeacher(true);
+          setVerifiedEmail(user.email || 'teacher');
+        }
+      }
+    } catch (error) {
+      console.error('[SharedWorksheet] Error checking teacher status:', error);
+    }
+  };
+
   const loadSharedWorksheet = async () => {
     try {
       setIsLoading(true);
@@ -68,7 +124,24 @@ const SharedWorksheet = () => {
         throw new Error('Worksheet not found or link has expired');
       }
 
-      setWorksheet(data[0]);
+      const worksheetRow = data[0];
+      
+      // Check if worksheet has assigned student
+      const { data: fullWorksheet } = await supabase
+        .from('worksheets')
+        .select('student_id, share_recipient_email')
+        .eq('id', worksheetRow.id)
+        .single();
+      
+      if (!fullWorksheet?.student_id) {
+        setNeedsStudentAssignment(true);
+      }
+
+      setWorksheet({
+        ...worksheetRow,
+        student_id: fullWorksheet?.student_id,
+        share_recipient_email: fullWorksheet?.share_recipient_email
+      });
       
       toast({
         title: "Worksheet loaded",
@@ -88,6 +161,21 @@ const SharedWorksheet = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleEmailVerified = (email: string) => {
+    console.log('[SharedWorksheet] Email verified:', email);
+    setVerifiedEmail(email);
+    toast({
+      title: "Email verified!",
+      description: "You can now start studying.",
+      className: "bg-green-50 border-green-200"
+    });
+  };
+
+  const handleStartStudy = () => {
+    console.log('[SharedWorksheet] Starting study mode');
+    setIsStudyMode(true);
   };
 
   if (isLoading) {
@@ -129,18 +217,65 @@ const SharedWorksheet = () => {
     );
   }
 
-  // Parse the AI response to get the worksheet title if needed
-  let parsedWorksheet;
-  try {
-    parsedWorksheet = JSON.parse(worksheet.ai_response);
-  } catch (error) {
-    parsedWorksheet = null;
+  // Check if worksheet needs assigned student
+  if (needsStudentAssignment && !isTeacher) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            Student Not Assigned
+          </h1>
+          <p className="text-gray-600 mb-4">
+            This worksheet doesn't have a student assigned yet.
+          </p>
+          <p className="text-sm text-gray-500">
+            Please ask your teacher to assign a student to this worksheet before you can access it.
+          </p>
+        </div>
+      </div>
+    );
   }
 
-  const worksheetTitle = worksheet.title || parsedWorksheet?.title || 'English Worksheet';
+  // Parse the AI response to get the worksheet title if needed
+  const worksheetTitle = worksheet.title || worksheetData?.title || 'English Worksheet';
+
+  // Student needs to verify email (unless they are the teacher)
+  const showEmailVerification = !isTeacher && !verifiedEmail;
+  
+  // After verification, show Study button (unless in study mode)
+  const showStudyButton = verifiedEmail && !isStudyMode && !isTeacher;
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Email Verification Modal */}
+      {showEmailVerification && (
+        <SharedWorksheetEmailVerification
+          onVerified={handleEmailVerified}
+          verifyEmail={interactiveHook.verifyStudentEmail}
+          worksheetId={worksheet.id}
+          worksheetTitle={worksheetTitle}
+          teacherEmail={worksheet.teacher_email}
+        />
+      )}
+
+      {/* Big Study Button (after email verified) */}
+      {showStudyButton && (
+        <StudyModeButton
+          onStartStudy={handleStartStudy}
+          worksheetTitle={worksheetTitle}
+        />
+      )}
+
+      {/* Progress Bar (only in study mode) */}
+      {isStudyMode && (
+        <SharedWorksheetProgressBar
+          progress={interactiveHook.getProgress()}
+          isSaving={interactiveHook.isSaving}
+          lastSavedAt={interactiveHook.lastSavedAt}
+        />
+      )}
+
       {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-6">
@@ -153,6 +288,11 @@ const SharedWorksheet = () => {
               <p className="text-sm text-gray-500">
                 Shared by: {worksheet.teacher_email} • 
                 Created: {new Date(worksheet.created_at).toLocaleDateString()}
+                {isStudyMode && verifiedEmail && (
+                  <span className="ml-2 text-worksheet-purple font-medium">
+                    • Studying as: {verifiedEmail}
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -164,7 +304,13 @@ const SharedWorksheet = () => {
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
           {/* Content wrapper with proper styling */}
           <div className="worksheet-content p-6">
-            <SharedWorksheetContent worksheet={worksheet} />
+            <SharedWorksheetContent 
+              worksheet={worksheet}
+              isInteractive={isStudyMode}
+              studentAnswers={interactiveHook.answers}
+              onAnswerChange={interactiveHook.updateAnswer}
+              onBlur={interactiveHook.saveOnBlur}
+            />
           </div>
         </div>
       </div>
@@ -184,13 +330,19 @@ const SharedWorksheet = () => {
       <div className="bg-white border-t py-6 mt-8">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <p className="text-sm text-gray-500">
-            This is a read-only view of a shared worksheet. 
-            <a 
-              href="/" 
-              className="text-worksheet-purple hover:underline ml-1 font-medium"
-            >
-              Create your own worksheets at edooqoo.com
-            </a>
+            {isStudyMode ? (
+              "Your answers are automatically saved as you type."
+            ) : (
+              <>
+                This is a read-only view of a shared worksheet. 
+                <a 
+                  href="/" 
+                  className="text-worksheet-purple hover:underline ml-1 font-medium"
+                >
+                  Create your own worksheets at edooqoo.com
+                </a>
+              </>
+            )}
           </p>
         </div>
       </div>
