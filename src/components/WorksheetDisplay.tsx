@@ -15,6 +15,7 @@ import { StudentKnowledgeFAB } from "@/components/student-knowledge/StudentKnowl
 import { StudentKnowledgeMiniList } from "@/components/student-knowledge/StudentKnowledgeMiniList";
 import { StudentKnowledgeToggleButton } from "@/components/student-knowledge/StudentKnowledgeToggleButton";
 import { StudentKnowledgeFloatingPanel } from "@/components/student-knowledge/StudentKnowledgeFloatingPanel";
+import { StudentKnowledgeLessonIdeasButton } from "@/components/student-knowledge/StudentKnowledgeLessonIdeasButton";
 import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
 import { useStudents } from "@/hooks/useStudents";
 import { useFlashcardSets } from "@/hooks/useFlashcardSets";
@@ -28,6 +29,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Badge } from "@/components/ui/badge";
 import { Plus, TextSelect, Layers, Radio } from "lucide-react";
 import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry, KnowledgeCategory } from "@/types/studentKnowledge";
+import { KNOWLEDGE_CATEGORIES } from "@/types/studentKnowledge";
 
 interface Exercise {
   type: string;
@@ -522,6 +524,15 @@ export default function WorksheetDisplay({
     setIsPanelOpen(true);
   };
 
+  // PROBLEM 9: Handler for "Next Lesson Ideas" category
+  const handleAddLessonIdea = () => {
+    setSelectedEntry(null);
+    setPanelMode('add');
+    setIsPanelOpen(true);
+    // Note: The panel will be opened, user needs to select "Next Lesson Ideas" category
+    // We could pre-select this category but that requires changes to FloatingPanel
+  };
+
   const handleClosePanel = () => {
     setIsPanelOpen(false);
     setSelectedEntry(null);
@@ -634,9 +645,11 @@ export default function WorksheetDisplay({
         </>
       )}
       
-      {/* Student Knowledge FAB, Toggle Button, and Mini List */}
+      {/* Student Knowledge FAB, Toggle Button, Lesson Ideas Button, and Mini List */}
       {shouldShowFAB && (
         <>
+          {/* PROBLEM 9: New Lesson Ideas button (above FAB) */}
+          <StudentKnowledgeLessonIdeasButton onClick={handleAddLessonIdea} />
           <StudentKnowledgeFAB onClick={handleAddNote} />
           <StudentKnowledgeToggleButton
             count={totalEntries}
