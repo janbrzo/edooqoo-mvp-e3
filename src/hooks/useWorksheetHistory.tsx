@@ -11,6 +11,8 @@ interface WorksheetHistoryItem {
   html_content: string;
   student_id?: string;
   generation_time_seconds?: number;
+  share_token?: string | null;
+  share_expires_at?: string | null;
 }
 
 export const useWorksheetHistory = (
@@ -45,7 +47,7 @@ export const useWorksheetHistory = (
       // ✅ FIX: For list views, skip heavy columns (ai_response, html_content)
       // These are only needed when opening a specific worksheet
       const selectQuery = listView 
-        ? 'id, title, created_at, student_id, generation_time_seconds, form_data, audio_url, audio_duration, audio_voice, selected_audio, selected_image, media_metadata'
+        ? 'id, title, created_at, student_id, generation_time_seconds, form_data, audio_url, audio_duration, audio_voice, selected_audio, selected_image, media_metadata, share_token, share_expires_at'
         : '*';
       
       let query = supabase

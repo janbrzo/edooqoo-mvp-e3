@@ -19,7 +19,7 @@ import { useAllWorksheetHomework } from '@/hooks/useAllWorksheetHomework';
 import { WorksheetHomeworkSection } from '@/components/worksheet/WorksheetHomeworkSection';
 import { StudentHomeworkTab } from '@/components/student-homework/StudentHomeworkTab';
 import { FlashcardSetsSection } from '@/components/flashcards/FlashcardSetsSection';
-import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { deepFixTextObjects } from '@/utils/textObjectFixer';
@@ -36,6 +36,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import ShareWorksheetModal from '@/components/ShareWorksheetModal';
 
 const StudentPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -54,6 +55,8 @@ const StudentPage = () => {
   const { deletedWorksheets, loading: deletedLoading, restoreWorksheet: restoreDeleted, totalCount: deletedTotalCount } = 
     useDeletedWorksheets(id || '', false, true, deletedCurrentPage, pageSize);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareWorksheetData, setShareWorksheetData] = useState<{id: string; title: string; shareToken?: string; shareExpiresAt?: string} | null>(null);
 
   // Get recent notes for overview
   const studentKnowledge = useStudentKnowledge({
@@ -523,6 +526,28 @@ const StudentPage = () => {
                                     {format(new Date(worksheet.created_at), 'HH:mm')}
                                   </div>
                                 </div>
+                                {/* PROBLEM 7: Share button with green border if active */}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`${
+                                    worksheet.share_token && worksheet.share_expires_at && new Date(worksheet.share_expires_at) > new Date()
+                                      ? 'border-2 border-green-500 rounded-md'
+                                      : ''
+                                  }`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShareWorksheetData({
+                                      id: worksheet.id,
+                                      title: worksheet.title || 'Untitled Worksheet',
+                                      shareToken: worksheet.share_token || undefined,
+                                      shareExpiresAt: worksheet.share_expires_at || undefined
+                                    });
+                                    setShareModalOpen(true);
+                                  }}
+                                >
+                                  <Share2 className="h-4 w-4" />
+                                </Button>
                                 <DuplicateWorksheetButton
                                   worksheetId={worksheet.id}
                                   worksheetTitle={worksheet.title || 'Untitled Worksheet'}
@@ -705,6 +730,20 @@ const StudentPage = () => {
           onClose={() => setIsEditDialogOpen(false)}
           onSave={updateStudent}
         />
+        
+        {/* PROBLEM 7: Share Worksheet Modal */}
+        {shareWorksheetData && (
+          <ShareWorksheetModal
+            worksheetId={shareWorksheetData.id}
+            worksheetTitle={shareWorksheetData.title}
+            isOpen={shareModalOpen}
+            onClose={() => {
+              setShareModalOpen(false);
+              setShareWorksheetData(null);
+              refetchWorksheets();
+            }}
+          />
+        )}
       </div>
     </div>
   );

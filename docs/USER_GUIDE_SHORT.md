@@ -4,7 +4,7 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Fix:** All audio and picture exercises now work perfectly in shared worksheets (/shared). PDF export margins corrected to 1cm sides, 0.5cm top/bottom for professional printing. The "Add Student" form now preserves what you typed even if you temporarily switch browser tabs.
+**Latest Fixes:** Live Session mode now has "Done" button to mark exercises as completed. Share button added to worksheet cards in /student page (green border when link active). Share links valid for 10 days. Matching exercises shuffle only once (consistent order). New "Next Lesson Ideas" category in Student Knowledge with dedicated lightbulb button. Email templates no longer overflow.
 
 ## How it works?
 1. **Create account** - Sign up and get 2 free tokens
