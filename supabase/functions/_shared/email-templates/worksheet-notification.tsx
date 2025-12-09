@@ -125,7 +125,12 @@ const worksheetBox = {
   border: '1px solid #e9d5ff',
   borderRadius: '8px',
   padding: '24px',
-  margin: '24px 40px',
+  marginTop: '24px',
+  marginBottom: '24px',
+  marginLeft: '40px',
+  marginRight: '40px',
+  maxWidth: 'calc(100% - 80px)', // PROBLEM 4 FIX: Prevent box from overflowing
+  boxSizing: 'border-box' as const,
 };
 
 const button = {

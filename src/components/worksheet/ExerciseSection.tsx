@@ -105,8 +105,11 @@ interface ExerciseSectionProps {
   studentAnswers?: Record<number, any>;
   onAnswerChange?: (questionIndex: number, value: any) => void;
   showCorrectAnswers?: boolean;
-  // PROBLEM 1: Live Session answer prop
+  // PROBLEM 1: Live Session answer prop - passed inline to exercises for blue highlighting
   liveSessionAnswer?: Record<number, any>;
+  // PROBLEM 5: Mark exercise as done in Live Session
+  isMarkedDone?: boolean;
+  onMarkDone?: () => void;
 }
 
 // Helper function to normalize exercise type (removes -picture suffix for rendering logic)
@@ -286,20 +289,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           <CollapsibleContent className="animate-accordion-down data-[state=closed]:animate-accordion-up">
             <div className="p-5 pt-0">
         
-        {/* PROBLEM 1: Live Session - Display student answers in blue */}
-        {viewMode === 'live-session' && liveSessionAnswer && Object.keys(liveSessionAnswer).length > 0 && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm font-medium text-blue-700 mb-2">📡 Student's Live Answers:</p>
-            <div className="space-y-1">
-              {Object.entries(liveSessionAnswer).map(([key, value]) => (
-                <div key={key} className="flex gap-2 text-sm">
-                  <span className="text-blue-600 font-medium">Q{parseInt(key) + 1}:</span>
-                  <span className="text-blue-800 bg-blue-100 px-2 py-0.5 rounded">{String(value)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* PROBLEM 1 FIXED: Live Session answers are now passed inline to each exercise component */}
 
         <ExerciseContent
           instructions={exercise.instructions}

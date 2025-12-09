@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -7,6 +7,31 @@ interface ExerciseMatchingHalvesProps extends Partial<InteractiveExerciseProps> 
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onHalvesChange: (hIndex: number, field: string, value: any) => void;
+  worksheetId?: string; // PROBLEM 8: Optional worksheetId for deterministic shuffle
+}
+
+// PROBLEM 8 FIX: Seeded random for deterministic shuffle
+function seededRandom(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return function() {
+    hash = (hash * 1103515245 + 12345) & 0x7fffffff;
+    return (hash % 1000) / 1000;
+  };
+}
+
+function shuffleIndicesWithSeed(length: number, seed: string): number[] {
+  const indices = Array.from({ length }, (_, i) => i);
+  const random = seededRandom(seed);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  return indices;
 }
 
 const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
@@ -14,6 +39,7 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
   isEditing,
   viewMode,
   onHalvesChange,
+  worksheetId,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -56,16 +82,16 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
     onHalvesChange(hIndex, 'correct_match', value);
   };
 
-  // Shuffle the second halves for display (but keep original order for teacher view)
-  const shuffledIndices = React.useMemo(() => {
-    const indices = sentence_halves.map((_, index) => index);
-    // Simple shuffle algorithm
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    return indices;
-  }, [processedHalves.length]);
+  // PROBLEM 8 FIX: Use useRef with seeded random for deterministic shuffle
+  const halvesKey = sentence_halves.map(h => h.first_half).join('|');
+  const shuffledIndicesRef = useRef<number[] | null>(null);
+  
+  if (!shuffledIndicesRef.current || shuffledIndicesRef.current.length !== processedHalves.length) {
+    const seed = worksheetId ? `${worksheetId}-halves-${halvesKey}` : `halves-${halvesKey}`;
+    shuffledIndicesRef.current = shuffleIndicesWithSeed(processedHalves.length, seed);
+  }
+  
+  const shuffledIndices = shuffledIndicesRef.current;
 
   // Create shuffled second halves array for consistent indexing
   const shuffledSecondHalves = React.useMemo(() => {

@@ -41,13 +41,39 @@ const ShareWorksheetModal = ({
     }
   }, [initialStudentEmail]);
 
-  // Reset state when modal opens
+  // PROBLEM 6: Check for existing active share token when modal opens
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      checkExistingShareToken();
+    } else {
       setShareUrl('');
       setIsSendingEmail(false);
     }
   }, [isOpen]);
+
+  const checkExistingShareToken = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('worksheets')
+        .select('share_token, share_expires_at')
+        .eq('id', worksheetId)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data?.share_token && data?.share_expires_at) {
+        const expiresAt = new Date(data.share_expires_at);
+        if (expiresAt > new Date()) {
+          // Token is still valid - show it immediately
+          const url = `${window.location.origin}/shared/${data.share_token}`;
+          setShareUrl(url);
+          console.log('[ShareWorksheet] Found existing active share token');
+        }
+      }
+    } catch (error) {
+      console.error('[ShareWorksheet] Error checking existing token:', error);
+    }
+  };
 
   const generateShareLink = async () => {
     setIsGenerating(true);
@@ -90,7 +116,7 @@ const ShareWorksheetModal = ({
       const { data: shareToken, error: rpcError } = await supabase.rpc('generate_worksheet_share_token' as any, {
         p_worksheet_id: worksheetId,
         p_teacher_id: user.id,
-        p_expires_hours: 168 // 7 days
+        p_expires_hours: 240 // PROBLEM 6: Changed from 7 days (168h) to 10 days (240h)
       });
 
       console.log('RPC response - data:', shareToken);
@@ -352,7 +378,7 @@ const ShareWorksheetModal = ({
               </div>
 
               <p className="text-xs text-gray-500 text-center">
-                Link expires in 7 days • Student will verify email to access
+                Link expires in 10 days • Student will verify email to access
               </p>
             </div>
           )}

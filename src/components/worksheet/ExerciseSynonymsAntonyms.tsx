@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useRef } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -8,13 +8,28 @@ interface ExerciseSynonymsAntonymsProps extends Partial<InteractiveExerciseProps
   viewMode: "student" | "teacher";
   onItemChange: (iIndex: number, field: string, value: string) => void;
   exerciseType?: string;
+  worksheetId?: string; // PROBLEM 8: Optional worksheetId for deterministic shuffle
 }
 
-// Shuffle function for matching exercise
-function shuffleArray(array: any[]) {
+// PROBLEM 8 FIX: Seeded random for deterministic shuffle
+function seededRandom(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return function() {
+    hash = (hash * 1103515245 + 12345) & 0x7fffffff;
+    return (hash % 1000) / 1000;
+  };
+}
+
+function shuffleArrayWithSeed(array: any[], seed: string) {
   const newArray = [...array];
+  const random = seededRandom(seed);
   for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }
   return newArray;
@@ -26,16 +41,23 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
   viewMode,
   onItemChange,
   exerciseType = 'synonyms-antonyms',
+  worksheetId,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
   showCorrectAnswers = false
 }) => {
-  // Use useMemo to prevent re-shuffling on every render
-  const shuffledDefinitions = useMemo(() => {
-    return shuffleArray([...items]);
-  }, [items.map(item => `${item.term}|${item.definition}`).join('||')]);
+  // PROBLEM 8 FIX: Use useRef with seeded random for deterministic shuffle
+  const itemsKey = items.map(item => item.term).join('|');
+  const shuffledRef = useRef<any[] | null>(null);
+  
+  if (!shuffledRef.current || shuffledRef.current.length !== items.length) {
+    const seed = worksheetId ? `${worksheetId}-syn-${itemsKey}` : `syn-${itemsKey}`;
+    shuffledRef.current = shuffleArrayWithSeed([...items], seed);
+  }
+  
+  const shuffledDefinitions = shuffledRef.current;
 
   // Determine the title based on exercise type
   const rightColumnTitle = exerciseType === 'synonyms' ? 'Synonyms' 
