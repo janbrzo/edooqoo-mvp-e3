@@ -243,8 +243,12 @@ const SharedWorksheet = () => {
   // Student needs to verify email (unless they are the teacher)
   const showEmailVerification = !isTeacher && !verifiedEmail;
   
-  // After verification, show Study button (unless in study mode)
+  // PROBLEM 3: Teacher sees same view but read-only (automatically in study mode)
+  // After verification, show Study button (unless in study mode or teacher)
   const showStudyButton = verifiedEmail && !isStudyMode && !isTeacher;
+  
+  // Teacher is always in "view" mode (like study mode but read-only)
+  const effectiveStudyMode = isStudyMode || isTeacher;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -267,13 +271,22 @@ const SharedWorksheet = () => {
         />
       )}
 
-      {/* Progress Bar (only in study mode) */}
-      {isStudyMode && (
+      {/* Progress Bar (only in study mode for students, not for teachers) */}
+      {isStudyMode && !isTeacher && (
         <SharedWorksheetProgressBar
           progress={interactiveHook.getProgress()}
           isSaving={interactiveHook.isSaving}
           lastSavedAt={interactiveHook.lastSavedAt}
         />
+      )}
+      
+      {/* Teacher read-only notice */}
+      {isTeacher && (
+        <div className="bg-amber-50 border-b border-amber-200 py-2 px-4 text-center">
+          <p className="text-sm text-amber-700">
+            👀 Teacher View - You're viewing this worksheet as your students will see it (read-only)
+          </p>
+        </div>
       )}
 
       {/* Header */}
@@ -304,12 +317,14 @@ const SharedWorksheet = () => {
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
           {/* Content wrapper with proper styling */}
           <div className="worksheet-content p-6">
+            {/* PROBLEM 3: Pass isReadOnly for teachers */}
             <SharedWorksheetContent 
               worksheet={worksheet}
-              isInteractive={isStudyMode}
+              isInteractive={effectiveStudyMode && !isTeacher}
+              isReadOnly={isTeacher}
               studentAnswers={interactiveHook.answers}
-              onAnswerChange={interactiveHook.updateAnswer}
-              onBlur={interactiveHook.saveOnBlur}
+              onAnswerChange={isTeacher ? undefined : interactiveHook.updateAnswer}
+              onBlur={isTeacher ? undefined : interactiveHook.saveOnBlur}
             />
           </div>
         </div>

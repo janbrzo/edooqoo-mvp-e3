@@ -129,10 +129,15 @@ const detailText = {
 
 const homeworkBox = {
   backgroundColor: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-            padding: '24px',
-            margin: '24px 0',
+  border: '1px solid #e2e8f0',
+  borderRadius: '8px',
+  padding: '24px',
+  marginTop: '24px',
+  marginBottom: '24px',
+  marginLeft: '40px',
+  marginRight: '40px',
+  maxWidth: 'calc(100% - 80px)', // PROBLEM 4 FIX: Prevent box from overflowing
+  boxSizing: 'border-box' as const,
 };
 
 const button = {

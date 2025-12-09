@@ -26,7 +26,8 @@ export type KnowledgeCategory =
   | 'Common Mistakes'
   | 'To Practice'
   | 'Interests & Hobbies'
-  | 'Notes';
+  | 'Notes'
+  | 'Next Lesson Ideas'; // PROBLEM 9: New category
 
 /**
  * Źródło wpisu - skąd pochodził wpis
@@ -199,6 +200,13 @@ export const KNOWLEDGE_CATEGORIES = [
     icon: '📋',
     color: 'bg-gray-100 text-gray-800 border-gray-300',
     description: 'General notes, observations, miscellaneous'
+  },
+  {
+    id: 'Next Lesson Ideas' as KnowledgeCategory,
+    label: 'Next Lesson Ideas',
+    icon: '💡',
+    color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    description: 'Ideas and topics for upcoming lessons'
   }
 ] as const;
 

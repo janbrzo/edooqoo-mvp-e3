@@ -38,6 +38,7 @@ interface SharedWorksheetContentProps {
   };
   // Interactive mode props
   isInteractive?: boolean;
+  isReadOnly?: boolean; // PROBLEM 3: Read-only mode for teachers
   studentAnswers?: Record<number, any>;
   onAnswerChange?: (exerciseIndex: number, exerciseType: string, questionIndex: number, value: any) => void;
   onBlur?: (exerciseIndex: number, exerciseType: string) => void;
@@ -51,10 +52,13 @@ const normalizeExerciseType = (type: string): string => {
 const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({ 
   worksheet,
   isInteractive = false,
+  isReadOnly = false, // PROBLEM 3: Read-only for teachers
   studentAnswers = {},
   onAnswerChange,
   onBlur
 }) => {
+  // PROBLEM 3: Effective interactive mode (disabled if read-only)
+  const effectiveInteractive = isInteractive && !isReadOnly;
   console.log('🔧 SharedWorksheetContent: Starting data parsing...');
   console.log('🔧 ai_response length:', worksheet.ai_response?.length || 0);
   console.log('🔧 html_content length:', worksheet.html_content?.length || 0);

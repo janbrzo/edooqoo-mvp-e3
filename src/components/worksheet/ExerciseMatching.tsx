@@ -1,5 +1,5 @@
 
-import React, { useMemo } from "react";
+import React, { useRef } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -9,13 +9,28 @@ interface ExerciseMatchingProps extends Partial<InteractiveExerciseProps> {
   viewMode: "student" | "teacher";
   getMatchedItems: (items: any[]) => any[];
   onItemChange: (iIndex: number, field: string, value: string) => void;
+  worksheetId?: string; // PROBLEM 8: Optional worksheetId for deterministic shuffle
 }
 
-// Funkcja do tasowania (Fisher-Yates)
-function shuffleArray(array: any[]) {
+// PROBLEM 8 FIX: Seeded random for deterministic shuffle
+function seededRandom(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return function() {
+    hash = (hash * 1103515245 + 12345) & 0x7fffffff;
+    return (hash % 1000) / 1000;
+  };
+}
+
+function shuffleArrayWithSeed(array: any[], seed: string) {
   const newArray = [...array];
+  const random = seededRandom(seed);
   for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(random() * (i + 1));
     [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }
   return newArray;
@@ -27,18 +42,25 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
   viewMode, 
   getMatchedItems, 
   onItemChange,
+  worksheetId,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
   showCorrectAnswers = false
 }) => {
-  // Use useMemo to prevent re-shuffling on every render
-  // Create a stable key based on the terms to ensure consistent shuffling
-  const shuffledDefinitions = useMemo(() => {
-    const termsKey = items.map(item => item.term).join('|');
-    return shuffleArray([...items]);
-  }, [items.map(item => `${item.term}|${item.definition}`).join('||')]);
+  // PROBLEM 8 FIX: Use useRef to ensure shuffle happens only once
+  // Create a stable seed from item terms for deterministic order
+  const itemsKey = items.map(item => item.term).join('|');
+  const shuffledRef = useRef<any[] | null>(null);
+  
+  // Only shuffle once on first render or when items structurally change
+  if (!shuffledRef.current || shuffledRef.current.length !== items.length) {
+    const seed = worksheetId ? `${worksheetId}-${itemsKey}` : itemsKey;
+    shuffledRef.current = shuffleArrayWithSeed([...items], seed);
+  }
+  
+  const shuffledDefinitions = shuffledRef.current;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">

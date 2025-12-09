@@ -1,7 +1,8 @@
 
 import React from "react";
-import { Eye, Database, Pencil, Star, User, Lightbulb, Clock, RefreshCw, ChevronUp, ChevronDown, Trash2 } from "lucide-react";
+import { Eye, Database, Pencil, Star, User, Lightbulb, Clock, RefreshCw, ChevronUp, ChevronDown, Trash2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ExerciseHeaderProps {
   icon: string;
@@ -19,6 +20,10 @@ interface ExerciseHeaderProps {
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   onDelete?: () => void;
+  // PROBLEM 5: Live Session Done button props
+  viewMode?: "student" | "teacher" | "live-session";
+  isMarkedDone?: boolean;
+  onMarkDone?: () => void;
 }
 
 const getIconComponent = (iconName: string) => {
@@ -57,12 +62,23 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
   canMoveDown = false,
   onMoveUp,
   onMoveDown,
-  onDelete
+  onDelete,
+  // PROBLEM 5: Live Session props
+  viewMode,
+  isMarkedDone = false,
+  onMarkDone
 }) => (
-  <div className="bg-worksheet-purple text-white p-2 flex justify-between items-center exercise-header">
+  <div className={cn(
+    "bg-worksheet-purple text-white p-2 flex justify-between items-center exercise-header",
+    // PROBLEM 5: Apply "done" styling when exercise is marked done in Live Session
+    isMarkedDone && "bg-gray-400 opacity-80"
+  )}>
     <div className="flex items-center">
-      <div className="p-2 bg-white/20 rounded-full mr-3">
-        {getIconComponent(icon)}
+      <div className={cn(
+        "p-2 rounded-full mr-3",
+        isMarkedDone ? "bg-white/30" : "bg-white/20"
+      )}>
+        {isMarkedDone ? <Check className="h-5 w-5" /> : getIconComponent(icon)}
       </div>
       <div className="flex items-center gap-2">
         <h3 className="text-lg font-semibold">
@@ -86,6 +102,24 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
           >
             <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
             <span className="text-xs">Regenerate</span>
+          </Button>
+        )}
+        {/* PROBLEM 5: Done button - visible only in Live Session mode */}
+        {viewMode === 'live-session' && onMarkDone && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onMarkDone}
+            className={cn(
+              "h-8 px-2 gap-1 transition-colors",
+              isMarkedDone 
+                ? "text-white bg-green-600 hover:bg-green-700" 
+                : "text-green-300 hover:bg-white/20 hover:text-green-200"
+            )}
+          >
+            <Check className="h-3 w-3" />
+            <span className="text-xs">{isMarkedDone ? 'Done' : 'Mark Done'}</span>
           </Button>
         )}
       </div>
