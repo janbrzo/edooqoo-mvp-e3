@@ -454,6 +454,31 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                 />
               )}
 
+              {/* PROBLEM 2 FIX: Add missing error-correction exercise type */}
+              {exercise.type === 'error-correction' && exercise.sentences && (
+                <div className="space-y-3">
+                  {exercise.sentences.map((sentence: any, sIndex: number) => {
+                    const studentAnswer = (studentAnswers[index] || {})[sIndex] || '';
+                    return (
+                      <div key={sIndex} className="border rounded-lg p-3 bg-white">
+                        <p className="leading-snug mb-2">
+                          <span className="font-medium">{sIndex + 1}.</span> {sentence.incorrect || sentence.text}
+                        </p>
+                        {isInteractive && (
+                          <input
+                            type="text"
+                            value={studentAnswer}
+                            onChange={(e) => onAnswerChange?.(index, exercise.type, sIndex, e.target.value)}
+                            placeholder="Write the correct sentence..."
+                            className="w-full h-10 border rounded px-3"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* NEWLY ADDED: Missing exercise types */}
               {exercise.type === 'odd-one-out' && exercise.questions && (
                 <ExerciseOddOneOut

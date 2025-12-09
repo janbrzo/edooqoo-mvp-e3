@@ -1333,7 +1333,6 @@ export type Database = {
               p_ip_address: string
               p_prompt: string
               p_status: string
-              p_teacher_email?: string
               p_title: string
               p_user_id: string
             }
@@ -1354,6 +1353,7 @@ export type Database = {
               p_ip_address: string
               p_prompt: string
               p_status: string
+              p_teacher_email?: string
               p_title: string
               p_user_id: string
             }

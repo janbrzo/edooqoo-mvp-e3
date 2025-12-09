@@ -35,6 +35,10 @@ interface WorksheetContentProps {
   onTogglePin?: () => void;
   isFullScreen?: boolean;
   onToggleFullScreen?: () => void;
+  // PROBLEM 1: Live Session props
+  liveSessionAnswers?: Record<number, any>;
+  liveStudentEmail?: string | null;
+  isLiveConnected?: boolean;
 }
 
 export default function WorksheetContent({
@@ -53,7 +57,11 @@ export default function WorksheetContent({
   isPinned = false,
   onTogglePin,
   isFullScreen = false,
-  onToggleFullScreen
+  onToggleFullScreen,
+  // PROBLEM 1: Live Session props
+  liveSessionAnswers,
+  liveStudentEmail,
+  isLiveConnected
 }: WorksheetContentProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
@@ -226,6 +234,24 @@ export default function WorksheetContent({
 
   return (
     <div className="worksheet-content mb-8 relative w-full" id="worksheet-content">
+      {/* Live Session Connection Status */}
+      {viewMode === 'live-session' && (
+        <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${isLiveConnected ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'}`}>
+          <div className={`w-2 h-2 rounded-full ${isLiveConnected ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`} />
+          <span className="text-sm font-medium">
+            {isLiveConnected 
+              ? `Live Session Active${liveStudentEmail ? ` - ${liveStudentEmail}` : ''}`
+              : 'Connecting to Live Session...'
+            }
+          </span>
+          {Object.keys(liveSessionAnswers || {}).length > 0 && (
+            <span className="ml-auto text-xs text-gray-500">
+              {Object.keys(liveSessionAnswers || {}).length} exercises answered
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Exercise Navigation Sidebar */}
       {activeExercises.length > 0 && (
         <ExerciseNavSidebar
@@ -475,6 +501,7 @@ export default function WorksheetContent({
                   onDeleteExercise={() => softDeleteExercise(originalIndex)}
                   isCollapsed={navigation.collapsedExercises.get(sortedIndex)}
                   onToggleCollapse={() => navigation.toggleExercise(sortedIndex)}
+                  liveSessionAnswer={viewMode === 'live-session' ? liveSessionAnswers?.[sortedIndex] : undefined}
                 />
               </div>
             );

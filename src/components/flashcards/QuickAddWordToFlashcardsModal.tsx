@@ -30,7 +30,8 @@ export const QuickAddWordToFlashcardsModal = ({
   nativeLanguage = 'Spanish',
   initialWord = ''
 }: QuickAddWordToFlashcardsModalProps) => {
-  const [step, setStep] = useState<'select-set' | 'create-set' | 'enter-word' | 'edit-translation'>('select-set');
+  // PROBLEM 4 FIX: Combined 'enter-word' and 'edit-translation' into single step
+  const [step, setStep] = useState<'select-set' | 'create-set' | 'enter-word'>('select-set');
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const [selectedSetBackType, setSelectedSetBackType] = useState<'translation' | 'definition'>('definition');
   const [word, setWord] = useState(initialWord);
@@ -70,19 +71,16 @@ export const QuickAddWordToFlashcardsModal = ({
     }
   }, [open, initialWord, refetch]);
   
-  // Auto-translate when moving to edit-translation step
-  const fetchTranslation = async () => {
-    if (!word.trim() || !selectedSetId) return;
-    
-    const selectedSet = sets.find(s => s.id === selectedSetId);
-    if (!selectedSet) return;
+  // Auto-translate when word changes (debounced effect)
+  const fetchTranslationForWord = async (wordToTranslate: string, backType: 'translation' | 'definition') => {
+    if (!wordToTranslate.trim()) return;
     
     setIsTranslating(true);
     try {
       const { data, error } = await supabase.functions.invoke('translate-flashcard', {
         body: {
-          text: word.trim(),
-          target_language: selectedSet.back_type === 'translation' ? nativeLanguage : 'English definition',
+          text: wordToTranslate.trim(),
+          target_language: backType === 'translation' ? nativeLanguage : 'English definition',
         }
       });
       
@@ -103,28 +101,12 @@ export const QuickAddWordToFlashcardsModal = ({
     const backType = selectedSet?.back_type || 'definition';
     setSelectedSetBackType(backType as 'translation' | 'definition');
     
-    // If we already have a word (from selection mode), go directly to translation step
+    // PROBLEM 4 FIX: Always go to 'enter-word' step (which now includes translation)
+    setStep('enter-word');
+    
+    // If we already have a word (from selection mode), auto-translate it
     if (word.trim()) {
-      setStep('edit-translation');
-      // Fetch translation
-      setIsTranslating(true);
-      try {
-        const { data, error } = await supabase.functions.invoke('translate-flashcard', {
-          body: {
-            text: word.trim(),
-            target_language: backType === 'translation' ? nativeLanguage : 'English definition',
-          }
-        });
-        if (!error && data?.translation) {
-          setTranslation(data.translation);
-        }
-      } catch (e) {
-        console.error('Translation error:', e);
-      } finally {
-        setIsTranslating(false);
-      }
-    } else {
-      setStep('enter-word');
+      fetchTranslationForWord(word.trim(), backType as 'translation' | 'definition');
     }
   };
   
@@ -150,36 +132,19 @@ export const QuickAddWordToFlashcardsModal = ({
     setSelectedSetId(newSet.id);
     setSelectedSetBackType(newSetBackType);
     
-    // If we already have a word, go to translation step
+    // PROBLEM 4 FIX: Always go to 'enter-word' step (which now includes translation)
+    setStep('enter-word');
+    
+    // If we already have a word, auto-translate it
     if (word.trim()) {
-      setStep('edit-translation');
-      // Fetch translation for the word
-      setIsTranslating(true);
-      try {
-        const { data, error } = await supabase.functions.invoke('translate-flashcard', {
-          body: {
-            text: word.trim(),
-            target_language: newSetBackType === 'translation' ? nativeLanguage : 'English definition',
-          }
-        });
-        if (!error && data?.translation) {
-          setTranslation(data.translation);
-        }
-      } catch (e) {
-        console.error('Translation error:', e);
-      } finally {
-        setIsTranslating(false);
-      }
-    } else {
-      setStep('enter-word');
+      fetchTranslationForWord(word.trim(), newSetBackType);
     }
   };
   
-  const handleWordSubmit = async () => {
-    if (!word.trim()) return;
-    
-    setStep('edit-translation');
-    fetchTranslation();
+  // PROBLEM 4 FIX: Trigger auto-translation when word is entered
+  const handleWordBlur = async () => {
+    if (!word.trim() || translation.trim()) return; // Don't re-translate if translation exists
+    fetchTranslationForWord(word.trim(), selectedSetBackType);
   };
   
   const handleSave = async () => {
@@ -218,15 +183,13 @@ export const QuickAddWordToFlashcardsModal = ({
             <Plus className="h-5 w-5 text-green-600" />
             {step === 'select-set' && 'Add to Flashcards'}
             {step === 'create-set' && 'Create New Flashcard Set'}
-            {step === 'enter-word' && 'Enter Word or Phrase'}
-            {step === 'edit-translation' && 'Confirm Translation'}
+            {step === 'enter-word' && 'Add Word to Flashcards'}
             <span className="ml-auto text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Press F</span>
           </DialogTitle>
           <DialogDescription>
             {step === 'select-set' && 'Choose an existing flashcard set or create a new one'}
             {step === 'create-set' && 'Set up your new flashcard set'}
-            {step === 'enter-word' && 'Type the word or phrase you want to add'}
-            {step === 'edit-translation' && `Review and edit the ${selectedSetBackType === 'translation' ? 'translation' : 'definition'}`}
+            {step === 'enter-word' && `Enter the word and ${selectedSetBackType === 'translation' ? 'translation' : 'definition'}`}
           </DialogDescription>
         </DialogHeader>
         
@@ -361,7 +324,7 @@ export const QuickAddWordToFlashcardsModal = ({
           </div>
         )}
         
-        {/* Step 3: Enter Word */}
+        {/* Step 3: Enter Word AND Translation (PROBLEM 4 FIX: Combined into one step) */}
         {step === 'enter-word' && (
           <div className="space-y-4 py-4">
             <div className="p-3 bg-muted rounded-lg text-sm">
@@ -371,11 +334,13 @@ export const QuickAddWordToFlashcardsModal = ({
               </span>
             </div>
             
+            {/* Word input */}
             <div>
               <Label>Word or phrase</Label>
               <Textarea
                 value={word}
                 onChange={(e) => setWord(e.target.value)}
+                onBlur={handleWordBlur}
                 placeholder="Enter the word or phrase..."
                 className="mt-1"
                 rows={2}
@@ -383,33 +348,7 @@ export const QuickAddWordToFlashcardsModal = ({
               />
             </div>
             
-            <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep('select-set')}>
-                Back
-              </Button>
-              <Button 
-                onClick={handleWordSubmit}
-                disabled={!word.trim()}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Next <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-        
-        {/* Step 4: Edit Translation */}
-        {step === 'edit-translation' && (
-          <div className="space-y-4 py-4">
-            <div className="p-3 bg-muted rounded-lg text-sm">
-              Adding to: <strong>{selectedSet?.title}</strong>
-            </div>
-            
-            <div>
-              <Label>Word</Label>
-              <p className="mt-1 p-2 bg-muted rounded text-sm font-medium">{word}</p>
-            </div>
-            
+            {/* Translation input - shown together with word */}
             <div>
               <Label>
                 {selectedSetBackType === 'translation' 
@@ -428,18 +367,17 @@ export const QuickAddWordToFlashcardsModal = ({
                   placeholder={`Enter ${selectedSetBackType === 'translation' ? 'translation' : 'definition'}...`}
                   className="mt-1"
                   rows={2}
-                  autoFocus={!isTranslating}
                 />
               )}
             </div>
             
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => setStep('enter-word')}>
+              <Button variant="outline" onClick={() => setStep('select-set')}>
                 Back
               </Button>
               <Button 
                 onClick={handleSave}
-                disabled={isSaving || isTranslating || !translation.trim()}
+                disabled={isSaving || isTranslating || !word.trim() || !translation.trim()}
                 className="bg-green-600 hover:bg-green-700"
               >
                 {isSaving ? (

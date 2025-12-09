@@ -18,6 +18,7 @@ import { StudentKnowledgeFloatingPanel } from "@/components/student-knowledge/St
 import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
 import { useStudents } from "@/hooks/useStudents";
 import { useFlashcardSets } from "@/hooks/useFlashcardSets";
+import { useLiveSessionAnswers } from "@/hooks/useLiveSessionAnswers";
 import { CreateHomeworkModal } from "@/components/homework/CreateHomeworkModal";
 import { QuickAddWordToFlashcardsModal } from "@/components/flashcards/QuickAddWordToFlashcardsModal";
 import { ViewFlashcardSetsModal } from "@/components/flashcards/ViewFlashcardSetsModal";
@@ -25,7 +26,7 @@ import { SelectWordMode } from "@/components/worksheet/SelectWordMode";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TextSelect, Layers } from "lucide-react";
+import { Plus, TextSelect, Layers, Radio } from "lucide-react";
 import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry, KnowledgeCategory } from "@/types/studentKnowledge";
 
 interface Exercise {
@@ -192,6 +193,12 @@ export default function WorksheetDisplay({
   // Fetch flashcard sets count for badge
   const { sets: flashcardSets } = useFlashcardSets(userId || '', studentId || '');
   const flashcardSetsCount = flashcardSets?.length || 0;
+  
+  // PROBLEM 1 FIX: Integrate Live Session for real-time student answers
+  const { liveAnswers, studentEmail: liveStudentEmail, isConnected: isLiveConnected } = useLiveSessionAnswers({
+    worksheetId: worksheetId || '',
+    enabled: viewMode === 'live-session'
+  });
   
   const shouldShowMiniList = shouldShowFAB && (studentKnowledge.entries?.length || 0) > 0;
   
@@ -767,6 +774,9 @@ export default function WorksheetDisplay({
             onTogglePin={() => setIsPinned(!isPinned)}
             isFullScreen={isFullScreen}
             onToggleFullScreen={() => setIsFullScreen(!isFullScreen)}
+            liveSessionAnswers={viewMode === 'live-session' ? liveAnswers : undefined}
+            liveStudentEmail={viewMode === 'live-session' ? liveStudentEmail : undefined}
+            isLiveConnected={viewMode === 'live-session' ? isLiveConnected : undefined}
           />
         </div>
       </WorksheetContainer>
