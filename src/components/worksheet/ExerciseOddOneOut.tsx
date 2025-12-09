@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 
 interface ExerciseOddOneOutProps extends Partial<InteractiveExerciseProps> {
@@ -19,13 +19,21 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
   onAnswerChange,
   showCorrectAnswers = false
 }) => {
-  // Randomize options (not in edit mode)
-  const questionsWithShuffledOptions = React.useMemo(() => {
-    if (isEditing) {
-      return questions; // Don't shuffle in edit mode only
-    }
-    
-    return questions.map(question => {
+  // CRITICAL FIX: Use useRef to store shuffled options ONCE and never reshuffle
+  // This prevents the shuffle from happening on every re-render when student clicks
+  const shuffledQuestionsRef = useRef<any[] | null>(null);
+  const questionsKeyRef = useRef<string>('');
+  
+  // Create a stable key based on questions structure (not the options order)
+  const currentQuestionsKey = JSON.stringify(questions.map(q => ({
+    options: q.options?.length || 0,
+    correct: q.correct_answer
+  })));
+  
+  // Only shuffle on initial mount or if questions structure actually changes
+  if (!isEditing && (shuffledQuestionsRef.current === null || questionsKeyRef.current !== currentQuestionsKey)) {
+    questionsKeyRef.current = currentQuestionsKey;
+    shuffledQuestionsRef.current = questions.map(question => {
       if (!question.options || question.options.length === 0) return question;
       
       // Fisher-Yates shuffle for options
@@ -40,7 +48,10 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
         options: shuffled
       };
     });
-  }, [questions, isEditing, viewMode]);
+  }
+  
+  // Use original questions in edit mode, shuffled otherwise
+  const questionsWithShuffledOptions = isEditing ? questions : (shuffledQuestionsRef.current || questions);
 
   const handleOptionChange = (qIndex: number, oIndex: number, value: string) => {
     const question = questions[qIndex];
