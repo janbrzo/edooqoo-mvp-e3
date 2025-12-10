@@ -278,7 +278,10 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   {getIconComponent(exercise.icon || 'fa-book-open')}
                 </div>
                 <h3 className="text-lg font-semibold">
-                  Exercise {index + 1}: {exercise.title || `Untitled Exercise`}
+                  {/* PROBLEM 2 FIX: Avoid duplicate "Exercise X:" if already in title */}
+                  {exercise.title?.toLowerCase().startsWith('exercise') 
+                    ? exercise.title 
+                    : `Exercise ${index + 1}: ${exercise.title || 'Untitled Exercise'}`}
                 </h3>
               </div>
               <div className="flex items-center bg-white/20 px-3 py-1 rounded-md">
@@ -307,7 +310,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onQuestionChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -320,7 +323,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   viewMode="student"
                   getMatchedItems={() => exercise.items}
                   onItemChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -334,7 +337,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   viewMode="student"
                   onWordBankChange={() => {}}
                   onSentenceChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -347,7 +350,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   viewMode="student"
                   onQuestionTextChange={() => {}}
                   onOptionTextChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -363,7 +366,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   onDialogueChange={() => {}}
                   onExpressionChange={() => {}}
                   onExpressionInstructionChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -380,7 +383,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                         <p className="leading-snug mb-2">
                           {qIndex + 1}. {question}
                         </p>
-                        {isInteractive && (
+                        {effectiveInteractive && (
                           <input
                             type="text"
                             value={studentAnswer}
@@ -401,7 +404,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onSentenceChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -413,7 +416,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onWordChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -428,7 +431,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   viewMode="student"
                   onWordsChange={() => {}}
                   onCategoryChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -440,7 +443,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onSentenceChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -452,7 +455,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onWordChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -468,7 +471,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                         <p className="leading-snug mb-2">
                           <span className="font-medium">{sIndex + 1}.</span> {sentence.incorrect || sentence.text}
                         </p>
-                        {isInteractive && (
+                        {effectiveInteractive && (
                           <input
                             type="text"
                             value={studentAnswer}
@@ -490,7 +493,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onQuestionChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -502,7 +505,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onSentenceChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -514,7 +517,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onSentenceChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -526,7 +529,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onHalvesChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -539,7 +542,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   viewMode="student"
                   onItemChange={() => {}}
                   exerciseType={exercise.type}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -553,7 +556,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onQuestionChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -567,7 +570,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onQuestionChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -581,7 +584,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onStatementChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -595,7 +598,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isEditing={false}
                   viewMode="student"
                   onQuestionChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -615,14 +618,14 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   onSentenceChange={() => {}}
                   onTranscriptChange={() => {}}
                   onAnswersChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
               )}
 
-              {/* Picture exercises - Describe Picture */}
-              {normalizedType === 'describe-picture' && (
+              {/* Picture exercises - Describe Picture - PROBLEM 2 FIX: use original type, not normalized */}
+              {exercise.type === 'describe-picture' && (
                 <ExerciseDescribe
                   image_url={exercise.image_url}
                   questions={exercise.prompts || exercise.questions || []}
@@ -631,7 +634,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   showImage={true}
                   onQuestionChange={() => {}}
                   onImageUrlChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -645,7 +648,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   viewMode="student"
                   showImage={false}
                   onQuestionChange={() => {}}
-                  isInteractive={isInteractive}
+                  isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                 />
@@ -670,28 +673,28 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                           </div>
                           <div className="ml-4 flex space-x-4">
                             <label className={`inline-flex items-center cursor-pointer ${
-                              isInteractive && studentAnswer === 'true' ? 'bg-blue-100 px-2 py-1 rounded' : ''
+                              effectiveInteractive && studentAnswer === 'true' ? 'bg-blue-100 px-2 py-1 rounded' : ''
                             }`}>
                               <input 
                                 type="radio" 
                                 name={`statement-${index}-${sIndex}`} 
                                 className="form-radio h-4 w-4" 
                                 checked={studentAnswer === 'true'}
-                                disabled={!isInteractive}
-                                onChange={() => isInteractive && onAnswerChange?.(index, exercise.type, sIndex, 'true')}
+                                disabled={!effectiveInteractive}
+                                onChange={() => effectiveInteractive && onAnswerChange?.(index, exercise.type, sIndex, 'true')}
                               />
                               <span className="ml-2">True</span>
                             </label>
                             <label className={`inline-flex items-center cursor-pointer ${
-                              isInteractive && studentAnswer === 'false' ? 'bg-blue-100 px-2 py-1 rounded' : ''
+                              effectiveInteractive && studentAnswer === 'false' ? 'bg-blue-100 px-2 py-1 rounded' : ''
                             }`}>
                               <input 
                                 type="radio" 
                                 name={`statement-${index}-${sIndex}`} 
                                 className="form-radio h-4 w-4"
                                 checked={studentAnswer === 'false'}
-                                disabled={!isInteractive}
-                                onChange={() => isInteractive && onAnswerChange?.(index, exercise.type, sIndex, 'false')}
+                                disabled={!effectiveInteractive}
+                                onChange={() => effectiveInteractive && onAnswerChange?.(index, exercise.type, sIndex, 'false')}
                               />
                               <span className="ml-2">False</span>
                             </label>

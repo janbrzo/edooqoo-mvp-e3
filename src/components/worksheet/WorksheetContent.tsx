@@ -501,7 +501,7 @@ export default function WorksheetContent({
                   onDeleteExercise={() => softDeleteExercise(originalIndex)}
                   isCollapsed={navigation.collapsedExercises.get(sortedIndex)}
                   onToggleCollapse={() => navigation.toggleExercise(sortedIndex)}
-                  liveSessionAnswer={viewMode === 'live-session' ? liveSessionAnswers?.[sortedIndex] : undefined}
+                  liveSessionAnswer={viewMode === 'live-session' ? liveSessionAnswers?.[originalIndex] : undefined}
                 />
               </div>
             );

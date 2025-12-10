@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, AlertCircle, FileText, ArrowUp } from 'lucide-react';
@@ -9,6 +9,8 @@ import { SharedWorksheetEmailVerification } from '@/components/shared/SharedWork
 import { StudyModeButton } from '@/components/shared/StudyModeButton';
 import { SharedWorksheetProgressBar } from '@/components/shared/SharedWorksheetProgressBar';
 import { useInteractiveSharedWorksheet } from '@/hooks/useInteractiveSharedWorksheet';
+import { ExerciseNavSidebar } from '@/components/worksheet/ExerciseNavSidebar';
+import { useWorksheetNavigation } from '@/hooks/useWorksheetNavigation';
 import type { SharedWorksheetData } from '@/types/interactiveSharedWorksheet';
 
 const SharedWorksheet = () => {
@@ -58,6 +60,11 @@ const SharedWorksheet = () => {
     totalExercises,
     exerciseQuestionCounts
   });
+
+  // PROBLEM 3: Navigation sidebar for shared worksheet
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const exercises = worksheetData?.exercises || [];
+  const navigation = useWorksheetNavigation({ exercises });
 
   useEffect(() => {
     if (!token) {
@@ -313,14 +320,37 @@ const SharedWorksheet = () => {
       </div>
 
       {/* Main Content - styled to match HTML export */}
-      <div className="max-w-6xl mx-auto px-2 py-8">
+      <div className="max-w-6xl mx-auto px-2 py-8 relative">
+        {/* PROBLEM 3: Exercise Navigation Sidebar */}
+        {exercises.length > 0 && (
+          <ExerciseNavSidebar
+            exercises={exercises.map((exercise: any) => ({
+              title: exercise.title,
+              icon: exercise.icon,
+              estimated_time: exercise.time
+            }))}
+            activeExercise={navigation.activeExercise}
+            collapsedExercises={navigation.collapsedExercises}
+            onScrollToExercise={navigation.scrollToExercise}
+            onToggleExercise={navigation.toggleExercise}
+            onCollapseAll={navigation.collapseAll}
+            onExpandAll={navigation.expandAll}
+            isAllCollapsed={navigation.isAllCollapsed}
+            isAllExpanded={navigation.isAllExpanded}
+            isOpen={sidebarOpen}
+            setIsOpen={setSidebarOpen}
+            hasGrammar={!!worksheetData?.grammar_rules}
+            hasVocabulary={!!worksheetData?.vocabulary_sheet}
+          />
+        )}
+
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
           {/* Content wrapper with proper styling */}
           <div className="worksheet-content p-6">
-            {/* PROBLEM 3: Pass isReadOnly for teachers */}
+            {/* PROBLEM 4 FIX: Teacher sees inputs but they are read-only */}
             <SharedWorksheetContent 
               worksheet={worksheet}
-              isInteractive={effectiveStudyMode && !isTeacher}
+              isInteractive={effectiveStudyMode}
               isReadOnly={isTeacher}
               studentAnswers={interactiveHook.answers}
               onAnswerChange={isTeacher ? undefined : interactiveHook.updateAnswer}
