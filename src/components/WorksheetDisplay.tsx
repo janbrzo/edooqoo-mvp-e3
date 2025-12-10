@@ -521,22 +521,30 @@ export default function WorksheetDisplay({
   const handleAddNote = () => {
     setSelectedEntry(null);
     setPanelMode('add');
+    setPreSelectedCategory(undefined); // Regular add note
     setIsPanelOpen(true);
   };
 
-  // PROBLEM 9: Handler for "Next Lesson Ideas" category
+  // PROBLEM 10: Handler for "Next Lesson Ideas" category - pre-selects category
+  const [preSelectedCategory, setPreSelectedCategory] = useState<KnowledgeCategory | undefined>(undefined);
+  
   const handleAddLessonIdea = () => {
     setSelectedEntry(null);
     setPanelMode('add');
+    setPreSelectedCategory('Next Lesson Ideas');
     setIsPanelOpen(true);
-    // Note: The panel will be opened, user needs to select "Next Lesson Ideas" category
-    // We could pre-select this category but that requires changes to FloatingPanel
   };
-
-  const handleClosePanel = () => {
+  
+  // Reset preSelectedCategory when panel closes
+  const handleClosePanelWithReset = () => {
     setIsPanelOpen(false);
     setSelectedEntry(null);
     setPanelMode('add');
+    setPreSelectedCategory(undefined);
+  };
+
+  const handleClosePanel = () => {
+    handleClosePanelWithReset();
   };
 
   const handleCreateHomework = () => {
@@ -687,6 +695,7 @@ export default function WorksheetDisplay({
           onSave={handleSaveEntry}
           suggestedTags={studentKnowledge.suggestedTags || []}
           onEdit={() => setPanelMode('edit')}
+          preSelectedCategory={preSelectedCategory}
         />
       )}
       

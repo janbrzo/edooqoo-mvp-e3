@@ -14,6 +14,7 @@ interface StudentKnowledgeToggleButtonProps {
   onClick: () => void;
 }
 
+// PROBLEM 10: Position adjusted to top-[calc(50%+105px)] - below Add Note FAB
 export const StudentKnowledgeToggleButton = ({
   count,
   isOpen,
@@ -25,7 +26,7 @@ export const StudentKnowledgeToggleButton = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="fixed top-[calc(50%+65px)] right-6 z-40">
+          <div className="fixed top-[calc(50%+105px)] right-6 z-40">
             <Button
               onClick={onClick}
               size="icon"

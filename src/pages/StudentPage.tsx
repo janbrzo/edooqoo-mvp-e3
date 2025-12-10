@@ -511,20 +511,18 @@ const StudentPage = () => {
                                       size="sm"
                                     />
                                   </div>
-                                  <p className="text-sm text-muted-foreground">
-                                    {worksheet.form_data?.lessonTopic && `Topic: ${worksheet.form_data.lessonTopic}`}
-                                    {worksheet.form_data?.grammar && ` • Grammar: ${worksheet.form_data.grammar}`}
-                                  </p>
+                                  {/* PROBLEM 8: Removed Topic display, only show Grammar if exists */}
+                                  {worksheet.form_data?.grammar && (
+                                    <p className="text-sm text-muted-foreground">
+                                      Grammar: {worksheet.form_data.grammar}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                               <div className="flex items-center space-x-2">
-                                <div className="text-right">
-                                  <div className="text-sm font-medium">
-                                    {format(new Date(worksheet.created_at), 'MMM dd, yyyy')}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {format(new Date(worksheet.created_at), 'HH:mm')}
-                                  </div>
+                                {/* PROBLEM 8: Date and time on same line */}
+                                <div className="text-sm font-medium whitespace-nowrap">
+                                  {format(new Date(worksheet.created_at), 'MMM dd, yyyy HH:mm')}
                                 </div>
                                 {/* PROBLEM 7: Share button with green border if active */}
                                 <Button

@@ -31,6 +31,8 @@ interface StudentKnowledgeFloatingPanelProps {
   onSave: (data: NewKnowledgeEntry | { entryId: string; updates: UpdateKnowledgeEntry }) => Promise<void>;
   suggestedTags?: string[];
   onEdit?: () => void;
+  // PROBLEM 10: Pre-select category when opening panel
+  preSelectedCategory?: KnowledgeCategory;
 }
 
 export const StudentKnowledgeFloatingPanel = ({
@@ -45,6 +47,7 @@ export const StudentKnowledgeFloatingPanel = ({
   onSave,
   suggestedTags = [],
   onEdit,
+  preSelectedCategory,
 }: StudentKnowledgeFloatingPanelProps) => {
   const [selectedCategory, setSelectedCategory] = useState<KnowledgeCategory>('Goals');
   const [content, setContent] = useState('');
@@ -62,11 +65,12 @@ export const StudentKnowledgeFloatingPanel = ({
       setContent(entry.content);
       setTagsInput(entry.tags?.map(formatTagForDisplay).join(', ') || '');
     } else if (mode === 'add') {
-      setSelectedCategory('Goals');
+      // PROBLEM 10: Use preSelectedCategory if provided, otherwise default to 'Goals'
+      setSelectedCategory(preSelectedCategory || 'Goals');
       setContent('');
       setTagsInput('');
     }
-  }, [mode, entry]);
+  }, [mode, entry, preSelectedCategory]);
 
   const handleSave = async () => {
     if (!content.trim()) return;
