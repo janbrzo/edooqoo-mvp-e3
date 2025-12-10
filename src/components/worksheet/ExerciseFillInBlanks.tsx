@@ -11,6 +11,23 @@ interface ExerciseFillInBlanksProps extends Partial<InteractiveExerciseProps> {
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
 }
 
+// PROBLEM 9 FIX: Seeded random function for deterministic shuffle
+const seededRandom = (seed: number) => {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+};
+
+// Generate a hash from string for seed
+const hashString = (str: string): number => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+};
+
 const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
   word_bank, 
   sentences, 
@@ -24,13 +41,17 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
   onAnswerChange,
   showCorrectAnswers = false
 }) => {
-  // Shuffle word bank randomly for student view, but keep original order for editing
+  // PROBLEM 9 FIX: Shuffle word bank with deterministic seed based on content
   const shuffledWordBank = useMemo(() => {
     if (!word_bank || isEditing) return word_bank;
     
+    // Create seed from word_bank content - same content = same shuffle
+    const seed = hashString(word_bank.join('|'));
+    
     const shuffled = [...word_bank];
     for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      // Use seeded random instead of Math.random()
+      const j = Math.floor(seededRandom(seed + i) * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled;

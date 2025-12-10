@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen, Copy, Radio } from "lucide-react";
 import { isFreeCustomDemoWeek } from "@/utils/promoUtils";
@@ -10,6 +10,7 @@ import { trackWorksheetEvent } from "@/services/worksheetService";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDownloadTracking } from "@/hooks/useDownloadTracking";
 import { useAuthFlow } from "@/hooks/useAuthFlow";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Tooltip,
   TooltipContent,
@@ -67,6 +68,53 @@ const WorksheetToolbar = ({
   const isMobile = useIsMobile();
   const { trackDownloadAttempt } = useDownloadTracking(userId);
   const { user, isRegisteredUser } = useAuthFlow();
+  
+  // PROBLEM 6 & 7: Track student email and share token status
+  const [studentEmail, setStudentEmail] = useState<string | undefined>(undefined);
+  const [hasActiveShareToken, setHasActiveShareToken] = useState(false);
+  
+  // Fetch student email and share token status when worksheet changes
+  useEffect(() => {
+    const fetchWorksheetData = async () => {
+      if (!worksheetId) return;
+      
+      try {
+        // Fetch worksheet data including share token and student_id
+        const { data: worksheet, error: worksheetError } = await supabase
+          .from('worksheets')
+          .select('share_token, share_expires_at, student_id')
+          .eq('id', worksheetId)
+          .single();
+        
+        if (worksheetError) throw worksheetError;
+        
+        // Check if share token is active (PROBLEM 7)
+        if (worksheet?.share_token && worksheet?.share_expires_at) {
+          const expiresAt = new Date(worksheet.share_expires_at);
+          setHasActiveShareToken(expiresAt > new Date());
+        } else {
+          setHasActiveShareToken(false);
+        }
+        
+        // Fetch student email if student_id exists (PROBLEM 6)
+        if (worksheet?.student_id) {
+          const { data: student, error: studentError } = await supabase
+            .from('students')
+            .select('student_email')
+            .eq('id', worksheet.student_id)
+            .single();
+          
+          if (!studentError && student?.student_email) {
+            setStudentEmail(student.student_email);
+          }
+        }
+      } catch (error) {
+        console.error('[WorksheetToolbar] Error fetching worksheet data:', error);
+      }
+    };
+    
+    fetchWorksheetData();
+  }, [worksheetId]);
 
   const handleDownloadHTML = async (downloadViewMode: "student" | "teacher") => {
     const originalViewMode = viewMode;
@@ -258,10 +306,11 @@ const WorksheetToolbar = ({
                 
                 {canShareWorksheet && (
                   <>
+                    {/* PROBLEM 7: Green border when share token is active */}
                     <Button
                       variant="outline"
                       onClick={handleShareClick}
-                      className={`border-worksheet-purple text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
+                      className={`${hasActiveShareToken ? 'border-2 border-green-500' : 'border-worksheet-purple'} text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
                       size="sm"
                     >
                       <Share2 className="mr-2 h-4 w-4" /> Share
@@ -385,12 +434,14 @@ const WorksheetToolbar = ({
         userIp={userIp}
       />
 
+      {/* PROBLEM 6: Pass studentEmail to ShareWorksheetModal */}
       {canShareWorksheet && (
         <ShareWorksheetModal
           isOpen={showShareModal}
           onClose={() => setShowShareModal(false)}
           worksheetId={worksheetId!}
           worksheetTitle={editableWorksheet?.title || 'English Worksheet'}
+          studentEmail={studentEmail}
         />
       )}
     </>
