@@ -154,7 +154,14 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   showCorrectAnswers = false,
   // PROBLEM 1: Live Session answer prop
   liveSessionAnswer,
+  // PROBLEM 5: Mark Done props from parent
+  isMarkedDone: isMarkedDoneProp,
+  onMarkDone: onMarkDoneProp,
 }, ref) => {
+  // PROBLEM 5: Local state for marking exercise as done in Live Session
+  const [localMarkedDone, setLocalMarkedDone] = React.useState(false);
+  const isMarkedDone = isMarkedDoneProp ?? localMarkedDone;
+  const handleMarkDone = onMarkDoneProp ?? (() => setLocalMarkedDone(prev => !prev));
   // Use originalIndex for array operations, index for display
   const arrayIndex = originalIndex !== undefined ? originalIndex : index - 1;
   
@@ -273,6 +280,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           onMoveUp={onMoveUp}
           onMoveDown={onMoveDown}
           onDelete={onDeleteExercise}
+          // PROBLEM 5: Live Session Done button props
+          viewMode={viewMode}
+          isMarkedDone={isMarkedDone}
+          onMarkDone={handleMarkDone}
         />
 
         <Collapsible open={!isCollapsed} onOpenChange={() => onToggleCollapse?.()}>
