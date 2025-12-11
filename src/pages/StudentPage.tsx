@@ -729,11 +729,12 @@ const StudentPage = () => {
           onSave={updateStudent}
         />
         
-        {/* PROBLEM 7: Share Worksheet Modal */}
+        {/* PROBLEM 5: Share Worksheet Modal with pre-filled student email */}
         {shareWorksheetData && (
           <ShareWorksheetModal
             worksheetId={shareWorksheetData.id}
             worksheetTitle={shareWorksheetData.title}
+            studentEmail={student?.student_email || ''}
             isOpen={shareModalOpen}
             onClose={() => {
               setShareModalOpen(false);

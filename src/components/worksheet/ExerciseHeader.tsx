@@ -104,7 +104,7 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
             <span className="text-xs">Regenerate</span>
           </Button>
         )}
-        {/* PROBLEM 5: Done button - visible only in Live Session mode */}
+        {/* PROBLEM 5: Done button - visible only in Live Session mode with better visibility */}
         {viewMode === 'live-session' && onMarkDone && (
           <Button
             type="button"
@@ -112,14 +112,14 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
             size="sm"
             onClick={onMarkDone}
             className={cn(
-              "h-8 px-2 gap-1 transition-colors",
+              "h-8 px-3 gap-1.5 transition-colors ml-2 font-medium rounded-md",
               isMarkedDone 
-                ? "text-white bg-green-600 hover:bg-green-700" 
-                : "text-green-300 hover:bg-white/20 hover:text-green-200"
+                ? "bg-green-600 text-white hover:bg-green-700 shadow-sm" 
+                : "bg-white/20 text-white hover:bg-white/30 border border-white/30"
             )}
           >
-            <Check className="h-3 w-3" />
-            <span className="text-xs">{isMarkedDone ? 'Done' : 'Mark Done'}</span>
+            <Check className="h-4 w-4" />
+            <span className="text-sm">{isMarkedDone ? '✓ Done' : 'Mark Done'}</span>
           </Button>
         )}
       </div>

@@ -31,8 +31,10 @@ interface StudentKnowledgeFloatingPanelProps {
   onSave: (data: NewKnowledgeEntry | { entryId: string; updates: UpdateKnowledgeEntry }) => Promise<void>;
   suggestedTags?: string[];
   onEdit?: () => void;
-  // PROBLEM 10: Pre-select category when opening panel
+  // PROBLEM 6: Pre-select category when opening panel
   preSelectedCategory?: KnowledgeCategory;
+  // PROBLEM 6: Hide category selection grid (for lightbulb button - only show "Next Lesson Ideas")
+  hideCategories?: boolean;
 }
 
 export const StudentKnowledgeFloatingPanel = ({
@@ -48,6 +50,7 @@ export const StudentKnowledgeFloatingPanel = ({
   suggestedTags = [],
   onEdit,
   preSelectedCategory,
+  hideCategories = false, // PROBLEM 6: Hide category grid for lightbulb button
 }: StudentKnowledgeFloatingPanelProps) => {
   const [selectedCategory, setSelectedCategory] = useState<KnowledgeCategory>('Goals');
   const [content, setContent] = useState('');
@@ -160,33 +163,45 @@ export const StudentKnowledgeFloatingPanel = ({
 
         <ScrollArea className="h-[calc(90vh-160px)]">
           <CardContent className="pt-6 space-y-6">
-            {/* Category Selection */}
+            {/* Category Selection - PROBLEM 6: Hide grid when hideCategories=true */}
             <div className="space-y-3">
               <Label>Category</Label>
-              <div className="grid grid-cols-3 gap-1">
-                {KNOWLEDGE_CATEGORIES.map((cat) => {
-                  const isSelected = selectedCategory === cat.id;
-                  return (
-                    <Button
-                      key={cat.id}
-                      variant={isSelected ? 'default' : 'outline'}
-                      className={cn(
-                        'h-auto flex items-center gap-1 px-2 py-1.5',
-                        isSelected && 'ring-2 ring-ring',
-                        isReadOnly && 'pointer-events-none opacity-60'
-                      )}
-                      onClick={() => !isReadOnly && setSelectedCategory(cat.id)}
-                      disabled={isReadOnly}
-                    >
-                      <span className="text-base">{cat.icon}</span>
-              <span className="text-xs font-medium leading-tight">
-                {cat.label}
-              </span>
-                    </Button>
-                  );
-                })}
-              </div>
-              {categoryMetadata && (
+              {hideCategories && categoryMetadata ? (
+                /* PROBLEM 6: Show only selected category as a static badge */
+                <div className="p-3 bg-muted rounded-lg flex items-center gap-3">
+                  <span className="text-xl">{categoryMetadata.icon}</span>
+                  <div>
+                    <span className="font-medium">{categoryMetadata.label}</span>
+                    <p className="text-xs text-muted-foreground">{categoryMetadata.description}</p>
+                  </div>
+                </div>
+              ) : (
+                /* Original category grid */
+                <div className="grid grid-cols-3 gap-1">
+                  {KNOWLEDGE_CATEGORIES.map((cat) => {
+                    const isSelected = selectedCategory === cat.id;
+                    return (
+                      <Button
+                        key={cat.id}
+                        variant={isSelected ? 'default' : 'outline'}
+                        className={cn(
+                          'h-auto flex items-center gap-1 px-2 py-1.5',
+                          isSelected && 'ring-2 ring-ring',
+                          isReadOnly && 'pointer-events-none opacity-60'
+                        )}
+                        onClick={() => !isReadOnly && setSelectedCategory(cat.id)}
+                        disabled={isReadOnly}
+                      >
+                        <span className="text-base">{cat.icon}</span>
+                        <span className="text-xs font-medium leading-tight">
+                          {cat.label}
+                        </span>
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
+              {!hideCategories && categoryMetadata && (
                 <p className="text-xs text-muted-foreground">
                   {categoryMetadata.description}
                 </p>

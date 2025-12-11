@@ -1,9 +1,10 @@
 
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, AlertCircle, FileText, ArrowUp } from 'lucide-react';
+import { Loader2, AlertCircle, FileText, ArrowUp, Pin, Maximize, X, Home, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import SharedWorksheetContent from '@/components/shared/SharedWorksheetContent';
 import { SharedWorksheetEmailVerification } from '@/components/shared/SharedWorksheetEmailVerification';
 import { StudyModeButton } from '@/components/shared/StudyModeButton';
@@ -15,6 +16,7 @@ import type { SharedWorksheetData } from '@/types/interactiveSharedWorksheet';
 
 const SharedWorksheet = () => {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const [worksheet, setWorksheet] = useState<SharedWorksheetData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -26,6 +28,10 @@ const SharedWorksheet = () => {
   const [isTeacher, setIsTeacher] = useState(false);
   const [isStudyMode, setIsStudyMode] = useState(false);
   const [needsStudentAssignment, setNeedsStudentAssignment] = useState(false);
+
+  // PROBLEM 2: Pin media state
+  const [isPinned, setIsPinned] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // Parse exercises count from worksheet data
   const worksheetData = useMemo(() => {
@@ -287,12 +293,36 @@ const SharedWorksheet = () => {
         />
       )}
       
-      {/* Teacher read-only notice */}
+      {/* PROBLEM 3: Teacher toolbar with navigation buttons */}
       {isTeacher && (
-        <div className="bg-amber-50 border-b border-amber-200 py-2 px-4 text-center">
-          <p className="text-sm text-amber-700">
-            👀 Teacher View - You're viewing this worksheet as your students will see it (read-only)
-          </p>
+        <div className="sticky top-0 bg-white border-b shadow-sm py-3 px-4 z-40 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-amber-700 bg-amber-50 px-3 py-1 rounded-md">
+              👀 Teacher Preview Mode
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/dashboard')}
+              className="gap-2"
+            >
+              <Home className="h-4 w-4" />
+              Dashboard
+            </Button>
+            {worksheet?.student_id && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate(`/student/${worksheet.student_id}`)}
+                className="gap-2"
+              >
+                <User className="h-4 w-4" />
+                Student Page
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -347,7 +377,7 @@ const SharedWorksheet = () => {
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
           {/* Content wrapper with proper styling */}
           <div className="worksheet-content p-6">
-            {/* PROBLEM 4 FIX: Teacher sees inputs but they are read-only */}
+            {/* PROBLEM 2: Pass exerciseRefs for navigation sidebar */}
             <SharedWorksheetContent 
               worksheet={worksheet}
               isInteractive={effectiveStudyMode}
@@ -355,9 +385,73 @@ const SharedWorksheet = () => {
               studentAnswers={interactiveHook.answers}
               onAnswerChange={isTeacher ? undefined : interactiveHook.updateAnswer}
               onBlur={isTeacher ? undefined : interactiveHook.saveOnBlur}
+              exerciseRefs={navigation.exerciseRefs}
             />
           </div>
         </div>
+
+        {/* PROBLEM 2: Floating Pin/Fullscreen buttons for media */}
+        {(worksheet.selected_audio || worksheet.selected_image || worksheetData?.selected_audio || worksheetData?.selected_image) && (
+          <div className="fixed bottom-24 right-6 z-50 flex flex-col gap-2">
+            <Button
+              onClick={() => setIsPinned(!isPinned)}
+              size="icon"
+              variant={isPinned ? "default" : "outline"}
+              className={`rounded-full shadow-lg ${isPinned ? 'bg-worksheet-purple' : 'bg-white'}`}
+              title={isPinned ? "Unpin audio" : "Pin audio"}
+            >
+              <Pin className={`h-5 w-5 ${isPinned ? 'fill-current' : ''}`} />
+            </Button>
+            <Button
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              size="icon"
+              variant={isFullScreen ? "default" : "outline"}
+              className={`rounded-full shadow-lg ${isFullScreen ? 'bg-worksheet-purple' : 'bg-white'}`}
+              title={isFullScreen ? "Exit fullscreen" : "Fullscreen image"}
+            >
+              <Maximize className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
+
+        {/* PROBLEM 2: Pinned Audio Player */}
+        {isPinned && (worksheet.selected_audio || worksheet.audio_url || worksheetData?.selected_audio) && (
+          <div className="fixed bottom-6 right-24 z-50 bg-white border-2 border-worksheet-purple rounded-lg shadow-2xl p-4 w-80">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                🎧 Pinned Audio Player
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsPinned(false)}
+                className="h-7 w-7 p-0 hover:bg-gray-100"
+                title="Unpin audio player"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <audio
+              controls
+              src={
+                worksheet.audio_url || 
+                worksheet.selected_audio?.ai_generated_audio_url || 
+                worksheet.selected_audio?.url ||
+                worksheetData?.selected_audio?.ai_generated_audio_url ||
+                worksheetData?.selected_audio?.url ||
+                ''
+              }
+              className="w-full"
+              controlsList="nodownload"
+              style={{ 
+                height: '40px',
+                backgroundColor: '#f3f4f6',
+                borderRadius: '8px'
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Scroll to top button */}
