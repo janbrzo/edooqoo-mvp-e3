@@ -5,17 +5,7 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Shared Worksheet & Live Session Fixes:**
-- **Live Session Answers Inline Display**: Fixed data flow - `liveSessionAnswer` now correctly passed from `WorksheetContent` → `ExerciseSection` → individual exercise components for inline blue highlighting
-- **Navigation Sidebar on Shared Worksheets**: Fixed scroll-to-exercise by passing `exerciseRefs` to `SharedWorksheetContent` and assigning refs to exercise divs
-- **Pin Audio/Picture on Shared Worksheets**: Added floating Pin and Maximize buttons with pinned audio player (identical to main worksheet)
-- **Teacher Toolbar on Shared Worksheets**: Teachers now see toolbar with "Dashboard" and "Student Page" navigation buttons instead of simple notice
-- **Mark Done Persistence**: "Mark Done" button state now persists to `localStorage` so it survives page refresh
-- **Mark Done Button Visibility**: Improved button styling with better contrast (white/green background) on purple header
-- **Share Modal Email Pre-fill on /student**: StudentPage's ShareWorksheetModal now pre-fills student email
-- **Lightbulb Button Category Lock**: When clicking lightbulb button, panel only shows "Next Lesson Ideas" category (no grid)
-
-**Previous Update (December 2025) - Interactive Worksheets Improvements:**
+**Latest Update (December 2025) - Interactive Worksheets Improvements:**
 - **Live Session Inline Answers**: In "Live Session" mode, teacher can mark exercises as "Done" with elegant gray styling
 - **Share Button on Student Worksheets**: New Share button on worksheet cards in `/student` Worksheets tab with green border when link active
 - **Share Link Extended to 10 Days**: Worksheet share links now valid for 10 days (was 7)

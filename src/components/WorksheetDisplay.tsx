@@ -696,7 +696,6 @@ export default function WorksheetDisplay({
           suggestedTags={studentKnowledge.suggestedTags || []}
           onEdit={() => setPanelMode('edit')}
           preSelectedCategory={preSelectedCategory}
-          hideCategories={preSelectedCategory === 'Next Lesson Ideas'} // PROBLEM 6: Only show "Next Lesson Ideas" category when lightbulb clicked
         />
       )}
       

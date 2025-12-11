@@ -42,8 +42,6 @@ interface SharedWorksheetContentProps {
   studentAnswers?: Record<number, any>;
   onAnswerChange?: (exerciseIndex: number, exerciseType: string, questionIndex: number, value: any) => void;
   onBlur?: (exerciseIndex: number, exerciseType: string) => void;
-  // PROBLEM 2: Navigation refs for sidebar scroll-to-exercise
-  exerciseRefs?: React.MutableRefObject<(HTMLElement | null)[]>;
 }
 
 // Helper function to normalize exercise type (removes -picture and -audio suffixes)
@@ -57,8 +55,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
   isReadOnly = false, // PROBLEM 3: Read-only for teachers
   studentAnswers = {},
   onAnswerChange,
-  onBlur,
-  exerciseRefs // PROBLEM 2: Navigation refs
+  onBlur
 }) => {
   // PROBLEM 3: Effective interactive mode (disabled if read-only)
   const effectiveInteractive = isInteractive && !isReadOnly;
@@ -273,16 +270,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
         const normalizedType = normalizeExerciseType(exercise.type);
         
         return (
-          <div 
-            key={index} 
-            className="mb-6 bg-white border rounded-lg overflow-hidden shadow-sm"
-            ref={el => {
-              // PROBLEM 2: Assign ref for navigation sidebar to scroll to exercise
-              if (exerciseRefs) {
-                exerciseRefs.current[index] = el;
-              }
-            }}
-          >
+          <div key={index} className="mb-6 bg-white border rounded-lg overflow-hidden shadow-sm">
             <div className="bg-worksheet-purple text-white p-2 flex justify-between items-center exercise-header">
               <div className="flex items-center">
                 <div className="p-2 bg-white/20 rounded-full mr-3">

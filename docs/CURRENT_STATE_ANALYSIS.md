@@ -6,17 +6,13 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2025-12):** 
-- ✅ **NAPRAWIONO Live Session Flow**: Odpowiedzi studentów poprawnie przekazywane z `liveSessionAnswers` → `ExerciseSection` → komponenty ćwiczeń z niebieskim podświetleniem inline
-- ✅ **NAPRAWIONO Navigation Sidebar na Shared Worksheet**: Klikanie numerków scrolluje do odpowiedniego ćwiczenia dzięki przekazaniu `exerciseRefs` do `SharedWorksheetContent`
-- ✅ **DODANO Pin Audio/Picture na Shared Worksheet**: Floating buttons Pin i Maximize z pinned audio player (identycznie jak na głównym worksheet)
-- ✅ **NAPRAWIONO Teacher Toolbar na Shared Worksheet**: Nauczyciel widzi toolbar z przyciskami "Dashboard" i "Student Page" zamiast prostego notice
-- ✅ **NAPRAWIONO Mark Done Persistence**: Stan "Mark Done" zapisywany do `localStorage` - przetrwa odświeżenie strony
-- ✅ **NAPRAWIONO Mark Done Button Visibility**: Ulepszone stylowanie z lepszym kontrastem (białe/zielone tło) na fioletowym pasku
-- ✅ **NAPRAWIONO Share Modal Email na /student**: ShareWorksheetModal uzupełnia automatycznie email studenta
-- ✅ **NAPRAWIONO Lightbulb Button**: Po kliknięciu żarówki panel pokazuje tylko kategorię "Next Lesson Ideas" (bez grida)
+**Ostatnia naprawa (2025-01):** 
 - ✅ Naprawiono wyświetlanie wszystkich zadań audio (Listening Comprehension, Answer Questions Audio, True/False Audio, Multiple Choice Audio, Fill in Blanks Audio) w udostępnianych worksheetach
 - ✅ Naprawiono wyświetlanie wszystkich zadań picture (Answer Questions Picture, True/False Picture, Describe Picture, Multiple Choice Picture) w udostępnianych worksheetach
+- ✅ Skorygowano marginesy PDF: 1cm boki, 0.5cm góra/dół (wcześniej 1.5cm boki powodowało nadmierne białe przestrzenie)
+- ✅ **NAPRAWIONO "describe-picture"**: Zmieniono wszystkie referencje frontend z `'describe'` na `'describe-picture'` (8 plików: ExerciseSelector, WorksheetForm, InputParamsCard, SharedWorksheetContent, ExerciseSection, worksheetUtils, mockNewExercisesData), dzięki czemu backend znajduje właściwą funkcję template i dołącza wytyczne do promptu ChatGPT
+- ✅ **NAPRAWIONO "odd-one-out" validator**: Zmieniono strukturę z `groups` na `questions` (zgodnie z frontendem ExerciseOddOneOut.tsx), walidacja sprawdza `questions` array z polami `options` i `correct_answer`; dodano 2 pytania do template (8→10 zgodnie z requirements); zmieniono terminologię w final-requirements z "groups" na "questions"
+- ✅ **UX: Add Student Modal**: Formularz "Add New Student" (Dashboard + Onboarding) zachowuje teraz wpisane dane podczas przełączania kart przeglądarki – dane znikają dopiero po poprawnym zapisaniu studenta.
 
 ## Wygląd i Interface
 
