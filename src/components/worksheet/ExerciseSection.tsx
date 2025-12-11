@@ -158,10 +158,21 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   isMarkedDone: isMarkedDoneProp,
   onMarkDone: onMarkDoneProp,
 }, ref) => {
-  // PROBLEM 5: Local state for marking exercise as done in Live Session
-  const [localMarkedDone, setLocalMarkedDone] = React.useState(false);
+  // PROBLEM 4: Persist Mark Done state to localStorage for Live Session
+  const worksheetIdForStorage = (editableWorksheet as any)?.id;
+  const storageKey = `exercise-done-${worksheetIdForStorage}-${originalIndex !== undefined ? originalIndex : index}`;
+  
+  const [localMarkedDone, setLocalMarkedDone] = React.useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(storageKey) === 'true';
+  });
+  
   const isMarkedDone = isMarkedDoneProp ?? localMarkedDone;
-  const handleMarkDone = onMarkDoneProp ?? (() => setLocalMarkedDone(prev => !prev));
+  const handleMarkDone = onMarkDoneProp ?? (() => {
+    const newValue = !localMarkedDone;
+    setLocalMarkedDone(newValue);
+    localStorage.setItem(storageKey, String(newValue));
+  });
   // Use originalIndex for array operations, index for display
   const arrayIndex = originalIndex !== undefined ? originalIndex : index - 1;
   
