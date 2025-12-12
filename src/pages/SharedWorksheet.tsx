@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, AlertCircle, FileText, ArrowUp, Pin, Maximize, X, Home, User } from 'lucide-react';
+import { Loader2, AlertCircle, FileText, ArrowUp, Image, X, Maximize2, Headphones, Home, User, ArrowLeft, Unlock, Save, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import SharedWorksheetContent from '@/components/shared/SharedWorksheetContent';
@@ -29,9 +29,16 @@ const SharedWorksheet = () => {
   const [isStudyMode, setIsStudyMode] = useState(false);
   const [needsStudentAssignment, setNeedsStudentAssignment] = useState(false);
 
-  // PROBLEM 2: Pin media state
+  // PROBLEM 2: Pin media state (like WorksheetContainer)
   const [isPinned, setIsPinned] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  
+  // PROBLEM 3: Teacher edit mode and student info
+  const [teacherEditMode, setTeacherEditMode] = useState(false);
+  const [studentName, setStudentName] = useState<string | null>(null);
+  const [editableWorksheet, setEditableWorksheet] = useState<any>(null);
+  const [originalWorksheet, setOriginalWorksheet] = useState<any>(null);
+  const [isSavingTeacherEdits, setIsSavingTeacherEdits] = useState(false);
 
   // Parse exercises count from worksheet data
   const worksheetData = useMemo(() => {
@@ -139,7 +146,7 @@ const SharedWorksheet = () => {
 
       const worksheetRow = data[0];
       
-      // Check if worksheet has assigned student
+      // Check if worksheet has assigned student and get student name
       const { data: fullWorksheet } = await supabase
         .from('worksheets')
         .select('student_id, share_recipient_email')
@@ -148,13 +155,35 @@ const SharedWorksheet = () => {
       
       if (!fullWorksheet?.student_id) {
         setNeedsStudentAssignment(true);
+      } else {
+        // PROBLEM 3: Fetch student name for teacher toolbar
+        const { data: studentData } = await supabase
+          .from('students')
+          .select('name')
+          .eq('id', fullWorksheet.student_id)
+          .single();
+        
+        if (studentData?.name) {
+          setStudentName(studentData.name);
+        }
       }
 
-      setWorksheet({
+      const worksheetData = {
         ...worksheetRow,
         student_id: fullWorksheet?.student_id,
         share_recipient_email: fullWorksheet?.share_recipient_email
-      });
+      };
+      
+      setWorksheet(worksheetData);
+      
+      // PROBLEM 3: Initialize editable worksheet for teacher edit mode
+      try {
+        const parsedContent = JSON.parse(worksheetRow.ai_response);
+        setEditableWorksheet(parsedContent);
+        setOriginalWorksheet(parsedContent);
+      } catch (e) {
+        console.error('Error parsing worksheet content:', e);
+      }
       
       toast({
         title: "Worksheet loaded",
@@ -189,6 +218,48 @@ const SharedWorksheet = () => {
   const handleStartStudy = () => {
     console.log('[SharedWorksheet] Starting study mode');
     setIsStudyMode(true);
+  };
+
+  // PROBLEM 3: Teacher edit mode handlers
+  const handleSaveTeacherChanges = async () => {
+    if (!worksheet?.id || !editableWorksheet) return;
+    
+    setIsSavingTeacherEdits(true);
+    try {
+      const { error } = await supabase
+        .from('worksheets')
+        .update({ ai_response: JSON.stringify(editableWorksheet) })
+        .eq('id', worksheet.id);
+      
+      if (error) throw error;
+      
+      setOriginalWorksheet(editableWorksheet);
+      setTeacherEditMode(false);
+      
+      toast({
+        title: "Changes saved",
+        description: "Your edits have been saved successfully.",
+        className: "bg-green-50 border-green-200"
+      });
+    } catch (error) {
+      console.error('Error saving teacher changes:', error);
+      toast({
+        title: "Save failed",
+        description: "Could not save changes. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingTeacherEdits(false);
+    }
+  };
+
+  const handleDiscardTeacherChanges = () => {
+    setEditableWorksheet(originalWorksheet);
+    setTeacherEditMode(false);
+    toast({
+      title: "Changes discarded",
+      description: "All edits have been reverted.",
+    });
   };
 
   if (isLoading) {
@@ -293,34 +364,84 @@ const SharedWorksheet = () => {
         />
       )}
       
-      {/* PROBLEM 3: Teacher toolbar with navigation buttons */}
+      {/* PROBLEM 3: Teacher toolbar with Back, Dashboard, Student Name, Edit buttons */}
       {isTeacher && (
         <div className="sticky top-0 bg-white border-b shadow-sm py-3 px-4 z-40 flex items-center justify-between">
+          {/* Left side: Navigation buttons */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-amber-700 bg-amber-50 px-3 py-1 rounded-md">
-              👀 Teacher Preview Mode
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="ghost"
               size="sm"
-              onClick={() => navigate('/dashboard')}
-              className="gap-2"
+              onClick={() => navigate(-1)}
             >
-              <Home className="h-4 w-4" />
-              Dashboard
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+            >
+              <Link to="/dashboard">
+                <Home className="h-4 w-4 mr-1" />
+                Dashboard
+              </Link>
             </Button>
             {worksheet?.student_id && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="ghost"
                 size="sm"
-                onClick={() => navigate(`/student/${worksheet.student_id}`)}
-                className="gap-2"
+                asChild
               >
-                <User className="h-4 w-4" />
-                Student Page
+                <Link to={`/student/${worksheet.student_id}`}>
+                  <User className="h-4 w-4 mr-1" />
+                  {studentName || 'Student'}
+                </Link>
               </Button>
+            )}
+          </div>
+          
+          {/* Right side: Edit mode buttons */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-amber-700 bg-amber-50 px-3 py-1 rounded-md mr-2">
+              👀 Teacher Preview
+            </span>
+            {!teacherEditMode ? (
+              <Button 
+                onClick={() => setTeacherEditMode(true)}
+                variant="outline"
+                size="sm"
+                className="border-blue-500 text-blue-600 hover:bg-blue-50"
+              >
+                <Unlock className="h-3 w-3 mr-1" />
+                Unlock Editing
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  onClick={handleSaveTeacherChanges}
+                  disabled={isSavingTeacherEdits}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {isSavingTeacherEdits ? (
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  ) : (
+                    <Save className="h-3 w-3 mr-1" />
+                  )}
+                  Save
+                </Button>
+                <Button 
+                  onClick={handleDiscardTeacherChanges}
+                  disabled={isSavingTeacherEdits}
+                  variant="outline"
+                  size="sm"
+                  className="border-red-500 text-red-600 hover:bg-red-50"
+                >
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  Discard
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -390,79 +511,145 @@ const SharedWorksheet = () => {
           </div>
         </div>
 
-        {/* PROBLEM 2: Floating Pin/Fullscreen buttons for media */}
-        {(worksheet.selected_audio || worksheet.selected_image || worksheetData?.selected_audio || worksheetData?.selected_image) && (
-          <div className="fixed bottom-24 right-6 z-50 flex flex-col gap-2">
-            <Button
-              onClick={() => setIsPinned(!isPinned)}
-              size="icon"
-              variant={isPinned ? "default" : "outline"}
-              className={`rounded-full shadow-lg ${isPinned ? 'bg-worksheet-purple' : 'bg-white'}`}
-              title={isPinned ? "Unpin audio" : "Pin audio"}
-            >
-              <Pin className={`h-5 w-5 ${isPinned ? 'fill-current' : ''}`} />
-            </Button>
-            <Button
-              onClick={() => setIsFullScreen(!isFullScreen)}
-              size="icon"
-              variant={isFullScreen ? "default" : "outline"}
-              className={`rounded-full shadow-lg ${isFullScreen ? 'bg-worksheet-purple' : 'bg-white'}`}
-              title={isFullScreen ? "Exit fullscreen" : "Fullscreen image"}
-            >
-              <Maximize className="h-5 w-5" />
-            </Button>
-          </div>
-        )}
+      </div>
 
-        {/* PROBLEM 2: Pinned Audio Player */}
-        {isPinned && (worksheet.selected_audio || worksheet.audio_url || worksheetData?.selected_audio) && (
-          <div className="fixed bottom-6 right-24 z-50 bg-white border-2 border-worksheet-purple rounded-lg shadow-2xl p-4 w-80">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                🎧 Pinned Audio Player
-              </span>
+      {/* PROBLEM 2: Fixed action buttons in bottom right (like WorksheetContainer) */}
+      {showScrollTop && (
+        <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-50">
+          {/* Pin Image button - only show if image exists and no audio */}
+          {(worksheet.selected_image || worksheetData?.selected_image) && 
+           !(worksheet.selected_audio || worksheetData?.selected_audio) && (
+            <button 
+              onClick={() => setIsPinned(!isPinned)}
+              className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+              aria-label={isPinned ? "Unpin image" : "Pin image"}
+              title={isPinned ? "Unpin image" : "Pin image"}
+            >
+              <Image className="h-5 w-5" />
+            </button>
+          )}
+          
+          {/* Pin Audio button - only show if audio exists */}
+          {(worksheet.selected_audio || worksheet.audio_url || worksheetData?.selected_audio) && (
+            <button 
+              onClick={() => setIsPinned(!isPinned)}
+              className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+              aria-label={isPinned ? "Unpin audio player" : "Pin audio player"}
+              title={isPinned ? "Unpin audio player" : "Pin audio player"}
+            >
+              <Headphones className="h-5 w-5" />
+            </button>
+          )}
+          
+          {/* Scroll to top button */}
+          <button 
+            onClick={scrollToTop}
+            className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+            aria-label="Scroll to top"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {/* PROBLEM 2: Pinned image in bottom right corner (like WorksheetContainer) */}
+      {isPinned && (worksheet.selected_image || worksheetData?.selected_image) && 
+       !(worksheet.selected_audio || worksheetData?.selected_audio) && (
+        <div 
+          className="fixed bottom-6 right-24 z-40 bg-white border-2 border-gray-300 rounded-lg shadow-2xl overflow-hidden"
+          style={{ width: '300px' }}
+        >
+          <div className="relative">
+            <img
+              src={(worksheet.selected_image || worksheetData?.selected_image)?.url}
+              alt={(worksheet.selected_image || worksheetData?.selected_image)?.description || 'Lesson image'}
+              className="w-full h-auto object-contain max-h-[200px]"
+            />
+            <div className="absolute top-1 right-1 flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsFullScreen(true)}
+                className="bg-white/80 hover:bg-white"
+                title="Expand image"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsPinned(false)}
-                className="h-7 w-7 p-0 hover:bg-gray-100"
-                title="Unpin audio player"
+                className="bg-white/80 hover:bg-white"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            
-            <audio
-              controls
-              src={
-                worksheet.audio_url || 
-                worksheet.selected_audio?.ai_generated_audio_url || 
-                worksheet.selected_audio?.url ||
-                worksheetData?.selected_audio?.ai_generated_audio_url ||
-                worksheetData?.selected_audio?.url ||
-                ''
-              }
-              className="w-full"
-              controlsList="nodownload"
-              style={{ 
-                height: '40px',
-                backgroundColor: '#f3f4f6',
-                borderRadius: '8px'
-              }}
-            />
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Scroll to top button */}
-      {showScrollTop && (
-        <button 
-          onClick={scrollToTop}
-          className="fixed bottom-6 right-6 rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity z-50"
-          aria-label="Scroll to top"
+      {/* PROBLEM 2: Full screen modal for pinned image (like WorksheetContainer) */}
+      {isFullScreen && (worksheet.selected_image || worksheetData?.selected_image) && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setIsFullScreen(false)}
         >
-          <ArrowUp className="h-5 w-5" />
-        </button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsFullScreen(false);
+            }}
+            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white"
+          >
+            <X className="h-6 w-6" />
+          </Button>
+          <img
+            src={(worksheet.selected_image || worksheetData?.selected_image)?.url}
+            alt={(worksheet.selected_image || worksheetData?.selected_image)?.description || 'Lesson image'}
+            className="max-w-full max-h-full object-contain"
+          />
+        </div>
+      )}
+
+      {/* PROBLEM 2: Pinned Audio Player (like WorksheetContainer) */}
+      {isPinned && (worksheet.selected_audio || worksheet.audio_url || worksheetData?.selected_audio) && (
+        <div className="fixed bottom-6 right-24 z-40 bg-white border-2 border-worksheet-purple rounded-lg shadow-2xl p-4 w-80">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+              🎧 Pinned Audio Player
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsPinned(false)}
+              className="h-7 w-7 p-0 hover:bg-gray-100"
+              title="Unpin audio player"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <audio
+            controls
+            src={
+              worksheet.audio_url || 
+              worksheet.selected_audio?.ai_generated_audio_url || 
+              worksheet.selected_audio?.url ||
+              worksheetData?.selected_audio?.ai_generated_audio_url ||
+              worksheetData?.selected_audio?.url ||
+              ''
+            }
+            className="w-full"
+            controlsList="nodownload"
+            style={{ 
+              height: '40px',
+              backgroundColor: '#f3f4f6',
+              borderRadius: '8px'
+            }}
+          />
+        </div>
       )}
 
       {/* Footer */}
