@@ -10,6 +10,8 @@ interface ExerciseMatchingProps extends Partial<InteractiveExerciseProps> {
   getMatchedItems: (items: any[]) => any[];
   onItemChange: (iIndex: number, field: string, value: string) => void;
   worksheetId?: string; // PROBLEM 8: Optional worksheetId for deterministic shuffle
+  // PROBLEM 1: Live Session answer prop for displaying student answers in blue
+  liveSessionAnswer?: Record<number, any>;
 }
 
 // PROBLEM 8 FIX: Seeded random for deterministic shuffle
@@ -47,7 +49,9 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // PROBLEM 1: Live Session
+  liveSessionAnswer
 }) => {
   // PROBLEM 8 FIX: Use useRef to ensure shuffle happens only once
   // Create a stable seed from item terms for deterministic order
@@ -72,6 +76,7 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
           const isCorrect = showCorrectAnswers && selectedAnswer === correctLetter;
           const isIncorrect = showCorrectAnswers && selectedAnswer && !isCorrect;
           const isEmpty = showCorrectAnswers && !selectedAnswer;
+          const liveAnswer = liveSessionAnswer?.[iIndex];
 
           return (
             <div key={iIndex} className={`p-2 border rounded-md bg-white 
@@ -117,6 +122,13 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
 
                 {showCorrectAnswers && (
                   <span className="text-sm text-green-600">({correctLetter})</span>
+                )}
+                
+                {/* PROBLEM 1: Display live session answer in blue */}
+                {liveAnswer && !isInteractive && (
+                  <span className="text-blue-600 font-medium text-sm">
+                    [Student: {liveAnswer}]
+                  </span>
                 )}
               </div>
             </div>
