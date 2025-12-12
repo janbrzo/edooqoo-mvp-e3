@@ -8,6 +8,8 @@ interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
+  // PROBLEM 1: Live Session answer prop for displaying student answers in blue
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseReading: React.FC<ExerciseReadingProps> = ({
@@ -19,12 +21,15 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // PROBLEM 1: Live Session
+  liveSessionAnswer
 }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
     {questions.map((question, qIndex) => {
       const studentAnswer = studentAnswers[qIndex] || '';
       const isEmpty = showCorrectAnswers && !studentAnswer;
+      const liveAnswer = liveSessionAnswer?.[qIndex];
       
       return (
         <div key={qIndex} className="border rounded-lg p-3 bg-white">
@@ -52,16 +57,24 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
               />
             )}
             {(viewMode === 'teacher' || showCorrectAnswers) && (
-              <div className="text-green-600 italic text-sm">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={question.answer}
-                    onChange={e => onQuestionChange(qIndex, 'answer', e.target.value)}
-                    className="border p-1 editable-content w-full"
-                  />
-                ) : (
-                  <span>Suggested answer: {question.answer}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-green-600 italic text-sm">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={question.answer}
+                      onChange={e => onQuestionChange(qIndex, 'answer', e.target.value)}
+                      className="border p-1 editable-content w-full"
+                    />
+                  ) : (
+                    <>Suggested answer: {question.answer}</>
+                  )}
+                </span>
+                {/* PROBLEM 1: Display live session answer in blue */}
+                {liveAnswer && (
+                  <span className="text-blue-600 font-medium text-sm">
+                    [Student: {liveAnswer}]
+                  </span>
                 )}
               </div>
             )}

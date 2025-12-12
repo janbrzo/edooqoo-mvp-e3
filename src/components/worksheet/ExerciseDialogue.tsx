@@ -11,6 +11,8 @@ interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   onDialogueChange: (index: number, field: string, value: string) => void;
   onExpressionChange: (index: number, value: string) => void;
   onExpressionInstructionChange: (value: string) => void;
+  // PROBLEM 1: Live Session answer prop for displaying student answers in blue
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
@@ -26,7 +28,9 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // PROBLEM 1: Live Session
+  liveSessionAnswer
 }) => {
   return (
     <div>
@@ -79,6 +83,7 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
             {expressions.map((expr, eIndex) => {
               const studentAnswer = studentAnswers[eIndex] || '';
               const isEmpty = showCorrectAnswers && !studentAnswer;
+              const liveAnswer = liveSessionAnswer?.[eIndex];
               
               return (
                 <div key={eIndex} className="p-3 border rounded-lg bg-white">
@@ -107,6 +112,13 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
                         placeholder="Use this expression in a sentence..."
                         className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}`}
                       />
+                    </div>
+                  )}
+                  
+                  {/* PROBLEM 1: Display live session answer in blue */}
+                  {liveAnswer && !isInteractive && viewMode === 'teacher' && (
+                    <div className="mt-2 text-blue-600 font-medium text-sm">
+                      [Student: {liveAnswer}]
                     </div>
                   )}
                 </div>

@@ -9,6 +9,8 @@ interface ExerciseFillInBlanksProps extends Partial<InteractiveExerciseProps> {
   viewMode: "student" | "teacher";
   onWordBankChange: (wIndex: number, value: string) => void;
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
+  // PROBLEM 1: Live Session answer prop for displaying student answers in blue
+  liveSessionAnswer?: Record<number, any>;
 }
 
 // PROBLEM 9 FIX: Seeded random function for deterministic shuffle
@@ -39,7 +41,9 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // PROBLEM 1: Live Session
+  liveSessionAnswer
 }) => {
   // PROBLEM 9 FIX: Shuffle word bank with deterministic seed based on content
   const shuffledWordBank = useMemo(() => {
@@ -81,12 +85,13 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
         </div>
       )}
       <div className="space-y-2">
-        {sentences.map((sentence, sIndex) => {
+      {sentences.map((sentence, sIndex) => {
           const studentAnswer = studentAnswers[sIndex] || '';
           const correctAnswer = sentence.answer;
           const isCorrect = showCorrectAnswers && studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
           const isEmpty = showCorrectAnswers && !studentAnswer;
+          const liveAnswer = liveSessionAnswer?.[sIndex];
 
           return (
             <div key={sIndex} className="border rounded-lg p-3 bg-white">
@@ -119,16 +124,24 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
                   )}
                 </div>
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
-                  <div className="text-green-600 italic text-sm min-w-[120px]">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={sentence.answer}
-                        onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
-                        className="border p-1 editable-content w-full"
-                      />
-                    ) : (
-                      <span>({correctAnswer})</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-600 italic text-sm min-w-[120px]">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={sentence.answer}
+                          onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
+                          className="border p-1 editable-content w-full"
+                        />
+                      ) : (
+                        <>({correctAnswer})</>
+                      )}
+                    </span>
+                    {/* PROBLEM 1: Display live session answer in blue */}
+                    {liveAnswer && (
+                      <span className="text-blue-600 font-medium text-sm">
+                        [{liveAnswer}]
+                      </span>
                     )}
                   </div>
                 )}

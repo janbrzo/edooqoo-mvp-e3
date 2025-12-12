@@ -119,7 +119,7 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
             )}
           >
             <Check className="h-4 w-4" />
-            <span className="text-sm">{isMarkedDone ? '✓ Done' : 'Mark Done'}</span>
+            <span className="text-sm">{isMarkedDone ? 'Done' : 'Mark Done'}</span>
           </Button>
         )}
       </div>
