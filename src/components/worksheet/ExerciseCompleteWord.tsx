@@ -12,6 +12,7 @@ interface ExerciseCompleteWordProps extends Partial<InteractiveExerciseProps> {
 
 const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
   words = [], isEditing, viewMode, onWordChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -79,16 +80,24 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
                 )}
                 
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
-                  <div className="text-green-600 italic text-sm">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={correctAnswer}
-                        onChange={e => onWordChange(wIndex, 'complete', e.target.value)}
-                        className="border p-1 editable-content w-full"
-                      />
-                    ) : (
-                      <span>({correctAnswer || 'No answer'})</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="text-green-600 italic text-sm">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={correctAnswer}
+                          onChange={e => onWordChange(wIndex, 'complete', e.target.value)}
+                          className="border p-1 editable-content w-full"
+                        />
+                      ) : (
+                        <span>({correctAnswer || 'No answer'})</span>
+                      )}
+                    </div>
+                    {/* Live Session: show student answer in blue */}
+                    {liveSessionAnswer?.[wIndex] !== undefined && (
+                      <span className="text-blue-600 font-medium text-sm">
+                        [Student: {liveSessionAnswer[wIndex]}]
+                      </span>
                     )}
                   </div>
                 )}

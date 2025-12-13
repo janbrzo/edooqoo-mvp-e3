@@ -23,6 +23,7 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
   isEditing,
   viewMode,
   onStatementChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -76,20 +77,42 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
                     </div>
                   </RadioGroup>
                 ) : (
-                  <div className="ml-4 flex space-x-4">
-                    {viewMode === 'student' ? (
-                      <div className="flex space-x-4">
-                        <label className="inline-flex items-center">
-                          <input type="radio" name={`statement-audio-${sIndex}`} className="form-radio h-4 w-4" disabled={!isEditing} />
-                          <span className="ml-2">True</span>
-                        </label>
-                        <label className="inline-flex items-center">
-                          <input type="radio" name={`statement-audio-${sIndex}`} className="form-radio h-4 w-4" disabled={!isEditing} />
-                          <span className="ml-2">False</span>
-                        </label>
-                      </div>
-                    ) : (
-                      <div className="text-green-600 italic ml-3 text-sm">
+                  <div className="ml-4 flex items-center space-x-4">
+                    {/* Show radio buttons for all views (including Teacher View and Live Session) */}
+                    <div className="flex space-x-4">
+                      <label className={`inline-flex items-center ${
+                        liveSessionAnswer?.[sIndex] === true ? 'bg-blue-100 px-2 py-1 rounded' : ''
+                      }`}>
+                        <input 
+                          type="radio" 
+                          name={`statement-audio-${sIndex}`} 
+                          className="form-radio h-4 w-4" 
+                          disabled={true}
+                          checked={statement.isTrue === true}
+                        />
+                        <span className="ml-2">True</span>
+                        {liveSessionAnswer?.[sIndex] === true && (
+                          <span className="ml-1 text-blue-600 font-medium text-xs">(Student)</span>
+                        )}
+                      </label>
+                      <label className={`inline-flex items-center ${
+                        liveSessionAnswer?.[sIndex] === false ? 'bg-blue-100 px-2 py-1 rounded' : ''
+                      }`}>
+                        <input 
+                          type="radio" 
+                          name={`statement-audio-${sIndex}`} 
+                          className="form-radio h-4 w-4"
+                          disabled={true}
+                          checked={statement.isTrue === false}
+                        />
+                        <span className="ml-2">False</span>
+                        {liveSessionAnswer?.[sIndex] === false && (
+                          <span className="ml-1 text-blue-600 font-medium text-xs">(Student)</span>
+                        )}
+                      </label>
+                    </div>
+                    {viewMode === 'teacher' && (
+                      <span className="text-green-600 italic text-sm">
                         {isEditing ? (
                           <select
                             value={statement.isTrue ? "true" : "false"}
@@ -102,13 +125,8 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
                         ) : (
                           <span>({statement.isTrue ? "True" : "False"})</span>
                         )}
-                      </div>
+                      </span>
                     )}
-                  </div>
-                )}
-                {(viewMode === 'teacher' || showCorrectAnswers) && (
-                  <div className="text-green-600 italic text-sm">
-                    Answer: {statement.isTrue ? "True" : "False"}
                   </div>
                 )}
               </div>

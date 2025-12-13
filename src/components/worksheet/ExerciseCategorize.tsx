@@ -21,6 +21,7 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
   viewMode,
   onWordsChange,
   onCategoryChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -133,17 +134,27 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
             </h4>
             <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded p-2">
               {viewMode === 'teacher' && (
-                <div className="text-green-600 italic text-sm">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={category?.correct_items ? category.correct_items.join(', ') : (category?.words ? category.words.join(', ') : '')}
-                      onChange={e => handleCategoryAnswerChange(cIndex, e.target.value)}
-                      className="border p-1 editable-content w-full"
-                      placeholder="word1, word2, word3"
-                    />
-                  ) : (
-                    <span>({category?.correct_items ? category.correct_items.join(', ') : (category?.words ? category.words.join(', ') : 'No words')})</span>
+                <div className="space-y-1">
+                  <div className="text-green-600 italic text-sm">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={category?.correct_items ? category.correct_items.join(', ') : (category?.words ? category.words.join(', ') : '')}
+                        onChange={e => handleCategoryAnswerChange(cIndex, e.target.value)}
+                        className="border p-1 editable-content w-full"
+                        placeholder="word1, word2, word3"
+                      />
+                    ) : (
+                      <span>({category?.correct_items ? category.correct_items.join(', ') : (category?.words ? category.words.join(', ') : 'No words')})</span>
+                    )}
+                  </div>
+                  {/* Live Session: show student selections for this category */}
+                  {liveSessionAnswer && (
+                    <div className="text-blue-600 font-medium text-xs">
+                      [Student: {actualWords.filter((_, wIndex) => 
+                        parseInt(liveSessionAnswer[wIndex]) === cIndex
+                      ).join(', ') || 'none'}]
+                    </div>
                   )}
                 </div>
               )}

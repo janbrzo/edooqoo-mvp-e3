@@ -17,6 +17,7 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
   isEditing,
   viewMode,
   onQuestionChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -61,16 +62,24 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                 />
               )}
               {(viewMode === 'teacher' || showCorrectAnswers) && (
-                <div className="text-green-600 italic text-sm">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={q.answer}
-                      onChange={e => onQuestionChange(qIndex, 'answer', e.target.value)}
-                      className="border p-1 editable-content w-full"
-                    />
-                  ) : (
-                    <span>Suggested answer: {q.answer}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="text-green-600 italic text-sm">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={q.answer}
+                        onChange={e => onQuestionChange(qIndex, 'answer', e.target.value)}
+                        className="border p-1 editable-content w-full"
+                      />
+                    ) : (
+                      <span>Suggested answer: {q.answer}</span>
+                    )}
+                  </div>
+                  {/* Live Session: show student answer in blue */}
+                  {liveSessionAnswer?.[qIndex] !== undefined && (
+                    <span className="text-blue-600 font-medium text-sm">
+                      [Student: {liveSessionAnswer[qIndex]}]
+                    </span>
                   )}
                 </div>
               )}

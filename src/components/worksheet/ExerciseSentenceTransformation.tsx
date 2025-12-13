@@ -12,6 +12,7 @@ interface ExerciseSentenceTransformationProps extends Partial<InteractiveExercis
 
 const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationProps> = ({
   sentences = [], isEditing, viewMode, onSentenceChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -74,16 +75,24 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                 )}
                 
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
-                  <div className="text-green-600 italic text-sm ml-6">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={correctAnswer}
-                        onChange={e => onSentenceChange(sIndex, 'transformed', e.target.value)}
-                        className="border p-1 editable-content w-full"
-                      />
-                    ) : (
-                      <span>({correctAnswer || 'Missing answer'})</span>
+                  <div className="flex items-center gap-2 flex-wrap ml-6">
+                    <div className="text-green-600 italic text-sm">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={correctAnswer}
+                          onChange={e => onSentenceChange(sIndex, 'transformed', e.target.value)}
+                          className="border p-1 editable-content w-full"
+                        />
+                      ) : (
+                        <span>({correctAnswer || 'Missing answer'})</span>
+                      )}
+                    </div>
+                    {/* Live Session: show student answer in blue */}
+                    {liveSessionAnswer?.[sIndex] !== undefined && (
+                      <span className="text-blue-600 font-medium text-sm">
+                        [Student: {liveSessionAnswer[sIndex]}]
+                      </span>
                     )}
                   </div>
                 )}

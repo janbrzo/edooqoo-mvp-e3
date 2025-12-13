@@ -34,6 +34,7 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
   onQuestionChange,
   onMediaUrlChange,
   onMediaTypeChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -120,21 +121,29 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
                   </p>
                 </div>
                 {viewMode === 'teacher' && (question.answer || question.focus) && !isInteractive && (
-                  <div className="text-green-600 italic ml-3 text-sm">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={question.answer || question.focus || ''}
-                        onChange={e => onQuestionChange(qIndex, question.answer ? 'answer' : 'focus', e.target.value)}
-                        className="border p-1 editable-content w-full"
-                      />
-                    ) : (
-                      <span>
-                        {question.answer 
-                          ? `(${question.answer})` 
-                          : question.focus 
-                          ? `Focus: ${question.focus}` 
-                          : ''}
+                  <div className="flex items-center gap-2 flex-wrap ml-3">
+                    <div className="text-green-600 italic text-sm">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={question.answer || question.focus || ''}
+                          onChange={e => onQuestionChange(qIndex, question.answer ? 'answer' : 'focus', e.target.value)}
+                          className="border p-1 editable-content w-full"
+                        />
+                      ) : (
+                        <span>
+                          {question.answer 
+                            ? `(${question.answer})` 
+                            : question.focus 
+                            ? `Focus: ${question.focus}` 
+                            : ''}
+                        </span>
+                      )}
+                    </div>
+                    {/* Live Session: show student answer in blue */}
+                    {liveSessionAnswer?.[qIndex] !== undefined && (
+                      <span className="text-blue-600 font-medium text-sm">
+                        [Student: {liveSessionAnswer[qIndex]}]
                       </span>
                     )}
                   </div>
