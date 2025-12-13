@@ -15,6 +15,7 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
   isEditing, 
   viewMode, 
   onSentenceChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -77,16 +78,24 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
                 )}
                 
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
-                  <div className="text-green-600 italic text-sm">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={sentence?.correct_order || ''}
-                        onChange={e => onSentenceChange(sIndex, 'correct_order', e.target.value)}
-                        className="border p-1 editable-content w-full"
-                      />
-                    ) : (
-                      <span>({sentence?.correct_order || 'Missing answer'})</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="text-green-600 italic text-sm">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={sentence?.correct_order || ''}
+                          onChange={e => onSentenceChange(sIndex, 'correct_order', e.target.value)}
+                          className="border p-1 editable-content w-full"
+                        />
+                      ) : (
+                        <span>({sentence?.correct_order || 'Missing answer'})</span>
+                      )}
+                    </div>
+                    {/* Live Session: show student answer in blue */}
+                    {liveSessionAnswer?.[sIndex] !== undefined && (
+                      <span className="text-blue-600 font-medium text-sm">
+                        [Student: {liveSessionAnswer[sIndex]}]
+                      </span>
                     )}
                   </div>
                 )}

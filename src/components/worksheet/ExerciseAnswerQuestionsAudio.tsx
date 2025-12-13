@@ -22,6 +22,7 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
   isEditing,
   viewMode,
   onQuestionChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -53,16 +54,24 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
               </p>
             </div>
             {viewMode === 'teacher' && (
-              <div className="text-green-600 italic ml-3 text-sm">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={q.focus}
-                    onChange={e => onQuestionChange(qIndex, 'focus', e.target.value)}
-                    className="border p-1 editable-content w-full"
-                  />
-                ) : (
-                  <span>Focus: {q.focus}</span>
+              <div className="flex items-center gap-2 flex-wrap ml-3">
+                <div className="text-green-600 italic text-sm">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={q.focus}
+                      onChange={e => onQuestionChange(qIndex, 'focus', e.target.value)}
+                      className="border p-1 editable-content w-full"
+                    />
+                  ) : (
+                    <span>Focus: {q.focus}</span>
+                  )}
+                </div>
+                {/* Live Session: show student answer in blue */}
+                {liveSessionAnswer?.[qIndex] !== undefined && (
+                  <span className="text-blue-600 font-medium text-sm">
+                    [Student: {liveSessionAnswer[qIndex]}]
+                  </span>
                 )}
               </div>
             )}

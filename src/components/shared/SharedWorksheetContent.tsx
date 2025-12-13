@@ -360,7 +360,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                 />
               )}
 
-              {exercise.type === 'multiple-choice' && exercise.questions && (
+              {(exercise.type === 'multiple-choice' || exercise.type === 'multiple-choice-picture') && exercise.questions && (
                 <ExerciseMultipleChoice
                   questions={exercise.questions}
                   isEditing={false}

@@ -15,6 +15,7 @@ const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
   isEditing, 
   viewMode, 
   onWordChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -62,16 +63,24 @@ const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
                   />
                 )}
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
-                  <div className="text-green-600 italic text-sm">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={wordItem?.answer || ''}
-                        onChange={e => onWordChange(wIndex, 'answer', e.target.value)}
-                        className="border p-1 editable-content w-full"
-                      />
-                    ) : (
-                      <span>({correctAnswer})</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="text-green-600 italic text-sm">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={wordItem?.answer || ''}
+                          onChange={e => onWordChange(wIndex, 'answer', e.target.value)}
+                          className="border p-1 editable-content w-full"
+                        />
+                      ) : (
+                        <span>({correctAnswer})</span>
+                      )}
+                    </div>
+                    {/* Live Session: show student answer in blue */}
+                    {liveSessionAnswer?.[wIndex] !== undefined && (
+                      <span className="text-blue-600 font-medium text-sm">
+                        [Student: {liveSessionAnswer[wIndex]}]
+                      </span>
                     )}
                   </div>
                 )}

@@ -43,6 +43,7 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
   onItemChange,
   exerciseType = 'synonyms-antonyms',
   worksheetId,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -69,24 +70,37 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">
       <div className="md:col-span-5 space-y-2">
         <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Words</h4>
-        {items.map((item, iIndex) => (
-          <div key={iIndex} className="p-2 border rounded-md bg-white">
-            <span className="text-worksheet-purple font-medium mr-2">{iIndex + 1}.</span>
-            {viewMode === 'teacher' ? (
-              <span className="teacher-answer">{String.fromCharCode(65 + shuffledDefinitions.findIndex(i => i.term === item.term))}</span>
-            ) : (
-              <span className="student-answer-blank"></span>
-            )}
-            {isEditing ? (
-              <input
-                type="text"
-                value={item.term}
-                onChange={e => onItemChange(iIndex, 'term', e.target.value)}
-                className="border p-1 editable-content w-full"
-              />
-            ) : item.term}
-          </div>
-        ))}
+        {items.map((item, iIndex) => {
+          const correctAnswer = String.fromCharCode(65 + shuffledDefinitions.findIndex(i => i.term === item.term));
+          const liveAnswer = liveSessionAnswer?.[iIndex];
+          
+          return (
+            <div key={iIndex} className="p-2 border rounded-md bg-white">
+              <span className="text-worksheet-purple font-medium mr-2">{iIndex + 1}.</span>
+              {viewMode === 'teacher' ? (
+                <>
+                  <span className="teacher-answer">{correctAnswer}</span>
+                  {/* Live Session: show student answer in blue */}
+                  {liveAnswer !== undefined && (
+                    <span className="text-blue-600 font-medium text-sm ml-2">
+                      [Student: {liveAnswer}]
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="student-answer-blank"></span>
+              )}
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={item.term}
+                  onChange={e => onItemChange(iIndex, 'term', e.target.value)}
+                  className="border p-1 editable-content w-full"
+                />
+              ) : item.term}
+            </div>
+          );
+        })}
       </div>
 
       <div className="md:col-span-7 space-y-2">

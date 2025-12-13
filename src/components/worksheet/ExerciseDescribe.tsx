@@ -21,6 +21,7 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
   viewMode,
   onQuestionChange,
   onImageUrlChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -43,21 +44,30 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
           {questions.map((question, qIndex) => {
             const questionText = typeof question === 'string' ? question : (question.text || question.question || '');
             const studentAnswer = studentAnswers[qIndex];
+            const liveAnswer = liveSessionAnswer?.[qIndex];
             
             return (
               <div key={qIndex} className="border-b pb-2">
-                <p className="leading-snug mb-1">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={questionText}
-                      onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
-                      className="w-full border p-1 editable-content"
-                    />
-                  ) : (
-                    <>{qIndex + 1}. {questionText}</>
+                <div className="flex items-start gap-2 flex-wrap">
+                  <p className="leading-snug mb-1 flex-grow">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={questionText}
+                        onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
+                        className="w-full border p-1 editable-content"
+                      />
+                    ) : (
+                      <>{qIndex + 1}. {questionText}</>
+                    )}
+                  </p>
+                  {/* Live Session: show student answer in blue for teacher view */}
+                  {viewMode === 'teacher' && liveAnswer !== undefined && (
+                    <span className="text-blue-600 font-medium text-sm">
+                      [Student: {liveAnswer}]
+                    </span>
                   )}
-                </p>
+                </div>
                 
                 {/* Interactive answer input under each question */}
                 {isInteractive && (

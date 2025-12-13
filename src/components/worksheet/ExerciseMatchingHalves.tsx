@@ -41,6 +41,7 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
   viewMode,
   onHalvesChange,
   worksheetId,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -108,24 +109,37 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">
         <div className="md:col-span-5 space-y-2">
           <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence beginnings</h4>
-          {processedHalves.map((item, hIndex) => (
-            <div key={hIndex} className="p-2 border rounded-md bg-white">
-              <span className="text-worksheet-purple font-medium mr-2">{hIndex + 1}.</span>
-              {viewMode === 'student' ? (
-                <span className="inline-block w-8 h-6 border-b border-gray-400 mr-2"></span>
-              ) : (
-                <span className="teacher-answer">{String.fromCharCode(65 + shuffledSecondHalves.findIndex(shuffled => shuffled.second_half === item.second_half))}</span>
-              )}
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={item?.first_half || ''}
-                  onChange={e => handleFirstHalfChange(hIndex, e.target.value)}
-                  className="border p-1 editable-content w-full"
-                />
-              ) : (item?.first_half || 'Missing first half')}
-            </div>
-          ))}
+          {processedHalves.map((item, hIndex) => {
+            const correctAnswer = String.fromCharCode(65 + shuffledSecondHalves.findIndex(shuffled => shuffled.second_half === item.second_half));
+            const liveAnswer = liveSessionAnswer?.[hIndex];
+            
+            return (
+              <div key={hIndex} className="p-2 border rounded-md bg-white">
+                <span className="text-worksheet-purple font-medium mr-2">{hIndex + 1}.</span>
+                {viewMode === 'student' ? (
+                  <span className="inline-block w-8 h-6 border-b border-gray-400 mr-2"></span>
+                ) : (
+                  <>
+                    <span className="teacher-answer">{correctAnswer}</span>
+                    {/* Live Session: show student answer in blue */}
+                    {liveAnswer !== undefined && (
+                      <span className="text-blue-600 font-medium text-sm ml-2">
+                        [Student: {liveAnswer}]
+                      </span>
+                    )}
+                  </>
+                )}
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={item?.first_half || ''}
+                    onChange={e => handleFirstHalfChange(hIndex, e.target.value)}
+                    className="border p-1 editable-content w-full"
+                  />
+                ) : (item?.first_half || 'Missing first half')}
+              </div>
+            );
+          })}
         </div>
 
         <div className="md:col-span-7 space-y-2">

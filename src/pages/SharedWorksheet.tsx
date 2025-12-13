@@ -534,8 +534,8 @@ const SharedWorksheet = () => {
               isInteractive={effectiveStudyMode}
               isReadOnly={isTeacher && !teacherEditMode}
               studentAnswers={interactiveHook.answers}
-              onAnswerChange={isTeacher ? undefined : interactiveHook.updateAnswer}
-              onBlur={isTeacher ? undefined : interactiveHook.saveOnBlur}
+              onAnswerChange={(isTeacher && !teacherEditMode) ? undefined : interactiveHook.updateAnswer}
+              onBlur={(isTeacher && !teacherEditMode) ? undefined : interactiveHook.saveOnBlur}
               exerciseRefs={navigation.exerciseRefs}
             />
           </div>

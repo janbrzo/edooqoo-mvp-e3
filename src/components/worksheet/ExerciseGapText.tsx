@@ -15,6 +15,7 @@ const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
   isEditing,
   viewMode,
   onSentenceChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -65,16 +66,24 @@ const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
                 />
               )}
               {(viewMode === 'teacher' || showCorrectAnswers) && (
-                <div className="text-green-600 italic text-sm">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={sentence?.answer || ''}
-                      onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
-                      className="border p-1 editable-content w-full"
-                    />
-                  ) : (
-                    <span>({correctAnswer})</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="text-green-600 italic text-sm">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={sentence?.answer || ''}
+                        onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
+                        className="border p-1 editable-content w-full"
+                      />
+                    ) : (
+                      <span>({correctAnswer})</span>
+                    )}
+                  </div>
+                  {/* Live Session: show student answer in blue */}
+                  {liveSessionAnswer?.[sIndex] !== undefined && (
+                    <span className="text-blue-600 font-medium text-sm">
+                      [Student: {liveSessionAnswer[sIndex]}]
+                    </span>
                   )}
                 </div>
               )}

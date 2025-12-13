@@ -14,6 +14,7 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
   isEditing, 
   viewMode, 
   onQuestionChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -119,16 +120,24 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
                 </div>
 
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
-                  <div className="text-green-600 italic text-sm">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={correctAnswer || ''}
-                        onChange={e => handleCorrectAnswerChange(qIndex, e.target.value)}
-                        className="border p-1 editable-content w-20"
-                      />
-                    ) : (
-                      <span>({correctAnswer || 'No answer'})</span>
+                  <div className="flex items-center gap-2">
+                    <div className="text-green-600 italic text-sm">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={correctAnswer || ''}
+                          onChange={e => handleCorrectAnswerChange(qIndex, e.target.value)}
+                          className="border p-1 editable-content w-20"
+                        />
+                      ) : (
+                        <span>({correctAnswer || 'No answer'})</span>
+                      )}
+                    </div>
+                    {/* Live Session: show student answer in blue */}
+                    {liveSessionAnswer?.[qIndex] !== undefined && (
+                      <span className="text-blue-600 font-medium text-sm">
+                        [Student: {liveSessionAnswer[qIndex]}]
+                      </span>
                     )}
                   </div>
                 )}
