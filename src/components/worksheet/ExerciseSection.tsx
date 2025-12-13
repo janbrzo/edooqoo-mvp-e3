@@ -498,6 +498,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -512,6 +513,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -526,6 +528,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -539,6 +542,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -552,6 +556,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -565,6 +570,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -593,6 +599,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -636,6 +643,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -649,6 +657,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -677,6 +686,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -705,6 +715,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -739,6 +750,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -758,6 +770,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -773,6 +786,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -801,6 +815,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 
@@ -858,6 +873,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 

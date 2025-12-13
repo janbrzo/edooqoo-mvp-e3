@@ -6,6 +6,7 @@ interface ExerciseOddOneOutProps extends Partial<InteractiveExerciseProps> {
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: any) => void;
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({

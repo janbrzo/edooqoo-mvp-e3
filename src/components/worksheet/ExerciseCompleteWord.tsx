@@ -7,6 +7,7 @@ interface ExerciseCompleteWordProps extends Partial<InteractiveExerciseProps> {
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onWordChange: (wIndex: number, field: string, value: string) => void;
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({

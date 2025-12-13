@@ -14,6 +14,7 @@ interface ExerciseTrueFalseAudioProps extends Partial<InteractiveExerciseProps> 
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onStatementChange: (sIndex: number, field: string, value: any) => void;
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({

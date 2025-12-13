@@ -29,6 +29,28 @@ const SharedWorksheet = () => {
   const [isStudyMode, setIsStudyMode] = useState(false);
   const [needsStudentAssignment, setNeedsStudentAssignment] = useState(false);
 
+  // PROBLEM 5: Check localStorage for remembered email on mount
+  useEffect(() => {
+    if (!token || isTeacher) return;
+    
+    const storedData = localStorage.getItem(`worksheet_email_${token}`);
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        // Check if not expired (48h = 172800000ms)
+        if (parsed.email && parsed.expiresAt && Date.now() < parsed.expiresAt) {
+          console.log('[SharedWorksheet] Found remembered email:', parsed.email);
+          setVerifiedEmail(parsed.email);
+        } else {
+          // Clean up expired data
+          localStorage.removeItem(`worksheet_email_${token}`);
+        }
+      } catch (e) {
+        localStorage.removeItem(`worksheet_email_${token}`);
+      }
+    }
+  }, [token, isTeacher]);
+
   // PROBLEM 2: Pin media state (like WorksheetContainer)
   const [isPinned, setIsPinned] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -208,6 +230,13 @@ const SharedWorksheet = () => {
   const handleEmailVerified = (email: string) => {
     console.log('[SharedWorksheet] Email verified:', email);
     setVerifiedEmail(email);
+    
+    // PROBLEM 5: Remember email for 48 hours
+    localStorage.setItem(`worksheet_email_${token}`, JSON.stringify({
+      email: email,
+      expiresAt: Date.now() + 48 * 60 * 60 * 1000 // 48 hours
+    }));
+    
     toast({
       title: "Email verified!",
       description: "You can now start studying.",
@@ -367,8 +396,8 @@ const SharedWorksheet = () => {
       {/* PROBLEM 3: Teacher toolbar with Back, Dashboard, Student Name, Edit buttons */}
       {isTeacher && (
         <div className="sticky top-0 bg-white border-b shadow-sm py-3 px-4 z-40 flex items-center justify-between">
-          {/* Left side: Navigation buttons */}
-          <div className="flex items-center gap-2">
+          {/* Left side: Navigation buttons - PROBLEM 2: Add ml-14 to avoid overlap with ExerciseNavSidebar Menu button */}
+          <div className="flex items-center gap-2 ml-14">
             <Button
               variant="ghost"
               size="sm"
@@ -499,10 +528,11 @@ const SharedWorksheet = () => {
           {/* Content wrapper with proper styling */}
           <div className="worksheet-content p-6">
             {/* PROBLEM 2: Pass exerciseRefs for navigation sidebar */}
+            {/* PROBLEM 3: When teacherEditMode is true, allow teacher to fill exercises like student */}
             <SharedWorksheetContent 
               worksheet={worksheet}
               isInteractive={effectiveStudyMode}
-              isReadOnly={isTeacher}
+              isReadOnly={isTeacher && !teacherEditMode}
               studentAnswers={interactiveHook.answers}
               onAnswerChange={isTeacher ? undefined : interactiveHook.updateAnswer}
               onBlur={isTeacher ? undefined : interactiveHook.saveOnBlur}

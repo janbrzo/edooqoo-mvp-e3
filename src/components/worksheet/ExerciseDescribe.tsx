@@ -10,6 +10,7 @@ interface ExerciseDescribeProps extends Partial<InteractiveExerciseProps> {
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
   onImageUrlChange?: (url: string) => void;
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({

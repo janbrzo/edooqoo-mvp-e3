@@ -8,6 +8,7 @@ interface ExerciseListeningComprehensionProps extends Partial<InteractiveExercis
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionProps> = ({

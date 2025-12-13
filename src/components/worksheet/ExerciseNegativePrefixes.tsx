@@ -7,6 +7,7 @@ interface ExerciseNegativePrefixesProps extends Partial<InteractiveExerciseProps
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onWordChange: (wIndex: number, field: string, value: string) => void;
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
