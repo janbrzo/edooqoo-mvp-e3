@@ -7,7 +7,8 @@ interface ExerciseMatchingHalvesProps extends Partial<InteractiveExerciseProps> 
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onHalvesChange: (hIndex: number, field: string, value: any) => void;
-  worksheetId?: string; // PROBLEM 8: Optional worksheetId for deterministic shuffle
+  worksheetId?: string;
+  liveSessionAnswer?: Record<number, any>;
 }
 
 // PROBLEM 8 FIX: Seeded random for deterministic shuffle

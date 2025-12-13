@@ -8,7 +8,8 @@ interface ExerciseSynonymsAntonymsProps extends Partial<InteractiveExerciseProps
   viewMode: "student" | "teacher";
   onItemChange: (iIndex: number, field: string, value: string) => void;
   exerciseType?: string;
-  worksheetId?: string; // PROBLEM 8: Optional worksheetId for deterministic shuffle
+  worksheetId?: string;
+  liveSessionAnswer?: Record<number, any>;
 }
 
 // PROBLEM 8 FIX: Seeded random for deterministic shuffle

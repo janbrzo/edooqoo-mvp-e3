@@ -7,6 +7,7 @@ interface ExerciseGapTextProps extends Partial<InteractiveExerciseProps> {
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({

@@ -189,8 +189,13 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
       )}
 
       {/* Grammar Rules - identical structure to GrammarRules */}
+      {/* PROBLEM 4: Add id and data-section for ExerciseNavSidebar G button */}
       {worksheetData.grammar_rules && (
-        <div className="bg-white border rounded-lg shadow-sm mb-6 overflow-hidden">
+        <div 
+          id="grammar-rules-section" 
+          data-section="grammar"
+          className="bg-white border rounded-lg shadow-sm mb-6 overflow-hidden"
+        >
           <div className="bg-worksheet-purple text-white p-2 flex justify-between items-center">
             <div className="flex items-center">
               <div className="p-2 bg-white/20 rounded-full mr-3">
@@ -723,8 +728,13 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
       })}
 
       {/* Vocabulary Sheet - identical structure to VocabularySheet */}
+      {/* PROBLEM 4: Add id and data-section for ExerciseNavSidebar V button */}
       {worksheetData.vocabulary_sheet && worksheetData.vocabulary_sheet.length > 0 && (
-        <div className="mb-6 bg-white border rounded-lg overflow-hidden shadow-sm">
+        <div 
+          id="vocabulary-sheet-section" 
+          data-section="vocabulary"
+          className="mb-6 bg-white border rounded-lg overflow-hidden shadow-sm"
+        >
           <div className="bg-worksheet-purple text-white p-2 flex justify-between items-center exercise-header">
             <div className="flex items-center">
               <div className="p-2 bg-white/20 rounded-full mr-3">

@@ -10,6 +10,7 @@ interface ExerciseCategorizeProps extends Partial<InteractiveExerciseProps> {
   viewMode: "student" | "teacher";
   onWordsChange?: (words: string[]) => void;
   onCategoryChange: (cIndex: number, field: string, value: any) => void;
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({

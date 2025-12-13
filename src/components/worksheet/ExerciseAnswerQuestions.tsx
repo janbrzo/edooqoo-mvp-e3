@@ -20,6 +20,7 @@ interface ExerciseAnswerQuestionsProps extends Partial<InteractiveExerciseProps>
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
   onMediaUrlChange?: (url: string) => void;
   onMediaTypeChange?: (type: "video" | "audio" | "image") => void;
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
