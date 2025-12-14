@@ -175,13 +175,16 @@ export const renderOtherExerciseTypes = (
   isInteractive: boolean = false,
   studentAnswers: Record<number, any> = {},
   onAnswerChange?: (questionIndex: number, value: any) => void,
-  showCorrectAnswers: boolean = false
+  showCorrectAnswers: boolean = false,
+  // PROBLEM 1: Live Session answer prop for displaying student answers in blue
+  liveSessionAnswer?: Record<number, any>
 ) => (
   <div>
     <div className="space-y-2">
       {exercise.sentences.map((sentence: any, sIndex: number) => {
         const studentAnswer = studentAnswers[sIndex] || '';
         const isEmpty = showCorrectAnswers && !studentAnswer;
+        const liveAnswer = liveSessionAnswer?.[sIndex];
         
         return (
           <div key={sIndex} className="border rounded-lg p-3 bg-white">
@@ -214,20 +217,28 @@ export const renderOtherExerciseTypes = (
                 />
               )}
               {(viewMode === 'teacher' || showCorrectAnswers) && (
-                <div className="text-green-600 italic text-sm">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={sentence.answer || sentence.correction}
-                      onChange={e => handleSentenceChange(
-                        sIndex, 
-                        exercise.type === 'error-correction' ? 'correction' : 'answer', 
-                        e.target.value
-                      )}
-                      className="border p-1 editable-content w-full"
-                    />
-                  ) : (
-                    <span>({sentence.answer || sentence.correction})</span>
+                <div className="flex items-center gap-3">
+                  <div className="text-green-600 italic text-sm">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={sentence.answer || sentence.correction}
+                        onChange={e => handleSentenceChange(
+                          sIndex, 
+                          exercise.type === 'error-correction' ? 'correction' : 'answer', 
+                          e.target.value
+                        )}
+                        className="border p-1 editable-content w-full"
+                      />
+                    ) : (
+                      <span>({sentence.answer || sentence.correction})</span>
+                    )}
+                  </div>
+                  {/* PROBLEM 1: Display live session answer in blue */}
+                  {liveAnswer && (
+                    <span className="text-blue-600 font-medium text-sm">
+                      [Student: {liveAnswer}]
+                    </span>
                   )}
                 </div>
               )}

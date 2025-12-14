@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useMemo } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 
 interface ExerciseOddOneOutProps extends Partial<InteractiveExerciseProps> {
@@ -7,6 +7,31 @@ interface ExerciseOddOneOutProps extends Partial<InteractiveExerciseProps> {
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: any) => void;
   liveSessionAnswer?: Record<number, any>;
+  worksheetId?: string; // PROBLEM 3: For deterministic shuffle
+}
+
+// PROBLEM 3 FIX: Seeded random for deterministic shuffle (same as ExerciseMatchingHalves)
+function seededRandom(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return function() {
+    hash = (hash * 1103515245 + 12345) & 0x7fffffff;
+    return (hash % 1000) / 1000;
+  };
+}
+
+function shuffleArrayWithSeed<T>(array: T[], seed: string): T[] {
+  const newArray = [...array];
+  const random = seededRandom(seed);
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
 }
 
 const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
@@ -15,45 +40,36 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
   viewMode, 
   onQuestionChange,
   liveSessionAnswer,
+  worksheetId,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
   showCorrectAnswers = false
 }) => {
-  // CRITICAL FIX: Use useRef to store shuffled options ONCE and never reshuffle
-  // This prevents the shuffle from happening on every re-render when student clicks
-  const shuffledQuestionsRef = useRef<any[] | null>(null);
-  const questionsKeyRef = useRef<string>('');
+  // PROBLEM 3 FIX: Create a stable key based on questions content for deterministic shuffle
+  const questionsKey = useMemo(() => 
+    questions.map(q => (q.options || []).join('|')).join('||'),
+    [questions]
+  );
   
-  // Create a stable key based on questions structure (not the options order)
-  const currentQuestionsKey = JSON.stringify(questions.map(q => ({
-    options: q.options?.length || 0,
-    correct: q.correct_answer
-  })));
-  
-  // Only shuffle on initial mount or if questions structure actually changes
-  if (!isEditing && (shuffledQuestionsRef.current === null || questionsKeyRef.current !== currentQuestionsKey)) {
-    questionsKeyRef.current = currentQuestionsKey;
-    shuffledQuestionsRef.current = questions.map(question => {
+  // PROBLEM 3 FIX: Use useMemo with seeded random - shuffle is DETERMINISTIC based on content
+  const questionsWithShuffledOptions = useMemo(() => {
+    if (isEditing) return questions;
+    
+    return questions.map((question, qIndex) => {
       if (!question.options || question.options.length === 0) return question;
       
-      // Fisher-Yates shuffle for options
-      const shuffled = [...question.options];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
+      // Create seed from worksheetId + question index + options content
+      const seed = `${worksheetId || 'default'}-oddoneout-${qIndex}-${question.options.join('|')}`;
+      const shuffled = shuffleArrayWithSeed([...question.options], seed);
       
       return {
         ...question,
         options: shuffled
       };
     });
-  }
-  
-  // Use original questions in edit mode, shuffled otherwise
-  const questionsWithShuffledOptions = isEditing ? questions : (shuffledQuestionsRef.current || questions);
+  }, [questions, isEditing, worksheetId, questionsKey]);
 
   const handleOptionChange = (qIndex: number, oIndex: number, value: string) => {
     const question = questions[qIndex];

@@ -20,6 +20,8 @@ interface ExerciseMultipleChoiceAudioProps extends Partial<InteractiveExercisePr
   isEditing: boolean;
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: any) => void;
+  // PROBLEM 1: Live Session answer prop for displaying student answers in blue
+  liveSessionAnswer?: Record<number, any>;
 }
 
 const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = ({
@@ -32,7 +34,9 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // PROBLEM 1: Live Session
+  liveSessionAnswer
 }) => {
   return (
     <div>
@@ -91,52 +95,64 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
               </RadioGroup>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-                {question.options?.map((option: any, oIndex: number) => (
-                  <div
-                    key={oIndex}
-                    className={`
-                      p-2 border rounded-md flex items-center gap-2 multiple-choice-option
-                      ${viewMode === 'teacher' && option.correct ? 'bg-green-50 border-green-200' : 'bg-white'}
-                    `}
-                  >
+                {question.options?.map((option: any, oIndex: number) => {
+                  // PROBLEM 1: Check if this option is selected by student in Live Session
+                  const isLiveSelected = liveSessionAnswer?.[qIndex] === oIndex;
+                  
+                  return (
                     <div
+                      key={oIndex}
                       className={`
-                        w-5 h-5 rounded-md border flex items-center justify-center option-icon
-                        ${viewMode === 'teacher' && option.correct ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}
+                        p-2 border rounded-md flex items-center gap-2 multiple-choice-option
+                        ${viewMode === 'teacher' && option.correct ? 'bg-green-50 border-green-200' : 'bg-white'}
+                        ${isLiveSelected ? 'ring-2 ring-blue-400 border-blue-400' : ''}
                       `}
                     >
-                      {viewMode === 'teacher' && option.correct && <span>✓</span>}
-                    </div>
-                    <span>
-                      {isEditing ? (
+                      <div
+                        className={`
+                          w-5 h-5 rounded-md border flex items-center justify-center option-icon
+                          ${viewMode === 'teacher' && option.correct ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}
+                          ${isLiveSelected ? 'bg-blue-500 border-blue-500 text-white' : ''}
+                        `}
+                      >
+                        {viewMode === 'teacher' && option.correct && <span>✓</span>}
+                        {isLiveSelected && !option.correct && <span>●</span>}
+                      </div>
+                      <span>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={option.text}
+                            onChange={e => {
+                              const newOptions = [...question.options];
+                              newOptions[oIndex] = { ...option, text: e.target.value };
+                              onQuestionChange(qIndex, 'options', newOptions);
+                            }}
+                            className="border p-1 editable-content ml-1"
+                          />
+                        ) : (
+                          <>{option.label}. {option.text}</>
+                        )}
+                        {/* PROBLEM 1: Show blue indicator for live session answer */}
+                        {isLiveSelected && (
+                          <span className="ml-2 text-blue-600 font-medium text-xs">(Student)</span>
+                        )}
+                      </span>
+                      {isEditing && (
                         <input
-                          type="text"
-                          value={option.text}
+                          type="checkbox"
+                          checked={option.correct}
                           onChange={e => {
                             const newOptions = [...question.options];
-                            newOptions[oIndex] = { ...option, text: e.target.value };
+                            newOptions[oIndex] = { ...option, correct: e.target.checked };
                             onQuestionChange(qIndex, 'options', newOptions);
                           }}
-                          className="border p-1 editable-content ml-1"
+                          className="ml-auto"
                         />
-                      ) : (
-                        <>{option.label}. {option.text}</>
                       )}
-                    </span>
-                    {isEditing && (
-                      <input
-                        type="checkbox"
-                        checked={option.correct}
-                        onChange={e => {
-                          const newOptions = [...question.options];
-                          newOptions[oIndex] = { ...option, correct: e.target.checked };
-                          onQuestionChange(qIndex, 'options', newOptions);
-                        }}
-                        className="ml-auto"
-                      />
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
