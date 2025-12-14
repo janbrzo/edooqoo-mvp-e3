@@ -484,7 +484,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isInteractive,
             studentAnswers,
             onAnswerChange,
-            showCorrectAnswers
+            showCorrectAnswers,
+            liveSessionAnswer
           )}
         
         {normalizedType === 'true-false' && exercise.statements && (
@@ -514,6 +515,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
+            worksheetId={worksheetId}
           />
         )}
 
@@ -801,6 +803,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
           />
         )}
 

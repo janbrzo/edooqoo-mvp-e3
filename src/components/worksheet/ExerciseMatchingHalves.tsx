@@ -144,8 +144,32 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
 
         <div className="md:col-span-7 space-y-2">
           <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence endings</h4>
-          {isInteractive ? (
-            processedHalves.map((half, hIndex) => {
+          {/* PROBLEM 2 FIX: Always show shuffled second halves with A, B, C labels */}
+          {shuffledIndices.map((originalIndex, displayIndex) => {
+            const item = processedHalves[originalIndex];
+            return (
+              <div key={`shuffled-${displayIndex}`} className="p-2 border rounded-md bg-white">
+                <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + displayIndex)}.</span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={item?.second_half || ''}
+                    onChange={e => handleSecondHalfChange(originalIndex, e.target.value)}
+                    className="border p-1 editable-content w-full"
+                  />
+                ) : (item?.second_half || 'Missing second half')}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Interactive matching - student picks letter for each sentence beginning */}
+      {isInteractive && (
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+          <h4 className="font-medium text-blue-800 mb-2">Match each beginning (1, 2, 3...) with an ending (A, B, C...):</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {processedHalves.map((half, hIndex) => {
               const studentAnswer = studentAnswers[hIndex];
               const correctAnswer = String.fromCharCode(65 + shuffledSecondHalves.findIndex(s => s.second_half === half.second_half));
               const isCorrect = showCorrectAnswers && studentAnswer === correctAnswer;
@@ -158,13 +182,12 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
                   ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
                   ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
                 `}>
-                  <span className="text-worksheet-purple font-medium">{hIndex + 1}.</span>
-                  <span className="flex-grow">{half.first_half}</span>
+                  <span className="text-worksheet-purple font-medium">{hIndex + 1} →</span>
                   <Select
                     value={studentAnswer || ''}
                     onValueChange={(value) => onAnswerChange?.(hIndex, value)}
                   >
-                    <SelectTrigger className="w-20">
+                    <SelectTrigger className="w-16">
                       <SelectValue placeholder="?" />
                     </SelectTrigger>
                     <SelectContent>
@@ -180,27 +203,10 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
                   )}
                 </div>
               );
-            })
-          ) : (
-            shuffledIndices.map((originalIndex, displayIndex) => {
-              const item = processedHalves[originalIndex];
-              return (
-                <div key={`shuffled-${displayIndex}`} className="p-2 border rounded-md bg-white">
-                  <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + displayIndex)}.</span>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={item?.second_half || ''}
-                      onChange={e => handleSecondHalfChange(originalIndex, e.target.value)}
-                      className="border p-1 editable-content w-full"
-                    />
-                  ) : (item?.second_half || 'Missing second half')}
-                </div>
-              );
-            })
-          )}
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Teacher answers in editing mode */}
       {viewMode === 'teacher' && isEditing && (
