@@ -12,8 +12,8 @@ import { SharedWorksheetProgressBar } from '@/components/shared/SharedWorksheetP
 import { useInteractiveSharedWorksheet } from '@/hooks/useInteractiveSharedWorksheet';
 import { ExerciseNavSidebar } from '@/components/worksheet/ExerciseNavSidebar';
 import { useWorksheetNavigation } from '@/hooks/useWorksheetNavigation';
-import { DrawingToggleButton, DrawingToolbar, DrawingOverlay } from '@/components/drawing';
-import { useDrawingCanvas } from '@/hooks/useDrawingCanvas';
+import { DrawingToggleButton, DrawingToolbar, DrawingOverlay, type DrawingOverlayRef } from '@/components/drawing';
+// useDrawingCanvas not needed - DrawingOverlay handles saving internally
 import type { SharedWorksheetData } from '@/types/interactiveSharedWorksheet';
 import type { DrawingTool, DrawingColor, StrokeWidth, DrawingState } from '@/types/drawing';
 import { DRAWING_COLORS, STROKE_WIDTHS } from '@/types/drawing';
@@ -72,7 +72,10 @@ const SharedWorksheet = () => {
   const [currentDrawingColor, setCurrentDrawingColor] = useState<DrawingColor>(DRAWING_COLORS[0]);
   const [currentStrokeWidth, setCurrentStrokeWidth] = useState<StrokeWidth>(STROKE_WIDTHS[1]);
   const [currentTeacherId, setCurrentTeacherId] = useState<string | null>(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   const contentWrapperRef = useRef<HTMLDivElement>(null);
+  const drawingOverlayRef = useRef<DrawingOverlayRef>(null);
 
   // Parse exercises count from worksheet data
   const worksheetData = useMemo(() => {
@@ -113,13 +116,9 @@ const SharedWorksheet = () => {
   const exercises = worksheetData?.exercises || [];
   const navigation = useWorksheetNavigation({ exercises });
 
-  // DRAWING OVERLAY: Initialize drawing canvas hook
-  const drawingCanvas = useDrawingCanvas({
-    worksheetId: worksheet?.id || '',
-    teacherId: currentTeacherId || undefined,
-    isTeacher,
-    enabled: isDrawingEnabled || !isTeacher // Uczniowie zawsze subskrybują, nauczyciel tylko gdy włączone
-  });
+  // DRAWING: Stan zapisywania (aktualizowany przez DrawingOverlay przez callback)
+  const [drawingIsSaving, setDrawingIsSaving] = useState(false);
+  const [drawingLastSavedAt, setDrawingLastSavedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -513,17 +512,17 @@ const SharedWorksheet = () => {
             activeTool: currentDrawingTool,
             activeColor: currentDrawingColor,
             strokeWidth: currentStrokeWidth,
-            canUndo: false, // TODO: Connect to drawing overlay ref
-            canRedo: false,
-            isSaving: drawingCanvas.isSaving,
-            lastSavedAt: drawingCanvas.lastSavedAt
+            canUndo: canUndo,
+            canRedo: canRedo,
+            isSaving: drawingIsSaving,
+            lastSavedAt: drawingLastSavedAt
           }}
           onToolChange={setCurrentDrawingTool}
           onColorChange={setCurrentDrawingColor}
           onStrokeWidthChange={setCurrentStrokeWidth}
-          onUndo={() => {}} // TODO: Connect to drawing overlay ref
-          onRedo={() => {}} // TODO: Connect to drawing overlay ref
-          onClearAll={() => drawingCanvas.clearDrawing()}
+          onUndo={() => drawingOverlayRef.current?.undo()}
+          onRedo={() => drawingOverlayRef.current?.redo()}
+          onClearAll={() => drawingOverlayRef.current?.clearAll()}
         />
       )}
 
@@ -575,7 +574,7 @@ const SharedWorksheet = () => {
           />
         )}
 
-        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border overflow-hidden relative" ref={contentWrapperRef}>
           {/* Content wrapper with proper styling */}
           <div className="worksheet-content p-6">
             {/* PROBLEM 2: Pass exerciseRefs for navigation sidebar */}
@@ -590,6 +589,29 @@ const SharedWorksheet = () => {
               exerciseRefs={navigation.exerciseRefs}
             />
           </div>
+          
+          {/* DRAWING OVERLAY: Nakładka canvas do rysowania (tylko dla nauczyciela w Live Session) */}
+          {worksheet?.id && currentTeacherId && (
+            <DrawingOverlay
+              ref={drawingOverlayRef}
+              worksheetId={worksheet.id}
+              teacherId={currentTeacherId}
+              isTeacher={isTeacher}
+              isEnabled={isDrawingEnabled}
+              externalTool={currentDrawingTool}
+              externalColor={currentDrawingColor}
+              externalStrokeWidth={currentStrokeWidth}
+              hideToolbar={true}
+              onHistoryChange={(newCanUndo, newCanRedo) => {
+                setCanUndo(newCanUndo);
+                setCanRedo(newCanRedo);
+              }}
+              onSaveStatusChange={(isSaving, lastSavedAt) => {
+                setDrawingIsSaving(isSaving);
+                setDrawingLastSavedAt(lastSavedAt);
+              }}
+            />
+          )}
         </div>
 
       </div>

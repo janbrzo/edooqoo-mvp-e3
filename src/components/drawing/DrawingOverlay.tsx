@@ -4,9 +4,12 @@
  * Główny komponent do rysowania po worksheet.
  * Nauczyciel może rysować, uczeń tylko widzi (read-only).
  * Obsługuje touch dla mobile/tablet.
+ * 
+ * Może być kontrolowany zewnętrznie (przez props) lub wewnętrznie.
+ * Eksponuje metody undo/redo/clearAll przez ref.
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Canvas as FabricCanvas, PencilBrush, CircleBrush, Circle, Rect, Line, IText, FabricObject } from 'fabric';
 import { 
   DrawingOverlayProps, 
@@ -29,13 +32,44 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-export const DrawingOverlay = ({
+/** Rozszerzone props z opcjonalnym zewnętrznym sterowaniem */
+export interface DrawingOverlayExternalProps extends DrawingOverlayProps {
+  /** Zewnętrzne sterowanie narzędziem (opcjonalne) */
+  externalTool?: DrawingTool;
+  /** Zewnętrzne sterowanie kolorem (opcjonalne) */
+  externalColor?: DrawingColor;
+  /** Zewnętrzne sterowanie grubością (opcjonalne) */
+  externalStrokeWidth?: StrokeWidth;
+  /** Ukryj wewnętrzny toolbar (gdy używasz zewnętrznego) */
+  hideToolbar?: boolean;
+  /** Callback gdy zmieni się canUndo/canRedo */
+  onHistoryChange?: (canUndo: boolean, canRedo: boolean) => void;
+  /** Callback gdy zmieni się stan zapisywania */
+  onSaveStatusChange?: (isSaving: boolean, lastSavedAt: Date | null) => void;
+}
+
+/** Metody eksponowane przez ref */
+export interface DrawingOverlayRef {
+  undo: () => void;
+  redo: () => void;
+  clearAll: () => void;
+  getCanUndo: () => boolean;
+  getCanRedo: () => boolean;
+}
+
+export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExternalProps>(({
   worksheetId,
   teacherId,
   isTeacher,
   isEnabled,
-  onDrawingChange
-}: DrawingOverlayProps) => {
+  onDrawingChange,
+  externalTool,
+  externalColor,
+  externalStrokeWidth,
+  hideToolbar = false,
+  onHistoryChange,
+  onSaveStatusChange
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -51,14 +85,48 @@ export const DrawingOverlay = ({
   const [undoStack, setUndoStack] = useState<string[]>([]);
   const [redoStack, setRedoStack] = useState<string[]>([]);
 
-  // Aktualizuj stan canUndo/canRedo
+  // Aktualizuj stan canUndo/canRedo i wywołaj callback
   useEffect(() => {
+    const canUndo = undoStack.length > 0;
+    const canRedo = redoStack.length > 0;
+    
     setDrawingState(prev => ({
       ...prev,
-      canUndo: undoStack.length > 0,
-      canRedo: redoStack.length > 0,
+      canUndo,
+      canRedo,
     }));
-  }, [undoStack.length, redoStack.length]);
+    
+    // Powiadom rodzica o zmianie historii
+    onHistoryChange?.(canUndo, canRedo);
+  }, [undoStack.length, redoStack.length, onHistoryChange]);
+
+  // Synchronizuj z zewnętrznymi props (gdy kontrolowane z zewnątrz)
+  useEffect(() => {
+    if (externalTool !== undefined) {
+      setDrawingState(prev => ({ ...prev, activeTool: externalTool }));
+    }
+  }, [externalTool]);
+
+  useEffect(() => {
+    if (externalColor !== undefined) {
+      setDrawingState(prev => ({ ...prev, activeColor: externalColor }));
+    }
+  }, [externalColor]);
+
+  useEffect(() => {
+    if (externalStrokeWidth !== undefined) {
+      setDrawingState(prev => ({ ...prev, strokeWidth: externalStrokeWidth }));
+    }
+  }, [externalStrokeWidth]);
+
+  // Eksponuj metody przez ref (dla zewnętrznego sterowania)
+  useImperativeHandle(ref, () => ({
+    undo: handleUndo,
+    redo: handleRedo,
+    clearAll: handleClearAll,
+    getCanUndo: () => undoStack.length > 0,
+    getCanRedo: () => redoStack.length > 0,
+  }), [undoStack.length, redoStack.length]);
 
   // Inicjalizacja Fabric.js canvas
   useEffect(() => {
@@ -484,6 +552,7 @@ export const DrawingOverlay = ({
     if (!canvas || !isTeacher) return;
 
     setDrawingState(prev => ({ ...prev, isSaving: true }));
+    onSaveStatusChange?.(true, drawingState.lastSavedAt);
 
     try {
       const objects = canvas.toJSON().objects || [];
@@ -491,6 +560,8 @@ export const DrawingOverlay = ({
       // Sprawdź limit obiektów
       if (objects.length > DRAWING_LIMITS.maxObjects) {
         toast.error(`Too many objects (max ${DRAWING_LIMITS.maxObjects})`);
+        setDrawingState(prev => ({ ...prev, isSaving: false }));
+        onSaveStatusChange?.(false, drawingState.lastSavedAt);
         return;
       }
 
@@ -534,17 +605,20 @@ export const DrawingOverlay = ({
 
       if (error) throw error;
 
+      const now = new Date();
       setDrawingState(prev => ({ 
         ...prev, 
         isSaving: false,
-        lastSavedAt: new Date(),
+        lastSavedAt: now,
       }));
+      onSaveStatusChange?.(false, now);
 
       onDrawingChange?.(drawingData);
     } catch (err) {
       console.error('Error saving drawings:', err);
       toast.error('Failed to save drawing');
       setDrawingState(prev => ({ ...prev, isSaving: false }));
+      onSaveStatusChange?.(false, drawingState.lastSavedAt);
     }
   };
 
@@ -608,8 +682,8 @@ export const DrawingOverlay = ({
 
   return (
     <>
-      {/* Toolbar - tylko dla nauczyciela gdy włączone */}
-      {isTeacher && isEnabled && (
+      {/* Toolbar - tylko dla nauczyciela gdy włączone i nie ukryty */}
+      {isTeacher && isEnabled && !hideToolbar && (
         <DrawingToolbar
           state={drawingState}
           onToolChange={handleToolChange}
@@ -641,6 +715,9 @@ export const DrawingOverlay = ({
       </div>
     </>
   );
-};
+});
+
+// Display name dla DevTools
+DrawingOverlay.displayName = 'DrawingOverlay';
 
 export default DrawingOverlay;
