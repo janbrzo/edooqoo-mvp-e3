@@ -12,7 +12,11 @@ import { SharedWorksheetProgressBar } from '@/components/shared/SharedWorksheetP
 import { useInteractiveSharedWorksheet } from '@/hooks/useInteractiveSharedWorksheet';
 import { ExerciseNavSidebar } from '@/components/worksheet/ExerciseNavSidebar';
 import { useWorksheetNavigation } from '@/hooks/useWorksheetNavigation';
+import { DrawingToggleButton, DrawingToolbar, DrawingOverlay } from '@/components/drawing';
+import { useDrawingCanvas } from '@/hooks/useDrawingCanvas';
 import type { SharedWorksheetData } from '@/types/interactiveSharedWorksheet';
+import type { DrawingTool, DrawingColor, StrokeWidth, DrawingState } from '@/types/drawing';
+import { DRAWING_COLORS, STROKE_WIDTHS } from '@/types/drawing';
 
 const SharedWorksheet = () => {
   const { token } = useParams<{ token: string }>();
@@ -62,6 +66,14 @@ const SharedWorksheet = () => {
   const [originalWorksheet, setOriginalWorksheet] = useState<any>(null);
   const [isSavingTeacherEdits, setIsSavingTeacherEdits] = useState(false);
 
+  // DRAWING OVERLAY: State for drawing mode (Live Session only)
+  const [isDrawingEnabled, setIsDrawingEnabled] = useState(false);
+  const [currentDrawingTool, setCurrentDrawingTool] = useState<DrawingTool>('pencil');
+  const [currentDrawingColor, setCurrentDrawingColor] = useState<DrawingColor>(DRAWING_COLORS[0]);
+  const [currentStrokeWidth, setCurrentStrokeWidth] = useState<StrokeWidth>(STROKE_WIDTHS[1]);
+  const [currentTeacherId, setCurrentTeacherId] = useState<string | null>(null);
+  const contentWrapperRef = useRef<HTMLDivElement>(null);
+
   // Parse exercises count from worksheet data
   const worksheetData = useMemo(() => {
     if (!worksheet?.ai_response) return null;
@@ -100,6 +112,14 @@ const SharedWorksheet = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const exercises = worksheetData?.exercises || [];
   const navigation = useWorksheetNavigation({ exercises });
+
+  // DRAWING OVERLAY: Initialize drawing canvas hook
+  const drawingCanvas = useDrawingCanvas({
+    worksheetId: worksheet?.id || '',
+    teacherId: currentTeacherId || undefined,
+    isTeacher,
+    enabled: isDrawingEnabled || !isTeacher // Uczniowie zawsze subskrybują, nauczyciel tylko gdy włączone
+  });
 
   useEffect(() => {
     if (!token) {
@@ -144,6 +164,8 @@ const SharedWorksheet = () => {
           console.log('[SharedWorksheet] User is the teacher - bypassing email verification');
           setIsTeacher(true);
           setVerifiedEmail(user.email || 'teacher');
+          // DRAWING: Save teacher ID for drawing canvas
+          setCurrentTeacherId(user.id);
         }
       }
     } catch (error) {
@@ -430,11 +452,18 @@ const SharedWorksheet = () => {
             )}
           </div>
           
-          {/* Right side: Edit mode buttons */}
+          {/* Right side: Drawing button and Edit mode buttons */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-amber-700 bg-amber-50 px-3 py-1 rounded-md mr-2">
-              👀 Teacher Preview
+              👀 Live Session
             </span>
+            
+            {/* DRAWING: Toggle button for drawing mode */}
+            <DrawingToggleButton
+              isEnabled={isDrawingEnabled}
+              onToggle={() => setIsDrawingEnabled(!isDrawingEnabled)}
+            />
+            
             {!teacherEditMode ? (
               <Button 
                 onClick={() => setTeacherEditMode(true)}
@@ -474,6 +503,28 @@ const SharedWorksheet = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* DRAWING: Toolbar when drawing mode is enabled (teacher only) */}
+      {isTeacher && isDrawingEnabled && (
+        <DrawingToolbar
+          state={{
+            isEnabled: isDrawingEnabled,
+            activeTool: currentDrawingTool,
+            activeColor: currentDrawingColor,
+            strokeWidth: currentStrokeWidth,
+            canUndo: false, // TODO: Connect to drawing overlay ref
+            canRedo: false,
+            isSaving: drawingCanvas.isSaving,
+            lastSavedAt: drawingCanvas.lastSavedAt
+          }}
+          onToolChange={setCurrentDrawingTool}
+          onColorChange={setCurrentDrawingColor}
+          onStrokeWidthChange={setCurrentStrokeWidth}
+          onUndo={() => {}} // TODO: Connect to drawing overlay ref
+          onRedo={() => {}} // TODO: Connect to drawing overlay ref
+          onClearAll={() => drawingCanvas.clearDrawing()}
+        />
       )}
 
       {/* Header */}
