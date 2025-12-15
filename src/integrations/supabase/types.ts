@@ -956,6 +956,41 @@ export type Database = {
         }
         Relationships: []
       }
+      worksheet_drawings: {
+        Row: {
+          created_at: string
+          drawing_data: Json
+          id: string
+          teacher_id: string
+          updated_at: string
+          worksheet_id: string
+        }
+        Insert: {
+          created_at?: string
+          drawing_data?: Json
+          id?: string
+          teacher_id: string
+          updated_at?: string
+          worksheet_id: string
+        }
+        Update: {
+          created_at?: string
+          drawing_data?: Json
+          id?: string
+          teacher_id?: string
+          updated_at?: string
+          worksheet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worksheet_drawings_worksheet_id_fkey"
+            columns: ["worksheet_id"]
+            isOneToOne: true
+            referencedRelation: "worksheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       worksheet_student_answers: {
         Row: {
           answers: Json
