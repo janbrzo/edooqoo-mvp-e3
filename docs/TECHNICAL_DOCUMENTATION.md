@@ -5,7 +5,20 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Shared Worksheet & Live Session Fixes:**
+**Latest Update (December 2025) - Drawing Overlay for Live Session:**
+- **Drawing Overlay Feature**: Teachers can now draw annotations on worksheets during Live Session mode
+- **Real-time Sync**: Drawings are synchronized to students in real-time via Supabase Realtime
+- **Drawing Tools**: 10 tools available - Select, Pencil, Marker, Highlighter, Eraser, Rectangle, Circle, Arrow, Line, Text
+- **Color Picker**: 9 predefined colors (Black, Red, Orange, Yellow, Green, Blue, Purple, Pink, White)
+- **Stroke Width**: 4 stroke widths (Thin 2px, Medium 4px, Thick 8px, Extra Thick 16px)
+- **Undo/Redo**: 50-step history with Ctrl+Z/Ctrl+Y shortcuts
+- **Keyboard Shortcuts**: V (Select), P (Pencil), M (Marker), H (Highlighter), E (Eraser), R (Rectangle), C (Circle), A (Arrow), L (Line), T (Text)
+- **Auto-save**: Drawings auto-save to database with 2s debounce
+- **Database Table**: New `worksheet_drawings` table with RLS policies
+- **Fabric.js**: Canvas library for professional drawing capabilities
+- **Touch Support**: Works on mobile/tablet with touch input
+
+**Previous Update (December 2025) - Shared Worksheet & Live Session Fixes:**
 - **Live Session Answers Inline Display**: Fixed data flow - `liveSessionAnswer` now correctly passed from `WorksheetContent` → `ExerciseSection` → individual exercise components for inline blue highlighting
 - **Navigation Sidebar on Shared Worksheets**: Fixed scroll-to-exercise by passing `exerciseRefs` to `SharedWorksheetContent` and assigning refs to exercise divs
 - **Pin Audio/Picture on Shared Worksheets**: Added floating Pin and Maximize buttons with pinned audio player (identical to main worksheet)
