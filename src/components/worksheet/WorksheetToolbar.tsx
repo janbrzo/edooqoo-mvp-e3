@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen, Copy, Radio } from "lucide-react";
+import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen, Copy, Radio, Paintbrush } from "lucide-react";
 import { isFreeCustomDemoWeek } from "@/utils/promoUtils";
 import PaymentPopup from "@/components/PaymentPopup";
 import ShareWorksheetModal from "@/components/ShareWorksheetModal";
@@ -38,6 +38,9 @@ interface WorksheetToolbarProps {
   onCloseSidebar?: () => void;
   onCreateHomework?: () => void;
   onDuplicateSuccess?: () => void;
+  // Drawing overlay props (for Live Session mode)
+  isDrawingEnabled?: boolean;
+  onDrawingToggle?: () => void;
 }
 
 const WorksheetToolbar = ({
@@ -61,6 +64,8 @@ const WorksheetToolbar = ({
   onCloseSidebar,
   onCreateHomework,
   onDuplicateSuccess,
+  isDrawingEnabled = false,
+  onDrawingToggle,
 }: WorksheetToolbarProps) => {
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -239,7 +244,7 @@ const WorksheetToolbar = ({
 
   return (
     <>
-      <div className="sticky top-0 z-10 bg-white border-b mb-6 py-3 px-4">
+      <div className="sticky top-0 z-[60] bg-white border-b mb-6 py-3 px-4">
         <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'} max-w-[98%] mx-auto`}>
           <div className={`flex ${isMobile ? 'justify-center flex-wrap' : ''} space-x-2`}>
             <Button
@@ -374,54 +379,75 @@ const WorksheetToolbar = ({
                 )}
               </>
             )}
-            <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-2'}`}>
+            {/* In Live Session mode: show Draw button instead of Download buttons */}
+            {viewMode === 'live-session' && onDrawingToggle ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => handleDownloadClick('html-student')}
-                    className={`${isDownloadUnlocked 
-                      ? 'bg-worksheet-purple hover:bg-worksheet-purpleDark' 
-                      : 'bg-gray-400 hover:bg-gray-500'} ${isMobile ? 'w-full' : ''}`}
+                    onClick={onDrawingToggle}
+                    className={`${isDrawingEnabled 
+                      ? 'bg-amber-500 hover:bg-amber-600' 
+                      : 'bg-worksheet-purple hover:bg-worksheet-purpleDark'} ${isMobile ? 'w-full' : ''}`}
                     size="sm"
                   >
-                    {isDownloadUnlocked ? (
-                      <Download className="mr-2 h-4 w-4" />
-                    ) : shouldShowGiftIcon ? (
-                      <Gift className="mr-2 h-4 w-4" />
-                    ) : (
-                      <Lock className="mr-2 h-4 w-4" />
-                    )}
-                    {isMobile ? 'Student (HTML)' : 'Download STUDENT'}
+                    <Paintbrush className="mr-2 h-4 w-4" />
+                    {isDrawingEnabled ? 'Stop Drawing' : 'Draw on Worksheet'}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Download as HTML file. Best quality, works offline. Double-click to open.</p>
+                  <p>{isDrawingEnabled ? 'Click to stop drawing mode' : 'Draw annotations on the worksheet during live session'}</p>
                 </TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={() => handleDownloadClick('html-teacher')}
-                    className={`${isDownloadUnlocked 
-                      ? 'bg-worksheet-purple hover:bg-worksheet-purpleDark' 
-                      : 'bg-gray-400 hover:bg-gray-500'} ${isMobile ? 'w-full' : ''}`}
-                    size="sm"
-                  >
-                    {isDownloadUnlocked ? (
-                      <Download className="mr-2 h-4 w-4" />
-                    ) : shouldShowGiftIcon ? (
-                      <Gift className="mr-2 h-4 w-4" />
-                    ) : (
-                      <Lock className="mr-2 h-4 w-4" />
-                    )}
-                    {isMobile ? 'Teacher (HTML)' : 'Download TEACHER'}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Download as HTML file. Best quality, works offline. Double-click to open.</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
+            ) : (
+              <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-2'}`}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => handleDownloadClick('html-student')}
+                      className={`${isDownloadUnlocked 
+                        ? 'bg-worksheet-purple hover:bg-worksheet-purpleDark' 
+                        : 'bg-gray-400 hover:bg-gray-500'} ${isMobile ? 'w-full' : ''}`}
+                      size="sm"
+                    >
+                      {isDownloadUnlocked ? (
+                        <Download className="mr-2 h-4 w-4" />
+                      ) : shouldShowGiftIcon ? (
+                        <Gift className="mr-2 h-4 w-4" />
+                      ) : (
+                        <Lock className="mr-2 h-4 w-4" />
+                      )}
+                      {isMobile ? 'Student (HTML)' : 'Download STUDENT'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Download as HTML file. Best quality, works offline. Double-click to open.</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => handleDownloadClick('html-teacher')}
+                      className={`${isDownloadUnlocked 
+                        ? 'bg-worksheet-purple hover:bg-worksheet-purpleDark' 
+                        : 'bg-gray-400 hover:bg-gray-500'} ${isMobile ? 'w-full' : ''}`}
+                      size="sm"
+                    >
+                      {isDownloadUnlocked ? (
+                        <Download className="mr-2 h-4 w-4" />
+                      ) : shouldShowGiftIcon ? (
+                        <Gift className="mr-2 h-4 w-4" />
+                      ) : (
+                        <Lock className="mr-2 h-4 w-4" />
+                      )}
+                      {isMobile ? 'Teacher (HTML)' : 'Download TEACHER'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Download as HTML file. Best quality, works offline. Double-click to open.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
           </div>
         </div>
       </div>

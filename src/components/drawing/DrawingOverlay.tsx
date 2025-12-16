@@ -699,7 +699,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
       <div
         ref={containerRef}
         className={cn(
-          "absolute inset-0 z-[50]",
+          "absolute inset-0 z-[30]",
           isEnabled ? "pointer-events-auto" : "pointer-events-none",
           // Dla ucznia zawsze pointer-events-none (tylko widzi)
           !isTeacher && "pointer-events-none"
