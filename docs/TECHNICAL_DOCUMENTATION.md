@@ -5,16 +5,25 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Drawing Overlay for Live Session:**
+**Latest Update (December 2025) - Drawing Overlay for Live Session (Redesigned - Windows Snipping Tool style):**
 - **Drawing Overlay Feature**: Teachers can now draw annotations on worksheets during Live Session mode in the main worksheet view (`WorksheetDisplay.tsx`)
 - **Live Session Integration**: "Draw on Worksheet" button replaces Download buttons when in Live Session mode
-- **Toggle Functionality**: Click "Draw on Worksheet" to enable/disable drawing mode (button label changes to "Stop Drawing")
+- **Toggle Functionality**: "Draw on Worksheet" enables drawing mode, "Stop Drawing" disables drawing but keeps layer visible
+- **Show/Hide Drawings Button**: New toggle button to show/hide drawing layer independently of drawing mode
+- **Auto-Show Drawings**: When existing drawings are saved, switching to Live Session automatically shows the drawing layer
 - **Real-time Sync**: Drawings are synchronized to students in real-time via Supabase Realtime (on shared worksheets)
-- **Drawing Tools**: 10 tools available - Select, Pencil, Marker, Highlighter, Eraser, Rectangle, Circle, Arrow, Line, Text
-- **Color Picker**: 9 predefined colors (Black, Red, Orange, Yellow, Green, Blue, Purple, Pink, White)
-- **Stroke Width**: 4 stroke widths (Thin 2px, Medium 4px, Thick 8px, Extra Thick 16px)
-- **Undo/Redo**: 50-step history with Ctrl+Z/Ctrl+Y shortcuts
-- **Keyboard Shortcuts**: V (Select), P (Pencil), M (Marker), H (Highlighter), E (Eraser), R (Rectangle), C (Circle), A (Arrow), L (Line), T (Text)
+- **Drawing Tools (Simplified)**: 5 tools available (Windows Snipping Tool style):
+  - **Select on Worksheet** (V): Allows selecting text on worksheet without disabling toolbar
+  - **Marker** (M): Opaque pen for drawing - NOT editable after creation
+  - **Highlighter** (H): Semi-transparent (40% opacity) for highlighting text - NOT editable after creation
+  - **Arrow** (A): Arrow with arrowhead - 2 control points for manipulation right after drawing, then locked
+  - **Eraser** (E): Removes objects on visual hit (not bounding box)
+- **Tool Color/Width Selection**: Click active tool to open popover with color grid + stroke width slider
+- **Color Palettes**:
+  - Marker/Arrow: 10 colors (Black, Red, Orange, Yellow, Green, Blue, Purple, Pink, Brown, White)
+  - Highlighter: 6 semi-transparent colors (Yellow, Green, Blue, Pink, Orange, Purple)
+- **Stroke Width**: 4 widths (Thin 2px, Medium 4px, Thick 8px, Extra Thick 16px) via slider
+- **Undo/Redo Fixed**: Now works step-by-step (single action undo/redo), 50-step history, Ctrl+Z/Ctrl+Y shortcuts
 - **Auto-save**: Drawings auto-save to database with 2s debounce
 - **Database Table**: `worksheet_drawings` table with RLS policies
 - **Fabric.js**: Canvas library for professional drawing capabilities
