@@ -882,7 +882,7 @@ export default function WorksheetDisplay({
             />
             
             {/* DRAWING OVERLAY: Canvas overlay for drawing (Live Session only) */}
-            {viewMode === 'live-session' && worksheetId && userId && (
+            {viewMode === 'live-session' && worksheetId && userId && isDrawingLayerVisible && (
               <DrawingOverlay
                 ref={drawingOverlayRef}
                 worksheetId={worksheetId}
