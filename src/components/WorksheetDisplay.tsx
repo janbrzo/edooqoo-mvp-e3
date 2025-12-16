@@ -34,6 +34,7 @@ import { KNOWLEDGE_CATEGORIES } from "@/types/studentKnowledge";
 import { DrawingToolbar, DrawingOverlay, type DrawingOverlayRef } from "@/components/drawing";
 import type { DrawingTool, DrawingColor, StrokeWidth } from "@/types/drawing";
 import { DRAWING_COLORS, STROKE_WIDTHS } from "@/types/drawing";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Exercise {
   type: string;
@@ -130,7 +131,9 @@ export default function WorksheetDisplay({
   
   // DRAWING OVERLAY: State for drawing mode (Live Session only)
   const [isDrawingEnabled, setIsDrawingEnabled] = useState(false);
-  const [currentDrawingTool, setCurrentDrawingTool] = useState<DrawingTool>('pencil');
+  const [isDrawingLayerVisible, setIsDrawingLayerVisible] = useState(false); // FAZA A: widoczność warstwy
+  const [hasExistingDrawings, setHasExistingDrawings] = useState(false); // FAZA A: czy są rysunki w DB
+  const [currentDrawingTool, setCurrentDrawingTool] = useState<DrawingTool>('marker');
   const [currentDrawingColor, setCurrentDrawingColor] = useState<DrawingColor>(DRAWING_COLORS[0]);
   const [currentStrokeWidth, setCurrentStrokeWidth] = useState<StrokeWidth>(STROKE_WIDTHS[1]);
   const [canUndo, setCanUndo] = useState(false);
@@ -270,6 +273,35 @@ export default function WorksheetDisplay({
     }
   }, [worksheetId, editableWorksheet?.audio_url, editableWorksheet?.selected_audio, editableWorksheet?.selected_image]); // Run when worksheet or media fields change
   
+  // FAZA A: Sprawdź czy istnieją rysunki przy załadowaniu
+  useEffect(() => {
+    const checkExistingDrawings = async () => {
+      if (!worksheetId) return;
+      try {
+        const { data } = await supabase
+          .from('worksheet_drawings')
+          .select('id')
+          .eq('worksheet_id', worksheetId)
+          .single();
+        setHasExistingDrawings(!!data);
+      } catch {
+        setHasExistingDrawings(false);
+      }
+    };
+    checkExistingDrawings();
+  }, [worksheetId]);
+
+  // FAZA A: Auto-show rysunków przy przełączeniu na Live Session (jeśli istnieją)
+  useEffect(() => {
+    if (viewMode === 'live-session' && hasExistingDrawings) {
+      setIsDrawingLayerVisible(true);
+    } else if (viewMode !== 'live-session') {
+      // Ukryj warstwę przy przełączeniu na inne tryby
+      setIsDrawingLayerVisible(false);
+      setIsDrawingEnabled(false);
+    }
+  }, [viewMode, hasExistingDrawings]);
+
   useEffect(() => {
     validateWorksheetStructure();
     
@@ -795,7 +827,12 @@ export default function WorksheetDisplay({
             onCloseSidebar={closeSidebarRef || (() => {})}
             onCreateHomework={handleCreateHomework}
             isDrawingEnabled={isDrawingEnabled}
-            onDrawingToggle={() => setIsDrawingEnabled(!isDrawingEnabled)}
+            isDrawingLayerVisible={isDrawingLayerVisible}
+            onDrawingToggle={() => {
+              setIsDrawingEnabled(!isDrawingEnabled);
+              if (!isDrawingEnabled) setIsDrawingLayerVisible(true); // Draw włącza też widoczność
+            }}
+            onDrawingLayerToggle={() => setIsDrawingLayerVisible(!isDrawingLayerVisible)}
           />
 
           {/* DRAWING: Toolbar when drawing mode is enabled (Live Session only) */}

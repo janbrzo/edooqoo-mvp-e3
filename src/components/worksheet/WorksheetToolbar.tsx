@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen, Copy, Radio, Paintbrush } from "lucide-react";
+import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen, Copy, Radio, Paintbrush, Eye, EyeOff } from "lucide-react";
 import { isFreeCustomDemoWeek } from "@/utils/promoUtils";
 import PaymentPopup from "@/components/PaymentPopup";
 import ShareWorksheetModal from "@/components/ShareWorksheetModal";
@@ -40,7 +40,9 @@ interface WorksheetToolbarProps {
   onDuplicateSuccess?: () => void;
   // Drawing overlay props (for Live Session mode)
   isDrawingEnabled?: boolean;
+  isDrawingLayerVisible?: boolean;
   onDrawingToggle?: () => void;
+  onDrawingLayerToggle?: () => void;
 }
 
 const WorksheetToolbar = ({
@@ -65,7 +67,9 @@ const WorksheetToolbar = ({
   onCreateHomework,
   onDuplicateSuccess,
   isDrawingEnabled = false,
+  isDrawingLayerVisible = false,
   onDrawingToggle,
+  onDrawingLayerToggle,
 }: WorksheetToolbarProps) => {
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -381,23 +385,43 @@ const WorksheetToolbar = ({
             )}
             {/* In Live Session mode: show Draw button instead of Download buttons */}
             {viewMode === 'live-session' && onDrawingToggle ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={onDrawingToggle}
-                    className={`${isDrawingEnabled 
-                      ? 'bg-amber-500 hover:bg-amber-600' 
-                      : 'bg-worksheet-purple hover:bg-worksheet-purpleDark'} ${isMobile ? 'w-full' : ''}`}
-                    size="sm"
-                  >
-                    <Paintbrush className="mr-2 h-4 w-4" />
-                    {isDrawingEnabled ? 'Stop Drawing' : 'Draw on Worksheet'}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{isDrawingEnabled ? 'Click to stop drawing mode' : 'Draw annotations on the worksheet during live session'}</p>
-                </TooltipContent>
-              </Tooltip>
+              <div className="flex gap-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={onDrawingToggle}
+                      className={`${isDrawingEnabled 
+                        ? 'bg-amber-500 hover:bg-amber-600' 
+                        : 'bg-worksheet-purple hover:bg-worksheet-purpleDark'} ${isMobile ? 'w-full' : ''}`}
+                      size="sm"
+                    >
+                      <Paintbrush className="mr-2 h-4 w-4" />
+                      {isDrawingEnabled ? 'Stop Drawing' : 'Draw on Worksheet'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isDrawingEnabled ? 'Stop drawing mode (drawings stay visible)' : 'Draw annotations on the worksheet'}</p>
+                  </TooltipContent>
+                </Tooltip>
+                {onDrawingLayerToggle && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={onDrawingLayerToggle}
+                        variant="outline"
+                        className="border-worksheet-purple text-worksheet-purple"
+                        size="sm"
+                      >
+                        {isDrawingLayerVisible ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                        {isDrawingLayerVisible ? 'Hide Drawings' : 'Show Drawings'}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{isDrawingLayerVisible ? 'Hide drawing layer' : 'Show drawing layer'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
             ) : (
               <div className={`flex ${isMobile ? 'flex-col gap-2' : 'gap-2'}`}>
                 <Tooltip>
