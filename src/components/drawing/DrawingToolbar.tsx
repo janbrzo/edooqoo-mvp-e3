@@ -1,22 +1,11 @@
 /**
- * DrawingToolbar - Pasek narzędzi rysowania
+ * DrawingToolbar - Pasek narzędzi rysowania (wzór: Windows Snipping Tool)
  * 
- * Zawiera wszystkie narzędzia: select, pencil, marker, highlighter, eraser,
- * rectangle, circle, arrow, line, text, oraz color picker, stroke width,
- * undo/redo i clear all.
+ * Narzędzia: Select Worksheet | Marker ▼ | Highlighter ▼ | Arrow ▼ | Eraser
+ * Akcje: Undo | Redo | Clear All | Status zapisu
  */
 
 import { 
-  MousePointer2, 
-  Pencil, 
-  Pen, 
-  Highlighter, 
-  Eraser,
-  Square,
-  Circle,
-  MoveUpRight,
-  Minus,
-  Type,
   Undo2,
   Redo2,
   Trash2,
@@ -37,23 +26,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { DrawingToolbarProps, DrawingTool, DRAWING_TOOLS } from '@/types/drawing';
-import { DrawingColorPicker } from './DrawingColorPicker';
-import { DrawingStrokeWidth } from './DrawingStrokeWidth';
-import { cn } from '@/lib/utils';
-
-// Mapowanie nazw ikon na komponenty
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  MousePointer2,
-  Pencil,
-  Pen,
-  Highlighter,
-  Eraser,
-  Square,
-  Circle,
-  MoveUpRight,
-  Minus,
-  Type,
-};
+import { DrawingToolButton } from './DrawingToolButton';
 
 export const DrawingToolbar = ({
   state,
@@ -69,65 +42,36 @@ export const DrawingToolbar = ({
   return (
     <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-background/95 backdrop-blur-sm border rounded-xl shadow-lg p-2 flex items-center gap-1 flex-wrap max-w-[95vw]">
       {/* Narzędzia rysowania */}
-      <div className="flex items-center gap-0.5">
-        {DRAWING_TOOLS.map((tool) => {
-          const Icon = iconMap[tool.icon];
-          if (!Icon) return null;
+      {DRAWING_TOOLS.map((tool, index) => (
+        <div key={tool.id} className="flex items-center">
+          {/* Separator po Select Worksheet i przed Eraser */}
+          {(index === 1 || tool.id === 'eraser') && (
+            <Separator orientation="vertical" className="h-8 mx-1" />
+          )}
           
-          return (
-            <Tooltip key={tool.id}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={activeTool === tool.id ? "default" : "ghost"}
-                  size="sm"
-                  className={cn(
-                    "w-9 h-9 p-0",
-                    activeTool === tool.id && "bg-primary text-primary-foreground"
-                  )}
-                  onClick={() => onToolChange(tool.id)}
-                >
-                  <Icon className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{tool.label} {tool.shortcut && <span className="text-muted-foreground">({tool.shortcut})</span>}</p>
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </div>
-
-      <Separator orientation="vertical" className="h-8 mx-1" />
-
-      {/* Color Picker */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div>
-            <DrawingColorPicker
-              selectedColor={activeColor}
-              onColorSelect={onColorChange}
-            />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Color: {activeColor.name}</p>
-        </TooltipContent>
-      </Tooltip>
-
-      {/* Stroke Width */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div>
-            <DrawingStrokeWidth
-              selectedWidth={strokeWidth}
-              onWidthSelect={onStrokeWidthChange}
-            />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Stroke: {strokeWidth.name}</p>
-        </TooltipContent>
-      </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <DrawingToolButton
+                  tool={tool.id}
+                  label={tool.label}
+                  isActive={activeTool === tool.id}
+                  currentColor={activeColor}
+                  currentStrokeWidth={strokeWidth}
+                  onToolSelect={() => onToolChange(tool.id)}
+                  onColorChange={onColorChange}
+                  onStrokeWidthChange={onStrokeWidthChange}
+                  hasColorPicker={tool.hasColorPicker}
+                  hasStrokeWidth={tool.hasStrokeWidth}
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{tool.label} {tool.shortcut && <span className="text-muted-foreground">({tool.shortcut})</span>}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      ))}
 
       <Separator orientation="vertical" className="h-8 mx-1" />
 

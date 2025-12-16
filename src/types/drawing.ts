@@ -1,8 +1,8 @@
 /**
  * Drawing Overlay Types for Live Session
  * 
- * Ten plik zawiera wszystkie typy TypeScript dla funkcji rysowania
- * po worksheet w trybie Live Session.
+ * REDESIGNED based on Windows Snipping Tool (version 11.2510.31.0)
+ * Simplified tools: marker, highlighter, arrow, eraser, select-worksheet
  */
 
 // ============================================
@@ -10,19 +10,14 @@
 // ============================================
 
 /**
- * Dostępne narzędzia rysowania
+ * Dostępne narzędzia rysowania (zredukowane jak w Snipping Tool)
  */
 export type DrawingTool = 
-  | 'select'      // Zaznaczanie i przesuwanie obiektów
-  | 'pencil'      // Ołówek - cienka linia
-  | 'marker'      // Pisak - grubsza linia
-  | 'highlighter' // Zakreślacz - półprzezroczysty
-  | 'eraser'      // Gumka - usuwanie obiektów
-  | 'rectangle'   // Prostokąt
-  | 'circle'      // Koło/elipsa
-  | 'arrow'       // Strzałka
-  | 'line'        // Linia prosta
-  | 'text';       // Tekst
+  | 'select-worksheet' // Zaznaczanie treści worksheet (nie elementów rysunku)
+  | 'marker'           // Pisak - do rysowania
+  | 'highlighter'      // Zakreślacz - półprzezroczysty
+  | 'arrow'            // Strzałka z grotem
+  | 'eraser';          // Gumka - usuwanie obiektów
 
 /**
  * Informacje o każdym narzędziu
@@ -32,22 +27,19 @@ export interface DrawingToolInfo {
   label: string;
   icon: string; // Lucide icon name
   shortcut?: string;
+  hasColorPicker?: boolean; // Czy pokazać color picker
+  hasStrokeWidth?: boolean; // Czy pokazać stroke width slider
 }
 
 /**
  * Lista wszystkich narzędzi z metadanymi
  */
 export const DRAWING_TOOLS: DrawingToolInfo[] = [
-  { id: 'select', label: 'Select', icon: 'MousePointer2', shortcut: 'V' },
-  { id: 'pencil', label: 'Pencil', icon: 'Pencil', shortcut: 'P' },
-  { id: 'marker', label: 'Marker', icon: 'Pen', shortcut: 'M' },
-  { id: 'highlighter', label: 'Highlighter', icon: 'Highlighter', shortcut: 'H' },
-  { id: 'eraser', label: 'Eraser', icon: 'Eraser', shortcut: 'E' },
-  { id: 'rectangle', label: 'Rectangle', icon: 'Square', shortcut: 'R' },
-  { id: 'circle', label: 'Circle', icon: 'Circle', shortcut: 'C' },
-  { id: 'arrow', label: 'Arrow', icon: 'MoveUpRight', shortcut: 'A' },
-  { id: 'line', label: 'Line', icon: 'Minus', shortcut: 'L' },
-  { id: 'text', label: 'Text', icon: 'Type', shortcut: 'T' },
+  { id: 'select-worksheet', label: 'Select on Worksheet', icon: 'MousePointer2', shortcut: 'V', hasColorPicker: false, hasStrokeWidth: false },
+  { id: 'marker', label: 'Marker', icon: 'Pen', shortcut: 'M', hasColorPicker: true, hasStrokeWidth: true },
+  { id: 'highlighter', label: 'Highlighter', icon: 'Highlighter', shortcut: 'H', hasColorPicker: true, hasStrokeWidth: true },
+  { id: 'arrow', label: 'Arrow', icon: 'MoveUpRight', shortcut: 'A', hasColorPicker: true, hasStrokeWidth: true },
+  { id: 'eraser', label: 'Eraser', icon: 'Eraser', shortcut: 'E', hasColorPicker: false, hasStrokeWidth: false },
 ];
 
 // ============================================
@@ -64,9 +56,9 @@ export interface DrawingColor {
 }
 
 /**
- * 9 predefiniowanych kolorów
+ * Kolory dla Marker i Arrow (10 kolorów)
  */
-export const DRAWING_COLORS: DrawingColor[] = [
+export const MARKER_COLORS: DrawingColor[] = [
   { name: 'Black', value: 'hsl(0, 0%, 0%)', hex: '#000000' },
   { name: 'Red', value: 'hsl(0, 84%, 60%)', hex: '#ef4444' },
   { name: 'Orange', value: 'hsl(25, 95%, 53%)', hex: '#f97316' },
@@ -75,13 +67,32 @@ export const DRAWING_COLORS: DrawingColor[] = [
   { name: 'Blue', value: 'hsl(217, 91%, 60%)', hex: '#3b82f6' },
   { name: 'Purple', value: 'hsl(271, 91%, 65%)', hex: '#a855f7' },
   { name: 'Pink', value: 'hsl(330, 81%, 60%)', hex: '#ec4899' },
+  { name: 'Brown', value: 'hsl(20, 50%, 40%)', hex: '#8B4513' },
   { name: 'White', value: 'hsl(0, 0%, 100%)', hex: '#ffffff' },
 ];
 
 /**
+ * Kolory dla Highlighter (6 kolorów podświetlających - semi-transparent)
+ */
+export const HIGHLIGHTER_COLORS: DrawingColor[] = [
+  { name: 'Yellow', value: 'hsla(60, 100%, 50%, 0.4)', hex: 'rgba(255, 255, 0, 0.4)' },
+  { name: 'Green', value: 'hsla(120, 100%, 50%, 0.4)', hex: 'rgba(0, 255, 0, 0.4)' },
+  { name: 'Blue', value: 'hsla(200, 100%, 50%, 0.4)', hex: 'rgba(0, 180, 255, 0.4)' },
+  { name: 'Pink', value: 'hsla(330, 100%, 70%, 0.4)', hex: 'rgba(255, 105, 180, 0.4)' },
+  { name: 'Orange', value: 'hsla(30, 100%, 50%, 0.4)', hex: 'rgba(255, 165, 0, 0.4)' },
+  { name: 'Purple', value: 'hsla(270, 100%, 60%, 0.4)', hex: 'rgba(180, 100, 255, 0.4)' },
+];
+
+/**
+ * Wszystkie kolory (dla kompatybilności)
+ */
+export const DRAWING_COLORS: DrawingColor[] = MARKER_COLORS;
+
+/**
  * Domyślny kolor
  */
-export const DEFAULT_DRAWING_COLOR = DRAWING_COLORS[0]; // Black
+export const DEFAULT_DRAWING_COLOR = MARKER_COLORS[0]; // Black
+export const DEFAULT_HIGHLIGHTER_COLOR = HIGHLIGHTER_COLORS[0]; // Yellow
 
 // ============================================
 // GRUBOŚĆ LINII
@@ -133,7 +144,7 @@ export interface DrawingState {
  */
 export const DEFAULT_DRAWING_STATE: DrawingState = {
   isEnabled: false,
-  activeTool: 'pencil',
+  activeTool: 'marker',
   activeColor: DEFAULT_DRAWING_COLOR,
   strokeWidth: DEFAULT_STROKE_WIDTH,
   canUndo: false,
@@ -172,7 +183,7 @@ export interface FabricObjectData {
   stroke?: string;
   strokeWidth?: number;
   opacity?: number;
-  path?: any[];           // Dla ścieżek (pencil, marker)
+  path?: any[];           // Dla ścieżek (marker)
   text?: string;          // Dla tekstu
   points?: any[];         // Dla linii, strzałek
   [key: string]: any;     // Inne właściwości Fabric.js

@@ -68,7 +68,7 @@ const SharedWorksheet = () => {
 
   // DRAWING OVERLAY: State for drawing mode (Live Session only)
   const [isDrawingEnabled, setIsDrawingEnabled] = useState(false);
-  const [currentDrawingTool, setCurrentDrawingTool] = useState<DrawingTool>('pencil');
+  const [currentDrawingTool, setCurrentDrawingTool] = useState<DrawingTool>('marker');
   const [currentDrawingColor, setCurrentDrawingColor] = useState<DrawingColor>(DRAWING_COLORS[0]);
   const [currentStrokeWidth, setCurrentStrokeWidth] = useState<StrokeWidth>(STROKE_WIDTHS[1]);
   const [currentTeacherId, setCurrentTeacherId] = useState<string | null>(null);
