@@ -416,7 +416,7 @@ const SharedWorksheet = () => {
       
       {/* PROBLEM 3: Teacher toolbar with Back, Dashboard, Student Name, Edit buttons */}
       {isTeacher && (
-        <div className="sticky top-0 bg-white border-b shadow-sm py-3 px-4 z-40 flex items-center justify-between">
+        <div className="sticky top-0 bg-white border-b shadow-sm py-3 px-4 z-[60] flex items-center justify-between">
           {/* Left side: Navigation buttons - PROBLEM 2: Add ml-14 to avoid overlap with ExerciseNavSidebar Menu button */}
           <div className="flex items-center gap-2 ml-14">
             <Button

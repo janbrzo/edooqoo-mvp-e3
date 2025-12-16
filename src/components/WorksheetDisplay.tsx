@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useDownloadTracking } from "@/hooks/useDownloadTracking";
 import { usePaymentTracking } from "@/hooks/usePaymentTracking";
@@ -30,6 +30,10 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, TextSelect, Layers, Radio } from "lucide-react";
 import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry, KnowledgeCategory } from "@/types/studentKnowledge";
 import { KNOWLEDGE_CATEGORIES } from "@/types/studentKnowledge";
+// Drawing overlay imports
+import { DrawingToolbar, DrawingOverlay, type DrawingOverlayRef } from "@/components/drawing";
+import type { DrawingTool, DrawingColor, StrokeWidth } from "@/types/drawing";
+import { DRAWING_COLORS, STROKE_WIDTHS } from "@/types/drawing";
 
 interface Exercise {
   type: string;
@@ -123,6 +127,18 @@ export default function WorksheetDisplay({
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [panelMode, setPanelMode] = useState<'add' | 'view' | 'edit'>('add');
   const [selectedEntry, setSelectedEntry] = useState<StudentKnowledgeEntry | null>(null);
+  
+  // DRAWING OVERLAY: State for drawing mode (Live Session only)
+  const [isDrawingEnabled, setIsDrawingEnabled] = useState(false);
+  const [currentDrawingTool, setCurrentDrawingTool] = useState<DrawingTool>('pencil');
+  const [currentDrawingColor, setCurrentDrawingColor] = useState<DrawingColor>(DRAWING_COLORS[0]);
+  const [currentStrokeWidth, setCurrentStrokeWidth] = useState<StrokeWidth>(STROKE_WIDTHS[1]);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const [drawingIsSaving, setDrawingIsSaving] = useState(false);
+  const [drawingLastSavedAt, setDrawingLastSavedAt] = useState<Date | null>(null);
+  const drawingOverlayRef = useRef<DrawingOverlayRef>(null);
+  const worksheetContentWrapperRef = useRef<HTMLDivElement>(null);
 
   // CRITICAL FIX: Inject selectedImage/selectedAudio/audioUrl into editableWorksheet
   // This ensures Lesson Media renders when opening worksheet from /student → Homework
@@ -778,29 +794,79 @@ export default function WorksheetDisplay({
             onExpandAll={expandAllRef || (() => {})}
             onCloseSidebar={closeSidebarRef || (() => {})}
             onCreateHomework={handleCreateHomework}
+            isDrawingEnabled={isDrawingEnabled}
+            onDrawingToggle={() => setIsDrawingEnabled(!isDrawingEnabled)}
           />
 
-          <WorksheetContent
-            editableWorksheet={editableWorksheet}
-            isEditing={isEditing}
-            viewMode={viewMode}
-            setEditableWorksheet={setEditableWorksheet}
-            worksheetId={worksheetId}
-            onFeedbackSubmit={onFeedbackSubmit}
-            isDownloadUnlocked={isDownloadUnlocked}
-            inputParams={inputParams}
-            userId={userId}
-            studentId={studentId}
-            onExpandAll={(expandFn: () => void) => setExpandAllRef(() => expandFn)}
-            onCloseSidebar={(closeFn: () => void) => setCloseSidebarRef(() => closeFn)}
-            isPinned={isPinned}
-            onTogglePin={() => setIsPinned(!isPinned)}
-            isFullScreen={isFullScreen}
-            onToggleFullScreen={() => setIsFullScreen(!isFullScreen)}
-            liveSessionAnswers={viewMode === 'live-session' ? liveAnswers : undefined}
-            liveStudentEmail={viewMode === 'live-session' ? liveStudentEmail : undefined}
-            isLiveConnected={viewMode === 'live-session' ? isLiveConnected : undefined}
-          />
+          {/* DRAWING: Toolbar when drawing mode is enabled (Live Session only) */}
+          {viewMode === 'live-session' && isDrawingEnabled && (
+            <DrawingToolbar
+              state={{
+                isEnabled: isDrawingEnabled,
+                activeTool: currentDrawingTool,
+                activeColor: currentDrawingColor,
+                strokeWidth: currentStrokeWidth,
+                canUndo: canUndo,
+                canRedo: canRedo,
+                isSaving: drawingIsSaving,
+                lastSavedAt: drawingLastSavedAt
+              }}
+              onToolChange={setCurrentDrawingTool}
+              onColorChange={setCurrentDrawingColor}
+              onStrokeWidthChange={setCurrentStrokeWidth}
+              onUndo={() => drawingOverlayRef.current?.undo()}
+              onRedo={() => drawingOverlayRef.current?.redo()}
+              onClearAll={() => drawingOverlayRef.current?.clearAll()}
+            />
+          )}
+
+          {/* Worksheet Content with Drawing Overlay */}
+          <div className="relative" ref={worksheetContentWrapperRef}>
+            <WorksheetContent
+              editableWorksheet={editableWorksheet}
+              isEditing={isEditing}
+              viewMode={viewMode}
+              setEditableWorksheet={setEditableWorksheet}
+              worksheetId={worksheetId}
+              onFeedbackSubmit={onFeedbackSubmit}
+              isDownloadUnlocked={isDownloadUnlocked}
+              inputParams={inputParams}
+              userId={userId}
+              studentId={studentId}
+              onExpandAll={(expandFn: () => void) => setExpandAllRef(() => expandFn)}
+              onCloseSidebar={(closeFn: () => void) => setCloseSidebarRef(() => closeFn)}
+              isPinned={isPinned}
+              onTogglePin={() => setIsPinned(!isPinned)}
+              isFullScreen={isFullScreen}
+              onToggleFullScreen={() => setIsFullScreen(!isFullScreen)}
+              liveSessionAnswers={viewMode === 'live-session' ? liveAnswers : undefined}
+              liveStudentEmail={viewMode === 'live-session' ? liveStudentEmail : undefined}
+              isLiveConnected={viewMode === 'live-session' ? isLiveConnected : undefined}
+            />
+            
+            {/* DRAWING OVERLAY: Canvas overlay for drawing (Live Session only) */}
+            {viewMode === 'live-session' && worksheetId && userId && (
+              <DrawingOverlay
+                ref={drawingOverlayRef}
+                worksheetId={worksheetId}
+                teacherId={userId}
+                isTeacher={true}
+                isEnabled={isDrawingEnabled}
+                externalTool={currentDrawingTool}
+                externalColor={currentDrawingColor}
+                externalStrokeWidth={currentStrokeWidth}
+                hideToolbar={true}
+                onHistoryChange={(newCanUndo, newCanRedo) => {
+                  setCanUndo(newCanUndo);
+                  setCanRedo(newCanRedo);
+                }}
+                onSaveStatusChange={(isSaving, lastSavedAt) => {
+                  setDrawingIsSaving(isSaving);
+                  setDrawingLastSavedAt(lastSavedAt);
+                }}
+              />
+            )}
+          </div>
         </div>
       </WorksheetContainer>
       
