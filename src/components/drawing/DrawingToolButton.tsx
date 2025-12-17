@@ -1,11 +1,14 @@
 /**
  * DrawingToolButton - Przycisk narzędzia z popover (wzór: Windows Snipping Tool)
  * 
- * Pierwszy klik = wybiera narzędzie
- * Drugi klik na aktywne narzędzie = otwiera popover z kolorami i grubością
+ * NAPRAWIONE:
+ * - Pierwszy klik = wybiera narzędzie (NIE otwiera popover)
+ * - Drugi klik na aktywne narzędzie = otwiera popover z kolorami i grubością
+ * - Po wyborze koloru lub grubości popover się zamyka
+ * - Slider bez "px" - wyświetla tylko liczbę
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
@@ -16,7 +19,6 @@ import {
   StrokeWidth,
   MARKER_COLORS,
   HIGHLIGHTER_COLORS,
-  STROKE_WIDTHS
 } from '@/types/drawing';
 import { cn } from '@/lib/utils';
 
@@ -55,26 +57,35 @@ export const DrawingToolButton = ({
 }: DrawingToolButtonProps) => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const Icon = iconMap[tool];
+  const triggerRef = useRef<HTMLDivElement>(null);
   
   // Wybierz odpowiednie kolory dla narzędzia
   const availableColors = tool === 'highlighter' ? HIGHLIGHTER_COLORS : MARKER_COLORS;
   
-  const handleClick = () => {
-    if (isActive && (hasColorPicker || hasStrokeWidth)) {
-      // Drugie kliknięcie na aktywne narzędzie = otwórz popover
-      setIsPopoverOpen(true);
-    } else {
+  // NAPRAWKA: Obsługa kliknięcia - NIE otwiera popover przy pierwszym kliknięciu
+  const handleButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isActive) {
       // Pierwsze kliknięcie = wybierz narzędzie
       onToolSelect();
+    } else if (hasColorPicker || hasStrokeWidth) {
+      // Drugie kliknięcie na aktywne narzędzie = otwórz popover
+      setIsPopoverOpen(true);
     }
   };
 
-  const handleStrokeWidthSlider = (value: number[]) => {
-    const selectedWidth = STROKE_WIDTHS.find(sw => sw.value === value[0]) 
-      || STROKE_WIDTHS.reduce((prev, curr) => 
-        Math.abs(curr.value - value[0]) < Math.abs(prev.value - value[0]) ? curr : prev
-      );
-    onStrokeWidthChange(selectedWidth);
+  // NAPRAWKA: Zamknij popover po wyborze koloru
+  const handleColorSelect = (color: DrawingColor) => {
+    onColorChange(color);
+    setIsPopoverOpen(false);
+  };
+
+  // NAPRAWKA: Zamknij popover po wyborze grubości (onValueCommit)
+  const handleStrokeWidthCommit = (value: number[]) => {
+    onStrokeWidthChange({ name: `${value[0]}`, value: value[0] });
+    setIsPopoverOpen(false);
   };
 
   // Znajdź kolor do wyświetlenia w przycisku (dla wskaźnika koloru)
@@ -83,89 +94,103 @@ export const DrawingToolButton = ({
     : currentColor;
 
   return (
-    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant={isActive ? "default" : "ghost"}
-          size="sm"
-          className={cn(
-            "relative h-9 px-3 gap-1",
-            isActive && "bg-primary text-primary-foreground"
-          )}
-          onClick={handleClick}
-        >
-          <Icon className="h-4 w-4" />
-          {/* Wskaźnik koloru pod ikoną (tylko dla narzędzi z kolorem) */}
-          {hasColorPicker && (
-            <div 
-              className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 rounded-full"
-              style={{ backgroundColor: displayColor.hex }}
-            />
-          )}
-          {/* Strzałka w dół gdy aktywne i ma popover */}
-          {isActive && (hasColorPicker || hasStrokeWidth) && (
-            <ChevronDown className="h-3 w-3 ml-0.5" />
-          )}
-        </Button>
-      </PopoverTrigger>
+    <div className="relative" ref={triggerRef}>
+      {/* Główny przycisk narzędzia */}
+      <Button
+        variant={isActive ? "default" : "ghost"}
+        size="sm"
+        className={cn(
+          "relative h-9 px-3 gap-1",
+          isActive && "bg-primary text-primary-foreground"
+        )}
+        onClick={handleButtonClick}
+      >
+        <Icon className="h-4 w-4" />
+        {/* Wskaźnik koloru pod ikoną (tylko dla narzędzi z kolorem) */}
+        {hasColorPicker && (
+          <div 
+            className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 rounded-full"
+            style={{ backgroundColor: displayColor.hex }}
+          />
+        )}
+        {/* Strzałka w dół gdy aktywne i ma popover */}
+        {isActive && (hasColorPicker || hasStrokeWidth) && (
+          <ChevronDown className="h-3 w-3 ml-0.5" />
+        )}
+      </Button>
       
+      {/* Popover - kontrolowany przez isPopoverOpen */}
       {(hasColorPicker || hasStrokeWidth) && (
-        <PopoverContent className="w-56 p-3" align="start">
-          {/* Siatka kolorów */}
-          {hasColorPicker && (
-            <div className="mb-3">
-              <p className="text-xs text-muted-foreground mb-2">Color</p>
-              <div className="grid grid-cols-5 gap-1">
-                {availableColors.map((color) => (
-                  <button
-                    key={color.name}
-                    className={cn(
-                      "w-8 h-8 rounded-md border-2 transition-all hover:scale-110",
-                      currentColor.name === color.name 
-                        ? "border-primary ring-2 ring-primary/30" 
-                        : "border-transparent"
-                    )}
-                    style={{ backgroundColor: color.hex }}
-                    onClick={() => {
-                      onColorChange(color);
-                    }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+          {/* Niewidoczny trigger - pozycjonujemy popover pod przyciskiem */}
+          <PopoverTrigger asChild>
+            <div className="absolute inset-0 pointer-events-none" />
+          </PopoverTrigger>
           
-          {/* Slider grubości */}
-          {hasStrokeWidth && (
-            <div>
-              <p className="text-xs text-muted-foreground mb-2">
-                Stroke: {currentStrokeWidth.name} ({currentStrokeWidth.value}px)
-              </p>
-              <Slider
-                value={[currentStrokeWidth.value]}
-                min={STROKE_WIDTHS[0].value}
-                max={STROKE_WIDTHS[STROKE_WIDTHS.length - 1].value}
-                step={1}
-                onValueChange={handleStrokeWidthSlider}
-                className="w-full"
-              />
-              {/* Preview line */}
-              <div className="mt-2 flex items-center justify-center h-8 bg-muted/30 rounded">
-                <div 
-                  className="rounded-full"
-                  style={{ 
-                    width: Math.min(currentStrokeWidth.value * 8, 100),
-                    height: currentStrokeWidth.value,
-                    backgroundColor: tool === 'highlighter' ? displayColor.hex : currentColor.hex
-                  }}
-                />
+          <PopoverContent 
+            className="w-56 p-3" 
+            align="start"
+            onPointerDownOutside={() => setIsPopoverOpen(false)}
+            onEscapeKeyDown={() => setIsPopoverOpen(false)}
+          >
+            {/* Siatka kolorów */}
+            {hasColorPicker && (
+              <div className="mb-3">
+                <p className="text-xs text-muted-foreground mb-2">Color</p>
+                <div className="grid grid-cols-5 gap-1">
+                  {availableColors.map((color) => (
+                    <button
+                      key={color.name}
+                      className={cn(
+                        "w-8 h-8 rounded-md border-2 transition-all hover:scale-110",
+                        currentColor.name === color.name 
+                          ? "border-primary ring-2 ring-primary/30" 
+                          : "border-transparent"
+                      )}
+                      style={{ backgroundColor: color.hex }}
+                      onClick={() => handleColorSelect(color)}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </PopoverContent>
+            )}
+            
+            {/* Slider grubości - NAPRAWKA: bez "px", zakres 1-16 */}
+            {hasStrokeWidth && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Stroke: {currentStrokeWidth.value}
+                </p>
+                <Slider
+                  value={[currentStrokeWidth.value]}
+                  min={1}
+                  max={16}
+                  step={1}
+                  onValueChange={(value) => {
+                    // Preview podczas przeciągania (nie zamyka popover)
+                    onStrokeWidthChange({ name: `${value[0]}`, value: value[0] });
+                  }}
+                  onValueCommit={handleStrokeWidthCommit}
+                  className="w-full"
+                />
+                {/* Preview line */}
+                <div className="mt-2 flex items-center justify-center h-8 bg-muted/30 rounded">
+                  <div 
+                    className="rounded-full"
+                    style={{ 
+                      width: Math.min(currentStrokeWidth.value * 8, 100),
+                      height: currentStrokeWidth.value,
+                      backgroundColor: tool === 'highlighter' ? displayColor.hex : currentColor.hex
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
       )}
-    </Popover>
+    </div>
   );
 };
 

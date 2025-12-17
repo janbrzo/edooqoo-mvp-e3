@@ -273,34 +273,51 @@ export default function WorksheetDisplay({
     }
   }, [worksheetId, editableWorksheet?.audio_url, editableWorksheet?.selected_audio, editableWorksheet?.selected_image]); // Run when worksheet or media fields change
   
-  // FAZA A: Sprawdź czy istnieją rysunki przy załadowaniu
+  // FAZA A: Sprawdź czy istnieją rysunki przy załadowaniu - NAPRAWIONE: maybeSingle + sprawdzenie objects
   useEffect(() => {
     const checkExistingDrawings = async () => {
       if (!worksheetId) return;
       try {
         const { data } = await supabase
           .from('worksheet_drawings')
-          .select('id')
+          .select('id, drawing_data')
           .eq('worksheet_id', worksheetId)
-          .single();
-        setHasExistingDrawings(!!data);
+          .maybeSingle();
+        
+        // NAPRAWKA: Sprawdź czy są faktyczne obiekty w rysunku
+        const drawingData = data?.drawing_data as any;
+        const hasDrawings = !!(drawingData?.objects && drawingData.objects.length > 0);
+        setHasExistingDrawings(hasDrawings);
+        
+        // Jeśli są rysunki i jesteśmy w live-session, pokaż warstwę
+        if (hasDrawings && viewMode === 'live-session') {
+          setIsDrawingLayerVisible(true);
+        }
       } catch {
         setHasExistingDrawings(false);
       }
     };
     checkExistingDrawings();
-  }, [worksheetId]);
+  }, [worksheetId, viewMode]);
 
   // FAZA A: Auto-show rysunków przy przełączeniu na Live Session (jeśli istnieją)
   useEffect(() => {
     if (viewMode === 'live-session' && hasExistingDrawings) {
       setIsDrawingLayerVisible(true);
-    } else if (viewMode !== 'live-session') {
-      // Ukryj warstwę przy przełączeniu na inne tryby
-      setIsDrawingLayerVisible(false);
+    }
+    // NIE ukrywaj warstwy przy przełączeniu - użytkownik może chcieć ją zobaczyć
+    // Tylko wyłącz tryb rysowania
+    if (viewMode !== 'live-session') {
       setIsDrawingEnabled(false);
     }
   }, [viewMode, hasExistingDrawings]);
+
+  // FAZA E: Select Word mode automatycznie włącza Select on Worksheet
+  useEffect(() => {
+    if (isSelectWordMode && isDrawingEnabled) {
+      setCurrentDrawingTool('select-worksheet');
+    }
+  }, [isSelectWordMode, isDrawingEnabled]);
 
   useEffect(() => {
     validateWorksheetStructure();
