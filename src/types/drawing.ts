@@ -56,23 +56,28 @@ export interface DrawingColor {
 }
 
 /**
- * Kolory dla Marker i Arrow (10 kolorów)
+ * Kolory dla Marker i Arrow (15 kolorów - jak w Snipping Tool)
  */
 export const MARKER_COLORS: DrawingColor[] = [
   { name: 'Black', value: 'hsl(0, 0%, 0%)', hex: '#000000' },
+  { name: 'White', value: 'hsl(0, 0%, 100%)', hex: '#ffffff' },
+  { name: 'Gray', value: 'hsl(0, 0%, 50%)', hex: '#808080' },
   { name: 'Red', value: 'hsl(0, 84%, 60%)', hex: '#ef4444' },
+  { name: 'Maroon', value: 'hsl(0, 100%, 25%)', hex: '#800000' },
   { name: 'Orange', value: 'hsl(25, 95%, 53%)', hex: '#f97316' },
   { name: 'Yellow', value: 'hsl(48, 96%, 53%)', hex: '#eab308' },
+  { name: 'Lime', value: 'hsl(84, 81%, 44%)', hex: '#84cc16' },
   { name: 'Green', value: 'hsl(142, 71%, 45%)', hex: '#22c55e' },
+  { name: 'Teal', value: 'hsl(174, 72%, 40%)', hex: '#14b8a6' },
   { name: 'Blue', value: 'hsl(217, 91%, 60%)', hex: '#3b82f6' },
+  { name: 'Navy', value: 'hsl(224, 64%, 33%)', hex: '#1e3a5f' },
   { name: 'Purple', value: 'hsl(271, 91%, 65%)', hex: '#a855f7' },
   { name: 'Pink', value: 'hsl(330, 81%, 60%)', hex: '#ec4899' },
   { name: 'Brown', value: 'hsl(20, 50%, 40%)', hex: '#8B4513' },
-  { name: 'White', value: 'hsl(0, 0%, 100%)', hex: '#ffffff' },
 ];
 
 /**
- * Kolory dla Highlighter (6 kolorów podświetlających - semi-transparent)
+ * Kolory dla Highlighter (5 kolorów podświetlających - semi-transparent)
  */
 export const HIGHLIGHTER_COLORS: DrawingColor[] = [
   { name: 'Yellow', value: 'hsla(60, 100%, 50%, 0.4)', hex: 'rgba(255, 255, 0, 0.4)' },
@@ -80,7 +85,6 @@ export const HIGHLIGHTER_COLORS: DrawingColor[] = [
   { name: 'Blue', value: 'hsla(200, 100%, 50%, 0.4)', hex: 'rgba(0, 180, 255, 0.4)' },
   { name: 'Pink', value: 'hsla(330, 100%, 70%, 0.4)', hex: 'rgba(255, 105, 180, 0.4)' },
   { name: 'Orange', value: 'hsla(30, 100%, 50%, 0.4)', hex: 'rgba(255, 165, 0, 0.4)' },
-  { name: 'Purple', value: 'hsla(270, 100%, 60%, 0.4)', hex: 'rgba(180, 100, 255, 0.4)' },
 ];
 
 /**
@@ -107,19 +111,17 @@ export interface StrokeWidth {
 }
 
 /**
- * 4 predefiniowane grubości
+ * Grubości - zakres 1-16 (generowane dynamicznie)
  */
-export const STROKE_WIDTHS: StrokeWidth[] = [
-  { name: 'Thin', value: 2 },
-  { name: 'Medium', value: 4 },
-  { name: 'Thick', value: 8 },
-  { name: 'Extra Thick', value: 16 },
-];
+export const STROKE_WIDTHS: StrokeWidth[] = Array.from({ length: 16 }, (_, i) => ({
+  name: `${i + 1}`,
+  value: i + 1,
+}));
 
 /**
  * Domyślna grubość
  */
-export const DEFAULT_STROKE_WIDTH = STROKE_WIDTHS[1]; // Medium (4px)
+export const DEFAULT_STROKE_WIDTH: StrokeWidth = { name: '4', value: 4 }; // Medium
 
 // ============================================
 // STAN RYSOWANIA
