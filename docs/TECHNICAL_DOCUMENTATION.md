@@ -5,7 +5,18 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Drawing Overlay for Live Session (Redesigned - Windows Snipping Tool style):**
+**Latest Update (December 2025) - Drawing Overlay v2.1 Fixes:**
+- **Drawing Layer Visibility Fixed**: Drawings now properly auto-show when switching to Live Session mode if existing drawings exist
+- **Show/Hide Button Always Works**: Toggle button now reliably shows/hides drawing layer in Live Session mode
+- **DrawingOverlay Persistence**: Overlay no longer loses state when switching between Student/Teacher/Live Session views
+- **Popover Behavior Fixed**: First click selects tool, second click opens color/stroke popover (Windows Snipping Tool pattern)
+- **Popover Auto-Close**: Popover closes after selecting color or committing stroke width
+- **Undo/Redo Fixed**: Now properly undoes single action (was resetting all) using useRef pattern
+- **"Saving..." Indicator Moved**: Moved outside toolbar to prevent width flickering
+- **Debug Logs Added**: `console.log('🎨 ...')` messages help track drawing state changes
+- **Select Word Integration**: When Select Word mode (S) is active with drawing enabled, auto-switches to "Select on Worksheet" tool
+
+**Previous Update (December 2025) - Drawing Overlay for Live Session (Redesigned - Windows Snipping Tool style):**
 - **Drawing Overlay Feature**: Teachers can now draw annotations on worksheets during Live Session mode in the main worksheet view (`WorksheetDisplay.tsx`)
 - **Live Session Integration**: "Draw on Worksheet" button replaces Download buttons when in Live Session mode
 - **Toggle Functionality**: "Draw on Worksheet" enables drawing mode, "Stop Drawing" disables drawing but keeps layer visible
@@ -20,9 +31,9 @@ The English Worksheet Generator is a full-featured SaaS platform built on React,
   - **Eraser** (E): Removes objects on visual hit (not bounding box)
 - **Tool Color/Width Selection**: Click active tool to open popover with color grid + stroke width slider
 - **Color Palettes**:
-  - Marker/Arrow: 10 colors (Black, Red, Orange, Yellow, Green, Blue, Purple, Pink, Brown, White)
-  - Highlighter: 6 semi-transparent colors (Yellow, Green, Blue, Pink, Orange, Purple)
-- **Stroke Width**: 4 widths (Thin 2px, Medium 4px, Thick 8px, Extra Thick 16px) via slider
+  - Marker/Arrow: 15 colors (Black, White, Gray, Red, Maroon, Orange, Yellow, Lime, Green, Teal, Blue, Navy, Purple, Pink, Brown)
+  - Highlighter: 5 semi-transparent colors (Yellow, Green, Blue, Pink, Orange)
+- **Stroke Width**: Range 1-16, slider with live preview
 - **Undo/Redo Fixed**: Now works step-by-step (single action undo/redo), 50-step history, Ctrl+Z/Ctrl+Y shortcuts
 - **Auto-save**: Drawings auto-save to database with 2s debounce
 - **Database Table**: `worksheet_drawings` table with RLS policies

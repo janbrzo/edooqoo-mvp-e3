@@ -342,7 +342,15 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
 
   // Inicjalizacja Fabric.js canvas
   useEffect(() => {
-    if (!canvasRef.current || !containerRef.current || isInitializedRef.current) return;
+    if (!canvasRef.current || !containerRef.current) return;
+    
+    // NAPRAWKA v2: Jeśli canvas już istnieje, nie twórz nowego
+    if (isInitializedRef.current && fabricCanvasRef.current) {
+      console.log('🎨 [DrawingOverlay] Canvas already initialized, skipping');
+      return;
+    }
+
+    console.log('🎨 [DrawingOverlay] Initializing Fabric.js canvas');
 
     const container = containerRef.current;
     const canvas = new FabricCanvas(canvasRef.current, {
@@ -363,9 +371,16 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
 
     // Załaduj istniejące rysunki i zapisz initial state
     loadDrawings().then(() => {
-      const initialState = JSON.stringify(canvas.toJSON());
-      undoStackRef.current = [initialState];
-      updateHistoryState();
+      // NAPRAWKA: Poczekaj na renderowanie przed zapisem initial state
+      setTimeout(() => {
+        if (fabricCanvasRef.current) {
+          const initialState = JSON.stringify(fabricCanvasRef.current.toJSON());
+          undoStackRef.current = [initialState];
+          redoStackRef.current = []; // NAPRAWKA: Wyczyść redo przy załadowaniu
+          console.log('🎨 [DrawingOverlay] Initial state saved, objects:', JSON.parse(initialState).objects?.length || 0);
+          updateHistoryState();
+        }
+      }, 100);
     });
 
     // Obsługa resize
@@ -385,11 +400,13 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     window.addEventListener('resize', handleResize);
 
     return () => {
+      console.log('🎨 [DrawingOverlay] Cleanup - disposing canvas');
       window.removeEventListener('resize', handleResize);
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
       canvas.dispose();
+      fabricCanvasRef.current = null;
       // NAPRAWKA: Reset przy unmount
       isInitializedRef.current = false;
     };
@@ -731,10 +748,21 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     setDrawingState(prev => ({ ...prev, strokeWidth: width }));
   };
 
-  // Nie renderuj nic jeśli nie jest włączone i nie ma nauczyciela
-  if (!isEnabled && !isTeacher) return null;
-
+  // NAPRAWKA: Zawsze renderuj canvas (nawet gdy disabled) żeby zachować rysunki
   const isSelectMode = drawingState.activeTool === 'select-worksheet';
+  const shouldShowCanvas = isTeacher || isEnabled;
+
+  // Dla studentów - tylko pokaż rysunki (nie pozwól rysować)
+  if (!shouldShowCanvas) {
+    return (
+      <div
+        ref={containerRef}
+        className="absolute inset-0 z-[30] pointer-events-none"
+      >
+        <canvas ref={canvasRef} className="w-full h-full" />
+      </div>
+    );
+  }
 
   return (
     <>
