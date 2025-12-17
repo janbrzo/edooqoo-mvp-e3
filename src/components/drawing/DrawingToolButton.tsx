@@ -1,14 +1,16 @@
 /**
  * DrawingToolButton - Przycisk narzędzia z popover (wzór: Windows Snipping Tool)
  * 
- * NAPRAWIONE:
+ * NAPRAWIONE v2.1:
  * - Pierwszy klik = wybiera narzędzie (NIE otwiera popover)
  * - Drugi klik na aktywne narzędzie = otwiera popover z kolorami i grubością
  * - Po wyborze koloru lub grubości popover się zamyka
  * - Slider bez "px" - wyświetla tylko liczbę
  */
 
-import { useState, useRef } from 'react';
+console.log('🎨 DrawingToolButton v2.1 loaded'); // Debug
+
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
@@ -62,28 +64,41 @@ export const DrawingToolButton = ({
   // Wybierz odpowiednie kolory dla narzędzia
   const availableColors = tool === 'highlighter' ? HIGHLIGHTER_COLORS : MARKER_COLORS;
   
-  // NAPRAWKA: Obsługa kliknięcia - NIE otwiera popover przy pierwszym kliknięciu
+  // NAPRAWKA v2: Zamknij popover gdy narzędzie przestaje być aktywne
+  useEffect(() => {
+    if (!isActive && isPopoverOpen) {
+      setIsPopoverOpen(false);
+    }
+  }, [isActive]);
+
+  // NAPRAWKA v2: Obsługa kliknięcia - NIE otwiera popover przy pierwszym kliknięciu
   const handleButtonClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
+    console.log('🎨 [ToolButton] Click:', { tool, isActive, hasColorPicker, isPopoverOpen });
+    
     if (!isActive) {
       // Pierwsze kliknięcie = wybierz narzędzie
+      console.log('🎨 [ToolButton] Selecting tool:', tool);
       onToolSelect();
     } else if (hasColorPicker || hasStrokeWidth) {
-      // Drugie kliknięcie na aktywne narzędzie = otwórz popover
-      setIsPopoverOpen(true);
+      // Drugie kliknięcie na aktywne narzędzie = otwórz/zamknij popover
+      console.log('🎨 [ToolButton] Toggle popover:', !isPopoverOpen);
+      setIsPopoverOpen(!isPopoverOpen);
     }
   };
 
-  // NAPRAWKA: Zamknij popover po wyborze koloru
+  // NAPRAWKA v2: Zamknij popover po wyborze koloru
   const handleColorSelect = (color: DrawingColor) => {
+    console.log('🎨 [ToolButton] Color selected:', color.name);
     onColorChange(color);
     setIsPopoverOpen(false);
   };
 
-  // NAPRAWKA: Zamknij popover po wyborze grubości (onValueCommit)
+  // NAPRAWKA v2: Zamknij popover po wyborze grubości (onValueCommit)
   const handleStrokeWidthCommit = (value: number[]) => {
+    console.log('🎨 [ToolButton] StrokeWidth committed:', value[0]);
     onStrokeWidthChange({ name: `${value[0]}`, value: value[0] });
     setIsPopoverOpen(false);
   };
@@ -119,7 +134,7 @@ export const DrawingToolButton = ({
         )}
       </Button>
       
-      {/* Popover - kontrolowany przez isPopoverOpen */}
+      {/* Popover - kontrolowany całkowicie przez isPopoverOpen */}
       {(hasColorPicker || hasStrokeWidth) && (
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           {/* Niewidoczny trigger - pozycjonujemy popover pod przyciskiem */}
@@ -130,8 +145,16 @@ export const DrawingToolButton = ({
           <PopoverContent 
             className="w-56 p-3" 
             align="start"
-            onPointerDownOutside={() => setIsPopoverOpen(false)}
+            onPointerDownOutside={(e) => {
+              // Zapobiegaj rysowaniu gdy klikamy poza popover
+              e.preventDefault();
+              setIsPopoverOpen(false);
+            }}
             onEscapeKeyDown={() => setIsPopoverOpen(false)}
+            onInteractOutside={(e) => {
+              e.preventDefault();
+              setIsPopoverOpen(false);
+            }}
           >
             {/* Siatka kolorów */}
             {hasColorPicker && (
@@ -148,7 +171,10 @@ export const DrawingToolButton = ({
                           : "border-transparent"
                       )}
                       style={{ backgroundColor: color.hex }}
-                      onClick={() => handleColorSelect(color)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleColorSelect(color);
+                      }}
                       title={color.name}
                     />
                   ))}

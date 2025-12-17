@@ -273,48 +273,66 @@ export default function WorksheetDisplay({
     }
   }, [worksheetId, editableWorksheet?.audio_url, editableWorksheet?.selected_audio, editableWorksheet?.selected_image]); // Run when worksheet or media fields change
   
-  // FAZA A: Sprawdź czy istnieją rysunki przy załadowaniu - NAPRAWIONE: maybeSingle + sprawdzenie objects
+  // FAZA A: Sprawdź czy istnieją rysunki przy załadowaniu - NAPRAWIONE v2
+  // CRITICAL: Uruchamiaj tylko przy zmianie worksheetId (nie viewMode!)
   useEffect(() => {
     const checkExistingDrawings = async () => {
       if (!worksheetId) return;
+      
+      console.log('🎨 [Drawing] Checking existing drawings for worksheet:', worksheetId);
+      
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('worksheet_drawings')
           .select('id, drawing_data')
           .eq('worksheet_id', worksheetId)
           .maybeSingle();
         
+        if (error) {
+          console.log('🎨 [Drawing] Error checking drawings:', error.message);
+          setHasExistingDrawings(false);
+          return;
+        }
+        
         // NAPRAWKA: Sprawdź czy są faktyczne obiekty w rysunku
         const drawingData = data?.drawing_data as any;
         const hasDrawings = !!(drawingData?.objects && drawingData.objects.length > 0);
-        setHasExistingDrawings(hasDrawings);
         
-        // Jeśli są rysunki i jesteśmy w live-session, pokaż warstwę
-        if (hasDrawings && viewMode === 'live-session') {
-          setIsDrawingLayerVisible(true);
-        }
-      } catch {
+        console.log('🎨 [Drawing] Found drawings:', hasDrawings, 'Objects count:', drawingData?.objects?.length || 0);
+        
+        setHasExistingDrawings(hasDrawings);
+      } catch (err) {
+        console.log('🎨 [Drawing] Exception checking drawings:', err);
         setHasExistingDrawings(false);
       }
     };
     checkExistingDrawings();
-  }, [worksheetId, viewMode]);
+  }, [worksheetId]); // TYLKO worksheetId - nie viewMode!
 
   // FAZA A: Auto-show rysunków przy przełączeniu na Live Session (jeśli istnieją)
   useEffect(() => {
-    if (viewMode === 'live-session' && hasExistingDrawings) {
-      setIsDrawingLayerVisible(true);
-    }
-    // NIE ukrywaj warstwy przy przełączeniu - użytkownik może chcieć ją zobaczyć
-    // Tylko wyłącz tryb rysowania
-    if (viewMode !== 'live-session') {
-      setIsDrawingEnabled(false);
+    console.log('🎨 [Drawing] ViewMode/HasDrawings effect:', { viewMode, hasExistingDrawings, isDrawingLayerVisible });
+    
+    if (viewMode === 'live-session') {
+      // NAPRAWKA: Zawsze pokaż warstwę w live-session jeśli są rysunki
+      if (hasExistingDrawings && !isDrawingLayerVisible) {
+        console.log('🎨 [Drawing] Auto-showing drawing layer (existing drawings found)');
+        setIsDrawingLayerVisible(true);
+      }
+    } else {
+      // NIE ukrywaj warstwy przy przełączeniu - użytkownik może chcieć ją zobaczyć
+      // Tylko wyłącz tryb rysowania
+      if (isDrawingEnabled) {
+        console.log('🎨 [Drawing] Disabling drawing mode (left live-session)');
+        setIsDrawingEnabled(false);
+      }
     }
   }, [viewMode, hasExistingDrawings]);
 
   // FAZA E: Select Word mode automatycznie włącza Select on Worksheet
   useEffect(() => {
     if (isSelectWordMode && isDrawingEnabled) {
+      console.log('🎨 [Drawing] Select Word mode active - switching to select-worksheet tool');
       setCurrentDrawingTool('select-worksheet');
     }
   }, [isSelectWordMode, isDrawingEnabled]);
@@ -899,13 +917,14 @@ export default function WorksheetDisplay({
             />
             
             {/* DRAWING OVERLAY: Canvas overlay for drawing (Live Session only) */}
-            {viewMode === 'live-session' && worksheetId && userId && isDrawingLayerVisible && (
+            {/* NAPRAWKA: Renderuj overlay gdy warstwa jest widoczna LUB jest live-session */}
+            {viewMode === 'live-session' && worksheetId && userId && (
               <DrawingOverlay
                 ref={drawingOverlayRef}
                 worksheetId={worksheetId}
                 teacherId={userId}
                 isTeacher={true}
-                isEnabled={isDrawingEnabled}
+                isEnabled={isDrawingEnabled && isDrawingLayerVisible}
                 externalTool={currentDrawingTool}
                 externalColor={currentDrawingColor}
                 externalStrokeWidth={currentStrokeWidth}

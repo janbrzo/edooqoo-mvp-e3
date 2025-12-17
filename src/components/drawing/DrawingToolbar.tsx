@@ -4,9 +4,11 @@
  * Narzędzia: Select Worksheet | Marker ▼ | Highlighter ▼ | Arrow ▼ | Eraser
  * Akcje: Undo | Redo | Clear All
  * 
- * NAPRAWIONE:
+ * NAPRAWIONE v2.1:
  * - "Saving..." przeniesiony poza toolbar (fixed position) żeby nie poszerzać paska
  */
+
+console.log('🎨 DrawingToolbar v2.1 loaded'); // Debug - sprawdź czy nowy kod jest załadowany
 
 import { 
   Undo2,
@@ -41,8 +43,17 @@ export const DrawingToolbar = ({
 }: DrawingToolbarProps) => {
   const { activeTool, activeColor, strokeWidth, canUndo, canRedo, isSaving } = state;
 
+  console.log('🎨 [DrawingToolbar] Render:', { activeTool, canUndo, canRedo, isSaving });
+
   return (
     <>
+      {/* NAPRAWKA v2: Status "Saving..." przeniesiony poza toolbar - stała pozycja NAD toolbarem */}
+      {isSaving && (
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[101] bg-amber-100 text-amber-800 px-3 py-1 rounded-full shadow text-xs font-medium animate-pulse">
+          Saving...
+        </div>
+      )}
+
       {/* Główny toolbar */}
       <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] bg-background/95 backdrop-blur-sm border rounded-xl shadow-lg p-2 flex items-center gap-1 flex-wrap max-w-[95vw]">
         {/* Narzędzia rysowania */}
@@ -86,7 +97,10 @@ export const DrawingToolbar = ({
               variant="ghost"
               size="sm"
               className="w-9 h-9 p-0"
-              onClick={onUndo}
+              onClick={() => {
+                console.log('🎨 [DrawingToolbar] Undo clicked, canUndo:', canUndo);
+                onUndo();
+              }}
               disabled={!canUndo}
             >
               <Undo2 className="h-4 w-4" />
@@ -103,7 +117,10 @@ export const DrawingToolbar = ({
               variant="ghost"
               size="sm"
               className="w-9 h-9 p-0"
-              onClick={onRedo}
+              onClick={() => {
+                console.log('🎨 [DrawingToolbar] Redo clicked, canRedo:', canRedo);
+                onRedo();
+              }}
               disabled={!canRedo}
             >
               <Redo2 className="h-4 w-4" />
@@ -153,13 +170,6 @@ export const DrawingToolbar = ({
           </AlertDialogContent>
         </AlertDialog>
       </div>
-
-      {/* NAPRAWKA: Status "Saving..." przeniesiony poza toolbar - stała pozycja */}
-      {isSaving && (
-        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-[101] bg-amber-100 text-amber-800 px-3 py-1 rounded-full shadow text-xs font-medium animate-pulse">
-          Saving...
-        </div>
-      )}
     </>
   );
 };
