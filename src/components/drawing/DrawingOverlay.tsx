@@ -4,14 +4,15 @@
  * Główny komponent do rysowania po worksheet.
  * Narzędzia: marker, highlighter, arrow, eraser, select-worksheet
  * 
- * NAPRAWIONE:
- * - Undo/Redo działa poprawnie (pojedyncze kroki) - używamy useRef
- * - Highlighter jest semi-transparent
- * - Arrow ma grot
- * - Marker/Highlighter paths nie są edytowalne po narysowaniu
- * - Gumka usuwa po trafieniu wizualnym (nie bounding box)
- * - Reset isInitializedRef przy unmount
+ * NAPRAWIONE v3.0:
+ * - loadDrawingsFromData zwraca Promise i loadDrawings czeka na niego
+ * - Initial state zapisywany PO faktycznym załadowaniu rysunków
+ * - Undo/Redo działa poprawnie (pojedyncze kroki)
+ * - Gumka sprawdza odległość od linii dla Arrow
+ * - Canvas nie jest unmountowany przy zmianie viewMode
  */
+
+console.log('🎨 DrawingOverlay v3.0 loaded');
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Canvas as FabricCanvas, PencilBrush, Line, FabricObject, Triangle, Path, Point } from 'fabric';
@@ -77,7 +78,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
   const currentArrowGroupRef = useRef<{ line: Line; triangle: Triangle } | null>(null);
   const isInitializedRef = useRef(false);
 
-  // NAPRAWKA: Refs dla Undo/Redo (unikamy stale closure)
+  // NAPRAWKA v3: Refs dla Undo/Redo (unikamy stale closure)
   const undoStackRef = useRef<string[]>([]);
   const redoStackRef = useRef<string[]>([]);
 
@@ -91,6 +92,8 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
   const updateHistoryState = useCallback(() => {
     const canUndo = undoStackRef.current.length > 1;
     const canRedo = redoStackRef.current.length > 0;
+    
+    console.log('🎨 [History] Update state:', { undoLength: undoStackRef.current.length, redoLength: redoStackRef.current.length, canUndo, canRedo });
     
     setDrawingState(prev => ({
       ...prev,
@@ -125,12 +128,14 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     onSelectWorksheetMode?.(drawingState.activeTool === 'select-worksheet');
   }, [drawingState.activeTool, onSelectWorksheetMode]);
 
-  // Funkcje pomocnicze - NAPRAWKA: używamy refs
+  // NAPRAWKA v3: Zapisz do historii
   const saveToHistory = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
     const json = JSON.stringify(canvas.toJSON());
+    
+    console.log('🎨 [History] Saving to history, current length:', undoStackRef.current.length);
     
     // Dodaj do undo stack
     undoStackRef.current = [...undoStackRef.current, json];
@@ -156,9 +161,37 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     }, DRAWING_AUTOSAVE_CONFIG.debounceMs);
   }, []);
 
-  const loadDrawings = async () => {
+  // NAPRAWKA v3: loadDrawingsFromData zwraca Promise
+  const loadDrawingsFromData = useCallback((drawingData: DrawingData): Promise<void> => {
+    return new Promise((resolve) => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas || !drawingData.objects) {
+        resolve();
+        return;
+      }
+
+      console.log('🎨 [Load] Loading', drawingData.objects.length, 'objects from data');
+
+      canvas.loadFromJSON({ objects: drawingData.objects }, () => {
+        canvas.renderAll();
+        
+        // Zablokuj wszystkie obiekty
+        canvas.forEachObject((obj) => {
+          obj.selectable = false;
+          obj.evented = false;
+        });
+        
+        console.log('🎨 [Load] Objects loaded and locked');
+        resolve();
+      });
+    });
+  }, []);
+
+  // NAPRAWKA v3: loadDrawings czeka na loadDrawingsFromData
+  const loadDrawings = useCallback(async (): Promise<boolean> => {
     try {
-      // NAPRAWKA: użyj maybeSingle zamiast single
+      console.log('🎨 [Load] Loading drawings for worksheet:', worksheetId);
+      
       const { data, error } = await supabase
         .from('worksheet_drawings')
         .select('drawing_data')
@@ -166,35 +199,26 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         .maybeSingle();
 
       if (error) {
-        console.error('Error loading drawings:', error);
-        return;
+        console.error('🎨 [Load] Error loading drawings:', error);
+        return false;
       }
 
       if (data?.drawing_data) {
         const drawingData = data.drawing_data as unknown as DrawingData;
-        if (drawingData && drawingData.objects) {
-          loadDrawingsFromData(drawingData);
+        if (drawingData && drawingData.objects && drawingData.objects.length > 0) {
+          await loadDrawingsFromData(drawingData);
+          console.log('🎨 [Load] Drawings loaded successfully');
+          return true;
         }
       }
-    } catch (err) {
-      console.error('Error loading drawings:', err);
-    }
-  };
-
-  const loadDrawingsFromData = (drawingData: DrawingData) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !drawingData.objects) return;
-
-    canvas.loadFromJSON({ objects: drawingData.objects }, () => {
-      canvas.renderAll();
       
-      // Zablokuj wszystkie obiekty
-      canvas.forEachObject((obj) => {
-        obj.selectable = false;
-        obj.evented = false;
-      });
-    });
-  };
+      console.log('🎨 [Load] No drawings found');
+      return false;
+    } catch (err) {
+      console.error('🎨 [Load] Error loading drawings:', err);
+      return false;
+    }
+  }, [worksheetId, loadDrawingsFromData]);
 
   const saveDrawings = async () => {
     const canvas = fabricCanvasRef.current;
@@ -220,7 +244,6 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         canvasHeight: canvas.height,
       };
 
-      // NAPRAWKA: użyj maybeSingle zamiast single
       const { data: existing } = await supabase
         .from('worksheet_drawings')
         .select('id')
@@ -268,10 +291,20 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     }
   };
 
-  // NAPRAWIONE: Undo cofa pojedynczy krok (używa refs)
+  // NAPRAWIONE v3: Undo cofa pojedynczy krok
   const handleUndo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || undoStackRef.current.length <= 1) return;
+    if (!canvas) {
+      console.log('🎨 [Undo] No canvas');
+      return;
+    }
+    
+    if (undoStackRef.current.length <= 1) {
+      console.log('🎨 [Undo] Nothing to undo, stack length:', undoStackRef.current.length);
+      return;
+    }
+
+    console.log('🎨 [Undo] Undoing, stack length:', undoStackRef.current.length);
 
     // Zapisz obecny stan do redo
     const currentState = JSON.stringify(canvas.toJSON());
@@ -291,15 +324,26 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         obj.selectable = false;
         obj.evented = false;
       });
+      console.log('🎨 [Undo] State restored, new stack length:', undoStackRef.current.length);
       updateHistoryState();
       scheduleAutoSave();
     });
   }, [updateHistoryState, scheduleAutoSave]);
 
-  // NAPRAWIONE: Redo działa natychmiast (używa refs)
+  // NAPRAWIONE v3: Redo działa natychmiast
   const handleRedo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || redoStackRef.current.length === 0) return;
+    if (!canvas) {
+      console.log('🎨 [Redo] No canvas');
+      return;
+    }
+    
+    if (redoStackRef.current.length === 0) {
+      console.log('🎨 [Redo] Nothing to redo');
+      return;
+    }
+
+    console.log('🎨 [Redo] Redoing, redo stack length:', redoStackRef.current.length);
 
     // Zapisz obecny stan do undo
     const currentState = JSON.stringify(canvas.toJSON());
@@ -315,6 +359,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         obj.selectable = false;
         obj.evented = false;
       });
+      console.log('🎨 [Redo] State restored');
       updateHistoryState();
       scheduleAutoSave();
     });
@@ -340,17 +385,17 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     getCanRedo: () => redoStackRef.current.length > 0,
   }), [handleUndo, handleRedo, handleClearAll]);
 
-  // Inicjalizacja Fabric.js canvas
+  // NAPRAWKA v3: Inicjalizacja Fabric.js canvas z poprawnym ładowaniem
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
     
-    // NAPRAWKA v2: Jeśli canvas już istnieje, nie twórz nowego
+    // Jeśli canvas już istnieje, nie twórz nowego
     if (isInitializedRef.current && fabricCanvasRef.current) {
-      console.log('🎨 [DrawingOverlay] Canvas already initialized, skipping');
+      console.log('🎨 [Init] Canvas already initialized, skipping');
       return;
     }
 
-    console.log('🎨 [DrawingOverlay] Initializing Fabric.js canvas');
+    console.log('🎨 [Init] Initializing Fabric.js canvas for worksheet:', worksheetId);
 
     const container = containerRef.current;
     const canvas = new FabricCanvas(canvasRef.current, {
@@ -369,18 +414,15 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     fabricCanvasRef.current = canvas;
     isInitializedRef.current = true;
 
-    // Załaduj istniejące rysunki i zapisz initial state
-    loadDrawings().then(() => {
-      // NAPRAWKA: Poczekaj na renderowanie przed zapisem initial state
-      setTimeout(() => {
-        if (fabricCanvasRef.current) {
-          const initialState = JSON.stringify(fabricCanvasRef.current.toJSON());
-          undoStackRef.current = [initialState];
-          redoStackRef.current = []; // NAPRAWKA: Wyczyść redo przy załadowaniu
-          console.log('🎨 [DrawingOverlay] Initial state saved, objects:', JSON.parse(initialState).objects?.length || 0);
-          updateHistoryState();
-        }
-      }, 100);
+    // NAPRAWKA v3: Załaduj rysunki i zapisz initial state PO załadowaniu
+    loadDrawings().then((hasDrawings) => {
+      if (fabricCanvasRef.current) {
+        const initialState = JSON.stringify(fabricCanvasRef.current.toJSON());
+        undoStackRef.current = [initialState];
+        redoStackRef.current = [];
+        console.log('🎨 [Init] Initial state saved, has drawings:', hasDrawings, 'objects:', JSON.parse(initialState).objects?.length || 0);
+        updateHistoryState();
+      }
     });
 
     // Obsługa resize
@@ -400,17 +442,16 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     window.addEventListener('resize', handleResize);
 
     return () => {
-      console.log('🎨 [DrawingOverlay] Cleanup - disposing canvas');
+      console.log('🎨 [Init] Cleanup - disposing canvas');
       window.removeEventListener('resize', handleResize);
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
       canvas.dispose();
       fabricCanvasRef.current = null;
-      // NAPRAWKA: Reset przy unmount
       isInitializedRef.current = false;
     };
-  }, []);
+  }, [worksheetId]); // Dodane worksheetId jako dependency
 
   // Aktualizuj interaktywność canvas gdy isEnabled się zmienia
   useEffect(() => {
@@ -450,72 +491,94 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     } else {
       canvas.isDrawingMode = false;
     }
-
-    canvas.renderAll();
   }, [drawingState.activeTool, drawingState.activeColor, drawingState.strokeWidth, isTeacher, isEnabled]);
 
-  // Obsługa rysowania Arrow
+  // Obsługa path:created - zapisz do historii po narysowaniu
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    const handlePathCreated = (e: any) => {
+      const path = e.path;
+      if (path) {
+        // Zablokuj edycję path
+        path.selectable = false;
+        path.evented = false;
+        
+        console.log('🎨 [Path] Created, saving to history');
+        saveToHistory();
+        scheduleAutoSave();
+      }
+    };
+
+    canvas.on('path:created', handlePathCreated);
+    
+    return () => {
+      canvas.off('path:created', handlePathCreated);
+    };
+  }, [saveToHistory, scheduleAutoSave]);
+
+  // Obsługa strzałki (arrow tool)
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || !isTeacher || !isEnabled) return;
+    if (drawingState.activeTool !== 'arrow') return;
 
-    const { activeTool, activeColor, strokeWidth } = drawingState;
-    
-    if (activeTool !== 'arrow') return;
+    const { activeColor, strokeWidth } = drawingState;
 
-    const handleMouseDown = (opt: any) => {
-      if (drawingState.activeTool !== 'arrow') return;
+    const handleMouseDown = (e: any) => {
+      if (!e.pointer) return;
       
       isDrawingArrowRef.current = true;
-      const pointer = canvas.getPointer(opt.e);
-      arrowStartPointRef.current = { x: pointer.x, y: pointer.y };
+      arrowStartPointRef.current = { x: e.pointer.x, y: e.pointer.y };
       
-      const line = new Line([pointer.x, pointer.y, pointer.x, pointer.y], {
-        stroke: activeColor.hex,
-        strokeWidth: strokeWidth.value,
-        selectable: false,
-        evented: false,
-      });
+      // Utwórz linię
+      const line = new Line(
+        [e.pointer.x, e.pointer.y, e.pointer.x, e.pointer.y],
+        {
+          stroke: activeColor.hex,
+          strokeWidth: strokeWidth.value * 2,
+          selectable: false,
+          evented: false,
+        }
+      );
       
+      // Utwórz grot strzałki
       const triangle = new Triangle({
-        width: strokeWidth.value * 4,
-        height: strokeWidth.value * 4,
+        left: e.pointer.x,
+        top: e.pointer.y,
+        width: strokeWidth.value * 6,
+        height: strokeWidth.value * 8,
         fill: activeColor.hex,
-        left: pointer.x,
-        top: pointer.y,
-        angle: 0,
         selectable: false,
         evented: false,
-      });
-      
-      canvas.add(line);
-      canvas.add(triangle);
-      
-      currentArrowGroupRef.current = { line, triangle };
-    };
-
-    const handleMouseMove = (opt: any) => {
-      if (!isDrawingArrowRef.current || !arrowStartPointRef.current || !currentArrowGroupRef.current) return;
-      
-      const pointer = canvas.getPointer(opt.e);
-      const startX = arrowStartPointRef.current.x;
-      const startY = arrowStartPointRef.current.y;
-      
-      const { line, triangle } = currentArrowGroupRef.current;
-      
-      line.set({
-        x2: pointer.x,
-        y2: pointer.y,
-      });
-      
-      const angle = Math.atan2(pointer.y - startY, pointer.x - startX) * (180 / Math.PI) + 90;
-      
-      triangle.set({
-        left: pointer.x,
-        top: pointer.y,
-        angle: angle,
         originX: 'center',
         originY: 'center',
+      });
+      
+      currentArrowGroupRef.current = { line, triangle };
+      canvas.add(line);
+      canvas.add(triangle);
+    };
+
+    const handleMouseMove = (e: any) => {
+      if (!isDrawingArrowRef.current || !arrowStartPointRef.current || !currentArrowGroupRef.current || !e.pointer) return;
+      
+      const { line, triangle } = currentArrowGroupRef.current;
+      const start = arrowStartPointRef.current;
+      const end = e.pointer;
+      
+      // Aktualizuj linię
+      line.set({ x2: end.x, y2: end.y });
+      
+      // Oblicz kąt strzałki
+      const angle = Math.atan2(end.y - start.y, end.x - start.x) * 180 / Math.PI + 90;
+      
+      // Aktualizuj grot
+      triangle.set({
+        left: end.x,
+        top: end.y,
+        angle: angle,
       });
       
       canvas.renderAll();
@@ -523,6 +586,13 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
 
     const handleMouseUp = () => {
       if (isDrawingArrowRef.current && currentArrowGroupRef.current) {
+        const { line, triangle } = currentArrowGroupRef.current;
+        line.selectable = false;
+        line.evented = false;
+        triangle.selectable = false;
+        triangle.evented = false;
+        
+        console.log('🎨 [Arrow] Created, saving to history');
         saveToHistory();
         scheduleAutoSave();
       }
@@ -543,81 +613,83 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     };
   }, [drawingState.activeTool, drawingState.activeColor, drawingState.strokeWidth, isTeacher, isEnabled, saveToHistory, scheduleAutoSave]);
 
-  // Obsługa path:created (dla marker/highlighter)
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !isTeacher) return;
-
-    const handlePathCreated = (e: any) => {
-      if (e.path) {
-        e.path.selectable = false;
-        e.path.evented = false;
-      }
-      
-      saveToHistory();
-      scheduleAutoSave();
-    };
-
-    canvas.on('path:created', handlePathCreated);
-
-    return () => {
-      canvas.off('path:created', handlePathCreated);
-    };
-  }, [isTeacher, saveToHistory, scheduleAutoSave]);
-
-  // NAPRAWIONA gumka - sprawdza rzeczywiste trafienie, nie bounding box
+  // NAPRAWKA v3: Gumka - sprawdza odległość od linii dla Arrow
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || !isTeacher || !isEnabled) return;
-
     if (drawingState.activeTool !== 'eraser') return;
 
+    canvas.isDrawingMode = false;
     let isErasing = false;
     let hasErased = false;
 
-    const handleMouseDown = (opt: any) => {
-      isErasing = true;
-      hasErased = false;
+    // Oblicz odległość punktu od odcinka
+    const pointToSegmentDistance = (
+      px: number, py: number,
+      x1: number, y1: number,
+      x2: number, y2: number
+    ): number => {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const lengthSquared = dx * dx + dy * dy;
       
-      // Sprawdź od razu przy kliknięciu
-      const pointer = canvas.getPointer(opt.e);
-      eraseAtPoint(pointer);
-    };
-
-    const handleMouseMove = (opt: any) => {
-      if (!isErasing) return;
-      
-      const pointer = canvas.getPointer(opt.e);
-      eraseAtPoint(pointer);
-    };
-
-    const eraseAtPoint = (pointer: { x: number; y: number }) => {
-      const objectsToRemove: FabricObject[] = [];
-      
-      canvas.forEachObject((obj) => {
-        // NAPRAWKA: Używamy findTarget lub sprawdzamy czy punkt jest wewnątrz ścieżki
-        if (isPointOnObject(obj, pointer, canvas)) {
-          objectsToRemove.push(obj);
-        }
-      });
-      
-      if (objectsToRemove.length > 0) {
-        objectsToRemove.forEach(obj => canvas.remove(obj));
-        canvas.renderAll();
-        hasErased = true;
+      if (lengthSquared === 0) {
+        return Math.sqrt((px - x1) ** 2 + (py - y1) ** 2);
       }
+      
+      let t = ((px - x1) * dx + (py - y1) * dy) / lengthSquared;
+      t = Math.max(0, Math.min(1, t));
+      
+      const projX = x1 + t * dx;
+      const projY = y1 + t * dy;
+      
+      return Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
     };
 
-    // Sprawdź czy punkt jest na obiekcie (nie tylko w bounding box)
-    const isPointOnObject = (obj: FabricObject, pointer: { x: number; y: number }, canvas: FabricCanvas): boolean => {
-      // Dla Path (marker/highlighter) - sprawdź czy punkt jest blisko ścieżki
+    // NAPRAWKA v3: Sprawdź czy punkt jest na obiekcie (nie tylko w bounding box)
+    const isPointOnObject = (obj: FabricObject, pointer: { x: number; y: number }): boolean => {
+      const tolerance = 15;
+      
+      // Dla Line (część strzałki) - oblicz odległość od linii
+      if (obj.type === 'line') {
+        const line = obj as Line;
+        const matrix = line.calcTransformMatrix();
+        
+        // Transformuj punkty linii
+        const x1 = line.x1 || 0;
+        const y1 = line.y1 || 0;
+        const x2 = line.x2 || 0;
+        const y2 = line.y2 || 0;
+        
+        // Zastosuj transformację
+        const startX = matrix[0] * x1 + matrix[2] * y1 + matrix[4];
+        const startY = matrix[1] * x1 + matrix[3] * y1 + matrix[5];
+        const endX = matrix[0] * x2 + matrix[2] * y2 + matrix[4];
+        const endY = matrix[1] * x2 + matrix[3] * y2 + matrix[5];
+        
+        const distance = pointToSegmentDistance(pointer.x, pointer.y, startX, startY, endX, endY);
+        return distance < tolerance + (line.strokeWidth || 2);
+      }
+      
+      // Dla Triangle (grot strzałki) - sprawdź bounding box (jest mały)
+      if (obj.type === 'triangle') {
+        const bounds = obj.getBoundingRect();
+        const padding = tolerance;
+        return (
+          pointer.x >= bounds.left - padding &&
+          pointer.x <= bounds.left + bounds.width + padding &&
+          pointer.y >= bounds.top - padding &&
+          pointer.y <= bounds.top + bounds.height + padding
+        );
+      }
+      
+      // Dla Path (marker/highlighter) - sprawdź punkty ścieżki
       if (obj.type === 'path' && (obj as Path).path) {
         const path = obj as Path;
-        const tolerance = 10; // piksele tolerancji
-        
-        // Pobierz punkty ścieżki
         const pathData = path.path;
         if (!pathData) return false;
+        
+        const matrix = path.calcTransformMatrix();
         
         // Sprawdź każdy segment ścieżki
         for (let i = 0; i < pathData.length; i++) {
@@ -625,19 +697,15 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
           if (Array.isArray(segment) && segment.length >= 3) {
             const cmd = segment[0];
             if (cmd === 'M' || cmd === 'L' || cmd === 'Q' || cmd === 'C') {
-              // Pobierz punkt końcowy segmentu
               const x = segment[segment.length - 2] as number;
               const y = segment[segment.length - 1] as number;
               
-              // Transformuj punkt do współrzędnych canvas
-              const matrix = path.calcTransformMatrix();
               const transformedX = matrix[0] * x + matrix[2] * y + matrix[4];
               const transformedY = matrix[1] * x + matrix[3] * y + matrix[5];
               
-              // Sprawdź odległość
               const distance = Math.sqrt(
-                Math.pow(pointer.x - transformedX, 2) + 
-                Math.pow(pointer.y - transformedY, 2)
+                (pointer.x - transformedX) ** 2 + 
+                (pointer.y - transformedY) ** 2
               );
               
               if (distance < tolerance + (path.strokeWidth || 2)) {
@@ -649,12 +717,41 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         return false;
       }
       
-      // Dla innych obiektów (linie, trójkąty) - użyj containsPoint
+      // Dla innych obiektów - użyj containsPoint z tolerancją
       return obj.containsPoint(new Point(pointer.x, pointer.y));
+    };
+
+    const handleMouseDown = (e: any) => {
+      if (!e.pointer) return;
+      isErasing = true;
+      hasErased = false;
+      eraseAtPoint(e.pointer);
+    };
+
+    const handleMouseMove = (e: any) => {
+      if (!isErasing || !e.pointer) return;
+      eraseAtPoint(e.pointer);
+    };
+
+    const eraseAtPoint = (pointer: { x: number; y: number }) => {
+      const objectsToRemove: FabricObject[] = [];
+      
+      canvas.forEachObject((obj) => {
+        if (isPointOnObject(obj, pointer)) {
+          objectsToRemove.push(obj);
+        }
+      });
+      
+      if (objectsToRemove.length > 0) {
+        objectsToRemove.forEach(obj => canvas.remove(obj));
+        canvas.renderAll();
+        hasErased = true;
+      }
     };
 
     const handleMouseUp = () => {
       if (isErasing && hasErased) {
+        console.log('🎨 [Eraser] Erased objects, saving to history');
         saveToHistory();
         scheduleAutoSave();
       }
@@ -701,7 +798,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [worksheetId, isTeacher]);
+  }, [worksheetId, isTeacher, loadDrawingsFromData]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -748,7 +845,6 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     setDrawingState(prev => ({ ...prev, strokeWidth: width }));
   };
 
-  // NAPRAWKA: Zawsze renderuj canvas (nawet gdy disabled) żeby zachować rysunki
   const isSelectMode = drawingState.activeTool === 'select-worksheet';
   const shouldShowCanvas = isTeacher || isEnabled;
 

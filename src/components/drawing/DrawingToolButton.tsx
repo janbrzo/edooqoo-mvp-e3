@@ -1,14 +1,17 @@
 /**
  * DrawingToolButton - Przycisk narzędzia z popover (wzór: Windows Snipping Tool)
  * 
- * NAPRAWIONE v2.1:
+ * NAPRAWIONE v3.0:
  * - Pierwszy klik = wybiera narzędzie (NIE otwiera popover)
+ * - Strzałka pojawia się TYLKO gdy narzędzie jest aktywne
  * - Drugi klik na aktywne narzędzie = otwiera popover z kolorami i grubością
  * - Po wyborze koloru lub grubości popover się zamyka
+ * - Kliknięcie poza popover NIE rysuje, tylko zamyka popover
  * - Slider bez "px" - wyświetla tylko liczbę
+ * - Usunięte onOpenChange z Popover - pełna kontrola ręczna
  */
 
-console.log('🎨 DrawingToolButton v2.1 loaded'); // Debug
+console.log('🎨 DrawingToolButton v3.0 loaded');
 
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -59,19 +62,20 @@ export const DrawingToolButton = ({
 }: DrawingToolButtonProps) => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const Icon = iconMap[tool];
-  const triggerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   
   // Wybierz odpowiednie kolory dla narzędzia
   const availableColors = tool === 'highlighter' ? HIGHLIGHTER_COLORS : MARKER_COLORS;
   
-  // NAPRAWKA v2: Zamknij popover gdy narzędzie przestaje być aktywne
+  // NAPRAWKA v3: Zamknij popover gdy narzędzie przestaje być aktywne
   useEffect(() => {
     if (!isActive && isPopoverOpen) {
+      console.log('🎨 [ToolButton] Closing popover - tool deactivated');
       setIsPopoverOpen(false);
     }
-  }, [isActive]);
+  }, [isActive, isPopoverOpen]);
 
-  // NAPRAWKA v2: Obsługa kliknięcia - NIE otwiera popover przy pierwszym kliknięciu
+  // NAPRAWKA v3: Obsługa kliknięcia - rozdzielenie logiki
   const handleButtonClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -79,24 +83,27 @@ export const DrawingToolButton = ({
     console.log('🎨 [ToolButton] Click:', { tool, isActive, hasColorPicker, isPopoverOpen });
     
     if (!isActive) {
-      // Pierwsze kliknięcie = wybierz narzędzie
+      // Pierwsze kliknięcie = wybierz narzędzie, NIE otwieraj popover
       console.log('🎨 [ToolButton] Selecting tool:', tool);
       onToolSelect();
+      // Popover pozostaje zamknięty
     } else if (hasColorPicker || hasStrokeWidth) {
-      // Drugie kliknięcie na aktywne narzędzie = otwórz/zamknij popover
+      // Drugie kliknięcie na aktywne narzędzie = toggle popover
       console.log('🎨 [ToolButton] Toggle popover:', !isPopoverOpen);
-      setIsPopoverOpen(!isPopoverOpen);
+      setIsPopoverOpen(prev => !prev);
     }
   };
 
-  // NAPRAWKA v2: Zamknij popover po wyborze koloru
-  const handleColorSelect = (color: DrawingColor) => {
+  // NAPRAWKA v3: Zamknij popover po wyborze koloru
+  const handleColorSelect = (color: DrawingColor, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     console.log('🎨 [ToolButton] Color selected:', color.name);
     onColorChange(color);
     setIsPopoverOpen(false);
   };
 
-  // NAPRAWKA v2: Zamknij popover po wyborze grubości (onValueCommit)
+  // NAPRAWKA v3: Zamknij popover po wyborze grubości (onValueCommit)
   const handleStrokeWidthCommit = (value: number[]) => {
     console.log('🎨 [ToolButton] StrokeWidth committed:', value[0]);
     onStrokeWidthChange({ name: `${value[0]}`, value: value[0] });
@@ -108,10 +115,14 @@ export const DrawingToolButton = ({
     ? (HIGHLIGHTER_COLORS.find(c => c.name === currentColor.name) || HIGHLIGHTER_COLORS[0])
     : currentColor;
 
+  // Czy pokazać strzałkę w dół (tylko gdy aktywne I ma popover)
+  const showChevron = isActive && (hasColorPicker || hasStrokeWidth);
+
   return (
-    <div className="relative" ref={triggerRef}>
+    <div className="relative">
       {/* Główny przycisk narzędzia */}
       <Button
+        ref={buttonRef}
         variant={isActive ? "default" : "ghost"}
         size="sm"
         className={cn(
@@ -128,15 +139,15 @@ export const DrawingToolButton = ({
             style={{ backgroundColor: displayColor.hex }}
           />
         )}
-        {/* Strzałka w dół gdy aktywne i ma popover */}
-        {isActive && (hasColorPicker || hasStrokeWidth) && (
+        {/* Strzałka w dół - tylko gdy aktywne i ma popover */}
+        {showChevron && (
           <ChevronDown className="h-3 w-3 ml-0.5" />
         )}
       </Button>
       
-      {/* Popover - kontrolowany całkowicie przez isPopoverOpen */}
+      {/* NAPRAWKA v3: Popover bez onOpenChange - pełna kontrola ręczna */}
       {(hasColorPicker || hasStrokeWidth) && (
-        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+        <Popover open={isPopoverOpen} modal={false}>
           {/* Niewidoczny trigger - pozycjonujemy popover pod przyciskiem */}
           <PopoverTrigger asChild>
             <div className="absolute inset-0 pointer-events-none" />
@@ -145,12 +156,20 @@ export const DrawingToolButton = ({
           <PopoverContent 
             className="w-56 p-3" 
             align="start"
+            sideOffset={5}
             onPointerDownOutside={(e) => {
-              // Zapobiegaj rysowaniu gdy klikamy poza popover
+              // NAPRAWKA v3: Zapobiegaj rysowaniu gdy klikamy poza popover
               e.preventDefault();
+              console.log('🎨 [ToolButton] Closing popover - clicked outside');
               setIsPopoverOpen(false);
             }}
-            onEscapeKeyDown={() => setIsPopoverOpen(false)}
+            onEscapeKeyDown={() => {
+              console.log('🎨 [ToolButton] Closing popover - escape pressed');
+              setIsPopoverOpen(false);
+            }}
+            onFocusOutside={(e) => {
+              e.preventDefault();
+            }}
             onInteractOutside={(e) => {
               e.preventDefault();
               setIsPopoverOpen(false);
@@ -164,6 +183,7 @@ export const DrawingToolButton = ({
                   {availableColors.map((color) => (
                     <button
                       key={color.name}
+                      type="button"
                       className={cn(
                         "w-8 h-8 rounded-md border-2 transition-all hover:scale-110",
                         currentColor.name === color.name 
@@ -171,10 +191,8 @@ export const DrawingToolButton = ({
                           : "border-transparent"
                       )}
                       style={{ backgroundColor: color.hex }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleColorSelect(color);
-                      }}
+                      onClick={(e) => handleColorSelect(color, e)}
+                      onMouseDown={(e) => e.stopPropagation()}
                       title={color.name}
                     />
                   ))}
@@ -182,7 +200,7 @@ export const DrawingToolButton = ({
               </div>
             )}
             
-            {/* Slider grubości - NAPRAWKA: bez "px", zakres 1-16 */}
+            {/* Slider grubości - zakres 1-16, bez "px" */}
             {hasStrokeWidth && (
               <div>
                 <p className="text-xs text-muted-foreground mb-2">
