@@ -892,8 +892,18 @@ export default function WorksheetDisplay({
                 lastSavedAt: drawingLastSavedAt
               }}
               onToolChange={setCurrentDrawingTool}
-              onColorChange={setCurrentDrawingColor}
-              onStrokeWidthChange={setCurrentStrokeWidth}
+              onColorChange={(color: DrawingColor) => {
+                setToolSettings(prev => ({
+                  ...prev,
+                  [currentDrawingTool]: { ...prev[currentDrawingTool as keyof typeof prev], color }
+                }));
+              }}
+              onStrokeWidthChange={(strokeWidth: StrokeWidth) => {
+                setToolSettings(prev => ({
+                  ...prev,
+                  [currentDrawingTool]: { ...prev[currentDrawingTool as keyof typeof prev], strokeWidth }
+                }));
+              }}
               onUndo={() => drawingOverlayRef.current?.undo()}
               onRedo={() => drawingOverlayRef.current?.redo()}
               onClearAll={() => drawingOverlayRef.current?.clearAll()}
