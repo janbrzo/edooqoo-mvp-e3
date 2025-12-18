@@ -131,17 +131,26 @@ export default function WorksheetDisplay({
   
   // DRAWING OVERLAY: State for drawing mode (Live Session only)
   const [isDrawingEnabled, setIsDrawingEnabled] = useState(false);
-  const [isDrawingLayerVisible, setIsDrawingLayerVisible] = useState(false); // FAZA A: widoczność warstwy
-  const [hasExistingDrawings, setHasExistingDrawings] = useState(false); // FAZA A: czy są rysunki w DB
+  const [isDrawingLayerVisible, setIsDrawingLayerVisible] = useState(true); // NAPRAWKA v4: domyślnie widoczna
+  const [hasExistingDrawings, setHasExistingDrawings] = useState(false);
   const [currentDrawingTool, setCurrentDrawingTool] = useState<DrawingTool>('marker');
-  const [currentDrawingColor, setCurrentDrawingColor] = useState<DrawingColor>(DRAWING_COLORS[0]);
-  const [currentStrokeWidth, setCurrentStrokeWidth] = useState<StrokeWidth>(STROKE_WIDTHS[1]);
+  // NAPRAWKA v4: Osobne ustawienia dla każdego narzędzia
+  const [toolSettings, setToolSettings] = useState({
+    marker: { color: DRAWING_COLORS[0], strokeWidth: STROKE_WIDTHS[3] },
+    highlighter: { color: DRAWING_COLORS[6], strokeWidth: STROKE_WIDTHS[5] }, // Yellow
+    arrow: { color: DRAWING_COLORS[3], strokeWidth: STROKE_WIDTHS[2] }, // Red
+  });
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [drawingIsSaving, setDrawingIsSaving] = useState(false);
   const [drawingLastSavedAt, setDrawingLastSavedAt] = useState<Date | null>(null);
   const drawingOverlayRef = useRef<DrawingOverlayRef>(null);
   const worksheetContentWrapperRef = useRef<HTMLDivElement>(null);
+  
+  // NAPRAWKA v4: Dynamicznie pobierz ustawienia dla aktualnego narzędzia
+  const currentToolSettings = toolSettings[currentDrawingTool as keyof typeof toolSettings] || toolSettings.marker;
+  const currentDrawingColor = currentToolSettings.color;
+  const currentStrokeWidth = currentToolSettings.strokeWidth;
 
   // CRITICAL FIX: Inject selectedImage/selectedAudio/audioUrl into editableWorksheet
   // This ensures Lesson Media renders when opening worksheet from /student → Homework
@@ -309,25 +318,24 @@ export default function WorksheetDisplay({
     checkExistingDrawings();
   }, [worksheetId]); // TYLKO worksheetId - nie viewMode!
 
-  // FAZA A: Auto-show rysunków przy przełączeniu na Live Session (jeśli istnieją)
+  // NAPRAWKA v4: ZAWSZE pokaż warstwę przy przełączeniu na Live Session
   useEffect(() => {
-    console.log('🎨 [Drawing] ViewMode/HasDrawings effect:', { viewMode, hasExistingDrawings, isDrawingLayerVisible });
+    console.log('🎨 [Drawing] ViewMode effect:', { viewMode, isDrawingLayerVisible });
     
     if (viewMode === 'live-session') {
-      // NAPRAWKA: Zawsze pokaż warstwę w live-session jeśli są rysunki
-      if (hasExistingDrawings && !isDrawingLayerVisible) {
-        console.log('🎨 [Drawing] Auto-showing drawing layer (existing drawings found)');
+      // NAPRAWKA v4: ZAWSZE pokaż warstwę w live-session
+      if (!isDrawingLayerVisible) {
+        console.log('🎨 [Drawing] Auto-showing drawing layer (entering live-session)');
         setIsDrawingLayerVisible(true);
       }
     } else {
-      // NIE ukrywaj warstwy przy przełączeniu - użytkownik może chcieć ją zobaczyć
-      // Tylko wyłącz tryb rysowania
+      // Tylko wyłącz tryb rysowania przy wyjściu z live-session
       if (isDrawingEnabled) {
         console.log('🎨 [Drawing] Disabling drawing mode (left live-session)');
         setIsDrawingEnabled(false);
       }
     }
-  }, [viewMode, hasExistingDrawings]);
+  }, [viewMode]);
 
   // FAZA E: Select Word mode automatycznie włącza Select on Worksheet
   useEffect(() => {
