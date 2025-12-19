@@ -4,11 +4,12 @@
  * Narzędzia: Select Worksheet | Marker ▼ | Highlighter ▼ | Arrow ▼ | Eraser
  * Akcje: Undo | Redo | Clear All
  * 
- * NAPRAWIONE v2.1:
- * - "Saving..." przeniesiony poza toolbar (fixed position) żeby nie poszerzać paska
+ * NAPRAWIONE v5.0:
+ * - Każde narzędzie ma osobne ustawienia (kolor, grubość)
+ * - Zmiana w jednym narzędziu NIE wpływa na inne
  */
 
-console.log('🎨 DrawingToolbar v2.1 loaded'); // Debug - sprawdź czy nowy kod jest załadowany
+console.log('🎨 DrawingToolbar v5.0 loaded');
 
 import { 
   Undo2,
@@ -29,11 +30,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { DrawingToolbarProps, DrawingTool, DRAWING_TOOLS } from '@/types/drawing';
+import { DrawingToolbarProps, DrawingTool, DRAWING_TOOLS, ToolSettingsMap, DEFAULT_DRAWING_COLOR, DEFAULT_STROKE_WIDTH, HIGHLIGHTER_COLORS } from '@/types/drawing';
 import { DrawingToolButton } from './DrawingToolButton';
+
+// Domyślne ustawienia dla każdego narzędzia (fallback)
+const DEFAULT_TOOL_SETTINGS: ToolSettingsMap = {
+  marker: { color: DEFAULT_DRAWING_COLOR, strokeWidth: { name: '4', value: 4 } },
+  highlighter: { color: HIGHLIGHTER_COLORS[0], strokeWidth: { name: '6', value: 6 } },
+  arrow: { color: DEFAULT_DRAWING_COLOR, strokeWidth: { name: '3', value: 3 } },
+};
 
 export const DrawingToolbar = ({
   state,
+  toolSettings,
   onToolChange,
   onColorChange,
   onStrokeWidthChange,
@@ -42,8 +51,26 @@ export const DrawingToolbar = ({
   onClearAll,
 }: DrawingToolbarProps) => {
   const { activeTool, activeColor, strokeWidth, canUndo, canRedo, isSaving } = state;
+  
+  // Użyj przekazanych toolSettings lub fallback
+  const settings = toolSettings || DEFAULT_TOOL_SETTINGS;
 
   console.log('🎨 [DrawingToolbar] Render:', { activeTool, canUndo, canRedo, isSaving });
+
+  // Pobierz ustawienia dla konkretnego narzędzia
+  const getToolColor = (toolId: DrawingTool) => {
+    if (toolId === 'marker' || toolId === 'highlighter' || toolId === 'arrow') {
+      return settings[toolId].color;
+    }
+    return activeColor;
+  };
+
+  const getToolStrokeWidth = (toolId: DrawingTool) => {
+    if (toolId === 'marker' || toolId === 'highlighter' || toolId === 'arrow') {
+      return settings[toolId].strokeWidth;
+    }
+    return strokeWidth;
+  };
 
   return (
     <>
@@ -71,8 +98,8 @@ export const DrawingToolbar = ({
                     tool={tool.id}
                     label={tool.label}
                     isActive={activeTool === tool.id}
-                    currentColor={activeColor}
-                    currentStrokeWidth={strokeWidth}
+                    currentColor={getToolColor(tool.id)}
+                    currentStrokeWidth={getToolStrokeWidth(tool.id)}
                     onToolSelect={() => onToolChange(tool.id)}
                     onColorChange={onColorChange}
                     onStrokeWidthChange={onStrokeWidthChange}

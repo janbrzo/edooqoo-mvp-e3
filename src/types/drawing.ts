@@ -231,10 +231,29 @@ export interface DrawingOverlayProps {
 }
 
 /**
+ * Ustawienia per narzędzie (kolor + grubość)
+ */
+export interface ToolSettings {
+  color: DrawingColor;
+  strokeWidth: StrokeWidth;
+}
+
+/**
+ * Mapa ustawień dla wszystkich narzędzi rysujących
+ */
+export interface ToolSettingsMap {
+  marker: ToolSettings;
+  highlighter: ToolSettings;
+  arrow: ToolSettings;
+}
+
+/**
  * Props dla DrawingToolbar
  */
 export interface DrawingToolbarProps {
   state: DrawingState;
+  /** NAPRAWKA v5: Osobne ustawienia dla każdego narzędzia */
+  toolSettings?: ToolSettingsMap;
   onToolChange: (tool: DrawingTool) => void;
   onColorChange: (color: DrawingColor) => void;
   onStrokeWidthChange: (width: StrokeWidth) => void;

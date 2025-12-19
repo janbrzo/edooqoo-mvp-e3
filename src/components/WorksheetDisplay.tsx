@@ -33,7 +33,7 @@ import { KNOWLEDGE_CATEGORIES } from "@/types/studentKnowledge";
 // Drawing overlay imports
 import { DrawingToolbar, DrawingOverlay, type DrawingOverlayRef } from "@/components/drawing";
 import type { DrawingTool, DrawingColor, StrokeWidth } from "@/types/drawing";
-import { DRAWING_COLORS, STROKE_WIDTHS } from "@/types/drawing";
+import { DRAWING_COLORS, HIGHLIGHTER_COLORS, STROKE_WIDTHS } from "@/types/drawing";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Exercise {
@@ -135,10 +135,11 @@ export default function WorksheetDisplay({
   const [hasExistingDrawings, setHasExistingDrawings] = useState(false);
   const [currentDrawingTool, setCurrentDrawingTool] = useState<DrawingTool>('marker');
   // NAPRAWKA v4: Osobne ustawienia dla każdego narzędzia
+  // Każde narzędzie ma własny kolor i grubość linii
   const [toolSettings, setToolSettings] = useState({
-    marker: { color: DRAWING_COLORS[0], strokeWidth: STROKE_WIDTHS[3] },
-    highlighter: { color: DRAWING_COLORS[6], strokeWidth: STROKE_WIDTHS[5] }, // Yellow
-    arrow: { color: DRAWING_COLORS[3], strokeWidth: STROKE_WIDTHS[2] }, // Red
+    marker: { color: DRAWING_COLORS[0], strokeWidth: STROKE_WIDTHS[3] }, // Black, size 4
+    highlighter: { color: HIGHLIGHTER_COLORS[0], strokeWidth: STROKE_WIDTHS[5] }, // Yellow semi-transparent, size 6
+    arrow: { color: DRAWING_COLORS[3], strokeWidth: STROKE_WIDTHS[2] }, // Red, size 3
   });
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
@@ -891,14 +892,17 @@ export default function WorksheetDisplay({
                 isSaving: drawingIsSaving,
                 lastSavedAt: drawingLastSavedAt
               }}
+              toolSettings={toolSettings}
               onToolChange={setCurrentDrawingTool}
               onColorChange={(color: DrawingColor) => {
+                // NAPRAWKA v5: Zmienia kolor tylko dla aktualnego narzędzia
                 setToolSettings(prev => ({
                   ...prev,
                   [currentDrawingTool]: { ...prev[currentDrawingTool as keyof typeof prev], color }
                 }));
               }}
               onStrokeWidthChange={(strokeWidth: StrokeWidth) => {
+                // NAPRAWKA v5: Zmienia grubość tylko dla aktualnego narzędzia
                 setToolSettings(prev => ({
                   ...prev,
                   [currentDrawingTool]: { ...prev[currentDrawingTool as keyof typeof prev], strokeWidth }
@@ -935,14 +939,15 @@ export default function WorksheetDisplay({
             />
             
             {/* DRAWING OVERLAY: Canvas overlay for drawing (Live Session only) */}
-            {/* NAPRAWKA: Renderuj overlay gdy warstwa jest widoczna LUB jest live-session */}
+            {/* NAPRAWKA v4: Przekazuj isVisible do kontroli widoczności CSS */}
             {viewMode === 'live-session' && worksheetId && userId && (
               <DrawingOverlay
                 ref={drawingOverlayRef}
                 worksheetId={worksheetId}
                 teacherId={userId}
                 isTeacher={true}
-                isEnabled={isDrawingEnabled && isDrawingLayerVisible}
+                isEnabled={isDrawingEnabled}
+                isVisible={isDrawingLayerVisible}
                 externalTool={currentDrawingTool}
                 externalColor={currentDrawingColor}
                 externalStrokeWidth={currentStrokeWidth}
