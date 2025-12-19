@@ -5,14 +5,25 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Drawing Overlay v3.0 Fixes:**
+**Latest Update (December 2025) - Drawing Overlay v5.0 Fixes:**
+- **CRITICAL FIX: Drawing Layer Visibility**: Added `isVisible` prop to DrawingOverlay for CSS visibility control, separate from `isEnabled`
+- **Live Session Auto-Show**: Drawings ALWAYS visible when entering Live Session mode (no matter if drawings exist)
+- **Show/Hide Button Fixed**: Now properly toggles CSS visibility via `isVisible` prop
+- **Separate Tool Settings**: Each tool (Marker, Highlighter, Arrow) now has INDEPENDENT color and stroke width settings
+- **ToolSettingsMap Type**: New TypeScript interface for storing per-tool settings
+- **DrawingToolbar v5.0**: Now accepts `toolSettings` prop and passes correct colors per tool
+- **Highlighter Colors**: Fixed to use semi-transparent `HIGHLIGHTER_COLORS` instead of opaque `DRAWING_COLORS`
+
+**Previous Update (December 2025) - Drawing Overlay v4.0 Fixes:**
+- **Eraser Precision Fixed**: Uses `pointToSegmentDistance` for Path objects - checks distance to SEGMENTS, not just endpoints
+- **Undo/Redo Fixed**: Initial state saved AFTER `loadFromJSON` callback completes; forced React re-render after state restore
+- **Debug Logs**: `console.log('🎨 ...')` messages for tracking drawing state
+
+**Previous Update (December 2025) - Drawing Overlay v3.0 Fixes:**
 - **CRITICAL FIX: loadDrawingsFromData now returns Promise** - Initial state saved AFTER drawings are fully loaded
 - **Drawing Layer Visibility Fixed**: Drawings auto-show when entering Live Session if existing drawings exist
 - **Popover Behavior Fixed**: First click selects tool (no popover), second click opens popover - removed onOpenChange
-- **Undo/Redo Fixed**: Now properly undoes/redoes single action using Promise-based loading
-- **Eraser Precision Fixed**: Uses pointToSegmentDistance for Line objects instead of bounding box
 - **"Saving..." Indicator**: Moved outside toolbar to prevent width flickering
-- **Debug Logs**: `console.log('🎨 ...')` messages for tracking drawing state
 - **Select Word Integration**: When Select Word mode (S) is active with drawing enabled, auto-switches to "Select on Worksheet" tool
 
 **Previous Updates - Drawing Overlay for Live Session:**
