@@ -319,21 +319,24 @@ export default function WorksheetDisplay({
     checkExistingDrawings();
   }, [worksheetId]); // TYLKO worksheetId - nie viewMode!
 
-  // NAPRAWKA v6: Automatycznie pokaż warstwę przy Live Session (bez setTimeout!)
-  // DrawingOverlay jest ZAWSZE zamontowany, więc nie ma race condition
+  // NAPRAWKA v5: ZAWSZE pokaż warstwę przy przełączeniu na Live Session
+  // Używamy setTimeout żeby dać czas na mount DrawingOverlay przed ustawieniem widoczności
   useEffect(() => {
-    console.log('🎨 [Drawing v6] ViewMode effect:', { viewMode, isDrawingLayerVisible });
+    console.log('🎨 [Drawing] ViewMode effect:', { viewMode, isDrawingLayerVisible });
     
     if (viewMode === 'live-session') {
-      // v6: Natychmiastowe ustawienie - DrawingOverlay jest już zamontowany
-      if (!isDrawingLayerVisible) {
-        console.log('🎨 [Drawing v6] Auto-showing drawing layer (entering live-session)');
+      // NAPRAWKA v5: Użyj setTimeout żeby dać czas na mount komponentu
+      // To zapobiega race condition gdzie komponent nie jest jeszcze gotowy
+      const timeoutId = setTimeout(() => {
+        console.log('🎨 [Drawing] Auto-showing drawing layer (entering live-session, after delay)');
         setIsDrawingLayerVisible(true);
-      }
+      }, 100); // 100ms daje czas na mount i inicjalizację canvas
+      
+      return () => clearTimeout(timeoutId);
     } else {
-      // Wyłącz tryb rysowania przy wyjściu z live-session
+      // Tylko wyłącz tryb rysowania przy wyjściu z live-session
       if (isDrawingEnabled) {
-        console.log('🎨 [Drawing v6] Disabling drawing mode (left live-session)');
+        console.log('🎨 [Drawing] Disabling drawing mode (left live-session)');
         setIsDrawingEnabled(false);
       }
     }
@@ -939,16 +942,16 @@ export default function WorksheetDisplay({
               isLiveConnected={viewMode === 'live-session' ? isLiveConnected : undefined}
             />
             
-            {/* DRAWING OVERLAY v6: ZAWSZE zamontowany, widoczność przez CSS */}
-            {/* To eliminuje problemy z unmount/mount przy zmianie viewMode */}
-            {worksheetId && userId && (
+            {/* DRAWING OVERLAY: Canvas overlay for drawing (Live Session only) */}
+            {/* NAPRAWKA v4: Przekazuj isVisible do kontroli widoczności CSS */}
+            {viewMode === 'live-session' && worksheetId && userId && (
               <DrawingOverlay
                 ref={drawingOverlayRef}
                 worksheetId={worksheetId}
                 teacherId={userId}
                 isTeacher={true}
-                isEnabled={viewMode === 'live-session' && isDrawingEnabled}
-                isVisible={viewMode === 'live-session' && isDrawingLayerVisible}
+                isEnabled={isDrawingEnabled}
+                isVisible={isDrawingLayerVisible}
                 externalTool={currentDrawingTool}
                 externalColor={currentDrawingColor}
                 externalStrokeWidth={currentStrokeWidth}

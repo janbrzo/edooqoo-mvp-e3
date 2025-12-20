@@ -5,21 +5,26 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Drawing Overlay v6.0 Complete Rewrite:**
-- **CRITICAL FIX: Drawing Layer Always Mounted**: DrawingOverlay is NO LONGER conditionally rendered - it's ALWAYS mounted, visibility controlled via CSS `hidden` class
-- **No More Race Conditions**: Since canvas is always present, no need for setTimeout delays when switching to Live Session
-- **Undo/Redo Rewritten**: New 3-ref architecture: `currentStateRef` (current canvas state), `undoStackRef` (previous states), `redoStackRef` (undone states)
-- **Undo Logic**: Push currentState to redoStack, pop from undoStack to currentState, load
-- **Redo Logic**: Push currentState to undoStack, pop from redoStack to currentState, load
-- **Eraser Rewritten**: Uses `useRef` instead of local variables (`isErasingRef`, `hasErasedInSessionRef`) - no state reset on re-renders
-- **Continuous Erasing**: Eraser now works by dragging mouse, not just clicking - like Windows Snipping Tool
-- **Arrows as Groups**: `fabric.Group` combines Line + Triangle into single object - eraser removes entire arrow at once
-- **Simplified Collision Detection**: Uses `getBoundingRect()` with padding for all object types
+**Latest Update (December 2025) - Drawing Overlay v5.1 Fixes:**
+- **CRITICAL FIX: Undo/Redo Initial State**: Initial state now saved INSIDE `loadFromJSON` callback - guarantees state captured AFTER all objects loaded
+- **Live Session Visibility Race Condition**: Added 100ms setTimeout before setting `isDrawingLayerVisible=true` - gives time for DrawingOverlay to mount
+- **Eraser Diagnostics**: Added comprehensive `console.log` statements to debug eraser functionality (checks isTeacher, isEnabled, activeTool, objectsCount)
+- **loadDrawingsFromData Updated**: Now accepts `shouldSaveInitialState` parameter to save initial state at correct moment
+- **loadDrawings Updated**: Passes flag to save initial state only when loading during initialization, not during realtime updates
 
-**Previous Update (December 2025) - Drawing Overlay v5.x:**
-- Added `isVisible` prop for CSS visibility control
-- Separate tool settings per tool (Marker, Highlighter, Arrow)
-- `pointToSegmentDistance` for Path collision detection
+**Previous Update (December 2025) - Drawing Overlay v5.0 Fixes:**
+- **CRITICAL FIX: Drawing Layer Visibility**: Added `isVisible` prop to DrawingOverlay for CSS visibility control, separate from `isEnabled`
+- **Live Session Auto-Show**: Drawings ALWAYS visible when entering Live Session mode (no matter if drawings exist)
+- **Show/Hide Button Fixed**: Now properly toggles CSS visibility via `isVisible` prop
+- **Separate Tool Settings**: Each tool (Marker, Highlighter, Arrow) now has INDEPENDENT color and stroke width settings
+- **ToolSettingsMap Type**: New TypeScript interface for storing per-tool settings
+- **DrawingToolbar v5.0**: Now accepts `toolSettings` prop and passes correct colors per tool
+- **Highlighter Colors**: Fixed to use semi-transparent `HIGHLIGHTER_COLORS` instead of opaque `DRAWING_COLORS`
+
+**Previous Update (December 2025) - Drawing Overlay v4.0 Fixes:**
+- **Eraser Precision Fixed**: Uses `pointToSegmentDistance` for Path objects - checks distance to SEGMENTS, not just endpoints
+- **Undo/Redo Fixed**: Initial state saved AFTER `loadFromJSON` callback completes; forced React re-render after state restore
+- **Debug Logs**: `console.log('🎨 ...')` messages for tracking drawing state
 
 **Previous Update (December 2025) - Drawing Overlay v3.0 Fixes:**
 - **CRITICAL FIX: loadDrawingsFromData now returns Promise** - Initial state saved AFTER drawings are fully loaded
