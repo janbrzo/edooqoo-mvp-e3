@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import WorksheetDisplay from '@/components/WorksheetDisplay';
 import { deepFixTextObjects } from '@/utils/textObjectFixer';
-import { Loader2 } from 'lucide-react';
+import { Loader2, GraduationCap, User } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useTokenSystem } from '@/hooks/useTokenSystem';
+import { HomeworkNotificationBadge } from '@/components/homework/HomeworkNotificationBadge';
 
 export default function WorksheetPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { tokenLeft } = useTokenSystem();
   const [loading, setLoading] = useState(true);
   const [worksheetData, setWorksheetData] = useState<any>(null);
   const [parsedWorksheet, setParsedWorksheet] = useState<any>(null);
@@ -159,22 +164,44 @@ export default function WorksheetPage() {
   }
 
   return (
-    <WorksheetDisplay
-      worksheet={parsedWorksheet}
-      inputParams={worksheetData.form_data}
-      generationTime={worksheetData.generation_time_seconds || 0}
-      sourceCount={0}
-      onBack={() => navigate(-1)}
-      worksheetId={worksheetData.id}
-      editableWorksheet={editableWorksheet}
-      setEditableWorksheet={setEditableWorksheet}
-      onDiscardChanges={handleDiscardChanges}
-      userId={worksheetData.teacher_id}
-      studentName={studentName}
-      studentId={worksheetData.student_id}
-      selectedImage={worksheetData.selected_image}
-      selectedAudio={worksheetData.selected_audio}
-      audioUrl={worksheetData.audio_url}
-    />
+    <>
+      {/* Top navigation bar */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
+        <Badge variant="outline" className="text-sm px-3 py-1">
+          Tokens Left: {tokenLeft}
+        </Badge>
+        <HomeworkNotificationBadge />
+        <Button asChild variant="outline" size="sm">
+          <Link to="/dashboard">
+            <GraduationCap className="h-4 w-4 mr-2" />
+            Dashboard
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/profile">
+            <User className="h-4 w-4 mr-2" />
+            Profile
+          </Link>
+        </Button>
+      </div>
+
+      <WorksheetDisplay
+        worksheet={parsedWorksheet}
+        inputParams={worksheetData.form_data}
+        generationTime={worksheetData.generation_time_seconds || 0}
+        sourceCount={0}
+        onBack={() => navigate(-1)}
+        worksheetId={worksheetData.id}
+        editableWorksheet={editableWorksheet}
+        setEditableWorksheet={setEditableWorksheet}
+        onDiscardChanges={handleDiscardChanges}
+        userId={worksheetData.teacher_id}
+        studentName={studentName}
+        studentId={worksheetData.student_id}
+        selectedImage={worksheetData.selected_image}
+        selectedAudio={worksheetData.selected_audio}
+        audioUrl={worksheetData.audio_url}
+      />
+    </>
   );
 }

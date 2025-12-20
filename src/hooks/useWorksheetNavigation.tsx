@@ -85,26 +85,38 @@ export const useWorksheetNavigation = ({ exercises }: UseWorksheetNavigationProp
             // Check for Grammar section
             if (target.id === 'grammar-rules-section' || target.getAttribute('data-section') === 'grammar') {
               setIsGrammarActive(entry.isIntersecting);
+              // Reset activeExercise when Grammar becomes active
+              if (entry.isIntersecting) {
+                setActiveExercise(null);
+              }
               return;
             }
             
             // Check for Vocabulary section
             if (target.id === 'vocabulary-sheet-section' || target.getAttribute('data-section') === 'vocabulary') {
               setIsVocabularyActive(entry.isIntersecting);
+              // Reset activeExercise when Vocabulary becomes active
+              if (entry.isIntersecting) {
+                setActiveExercise(null);
+              }
               return;
             }
             
-            // Check for exercises
+            // Check for exercises - only set active if neither Grammar nor Vocabulary is active
             if (entry.isIntersecting) {
               const index = exerciseRefs.current.findIndex(ref => ref === target);
               if (index !== -1) {
+                // Only set active exercise if we're not in Grammar/Vocabulary section
                 setActiveExercise(index);
+                // Reset Grammar/Vocabulary when exercise becomes active
+                setIsGrammarActive(false);
+                setIsVocabularyActive(false);
               }
             }
           });
         },
         {
-          rootMargin: '-5% 0px -75% 0px',
+          rootMargin: '-10% 0px -70% 0px',
           threshold: 0.1
         }
       );

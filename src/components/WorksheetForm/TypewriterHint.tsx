@@ -20,39 +20,40 @@ const hints = [
 
 export default function TypewriterHint() {
   const [currentHintIndex, setCurrentHintIndex] = useState(0);
-  const [displayedText, setDisplayedText] = useState("");
+  const [displayedWords, setDisplayedWords] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(true);
 
   useEffect(() => {
     const currentHint = hints[currentHintIndex];
+    const words = currentHint.split(' ');
     
     if (isTyping) {
-      // Typing effect - 3 seconds total for the whole text
-      const typingDuration = 3000; // 3 seconds
-      const charDelay = typingDuration / currentHint.length;
+      // Typing effect - 2 seconds total for all words
+      const typingDuration = 2000; // 2 seconds
+      const wordDelay = typingDuration / words.length;
       
-      if (displayedText.length < currentHint.length) {
+      if (displayedWords.length < words.length) {
         const timeout = setTimeout(() => {
-          setDisplayedText(currentHint.slice(0, displayedText.length + 1));
-        }, charDelay);
+          setDisplayedWords(words.slice(0, displayedWords.length + 1));
+        }, wordDelay);
         return () => clearTimeout(timeout);
       } else {
         // Finished typing, wait 2 seconds then move to next
         setIsTyping(false);
         const pauseTimeout = setTimeout(() => {
-          setDisplayedText("");
+          setDisplayedWords([]);
           setCurrentHintIndex((prev) => (prev + 1) % hints.length);
           setIsTyping(true);
         }, 2000); // 2 second pause
         return () => clearTimeout(pauseTimeout);
       }
     }
-  }, [displayedText, currentHintIndex, isTyping]);
+  }, [displayedWords, currentHintIndex, isTyping]);
 
   return (
     <div className="h-6 mb-2">
       <p className="text-sm font-medium text-red-600">
-        {displayedText}
+        {displayedWords.join(' ')}
         <span className="animate-pulse">|</span>
       </p>
     </div>

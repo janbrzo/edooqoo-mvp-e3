@@ -26,6 +26,8 @@ interface FlashcardSetsSectionProps {
   teacherId: string;
   studentName: string;
   studentNativeLanguage: string;
+  initialEditingSetId?: string | null;
+  onSetChange?: (setId: string | null) => void;
 }
 
 export function FlashcardSetsSection({
@@ -33,12 +35,14 @@ export function FlashcardSetsSection({
   teacherId,
   studentName,
   studentNativeLanguage,
+  initialEditingSetId,
+  onSetChange,
 }: FlashcardSetsSectionProps) {
   const { sets, loading, createSet, updateSet, deleteSet, generateShareToken, refetch } = useFlashcardSets(teacherId, studentId);
   const { students, updateStudent } = useStudents();
   const { profile } = useProfile();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingSetId, setEditingSetId] = useState<string | null>(null);
+  const [editingSetId, setEditingSetId] = useState<string | null>(initialEditingSetId || null);
   const [deleteSetId, setDeleteSetId] = useState<string | null>(null);
   const [deleteSetTitle, setDeleteSetTitle] = useState<string>('');
   const [addCardForSetId, setAddCardForSetId] = useState<string | null>(null);
@@ -83,13 +87,25 @@ export function FlashcardSetsSection({
     }
   };
 
+  // Handle back from editor
+  const handleBackFromEditor = () => {
+    setEditingSetId(null);
+    onSetChange?.(null);
+  };
+
+  // Handle opening editor
+  const handleOpenEditor = (setId: string) => {
+    setEditingSetId(setId);
+    onSetChange?.(setId);
+  };
+
   if (editingSetId) {
     const set = sets.find(s => s.id === editingSetId);
     if (set) {
       return (
         <FlashcardSetEditor
           set={set}
-          onBack={() => setEditingSetId(null)}
+          onBack={handleBackFromEditor}
           onUpdate={updateSet}
           generateShareToken={generateShareToken}
           studentNativeLanguage={currentLanguage || studentNativeLanguage}
@@ -172,7 +188,7 @@ export function FlashcardSetsSection({
             <FlashcardSetCard
               key={set.id}
               set={set}
-              onEdit={() => setEditingSetId(set.id)}
+              onEdit={() => handleOpenEditor(set.id)}
               onDelete={() => handleDeleteClick(set)}
               onShare={() => generateShareToken(set.id)}
               onAddCard={() => setAddCardForSetId(set.id)}
