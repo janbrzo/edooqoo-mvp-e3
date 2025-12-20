@@ -49,10 +49,23 @@ const StudentPage = () => {
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const pageSize = 10;
 
+  // Get flashcard set ID from URL
+  const flashcardSetId = searchParams.get('set');
+
   // Sync tab with URL
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
+    // Remove set param when changing tabs
     setSearchParams({ tab });
+  };
+
+  // Handle flashcard set change
+  const handleFlashcardSetChange = (setId: string | null) => {
+    if (setId) {
+      setSearchParams({ tab: 'flashcards', set: setId });
+    } else {
+      setSearchParams({ tab: 'flashcards' });
+    }
   };
   
   const student = students.find(s => s.id === id);
@@ -472,9 +485,9 @@ const StudentPage = () => {
                         {worksheets.map((worksheet) => (
                           <div key={worksheet.id}>
                             <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                              <div 
-                                className="flex items-center space-x-3 cursor-pointer flex-1"
-                                onClick={() => handleWorksheetClick(worksheet)}
+                              <Link 
+                                to={`/worksheet/${worksheet.id}`}
+                                className="flex items-center space-x-3 flex-1"
                               >
                                 <FileText className="h-5 w-5 text-primary" />
                                 <div className="flex-1">
@@ -488,14 +501,13 @@ const StudentPage = () => {
                                       size="sm"
                                     />
                                   </div>
-                                  {/* PROBLEM 8: Removed Topic display, only show Grammar if exists */}
                                   {worksheet.form_data?.grammar && (
                                     <p className="text-sm text-muted-foreground">
                                       Grammar: {worksheet.form_data.grammar}
                                     </p>
                                   )}
                                 </div>
-                              </div>
+                              </Link>
                               <div className="flex items-center space-x-2">
                                 {/* PROBLEM 8: Date and time on same line */}
                                 <div className="text-sm font-medium whitespace-nowrap">
@@ -694,6 +706,8 @@ const StudentPage = () => {
               teacherId={student.teacher_id}
               studentName={student.name}
               studentNativeLanguage={student.native_language || 'Spanish'}
+              initialEditingSetId={activeTab === 'flashcards' ? flashcardSetId : null}
+              onSetChange={handleFlashcardSetChange}
             />
           </TabsContent>
         </Tabs>
