@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Drawing Overlay v5.0 Fixes:**
+**Latest Update (December 2025) - Drawing Overlay v5.1 Fixes:**
+- **CRITICAL FIX: Undo/Redo Initial State**: Initial state now saved INSIDE `loadFromJSON` callback - guarantees state captured AFTER all objects loaded
+- **Live Session Visibility Race Condition**: Added 100ms setTimeout before setting `isDrawingLayerVisible=true` - gives time for DrawingOverlay to mount
+- **Eraser Diagnostics**: Added comprehensive `console.log` statements to debug eraser functionality (checks isTeacher, isEnabled, activeTool, objectsCount)
+- **loadDrawingsFromData Updated**: Now accepts `shouldSaveInitialState` parameter to save initial state at correct moment
+- **loadDrawings Updated**: Passes flag to save initial state only when loading during initialization, not during realtime updates
+
+**Previous Update (December 2025) - Drawing Overlay v5.0 Fixes:**
 - **CRITICAL FIX: Drawing Layer Visibility**: Added `isVisible` prop to DrawingOverlay for CSS visibility control, separate from `isEnabled`
 - **Live Session Auto-Show**: Drawings ALWAYS visible when entering Live Session mode (no matter if drawings exist)
 - **Show/Hide Button Fixed**: Now properly toggles CSS visibility via `isVisible` prop

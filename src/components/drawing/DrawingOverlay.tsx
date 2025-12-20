@@ -4,13 +4,15 @@
  * Główny komponent do rysowania po worksheet.
  * Narzędzia: marker, highlighter, arrow, eraser, select-worksheet
  * 
- * NAPRAWIONE v4.0:
+ * NAPRAWIONE v5.0:
  * - Gumka sprawdza odległość od SEGMENTÓW ścieżki (nie tylko punktów końcowych)
- * - Undo/Redo działa poprawnie z wymuszonym re-renderem
+ * - Undo/Redo działa poprawnie - initial state zapisywany PO loadFromJSON callback
  * - Dodano prop isVisible do kontroli widoczności CSS
+ * - Dodano szczegółowe logi diagnostyczne dla eraser
+ * - Naprawiono race condition przy przełączaniu na Live Session
  */
 
-console.log('🎨 DrawingOverlay v4.0 loaded');
+console.log('🎨 DrawingOverlay v5.0 loaded');
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Canvas as FabricCanvas, PencilBrush, Line, FabricObject, Triangle, Path, Point } from 'fabric';
@@ -164,13 +166,14 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     }, DRAWING_AUTOSAVE_CONFIG.debounceMs);
   }, []);
 
-  // NAPRAWKA v4: loadDrawingsFromData zwraca Promise - resolve W CALLBACKU
-  const loadDrawingsFromData = useCallback((drawingData: DrawingData): Promise<void> => {
+  // NAPRAWKA v5: loadDrawingsFromData zwraca Promise - resolve W CALLBACKU
+  // CRITICAL: Zwraca flagę czy załadowano obiekty (do ustawienia initial state)
+  const loadDrawingsFromData = useCallback((drawingData: DrawingData, shouldSaveInitialState: boolean = false): Promise<boolean> => {
     return new Promise((resolve) => {
       const canvas = fabricCanvasRef.current;
       if (!canvas || !drawingData.objects || drawingData.objects.length === 0) {
         console.log('🎨 [Load] No objects to load or no canvas');
-        resolve();
+        resolve(false);
         return;
       }
 
@@ -186,15 +189,26 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         });
         
         console.log('🎨 [Load] Objects loaded and locked, count:', canvas.getObjects().length);
-        resolve();
+        
+        // NAPRAWKA v5: Zapisz initial state PO FAKTYCZNYM załadowaniu obiektów
+        // To zapewnia że Undo nie cofnie do pustego stanu
+        if (shouldSaveInitialState) {
+          const initialState = JSON.stringify(canvas.toJSON());
+          undoStackRef.current = [initialState];
+          redoStackRef.current = [];
+          console.log('🎨 [Load] Initial state saved AFTER loading, objects:', canvas.getObjects().length);
+          updateHistoryState();
+        }
+        
+        resolve(true);
       });
     });
-  }, []);
+  }, [updateHistoryState]);
 
-  // NAPRAWKA v4: loadDrawings czeka na loadDrawingsFromData
-  const loadDrawings = useCallback(async (): Promise<boolean> => {
+  // NAPRAWKA v5: loadDrawings czeka na loadDrawingsFromData i przekazuje flagę initial state
+  const loadDrawings = useCallback(async (shouldSaveInitialState: boolean = false): Promise<boolean> => {
     try {
-      console.log('🎨 [Load] Loading drawings for worksheet:', worksheetId);
+      console.log('🎨 [Load] Loading drawings for worksheet:', worksheetId, 'shouldSaveInitialState:', shouldSaveInitialState);
       
       const { data, error } = await supabase
         .from('worksheet_drawings')
@@ -210,7 +224,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
       if (data?.drawing_data) {
         const drawingData = data.drawing_data as unknown as DrawingData;
         if (drawingData && drawingData.objects && drawingData.objects.length > 0) {
-          await loadDrawingsFromData(drawingData);
+          await loadDrawingsFromData(drawingData, shouldSaveInitialState);
           console.log('🎨 [Load] Drawings loaded successfully');
           return true;
         }
@@ -425,14 +439,16 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     fabricCanvasRef.current = canvas;
     isInitializedRef.current = true;
 
-    // NAPRAWKA v4: Załaduj rysunki i zapisz initial state PO załadowaniu
-    loadDrawings().then((hasDrawings) => {
-      if (fabricCanvasRef.current) {
-        // Zapisz initial state PO faktycznym załadowaniu
+    // NAPRAWKA v5: Załaduj rysunki z flagą do zapisania initial state
+    // Initial state jest teraz zapisywany WEWNĄTRZ loadDrawingsFromData CALLBACK
+    // To gwarantuje że zapisujemy stan PO załadowaniu wszystkich obiektów
+    loadDrawings(true).then((hasDrawings) => {
+      // Jeśli nie było rysunków, zapisz pusty initial state
+      if (!hasDrawings && fabricCanvasRef.current) {
         const initialState = JSON.stringify(fabricCanvasRef.current.toJSON());
         undoStackRef.current = [initialState];
         redoStackRef.current = [];
-        console.log('🎨 [Init] Initial state saved, has drawings:', hasDrawings, 'objects:', JSON.parse(initialState).objects?.length || 0);
+        console.log('🎨 [Init] Empty initial state saved (no drawings found)');
         updateHistoryState();
       }
     });
@@ -625,12 +641,30 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     };
   }, [drawingState.activeTool, drawingState.activeColor, drawingState.strokeWidth, isTeacher, isEnabled, saveToHistory, scheduleAutoSave]);
 
-  // NAPRAWKA v4: Gumka - sprawdza odległość od SEGMENTÓW ścieżki
+  // NAPRAWKA v5: Gumka - sprawdza odległość od SEGMENTÓW ścieżki
+  // Dodano logi diagnostyczne do debugowania
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !isTeacher || !isEnabled) return;
-    if (drawingState.activeTool !== 'eraser') return;
+    
+    // DIAGNOSTYKA: Loguj warunki wejściowe
+    console.log('🎨 [Eraser] useEffect check:', { 
+      hasCanvas: !!canvas, 
+      isTeacher, 
+      isEnabled, 
+      activeTool: drawingState.activeTool,
+      objectsCount: canvas?.getObjects().length || 0
+    });
+    
+    if (!canvas || !isTeacher || !isEnabled) {
+      console.log('🎨 [Eraser] Skipping - missing requirements');
+      return;
+    }
+    if (drawingState.activeTool !== 'eraser') {
+      console.log('🎨 [Eraser] Skipping - not eraser tool');
+      return;
+    }
 
+    console.log('🎨 [Eraser] ACTIVE - setting up handlers');
     canvas.isDrawingMode = false;
     let isErasing = false;
     let hasErased = false;
@@ -768,9 +802,14 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
 
     const eraseAtPoint = (pointer: { x: number; y: number }) => {
       const objectsToRemove: FabricObject[] = [];
+      const totalObjects = canvas.getObjects().length;
+      
+      console.log('🎨 [Eraser] Checking at point:', pointer, 'Total objects:', totalObjects);
       
       canvas.forEachObject((obj) => {
-        if (isPointOnObject(obj, pointer)) {
+        const hit = isPointOnObject(obj, pointer);
+        if (hit) {
+          console.log('🎨 [Eraser] HIT object type:', obj.type);
           objectsToRemove.push(obj);
         }
       });
@@ -780,6 +819,8 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         objectsToRemove.forEach(obj => canvas.remove(obj));
         canvas.renderAll();
         hasErased = true;
+      } else if (totalObjects > 0) {
+        console.log('🎨 [Eraser] No hits at this point');
       }
     };
 
