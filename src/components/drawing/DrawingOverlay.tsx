@@ -4,14 +4,13 @@
  * Główny komponent do rysowania po worksheet.
  * Narzędzia: marker, highlighter, arrow, eraser, select-worksheet
  * 
- * NAPRAWIONE v5.0:
- * - DrawingOverlay ZAWSZE zamontowany (nie unmount przy zmianie viewMode)
- * - Gumka poprawiona: lepsza detekcja kolizji z diagnostyką
- * - Undo/Redo: naprawiona logika zgodna z Windows Snipping Tool
+ * NAPRAWIONE v4.0:
+ * - Gumka sprawdza odległość od SEGMENTÓW ścieżki (nie tylko punktów końcowych)
+ * - Undo/Redo działa poprawnie z wymuszonym re-renderem
  * - Dodano prop isVisible do kontroli widoczności CSS
  */
 
-console.log('🎨 DrawingOverlay v5.0 loaded');
+console.log('🎨 DrawingOverlay v4.0 loaded');
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Canvas as FabricCanvas, PencilBrush, Line, FabricObject, Triangle, Path, Point } from 'fabric';
@@ -296,7 +295,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     }
   };
 
-  // NAPRAWIONE v5: Undo cofa JEDEN krok (jak w Windows Snipping Tool)
+  // NAPRAWIONE v4: Undo cofa pojedynczy krok
   const handleUndo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) {
@@ -304,47 +303,40 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
       return;
     }
     
-    // Potrzebujemy minimum 2 stanów: initial + aktualny
     if (undoStackRef.current.length <= 1) {
       console.log('🎨 [Undo] Nothing to undo, stack length:', undoStackRef.current.length);
       return;
     }
 
-    console.log('🎨 [Undo] Starting undo, undo stack:', undoStackRef.current.length, 'redo stack:', redoStackRef.current.length);
+    console.log('🎨 [Undo] Undoing, stack length:', undoStackRef.current.length);
 
-    // 1. Pobierz OBECNY stan (ostatni w stacku) - to co cofamy
+    // Pobierz obecny stan (ostatni w stacku) i przenieś do redo
     const currentState = undoStackRef.current[undoStackRef.current.length - 1];
-    
-    // 2. Przenieś obecny stan do redo stack (żebyśmy mogli go przywrócić)
     redoStackRef.current = [...redoStackRef.current, currentState];
-    
-    // 3. Usuń obecny stan z undo stack
+
+    // Usuń obecny stan z undo (pop)
     undoStackRef.current = undoStackRef.current.slice(0, -1);
-    
-    // 4. Pobierz poprzedni stan (teraz ostatni w stacku) - to co przywracamy
+
+    // Załaduj poprzedni stan (teraz ostatni w stacku)
     const previousState = undoStackRef.current[undoStackRef.current.length - 1];
     
-    console.log('🎨 [Undo] Restoring to previous state with', JSON.parse(previousState).objects?.length || 0, 'objects');
+    console.log('🎨 [Undo] Loading previous state, objects:', JSON.parse(previousState).objects?.length || 0);
     
-    // 5. Załaduj poprzedni stan
     canvas.loadFromJSON(JSON.parse(previousState), () => {
       canvas.renderAll();
-      // Zablokuj wszystkie obiekty (tylko widoczne, nie edytowalne)
       canvas.forEachObject((obj) => {
         obj.selectable = false;
         obj.evented = false;
       });
-      
-      console.log('🎨 [Undo] Complete. Undo stack:', undoStackRef.current.length, 'Redo stack:', redoStackRef.current.length);
-      
-      // Zaktualizuj UI natychmiast
+      console.log('🎨 [Undo] State restored, undo stack length:', undoStackRef.current.length, 'redo stack length:', redoStackRef.current.length);
       updateHistoryState();
+      // Force React re-render
       forceUpdate(n => n + 1);
       scheduleAutoSave();
     });
   }, [updateHistoryState, scheduleAutoSave]);
 
-  // NAPRAWIONE v5: Redo przywraca cofnięty stan (jak w Windows Snipping Tool)
+  // NAPRAWIONE v4: Redo działa natychmiast
   const handleRedo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) {
@@ -357,32 +349,28 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
       return;
     }
 
-    console.log('🎨 [Redo] Starting redo, undo stack:', undoStackRef.current.length, 'redo stack:', redoStackRef.current.length);
+    console.log('🎨 [Redo] Redoing, redo stack length:', redoStackRef.current.length);
 
-    // 1. Pobierz stan do przywrócenia (ostatni w redo stacku)
-    const stateToRestore = redoStackRef.current[redoStackRef.current.length - 1];
+    // Pobierz stan do przywrócenia (ostatni w redo stacku)
+    const nextState = redoStackRef.current[redoStackRef.current.length - 1];
     
-    // 2. Usuń ze stosu redo
+    // Usuń ze stosu redo
     redoStackRef.current = redoStackRef.current.slice(0, -1);
     
-    // 3. Dodaj przywracany stan do undo stacku (staje się aktualnym stanem)
-    undoStackRef.current = [...undoStackRef.current, stateToRestore];
+    // Dodaj obecny stan do undo (przed załadowaniem nowego)
+    undoStackRef.current = [...undoStackRef.current, nextState];
 
-    console.log('🎨 [Redo] Restoring state with', JSON.parse(stateToRestore).objects?.length || 0, 'objects');
+    console.log('🎨 [Redo] Loading state, objects:', JSON.parse(nextState).objects?.length || 0);
 
-    // 4. Załaduj przywracany stan
-    canvas.loadFromJSON(JSON.parse(stateToRestore), () => {
+    canvas.loadFromJSON(JSON.parse(nextState), () => {
       canvas.renderAll();
-      // Zablokuj wszystkie obiekty
       canvas.forEachObject((obj) => {
         obj.selectable = false;
         obj.evented = false;
       });
-      
-      console.log('🎨 [Redo] Complete. Undo stack:', undoStackRef.current.length, 'Redo stack:', redoStackRef.current.length);
-      
-      // Zaktualizuj UI natychmiast
+      console.log('🎨 [Redo] State restored, undo stack length:', undoStackRef.current.length, 'redo stack length:', redoStackRef.current.length);
       updateHistoryState();
+      // Force React re-render
       forceUpdate(n => n + 1);
       scheduleAutoSave();
     });
@@ -392,15 +380,10 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
-    console.log('🎨 [ClearAll] Saving current state before clearing');
-    saveToHistory(); // Zapisz obecny stan przed wyczyszczeniem
-    
+    saveToHistory();
     canvas.clear();
     canvas.backgroundColor = 'transparent';
     canvas.renderAll();
-    
-    // Zapisz pusty stan jako nowy aktualny
-    saveToHistory();
     scheduleAutoSave();
   }, [saveToHistory, scheduleAutoSave]);
 
@@ -642,7 +625,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     };
   }, [drawingState.activeTool, drawingState.activeColor, drawingState.strokeWidth, isTeacher, isEnabled, saveToHistory, scheduleAutoSave]);
 
-  // NAPRAWKA v5: Gumka - ulepszona detekcja kolizji z diagnostyką
+  // NAPRAWKA v4: Gumka - sprawdza odległość od SEGMENTÓW ścieżki
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || !isTeacher || !isEnabled) return;
@@ -651,8 +634,6 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     canvas.isDrawingMode = false;
     let isErasing = false;
     let hasErased = false;
-
-    console.log('🎨 [Eraser] Tool activated, objects on canvas:', canvas.getObjects().length);
 
     // Oblicz odległość punktu od odcinka
     const pointToSegmentDistance = (
@@ -677,21 +658,9 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
       return Math.sqrt((px - projX) ** 2 + (py - projY) ** 2);
     };
 
-    // NAPRAWKA v5: Sprawdź czy punkt jest na obiekcie (sprawdzaj SEGMENTY)
+    // NAPRAWKA v4: Sprawdź czy punkt jest na obiekcie (sprawdzaj SEGMENTY, nie tylko punkty)
     const isPointOnObject = (obj: FabricObject, pointer: { x: number; y: number }): boolean => {
-      const tolerance = 20; // Zwiększona tolerancja dla łatwiejszego wymazywania
-      
-      // NAJPIERW sprawdź bounding box z tolerancją (szybka eliminacja)
-      const bounds = obj.getBoundingRect();
-      const padding = tolerance + 5;
-      if (
-        pointer.x < bounds.left - padding ||
-        pointer.x > bounds.left + bounds.width + padding ||
-        pointer.y < bounds.top - padding ||
-        pointer.y > bounds.top + bounds.height + padding
-      ) {
-        return false; // Nie w bounding box - nie sprawdzaj dalej
-      }
+      const tolerance = 15;
       
       // Dla Line (część strzałki) - oblicz odległość od linii
       if (obj.type === 'line') {
@@ -714,20 +683,26 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         return distance < tolerance + (line.strokeWidth || 2);
       }
       
-      // Dla Triangle (grot strzałki) - sprawdź bounding box
+      // Dla Triangle (grot strzałki) - sprawdź bounding box (jest mały)
       if (obj.type === 'triangle') {
-        // Już sprawdziliśmy bounding box wyżej i był trafiony
-        return true;
+        const bounds = obj.getBoundingRect();
+        const padding = tolerance;
+        return (
+          pointer.x >= bounds.left - padding &&
+          pointer.x <= bounds.left + bounds.width + padding &&
+          pointer.y >= bounds.top - padding &&
+          pointer.y <= bounds.top + bounds.height + padding
+        );
       }
       
-      // NAPRAWKA v5: Dla Path (marker/highlighter) - sprawdź SEGMENTY ścieżki
+      // NAPRAWKA v4: Dla Path (marker/highlighter) - sprawdź SEGMENTY ścieżki
       if (obj.type === 'path' && (obj as Path).path) {
         const path = obj as Path;
         const pathData = path.path;
         if (!pathData || pathData.length === 0) return false;
         
         const matrix = path.calcTransformMatrix();
-        const strokeTolerance = tolerance + (path.strokeWidth || 2) / 2;
+        const strokeTolerance = tolerance + (path.strokeWidth || 2);
         
         // Przechowuj poprzedni punkt do tworzenia segmentów
         let prevX = 0;
@@ -752,7 +727,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
             const y = segment[segment.length - 1] as number;
             
             if (!isFirstPoint) {
-              // Transformuj oba punkty segmentu do współrzędnych canvas
+              // Transformuj oba punkty segmentu
               const startX = matrix[0] * prevX + matrix[2] * prevY + matrix[4];
               const startY = matrix[1] * prevX + matrix[3] * prevY + matrix[5];
               const endX = matrix[0] * x + matrix[2] * y + matrix[4];
@@ -762,6 +737,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
               const distance = pointToSegmentDistance(pointer.x, pointer.y, startX, startY, endX, endY);
               
               if (distance < strokeTolerance) {
+                console.log('🎨 [Eraser] Hit path segment, distance:', distance.toFixed(2));
                 return true;
               }
             }
@@ -774,17 +750,12 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         return false;
       }
       
-      // Dla innych obiektów - użyj containsPoint
-      try {
-        return obj.containsPoint(new Point(pointer.x, pointer.y));
-      } catch {
-        return false;
-      }
+      // Dla innych obiektów - użyj containsPoint z tolerancją
+      return obj.containsPoint(new Point(pointer.x, pointer.y));
     };
 
     const handleMouseDown = (e: any) => {
       if (!e.pointer) return;
-      console.log('🎨 [Eraser] Mouse down at:', e.pointer.x.toFixed(0), e.pointer.y.toFixed(0));
       isErasing = true;
       hasErased = false;
       eraseAtPoint(e.pointer);
@@ -796,17 +767,16 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     };
 
     const eraseAtPoint = (pointer: { x: number; y: number }) => {
-      const objects = canvas.getObjects();
       const objectsToRemove: FabricObject[] = [];
       
-      for (const obj of objects) {
+      canvas.forEachObject((obj) => {
         if (isPointOnObject(obj, pointer)) {
           objectsToRemove.push(obj);
         }
-      }
+      });
       
       if (objectsToRemove.length > 0) {
-        console.log('🎨 [Eraser] Removing', objectsToRemove.length, 'object(s)');
+        console.log('🎨 [Eraser] Removing', objectsToRemove.length, 'objects');
         objectsToRemove.forEach(obj => canvas.remove(obj));
         canvas.renderAll();
         hasErased = true;
@@ -815,7 +785,7 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
 
     const handleMouseUp = () => {
       if (isErasing && hasErased) {
-        console.log('🎨 [Eraser] Finished erasing, saving to history');
+        console.log('🎨 [Eraser] Erased objects, saving to history');
         saveToHistory();
         scheduleAutoSave();
       }

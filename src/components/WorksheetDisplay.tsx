@@ -131,10 +131,10 @@ export default function WorksheetDisplay({
   
   // DRAWING OVERLAY: State for drawing mode (Live Session only)
   const [isDrawingEnabled, setIsDrawingEnabled] = useState(false);
-  const [isDrawingLayerVisible, setIsDrawingLayerVisible] = useState(true); // NAPRAWKA v5: domyślnie widoczna
+  const [isDrawingLayerVisible, setIsDrawingLayerVisible] = useState(true); // NAPRAWKA v4: domyślnie widoczna
   const [hasExistingDrawings, setHasExistingDrawings] = useState(false);
   const [currentDrawingTool, setCurrentDrawingTool] = useState<DrawingTool>('marker');
-  // NAPRAWKA v5: Osobne ustawienia dla każdego narzędzia
+  // NAPRAWKA v4: Osobne ustawienia dla każdego narzędzia
   // Każde narzędzie ma własny kolor i grubość linii
   const [toolSettings, setToolSettings] = useState({
     marker: { color: DRAWING_COLORS[0], strokeWidth: STROKE_WIDTHS[3] }, // Black, size 4
@@ -148,18 +148,10 @@ export default function WorksheetDisplay({
   const drawingOverlayRef = useRef<DrawingOverlayRef>(null);
   const worksheetContentWrapperRef = useRef<HTMLDivElement>(null);
   
-  // NAPRAWKA v5: Dynamicznie pobierz ustawienia dla aktualnego narzędzia
+  // NAPRAWKA v4: Dynamicznie pobierz ustawienia dla aktualnego narzędzia
   const currentToolSettings = toolSettings[currentDrawingTool as keyof typeof toolSettings] || toolSettings.marker;
   const currentDrawingColor = currentToolSettings.color;
   const currentStrokeWidth = currentToolSettings.strokeWidth;
-
-  // NAPRAWKA v5: Automatycznie pokaż warstwę rysunków przy wejściu do Live Session
-  useEffect(() => {
-    if (viewMode === 'live-session') {
-      console.log('🎨 [WorksheetDisplay] Entering live-session - ensuring drawing layer is visible');
-      setIsDrawingLayerVisible(true);
-    }
-  }, [viewMode]);
 
   // CRITICAL FIX: Inject selectedImage/selectedAudio/audioUrl into editableWorksheet
   // This ensures Lesson Media renders when opening worksheet from /student → Homework
@@ -946,17 +938,16 @@ export default function WorksheetDisplay({
               isLiveConnected={viewMode === 'live-session' ? isLiveConnected : undefined}
             />
             
-            {/* DRAWING OVERLAY: Canvas overlay for drawing */}
-            {/* NAPRAWKA v5: ZAWSZE montuj DrawingOverlay aby nie tracić stanu przy zmianie viewMode */}
-            {/* Widoczność kontrolowana przez CSS (isVisible) - nie przez conditional rendering */}
-            {worksheetId && userId && (
+            {/* DRAWING OVERLAY: Canvas overlay for drawing (Live Session only) */}
+            {/* NAPRAWKA v4: Przekazuj isVisible do kontroli widoczności CSS */}
+            {viewMode === 'live-session' && worksheetId && userId && (
               <DrawingOverlay
                 ref={drawingOverlayRef}
                 worksheetId={worksheetId}
                 teacherId={userId}
                 isTeacher={true}
-                isEnabled={isDrawingEnabled && viewMode === 'live-session'}
-                isVisible={isDrawingLayerVisible && viewMode === 'live-session'}
+                isEnabled={isDrawingEnabled}
+                isVisible={isDrawingLayerVisible}
                 externalTool={currentDrawingTool}
                 externalColor={currentDrawingColor}
                 externalStrokeWidth={currentStrokeWidth}
