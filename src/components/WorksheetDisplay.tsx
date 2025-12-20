@@ -319,16 +319,20 @@ export default function WorksheetDisplay({
     checkExistingDrawings();
   }, [worksheetId]); // TYLKO worksheetId - nie viewMode!
 
-  // NAPRAWKA v4: ZAWSZE pokaż warstwę przy przełączeniu na Live Session
+  // NAPRAWKA v5: ZAWSZE pokaż warstwę przy przełączeniu na Live Session
+  // Używamy setTimeout żeby dać czas na mount DrawingOverlay przed ustawieniem widoczności
   useEffect(() => {
     console.log('🎨 [Drawing] ViewMode effect:', { viewMode, isDrawingLayerVisible });
     
     if (viewMode === 'live-session') {
-      // NAPRAWKA v4: ZAWSZE pokaż warstwę w live-session
-      if (!isDrawingLayerVisible) {
-        console.log('🎨 [Drawing] Auto-showing drawing layer (entering live-session)');
+      // NAPRAWKA v5: Użyj setTimeout żeby dać czas na mount komponentu
+      // To zapobiega race condition gdzie komponent nie jest jeszcze gotowy
+      const timeoutId = setTimeout(() => {
+        console.log('🎨 [Drawing] Auto-showing drawing layer (entering live-session, after delay)');
         setIsDrawingLayerVisible(true);
-      }
+      }, 100); // 100ms daje czas na mount i inicjalizację canvas
+      
+      return () => clearTimeout(timeoutId);
     } else {
       // Tylko wyłącz tryb rysowania przy wyjściu z live-session
       if (isDrawingEnabled) {
