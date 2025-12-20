@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,12 +41,19 @@ import ShareWorksheetModal from '@/components/ShareWorksheetModal';
 const StudentPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { students, updateStudent, deleteStudent } = useStudents();
   const [currentPage, setCurrentPage] = useState(1);
   const [deletedCurrentPage, setDeletedCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const pageSize = 10;
+
+  // Sync tab with URL
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
   
   const student = students.find(s => s.id === id);
   
@@ -87,38 +94,8 @@ const StudentPage = () => {
     );
   }
 
-  const handleWorksheetClick = async (worksheet: any) => {
-    try {
-      let worksheetData = worksheet;
-      
-      if (!worksheet.ai_response) {
-        const { data, error } = await supabase
-          .from('worksheets')
-          .select('*')
-          .eq('id', worksheet.id)
-          .single();
-        
-        if (error) throw error;
-        if (!data) throw new Error('Worksheet not found');
-        
-        worksheetData = data;
-      }
-      
-      const parsedData = JSON.parse(worksheetData.ai_response);
-      const fixedWorksheetData = deepFixTextObjects(parsedData, 'studentPage');
-      
-      const restoredWorksheet = {
-        ...worksheetData,
-        ai_response: JSON.stringify(fixedWorksheetData)
-      };
-      
-      sessionStorage.setItem('restoredWorksheet', JSON.stringify(restoredWorksheet));
-      sessionStorage.setItem('worksheetStudentName', student.name);
-      
-      navigate('/');
-    } catch (error) {
-      console.error('Error opening worksheet:', error);
-    }
+  const handleWorksheetClick = (worksheet: any) => {
+    navigate(`/worksheet/${worksheet.id}`);
   };
 
   const handleGenerateWorksheet = () => {
@@ -178,7 +155,7 @@ const StudentPage = () => {
         </div>
 
         {/* Tabs Navigation */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <User className="h-4 w-4" />
@@ -351,9 +328,9 @@ const StudentPage = () => {
                   <div className="space-y-3">
                     {worksheets.slice(0, 5).map((worksheet) => (
                       <div key={worksheet.id}>
-                        <div
+                        <Link
+                          to={`/worksheet/${worksheet.id}`}
                           className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => handleWorksheetClick(worksheet)}
                         >
                           <div className="flex items-center space-x-3 flex-1">
                             <FileText className="h-4 w-4 text-primary" />
@@ -373,7 +350,7 @@ const StudentPage = () => {
                               </p>
                             </div>
                           </div>
-                        </div>
+                        </Link>
                         <WorksheetHomeworkSection 
                           worksheetId={worksheet.id}
                           compact={true}

@@ -30,8 +30,10 @@ interface ExerciseNavSidebarProps {
   isAllExpanded: boolean;
   isOpen?: boolean;
   setIsOpen?: (open: boolean) => void;
-  hasGrammar?: boolean;  // NEW: Whether Grammar section exists
-  hasVocabulary?: boolean;  // NEW: Whether Vocabulary section exists
+  hasGrammar?: boolean;
+  hasVocabulary?: boolean;
+  isGrammarActive?: boolean;
+  isVocabularyActive?: boolean;
 }
 
 const ExerciseNavContent: React.FC<ExerciseNavSidebarProps> = ({
@@ -136,9 +138,11 @@ const FloatingExerciseButtons: React.FC<{
   onCollapseAll: () => void;
   onExpandAll: () => void;
   isAllExpanded: boolean;
-  hasGrammar?: boolean;  // NEW
-  hasVocabulary?: boolean;  // NEW
-}> = ({ exercises, activeExercise, onScrollToExercise, onCollapseAll, onExpandAll, isAllExpanded, hasGrammar, hasVocabulary }) => {
+  hasGrammar?: boolean;
+  hasVocabulary?: boolean;
+  isGrammarActive?: boolean;
+  isVocabularyActive?: boolean;
+}> = ({ exercises, activeExercise, onScrollToExercise, onCollapseAll, onExpandAll, isAllExpanded, hasGrammar, hasVocabulary, isGrammarActive, isVocabularyActive }) => {
   
   const handleGrammarScroll = () => {
     const grammarSection = document.querySelector('#grammar-rules-section, [data-section="grammar"]');
@@ -177,7 +181,10 @@ const FloatingExerciseButtons: React.FC<{
           variant="outline"
           size="sm"
           onClick={handleGrammarScroll}
-          className="w-10 h-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm"
+          className={cn(
+            "w-10 h-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm",
+            isGrammarActive && "bg-primary text-primary-foreground border-primary"
+          )}
           title="Scroll to Grammar"
         >
           <span className="font-bold text-sm">G</span>
@@ -211,7 +218,10 @@ const FloatingExerciseButtons: React.FC<{
           variant="outline"
           size="sm"
           onClick={handleVocabularyScroll}
-          className="w-10 h-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm"
+          className={cn(
+            "w-10 h-10 p-0 shadow-lg bg-background/95 backdrop-blur-sm",
+            isVocabularyActive && "bg-primary text-primary-foreground border-primary"
+          )}
           title="Scroll to Vocabulary"
         >
           <span className="font-bold text-sm">V</span>
@@ -291,6 +301,8 @@ export const ExerciseNavSidebar: React.FC<ExerciseNavSidebarProps> = (props) => 
         isAllExpanded={props.isAllExpanded}
         hasGrammar={props.hasGrammar}
         hasVocabulary={props.hasVocabulary}
+        isGrammarActive={props.isGrammarActive}
+        isVocabularyActive={props.isVocabularyActive}
       />
 
       {/* Floating sidebar */}

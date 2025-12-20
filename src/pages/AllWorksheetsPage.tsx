@@ -95,9 +95,9 @@ const WorksheetTableRow = ({
 
           {/* Worksheet Info */}
           <div className="col-span-5">
-            <div
-              className="cursor-pointer group"
-              onClick={() => onOpen(worksheet)}
+            <Link
+              to={`/worksheet/${worksheet.id}`}
+              className="cursor-pointer group block"
             >
               <div className="flex items-center gap-2">
                 <h3 className="font-medium text-gray-900 group-hover:text-primary transition-colors truncate">
@@ -112,7 +112,7 @@ const WorksheetTableRow = ({
               <p className="text-sm text-gray-500 mt-1">
                 ID: {worksheet.id.slice(0, 8)}...
               </p>
-            </div>
+            </Link>
           </div>
 
           {/* Student */}
@@ -350,41 +350,8 @@ const AllWorksheetsPage = () => {
     setSelectedWorksheets([]);
   };
 
-  const handleWorksheetOpen = async (worksheet: WorksheetHistoryItem) => {
-    try {
-      // ✅ FIX: In listView mode, we don't have ai_response, so fetch it separately
-      let worksheetData = worksheet;
-      
-      if (!worksheet.ai_response) {
-        console.log('[AllWorksheets] Fetching full worksheet data for:', worksheet.id);
-        const { data, error } = await supabase
-          .from('worksheets')
-          .select('*')
-          .eq('id', worksheet.id)
-          .single();
-        
-        if (error) throw error;
-        if (!data) throw new Error('Worksheet not found');
-        
-        worksheetData = data as any;
-      }
-      
-      // Parse the AI response to get the worksheet data
-      const parsedData = JSON.parse(worksheetData.ai_response);
-      
-      // Store worksheet data in sessionStorage for restoration
-      const restoredWorksheet = {
-        ...worksheetData,
-        ai_response: JSON.stringify(parsedData)
-      };
-      
-      sessionStorage.setItem('restoredWorksheet', JSON.stringify(restoredWorksheet));
-      
-      // Navigate to the main worksheet view
-      navigate('/');
-    } catch (error) {
-      console.error('Error opening worksheet:', error);
-    }
+  const handleWorksheetOpen = (worksheet: WorksheetHistoryItem) => {
+    navigate(`/worksheet/${worksheet.id}`);
   };
 
   if (authLoading || loading) {

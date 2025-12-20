@@ -20,11 +20,15 @@ export interface UseWorksheetNavigationReturn {
   scrollToExercise: (index: number) => void;
   isAllCollapsed: boolean;
   isAllExpanded: boolean;
+  isGrammarActive: boolean;
+  isVocabularyActive: boolean;
 }
 
 export const useWorksheetNavigation = ({ exercises }: UseWorksheetNavigationProps): UseWorksheetNavigationReturn => {
   const [collapsedExercises, setCollapsedExercises] = useState<Map<number, boolean>>(new Map());
   const [activeExercise, setActiveExercise] = useState<number | null>(null);
+  const [isGrammarActive, setIsGrammarActive] = useState(false);
+  const [isVocabularyActive, setIsVocabularyActive] = useState(false);
   const exerciseRefs = useRef<(HTMLElement | null)[]>(Array(exercises.length).fill(null));
 
   // Initialize refs array when exercises length changes
@@ -69,15 +73,30 @@ export const useWorksheetNavigation = ({ exercises }: UseWorksheetNavigationProp
     }
   }, []);
 
-  // Intersection Observer for tracking active exercise
+  // Intersection Observer for tracking active exercise, Grammar, and Vocabulary
   useEffect(() => {
     // Delay observer setup to ensure all refs are populated
     const timeoutId = setTimeout(() => {
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
+            const target = entry.target;
+            
+            // Check for Grammar section
+            if (target.id === 'grammar-rules-section' || target.getAttribute('data-section') === 'grammar') {
+              setIsGrammarActive(entry.isIntersecting);
+              return;
+            }
+            
+            // Check for Vocabulary section
+            if (target.id === 'vocabulary-sheet-section' || target.getAttribute('data-section') === 'vocabulary') {
+              setIsVocabularyActive(entry.isIntersecting);
+              return;
+            }
+            
+            // Check for exercises
             if (entry.isIntersecting) {
-              const index = exerciseRefs.current.findIndex(ref => ref === entry.target);
+              const index = exerciseRefs.current.findIndex(ref => ref === target);
               if (index !== -1) {
                 setActiveExercise(index);
               }
@@ -90,12 +109,24 @@ export const useWorksheetNavigation = ({ exercises }: UseWorksheetNavigationProp
         }
       );
 
-      // Observe all current refs
+      // Observe all exercise refs
       exerciseRefs.current.forEach((ref) => {
         if (ref) {
           observer.observe(ref);
         }
       });
+
+      // Observe Grammar section
+      const grammarSection = document.querySelector('#grammar-rules-section, [data-section="grammar"]');
+      if (grammarSection) {
+        observer.observe(grammarSection);
+      }
+
+      // Observe Vocabulary section
+      const vocabSection = document.querySelector('#vocabulary-sheet-section, [data-section="vocabulary"]');
+      if (vocabSection) {
+        observer.observe(vocabSection);
+      }
 
       return () => {
         observer.disconnect();
@@ -105,7 +136,7 @@ export const useWorksheetNavigation = ({ exercises }: UseWorksheetNavigationProp
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [exercises.length, exerciseRefs.current]);
+  }, [exercises.length]);
 
   // Helper computed values
   const isAllCollapsed = exercises.every((_, index) => collapsedExercises.get(index) === true);
@@ -120,6 +151,8 @@ export const useWorksheetNavigation = ({ exercises }: UseWorksheetNavigationProp
     expandAll,
     scrollToExercise,
     isAllCollapsed,
-    isAllExpanded
+    isAllExpanded,
+    isGrammarActive,
+    isVocabularyActive
   };
 };
