@@ -112,34 +112,8 @@ const Dashboard = () => {
     navigate('/');
   };
 
-  const handleWorksheetOpen = async (worksheet: any) => {
-    try {
-      // ✅ FIX: In lightweight+listView mode, we don't have ai_response, so fetch it separately
-      let worksheetData = worksheet;
-      
-      if (!worksheet.ai_response) {
-        console.log('[Dashboard] Fetching full worksheet data for:', worksheet.id);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not authenticated');
-        
-        const { data: fullWorksheet, error: fetchError } = await supabase
-          .from('worksheets')
-          .select('*')
-          .eq('id', worksheet.id)
-          .eq('teacher_id', user.id)
-          .single();
-        
-        if (fetchError) throw fetchError;
-        if (!fullWorksheet) throw new Error('Worksheet not found');
-        
-        worksheetData = fullWorksheet;
-      }
-      
-      sessionStorage.setItem('restoredWorksheet', JSON.stringify(worksheetData));
-      navigate('/');
-    } catch (error) {
-      console.error('Error opening worksheet:', error);
-    }
+  const handleWorksheetOpen = (worksheet: any) => {
+    navigate(`/worksheet/${worksheet.id}`);
   };
 
   const handleDeleteWorksheet = async (worksheetId: string) => {
@@ -366,9 +340,9 @@ const Dashboard = () => {
                         <CardContent className="p-4">
                           {/* First line: Title + Student Badge + Media + Actions */}
                           <div className="flex items-center justify-between mb-2">
-                            <div 
+                            <Link 
+                              to={`/worksheet/${worksheet.id}`}
                               className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer hover:text-primary transition-colors"
-                              onClick={() => handleWorksheetOpen(worksheet)}
                             >
                               <h3 className="font-semibold text-base truncate">
                                 {formatWorksheetTitle(worksheet)}
@@ -381,7 +355,7 @@ const Dashboard = () => {
                                 hasAudio={hasAudio(worksheet)}
                                 size="sm"
                               />
-                            </div>
+                            </Link>
                             
                             <div className="flex items-center gap-2">
                               <DuplicateWorksheetButton 

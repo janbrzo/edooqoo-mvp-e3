@@ -272,6 +272,8 @@ export default function WorksheetContent({
           setIsOpen={setSidebarOpen}
           hasGrammar={hasGrammar}
           hasVocabulary={!!editableWorksheet?.vocabulary_sheet}
+          isGrammarActive={navigation.isGrammarActive}
+          isVocabularyActive={navigation.isVocabularyActive}
         />
       )}
 

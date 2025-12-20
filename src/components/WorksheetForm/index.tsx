@@ -8,6 +8,7 @@ import { getRandomSuggestionSets, getSuggestionSetMatchingPlaceholder, Suggestio
 import FormField from './FormField';
 import AdvancedOptions from './AdvancedOptions';
 import ExerciseSelector from './ExerciseSelector';
+import TypewriterHint from './TypewriterHint';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useEventTracking } from "@/hooks/useEventTracking";
 import { useAnonymousAuth } from "@/hooks/useAnonymousAuth";
@@ -310,6 +311,9 @@ export default function WorksheetForm({
                   </div>
                 </div>
               </div>
+
+              {/* Typewriter Hint */}
+              <TypewriterHint />
 
               {/* Lesson Topic - Always Visible, with Lesson Focus appearing next to it */}
               <div className={`grid grid-cols-1 ${isMobile ? 'gap-4' : showMoreFields ? 'md:grid-cols-2 gap-6' : ''} mb-6`}>
