@@ -54,11 +54,18 @@ function WorksheetHeader({
   return (
     <div className="mb-6">
       <div className="flex gap-2 mb-4">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Generate New Worksheet
-        </Button>
+        {/* Back button - on the left */}
         <Button variant="ghost" onClick={handleBack}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
+        </Button>
+        {/* Generate New Worksheet - as Link so it can be opened in new tab */}
+        <Button asChild>
+          <Link 
+            to="/" 
+            onClick={() => sessionStorage.setItem('forceNewWorksheet', 'true')}
+          >
+            Generate New Worksheet
+          </Link>
         </Button>
       </div>
       <div className="bg-worksheet-purple rounded-lg p-6">

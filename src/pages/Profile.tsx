@@ -693,12 +693,13 @@ const Profile = () => {
                   <CardTitle className="text-lg">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 space-y-2">
-                  <Button 
-                    className="w-full" 
-                    onClick={handleForceNewWorksheet}
-                    size="sm"
-                  >
-                    Generate Worksheet
+                  <Button className="w-full" size="sm" asChild>
+                    <Link 
+                      to="/" 
+                      onClick={() => sessionStorage.setItem('forceNewWorksheet', 'true')}
+                    >
+                      Generate Worksheet
+                    </Link>
                   </Button>
                   <Button 
                     className="w-full" 
