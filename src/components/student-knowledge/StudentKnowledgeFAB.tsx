@@ -6,18 +6,14 @@ interface StudentKnowledgeFABProps {
   onClick: () => void;
 }
 
-// PROBLEM 4: Swapped positions - Add Student Note is now at top-[calc(50%+5px)] (above Lesson Ideas)
-// Animation: Shows tooltip after 5 seconds
+// Add Student Note button - shows animated label immediately for 10 seconds
 export const StudentKnowledgeFAB = ({ onClick }: StudentKnowledgeFABProps) => {
-  const [showLabel, setShowLabel] = useState(false);
+  const [showLabel, setShowLabel] = useState(true); // Show immediately
 
   useEffect(() => {
-    const showTimer = setTimeout(() => {
-      setShowLabel(true);
-      const hideTimer = setTimeout(() => setShowLabel(false), 2500);
-      return () => clearTimeout(hideTimer);
-    }, 5000);
-    return () => clearTimeout(showTimer);
+    // Hide after 10 seconds
+    const hideTimer = setTimeout(() => setShowLabel(false), 10000);
+    return () => clearTimeout(hideTimer);
   }, []);
 
   return (

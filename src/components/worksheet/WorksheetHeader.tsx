@@ -1,9 +1,11 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Zap, Database, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Zap, Database, Clock, GraduationCap, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { StudentSelector } from "@/components/StudentSelector";
+import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
 
 interface WorksheetHeaderProps {
   onBack: () => void;
@@ -12,7 +14,9 @@ interface WorksheetHeaderProps {
   inputParams: any;
   studentName?: string;
   worksheetId?: string;
+  studentId?: string;
   onStudentChange?: () => void;
+  tokenLeft?: number;
 }
 
 function WorksheetHeader({
@@ -22,14 +26,16 @@ function WorksheetHeader({
   inputParams,
   studentName,
   worksheetId,
-  onStudentChange
+  studentId: propsStudentId,
+  onStudentChange,
+  tokenLeft
 }: WorksheetHeaderProps) {
   // Try to get student name from multiple sources
   const displayStudentName = studentName || 
     inputParams?.studentName || 
     (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('worksheetStudentName') : null);
 
-  const studentId = inputParams?.studentId || 
+  const studentId = propsStudentId || inputParams?.studentId || 
     (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('worksheetStudentId') : null);
 
   const handleBack = () => {
@@ -53,20 +59,43 @@ function WorksheetHeader({
 
   return (
     <div className="mb-6">
-      <div className="flex gap-2 mb-4">
-        {/* Back button - on the left */}
-        <Button variant="ghost" onClick={handleBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back
-        </Button>
-        {/* Generate New Worksheet - as Link so it can be opened in new tab */}
-        <Button asChild>
-          <Link 
-            to="/" 
-            onClick={() => sessionStorage.setItem('forceNewWorksheet', 'true')}
-          >
-            Generate New Worksheet
-          </Link>
-        </Button>
+      <div className="flex gap-2 mb-4 justify-between items-center">
+        {/* Left side: Back and Generate */}
+        <div className="flex gap-2">
+          <Button variant="ghost" onClick={handleBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
+          <Button asChild>
+            <Link 
+              to="/" 
+              onClick={() => sessionStorage.setItem('forceNewWorksheet', 'true')}
+            >
+              Generate New Worksheet
+            </Link>
+          </Button>
+        </div>
+        
+        {/* Right side: Tokens, bell, Dashboard, Profile */}
+        <div className="flex items-center gap-3">
+          {tokenLeft !== undefined && (
+            <Badge variant="outline" className="text-sm px-3 py-1">
+              Tokens Left: {tokenLeft}
+            </Badge>
+          )}
+          <HomeworkNotificationBadge />
+          <Button asChild variant="outline" size="sm">
+            <Link to="/dashboard">
+              <GraduationCap className="h-4 w-4 mr-2" />
+              Dashboard
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/profile">
+              <User className="h-4 w-4 mr-2" />
+              Profile
+            </Link>
+          </Button>
+        </div>
       </div>
       <div className="bg-worksheet-purple rounded-lg p-6">
         <div className="flex flex-col md:flex-row justify-between">
@@ -77,12 +106,12 @@ function WorksheetHeader({
                 <span>for</span>
                 {displayStudentName ? (
                   studentId ? (
-                    <Link 
-                      to={`/student/${studentId}`} 
-                      className="hover:underline hover:text-yellow-200 transition-colors"
+                    <a 
+                      href={`/student/${studentId}`} 
+                      className="hover:underline hover:text-yellow-200 transition-colors cursor-pointer"
                     >
                       {displayStudentName}
-                    </Link>
+                    </a>
                   ) : displayStudentName
                 ) : "Unassigned"}
                 {/* Show StudentSelector when we have worksheetId OR fallback for anonymous users */}

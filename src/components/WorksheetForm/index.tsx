@@ -392,10 +392,22 @@ export default function WorksheetForm({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 // Exclusive selection - tylko jeden na raz
+                                const maxExercises = lessonTime === '45min' ? 6 : 8;
+                                const PICTURE_EXERCISES_45MIN = ['describe-picture', 'answer-questions-picture', 'fill-in-blanks', 'dialogue', 'matching', 'true-false'];
+                                const PICTURE_EXERCISES_60MIN = ['describe-picture', 'answer-questions-picture', 'true-false-picture', 'fill-in-blanks', 'multiple-choice', 'matching', 'dialogue', 'answer-questions'];
+                                
                                 if (selectedMediaTypes.includes('picture')) {
                                   setSelectedMediaTypes([]);
+                                  // Reset to default exercises
+                                  const defaultExercises = lessonTime === '45min' 
+                                    ? ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out']
+                                    : ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
+                                  setSelectedExercises(defaultExercises);
                                 } else {
                                   setSelectedMediaTypes(['picture'] as MediaType[]);
+                                  // Select picture exercises
+                                  const pictureExercises = lessonTime === '45min' ? PICTURE_EXERCISES_45MIN : PICTURE_EXERCISES_60MIN;
+                                  setSelectedExercises(pictureExercises);
                                 }
                                 if (!activeTab) setActiveTab('exercises');
                               }}
@@ -419,10 +431,22 @@ export default function WorksheetForm({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 // Exclusive selection - tylko jeden na raz
+                                const maxExercises = lessonTime === '45min' ? 6 : 8;
+                                const AUDIO_EXERCISES_45MIN = ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'fill-in-blanks', 'multiple-choice-audio', 'matching'];
+                                const AUDIO_EXERCISES_60MIN = ['listening-comprehension', 'answer-questions-audio', 'true-false', 'fill-in-blanks-audio', 'multiple-choice', 'dialogue', 'answer-questions', 'matching'];
+                                
                                 if (selectedMediaTypes.includes('audio')) {
                                   setSelectedMediaTypes([]);
+                                  // Reset to default exercises
+                                  const defaultExercises = lessonTime === '45min' 
+                                    ? ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out']
+                                    : ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
+                                  setSelectedExercises(defaultExercises);
                                 } else {
                                   setSelectedMediaTypes(['audio'] as MediaType[]);
+                                  // Select audio exercises
+                                  const audioExercises = lessonTime === '45min' ? AUDIO_EXERCISES_45MIN : AUDIO_EXERCISES_60MIN;
+                                  setSelectedExercises(audioExercises);
                                 }
                                 if (!activeTab) setActiveTab('exercises');
                               }}

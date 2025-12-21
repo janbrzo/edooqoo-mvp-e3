@@ -23,6 +23,7 @@ import { useLiveSessionAnswers } from "@/hooks/useLiveSessionAnswers";
 import { CreateHomeworkModal } from "@/components/homework/CreateHomeworkModal";
 import { QuickAddWordToFlashcardsModal } from "@/components/flashcards/QuickAddWordToFlashcardsModal";
 import { ViewFlashcardSetsModal } from "@/components/flashcards/ViewFlashcardSetsModal";
+import { SelectWordFAB, QuickAddWordFAB } from "@/components/flashcards/FlashcardFABs";
 import { SelectWordMode } from "@/components/worksheet/SelectWordMode";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -84,6 +85,7 @@ interface WorksheetDisplayProps {
   selectedImage?: any;
   selectedAudio?: any;
   audioUrl?: string;
+  tokenLeft?: number;
 }
 
 export default function WorksheetDisplay({
@@ -105,7 +107,8 @@ export default function WorksheetDisplay({
   onStudentChange,
   selectedImage,
   selectedAudio,
-  audioUrl
+  audioUrl,
+  tokenLeft
 }: WorksheetDisplayProps) {
   const [viewMode, setViewMode] = useState<'student' | 'teacher' | 'live-session'>('teacher');
   const [isEditing, setIsEditing] = useState(false);
@@ -718,36 +721,14 @@ export default function WorksheetDisplay({
             )}
           </div>
           
-          {/* Select Word from Worksheet */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={() => setIsSelectWordMode(true)}
-                size="icon"
-                className="fixed top-[calc(50%-90px)] right-6 p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white z-50"
-              >
-                <TextSelect className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">Select Word to Add (S)</TooltipContent>
-          </Tooltip>
+          {/* Select Word from Worksheet - with animated label */}
+          <SelectWordFAB onClick={() => setIsSelectWordMode(true)} />
           
-          {/* Quick Add Word */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={() => {
-                  setSelectedWordForFlashcard('');
-                  setShowQuickAddWordModal(true);
-                }}
-                size="icon"
-                className="fixed top-[calc(50%-45px)] right-6 p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white z-50"
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">Quick Add Word to Flashcards (F)</TooltipContent>
-          </Tooltip>
+          {/* Quick Add Word - with animated label */}
+          <QuickAddWordFAB onClick={() => {
+            setSelectedWordForFlashcard('');
+            setShowQuickAddWordModal(true);
+          }} flashcardSetsCount={flashcardSetsCount} />
         </>
       )}
       
@@ -851,7 +832,9 @@ export default function WorksheetDisplay({
             inputParams={inputParams}
             studentName={studentName}
             worksheetId={worksheetId}
+            studentId={studentId}
             onStudentChange={onStudentChange}
+            tokenLeft={tokenLeft}
           />
           <InputParamsCard 
             inputParams={inputParams} 

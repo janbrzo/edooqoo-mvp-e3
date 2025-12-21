@@ -33,13 +33,14 @@ export interface DrawingToolInfo {
 
 /**
  * Lista wszystkich narzędzi z metadanymi
+ * UWAGA: Eraser, Undo, Redo tymczasowo ukryte - do poprawy później
  */
 export const DRAWING_TOOLS: DrawingToolInfo[] = [
   { id: 'select-worksheet', label: 'Select on Worksheet', icon: 'MousePointer2', shortcut: 'V', hasColorPicker: false, hasStrokeWidth: false },
   { id: 'marker', label: 'Marker', icon: 'Pen', shortcut: 'M', hasColorPicker: true, hasStrokeWidth: true },
   { id: 'highlighter', label: 'Highlighter', icon: 'Highlighter', shortcut: 'H', hasColorPicker: true, hasStrokeWidth: true },
   { id: 'arrow', label: 'Arrow', icon: 'MoveUpRight', shortcut: 'A', hasColorPicker: true, hasStrokeWidth: true },
-  { id: 'eraser', label: 'Eraser', icon: 'Eraser', shortcut: 'E', hasColorPicker: false, hasStrokeWidth: false },
+  // { id: 'eraser', label: 'Eraser', icon: 'Eraser', shortcut: 'E', hasColorPicker: false, hasStrokeWidth: false }, // TYMCZASOWO UKRYTE
 ];
 
 // ============================================
