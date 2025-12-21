@@ -5,21 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Login Incentives & UX Improvements:**
-- **10 Login Incentives for Anonymous Users**: Psychological and UX-driven prompts to encourage signup
-  - Demo Mode Badge with tooltip (loss aversion)
-  - Signup Progress Bar showing path Demo → Free → Side-Gig → Full-Time
-  - Toast after worksheet generation warning about unsaved work
-  - Social Proof Badge "Join 500+ teachers"
-  - Welcome Back Modal for returning visitors
-  - Feature Lock placeholder at Student Selector
-  - Upgrade Teaching Banner below worksheet
-  - Pulsing "2 FREE" badge on Sign Up button
-  - Exit Intent Modal when cursor leaves page
-- **Full-Time Plan Dropdown Fix**: Manual changes no longer overwritten by calculator
-- **New Component Folder**: `src/components/LoginIncentives/` with 8 reusable components
+**Latest Update (December 2025) - Navigation & UX Improvements:**
+- **Navigation Sidebar Highlighting**: Added `isGrammarActive` and `isVocabularyActive` to `useWorksheetNavigation` hook - G/V buttons now highlight when scrolling to those sections
+- **Student Page Tab URLs**: Added `useSearchParams` to sync active tab with URL - refreshing page now preserves current tab (`/student/:id?tab=worksheets`)
+- **Worksheet Navigation URLs**: Changed from `sessionStorage` approach to direct `/worksheet/:id` navigation - URLs are now shareable
+- **Open Worksheet in New Tab**: Replaced `<div onClick>` with `<Link to>` components - right-click and middle-click now work correctly
+- **Typewriter Hint Animation**: New `TypewriterHint` component above Lesson topic field - rotates through 15 educational hints with 3s typing + 2s pause effect
 
-**Previous Update (December 2025) - Navigation & UX Improvements:**
+**Previous Update (December 2025) - Drawing Overlay v5.1 Fixes:**
 - **CRITICAL FIX: Undo/Redo Initial State**: Initial state now saved INSIDE `loadFromJSON` callback - guarantees state captured AFTER all objects loaded
 - **Live Session Visibility Race Condition**: Added 100ms setTimeout before setting `isDrawingLayerVisible=true` - gives time for DrawingOverlay to mount
 - **Eraser Diagnostics**: Added comprehensive `console.log` statements to debug eraser functionality (checks isTeacher, isEnabled, activeTool, objectsCount)

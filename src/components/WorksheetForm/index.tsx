@@ -17,7 +17,6 @@ import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shuffle, Brain, MousePointer, ChevronDown, Image, Headphones } from "lucide-react";
 import type { MediaType } from './types';
-import { SocialProofBadge, FeatureLockPlaceholder } from "@/components/LoginIncentives";
 export type { FormData };
 interface ImageSuggestion {
   id: string;
@@ -365,28 +364,20 @@ export default function WorksheetForm({
                 {/* Card Headers in One Line with Student Selector */}
                 <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-3'} mb-4 items-stretch`}>
                   
-                  {/* Student Selection - INCENTIVE #6 & #10: Show lock for anonymous users */}
-                  {userId ? (
-                    students.length > 0 && (
-                      <div className={`${isMobile ? 'w-full' : 'w-[23%]'} flex items-center`}>
-                        <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
-                          <SelectTrigger className="w-full h-full">
-                            <SelectValue placeholder="No specific student" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="no-student">No specific student</SelectItem>
-                            {students.map(student => <SelectItem key={student.id} value={student.id}>
-                                {student.name} ({student.english_level})
-                              </SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )
-                  ) : (
-                    <div className={`${isMobile ? 'w-full' : 'w-[23%]'} flex items-center`}>
-                      <FeatureLockPlaceholder />
-                    </div>
-                  )}
+                  {/* Student Selection Dropdown - only for authenticated users */}
+                  {userId && students.length > 0 && <div className={`${isMobile ? 'w-full' : 'w-[23%]'} flex items-center`}>
+                      <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                        <SelectTrigger className="w-full h-full">
+                          <SelectValue placeholder="No specific student" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="no-student">No specific student</SelectItem>
+                          {students.map(student => <SelectItem key={student.id} value={student.id}>
+                              {student.name} ({student.english_level})
+                            </SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>}
                   
                   {/* Exercise Types Card Header */}
                   <Card className={`border-2 cursor-pointer transition-colors ${isMobile ? 'w-full' : 'flex-1'} ${activeTab === 'exercises' ? 'border-worksheet-purple bg-worksheet-purpleLight' : 'border-gray-200 hover:border-gray-300'}`} onClick={() => setActiveTab(activeTab === 'exercises' ? null : 'exercises')}>
@@ -541,24 +532,14 @@ export default function WorksheetForm({
                 </p>
               </div>
 
-              <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'} pt-4`}>
+              <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between'} pt-4`}>
                 <Button type="button" variant="outline" onClick={refreshSuggestions} className={`border-worksheet-purple text-worksheet-purple hover:bg-worksheet-purpleLight ${isMobile ? 'w-full' : ''}`} size={isMobile ? "sm" : "default"}>
                   Refresh Suggestions
                 </Button>
-                <div className={`flex ${isMobile ? 'flex-col gap-2 w-full' : 'items-center gap-4'}`}>
-                  {/* INCENTIVE #4: Social Proof Badge - show for all users */}
-                  {!isMobile && <SocialProofBadge />}
-                  <Button type="submit" className={`bg-worksheet-purple hover:bg-worksheet-purpleDark ${isMobile ? 'w-full' : ''}`} size={isMobile ? "sm" : "default"}>
-                    Generate Custom Worksheet
-                  </Button>
-                </div>
+                <Button type="submit" className={`bg-worksheet-purple hover:bg-worksheet-purpleDark ${isMobile ? 'w-full' : ''}`} size={isMobile ? "sm" : "default"}>
+                  Generate Custom Worksheet
+                </Button>
               </div>
-              {/* INCENTIVE #4: Social Proof Badge - mobile version */}
-              {isMobile && (
-                <div className="flex justify-center pt-2">
-                  <SocialProofBadge />
-                </div>
-              )}
             </div>
           </form>
         </CardContent>

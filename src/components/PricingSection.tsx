@@ -34,10 +34,12 @@ export const PricingSection = () => {
     setRecommendedWorksheets(worksheetsNeeded);
     setLastInteraction('calculator');
     
-    // FIX: Only update dropdown if user hasn't manually changed it
-    if (plan === 'full-time' && lessonsPerWeek && !hasManuallyChanged) {
+    if (plan === 'full-time' && lessonsPerWeek) {
       const recommendedTokens = getRecommendedPlanByLessons(lessonsPerWeek);
-      setSelectedFullTimePlan(recommendedTokens);
+      if (recommendedTokens !== selectedFullTimePlan) {
+        setSelectedFullTimePlan(recommendedTokens);
+        setHasManuallyChanged(false);
+      }
     }
   };
 
