@@ -115,48 +115,26 @@ export const DrawingToolbar = ({
           </div>
         ))}
 
+        {/* TYMCZASOWO UKRYTE: Undo/Redo - do poprawy później */}
+        {/* 
         <Separator orientation="vertical" className="h-8 mx-1" />
-
-        {/* Undo/Redo */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-9 h-9 p-0"
-              onClick={() => {
-                console.log('🎨 [DrawingToolbar] Undo clicked, canUndo:', canUndo);
-                onUndo();
-              }}
-              disabled={!canUndo}
-            >
+            <Button variant="ghost" size="sm" className="w-9 h-9 p-0" onClick={onUndo} disabled={!canUndo}>
               <Undo2 className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>
-            <p>Undo <span className="text-muted-foreground">(Ctrl+Z)</span></p>
-          </TooltipContent>
+          <TooltipContent><p>Undo (Ctrl+Z)</p></TooltipContent>
         </Tooltip>
-
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-9 h-9 p-0"
-              onClick={() => {
-                console.log('🎨 [DrawingToolbar] Redo clicked, canRedo:', canRedo);
-                onRedo();
-              }}
-              disabled={!canRedo}
-            >
+            <Button variant="ghost" size="sm" className="w-9 h-9 p-0" onClick={onRedo} disabled={!canRedo}>
               <Redo2 className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>
-            <p>Redo <span className="text-muted-foreground">(Ctrl+Y)</span></p>
-          </TooltipContent>
+          <TooltipContent><p>Redo (Ctrl+Y)</p></TooltipContent>
         </Tooltip>
+        */}
 
         <Separator orientation="vertical" className="h-8 mx-1" />
 

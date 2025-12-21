@@ -168,26 +168,6 @@ export default function WorksheetPage() {
 
   return (
     <>
-      {/* Top navigation bar */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
-        <Badge variant="outline" className="text-sm px-3 py-1">
-          Tokens Left: {tokenLeft}
-        </Badge>
-        <HomeworkNotificationBadge />
-        <Button asChild variant="outline" size="sm">
-          <Link to="/dashboard">
-            <GraduationCap className="h-4 w-4 mr-2" />
-            Dashboard
-          </Link>
-        </Button>
-        <Button asChild variant="outline" size="sm">
-          <Link to="/profile">
-            <User className="h-4 w-4 mr-2" />
-            Profile
-          </Link>
-        </Button>
-      </div>
-
       <WorksheetDisplay
         worksheet={parsedWorksheet}
         inputParams={worksheetData.form_data}
@@ -204,6 +184,7 @@ export default function WorksheetPage() {
         selectedImage={worksheetData.selected_image}
         selectedAudio={worksheetData.selected_audio}
         audioUrl={worksheetData.audio_url}
+        tokenLeft={tokenLeft}
       />
     </>
   );
