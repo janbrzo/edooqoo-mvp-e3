@@ -14,7 +14,7 @@
 
 console.log('🎨 DrawingOverlay v6.0 loaded - FULL REWRITE of Eraser/Undo/Redo');
 
-import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle, useReducer } from 'react';
 import { Canvas as FabricCanvas, PencilBrush, Line, FabricObject, Triangle, Path, Point } from 'fabric';
 import { 
   DrawingOverlayProps, 
@@ -81,34 +81,77 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
   const currentArrowGroupRef = useRef<{ line: Line; triangle: Triangle } | null>(null);
   const isInitializedRef = useRef(false);
   
-  // NAPRAWKA v6: Historia jako state (nie refs) dla poprawnego re-renderu
-  const [historyStack, setHistoryStack] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  // NAPRAWKA v7: Historia z useReducer - gwarantuje poprawne aktualizacje stanu
+  type HistoryState = { stack: string[]; index: number };
+  type HistoryAction = 
+    | { type: 'PUSH'; state: string }
+    | { type: 'UNDO' }
+    | { type: 'REDO' }
+    | { type: 'INIT'; state: string }
+    | { type: 'CLEAR' };
+
+  const historyReducer = (state: HistoryState, action: HistoryAction): HistoryState => {
+    switch (action.type) {
+      case 'PUSH': {
+        // Usuń wszystkie stany po obecnym indeksie (nowa gałąź historii)
+        const newStack = [...state.stack.slice(0, state.index + 1), action.state];
+        // Ogranicz do 50 kroków
+        const trimmedStack = newStack.length > 50 ? newStack.slice(-50) : newStack;
+        const newIndex = trimmedStack.length - 1;
+        console.log('🎨 [History v7] PUSH - new index:', newIndex, 'stack length:', trimmedStack.length);
+        return { stack: trimmedStack, index: newIndex };
+      }
+      case 'UNDO': {
+        const newIndex = Math.max(0, state.index - 1);
+        console.log('🎨 [History v7] UNDO - new index:', newIndex);
+        return { ...state, index: newIndex };
+      }
+      case 'REDO': {
+        const newIndex = Math.min(state.stack.length - 1, state.index + 1);
+        console.log('🎨 [History v7] REDO - new index:', newIndex);
+        return { ...state, index: newIndex };
+      }
+      case 'INIT': {
+        console.log('🎨 [History v7] INIT - setting initial state');
+        return { stack: [action.state], index: 0 };
+      }
+      case 'CLEAR': {
+        console.log('🎨 [History v7] CLEAR - resetting history');
+        return { stack: [], index: -1 };
+      }
+      default:
+        return state;
+    }
+  };
+
+  const [historyState, dispatchHistory] = useReducer(historyReducer, { stack: [], index: -1 });
   
-  // Force re-render counter (for debugging)
-  const [, forceUpdate] = useState(0);
+  // Oblicz canUndo i canRedo
+  const canUndo = historyState.index > 0;
+  const canRedo = historyState.index < historyState.stack.length - 1;
+  
+  // Synchronizuj props z callback'ami
+  const updateHistoryState = useCallback(() => {
+    console.log('🎨 [History v7] Update state:', { 
+      stackLength: historyState.stack.length, 
+      historyIndex: historyState.index, 
+      canUndo, 
+      canRedo 
+    });
+    
+    onHistoryChange?.(canUndo, canRedo);
+  }, [historyState.stack.length, historyState.index, canUndo, canRedo, onHistoryChange]);
+
+  // Powiadom o zmianach historii
+  useEffect(() => {
+    updateHistoryState();
+  }, [historyState.index, historyState.stack.length, updateHistoryState]);
 
   // Stan rysowania
   const [drawingState, setDrawingState] = useState<DrawingState>({
     ...DEFAULT_DRAWING_STATE,
     activeTool: 'marker',
   });
-
-  // NAPRAWKA v6: Oblicz canUndo i canRedo z historyStack i historyIndex
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex < historyStack.length - 1;
-  
-  // Synchronizuj props z callback'ami
-  const updateHistoryState = useCallback(() => {
-    console.log('🎨 [History v6] Update state:', { 
-      stackLength: historyStack.length, 
-      historyIndex, 
-      canUndo: historyIndex > 0, 
-      canRedo: historyIndex < historyStack.length - 1 
-    });
-    
-    onHistoryChange?.(historyIndex > 0, historyIndex < historyStack.length - 1);
-  }, [historyStack.length, historyIndex, onHistoryChange]);
 
   // Synchronizuj z zewnętrznymi props
   useEffect(() => {
@@ -134,29 +177,14 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     onSelectWorksheetMode?.(drawingState.activeTool === 'select-worksheet');
   }, [drawingState.activeTool, onSelectWorksheetMode]);
 
-  // NAPRAWKA v6: Zapisz do historii - używa setState
+  // NAPRAWKA v7: Zapisz do historii - używa dispatch
   const saveToHistory = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
     const json = JSON.stringify(canvas.toJSON());
-    
-    console.log('🎨 [History v6] Saving to history, current index:', historyIndex, 'stack length:', historyStack.length);
-    
-    setHistoryStack(prev => {
-      // Usuń wszystkie stany po obecnym indeksie (nowa gałąź historii)
-      const newStack = [...prev.slice(0, historyIndex + 1), json];
-      
-      // Ogranicz do 50 kroków
-      if (newStack.length > 50) {
-        return newStack.slice(-50);
-      }
-      return newStack;
-    });
-    
-    setHistoryIndex(prev => Math.min(prev + 1, 49));
-    
-  }, [historyIndex, historyStack.length]);
+    dispatchHistory({ type: 'PUSH', state: json });
+  }, []);
 
   const scheduleAutoSave = useCallback(() => {
     if (autoSaveTimeoutRef.current) {
@@ -192,12 +220,11 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         
         console.log('🎨 [Load] Objects loaded and locked, count:', canvas.getObjects().length);
         
-        // NAPRAWKA v6: Zapisz initial state używając setState
+        // NAPRAWKA v7: Zapisz initial state używając dispatch
         if (shouldSaveInitialState) {
           const initialState = JSON.stringify(canvas.toJSON());
-          setHistoryStack([initialState]);
-          setHistoryIndex(0);
-          console.log('🎨 [Load v6] Initial state saved AFTER loading, objects:', canvas.getObjects().length);
+          dispatchHistory({ type: 'INIT', state: initialState });
+          console.log('🎨 [Load v7] Initial state saved AFTER loading, objects:', canvas.getObjects().length);
         }
         
         resolve(true);
@@ -309,23 +336,23 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     }
   };
 
-  // NAPRAWIONE v6: Undo cofa pojedynczy krok - używa useState
+  // NAPRAWIONE v7: Undo cofa pojedynczy krok - używa reducer
   const handleUndo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) {
-      console.log('🎨 [Undo v6] No canvas');
+      console.log('🎨 [Undo v7] No canvas');
       return;
     }
     
     if (!canUndo) {
-      console.log('🎨 [Undo v6] Nothing to undo, index:', historyIndex);
+      console.log('🎨 [Undo v7] Nothing to undo, index:', historyState.index);
       return;
     }
 
-    const newIndex = historyIndex - 1;
-    const previousState = historyStack[newIndex];
+    const newIndex = historyState.index - 1;
+    const previousState = historyState.stack[newIndex];
     
-    console.log('🎨 [Undo v6] Undoing to index:', newIndex, 'objects:', JSON.parse(previousState).objects?.length || 0);
+    console.log('🎨 [Undo v7] Undoing to index:', newIndex, 'objects:', JSON.parse(previousState).objects?.length || 0);
     
     canvas.loadFromJSON(JSON.parse(previousState), () => {
       canvas.renderAll();
@@ -334,30 +361,29 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         obj.evented = false;
       });
       
-      setHistoryIndex(newIndex);
-      console.log('🎨 [Undo v6] State restored, new index:', newIndex);
-      forceUpdate(n => n + 1);
+      dispatchHistory({ type: 'UNDO' });
+      console.log('🎨 [Undo v7] State restored');
       scheduleAutoSave();
     });
-  }, [canUndo, historyIndex, historyStack, scheduleAutoSave]);
+  }, [canUndo, historyState.index, historyState.stack, scheduleAutoSave]);
 
-  // NAPRAWIONE v6: Redo działa natychmiast - używa useState
+  // NAPRAWIONE v7: Redo działa natychmiast - używa reducer
   const handleRedo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) {
-      console.log('🎨 [Redo v6] No canvas');
+      console.log('🎨 [Redo v7] No canvas');
       return;
     }
     
     if (!canRedo) {
-      console.log('🎨 [Redo v6] Nothing to redo, index:', historyIndex, 'stack length:', historyStack.length);
+      console.log('🎨 [Redo v7] Nothing to redo, index:', historyState.index, 'stack length:', historyState.stack.length);
       return;
     }
 
-    const newIndex = historyIndex + 1;
-    const nextState = historyStack[newIndex];
+    const newIndex = historyState.index + 1;
+    const nextState = historyState.stack[newIndex];
     
-    console.log('🎨 [Redo v6] Redoing to index:', newIndex, 'objects:', JSON.parse(nextState).objects?.length || 0);
+    console.log('🎨 [Redo v7] Redoing to index:', newIndex, 'objects:', JSON.parse(nextState).objects?.length || 0);
 
     canvas.loadFromJSON(JSON.parse(nextState), () => {
       canvas.renderAll();
@@ -366,12 +392,11 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         obj.evented = false;
       });
       
-      setHistoryIndex(newIndex);
-      console.log('🎨 [Redo v6] State restored, new index:', newIndex);
-      forceUpdate(n => n + 1);
+      dispatchHistory({ type: 'REDO' });
+      console.log('🎨 [Redo v7] State restored');
       scheduleAutoSave();
     });
-  }, [canRedo, historyIndex, historyStack, scheduleAutoSave]);
+  }, [canRedo, historyState.index, historyState.stack, scheduleAutoSave]);
 
   const handleClearAll = useCallback(() => {
     const canvas = fabricCanvasRef.current;
@@ -422,14 +447,13 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     fabricCanvasRef.current = canvas;
     isInitializedRef.current = true;
 
-    // NAPRAWKA v6: Załaduj rysunki z flagą do zapisania initial state
+    // NAPRAWKA v7: Załaduj rysunki z flagą do zapisania initial state
     loadDrawings(true).then((hasDrawings) => {
       // Jeśli nie było rysunków, zapisz pusty initial state
       if (!hasDrawings && fabricCanvasRef.current) {
         const initialState = JSON.stringify(fabricCanvasRef.current.toJSON());
-        setHistoryStack([initialState]);
-        setHistoryIndex(0);
-        console.log('🎨 [Init v6] Empty initial state saved (no drawings found)');
+        dispatchHistory({ type: 'INIT', state: initialState });
+        console.log('🎨 [Init v7] Empty initial state saved (no drawings found)');
       }
     });
 

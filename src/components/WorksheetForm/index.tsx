@@ -391,15 +391,17 @@ export default function WorksheetForm({
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const newMediaTypes: MediaType[] = selectedMediaTypes.includes('picture') 
-                                  ? selectedMediaTypes.filter(t => t !== 'picture')
-                                  : [...selectedMediaTypes, 'picture' as MediaType];
-                                setSelectedMediaTypes(newMediaTypes);
+                                // Exclusive selection - tylko jeden na raz
+                                if (selectedMediaTypes.includes('picture')) {
+                                  setSelectedMediaTypes([]);
+                                } else {
+                                  setSelectedMediaTypes(['picture'] as MediaType[]);
+                                }
                                 if (!activeTab) setActiveTab('exercises');
                               }}
                               className={`flex items-center gap-1 px-2 py-1 rounded border transition-all ${
                                 selectedMediaTypes.includes('picture')
-                                  ? 'border-worksheet-purple bg-worksheet-purpleLight text-worksheet-purple'
+                                  ? 'border-blue-500 bg-blue-50 text-blue-600'
                                   : 'border-gray-200 hover:border-gray-300'
                               }`}
                               title="Include picture-based exercises"
@@ -408,23 +410,25 @@ export default function WorksheetForm({
                                 type="checkbox" 
                                 checked={selectedMediaTypes.includes('picture')}
                                 onChange={() => {}}
-                                className="h-3 w-3 accent-worksheet-purple"
+                                className="h-3 w-3 accent-blue-500"
                               />
-                              <Image className="h-4 w-4" />
+                              <Image className="h-4 w-4 text-blue-500" />
                             </button>
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const newMediaTypes: MediaType[] = selectedMediaTypes.includes('audio') 
-                                  ? selectedMediaTypes.filter(t => t !== 'audio')
-                                  : [...selectedMediaTypes, 'audio' as MediaType];
-                                setSelectedMediaTypes(newMediaTypes);
+                                // Exclusive selection - tylko jeden na raz
+                                if (selectedMediaTypes.includes('audio')) {
+                                  setSelectedMediaTypes([]);
+                                } else {
+                                  setSelectedMediaTypes(['audio'] as MediaType[]);
+                                }
                                 if (!activeTab) setActiveTab('exercises');
                               }}
                               className={`flex items-center gap-1 px-2 py-1 rounded border transition-all ${
                                 selectedMediaTypes.includes('audio')
-                                  ? 'border-worksheet-purple bg-worksheet-purpleLight text-worksheet-purple'
+                                  ? 'border-orange-500 bg-orange-50 text-orange-600'
                                   : 'border-gray-200 hover:border-gray-300'
                               }`}
                               title="Include audio-based exercises"
@@ -433,9 +437,9 @@ export default function WorksheetForm({
                                 type="checkbox" 
                                 checked={selectedMediaTypes.includes('audio')}
                                 onChange={() => {}}
-                                className="h-3 w-3 accent-worksheet-purple"
+                                className="h-3 w-3 accent-orange-500"
                               />
-                              <Headphones className="h-4 w-4" />
+                              <Headphones className="h-4 w-4 text-orange-500" />
                             </button>
                           </div>
                         </div>

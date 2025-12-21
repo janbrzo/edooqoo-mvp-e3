@@ -21,12 +21,13 @@ const EXERCISE_TYPES_MAP: Record<string, string> = {
   'wordorder': 'Word Order',
   'dialogue': 'Dialogue',
   'describe-picture': 'Describe Picture',
+  'describe': 'Describe Picture',
   'answerquestions': 'Answer Questions',
   'paraphrasing': 'Paraphrasing',
   'sentencetransformation': 'Sentence Transformation',
   'oddoneout': 'Odd One Out',
-  'synonymsmatching': 'Synonyms Matching', // NEW
-  'antonymsmatching': 'Antonyms Matching', // NEW
+  'synonymsmatching': 'Synonyms Matching',
+  'antonymsmatching': 'Antonyms Matching',
   'synonymsantonyms': 'Synonyms & Antonyms',
   'matchinghalves': 'Matching Halves',
   'completeword': 'Complete Word',
@@ -37,8 +38,8 @@ const EXERCISE_TYPES_MAP: Record<string, string> = {
   'true-false': 'True/False',
   'gap-text': 'Gap Text',
   'fill-in-blanks': 'Fill in the Blanks',
-  'synonyms': 'Synonyms Matching', // NEW
-  'antonyms': 'Antonyms Matching', // NEW
+  'synonyms': 'Synonyms Matching',
+  'antonyms': 'Antonyms Matching',
   'synonyms-antonyms': 'Synonyms & Antonyms',
   'word-order': 'Word Order',
   'odd-one-out': 'Odd One Out',
@@ -53,8 +54,12 @@ const EXERCISE_TYPES_MAP: Record<string, string> = {
   'listening-comprehension': 'Listening Comprehension',
   'multiple-choice-audio': 'Multiple Choice (Audio)',
   'true-false-audio': 'True/False (Audio)',
-  'fill-in-blanks-audio': 'Fill in the Blanks (Dictation)',
-  'answer-questions-audio': 'Answer Questions (Audio)'
+  'fill-in-blanks-audio': 'Fill in the Blanks (Audio)',
+  'answer-questions-audio': 'Answer Questions (Audio)',
+  // Picture exercises  
+  'answer-questions-picture': 'Answer Questions (Picture)',
+  'multiple-choice-picture': 'Multiple Choice (Picture)',
+  'true-false-picture': 'True/False (Picture)'
 };
 
 interface InputParamsCardProps {
@@ -108,6 +113,15 @@ const getLanguageStyleDescription = (value: number): string => {
   if (value === 3) return "Neutral (balanced style)";
   if (value === 4) return "Formal (professional tone)";
   return "Very formal (academic style)";
+};
+
+// Helper function to format exercise name as fallback
+const formatExerciseName = (id: string): string => {
+  if (EXERCISE_TYPES_MAP[id]) return EXERCISE_TYPES_MAP[id];
+  // Fallback: replace hyphens with spaces and capitalize each word
+  return id.split('-').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
 };
 
 const InputParamsCard = ({ inputParams, selectedExercises, onExerciseClick }: InputParamsCardProps) => {
@@ -310,7 +324,7 @@ const InputParamsCard = ({ inputParams, selectedExercises, onExerciseClick }: In
                 <p className="text-sm text-gray-500">Selected Exercise Types</p>
                 <div className="font-medium text-sm">
                   {selectedExercises.map((exerciseId, index) => {
-                    const exerciseName = EXERCISE_TYPES_MAP[exerciseId] || exerciseId;
+                    const exerciseName = formatExerciseName(exerciseId);
                     const isLast = index === selectedExercises.length - 1;
                     const needsNewLine = (index + 1) % 8 === 0 && !isLast;
                     
