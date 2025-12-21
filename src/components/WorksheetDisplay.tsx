@@ -111,6 +111,8 @@ export default function WorksheetDisplay({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [expandAllRef, setExpandAllRef] = useState<(() => void) | null>(null);
+  // ✅ NEW: Ref for scrollToExercise function from WorksheetContent
+  const [scrollToExerciseRef, setScrollToExerciseRef] = useState<((index: number) => void) | null>(null);
   
   // ✅ Wrap onDiscardChanges to ALSO exit edit mode
   const handleDiscardChanges = () => {
@@ -854,6 +856,12 @@ export default function WorksheetDisplay({
           <InputParamsCard 
             inputParams={inputParams} 
             selectedExercises={inputParams.selectedExercises}
+            onExerciseClick={(_exerciseId, index) => {
+              // Scroll to exercise using the scrollToExercise function from WorksheetContent
+              if (scrollToExerciseRef) {
+                scrollToExerciseRef(index);
+              }
+            }}
           />
           <WorksheetToolbar
             viewMode={viewMode}
@@ -932,6 +940,7 @@ export default function WorksheetDisplay({
               userId={userId}
               studentId={studentId}
               onExpandAll={(expandFn: () => void) => setExpandAllRef(() => expandFn)}
+              onScrollToExercise={(scrollFn: (index: number) => void) => setScrollToExerciseRef(() => scrollFn)}
               onCloseSidebar={(closeFn: () => void) => setCloseSidebarRef(() => closeFn)}
               isPinned={isPinned}
               onTogglePin={() => setIsPinned(!isPinned)}

@@ -15,7 +15,7 @@ import { useAnonymousAuth } from "@/hooks/useAnonymousAuth";
 import { useStudents } from "@/hooks/useStudents";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shuffle, Brain, MousePointer, ChevronDown } from "lucide-react";
+import { Shuffle, Brain, MousePointer, ChevronDown, Image, Headphones } from "lucide-react";
 import type { MediaType } from './types';
 export type { FormData };
 interface ImageSuggestion {
@@ -384,7 +384,61 @@ export default function WorksheetForm({
                     <div className="p-2.5">
                       {/* Card Header with Title and Mode Selection Tiles in Same Line */}
                       <div className="flex items-center justify-between">
-                         <h3 className="font-semibold text-gray-800">Exercise Types (image & audio)</h3>
+                         <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-gray-800">Exercise Types</h3>
+                          <div className="flex gap-1 ml-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newMediaTypes: MediaType[] = selectedMediaTypes.includes('picture') 
+                                  ? selectedMediaTypes.filter(t => t !== 'picture')
+                                  : [...selectedMediaTypes, 'picture' as MediaType];
+                                setSelectedMediaTypes(newMediaTypes);
+                                if (!activeTab) setActiveTab('exercises');
+                              }}
+                              className={`flex items-center gap-1 px-2 py-1 rounded border transition-all ${
+                                selectedMediaTypes.includes('picture')
+                                  ? 'border-worksheet-purple bg-worksheet-purpleLight text-worksheet-purple'
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              title="Include picture-based exercises"
+                            >
+                              <input 
+                                type="checkbox" 
+                                checked={selectedMediaTypes.includes('picture')}
+                                onChange={() => {}}
+                                className="h-3 w-3 accent-worksheet-purple"
+                              />
+                              <Image className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newMediaTypes: MediaType[] = selectedMediaTypes.includes('audio') 
+                                  ? selectedMediaTypes.filter(t => t !== 'audio')
+                                  : [...selectedMediaTypes, 'audio' as MediaType];
+                                setSelectedMediaTypes(newMediaTypes);
+                                if (!activeTab) setActiveTab('exercises');
+                              }}
+                              className={`flex items-center gap-1 px-2 py-1 rounded border transition-all ${
+                                selectedMediaTypes.includes('audio')
+                                  ? 'border-worksheet-purple bg-worksheet-purpleLight text-worksheet-purple'
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              title="Include audio-based exercises"
+                            >
+                              <input 
+                                type="checkbox" 
+                                checked={selectedMediaTypes.includes('audio')}
+                                onChange={() => {}}
+                                className="h-3 w-3 accent-worksheet-purple"
+                              />
+                              <Headphones className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
                         
                         {/* Mode Selection Tiles - Always Visible, Beside Title */}
                         <div className="flex gap-1">

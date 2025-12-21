@@ -52,39 +52,19 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("month");
   
-  // ✅ FIX: Track initial load to prevent spinner on return navigation
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  // ✅ FIX: Track if initial data has ever been loaded
+  const [hasEverLoaded, setHasEverLoaded] = useState(false);
   
   // Fetch homework for all worksheets
   const worksheetIds = worksheets.map(w => w.id);
   const { homeworkByWorksheet, loading: homeworkLoading } = useAllWorksheetHomework(worksheetIds);
 
-  // ✅ FIX: Add debugging for worksheets state
+  // ✅ FIX: Mark as loaded once all data is ready (only first time)
   useEffect(() => {
-    console.log('📊 [Dashboard] Worksheets state updated:', {
-      count: worksheets.length,
-      loading: historyLoading,
-      firstThree: worksheets.slice(0, 3).map(w => ({
-        id: w.id,
-        title: w.title
-      }))
-    });
-  }, [worksheets, historyLoading]);
-
-  // ✅ FIX: Force refetch worksheets when user is ready
-  useEffect(() => {
-    if (user && !loading) {
-      console.log('🔄 [Dashboard] User ready, forcing worksheet refetch...');
-      refetchWorksheets();
+    if (!loading && !studentsLoading && !historyLoading && !statsLoading && !hasEverLoaded) {
+      setHasEverLoaded(true);
     }
-  }, [user, loading]);
-
-  // ✅ FIX: Mark initial load complete when all data is loaded
-  useEffect(() => {
-    if (!loading && !studentsLoading && !historyLoading && !statsLoading) {
-      setIsInitialLoad(false);
-    }
-  }, [loading, studentsLoading, historyLoading, statsLoading]);
+  }, [loading, studentsLoading, historyLoading, statsLoading, hasEverLoaded]);
 
   // Authentication check and redirection
   useEffect(() => {
@@ -93,8 +73,8 @@ const Dashboard = () => {
     }
   }, [loading, isRegisteredUser, navigate]);
 
-  // ✅ FIX: Show loading state ONLY during initial load
-  if (isInitialLoad && (loading || studentsLoading || historyLoading || statsLoading)) {
+  // ✅ FIX: Show loading state ONLY on first ever load, not on navigation back
+  if (!hasEverLoaded && (loading || studentsLoading || historyLoading || statsLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
