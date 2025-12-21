@@ -73,7 +73,12 @@ interface InputParamsCardProps {
     languageStyle?: number;
   };
   selectedExercises?: string[];
-  onExerciseClick?: (exerciseId: string, index: number) => void;
+  /** 
+   * Called when user clicks on an exercise name.
+   * @param exerciseType - The exercise type identifier (e.g., 'odd-one-out')
+   * This is used to find the correct exercise in the worksheet by type.
+   */
+  onExerciseClick?: (exerciseType: string) => void;
 }
 
 // Helper function to get icon for exercise type
@@ -328,12 +333,12 @@ const InputParamsCard = ({ inputParams, selectedExercises, onExerciseClick }: In
                     const isLast = index === selectedExercises.length - 1;
                     const needsNewLine = (index + 1) % 8 === 0 && !isLast;
                     
-                    return (
+                      return (
                       <span key={exerciseId}>
                         {onExerciseClick ? (
                           <button
                             type="button"
-                            onClick={() => onExerciseClick(exerciseId, index)}
+                            onClick={() => onExerciseClick(exerciseId)}
                             className="text-worksheet-purple hover:underline cursor-pointer focus:outline-none"
                           >
                             {exerciseName}

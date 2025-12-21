@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuthFlow } from "@/hooks/useAuthFlow";
 import { useWorksheetState } from "@/hooks/useWorksheetState";
 import { useWorksheetGeneration } from "@/hooks/useWorksheetGeneration";
@@ -22,6 +22,7 @@ import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotific
 const Index = () => {
   const { user, loading: authLoading, isRegisteredUser, isAnonymous } = useAuthFlow();
   const worksheetState = useWorksheetState(authLoading);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [preSelectedStudent, setPreSelectedStudent] = useState<{id: string, name: string} | null>(null);
   const { 
@@ -33,6 +34,16 @@ const Index = () => {
   } = useWorksheetGeneration(user?.id || null, worksheetState, selectedStudentId);
   const { tokenLeft, hasTokens, isDemo, profile } = useTokenSystem(user?.id || null);
   const [showTokenModal, setShowTokenModal] = useState(false);
+
+  // Handle ?forceNew=true query param from Profile page (enables middle-click to open in new tab)
+  useEffect(() => {
+    if (searchParams.get('forceNew') === 'true') {
+      sessionStorage.setItem('forceNewWorksheet', 'true');
+      // Remove the param from URL without causing a reload
+      setSearchParams({}, { replace: true });
+      worksheetState.forceNewWorksheet();
+    }
+  }, [searchParams, setSearchParams, worksheetState]);
 
   // Function to scroll to pricing section
   const scrollToPricing = () => {

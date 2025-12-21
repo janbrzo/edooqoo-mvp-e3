@@ -107,7 +107,7 @@ const Pricing = () => {
     },
     {
       question: "What exercise types are available?",
-      answer: "All plans include vocabulary sheets, grammar exercises, reading comprehension, fill-in-the-blanks, multiple choice, matching exercises, dialogue practice, and mixed exercise combinations."
+      answer: "We offer 29 exercise types organized in 3 categories:\n\n📝 **Basic Exercises (20 types):** Reading Comprehension, Fill in the Blanks, Multiple Choice, True/False Questions, Matching Exercise, Dialogue Practice, Answer Questions, Discussion Questions, Error Correction, Odd One Out, Matching Halves, Word Order, Gap Text (Cloze), Negative Prefixes, Categorization, Complete Word, Paraphrasing, Sentence Transformation, Synonyms Matching, and Antonyms Matching.\n\n🎧 **Audio Exercises (5 types):** Listening Comprehension, Fill in the Blanks (Audio), Multiple Choice (Audio), True/False (Audio), and Answer Questions (Audio).\n\n🖼️ **Picture Exercises (4 types):** Describe Picture, Multiple Choice (Picture), True/False (Picture), and Answer Questions (Picture).\n\nAll exercise types are available on all plans including the Free Demo."
     },
     {
       question: "How long does worksheet generation take?",

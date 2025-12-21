@@ -839,10 +839,16 @@ export default function WorksheetDisplay({
           <InputParamsCard 
             inputParams={inputParams} 
             selectedExercises={inputParams.selectedExercises}
-            onExerciseClick={(_exerciseId, index) => {
+            onExerciseClick={(exerciseType: string) => {
+              // Find the actual index of the exercise in the worksheet by its type
+              const activeExercises = editableWorksheet?.exercises?.filter((ex: any) => !ex.deleted) || [];
+              const actualIndex = activeExercises.findIndex(
+                (ex: any) => ex.type === exerciseType
+              );
+              
               // Scroll to exercise using the scrollToExercise function from WorksheetContent
-              if (scrollToExerciseRef) {
-                scrollToExerciseRef(index);
+              if (actualIndex >= 0 && scrollToExerciseRef) {
+                scrollToExerciseRef(actualIndex);
               }
             }}
           />
