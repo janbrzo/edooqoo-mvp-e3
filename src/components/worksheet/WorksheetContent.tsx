@@ -30,6 +30,7 @@ interface WorksheetContentProps {
   userId?: string;
   studentId?: string;
   onExpandAll?: (expandAllFn: () => void) => void;
+  onScrollToExercise?: (scrollFn: (index: number) => void) => void;
   onCloseSidebar?: (closeSidebarFn: () => void) => void;
   isPinned?: boolean;
   onTogglePin?: () => void;
@@ -53,6 +54,7 @@ export default function WorksheetContent({
   userId,
   studentId,
   onExpandAll,
+  onScrollToExercise,
   onCloseSidebar,
   isPinned = false,
   onTogglePin,
@@ -93,6 +95,13 @@ export default function WorksheetContent({
       onExpandAll(navigation.expandAll);
     }
   }, [onExpandAll, navigation.expandAll]);
+
+  // Pass scrollToExercise function to parent for InputParamsCard usage
+  React.useEffect(() => {
+    if (onScrollToExercise) {
+      onScrollToExercise(navigation.scrollToExercise);
+    }
+  }, [onScrollToExercise, navigation.scrollToExercise]);
 
   // CRITICAL FIX: Add safety check to prevent rendering with null worksheet
   if (!editableWorksheet) {

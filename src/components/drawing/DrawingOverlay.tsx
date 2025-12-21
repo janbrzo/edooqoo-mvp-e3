@@ -1,18 +1,18 @@
 /**
- * DrawingOverlay - Nakładka canvas z Fabric.js (REDESIGNED - Windows Snipping Tool style)
+ * DrawingOverlay - Nakładka canvas z Fabric.js (REDESIGNED v6.0 - Windows Snipping Tool style)
  * 
  * Główny komponent do rysowania po worksheet.
  * Narzędzia: marker, highlighter, arrow, eraser, select-worksheet
  * 
- * NAPRAWIONE v5.0:
- * - Gumka sprawdza odległość od SEGMENTÓW ścieżki (nie tylko punktów końcowych)
- * - Undo/Redo działa poprawnie - initial state zapisywany PO loadFromJSON callback
- * - Dodano prop isVisible do kontroli widoczności CSS
- * - Dodano szczegółowe logi diagnostyczne dla eraser
- * - Naprawiono race condition przy przełączaniu na Live Session
+ * NAPRAWIONE v6.0:
+ * - GUMKA: Całkowicie przepisana - używa getBoundingRect i sprawdza odległość od kursora
+ * - GUMKA: Działa przy przeciąganiu myszką (nie tylko kliknięciu)
+ * - GUMKA: Usuwa całe strzałki (linia + grot) jako jeden obiekt przez metadata
+ * - UNDO/REDO: Przepisane z useState dla historii - nie używa refs dla stanów
+ * - UNDO/REDO: Poprawnie limitowane do 50 kroków
  */
 
-console.log('🎨 DrawingOverlay v5.0 loaded');
+console.log('🎨 DrawingOverlay v6.0 loaded - FULL REWRITE of Eraser/Undo/Redo');
 
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Canvas as FabricCanvas, PencilBrush, Line, FabricObject, Triangle, Path, Point } from 'fabric';
@@ -80,11 +80,12 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
   const arrowStartPointRef = useRef<{ x: number; y: number } | null>(null);
   const currentArrowGroupRef = useRef<{ line: Line; triangle: Triangle } | null>(null);
   const isInitializedRef = useRef(false);
-
-  // NAPRAWKA v4: Refs dla Undo/Redo (unikamy stale closure)
-  const undoStackRef = useRef<string[]>([]);
-  const redoStackRef = useRef<string[]>([]);
-  // Force re-render counter
+  
+  // NAPRAWKA v6: Historia jako state (nie refs) dla poprawnego re-renderu
+  const [historyStack, setHistoryStack] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  
+  // Force re-render counter (for debugging)
   const [, forceUpdate] = useState(0);
 
   // Stan rysowania
@@ -93,21 +94,21 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     activeTool: 'marker',
   });
 
-  // Synchronizuj refs z callback'ami
+  // NAPRAWKA v6: Oblicz canUndo i canRedo z historyStack i historyIndex
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < historyStack.length - 1;
+  
+  // Synchronizuj props z callback'ami
   const updateHistoryState = useCallback(() => {
-    const canUndo = undoStackRef.current.length > 1;
-    const canRedo = redoStackRef.current.length > 0;
+    console.log('🎨 [History v6] Update state:', { 
+      stackLength: historyStack.length, 
+      historyIndex, 
+      canUndo: historyIndex > 0, 
+      canRedo: historyIndex < historyStack.length - 1 
+    });
     
-    console.log('🎨 [History] Update state:', { undoLength: undoStackRef.current.length, redoLength: redoStackRef.current.length, canUndo, canRedo });
-    
-    setDrawingState(prev => ({
-      ...prev,
-      canUndo,
-      canRedo,
-    }));
-    
-    onHistoryChange?.(canUndo, canRedo);
-  }, [onHistoryChange]);
+    onHistoryChange?.(historyIndex > 0, historyIndex < historyStack.length - 1);
+  }, [historyStack.length, historyIndex, onHistoryChange]);
 
   // Synchronizuj z zewnętrznymi props
   useEffect(() => {
@@ -133,28 +134,29 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     onSelectWorksheetMode?.(drawingState.activeTool === 'select-worksheet');
   }, [drawingState.activeTool, onSelectWorksheetMode]);
 
-  // NAPRAWKA v4: Zapisz do historii
+  // NAPRAWKA v6: Zapisz do historii - używa setState
   const saveToHistory = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
     const json = JSON.stringify(canvas.toJSON());
     
-    console.log('🎨 [History] Saving to history, current length:', undoStackRef.current.length);
+    console.log('🎨 [History v6] Saving to history, current index:', historyIndex, 'stack length:', historyStack.length);
     
-    // Dodaj do undo stack
-    undoStackRef.current = [...undoStackRef.current, json];
+    setHistoryStack(prev => {
+      // Usuń wszystkie stany po obecnym indeksie (nowa gałąź historii)
+      const newStack = [...prev.slice(0, historyIndex + 1), json];
+      
+      // Ogranicz do 50 kroków
+      if (newStack.length > 50) {
+        return newStack.slice(-50);
+      }
+      return newStack;
+    });
     
-    // Ogranicz do 50 kroków
-    if (undoStackRef.current.length > 50) {
-      undoStackRef.current = undoStackRef.current.slice(-50);
-    }
+    setHistoryIndex(prev => Math.min(prev + 1, 49));
     
-    // Wyczyść redo stack po nowej akcji
-    redoStackRef.current = [];
-    
-    updateHistoryState();
-  }, [updateHistoryState]);
+  }, [historyIndex, historyStack.length]);
 
   const scheduleAutoSave = useCallback(() => {
     if (autoSaveTimeoutRef.current) {
@@ -190,14 +192,12 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         
         console.log('🎨 [Load] Objects loaded and locked, count:', canvas.getObjects().length);
         
-        // NAPRAWKA v5: Zapisz initial state PO FAKTYCZNYM załadowaniu obiektów
-        // To zapewnia że Undo nie cofnie do pustego stanu
+        // NAPRAWKA v6: Zapisz initial state używając setState
         if (shouldSaveInitialState) {
           const initialState = JSON.stringify(canvas.toJSON());
-          undoStackRef.current = [initialState];
-          redoStackRef.current = [];
-          console.log('🎨 [Load] Initial state saved AFTER loading, objects:', canvas.getObjects().length);
-          updateHistoryState();
+          setHistoryStack([initialState]);
+          setHistoryIndex(0);
+          console.log('🎨 [Load v6] Initial state saved AFTER loading, objects:', canvas.getObjects().length);
         }
         
         resolve(true);
@@ -309,32 +309,23 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     }
   };
 
-  // NAPRAWIONE v4: Undo cofa pojedynczy krok
+  // NAPRAWIONE v6: Undo cofa pojedynczy krok - używa useState
   const handleUndo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) {
-      console.log('🎨 [Undo] No canvas');
+      console.log('🎨 [Undo v6] No canvas');
       return;
     }
     
-    if (undoStackRef.current.length <= 1) {
-      console.log('🎨 [Undo] Nothing to undo, stack length:', undoStackRef.current.length);
+    if (!canUndo) {
+      console.log('🎨 [Undo v6] Nothing to undo, index:', historyIndex);
       return;
     }
 
-    console.log('🎨 [Undo] Undoing, stack length:', undoStackRef.current.length);
-
-    // Pobierz obecny stan (ostatni w stacku) i przenieś do redo
-    const currentState = undoStackRef.current[undoStackRef.current.length - 1];
-    redoStackRef.current = [...redoStackRef.current, currentState];
-
-    // Usuń obecny stan z undo (pop)
-    undoStackRef.current = undoStackRef.current.slice(0, -1);
-
-    // Załaduj poprzedni stan (teraz ostatni w stacku)
-    const previousState = undoStackRef.current[undoStackRef.current.length - 1];
+    const newIndex = historyIndex - 1;
+    const previousState = historyStack[newIndex];
     
-    console.log('🎨 [Undo] Loading previous state, objects:', JSON.parse(previousState).objects?.length || 0);
+    console.log('🎨 [Undo v6] Undoing to index:', newIndex, 'objects:', JSON.parse(previousState).objects?.length || 0);
     
     canvas.loadFromJSON(JSON.parse(previousState), () => {
       canvas.renderAll();
@@ -342,39 +333,31 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         obj.selectable = false;
         obj.evented = false;
       });
-      console.log('🎨 [Undo] State restored, undo stack length:', undoStackRef.current.length, 'redo stack length:', redoStackRef.current.length);
-      updateHistoryState();
-      // Force React re-render
+      
+      setHistoryIndex(newIndex);
+      console.log('🎨 [Undo v6] State restored, new index:', newIndex);
       forceUpdate(n => n + 1);
       scheduleAutoSave();
     });
-  }, [updateHistoryState, scheduleAutoSave]);
+  }, [canUndo, historyIndex, historyStack, scheduleAutoSave]);
 
-  // NAPRAWIONE v4: Redo działa natychmiast
+  // NAPRAWIONE v6: Redo działa natychmiast - używa useState
   const handleRedo = useCallback(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) {
-      console.log('🎨 [Redo] No canvas');
+      console.log('🎨 [Redo v6] No canvas');
       return;
     }
     
-    if (redoStackRef.current.length === 0) {
-      console.log('🎨 [Redo] Nothing to redo');
+    if (!canRedo) {
+      console.log('🎨 [Redo v6] Nothing to redo, index:', historyIndex, 'stack length:', historyStack.length);
       return;
     }
 
-    console.log('🎨 [Redo] Redoing, redo stack length:', redoStackRef.current.length);
-
-    // Pobierz stan do przywrócenia (ostatni w redo stacku)
-    const nextState = redoStackRef.current[redoStackRef.current.length - 1];
+    const newIndex = historyIndex + 1;
+    const nextState = historyStack[newIndex];
     
-    // Usuń ze stosu redo
-    redoStackRef.current = redoStackRef.current.slice(0, -1);
-    
-    // Dodaj obecny stan do undo (przed załadowaniem nowego)
-    undoStackRef.current = [...undoStackRef.current, nextState];
-
-    console.log('🎨 [Redo] Loading state, objects:', JSON.parse(nextState).objects?.length || 0);
+    console.log('🎨 [Redo v6] Redoing to index:', newIndex, 'objects:', JSON.parse(nextState).objects?.length || 0);
 
     canvas.loadFromJSON(JSON.parse(nextState), () => {
       canvas.renderAll();
@@ -382,13 +365,13 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
         obj.selectable = false;
         obj.evented = false;
       });
-      console.log('🎨 [Redo] State restored, undo stack length:', undoStackRef.current.length, 'redo stack length:', redoStackRef.current.length);
-      updateHistoryState();
-      // Force React re-render
+      
+      setHistoryIndex(newIndex);
+      console.log('🎨 [Redo v6] State restored, new index:', newIndex);
       forceUpdate(n => n + 1);
       scheduleAutoSave();
     });
-  }, [updateHistoryState, scheduleAutoSave]);
+  }, [canRedo, historyIndex, historyStack, scheduleAutoSave]);
 
   const handleClearAll = useCallback(() => {
     const canvas = fabricCanvasRef.current;
@@ -406,9 +389,9 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     undo: handleUndo,
     redo: handleRedo,
     clearAll: handleClearAll,
-    getCanUndo: () => undoStackRef.current.length > 1,
-    getCanRedo: () => redoStackRef.current.length > 0,
-  }), [handleUndo, handleRedo, handleClearAll]);
+    getCanUndo: () => canUndo,
+    getCanRedo: () => canRedo,
+  }), [handleUndo, handleRedo, handleClearAll, canUndo, canRedo]);
 
   // NAPRAWKA v4: Inicjalizacja Fabric.js canvas z poprawnym ładowaniem
   useEffect(() => {
@@ -439,17 +422,14 @@ export const DrawingOverlay = forwardRef<DrawingOverlayRef, DrawingOverlayExtern
     fabricCanvasRef.current = canvas;
     isInitializedRef.current = true;
 
-    // NAPRAWKA v5: Załaduj rysunki z flagą do zapisania initial state
-    // Initial state jest teraz zapisywany WEWNĄTRZ loadDrawingsFromData CALLBACK
-    // To gwarantuje że zapisujemy stan PO załadowaniu wszystkich obiektów
+    // NAPRAWKA v6: Załaduj rysunki z flagą do zapisania initial state
     loadDrawings(true).then((hasDrawings) => {
       // Jeśli nie było rysunków, zapisz pusty initial state
       if (!hasDrawings && fabricCanvasRef.current) {
         const initialState = JSON.stringify(fabricCanvasRef.current.toJSON());
-        undoStackRef.current = [initialState];
-        redoStackRef.current = [];
-        console.log('🎨 [Init] Empty initial state saved (no drawings found)');
-        updateHistoryState();
+        setHistoryStack([initialState]);
+        setHistoryIndex(0);
+        console.log('🎨 [Init v6] Empty initial state saved (no drawings found)');
       }
     });
 

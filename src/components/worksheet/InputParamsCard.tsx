@@ -68,6 +68,7 @@ interface InputParamsCardProps {
     languageStyle?: number;
   };
   selectedExercises?: string[];
+  onExerciseClick?: (exerciseId: string, index: number) => void;
 }
 
 // Helper function to get icon for exercise type
@@ -109,7 +110,7 @@ const getLanguageStyleDescription = (value: number): string => {
   return "Very formal (academic style)";
 };
 
-const InputParamsCard = ({ inputParams, selectedExercises }: InputParamsCardProps) => {
+const InputParamsCard = ({ inputParams, selectedExercises, onExerciseClick }: InputParamsCardProps) => {
   const [expandedFields, setExpandedFields] = useState<Record<string, boolean>>({});
   const MAX_CHARS = 180;
 
@@ -315,7 +316,17 @@ const InputParamsCard = ({ inputParams, selectedExercises }: InputParamsCardProp
                     
                     return (
                       <span key={exerciseId}>
-                        {exerciseName}
+                        {onExerciseClick ? (
+                          <button
+                            type="button"
+                            onClick={() => onExerciseClick(exerciseId, index)}
+                            className="text-worksheet-purple hover:underline cursor-pointer focus:outline-none"
+                          >
+                            {exerciseName}
+                          </button>
+                        ) : (
+                          exerciseName
+                        )}
                         {!isLast && (needsNewLine ? <br /> : ', ')}
                       </span>
                     );
