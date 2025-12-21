@@ -693,20 +693,12 @@ const Profile = () => {
                   <CardTitle className="text-lg">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 space-y-2">
-                  <a 
-                    href="/" 
-                    onClick={(e) => {
-                      sessionStorage.setItem('forceNewWorksheet', 'true');
-                    }}
-                    onAuxClick={(e) => {
-                      if (e.button === 1) {
-                        sessionStorage.setItem('forceNewWorksheet', 'true');
-                      }
-                    }}
+                  <Link 
+                    to="/?forceNew=true"
                     className="w-full inline-flex items-center justify-center h-9 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
                   >
                     Generate Worksheet
-                  </a>
+                  </Link>
                   <Button 
                     className="w-full" 
                     variant="outline"
