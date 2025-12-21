@@ -89,7 +89,12 @@ export const StudentCard = ({ student, onViewHistory, onOpenWorksheet, onDeleteS
             <span>{totalCount} worksheets</span>
           </div>
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm" asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              asChild
+              className="border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700"
+            >
               <Link to={`/student/${student.id}`}>
                 <ExternalLink className="h-4 w-4 mr-1" />
                 View Profile

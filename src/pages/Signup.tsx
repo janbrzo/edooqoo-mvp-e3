@@ -106,7 +106,7 @@ const Signup = () => {
       <DashboardPreviewBackground />
       
       {/* Signup Modal Dialog */}
-      <Dialog open={true}>
+      <Dialog open={true} onOpenChange={(open) => !open && navigate('/')}>
         <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto">
           <Card className="border-0 shadow-none">
             <CardHeader className="space-y-1">
