@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuthFlow } from "@/hooks/useAuthFlow";
 import { useWorksheetState } from "@/hooks/useWorksheetState";
 import { useWorksheetGeneration } from "@/hooks/useWorksheetGeneration";
 import { useTokenSystem } from "@/hooks/useTokenSystem";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import GeneratingModal from "@/components/GeneratingModal";
@@ -13,8 +14,16 @@ import { TokenPaywallModal } from "@/components/TokenPaywallModal";
 import { PricingSection } from "@/components/PricingSection";
 import { FreeWeekBanner } from "@/components/FreeWeekBanner";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
-import { User, GraduationCap, DollarSign, Bell } from "lucide-react";
+import { User, GraduationCap, DollarSign } from "lucide-react";
 import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
+import { 
+  DemoModeBadge, 
+  SignupProgressBar, 
+  PulsingSignupButton,
+  WelcomeBackModal,
+  ExitIntentModal,
+  UpgradeTeachingBanner
+} from "@/components/LoginIncentives";
 
 /**
  * Main Index page component that handles worksheet generation and display
@@ -25,6 +34,7 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [preSelectedStudent, setPreSelectedStudent] = useState<{id: string, name: string} | null>(null);
+  const { toast } = useToast();
   const { 
     isGenerating, 
     generateWorksheetHandler, 
@@ -34,6 +44,12 @@ const Index = () => {
   } = useWorksheetGeneration(user?.id || null, worksheetState, selectedStudentId);
   const { tokenLeft, hasTokens, isDemo, profile } = useTokenSystem(user?.id || null);
   const [showTokenModal, setShowTokenModal] = useState(false);
+  
+  // LOGIN INCENTIVES: Modal states
+  const [showWelcomeBackModal, setShowWelcomeBackModal] = useState(false);
+  const [showExitIntentModal, setShowExitIntentModal] = useState(false);
+  const exitIntentShown = useRef(false);
+  const worksheetGeneratedToastShown = useRef(false);
 
   // Handle ?forceNew=true query param from Profile page (enables middle-click to open in new tab)
   useEffect(() => {
@@ -138,6 +154,67 @@ const Index = () => {
     }
   }, []);
 
+  // INCENTIVE #5: Welcome Back Modal - show when returning user
+  useEffect(() => {
+    if (isRegisteredUser || authLoading) return;
+    
+    const hasVisited = localStorage.getItem('worksheetAppVisited');
+    if (hasVisited) {
+      const lastVisit = parseInt(hasVisited);
+      const hoursSinceLastVisit = (Date.now() - lastVisit) / (1000 * 60 * 60);
+      // Show modal if last visit was more than 1 hour ago
+      if (hoursSinceLastVisit > 1) {
+        // Small delay to not overwhelm user immediately
+        const timer = setTimeout(() => {
+          setShowWelcomeBackModal(true);
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    }
+    localStorage.setItem('worksheetAppVisited', Date.now().toString());
+  }, [isRegisteredUser, authLoading]);
+
+  // INCENTIVE #9: Exit Intent Modal - show when cursor leaves viewport
+  useEffect(() => {
+    if (isRegisteredUser) return;
+    
+    const handleMouseLeave = (e: MouseEvent) => {
+      // Only trigger when cursor moves to top of page (exiting)
+      if (e.clientY < 10 && !exitIntentShown.current) {
+        exitIntentShown.current = true;
+        setShowExitIntentModal(true);
+      }
+    };
+    
+    document.addEventListener('mouseleave', handleMouseLeave);
+    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+  }, [isRegisteredUser]);
+
+  const bothWorksheetsReady = worksheetState.generatedWorksheet && worksheetState.editableWorksheet;
+
+  // INCENTIVE #3: Toast after worksheet generation for anonymous users
+  useEffect(() => {
+    if (bothWorksheetsReady && !isRegisteredUser && !worksheetGeneratedToastShown.current) {
+      worksheetGeneratedToastShown.current = true;
+      // Delayed toast so user can first see the worksheet
+      const timer = setTimeout(() => {
+        toast({
+          title: "⚠️ This worksheet won't be saved",
+          description: (
+            <span>
+              Create a free account to keep all your work!{' '}
+              <Link to="/signup" className="underline font-medium hover:text-primary">
+                Sign up free →
+              </Link>
+            </span>
+          ),
+          duration: 10000,
+        });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [bothWorksheetsReady, isRegisteredUser, toast]);
+
   // Show loading indicator while auth is initializing
   if (authLoading) {
     return (
@@ -146,8 +223,6 @@ const Index = () => {
       </div>
     );
   }
-
-  const bothWorksheetsReady = worksheetState.generatedWorksheet && worksheetState.editableWorksheet;
 
   const handleGenerateWorksheet = (data: any) => {
     console.log('🔍 POPUP DECISION DEBUG:', {
@@ -205,9 +280,11 @@ const Index = () => {
     </div>
   );
 
-  // Navigation component for anonymous users
+  // INCENTIVE #1 & #8: Navigation for anonymous users with DemoModeBadge and PulsingSignupButton
   const AnonymousNav = () => (
     <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+      {/* INCENTIVE #1: Demo Mode Badge */}
+      <DemoModeBadge />
       <Button onClick={scrollToPricing} variant="outline" size="sm">
         <DollarSign className="h-4 w-4 mr-2" />
         Pricing
@@ -215,9 +292,8 @@ const Index = () => {
       <Button asChild variant="outline" size="sm">
         <Link to="/login">Login</Link>
       </Button>
-      <Button asChild size="sm">
-        <Link to="/signup">Get Started Free</Link>
-      </Button>
+      {/* INCENTIVE #8: Pulsing Sign Up Button with "2 FREE" badge */}
+      <PulsingSignupButton />
     </div>
   );
 
@@ -239,6 +315,9 @@ const Index = () => {
             isRegisteredUser={!!isRegisteredUser}
           />
           
+          {/* INCENTIVE #2: Signup Progress Bar for anonymous users */}
+          {!isRegisteredUser && <SignupProgressBar />}
+          
           {/* Add pricing section below the form for anonymous users */}
           {!isRegisteredUser && (
             <div id="pricing-section">
@@ -247,17 +326,22 @@ const Index = () => {
           )}
         </>
       ) : (
-        <GenerationView 
-          worksheetId={worksheetState.worksheetId}
-          generatedWorksheet={worksheetState.generatedWorksheet}
-          editableWorksheet={worksheetState.editableWorksheet}
-          setEditableWorksheet={worksheetState.setEditableWorksheet}
-          inputParams={worksheetState.inputParams}
-          generationTime={worksheetState.generationTime}
-          sourceCount={worksheetState.sourceCount}
-          onBack={worksheetState.resetWorksheetState}
-          userId={isRegisteredUser ? user?.id || null : null}
-        />
+        <>
+          <GenerationView 
+            worksheetId={worksheetState.worksheetId}
+            generatedWorksheet={worksheetState.generatedWorksheet}
+            editableWorksheet={worksheetState.editableWorksheet}
+            setEditableWorksheet={worksheetState.setEditableWorksheet}
+            inputParams={worksheetState.inputParams}
+            generationTime={worksheetState.generationTime}
+            sourceCount={worksheetState.sourceCount}
+            onBack={worksheetState.resetWorksheetState}
+            userId={isRegisteredUser ? user?.id || null : null}
+          />
+          
+          {/* INCENTIVE #7: Upgrade Teaching Banner for anonymous users */}
+          {!isRegisteredUser && <UpgradeTeachingBanner />}
+        </>
       )}
       
       <GeneratingModal 
@@ -278,6 +362,18 @@ const Index = () => {
           console.log('Upgrade plan clicked');
           setShowTokenModal(false);
         }}
+      />
+      
+      {/* INCENTIVE #5: Welcome Back Modal */}
+      <WelcomeBackModal 
+        open={showWelcomeBackModal} 
+        onOpenChange={setShowWelcomeBackModal} 
+      />
+      
+      {/* INCENTIVE #9: Exit Intent Modal */}
+      <ExitIntentModal 
+        open={showExitIntentModal} 
+        onOpenChange={setShowExitIntentModal} 
       />
     </div>
   );
