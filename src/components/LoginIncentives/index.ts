@@ -1,0 +1,9 @@
+// Export all login incentive components
+export { DemoModeBadge } from './DemoModeBadge';
+export { SignupProgressBar } from './SignupProgressBar';
+export { SocialProofBadge } from './SocialProofBadge';
+export { FeatureLockPlaceholder } from './FeatureLockPlaceholder';
+export { UpgradeTeachingBanner } from './UpgradeTeachingBanner';
+export { PulsingSignupButton } from './PulsingSignupBadge';
+export { WelcomeBackModal } from './WelcomeBackModal';
+export { ExitIntentModal } from './ExitIntentModal';
