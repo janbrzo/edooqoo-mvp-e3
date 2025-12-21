@@ -8,13 +8,16 @@ import { Loader2, GraduationCap, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTokenSystem } from '@/hooks/useTokenSystem';
+import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { HomeworkNotificationBadge } from '@/components/homework/HomeworkNotificationBadge';
 
 export default function WorksheetPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { tokenLeft } = useTokenSystem();
+  // ✅ FIX: Pass user.id to useTokenSystem to get correct token count
+  const { user } = useAuthFlow();
+  const { tokenLeft } = useTokenSystem(user?.id);
   const [loading, setLoading] = useState(true);
   const [worksheetData, setWorksheetData] = useState<any>(null);
   const [parsedWorksheet, setParsedWorksheet] = useState<any>(null);

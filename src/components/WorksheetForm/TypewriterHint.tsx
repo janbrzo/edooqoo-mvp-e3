@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const hints = [
   "Input quality equals worksheet quality",
@@ -21,34 +21,45 @@ const hints = [
 export default function TypewriterHint() {
   const [currentHintIndex, setCurrentHintIndex] = useState(0);
   const [displayedWords, setDisplayedWords] = useState<string[]>([]);
-  const [isTyping, setIsTyping] = useState(true);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wordIndexRef = useRef(0);
 
   useEffect(() => {
     const currentHint = hints[currentHintIndex];
     const words = currentHint.split(' ');
+    const typingDuration = 3000; // 3 seconds total for typing
+    const wordDelay = typingDuration / words.length;
     
-    if (isTyping) {
-      // Typing effect - 2 seconds total for all words
-      const typingDuration = 2000; // 2 seconds
-      const wordDelay = typingDuration / words.length;
-      
-      if (displayedWords.length < words.length) {
-        const timeout = setTimeout(() => {
-          setDisplayedWords(words.slice(0, displayedWords.length + 1));
-        }, wordDelay);
-        return () => clearTimeout(timeout);
-      } else {
-        // Finished typing, wait 2 seconds then move to next
-        setIsTyping(false);
-        const pauseTimeout = setTimeout(() => {
-          setDisplayedWords([]);
-          setCurrentHintIndex((prev) => (prev + 1) % hints.length);
-          setIsTyping(true);
-        }, 2000); // 2 second pause
-        return () => clearTimeout(pauseTimeout);
-      }
+    // Reset for new hint
+    wordIndexRef.current = 0;
+    setDisplayedWords([]);
+    
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
     }
-  }, [displayedWords, currentHintIndex, isTyping]);
+    
+    // Start typing words one by one
+    intervalRef.current = setInterval(() => {
+      if (wordIndexRef.current < words.length) {
+        wordIndexRef.current++;
+        setDisplayedWords(words.slice(0, wordIndexRef.current));
+      } else {
+        // All words displayed - move to next hint
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+        // Immediately start next hint after typing finishes
+        setCurrentHintIndex((prev) => (prev + 1) % hints.length);
+      }
+    }, wordDelay);
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [currentHintIndex]);
 
   return (
     <div className="h-6 mb-2">

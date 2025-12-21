@@ -88,7 +88,8 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
                           name={`statement-audio-${sIndex}`} 
                           className="form-radio h-4 w-4" 
                           disabled={true}
-                          checked={statement.isTrue === true}
+                          // ✅ FIX: Only show checked state for teacher view, hide from students
+                          checked={viewMode === 'teacher' && statement.isTrue === true}
                         />
                         <span className="ml-2">True</span>
                         {liveSessionAnswer?.[sIndex] === true && (
@@ -103,7 +104,8 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
                           name={`statement-audio-${sIndex}`} 
                           className="form-radio h-4 w-4"
                           disabled={true}
-                          checked={statement.isTrue === false}
+                          // ✅ FIX: Only show checked state for teacher view, hide from students
+                          checked={viewMode === 'teacher' && statement.isTrue === false}
                         />
                         <span className="ml-2">False</span>
                         {liveSessionAnswer?.[sIndex] === false && (

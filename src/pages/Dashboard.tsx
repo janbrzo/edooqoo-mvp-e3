@@ -52,6 +52,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("month");
   
+  // ✅ FIX: Track initial load to prevent spinner on return navigation
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
   // Fetch homework for all worksheets
   const worksheetIds = worksheets.map(w => w.id);
   const { homeworkByWorksheet, loading: homeworkLoading } = useAllWorksheetHomework(worksheetIds);
@@ -76,6 +79,13 @@ const Dashboard = () => {
     }
   }, [user, loading]);
 
+  // ✅ FIX: Mark initial load complete when all data is loaded
+  useEffect(() => {
+    if (!loading && !studentsLoading && !historyLoading && !statsLoading) {
+      setIsInitialLoad(false);
+    }
+  }, [loading, studentsLoading, historyLoading, statsLoading]);
+
   // Authentication check and redirection
   useEffect(() => {
     if (!loading && !isRegisteredUser) {
@@ -83,8 +93,8 @@ const Dashboard = () => {
     }
   }, [loading, isRegisteredUser, navigate]);
 
-  // Show loading state
-  if (loading || studentsLoading || historyLoading || statsLoading) {
+  // ✅ FIX: Show loading state ONLY during initial load
+  if (isInitialLoad && (loading || studentsLoading || historyLoading || statsLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
