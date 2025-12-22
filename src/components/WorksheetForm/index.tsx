@@ -365,7 +365,7 @@ export default function WorksheetForm({
                 {/* Card Headers in One Line with Student Selector */}
                 <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-3'} mb-4 items-stretch`}>
                   
-                  {/* Student Selection - Lock icon for anonymous users, dropdown for authenticated */}
+                  {/* Student Selection - Lock icon for anonymous/no students, dropdown for authenticated with students */}
                   {userId && students.length > 0 ? (
                     <div className={`${isMobile ? 'w-full' : 'w-[23%]'} flex items-center`}>
                       <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
@@ -380,19 +380,21 @@ export default function WorksheetForm({
                         </SelectContent>
                       </Select>
                     </div>
-                  ) : !userId && (
+                  ) : (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className={`${isMobile ? 'w-full' : 'w-[23%]'} flex items-center`}>
                             <div className="w-full h-full flex items-center gap-2 px-3 py-2 border rounded-md bg-muted/50 text-muted-foreground cursor-help">
                               <Lock className="h-4 w-4 flex-shrink-0" />
-                              <span className="text-sm truncate">Student assignment</span>
+                              <span className="text-sm truncate">
+                                {userId ? 'Add students first' : 'Student assignment'}
+                              </span>
                             </div>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
-                          <p>🔒 Log in to assign worksheets to students</p>
+                          <p>{userId ? '➕ Add students in Dashboard to assign worksheets' : '🔒 Log in to assign worksheets to students'}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

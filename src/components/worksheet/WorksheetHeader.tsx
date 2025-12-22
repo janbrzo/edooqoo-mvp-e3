@@ -6,6 +6,7 @@ import { ArrowLeft, Zap, Database, Clock, GraduationCap, User } from "lucide-rea
 import { Link } from "react-router-dom";
 import { StudentSelector } from "@/components/StudentSelector";
 import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
+import { useAuthFlow } from "@/hooks/useAuthFlow";
 
 interface WorksheetHeaderProps {
   onBack: () => void;
@@ -30,6 +31,8 @@ function WorksheetHeader({
   onStudentChange,
   tokenLeft
 }: WorksheetHeaderProps) {
+  const { isRegisteredUser } = useAuthFlow();
+  
   // Try to get student name from multiple sources
   const displayStudentName = studentName || 
     inputParams?.studentName || 
@@ -54,7 +57,8 @@ function WorksheetHeader({
     displayStudentName,
     studentId,
     inputParams,
-    hasWorksheetId: !!worksheetId
+    hasWorksheetId: !!worksheetId,
+    isRegisteredUser
   });
 
   return (
@@ -75,27 +79,29 @@ function WorksheetHeader({
           </Button>
         </div>
         
-        {/* Right side: Tokens, bell, Dashboard, Profile */}
-        <div className="flex items-center gap-3">
-          {tokenLeft !== undefined && (
-            <Badge variant="outline" className="text-sm px-3 py-1">
-              Tokens Left: {tokenLeft}
-            </Badge>
-          )}
-          <HomeworkNotificationBadge />
-          <Button asChild variant="outline" size="sm">
-            <Link to="/dashboard">
-              <GraduationCap className="h-4 w-4 mr-2" />
-              Dashboard
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/profile">
-              <User className="h-4 w-4 mr-2" />
-              Profile
-            </Link>
-          </Button>
-        </div>
+        {/* Right side: Tokens, bell, Dashboard, Profile - ONLY FOR REGISTERED USERS */}
+        {isRegisteredUser && (
+          <div className="flex items-center gap-3">
+            {tokenLeft !== undefined && (
+              <Badge variant="outline" className="text-sm px-3 py-1">
+                Tokens Left: {tokenLeft}
+              </Badge>
+            )}
+            <HomeworkNotificationBadge />
+            <Button asChild variant="outline" size="sm">
+              <Link to="/dashboard">
+                <GraduationCap className="h-4 w-4 mr-2" />
+                Dashboard
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/profile">
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
       <div className="bg-worksheet-purple rounded-lg p-6">
         <div className="flex flex-col md:flex-row justify-between">

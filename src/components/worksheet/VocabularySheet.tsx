@@ -1,8 +1,11 @@
 
 import React, { useState } from "react";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Plus, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QuickImportToFlashcardsModal } from "@/components/flashcards/QuickImportToFlashcardsModal";
+import { LoginRequiredModal } from "@/components/LoginRequiredModal";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuthFlow } from "@/hooks/useAuthFlow";
 
 interface Worksheet {
   title: string;
@@ -41,16 +44,29 @@ const VocabularySheet = ({
 }: VocabularySheetProps) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedWords, setSelectedWords] = useState<number[]>([]);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const { isRegisteredUser } = useAuthFlow();
   
   // Show flashcard buttons when all required IDs are present
   const canAddFlashcards = studentId && teacherId && worksheetId && !isEditing;
+  
+  // Show locked flashcard button for anonymous users
+  const showLockedFlashcardButton = !isRegisteredUser && !isEditing;
 
   const handleAddSingleWord = (index: number) => {
+    if (!isRegisteredUser) {
+      setShowLoginModal(true);
+      return;
+    }
     setSelectedWords([index]);
     setIsImportModalOpen(true);
   };
 
   const handleAddAllWords = () => {
+    if (!isRegisteredUser) {
+      setShowLoginModal(true);
+      return;
+    }
     setSelectedWords(vocabularySheet.map((_, idx) => idx));
     setIsImportModalOpen(true);
   };
@@ -65,6 +81,7 @@ const VocabularySheet = ({
             </div>
             <h3 className="text-lg font-semibold">Vocabulary Sheet</h3>
           </div>
+          {/* Add All to Flashcards - visible for registered users with proper setup */}
           {canAddFlashcards && (
             <Button
               variant="secondary"
@@ -75,6 +92,26 @@ const VocabularySheet = ({
               <Plus className="h-4 w-4 mr-1" />
               Add All to Flashcards
             </Button>
+          )}
+          {/* Locked Add All to Flashcards - visible for anonymous users */}
+          {showLockedFlashcardButton && !canAddFlashcards && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowLoginModal(true)}
+                  className="opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400 text-white border-0"
+                >
+                  <Lock className="h-3 w-3 mr-1" />
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add All to Flashcards
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>🔒 Login to add vocabulary to flashcards</p>
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
 
@@ -164,6 +201,13 @@ const VocabularySheet = ({
           nativeLanguage={nativeLanguage}
         />
       )}
+
+      {/* Login Required Modal for anonymous users */}
+      <LoginRequiredModal
+        open={showLoginModal}
+        onOpenChange={setShowLoginModal}
+        featureName="Add to Flashcards"
+      />
     </>
   );
 };
