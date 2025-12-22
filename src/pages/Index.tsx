@@ -13,8 +13,10 @@ import { TokenPaywallModal } from "@/components/TokenPaywallModal";
 import { PricingSection } from "@/components/PricingSection";
 import { FreeWeekBanner } from "@/components/FreeWeekBanner";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
-import { User, GraduationCap, DollarSign, Bell } from "lucide-react";
+import { User, GraduationCap, DollarSign, Bell, Lock, CheckCircle } from "lucide-react";
 import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 /**
  * Main Index page component that handles worksheet generation and display
@@ -34,6 +36,27 @@ const Index = () => {
   } = useWorksheetGeneration(user?.id || null, worksheetState, selectedStudentId);
   const { tokenLeft, hasTokens, isDemo, profile } = useTokenSystem(user?.id || null);
   const [showTokenModal, setShowTokenModal] = useState(false);
+  const [showWelcomeBackModal, setShowWelcomeBackModal] = useState(false);
+
+  // Welcome Back Modal - show for returning anonymous users who have visited before
+  useEffect(() => {
+    if (authLoading || isRegisteredUser || user) return;
+    
+    const lastVisit = localStorage.getItem('worksheetAppLastVisit');
+    const hasGeneratedBefore = localStorage.getItem('worksheetAppHasGenerated');
+    
+    if (lastVisit && hasGeneratedBefore === 'true') {
+      const hoursSinceLastVisit = (Date.now() - parseInt(lastVisit)) / (1000 * 60 * 60);
+      // Show modal if more than 1 hour has passed since last visit AND they generated a worksheet before
+      if (hoursSinceLastVisit > 1) {
+        setShowWelcomeBackModal(true);
+      }
+    }
+    
+    // Update last visit timestamp
+    localStorage.setItem('worksheetAppLastVisit', Date.now().toString());
+  }, [authLoading, isRegisteredUser, user]);
+
 
   // Handle ?forceNew=true query param from Profile page (enables middle-click to open in new tab)
   useEffect(() => {
@@ -149,6 +172,13 @@ const Index = () => {
 
   const bothWorksheetsReady = worksheetState.generatedWorksheet && worksheetState.editableWorksheet;
 
+  // Mark that user has generated a worksheet (for Welcome Back Modal logic)
+  useEffect(() => {
+    if (bothWorksheetsReady && !isRegisteredUser) {
+      localStorage.setItem('worksheetAppHasGenerated', 'true');
+    }
+  }, [bothWorksheetsReady, isRegisteredUser]);
+
   const handleGenerateWorksheet = (data: any) => {
     console.log('🔍 POPUP DECISION DEBUG:', {
       userId: user?.id,
@@ -205,7 +235,7 @@ const Index = () => {
     </div>
   );
 
-  // Navigation component for anonymous users
+  // Navigation component for anonymous users with pulsing "2 FREE" badge
   const AnonymousNav = () => (
     <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
       <Button onClick={scrollToPricing} variant="outline" size="sm">
@@ -215,8 +245,13 @@ const Index = () => {
       <Button asChild variant="outline" size="sm">
         <Link to="/login">Login</Link>
       </Button>
-      <Button asChild size="sm">
-        <Link to="/signup">Get Started Free</Link>
+      <Button asChild size="sm" className="relative">
+        <Link to="/signup">
+          Get Started Free
+          <Badge className="absolute -top-2 -right-2 bg-green-500 text-white animate-pulse text-[10px] px-1.5 py-0.5 border-0">
+            2 FREE
+          </Badge>
+        </Link>
       </Button>
     </div>
   );
@@ -238,6 +273,49 @@ const Index = () => {
             preSelectedStudent={preSelectedStudent}
             isRegisteredUser={!!isRegisteredUser}
           />
+          
+          {/* Progress Bar for anonymous users - shows journey path */}
+          {!isRegisteredUser && (
+            <TooltipProvider>
+              <div className="w-full max-w-4xl mx-auto px-4 py-4">
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                      <CheckCircle className="h-3 w-3 text-primary-foreground" />
+                    </div>
+                    <span className="font-medium text-primary">Demo</span>
+                  </div>
+                  
+                  <div className="w-8 h-0.5 bg-muted-foreground/30" />
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1.5 cursor-help opacity-60 hover:opacity-100 transition-opacity">
+                        <Lock className="h-4 w-4" />
+                        <span>Free Account</span>
+                        <Badge variant="outline" className="text-[10px] px-1 py-0">2 tokens</Badge>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Create free account to save worksheets & get 2 tokens!</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <div className="w-8 h-0.5 bg-muted-foreground/20" />
+                  
+                  <div className="flex items-center gap-1.5 opacity-40">
+                    <span>Side-Gig</span>
+                  </div>
+                  
+                  <div className="w-8 h-0.5 bg-muted-foreground/20" />
+                  
+                  <div className="flex items-center gap-1.5 opacity-40">
+                    <span>Full-Time</span>
+                  </div>
+                </div>
+              </div>
+            </TooltipProvider>
+          )}
           
           {/* Add pricing section below the form for anonymous users */}
           {!isRegisteredUser && (
@@ -279,6 +357,42 @@ const Index = () => {
           setShowTokenModal(false);
         }}
       />
+
+      {/* Welcome Back Modal for returning anonymous users */}
+      <Dialog open={showWelcomeBackModal} onOpenChange={setShowWelcomeBackModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Welcome back! 👋</DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              Great to see you again! Log in to access your previous worksheets and continue your work.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+              <span>2 free worksheet tokens on signup</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+              <span>Save all your worksheets forever</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+              <span>Manage unlimited students</span>
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" onClick={() => setShowWelcomeBackModal(false)} className="flex-1">
+              Continue as guest
+            </Button>
+            <Button asChild className="flex-1">
+              <Link to="/signup" onClick={() => setShowWelcomeBackModal(false)}>
+                Create Free Account
+              </Link>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

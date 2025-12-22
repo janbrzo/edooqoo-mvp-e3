@@ -7,6 +7,11 @@
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
 **Ostatnia naprawa (2025-12):** 
+- ✅ **NAPRAWIONO Full-Time Plan Dropdown**: Kalkulator nie nadpisuje już ręcznych zmian dropdownu
+- ✅ **DODANO Pulsing Badge "2 FREE"**: Animowany badge przy przycisku Sign Up dla niezalogowanych użytkowników
+- ✅ **DODANO Progress Bar**: Wizualna ścieżka "Demo → Free Account → Side-Gig → Full-Time" pod formularzem
+- ✅ **DODANO Welcome Back Modal**: Modal powitalny dla powracających użytkowników (po wygenerowaniu worksheetu wcześniej)
+- ✅ **DODANO Lock Icons**: Ikona zamka przy Student Selector dla niezalogowanych użytkowników z tooltipem
 - ✅ **NAPRAWIONO Live Session Flow**: Odpowiedzi studentów poprawnie przekazywane z `liveSessionAnswers` → `ExerciseSection` → komponenty ćwiczeń z niebieskim podświetleniem inline
 - ✅ **NAPRAWIONO Navigation Sidebar na Shared Worksheet**: Klikanie numerków scrolluje do odpowiedniego ćwiczenia dzięki przekazaniu `exerciseRefs` do `SharedWorksheetContent`
 - ✅ **DODANO Pin Audio/Picture na Shared Worksheet**: Floating buttons Pin i Maximize z pinned audio player (identycznie jak na głównym worksheet)
