@@ -15,7 +15,8 @@ import { useAnonymousAuth } from "@/hooks/useAnonymousAuth";
 import { useStudents } from "@/hooks/useStudents";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shuffle, Brain, MousePointer, ChevronDown, Image, Headphones } from "lucide-react";
+import { Shuffle, Brain, MousePointer, ChevronDown, Image, Headphones, Lock } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import type { MediaType } from './types';
 export type { FormData };
 interface ImageSuggestion {
@@ -364,8 +365,9 @@ export default function WorksheetForm({
                 {/* Card Headers in One Line with Student Selector */}
                 <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-3'} mb-4 items-stretch`}>
                   
-                  {/* Student Selection Dropdown - only for authenticated users */}
-                  {userId && students.length > 0 && <div className={`${isMobile ? 'w-full' : 'w-[23%]'} flex items-center`}>
+                  {/* Student Selection - Lock icon for anonymous users, dropdown for authenticated */}
+                  {userId && students.length > 0 ? (
+                    <div className={`${isMobile ? 'w-full' : 'w-[23%]'} flex items-center`}>
                       <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
                         <SelectTrigger className="w-full h-full">
                           <SelectValue placeholder="No specific student" />
@@ -377,7 +379,24 @@ export default function WorksheetForm({
                             </SelectItem>)}
                         </SelectContent>
                       </Select>
-                    </div>}
+                    </div>
+                  ) : !userId && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className={`${isMobile ? 'w-full' : 'w-[23%]'} flex items-center`}>
+                            <div className="w-full h-full flex items-center gap-2 px-3 py-2 border rounded-md bg-muted/50 text-muted-foreground cursor-help">
+                              <Lock className="h-4 w-4 flex-shrink-0" />
+                              <span className="text-sm truncate">Student assignment</span>
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p>🔒 Log in to assign worksheets to students</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                   
                   {/* Exercise Types Card Header */}
                   <Card className={`border-2 cursor-pointer transition-colors ${isMobile ? 'w-full' : 'flex-1'} ${activeTab === 'exercises' ? 'border-worksheet-purple bg-worksheet-purpleLight' : 'border-gray-200 hover:border-gray-300'}`} onClick={() => setActiveTab(activeTab === 'exercises' ? null : 'exercises')}>
