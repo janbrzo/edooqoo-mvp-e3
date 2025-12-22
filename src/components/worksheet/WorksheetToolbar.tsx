@@ -291,7 +291,6 @@ const WorksheetToolbar = ({
                       : 'border-blue-600 text-blue-600 hover:bg-blue-50'} ${hasLiveSessionData ? 'animate-pulse' : ''}`}
                   size="sm"
                 >
-                  {!isRegisteredUser && <Lock className="mr-1 h-3 w-3" />}
                   <Radio className="mr-2 h-4 w-4" />
                   Live Session
                 </Button>
@@ -331,10 +330,9 @@ const WorksheetToolbar = ({
                           variant="outline"
                           onClick={() => handleLockedFeatureClick('Duplicate Worksheet')}
                           className="opacity-50 cursor-not-allowed border-gray-300 text-gray-400 mr-2"
-                          size="sm"
-                        >
-                          <Lock className="mr-1 h-3 w-3" />
-                          <Copy className="mr-2 h-4 w-4" /> Duplicate
+                        size="sm"
+                      >
+                        <Copy className="mr-2 h-4 w-4" /> Duplicate
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -363,7 +361,6 @@ const WorksheetToolbar = ({
                         className="opacity-50 cursor-not-allowed border-gray-300 text-gray-400 mr-2"
                         size="sm"
                       >
-                        <Lock className="mr-1 h-3 w-3" />
                         <Share2 className="mr-2 h-4 w-4" /> Share
                       </Button>
                     </TooltipTrigger>
@@ -392,7 +389,6 @@ const WorksheetToolbar = ({
                         className="opacity-50 cursor-not-allowed border-gray-300 text-gray-400 mr-2"
                         size="sm"
                       >
-                        <Lock className="mr-1 h-3 w-3" />
                         <BookOpen className="mr-2 h-4 w-4" /> Create Homework
                       </Button>
                     </TooltipTrigger>

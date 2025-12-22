@@ -28,8 +28,9 @@ import { SelectWordMode } from "@/components/worksheet/SelectWordMode";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TextSelect, Layers, Radio } from "lucide-react";
+import { Plus, TextSelect, Layers, Radio, StickyNote } from "lucide-react";
 import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry, KnowledgeCategory } from "@/types/studentKnowledge";
+import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 import { KNOWLEDGE_CATEGORIES } from "@/types/studentKnowledge";
 // Drawing overlay imports
 import { DrawingToolbar, DrawingOverlay, type DrawingOverlayRef } from "@/components/drawing";
@@ -216,11 +217,23 @@ export default function WorksheetDisplay({
   const [showViewSetsModal, setShowViewSetsModal] = useState(false);
   const [isSelectWordMode, setIsSelectWordMode] = useState(false);
   const [selectedWordForFlashcard, setSelectedWordForFlashcard] = useState('');
+  
+  // Login required modal state for anonymous users
+  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
+  const [lockedFeatureName, setLockedFeatureName] = useState("");
+  
+  const handleLockedFlashcardFeature = (featureName: string) => {
+    setLockedFeatureName(featureName);
+    setShowLoginRequiredModal(true);
+  };
+  
   // Fetch all students for homework creation
   const { students } = useStudents();
   
   // Initialize student knowledge hook only if we have studentId and userId (teacherId)
   const shouldShowFAB = !!(studentId && userId && worksheetId);
+  // Show FABs for ALL users when worksheetId exists (disabled for anonymous)
+  const shouldShowFlashcardFABsForAll = !!worksheetId;
   const studentKnowledge = useStudentKnowledge({
     studentId: studentId || '',
     teacherId: userId || ''
@@ -694,7 +707,7 @@ export default function WorksheetDisplay({
         onCancel={() => setIsSelectWordMode(false)}
       />
       
-      {/* Flashcard FAB Buttons - Green group (top) */}
+      {/* Flashcard FAB Buttons - Green group (top) - FOR REGISTERED USERS */}
       {shouldShowFAB && (
         <>
           {/* View Flashcard Sets - with badge */}
@@ -729,6 +742,75 @@ export default function WorksheetDisplay({
             setSelectedWordForFlashcard('');
             setShowQuickAddWordModal(true);
           }} flashcardSetsCount={flashcardSetsCount} />
+        </>
+      )}
+      
+      {/* Flashcard FAB Buttons for ANONYMOUS USERS - disabled with login modal */}
+      {shouldShowFlashcardFABsForAll && !shouldShowFAB && (
+        <>
+          {/* View Flashcard Sets - LOCKED */}
+          <div className="fixed top-[calc(50%-135px)] right-6 z-50">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => handleLockedFlashcardFeature('Flashcard Sets')}
+                  size="icon"
+                  className="p-3 rounded-full shadow-lg bg-gray-300 text-gray-500 cursor-not-allowed"
+                >
+                  <Layers className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">🔒 Login to view flashcard sets</TooltipContent>
+            </Tooltip>
+          </div>
+          
+          {/* Select Word - LOCKED */}
+          <div className="fixed top-[calc(50%-90px)] right-6 z-50">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => handleLockedFlashcardFeature('Select Word for Flashcards')}
+                  size="icon"
+                  className="p-3 rounded-full shadow-lg bg-gray-300 text-gray-500 cursor-not-allowed"
+                >
+                  <TextSelect className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">🔒 Login to add flashcards</TooltipContent>
+            </Tooltip>
+          </div>
+          
+          {/* Quick Add Word - LOCKED */}
+          <div className="fixed top-[calc(50%-45px)] right-6 z-50">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => handleLockedFlashcardFeature('Quick Add Flashcard')}
+                  size="icon"
+                  className="p-3 rounded-full shadow-lg bg-gray-300 text-gray-500 cursor-not-allowed"
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">🔒 Login to add flashcards</TooltipContent>
+            </Tooltip>
+          </div>
+          
+          {/* Notes button - LOCKED */}
+          <div className="fixed top-[calc(50%)] right-6 z-50">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => handleLockedFlashcardFeature('Student Notes')}
+                  size="icon"
+                  className="p-3 rounded-full shadow-lg bg-gray-300 text-gray-500 cursor-not-allowed"
+                >
+                  <StickyNote className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">🔒 Login to add notes</TooltipContent>
+            </Tooltip>
+          </div>
         </>
       )}
       
@@ -979,6 +1061,13 @@ export default function WorksheetDisplay({
         students={students}
         preselectedStudent={studentId}
         worksheetFormData={inputParams}
+      />
+      
+      {/* Login Required Modal for anonymous users */}
+      <LoginRequiredModal
+        open={showLoginRequiredModal}
+        onOpenChange={setShowLoginRequiredModal}
+        featureName={lockedFeatureName}
       />
     </WorksheetViewTracking>
   );
