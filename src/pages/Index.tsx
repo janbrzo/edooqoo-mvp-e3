@@ -161,6 +161,16 @@ const Index = () => {
     }
   }, []);
 
+  // IMPORTANT: This must be BEFORE any early returns to satisfy React hooks rules
+  const bothWorksheetsReady = worksheetState.generatedWorksheet && worksheetState.editableWorksheet;
+
+  // Mark that user has generated a worksheet (for Welcome Back Modal logic)
+  useEffect(() => {
+    if (bothWorksheetsReady && !isRegisteredUser) {
+      localStorage.setItem('worksheetAppHasGenerated', 'true');
+    }
+  }, [bothWorksheetsReady, isRegisteredUser]);
+
   // Show loading indicator while auth is initializing
   if (authLoading) {
     return (
@@ -170,14 +180,6 @@ const Index = () => {
     );
   }
 
-  const bothWorksheetsReady = worksheetState.generatedWorksheet && worksheetState.editableWorksheet;
-
-  // Mark that user has generated a worksheet (for Welcome Back Modal logic)
-  useEffect(() => {
-    if (bothWorksheetsReady && !isRegisteredUser) {
-      localStorage.setItem('worksheetAppHasGenerated', 'true');
-    }
-  }, [bothWorksheetsReady, isRegisteredUser]);
 
   const handleGenerateWorksheet = (data: any) => {
     console.log('🔍 POPUP DECISION DEBUG:', {
