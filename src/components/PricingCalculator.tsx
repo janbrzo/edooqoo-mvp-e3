@@ -110,8 +110,8 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
         break;
     }
   };
-  return <Card className="mb-6 bg-white">
-      <CardHeader className="text-center pb-3 bg-white rounded-none">
+  return <Card className="mb-6 bg-background border-2 shadow-md" style={{ opacity: 1 }}>
+      <CardHeader className="text-center pb-3 bg-background rounded-none">
         <div className="flex items-center justify-center gap-4 mb-2">
           <div className="flex items-center gap-2">
             <Calculator className="h-5 w-5 text-primary" />
@@ -123,7 +123,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
         </div>
       </CardHeader>
       
-      <CardContent className="bg-white">
+      <CardContent className="bg-background">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">

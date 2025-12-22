@@ -5,6 +5,7 @@ import { isFreeCustomDemoWeek } from "@/utils/promoUtils";
 import PaymentPopup from "@/components/PaymentPopup";
 import ShareWorksheetModal from "@/components/ShareWorksheetModal";
 import { DuplicateWorksheetButton } from "@/components/DuplicateWorksheetButton";
+import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 import { exportAsHTML } from "@/utils/htmlExport";
 import { trackWorksheetEvent } from "@/services/worksheetService";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -74,6 +75,8 @@ const WorksheetToolbar = ({
   const [showPaymentPopup, setShowPaymentPopup] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<'html-student' | 'html-teacher' | 'pdf' | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginFeatureName, setLoginFeatureName] = useState("");
   const isMobile = useIsMobile();
   const { trackDownloadAttempt } = useDownloadTracking(userId);
   const { user, isRegisteredUser } = useAuthFlow();
@@ -81,6 +84,12 @@ const WorksheetToolbar = ({
   // PROBLEM 6 & 7: Track student email and share token status
   const [studentEmail, setStudentEmail] = useState<string | undefined>(undefined);
   const [hasActiveShareToken, setHasActiveShareToken] = useState(false);
+  
+  // Handler for locked features (anonymous users)
+  const handleLockedFeatureClick = (featureName: string) => {
+    setLoginFeatureName(featureName);
+    setShowLoginModal(true);
+  };
   
   // Fetch student email and share token status when worksheet changes
   useEffect(() => {
@@ -269,23 +278,26 @@ const WorksheetToolbar = ({
               <Lightbulb className="mr-2 h-4 w-4" />
               Teacher
             </Button>
-            {/* Live Session button - only visible when shared worksheet has student answers */}
+            {/* Live Session button - disabled for anonymous users */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant={viewMode === 'live-session' ? 'default' : 'outline'}
-                  onClick={() => setViewMode('live-session')}
-                  className={`${viewMode === 'live-session' 
-                    ? 'bg-blue-600 hover:bg-blue-700' 
-                    : 'border-blue-600 text-blue-600 hover:bg-blue-50'} ${hasLiveSessionData ? 'animate-pulse' : ''}`}
+                  onClick={() => isRegisteredUser ? setViewMode('live-session') : handleLockedFeatureClick('Live Session')}
+                  className={`${!isRegisteredUser 
+                    ? 'opacity-50 cursor-not-allowed border-gray-300 text-gray-400'
+                    : viewMode === 'live-session' 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : 'border-blue-600 text-blue-600 hover:bg-blue-50'} ${hasLiveSessionData ? 'animate-pulse' : ''}`}
                   size="sm"
                 >
+                  {!isRegisteredUser && <Lock className="mr-1 h-3 w-3" />}
                   <Radio className="mr-2 h-4 w-4" />
                   Live Session
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>View student answers in real-time</p>
+                <p>{isRegisteredUser ? 'View student answers in real-time' : '🔒 Login to use Live Session'}</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -301,41 +313,93 @@ const WorksheetToolbar = ({
                   <Edit className="mr-2 h-4 w-4" /> Edit
                 </Button>
                 
-                {/* Duplicate Worksheet Button (Problem 5) */}
+                {/* Duplicate Worksheet Button - visible for all, disabled for anonymous */}
                 {worksheetId && (
-                  <DuplicateWorksheetButton
-                    worksheetId={worksheetId}
-                    worksheetTitle={editableWorksheet?.title || 'Worksheet'}
-                    onDuplicate={onDuplicateSuccess || (() => {})}
-                    variant="outline"
-                    size="sm"
-                    className="border-worksheet-purple text-worksheet-purple mr-2"
-                  />
+                  isRegisteredUser ? (
+                    <DuplicateWorksheetButton
+                      worksheetId={worksheetId}
+                      worksheetTitle={editableWorksheet?.title || 'Worksheet'}
+                      onDuplicate={onDuplicateSuccess || (() => {})}
+                      variant="outline"
+                      size="sm"
+                      className="border-worksheet-purple text-worksheet-purple mr-2"
+                    />
+                  ) : (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleLockedFeatureClick('Duplicate Worksheet')}
+                          className="opacity-50 cursor-not-allowed border-gray-300 text-gray-400 mr-2"
+                          size="sm"
+                        >
+                          <Lock className="mr-1 h-3 w-3" />
+                          <Copy className="mr-2 h-4 w-4" /> Duplicate
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>🔒 Login to duplicate worksheets</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )
                 )}
                 
-                {canShareWorksheet && (
-                  <>
-                    {/* PROBLEM 7: Green border when share token is active */}
-                    <Button
-                      variant="outline"
-                      onClick={handleShareClick}
-                      className={`${hasActiveShareToken ? 'border-2 border-green-500' : 'border-worksheet-purple'} text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
-                      size="sm"
-                    >
-                      <Share2 className="mr-2 h-4 w-4" /> Share
-                    </Button>
-                    
-                    {onCreateHomework && (
+                {/* Share button - visible for all, disabled for anonymous */}
+                {isRegisteredUser && canShareWorksheet ? (
+                  <Button
+                    variant="outline"
+                    onClick={handleShareClick}
+                    className={`${hasActiveShareToken ? 'border-2 border-green-500' : 'border-worksheet-purple'} text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
+                    size="sm"
+                  >
+                    <Share2 className="mr-2 h-4 w-4" /> Share
+                  </Button>
+                ) : !isRegisteredUser && worksheetId && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <Button
                         variant="outline"
-                        onClick={onCreateHomework}
-                        className={`border-worksheet-purple text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
+                        onClick={() => handleLockedFeatureClick('Share Worksheet')}
+                        className="opacity-50 cursor-not-allowed border-gray-300 text-gray-400 mr-2"
                         size="sm"
                       >
+                        <Lock className="mr-1 h-3 w-3" />
+                        <Share2 className="mr-2 h-4 w-4" /> Share
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>🔒 Login to share worksheets</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                
+                {/* Create Homework button - visible for all, disabled for anonymous */}
+                {isRegisteredUser && onCreateHomework ? (
+                  <Button
+                    variant="outline"
+                    onClick={onCreateHomework}
+                    className={`border-worksheet-purple text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
+                    size="sm"
+                  >
+                    <BookOpen className="mr-2 h-4 w-4" /> Create Homework
+                  </Button>
+                ) : !isRegisteredUser && worksheetId && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleLockedFeatureClick('Create Homework')}
+                        className="opacity-50 cursor-not-allowed border-gray-300 text-gray-400 mr-2"
+                        size="sm"
+                      >
+                        <Lock className="mr-1 h-3 w-3" />
                         <BookOpen className="mr-2 h-4 w-4" /> Create Homework
                       </Button>
-                    )}
-                  </>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>🔒 Login to create homework</p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </>
             )}
@@ -494,6 +558,13 @@ const WorksheetToolbar = ({
           studentEmail={studentEmail}
         />
       )}
+
+      {/* Login Required Modal for anonymous users */}
+      <LoginRequiredModal
+        open={showLoginModal}
+        onOpenChange={setShowLoginModal}
+        featureName={loginFeatureName}
+      />
     </>
   );
 };
