@@ -302,6 +302,85 @@ export type Database = {
           },
         ]
       }
+      future_worksheet_suggestions: {
+        Row: {
+          created_at: string | null
+          deleted_at: string | null
+          focus_elements: string[] | null
+          id: string
+          is_used: boolean | null
+          rationale: string | null
+          sequence_number: number
+          source: string
+          student_id: string
+          suggested_exercises: string[] | null
+          suggested_goal: string | null
+          suggested_topic: string
+          teacher_id: string
+          updated_at: string | null
+          used_at: string | null
+          used_worksheet_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deleted_at?: string | null
+          focus_elements?: string[] | null
+          id?: string
+          is_used?: boolean | null
+          rationale?: string | null
+          sequence_number?: number
+          source?: string
+          student_id: string
+          suggested_exercises?: string[] | null
+          suggested_goal?: string | null
+          suggested_topic: string
+          teacher_id: string
+          updated_at?: string | null
+          used_at?: string | null
+          used_worksheet_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deleted_at?: string | null
+          focus_elements?: string[] | null
+          id?: string
+          is_used?: boolean | null
+          rationale?: string | null
+          sequence_number?: number
+          source?: string
+          student_id?: string
+          suggested_exercises?: string[] | null
+          suggested_goal?: string | null
+          suggested_topic?: string
+          teacher_id?: string
+          updated_at?: string | null
+          used_at?: string | null
+          used_worksheet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "future_worksheet_suggestions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "future_worksheet_suggestions_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "future_worksheet_suggestions_used_worksheet_id_fkey"
+            columns: ["used_worksheet_id"]
+            isOneToOne: false
+            referencedRelation: "worksheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       geolocation_cache: {
         Row: {
           city: string | null
@@ -733,6 +812,145 @@ export type Database = {
             columns: ["worksheet_id"]
             isOneToOne: false
             referencedRelation: "worksheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_learning_elements: {
+        Row: {
+          created_at: string | null
+          current_rating: number | null
+          deleted_at: string | null
+          description: string | null
+          display_order: number
+          element_type: string
+          goal_id: string
+          id: string
+          last_rated_at: string | null
+          source: string
+          student_id: string
+          target_rating: number | null
+          teacher_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_rating?: number | null
+          deleted_at?: string | null
+          description?: string | null
+          display_order?: number
+          element_type: string
+          goal_id: string
+          id?: string
+          last_rated_at?: string | null
+          source?: string
+          student_id: string
+          target_rating?: number | null
+          teacher_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_rating?: number | null
+          deleted_at?: string | null
+          description?: string | null
+          display_order?: number
+          element_type?: string
+          goal_id?: string
+          id?: string
+          last_rated_at?: string | null
+          source?: string
+          student_id?: string
+          target_rating?: number | null
+          teacher_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_learning_elements_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "student_progress_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_learning_elements_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_learning_elements_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_progress_goals: {
+        Row: {
+          achieved_at: string | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          display_order: number
+          goal_type: string
+          id: string
+          is_achieved: boolean | null
+          student_id: string
+          target_date: string | null
+          teacher_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          achieved_at?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          display_order?: number
+          goal_type: string
+          id?: string
+          is_achieved?: boolean | null
+          student_id: string
+          target_date?: string | null
+          teacher_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          achieved_at?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          display_order?: number
+          goal_type?: string
+          id?: string
+          is_achieved?: boolean | null
+          student_id?: string
+          target_date?: string | null
+          teacher_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_progress_goals_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_progress_goals_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
