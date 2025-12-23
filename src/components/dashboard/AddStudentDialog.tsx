@@ -10,28 +10,7 @@ import { useStudents } from '@/hooks/useStudents';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { Plus } from 'lucide-react';
 import { NATIVE_LANGUAGES } from '@/types/flashcards';
-
-const ENGLISH_LEVELS = [
-  { value: 'A1', label: 'A1 (Beginner)' },
-  { value: 'A2', label: 'A2 (Elementary)' },
-  { value: 'B1', label: 'B1 (Intermediate)' },
-  { value: 'B2', label: 'B2 (Upper-Intermediate)' },
-  { value: 'C1', label: 'C1 (Advanced)' },
-  { value: 'C2', label: 'C2 (Proficiency)' }
-];
-
-const MAIN_GOALS = [
-  { value: 'business-communication', label: 'Business Communication & Presentations' },
-  { value: 'academic-writing', label: 'Academic Writing & Research' },
-  { value: 'conversation-speaking', label: 'Conversation & Speaking Fluency' },
-  { value: 'exam-preparation', label: 'Exam Preparation (IELTS/TOEFL/Cambridge)' },
-  { value: 'grammar-structure', label: 'Grammar & Language Structure' },
-  { value: 'vocabulary-building', label: 'Vocabulary Building & Usage' },
-  { value: 'reading-comprehension', label: 'Reading Comprehension & Analysis' },
-  { value: 'listening-skills', label: 'Listening Skills & Understanding' },
-  { value: 'travel-practical', label: 'Travel & Practical English' },
-  { value: 'custom', label: 'Custom Goal (enter below)' }
-];
+import { MAIN_GOALS, ENGLISH_LEVELS } from '@/constants/studentGoals';
 
 const ADD_STUDENT_DRAFT_KEY = 'add-student-dialog-draft';
 

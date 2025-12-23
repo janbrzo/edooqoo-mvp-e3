@@ -20,6 +20,7 @@ import { WorksheetHomeworkSection } from '@/components/worksheet/WorksheetHomewo
 import { StudentHomeworkTab } from '@/components/student-homework/StudentHomeworkTab';
 import { FlashcardSetsSection } from '@/components/flashcards/FlashcardSetsSection';
 import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2 } from 'lucide-react';
+import { formatGoalLabel } from '@/constants/studentGoals';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { deepFixTextObjects } from '@/utils/textObjectFixer';
@@ -120,16 +121,8 @@ const StudentPage = () => {
     navigate('/');
   };
 
-  const formatGoal = (goal: string) => {
-    const goalMap: Record<string, string> = {
-      'work': 'Work/Business',
-      'exam': 'Exam Preparation',
-      'general': 'General English',
-      'travel': 'Travel',
-      'academic': 'Academic'
-    };
-    return goalMap[goal] || goal;
-  };
+  // Use centralized goal formatting from constants
+  const formatGoal = formatGoalLabel;
 
   const handleDeleteStudent = async () => {
     try {

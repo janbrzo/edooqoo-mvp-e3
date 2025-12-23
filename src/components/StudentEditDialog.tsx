@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tables } from '@/integrations/supabase/types';
 import { NATIVE_LANGUAGES } from '@/types/flashcards';
+import { MAIN_GOALS, ENGLISH_LEVELS, isStandardGoal } from '@/constants/studentGoals';
 
 type Student = Tables<'students'>;
 
@@ -17,24 +18,6 @@ interface StudentEditDialogProps {
   onClose: () => void;
   onSave: (id: string, updates: Partial<Pick<Student, 'name' | 'english_level' | 'main_goal' | 'student_email' | 'send_overdue_emails' | 'native_language'>>) => Promise<any>;
 }
-
-const englishLevels = [
-  { value: 'A1', label: 'A1 - Beginner' },
-  { value: 'A2', label: 'A2 - Elementary' },
-  { value: 'B1', label: 'B1 - Intermediate' },
-  { value: 'B2', label: 'B2 - Upper Intermediate' },
-  { value: 'C1', label: 'C1 - Advanced' },
-  { value: 'C2', label: 'C2 - Proficiency' }
-];
-
-const mainGoals = [
-  { value: 'work', label: 'Work/Business' },
-  { value: 'exam', label: 'Exam Preparation' },
-  { value: 'general', label: 'General English' },
-  { value: 'travel', label: 'Travel' },
-  { value: 'academic', label: 'Academic' },
-  { value: 'custom', label: 'Custom' }
-];
 
 export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
   student,
@@ -49,7 +32,7 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
   const [sendOverdueEmails, setSendOverdueEmails] = useState(student.send_overdue_emails ?? true);
   const [nativeLanguage, setNativeLanguage] = useState(student.native_language || 'Spanish');
   const [customGoal, setCustomGoal] = useState(
-    mainGoals.find(goal => goal.value === student.main_goal) ? '' : student.main_goal
+    isStandardGoal(student.main_goal) ? '' : student.main_goal
   );
   const [isLoading, setIsLoading] = useState(false);
 
@@ -80,7 +63,7 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
     setMainGoal(student.main_goal);
     setStudentEmail(student.student_email || '');
     setNativeLanguage(student.native_language || 'Spanish');
-    setCustomGoal(mainGoals.find(goal => goal.value === student.main_goal) ? '' : student.main_goal);
+    setCustomGoal(isStandardGoal(student.main_goal) ? '' : student.main_goal);
     onClose();
   };
 
@@ -112,7 +95,7 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
                 <SelectValue placeholder="Select English level" />
               </SelectTrigger>
               <SelectContent>
-                {englishLevels.map((level) => (
+                {ENGLISH_LEVELS.map((level) => (
                   <SelectItem key={level.value} value={level.value}>
                     {level.label}
                   </SelectItem>
@@ -128,7 +111,7 @@ export const StudentEditDialog: React.FC<StudentEditDialogProps> = ({
                 <SelectValue placeholder="Select main goal" />
               </SelectTrigger>
               <SelectContent>
-                {mainGoals.map((goal) => (
+                {MAIN_GOALS.map((goal) => (
                   <SelectItem key={goal.value} value={goal.value}>
                     {goal.label}
                   </SelectItem>
