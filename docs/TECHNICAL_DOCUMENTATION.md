@@ -5,7 +5,18 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Navigation & UX Improvements:**
+**Latest Update (December 2025) - Student Progress Tracking System:**
+- **Unified Main Goals**: Created `src/constants/studentGoals.ts` with centralized MAIN_GOALS list (9 options including new: Social Conversation, Personal Development, Fun & Entertainment)
+- **New Progress Tab**: Added 6th tab "Progress" to StudentPage.tsx with TrendingUp icon - tracks student learning goals and progress
+- **Database Tables**: Created `student_progress_goals`, `student_learning_elements`, `future_worksheet_suggestions` with full RLS policies
+- **Hooks**: `useStudentProgress.tsx` for goals/elements CRUD, `useFutureTimeline.tsx` for AI-powered worksheet suggestions
+- **Components**: `StudentProgressTab.tsx` with Progress Overview, Supporting Goals, Additional Goals, Future Timeline sections
+- **AI Timeline Generation**: Edge function `generate-timeline` uses Lovable AI Gateway (Gemini 2.5 Flash) to suggest 2-4 personalized worksheets
+- **Learning Elements**: 11 element types (grammar, vocabulary, pronunciation, etc.) with 1-5 star rating system
+- **Goal Types**: "Supporting" (aligned with main goal) and "Additional" (side objectives)
+- **Use This Feature**: One-click pre-fill of worksheet generator from timeline suggestions
+
+**Previous Update (December 2025) - Navigation & UX Improvements:**
 - **Navigation Sidebar Highlighting**: Added `isGrammarActive` and `isVocabularyActive` to `useWorksheetNavigation` hook - G/V buttons now highlight when scrolling to those sections
 - **Student Page Tab URLs**: Added `useSearchParams` to sync active tab with URL - refreshing page now preserves current tab (`/student/:id?tab=worksheets`)
 - **Worksheet Navigation URLs**: Changed from `sessionStorage` approach to direct `/worksheet/:id` navigation - URLs are now shareable
