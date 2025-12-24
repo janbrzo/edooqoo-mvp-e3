@@ -55,7 +55,8 @@ export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelinePro
     studentName: string,
     englishLevel: string,
     mainGoal: string,
-    goals: Array<{ title: string; elements: Array<{ title: string; current_rating: number | null }> }>
+    goals: Array<{ title: string; elements: Array<{ title: string; current_rating: number | null }> }>,
+    mode: 'replace' | 'add' = 'replace'
   ): Promise<boolean> => {
     try {
       setGenerating(true);
@@ -79,19 +80,26 @@ export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelinePro
         return false;
       }
 
-      // Clear existing unused suggestions
-      await supabase
-        .from('future_worksheet_suggestions')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('student_id', studentId)
-        .eq('teacher_id', teacherId)
-        .eq('is_used', false);
+      // Clear existing unused suggestions only in 'replace' mode
+      if (mode === 'replace') {
+        await supabase
+          .from('future_worksheet_suggestions')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('student_id', studentId)
+          .eq('teacher_id', teacherId)
+          .eq('is_used', false);
+      }
+
+      // Calculate starting sequence number
+      const startSeq = mode === 'add' && suggestions.length > 0 
+        ? Math.max(...suggestions.map(s => s.sequence_number)) + 1 
+        : 1;
 
       // Insert new suggestions
       const insertData = newSuggestions.map((s: any, idx: number) => ({
         student_id: studentId,
         teacher_id: teacherId,
-        sequence_number: idx + 1,
+        sequence_number: startSeq + idx,
         suggested_topic: s.topic,
         suggested_goal: s.goal,
         suggested_exercises: s.exercises,
@@ -106,7 +114,12 @@ export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelinePro
 
       if (error) throw error;
 
-      setSuggestions(data || []);
+      if (mode === 'add') {
+        setSuggestions(prev => [...prev, ...(data || [])]);
+      } else {
+        setSuggestions(data || []);
+      }
+      
       toast.success(`Generated ${newSuggestions.length} worksheet suggestions`);
       return true;
     } catch (error) {
@@ -115,6 +128,38 @@ export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelinePro
       return false;
     } finally {
       setGenerating(false);
+    }
+  };
+
+  // Update suggestion
+  const updateSuggestion = async (
+    suggestionId: string,
+    topic: string,
+    goal?: string
+  ): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('future_worksheet_suggestions')
+        .update({ 
+          suggested_topic: topic,
+          suggested_goal: goal || null
+        })
+        .eq('id', suggestionId)
+        .eq('teacher_id', teacherId);
+
+      if (error) throw error;
+
+      setSuggestions(prev => prev.map(s => 
+        s.id === suggestionId 
+          ? { ...s, suggested_topic: topic, suggested_goal: goal || null }
+          : s
+      ));
+      toast.success('Suggestion updated');
+      return true;
+    } catch (error) {
+      console.error('Error updating suggestion:', error);
+      toast.error('Failed to update suggestion');
+      return false;
     }
   };
 
@@ -207,6 +252,7 @@ export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelinePro
     generateTimeline,
     useSuggestion,
     addSuggestion,
+    updateSuggestion,
     deleteSuggestion
   };
 };

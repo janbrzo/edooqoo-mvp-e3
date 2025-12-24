@@ -88,6 +88,27 @@ export default function WorksheetForm({
       setSelectedStudentId(preSelectedStudent.id);
     }
   }, [preSelectedStudent]);
+
+  // Handle prefill from Progress Tab "Use This" button
+  useEffect(() => {
+    const prefillData = sessionStorage.getItem('prefillWorksheet');
+    if (prefillData) {
+      try {
+        const { topic, goal } = JSON.parse(prefillData);
+        if (topic) {
+          setLessonTopic(topic);
+        }
+        if (goal) {
+          setLessonGoal(goal);
+        }
+        sessionStorage.removeItem('prefillWorksheet');
+        console.log('✅ [WorksheetForm] Pre-filled from Progress Tab:', { topic, goal });
+      } catch (error) {
+        console.error('Error parsing prefillWorksheet:', error);
+        sessionStorage.removeItem('prefillWorksheet');
+      }
+    }
+  }, []);
   useEffect(() => {
     if (selectedStudentId && selectedStudentId !== "no-student") {
       const selectedStudent = students.find(s => s.id === selectedStudentId);

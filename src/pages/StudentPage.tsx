@@ -696,6 +696,9 @@ const StudentPage = () => {
               studentName={student.name}
               englishLevel={student.english_level}
               mainGoal={student.main_goal}
+              onMainGoalChange={async (newGoal) => {
+                await updateStudent(student.id, { main_goal: newGoal });
+              }}
               onUseWorksheetSuggestion={(topic, goal) => {
                 sessionStorage.setItem('preSelectedStudent', JSON.stringify({
                   id: student.id,
