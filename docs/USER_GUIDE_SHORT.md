@@ -4,7 +4,7 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Fixes:** Live Session mode now has "Done" button to mark exercises as completed. Share button added to worksheet cards in /student page (green border when link active). Share links valid for 10 days. Matching exercises shuffle only once (consistent order). New "Next Lesson Ideas" category in Student Knowledge with dedicated lightbulb button. Email templates no longer overflow.
+**Latest Update:** New **Progress** tab on student page! Track learning goals, rate student skills (1-5 stars), and get AI-generated worksheet suggestions. Unified Main Goals across all dialogs with 3 new options: Social Conversation, Personal Development, Fun & Entertainment.
 
 ## How it works?
 1. **Create account** - Sign up and get 2 free tokens

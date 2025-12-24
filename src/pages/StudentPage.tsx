@@ -19,7 +19,8 @@ import { useAllWorksheetHomework } from '@/hooks/useAllWorksheetHomework';
 import { WorksheetHomeworkSection } from '@/components/worksheet/WorksheetHomeworkSection';
 import { StudentHomeworkTab } from '@/components/student-homework/StudentHomeworkTab';
 import { FlashcardSetsSection } from '@/components/flashcards/FlashcardSetsSection';
-import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2 } from 'lucide-react';
+import { StudentProgressTab } from '@/components/student-progress/StudentProgressTab';
+import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2, TrendingUp } from 'lucide-react';
 import { formatGoalLabel } from '@/constants/studentGoals';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
@@ -162,7 +163,7 @@ const StudentPage = () => {
 
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Overview
@@ -174,6 +175,10 @@ const StudentPage = () => {
             <TabsTrigger value="homework" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               Homework
+            </TabsTrigger>
+            <TabsTrigger value="progress" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Progress
             </TabsTrigger>
             <TabsTrigger value="knowledge" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
@@ -681,6 +686,29 @@ const StudentPage = () => {
                 />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Progress Tab */}
+          <TabsContent value="progress">
+            <StudentProgressTab
+              studentId={id || ''}
+              teacherId={student.teacher_id}
+              studentName={student.name}
+              englishLevel={student.english_level}
+              mainGoal={student.main_goal}
+              onUseWorksheetSuggestion={(topic, goal) => {
+                sessionStorage.setItem('preSelectedStudent', JSON.stringify({
+                  id: student.id,
+                  name: student.name
+                }));
+                sessionStorage.setItem('prefillWorksheet', JSON.stringify({
+                  topic,
+                  goal
+                }));
+                sessionStorage.setItem('forceNewWorksheet', 'true');
+                navigate('/');
+              }}
+            />
           </TabsContent>
 
           {/* Knowledge Base Tab */}
