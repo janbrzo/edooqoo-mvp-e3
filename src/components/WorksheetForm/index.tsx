@@ -94,15 +94,21 @@ export default function WorksheetForm({
     const prefillData = sessionStorage.getItem('prefillWorksheet');
     if (prefillData) {
       try {
-        const { topic, goal } = JSON.parse(prefillData);
-        if (topic) {
-          setLessonTopic(topic);
+        const parsed = JSON.parse(prefillData);
+        if (parsed.topic) {
+          setLessonTopic(parsed.topic);
         }
-        if (goal) {
-          setLessonGoal(goal);
+        if (parsed.goal) {
+          setLessonGoal(parsed.goal);
+        }
+        if (parsed.additionalInfo) {
+          setAdditionalInformation(parsed.additionalInfo);
+        }
+        if (parsed.grammarFocus) {
+          setGrammarFocus(parsed.grammarFocus);
         }
         sessionStorage.removeItem('prefillWorksheet');
-        console.log('✅ [WorksheetForm] Pre-filled from Progress Tab:', { topic, goal });
+        console.log('✅ [WorksheetForm] Pre-filled from Progress Tab:', parsed);
       } catch (error) {
         console.error('Error parsing prefillWorksheet:', error);
         sessionStorage.removeItem('prefillWorksheet');

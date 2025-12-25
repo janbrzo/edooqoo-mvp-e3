@@ -25,8 +25,9 @@ interface StudentProgressTabProps {
   studentName: string;
   englishLevel: string;
   mainGoal: string;
+  studentNotes?: string[];
   onMainGoalChange?: (newGoal: string) => void;
-  onUseWorksheetSuggestion?: (topic: string, goal: string) => void;
+  onUseWorksheetSuggestion?: (topic: string, goal: string, additionalInfo?: string, grammarFocus?: string) => void;
 }
 
 export const StudentProgressTab: React.FC<StudentProgressTabProps> = ({
@@ -35,6 +36,7 @@ export const StudentProgressTab: React.FC<StudentProgressTabProps> = ({
   studentName,
   englishLevel,
   mainGoal,
+  studentNotes,
   onMainGoalChange,
   onUseWorksheetSuggestion
 }) => {
@@ -62,7 +64,6 @@ export const StudentProgressTab: React.FC<StudentProgressTabProps> = ({
   
   // Regenerate confirmation
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
-  const [regenerateMode, setRegenerateMode] = useState<'replace' | 'add'>('replace');
 
   const stats = getProgressStats();
 
@@ -90,15 +91,31 @@ export const StudentProgressTab: React.FC<StudentProgressTabProps> = ({
 
   const handleGenerateTimeline = async (mode: 'replace' | 'add') => {
     setShowRegenerateConfirm(false);
-    await generateTimeline(studentName, englishLevel, mainGoal, goals.map(g => ({
-      title: g.title,
-      elements: (g.elements || []).map(e => ({ title: e.title, current_rating: e.current_rating }))
-    })), mode);
+    await generateTimeline(
+      studentName, 
+      englishLevel, 
+      mainGoal, 
+      goals.map(g => ({
+        title: g.title,
+        elements: (g.elements || []).map(e => ({ 
+          title: e.title, 
+          current_rating: e.current_rating,
+          element_type: e.element_type
+        }))
+      })), 
+      mode,
+      studentNotes
+    );
   };
 
-  const handleUseSuggestion = (topic: string, goal: string | null) => {
+  const handleUseSuggestion = (s: any) => {
     if (onUseWorksheetSuggestion) {
-      onUseWorksheetSuggestion(topic, goal || '');
+      onUseWorksheetSuggestion(
+        s.suggested_topic, 
+        s.suggested_goal || '',
+        s.suggested_additional_info || '',
+        s.suggested_grammar_focus || ''
+      );
     }
   };
 
@@ -129,89 +146,92 @@ export const StudentProgressTab: React.FC<StudentProgressTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Main Goal Display */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
+      {/* Progress Overview (70%) + Main Learning Goal (30%) - Side by Side */}
+      <div className="grid grid-cols-1 md:grid-cols-10 gap-6">
+        {/* Progress Overview - 70% width (7 cols) */}
+        <Card className="md:col-span-7">
+          <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              Main Learning Goal
+              <TrendingUp className="h-5 w-5" />
+              Progress Overview
             </CardTitle>
-            {!isEditingMainGoal && (
-              <Button size="sm" variant="ghost" onClick={() => { setEditedMainGoal(mainGoal); setIsEditingMainGoal(true); }}>
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isEditingMainGoal ? (
-            <div className="flex items-center gap-2">
-              <Select value={editedMainGoal} onValueChange={setEditedMainGoal}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MAIN_GOALS.map(g => (
-                    <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button size="icon" variant="ghost" onClick={handleSaveMainGoal}>
-                <Check className="h-4 w-4 text-green-600" />
-              </Button>
-              <Button size="icon" variant="ghost" onClick={() => setIsEditingMainGoal(false)}>
-                <X className="h-4 w-4 text-destructive" />
-              </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-3 bg-muted rounded-lg">
+                <div className="text-2xl font-bold text-primary">{stats.totalGoals}</div>
+                <div className="text-sm text-muted-foreground">Goals</div>
+              </div>
+              <div className="text-center p-3 bg-muted rounded-lg">
+                <div className="text-2xl font-bold text-primary">{stats.totalElements}</div>
+                <div className="text-sm text-muted-foreground">Learning Elements</div>
+              </div>
+              <div className="text-center p-3 bg-muted rounded-lg">
+                <div className="text-2xl font-bold text-primary">{stats.averageRating || '-'}</div>
+                <div className="text-sm text-muted-foreground">Avg. Rating</div>
+              </div>
+              <div className="text-center p-3 bg-muted rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{stats.masteredElements}</div>
+                <div className="text-sm text-muted-foreground">Mastered</div>
+              </div>
             </div>
-          ) : (
-            <div className="flex items-center gap-2">
+            {stats.totalElements > 0 && (
+              <div className="mt-4">
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Overall Progress</span>
+                  <span>{stats.progressPercentage}%</span>
+                </div>
+                <Progress value={stats.progressPercentage} className="h-2" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Main Learning Goal - 30% width (3 cols) */}
+        <Card className="md:col-span-3">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                Main Goal
+              </CardTitle>
+              {!isEditingMainGoal && (
+                <Button size="sm" variant="ghost" onClick={() => { setEditedMainGoal(mainGoal); setIsEditingMainGoal(true); }}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isEditingMainGoal ? (
+              <div className="space-y-2">
+                <Select value={editedMainGoal} onValueChange={setEditedMainGoal}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MAIN_GOALS.map(g => (
+                      <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" className="flex-1" onClick={handleSaveMainGoal}>
+                    <Check className="h-4 w-4 mr-1" /> Save
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setIsEditingMainGoal(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
               <Badge variant="secondary" className="text-base px-4 py-2">
                 {formatGoalLabel(mainGoal)}
               </Badge>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Progress Overview */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Progress Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">{stats.totalGoals}</div>
-              <div className="text-sm text-muted-foreground">Goals</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">{stats.totalElements}</div>
-              <div className="text-sm text-muted-foreground">Learning Elements</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-primary">{stats.averageRating || '-'}</div>
-              <div className="text-sm text-muted-foreground">Avg. Rating</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{stats.masteredElements}</div>
-              <div className="text-sm text-muted-foreground">Mastered</div>
-            </div>
-          </div>
-          {stats.totalElements > 0 && (
-            <div className="mt-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span>Overall Progress</span>
-                <span>{stats.progressPercentage}%</span>
-              </div>
-              <Progress value={stats.progressPercentage} className="h-2" />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Supporting Goals - Full Width */}
       <Card>
@@ -350,11 +370,14 @@ export const StudentProgressTab: React.FC<StudentProgressTabProps> = ({
                         </div>
                         <h4 className="font-medium">{s.suggested_topic}</h4>
                         {s.suggested_goal && <p className="text-sm text-muted-foreground mt-1">{s.suggested_goal}</p>}
+                        {(s as any).suggested_grammar_focus && (
+                          <p className="text-xs text-primary mt-1">Grammar: {(s as any).suggested_grammar_focus}</p>
+                        )}
                         {s.rationale && <p className="text-xs text-muted-foreground mt-2 italic">{s.rationale}</p>}
                         <Button 
                           size="sm" 
                           className="mt-3 w-full" 
-                          onClick={() => handleUseSuggestion(s.suggested_topic, s.suggested_goal)}
+                          onClick={() => handleUseSuggestion(s)}
                         >
                           Use This
                         </Button>

@@ -696,17 +696,20 @@ const StudentPage = () => {
               studentName={student.name}
               englishLevel={student.english_level}
               mainGoal={student.main_goal}
+              studentNotes={studentKnowledge.entries.slice(0, 10).map(e => e.content)}
               onMainGoalChange={async (newGoal) => {
                 await updateStudent(student.id, { main_goal: newGoal });
               }}
-              onUseWorksheetSuggestion={(topic, goal) => {
+              onUseWorksheetSuggestion={(topic, goal, additionalInfo, grammarFocus) => {
                 sessionStorage.setItem('preSelectedStudent', JSON.stringify({
                   id: student.id,
                   name: student.name
                 }));
                 sessionStorage.setItem('prefillWorksheet', JSON.stringify({
                   topic,
-                  goal
+                  goal,
+                  additionalInfo: additionalInfo || '',
+                  grammarFocus: grammarFocus || ''
                 }));
                 sessionStorage.setItem('forceNewWorksheet', 'true');
                 navigate('/');

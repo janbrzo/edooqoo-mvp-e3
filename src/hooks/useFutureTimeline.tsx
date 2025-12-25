@@ -11,8 +11,13 @@ interface UseFutureTimelineProps {
   teacherId: string;
 }
 
+interface ExtendedWorksheetSuggestion extends WorksheetSuggestion {
+  suggested_additional_info?: string | null;
+  suggested_grammar_focus?: string | null;
+}
+
 export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelineProps) => {
-  const [suggestions, setSuggestions] = useState<WorksheetSuggestion[]>([]);
+  const [suggestions, setSuggestions] = useState<ExtendedWorksheetSuggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
@@ -55,8 +60,9 @@ export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelinePro
     studentName: string,
     englishLevel: string,
     mainGoal: string,
-    goals: Array<{ title: string; elements: Array<{ title: string; current_rating: number | null }> }>,
-    mode: 'replace' | 'add' = 'replace'
+    goals: Array<{ title: string; elements: Array<{ title: string; current_rating: number | null; element_type?: string }> }>,
+    mode: 'replace' | 'add' = 'replace',
+    studentNotes?: string[]
   ): Promise<boolean> => {
     try {
       setGenerating(true);
@@ -67,7 +73,8 @@ export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelinePro
           studentName,
           englishLevel,
           mainGoal,
-          goals
+          goals,
+          studentNotes
         }
       });
 
@@ -95,13 +102,15 @@ export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelinePro
         ? Math.max(...suggestions.map(s => s.sequence_number)) + 1 
         : 1;
 
-      // Insert new suggestions
+      // Insert new suggestions with additional fields
       const insertData = newSuggestions.map((s: any, idx: number) => ({
         student_id: studentId,
         teacher_id: teacherId,
         sequence_number: startSeq + idx,
         suggested_topic: s.topic,
         suggested_goal: s.goal,
+        suggested_additional_info: s.additionalInfo || null,
+        suggested_grammar_focus: s.grammarFocus || null,
         suggested_exercises: s.exercises,
         rationale: s.rationale,
         source: 'ai_generated'
@@ -135,15 +144,27 @@ export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelinePro
   const updateSuggestion = async (
     suggestionId: string,
     topic: string,
-    goal?: string
+    goal?: string,
+    additionalInfo?: string,
+    grammarFocus?: string
   ): Promise<boolean> => {
     try {
+      const updateData: any = { 
+        suggested_topic: topic,
+        suggested_goal: goal || null
+      };
+      
+      // Only update additional fields if provided
+      if (additionalInfo !== undefined) {
+        updateData.suggested_additional_info = additionalInfo || null;
+      }
+      if (grammarFocus !== undefined) {
+        updateData.suggested_grammar_focus = grammarFocus || null;
+      }
+
       const { error } = await supabase
         .from('future_worksheet_suggestions')
-        .update({ 
-          suggested_topic: topic,
-          suggested_goal: goal || null
-        })
+        .update(updateData)
         .eq('id', suggestionId)
         .eq('teacher_id', teacherId);
 
@@ -151,7 +172,13 @@ export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelinePro
 
       setSuggestions(prev => prev.map(s => 
         s.id === suggestionId 
-          ? { ...s, suggested_topic: topic, suggested_goal: goal || null }
+          ? { 
+              ...s, 
+              suggested_topic: topic, 
+              suggested_goal: goal || null,
+              ...(additionalInfo !== undefined && { suggested_additional_info: additionalInfo || null }),
+              ...(grammarFocus !== undefined && { suggested_grammar_focus: grammarFocus || null })
+            }
           : s
       ));
       toast.success('Suggestion updated');
@@ -192,7 +219,7 @@ export const useFutureTimeline = ({ studentId, teacherId }: UseFutureTimelinePro
     goal?: string,
     exercises?: string[],
     rationale?: string
-  ): Promise<WorksheetSuggestion | null> => {
+  ): Promise<ExtendedWorksheetSuggestion | null> => {
     try {
       const maxSeq = suggestions.length > 0 ? Math.max(...suggestions.map(s => s.sequence_number)) : 0;
 
