@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { studentName, englishLevel, mainGoal, goals } = await req.json();
+    const { studentName, englishLevel, mainGoal, goals, studentNotes } = await req.json();
 
     // Validate required fields
     if (!studentName || !englishLevel || !mainGoal) {
@@ -43,6 +43,17 @@ serve(async (req) => {
         .map((e: any) => e.title)
     ) || [];
 
+    // Extract grammar elements from goals for grammar focus
+    const grammarElements = goals?.flatMap((g: any) => 
+      (g.elements || []).filter((e: any) => e.element_type === 'grammar')
+        .map((e: any) => e.title)
+    ) || [];
+
+    // Build student notes context
+    const notesContext = studentNotes && studentNotes.length > 0 
+      ? `STUDENT NOTES (personal context, interests, preferences):\n${studentNotes.map((n: string) => `- ${n}`).join('\n')}`
+      : '';
+
     const prompt = `You are an expert ESL curriculum planner. Based on the student profile below, generate 2-4 personalized worksheet suggestions for their upcoming lessons.
 
 STUDENT PROFILE:
@@ -55,6 +66,9 @@ ${goalsContext}
 
 ${weakElements.length > 0 ? `WEAK AREAS (need focus): ${weakElements.join(', ')}` : ''}
 ${practiceElements.length > 0 ? `AREAS TO PRACTICE: ${practiceElements.join(', ')}` : ''}
+${grammarElements.length > 0 ? `GRAMMAR TOPICS IN GOALS: ${grammarElements.join(', ')}` : ''}
+
+${notesContext}
 
 Generate 2-4 worksheet suggestions that:
 1. Address weak areas first
@@ -62,12 +76,16 @@ Generate 2-4 worksheet suggestions that:
 3. Are appropriate for ${englishLevel} level
 4. Support the main goal of "${mainGoal}"
 5. Include varied and engaging topics
+6. Include personalized context based on student notes/interests when available
+7. Include relevant grammar focus based on their grammar goals
 
 Return a JSON array with this exact format (no markdown, just valid JSON):
 [
   {
     "topic": "Specific lesson topic",
     "goal": "What student will learn/practice",
+    "additionalInfo": "Personal context, student interests, or situational details to include in the worksheet (based on student notes). Leave empty string if no relevant context.",
+    "grammarFocus": "Specific grammar points to focus on (e.g. Present Perfect, Conditionals). Leave empty string if no specific grammar focus.",
     "exercises": ["exercise-type-1", "exercise-type-2", "exercise-type-3"],
     "rationale": "Why this lesson is recommended now"
   }
@@ -89,7 +107,7 @@ Valid exercise types: reading, fill-in-blanks, matching, multiple-choice, word-o
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,
-        max_tokens: 1500
+        max_tokens: 2000
       })
     });
 
@@ -113,6 +131,8 @@ Valid exercise types: reading, fill-in-blanks, matching, multiple-choice, word-o
       // Return empty suggestions if parsing fails
       suggestions = [];
     }
+
+    console.log('Generated timeline suggestions:', suggestions.length);
 
     return new Response(
       JSON.stringify({ suggestions }),

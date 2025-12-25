@@ -1,42 +1,41 @@
 /**
- * FREE DEMO WEEK Promotion Utils
- * Handles checking if the FREE DEMO WEEK promotion is active
+ * Promotion Utils
+ * Handles checking if any promotional period is active
  */
 
-// FREE DEMO WEEK dates (UTC+0)
-const FREE_DEMO_WEEK_START = new Date('2025-09-23T00:00:00.000Z'); // Start: 23.09.2025 00:00 UTC+0
-const FREE_DEMO_WEEK_END = new Date('2025-10-05T23:59:59.999Z');   // End: 5.10.2025 23:59 UTC+0
+// OLD FREE DEMO WEEK dates (UTC+0) - EXPIRED
+const FREE_DEMO_WEEK_START = new Date('2025-09-23T00:00:00.000Z');
+const FREE_DEMO_WEEK_END = new Date('2025-10-05T23:59:59.999Z');
+
+// FREE CHRISTMAS WEEK dates (UTC+0)
+const FREE_CHRISTMAS_WEEK_START = new Date('2025-12-25T01:00:00.000Z'); // Start: 25.12.2025 01:00 UTC
+const FREE_CHRISTMAS_WEEK_END = new Date('2026-01-04T23:59:59.999Z');   // End: 4.01.2026 23:59 UTC
 
 /**
- * Check if FREE DEMO WEEK promotion is currently active
+ * Check if FREE CHRISTMAS WEEK promotion is currently active
  * @returns {boolean} True if the promotion is active, false otherwise
  */
-export const isFreeCustomDemoWeek = (): boolean => {
+export const isFreeChristmasWeek = (): boolean => {
   const now = new Date();
-  
-  // HARDCODED DISABLE: Promotion permanently ended
-  const isPromotionActive = false; // ⬅️ Disable promotion permanently
-  
-  const isWithinDateRange = now >= FREE_DEMO_WEEK_START && now <= FREE_DEMO_WEEK_END;
-  
-  console.log('🎁 FREE DEMO WEEK CHECK:', {
-    now: now.toISOString(),
-    start: FREE_DEMO_WEEK_START.toISOString(),
-    end: FREE_DEMO_WEEK_END.toISOString(),
-    isWithinDateRange,
-    isPromotionActive,
-    finalResult: isPromotionActive && isWithinDateRange
-  });
-  
-  return isPromotionActive && isWithinDateRange;
+  return now >= FREE_CHRISTMAS_WEEK_START && now <= FREE_CHRISTMAS_WEEK_END;
 };
 
 /**
- * Get the end date of the FREE DEMO WEEK for display purposes
+ * Check if any FREE WEEK promotion is currently active
+ * This is the main function used throughout the app
+ * @returns {boolean} True if any promotion is active, false otherwise
+ */
+export const isFreeCustomDemoWeek = (): boolean => {
+  // Currently only Christmas Week is active
+  return isFreeChristmasWeek();
+};
+
+/**
+ * Get the end date of the current active promotion for display purposes
  * @returns {Date} The end date of the promotion
  */
 export const getFreeWeekEndDate = (): Date => {
-  return FREE_DEMO_WEEK_END;
+  return FREE_CHRISTMAS_WEEK_END;
 };
 
 /**
@@ -44,7 +43,7 @@ export const getFreeWeekEndDate = (): Date => {
  * @returns {string} Formatted end date string
  */
 export const getFreeWeekEndDateString = (): string => {
-  return FREE_DEMO_WEEK_END.toLocaleDateString('en-US', {
+  return getFreeWeekEndDate().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -54,12 +53,30 @@ export const getFreeWeekEndDateString = (): string => {
 };
 
 /**
+ * Get the name of the current promotion
+ * @returns {string} Name of the current promotion
+ */
+export const getPromoName = (): string => {
+  if (isFreeChristmasWeek()) return 'FREE CHRISTMAS WEEK';
+  return 'FREE WEEK';
+};
+
+/**
+ * Check if current promotion is for logged-in users only
+ * @returns {boolean} True if only for logged-in users
+ */
+export const isPromoForLoggedInOnly = (): boolean => {
+  // Christmas Week is for logged-in users only
+  return isFreeChristmasWeek();
+};
+
+/**
  * Check if promotion ends today
  * @returns {boolean} True if promotion ends today
  */
 export const isLastDayOfFreeWeek = (): boolean => {
   const now = new Date();
-  const endDate = new Date(FREE_DEMO_WEEK_END);
+  const endDate = getFreeWeekEndDate();
   
   return now.getUTCFullYear() === endDate.getUTCFullYear() &&
          now.getUTCMonth() === endDate.getUTCMonth() &&

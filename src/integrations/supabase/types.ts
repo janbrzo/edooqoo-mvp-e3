@@ -313,8 +313,10 @@ export type Database = {
           sequence_number: number
           source: string
           student_id: string
+          suggested_additional_info: string | null
           suggested_exercises: string[] | null
           suggested_goal: string | null
+          suggested_grammar_focus: string | null
           suggested_topic: string
           teacher_id: string
           updated_at: string | null
@@ -331,8 +333,10 @@ export type Database = {
           sequence_number?: number
           source?: string
           student_id: string
+          suggested_additional_info?: string | null
           suggested_exercises?: string[] | null
           suggested_goal?: string | null
+          suggested_grammar_focus?: string | null
           suggested_topic: string
           teacher_id: string
           updated_at?: string | null
@@ -349,8 +353,10 @@ export type Database = {
           sequence_number?: number
           source?: string
           student_id?: string
+          suggested_additional_info?: string | null
           suggested_exercises?: string[] | null
           suggested_goal?: string | null
+          suggested_grammar_focus?: string | null
           suggested_topic?: string
           teacher_id?: string
           updated_at?: string | null
