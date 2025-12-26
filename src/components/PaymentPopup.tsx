@@ -6,7 +6,7 @@ import { Download, CreditCard, Lock, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaymentTracking } from "@/hooks/usePaymentTracking";
-import { isFreeCustomDemoWeek, getFreeWeekEndDateString, isLastDayOfFreeWeek } from "@/utils/promoUtils";
+import { isFreeCustomDemoWeek, getFreeWeekEndDateString, isLastDayOfFreeWeek, isPromoForLoggedInOnly } from "@/utils/promoUtils";
 
 interface PaymentPopupProps {
   isOpen: boolean;
@@ -14,15 +14,19 @@ interface PaymentPopupProps {
   onPaymentSuccess: (sessionToken: string) => void;
   worksheetId: string | null;
   userIp?: string | null;
+  isRegisteredUser?: boolean;
 }
 
-const PaymentPopup = ({ isOpen, onClose, onPaymentSuccess, worksheetId, userIp }: PaymentPopupProps) => {
+const PaymentPopup = ({ isOpen, onClose, onPaymentSuccess, worksheetId, userIp, isRegisteredUser = false }: PaymentPopupProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { trackPaymentButtonClick } = usePaymentTracking();
   
   // Check if FREE DEMO WEEK is active
-  const isFreeWeek = isFreeCustomDemoWeek();
+  // FREE WEEK is only valid for logged-in users when promotion requires login
+  // If isPromoForLoggedInOnly() returns true (e.g., FREE CHRISTMAS WEEK) and user is not registered,
+  // show regular payment flow instead of free download
+  const isFreeWeek = isFreeCustomDemoWeek() && (!isPromoForLoggedInOnly() || isRegisteredUser);
 
   // Check for existing valid token when popup opens
   useEffect(() => {

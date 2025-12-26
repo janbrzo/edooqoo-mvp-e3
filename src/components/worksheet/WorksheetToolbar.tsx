@@ -542,6 +542,7 @@ const WorksheetToolbar = ({
         onPaymentSuccess={handlePaymentSuccess}
         worksheetId={worksheetId}
         userIp={userIp}
+        isRegisteredUser={!!isRegisteredUser}
       />
 
       {/* PROBLEM 6: Pass studentEmail to ShareWorksheetModal */}
