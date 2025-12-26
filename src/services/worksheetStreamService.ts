@@ -35,7 +35,7 @@ export function streamWorksheetGeneration(
     body: JSON.stringify({
       ...formData,
       enableStreaming: true,  // ← KEY FLAG: enables streaming mode
-      userId: userId || 'anonymous'  // ← FIXED: Pass 'anonymous' for non-logged users
+      userId: userId || null  // ← FIXED: Pass null for anonymous mode (edge function accepts it)
     }),
     signal: controller.signal
   }).then(async response => {

@@ -50,12 +50,19 @@ serve(async (req) => {
       });
     }
 
-    // Validate userId if provided
-    if (userId && !isValidUUID(userId)) {
+    // Validate userId if provided - allow null/undefined for anonymous mode
+    // FIXED: Accept null, undefined, or 'anonymous' for demo mode (non-logged users)
+    if (userId && userId !== 'anonymous' && userId !== null && !isValidUUID(userId)) {
+      console.log('❌ Invalid userId format:', userId);
       return new Response(JSON.stringify({ error: "Invalid user ID format" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+    
+    // Log anonymous mode
+    if (!userId || userId === 'anonymous') {
+      console.log('📋 Anonymous mode - worksheet will be created without user association');
     }
 
     // Enhanced rate limiting with multi-tier limits

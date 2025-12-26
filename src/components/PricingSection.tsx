@@ -10,6 +10,7 @@ import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { useTokenSystem } from '@/hooks/useTokenSystem';
 import { usePlanLogic } from '@/hooks/usePlanLogic';
 import { PricingCalculator } from '@/components/PricingCalculator';
+import { faqItems } from '@/constants/faqItems';
 
 export const PricingSection = () => {
   const { user, isRegisteredUser } = useAuthFlow();
@@ -22,28 +23,7 @@ export const PricingSection = () => {
   const [lastInteraction, setLastInteraction] = useState<'calculator' | 'manual'>('calculator');
   const [openFaqItems, setOpenFaqItems] = useState<number[]>([]);
 
-  const faqItems = [
-    {
-      question: "What is Share Interactive Worksheet?",
-      answer: "You can share any worksheet with students via a secure link. Students can open it in their browser, fill in answers interactively, and you can see their responses in real-time or review them later."
-    },
-    {
-      question: "How do Flashcards work?",
-      answer: "Flashcards are automatically synced with vocabulary from your worksheets. Students can study using the spaced repetition system. You can also add words manually."
-    },
-    {
-      question: "How does Homework Assignments work?",
-      answer: "Assign any worksheet as homework, set deadlines, track completion, and add teacher comments. Students complete homework interactively online."
-    },
-    {
-      question: "What are rollover tokens?",
-      answer: "Unused monthly worksheets automatically convert to rollover tokens at the end of your billing cycle. You never lose unused worksheets!"
-    },
-    {
-      question: "Can I cancel anytime?",
-      answer: "Yes, cancel anytime through your profile. Your subscription remains active until the end of your billing period."
-    }
-  ];
+  // FAQ items are now imported from shared constants - same 21 questions as /pricing page
 
   const toggleFaqItem = (index: number) => {
     setOpenFaqItems(prev => 
