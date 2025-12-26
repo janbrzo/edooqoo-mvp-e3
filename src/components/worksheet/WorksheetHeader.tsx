@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Zap, Database, Clock, GraduationCap, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { StudentSelector } from "@/components/StudentSelector";
 import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
 import { useAuthFlow } from "@/hooks/useAuthFlow";
@@ -32,6 +32,7 @@ function WorksheetHeader({
   tokenLeft
 }: WorksheetHeaderProps) {
   const { isRegisteredUser } = useAuthFlow();
+  const navigate = useNavigate();
   
   // Try to get student name from multiple sources
   const displayStudentName = studentName || 
@@ -43,6 +44,11 @@ function WorksheetHeader({
 
   const handleBack = () => {
     window.history.back();
+  };
+
+  const handleGenerateNewWorksheet = () => {
+    sessionStorage.setItem('forceNewWorksheet', 'true');
+    navigate('/?forceNew=' + Date.now());
   };
 
   const handleStudentTransferSuccess = () => {
@@ -69,13 +75,8 @@ function WorksheetHeader({
           <Button variant="ghost" onClick={handleBack}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back
           </Button>
-          <Button asChild>
-            <Link 
-              to="/" 
-              onClick={() => sessionStorage.setItem('forceNewWorksheet', 'true')}
-            >
-              Generate New Worksheet
-            </Link>
+          <Button onClick={handleGenerateNewWorksheet}>
+            Generate New Worksheet
           </Button>
         </div>
         
