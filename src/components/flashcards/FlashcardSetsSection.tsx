@@ -102,7 +102,8 @@ export function FlashcardSetsSection({
     onSetChange?.(setId);
   };
 
-  if (editingSetId) {
+  // If editing set, show editor (but only after loading is complete)
+  if (editingSetId && !isLoading) {
     const set = sets.find(s => s.id === editingSetId);
     if (set) {
       return (
@@ -115,6 +116,9 @@ export function FlashcardSetsSection({
         />
       );
     }
+    // Set not found - clear editingSetId and show list
+    setEditingSetId(null);
+    onSetChange?.(null);
   }
 
   const selectedLanguage = NATIVE_LANGUAGES.find(
