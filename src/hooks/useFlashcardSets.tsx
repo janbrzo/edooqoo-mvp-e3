@@ -5,11 +5,14 @@ import { FlashcardSet, CreateFlashcardSet } from '@/types/flashcards';
 
 export const useFlashcardSets = (teacherId?: string, studentId?: string) => {
   const [sets, setSets] = useState<FlashcardSet[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true to wait for data
   const { toast } = useToast();
 
   const fetchSets = async () => {
-    if (!teacherId) return;
+    if (!teacherId) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {

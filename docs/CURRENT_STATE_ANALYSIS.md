@@ -7,6 +7,9 @@
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
 **Ostatnia naprawa (2025-12):** 
+- ✅ **NAPRAWIONO Biała strona Flashcards**: Zakładka Flashcards dla studentów bez zestawów nie powoduje białej strony - dodano poprawny loading state
+- ✅ **NAPRAWIONO Generate New Worksheet Button**: Przycisk na wygenerowanym worksheet działa poprawnie - używa `navigate()` z unikalnym parametrem
+- ✅ **NAPRAWIONO Onboarding Modal z-index**: Modal "Get started with Edooqoo" wyświetla się nad toolbarem (z-[70])
 - ✅ **NAPRAWIONO Full-Time Plan Dropdown**: Kalkulator nie nadpisuje już ręcznych zmian dropdownu
 - ✅ **DODANO Pulsing Badge "2 FREE"**: Animowany badge przy przycisku Sign Up dla niezalogowanych użytkowników
 - ✅ **DODANO Progress Bar**: Wizualna ścieżka "Demo → Free Account → Side-Gig → Full-Time" pod formularzem
