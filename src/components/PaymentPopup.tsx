@@ -150,7 +150,7 @@ const PaymentPopup = ({ isOpen, onClose, onPaymentSuccess, worksheetId, userIp, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md z-[100]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {isFreeWeek ? (
