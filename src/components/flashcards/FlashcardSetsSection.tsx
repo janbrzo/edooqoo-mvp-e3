@@ -39,8 +39,11 @@ export function FlashcardSetsSection({
   onSetChange,
 }: FlashcardSetsSectionProps) {
   const { sets, loading, createSet, updateSet, deleteSet, generateShareToken, refetch } = useFlashcardSets(teacherId, studentId);
-  const { students, updateStudent } = useStudents();
+  const { students, updateStudent, loading: studentsLoading } = useStudents();
   const { profile } = useProfile();
+  
+  // Wait for both data sources to load
+  const isLoading = loading || studentsLoading;
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingSetId, setEditingSetId] = useState<string | null>(initialEditingSetId || null);
   const [deleteSetId, setDeleteSetId] = useState<string | null>(null);
@@ -163,13 +166,13 @@ export function FlashcardSetsSection({
         </div>
       </div>
 
-      {loading && (
+      {isLoading && (
         <div className="text-center py-8 text-muted-foreground">
           Loading flashcard sets...
         </div>
       )}
 
-      {!loading && sets.length === 0 && (
+      {!isLoading && sets.length === 0 && (
         <div className="text-center py-12 bg-muted/50 rounded-lg">
           <div className="text-lg font-medium mb-2">No flashcard sets yet</div>
           <p className="text-muted-foreground mb-4">
@@ -182,7 +185,7 @@ export function FlashcardSetsSection({
         </div>
       )}
 
-      {!loading && sets.length > 0 && (
+      {!isLoading && sets.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sets.map((set) => (
             <FlashcardSetCard
