@@ -16,7 +16,7 @@ interface StreamCallbacks {
  */
 export function streamWorksheetGeneration(
   formData: any,
-  userId: string,
+  userId: string | null,
   callbacks: StreamCallbacks
 ): AbortController {
   const controller = new AbortController();
@@ -24,7 +24,7 @@ export function streamWorksheetGeneration(
   // Use the same URL as regular generation
   const GENERATE_WORKSHEET_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateWorksheet`;
   
-  console.log('🚀 Starting streaming worksheet generation...');
+  console.log('🚀 Starting streaming worksheet generation...', { hasUserId: !!userId });
   
   fetch(GENERATE_WORKSHEET_URL, {
     method: 'POST',
@@ -35,7 +35,7 @@ export function streamWorksheetGeneration(
     body: JSON.stringify({
       ...formData,
       enableStreaming: true,  // ← KEY FLAG: enables streaming mode
-      userId
+      userId: userId || 'anonymous'  // ← FIXED: Pass 'anonymous' for non-logged users
     }),
     signal: controller.signal
   }).then(async response => {

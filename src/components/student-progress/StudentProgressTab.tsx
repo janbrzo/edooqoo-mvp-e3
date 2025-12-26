@@ -60,7 +60,12 @@ export const StudentProgressTab: React.FC<StudentProgressTabProps> = ({
   
   // Timeline editing
   const [editingSuggestionId, setEditingSuggestionId] = useState<string | null>(null);
-  const [editedSuggestion, setEditedSuggestion] = useState({ topic: '', goal: '' });
+  const [editedSuggestion, setEditedSuggestion] = useState({ 
+    topic: '', 
+    goal: '',
+    additionalInfo: '',
+    grammarFocus: ''
+  });
   
   // Regenerate confirmation
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
@@ -121,12 +126,23 @@ export const StudentProgressTab: React.FC<StudentProgressTabProps> = ({
 
   const handleEditSuggestion = (s: any) => {
     setEditingSuggestionId(s.id);
-    setEditedSuggestion({ topic: s.suggested_topic, goal: s.suggested_goal || '' });
+    setEditedSuggestion({ 
+      topic: s.suggested_topic, 
+      goal: s.suggested_goal || '',
+      additionalInfo: s.suggested_additional_info || '',
+      grammarFocus: s.suggested_grammar_focus || ''
+    });
   };
 
   const handleSaveSuggestion = async () => {
     if (!editingSuggestionId || !editedSuggestion.topic.trim()) return;
-    await updateSuggestion(editingSuggestionId, editedSuggestion.topic, editedSuggestion.goal);
+    await updateSuggestion(
+      editingSuggestionId, 
+      editedSuggestion.topic, 
+      editedSuggestion.goal,
+      editedSuggestion.additionalInfo,
+      editedSuggestion.grammarFocus
+    );
     setEditingSuggestionId(null);
   };
 
@@ -344,6 +360,23 @@ export const StudentProgressTab: React.FC<StudentProgressTabProps> = ({
                           <Input 
                             value={editedSuggestion.goal} 
                             onChange={(e) => setEditedSuggestion({ ...editedSuggestion, goal: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Additional Information</Label>
+                          <Textarea 
+                            value={editedSuggestion.additionalInfo} 
+                            onChange={(e) => setEditedSuggestion({ ...editedSuggestion, additionalInfo: e.target.value })}
+                            className="h-16 text-sm"
+                            placeholder="Extra context & personal details..."
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Grammar Focus</Label>
+                          <Input 
+                            value={editedSuggestion.grammarFocus} 
+                            onChange={(e) => setEditedSuggestion({ ...editedSuggestion, grammarFocus: e.target.value })}
+                            placeholder="e.g., Present Perfect, Conditionals..."
                           />
                         </div>
                         <div className="flex gap-2">

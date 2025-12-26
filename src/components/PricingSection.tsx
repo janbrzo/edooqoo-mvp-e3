@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Check, User, GraduationCap, Zap, Users, Gift } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Check, User, GraduationCap, Zap, Users, Gift, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { useTokenSystem } from '@/hooks/useTokenSystem';
 import { usePlanLogic } from '@/hooks/usePlanLogic';
@@ -19,6 +20,38 @@ export const PricingSection = () => {
   const [recommendedWorksheets, setRecommendedWorksheets] = useState(15);
   const [hasManuallyChanged, setHasManuallyChanged] = useState(false);
   const [lastInteraction, setLastInteraction] = useState<'calculator' | 'manual'>('calculator');
+  const [openFaqItems, setOpenFaqItems] = useState<number[]>([]);
+
+  const faqItems = [
+    {
+      question: "What is Share Interactive Worksheet?",
+      answer: "You can share any worksheet with students via a secure link. Students can open it in their browser, fill in answers interactively, and you can see their responses in real-time or review them later."
+    },
+    {
+      question: "How do Flashcards work?",
+      answer: "Flashcards are automatically synced with vocabulary from your worksheets. Students can study using the spaced repetition system. You can also add words manually."
+    },
+    {
+      question: "How does Homework Assignments work?",
+      answer: "Assign any worksheet as homework, set deadlines, track completion, and add teacher comments. Students complete homework interactively online."
+    },
+    {
+      question: "What are rollover tokens?",
+      answer: "Unused monthly worksheets automatically convert to rollover tokens at the end of your billing cycle. You never lose unused worksheets!"
+    },
+    {
+      question: "Can I cancel anytime?",
+      answer: "Yes, cancel anytime through your profile. Your subscription remains active until the end of your billing period."
+    }
+  ];
+
+  const toggleFaqItem = (index: number) => {
+    setOpenFaqItems(prev => 
+      prev.includes(index) 
+        ? prev.filter(i => i !== index)
+        : [...prev, index]
+    );
+  };
 
   const fullTimePlans = [
     { tokens: '30', price: 19 },
@@ -137,15 +170,23 @@ export const PricingSection = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Worksheets are editable</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
                   <span className="text-sm">Student management</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Export to HTML & PDF</span>
+                  <span className="text-sm">Duplicate Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Share Interactive Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Flashcards auto-synced</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Draw on Worksheet</span>
                 </div>
               </div>
               
@@ -205,15 +246,35 @@ export const PricingSection = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Worksheets are editable</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
                   <span className="text-sm">Student management</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Export to HTML & PDF</span>
+                  <span className="text-sm">Duplicate Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Share Interactive Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Live Session mode</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Flashcards auto-synced</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Draw on Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Homework Assignments</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Student Knowledge tracking</span>
                 </div>
               </div>
               
@@ -293,15 +354,35 @@ export const PricingSection = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Worksheets are editable</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
                   <span className="text-sm">Student management</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Export to HTML & PDF</span>
+                  <span className="text-sm">Duplicate Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Share Interactive Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Live Session mode</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Flashcards auto-synced</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Draw on Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Homework Assignments</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Student Knowledge tracking</span>
                 </div>
               </div>
               
@@ -315,6 +396,35 @@ export const PricingSection = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* FAQ Section */}
+        <Card className="max-w-4xl mx-auto mt-8">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-xl">Frequently Asked Questions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {faqItems.map((item, index) => (
+                <Collapsible key={index} className="border rounded-lg">
+                  <CollapsibleTrigger
+                    className="flex items-center justify-between w-full p-3 text-left hover:bg-muted/50"
+                    onClick={() => toggleFaqItem(index)}
+                  >
+                    <span className="font-medium text-sm">{item.question}</span>
+                    {openFaqItems.includes(index) ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-3 pb-3 text-sm text-muted-foreground">
+                    {item.answer}
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -79,7 +79,7 @@ const Pricing = () => {
   const faqItems = [
     {
       question: "Do I need to be logged in to generate worksheets?",
-      answer: "Yes, you need to create an account and log in to generate worksheets. Anonymous generation is currently not supported. When you sign up, you get 2 free tokens to start creating worksheets immediately."
+      answer: "No, you can try the worksheet generator without logging in (demo mode). However, to save worksheets and access all features, you need to create an account. When you sign up, you get 2 free tokens to start creating worksheets immediately."
     },
     {
       question: "What happens when I run out of tokens?",
@@ -94,8 +94,28 @@ const Pricing = () => {
       answer: "Unused monthly worksheets automatically convert to rollover tokens at the end of your billing cycle. These tokens are used after your purchased tokens but before new monthly worksheets. This ensures you never lose unused worksheets!"
     },
     {
-      question: "Can I edit worksheets after they're generated?",
-      answer: "Yes! All generated worksheets are fully editable. You can modify text, add or remove exercises, and customize content before downloading. Both Student and Teacher versions are available."
+      question: "What is Share Interactive Worksheet?",
+      answer: "You can share any worksheet with students via a secure link. Students can open it in their browser, fill in answers interactively, and you can see their responses in real-time or review them later. Perfect for remote teaching!"
+    },
+    {
+      question: "What is Live Session mode?",
+      answer: "Live Session mode allows you to conduct real-time lessons. You can see all students' answers as they type, making it perfect for online group classes or tutoring sessions."
+    },
+    {
+      question: "How do Flashcards work?",
+      answer: "Flashcards are automatically synced with vocabulary from your worksheets. When you generate a worksheet, new vocabulary is added to your student's flashcard set. You can also add words manually. Students can study using the spaced repetition system."
+    },
+    {
+      question: "What is Student Knowledge tracking?",
+      answer: "Student Knowledge lets you record important notes about each student - their strengths, weaknesses, interests, and preferences. This information is used by the AI to generate more personalized worksheets."
+    },
+    {
+      question: "How does Homework Assignments work?",
+      answer: "You can assign any worksheet or specific exercises as homework. Set deadlines, send email notifications to students, track completion status, and add teacher comments. Students can complete homework interactively online."
+    },
+    {
+      question: "Can I draw on worksheets?",
+      answer: "Yes! The Draw on Worksheet feature lets you annotate worksheets during lessons - highlight text, circle answers, draw diagrams. Your drawings are saved and can be exported with the worksheet."
     },
     {
       question: "What file formats can I download?",
@@ -136,6 +156,10 @@ const Pricing = () => {
     {
       question: "Can I use the service for commercial purposes?",
       answer: "Yes, all plans support commercial use including private tutoring, language schools, and corporate training. The worksheets you create are yours to use commercially."
+    },
+    {
+      question: "Can I duplicate worksheets?",
+      answer: "Yes! You can duplicate any worksheet to create a copy. This is useful when you want to reuse similar content for different students or create variations of the same lesson."
     }
   ];
 
@@ -470,15 +494,23 @@ const Pricing = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Worksheets are editable</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
                   <span className="text-sm">Student management</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Export to HTML & PDF</span>
+                  <span className="text-sm">Duplicate Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Share Interactive Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Flashcards auto-synced</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Draw on Worksheet</span>
                 </div>
               </div>
               
@@ -538,15 +570,35 @@ const Pricing = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Worksheets are editable</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
                   <span className="text-sm">Student management</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Export to HTML & PDF</span>
+                  <span className="text-sm">Duplicate Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Share Interactive Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Live Session mode</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Flashcards auto-synced</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Draw on Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Homework Assignments</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Student Knowledge tracking</span>
                 </div>
               </div>
               
@@ -626,15 +678,35 @@ const Pricing = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Worksheets are editable</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
                   <span className="text-sm">Student management</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">Export to HTML & PDF</span>
+                  <span className="text-sm">Duplicate Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Share Interactive Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Live Session mode</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Flashcards auto-synced</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Draw on Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Homework Assignments</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Student Knowledge tracking</span>
                 </div>
               </div>
               

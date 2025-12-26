@@ -123,10 +123,11 @@ export const useWorksheetGeneration = (
       const fullPrompt = formatPromptForAI(data);
       const formDataForStorage = createFormDataForStorage(data);
       
-      // CRITICAL FIX: Only pass userId if it exists, don't use 'anonymous'
+      // FIXED: Allow anonymous users to generate worksheets in demo mode
+      // They can generate but need to pay for download (handled by PaymentPopup)
+      // Only logged-in users benefit from FREE_CHRISTMAS_WEEK (no token consumption)
       if (!userId) {
-        console.error('❌ CRITICAL: No authenticated user - cannot generate worksheet');
-        throw new Error("You must be logged in to generate worksheets");
+        console.log('📋 Anonymous user detected - proceeding in demo mode');
       }
       
       // ============================================================
