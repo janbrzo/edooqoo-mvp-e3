@@ -44,7 +44,7 @@ const StudentPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { students, updateStudent, deleteStudent } = useStudents();
+  const { students, updateStudent, deleteStudent, loading: studentsLoading } = useStudents();
   const [currentPage, setCurrentPage] = useState(1);
   const [deletedCurrentPage, setDeletedCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
@@ -90,7 +90,7 @@ const StudentPage = () => {
     refetchWorksheets();
   }, [currentPage, deletedCurrentPage]);
 
-  if (loading) {
+  if (loading || studentsLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
