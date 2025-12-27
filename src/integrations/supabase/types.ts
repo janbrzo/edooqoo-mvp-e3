@@ -961,6 +961,177 @@ export type Database = {
           },
         ]
       }
+      student_test_questions: {
+        Row: {
+          ai_feedback: string | null
+          answered_at: string | null
+          correct_answer: Json
+          created_at: string | null
+          difficulty_level: number | null
+          element_type: string | null
+          explanation: string | null
+          id: string
+          is_correct: boolean | null
+          question_data: Json | null
+          question_index: number
+          question_text: string
+          question_type: string
+          skill_tags: string[] | null
+          student_answer: Json | null
+          test_id: string
+          time_spent_seconds: number | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          answered_at?: string | null
+          correct_answer: Json
+          created_at?: string | null
+          difficulty_level?: number | null
+          element_type?: string | null
+          explanation?: string | null
+          id?: string
+          is_correct?: boolean | null
+          question_data?: Json | null
+          question_index: number
+          question_text: string
+          question_type: string
+          skill_tags?: string[] | null
+          student_answer?: Json | null
+          test_id: string
+          time_spent_seconds?: number | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          answered_at?: string | null
+          correct_answer?: Json
+          created_at?: string | null
+          difficulty_level?: number | null
+          element_type?: string | null
+          explanation?: string | null
+          id?: string
+          is_correct?: boolean | null
+          question_data?: Json | null
+          question_index?: number
+          question_text?: string
+          question_type?: string
+          skill_tags?: string[] | null
+          student_answer?: Json | null
+          test_id?: string
+          time_spent_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_test_questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "student_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_tests: {
+        Row: {
+          ai_generated: boolean | null
+          assigned_at: string | null
+          completed_at: string | null
+          correct_answers: number | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          generation_params: Json | null
+          id: string
+          linked_element_ids: string[] | null
+          linked_goal_id: string | null
+          reviewed_at: string | null
+          score_percentage: number | null
+          share_expires_at: string | null
+          share_token: string | null
+          started_at: string | null
+          status: string
+          student_id: string
+          teacher_id: string
+          test_type: string
+          time_spent_seconds: number | null
+          title: string
+          total_questions: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          assigned_at?: string | null
+          completed_at?: string | null
+          correct_answers?: number | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          generation_params?: Json | null
+          id?: string
+          linked_element_ids?: string[] | null
+          linked_goal_id?: string | null
+          reviewed_at?: string | null
+          score_percentage?: number | null
+          share_expires_at?: string | null
+          share_token?: string | null
+          started_at?: string | null
+          status?: string
+          student_id: string
+          teacher_id: string
+          test_type: string
+          time_spent_seconds?: number | null
+          title: string
+          total_questions?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_generated?: boolean | null
+          assigned_at?: string | null
+          completed_at?: string | null
+          correct_answers?: number | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          generation_params?: Json | null
+          id?: string
+          linked_element_ids?: string[] | null
+          linked_goal_id?: string | null
+          reviewed_at?: string | null
+          score_percentage?: number | null
+          share_expires_at?: string | null
+          share_token?: string | null
+          started_at?: string | null
+          status?: string
+          student_id?: string
+          teacher_id?: string
+          test_type?: string
+          time_spent_seconds?: number | null
+          title?: string
+          total_questions?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_tests_linked_goal_id_fkey"
+            columns: ["linked_goal_id"]
+            isOneToOne: false
+            referencedRelation: "student_progress_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_tests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_tests_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           created_at: string
@@ -1089,6 +1260,73 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      test_skill_results: {
+        Row: {
+          applied_at: string | null
+          applied_to_element_id: string | null
+          correct_answers: number
+          created_at: string | null
+          element_type: string
+          id: string
+          score_percentage: number | null
+          skill_tags: string[] | null
+          student_id: string
+          suggested_rating: number | null
+          test_id: string
+          total_questions: number
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_to_element_id?: string | null
+          correct_answers?: number
+          created_at?: string | null
+          element_type: string
+          id?: string
+          score_percentage?: number | null
+          skill_tags?: string[] | null
+          student_id: string
+          suggested_rating?: number | null
+          test_id: string
+          total_questions?: number
+        }
+        Update: {
+          applied_at?: string | null
+          applied_to_element_id?: string | null
+          correct_answers?: number
+          created_at?: string | null
+          element_type?: string
+          id?: string
+          score_percentage?: number | null
+          skill_tags?: string[] | null
+          student_id?: string
+          suggested_rating?: number | null
+          test_id?: string
+          total_questions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_skill_results_applied_to_element_id_fkey"
+            columns: ["applied_to_element_id"]
+            isOneToOne: false
+            referencedRelation: "student_learning_elements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_skill_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_skill_results_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "student_tests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       token_transactions: {
         Row: {
@@ -1413,6 +1651,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      calculate_test_results: { Args: { p_test_id: string }; Returns: Json }
       clean_old_geolocation_cache: { Args: never; Returns: undefined }
       cleanup_worksheet_base64: {
         Args: never
@@ -1436,6 +1675,14 @@ export type Database = {
       }
       generate_homework_share_token: {
         Args: { p_homework_id: string; p_teacher_id: string }
+        Returns: string
+      }
+      generate_test_share_token: {
+        Args: {
+          p_expires_hours?: number
+          p_teacher_id: string
+          p_test_id: string
+        }
         Returns: string
       }
       generate_worksheet_share_token: {
@@ -1525,6 +1772,22 @@ export type Database = {
       get_student_tags: {
         Args: { p_student_id: string; p_teacher_id: string }
         Returns: string[]
+      }
+      get_test_by_share_token: {
+        Args: { p_share_token: string }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          status: string
+          student_name: string
+          teacher_email: string
+          teacher_first_name: string
+          teacher_last_name: string
+          test_type: string
+          title: string
+          total_questions: number
+        }[]
       }
       get_token_balance: { Args: { p_teacher_id: string }; Returns: number }
       get_worksheet_by_share_token: {
