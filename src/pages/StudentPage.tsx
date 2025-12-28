@@ -20,7 +20,8 @@ import { WorksheetHomeworkSection } from '@/components/worksheet/WorksheetHomewo
 import { StudentHomeworkTab } from '@/components/student-homework/StudentHomeworkTab';
 import { FlashcardSetsSection } from '@/components/flashcards/FlashcardSetsSection';
 import { StudentProgressTab } from '@/components/student-progress/StudentProgressTab';
-import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2, TrendingUp } from 'lucide-react';
+import { StudentTestsTab } from '@/components/student-tests/StudentTestsTab';
+import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2, TrendingUp, ClipboardCheck } from 'lucide-react';
 import { formatGoalLabel } from '@/constants/studentGoals';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
@@ -163,7 +164,7 @@ const StudentPage = () => {
 
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-6">
+          <TabsList className="grid w-full grid-cols-7 mb-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Overview
@@ -179,6 +180,10 @@ const StudentPage = () => {
             <TabsTrigger value="progress" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Progress
+            </TabsTrigger>
+            <TabsTrigger value="tests" className="flex items-center gap-2">
+              <ClipboardCheck className="h-4 w-4" />
+              Tests
             </TabsTrigger>
             <TabsTrigger value="knowledge" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
@@ -714,6 +719,15 @@ const StudentPage = () => {
                 sessionStorage.setItem('forceNewWorksheet', 'true');
                 navigate('/');
               }}
+            />
+          </TabsContent>
+
+          {/* Tests Tab */}
+          <TabsContent value="tests">
+            <StudentTestsTab
+              studentId={id || ''}
+              teacherId={student.teacher_id}
+              studentName={student.name}
             />
           </TabsContent>
 
