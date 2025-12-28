@@ -7,6 +7,11 @@
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
 **Ostatnia naprawa (2025-12):** 
+- ✅ **DODANO Moduł Intelligent Tests**: Nowa 7. zakładka "Tests" na stronie studenta - AI generuje testy na podstawie danych ucznia
+  - Tabele: `student_tests`, `student_test_questions`, `test_skill_results`
+  - Edge function: `generate-test` używa GPT-4o-mini do generowania pytań
+  - Typy testów: Placement, Progress Check, Skill Verification, Goal Achievement
+  - Integracja z Progress (aktualizacja ratingów), Knowledge Base (słabości), Flashcards (słownictwo)
 - ✅ **NAPRAWIONO Biała strona Flashcards (v2)**: Warunek `editingSetId` sprawdzany jest teraz dopiero PO załadowaniu danych - zapobiega białej stronie gdy sets jest puste podczas loading
 - ✅ **NAPRAWIONO Generate New Worksheet Button**: Przycisk na wygenerowanym worksheet działa poprawnie - używa `navigate()` z unikalnym parametrem
 - ✅ **NAPRAWIONO Onboarding Modal z-index**: Modal "Get started with Edooqoo" wyświetla się nad toolbarem (z-[70])

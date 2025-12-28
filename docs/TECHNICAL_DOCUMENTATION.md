@@ -5,7 +5,22 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (December 2025) - Student Progress Tracking System:**
+**Latest Update (December 2025) - Intelligent Tests Module:**
+- **New Tests Tab**: Added 7th tab "Tests" to StudentPage.tsx with ClipboardCheck icon - for creating and managing AI-powered student tests
+- **Database Tables**: Created `student_tests`, `student_test_questions`, `test_skill_results` with full RLS policies and sharing capabilities
+- **Edge Function**: `generate-test` uses GPT-4o-mini to generate personalized test questions based on:
+  - Student's English level and main goal
+  - Learning elements from Progress module (skills with low ratings)
+  - Knowledge Base entries (weaknesses, common mistakes)
+  - Flashcard vocabulary the student struggles with
+- **Test Types**: Placement, Progress Check, Skill Verification, Goal Achievement
+- **Question Types**: Multiple choice, fill in blank, true/false, matching
+- **Hooks**: `useStudentTests.tsx` for tests CRUD operations
+- **Components**: `StudentTestsTab.tsx` displays test list and statistics
+- **Share Functionality**: Tests can be shared with students via token-based links
+- **Progress Integration**: Test results can update Learning Elements ratings in Progress module
+
+**Previous Update (December 2025) - Student Progress Tracking System:**
 - **Unified Main Goals**: Created `src/constants/studentGoals.ts` with centralized MAIN_GOALS list (9 options including new: Social Conversation, Personal Development, Fun & Entertainment)
 - **New Progress Tab**: Added 6th tab "Progress" to StudentPage.tsx with TrendingUp icon - tracks student learning goals and progress
 - **Database Tables**: Created `student_progress_goals`, `student_learning_elements`, `future_worksheet_suggestions` with full RLS policies
