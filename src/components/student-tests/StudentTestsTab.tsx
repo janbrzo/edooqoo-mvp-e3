@@ -3,13 +3,15 @@
  */
 
 import { useState } from 'react';
-import { Plus, FileText, TrendingUp, Target, CheckCircle, Loader2 } from 'lucide-react';
+import { Plus, FileText, TrendingUp, Target, CheckCircle, Loader2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useStudentTests } from '@/hooks/useStudentTests';
 import { TEST_STATUS_CONFIG, TEST_TYPES } from '@/types/studentTests';
 import type { StudentTest } from '@/types/studentTests';
+import { CreateTestModal } from './CreateTestModal';
+import { TestDetailsView } from './TestDetailsView';
 
 interface StudentTestsTabProps {
   studentId: string;
@@ -18,7 +20,9 @@ interface StudentTestsTabProps {
 }
 
 export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTestsTabProps) {
-  const { tests, loading, getTestStats } = useStudentTests({ studentId, teacherId });
+  const { tests, loading, getTestStats, refetch } = useStudentTests({ studentId, teacherId });
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const stats = getTestStats();
 
   if (loading) {
@@ -27,6 +31,21 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         <span className="ml-2 text-muted-foreground">Loading tests...</span>
       </div>
+    );
+  }
+
+  // Show test details view if a test is selected
+  if (selectedTestId) {
+    return (
+      <TestDetailsView
+        testId={selectedTestId}
+        teacherId={teacherId}
+        studentId={studentId}
+        onBack={() => {
+          setSelectedTestId(null);
+          refetch();
+        }}
+      />
     );
   }
 
@@ -40,10 +59,9 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
             {stats.total} tests • {stats.completed} completed • Avg score: {stats.avgScore.toFixed(0)}%
           </p>
         </div>
-        <Button disabled>
+        <Button onClick={() => setCreateModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Test
-          <Badge variant="secondary" className="ml-2 text-xs">Coming Soon</Badge>
         </Button>
       </div>
 
@@ -54,9 +72,9 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
             <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-semibold mb-2">No tests yet</h3>
             <p className="text-muted-foreground mb-4">
-              Tests help verify student progress and identify skill gaps.
+              Create AI-powered tests to verify student progress and identify skill gaps.
             </p>
-            <Button variant="outline" disabled>
+            <Button onClick={() => setCreateModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Create First Test
             </Button>
@@ -65,17 +83,21 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
       ) : (
         <div className="grid gap-4">
           {tests.map((test) => (
-            <TestCard key={test.id} test={test} />
+            <TestCard 
+              key={test.id} 
+              test={test} 
+              onClick={() => setSelectedTestId(test.id)}
+            />
           ))}
         </div>
       )}
 
-      {/* Info about upcoming features */}
+      {/* Info about features */}
       <Card className="bg-muted/30 border-dashed">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" />
-            Intelligent Tests - Coming Soon
+            Intelligent Testing Features
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
@@ -85,11 +107,29 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
           <p>• <strong>Placement Tests</strong> - initial assessment for new students</p>
         </CardContent>
       </Card>
+
+      {/* Create Test Modal */}
+      <CreateTestModal
+        open={createModalOpen}
+        onOpenChange={setCreateModalOpen}
+        studentId={studentId}
+        teacherId={teacherId}
+        studentName={studentName}
+        onTestCreated={(testId) => {
+          refetch();
+          setSelectedTestId(testId);
+        }}
+      />
     </div>
   );
 }
 
-function TestCard({ test }: { test: StudentTest }) {
+interface TestCardProps {
+  test: StudentTest;
+  onClick: () => void;
+}
+
+function TestCard({ test, onClick }: TestCardProps) {
   const statusConfig = TEST_STATUS_CONFIG[test.status];
   const testTypeInfo = TEST_TYPES.find(t => t.value === test.test_type);
 
@@ -104,7 +144,10 @@ function TestCard({ test }: { test: StudentTest }) {
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card 
+      className="hover:shadow-md transition-shadow cursor-pointer"
+      onClick={onClick}
+    >
       <CardContent className="py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -114,7 +157,7 @@ function TestCard({ test }: { test: StudentTest }) {
             <div>
               <h3 className="font-semibold">{test.title}</h3>
               <p className="text-sm text-muted-foreground">
-                {testTypeInfo?.label} • {test.total_questions} questions
+                {testTypeInfo?.label} • {test.total_questions || 0} questions
               </p>
             </div>
           </div>
@@ -130,6 +173,9 @@ function TestCard({ test }: { test: StudentTest }) {
             <Badge className={`${statusConfig.bgColor} ${statusConfig.color}`}>
               {statusConfig.label}
             </Badge>
+            <Button variant="ghost" size="sm">
+              <Eye className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </CardContent>
