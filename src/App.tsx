@@ -27,6 +27,7 @@ import HomeworkPage from "./pages/HomeworkPage";
 import HomeworkReviewPage from "./pages/HomeworkReviewPage";
 import FlashcardsLearning from "./pages/FlashcardsLearning";
 import StudentPortal from "./pages/StudentPortal";
+import StudentTestPage from "./pages/StudentTestPage";
 import CookieBanner from "./components/CookieBanner";
 import GlobalFooter from "./components/GlobalFooter";
 import OnboardingChecklist from "./components/OnboardingChecklist";
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/homework/:id/review" element={<HomeworkReviewPage />} />
               <Route path="/flashcards/:token" element={<FlashcardsLearning />} />
               <Route path="/my-flashcards/:studentEmail" element={<StudentPortal />} />
+              <Route path="/test/:token" element={<StudentTestPage />} />
               <Route path="/success" element={<PaymentSuccess />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/shared/:token" element={<SharedWorksheet />} />
