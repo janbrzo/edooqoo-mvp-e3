@@ -756,6 +756,59 @@ export type Database = {
         }
         Relationships: []
       }
+      student_events: {
+        Row: {
+          created_at: string
+          element_type: string | null
+          event_payload: Json
+          event_source: string
+          event_type: string
+          id: string
+          is_processed: boolean
+          session_id: string | null
+          skill_ids: string[] | null
+          source_id: string | null
+          student_id: string
+          teacher_id: string
+        }
+        Insert: {
+          created_at?: string
+          element_type?: string | null
+          event_payload?: Json
+          event_source: string
+          event_type: string
+          id?: string
+          is_processed?: boolean
+          session_id?: string | null
+          skill_ids?: string[] | null
+          source_id?: string | null
+          student_id: string
+          teacher_id: string
+        }
+        Update: {
+          created_at?: string
+          element_type?: string | null
+          event_payload?: Json
+          event_source?: string
+          event_type?: string
+          id?: string
+          is_processed?: boolean
+          session_id?: string | null
+          skill_ids?: string[] | null
+          source_id?: string | null
+          student_id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_events_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_knowledge_entries: {
         Row: {
           category: string
@@ -1642,6 +1695,20 @@ export type Database = {
       }
     }
     Functions: {
+      add_student_event: {
+        Args: {
+          p_element_type?: string
+          p_event_payload?: Json
+          p_event_source: string
+          p_event_type: string
+          p_session_id?: string
+          p_skill_ids?: string[]
+          p_source_id?: string
+          p_student_id: string
+          p_teacher_id: string
+        }
+        Returns: string
+      }
       add_tokens: {
         Args: {
           p_amount: number
