@@ -79,3 +79,6 @@ verify_jwt = true
 
 [functions.generate-test]
 verify_jwt = true
+
+[functions.track-student-event]
+verify_jwt = true
