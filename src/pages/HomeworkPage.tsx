@@ -52,6 +52,8 @@ export default function HomeworkPage() {
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   const [isTeacher, setIsTeacher] = useState(false);
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [submitCountdown, setSubmitCountdown] = useState(15);
   const [studentEmailForTeacher, setStudentEmailForTeacher] = useState<string | null>(null);
   const [studentIdForTeacher, setStudentIdForTeacher] = useState<string | null>(null);
   
@@ -72,6 +74,7 @@ export default function HomeworkPage() {
   const [isImageFullScreen, setIsImageFullScreen] = useState(false);
   
   const exerciseRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Interactive homework hook - only active after email verification
   const totalExercises = Array.isArray(homework?.selected_exercises) 
@@ -211,32 +214,44 @@ export default function HomeworkPage() {
       }));
     };
 
+  // Teacher save changes - now saves to homework_teacher_corrections table instead of student answers
   const handleTeacherSaveChanges = async () => {
-    if (!homework || !studentEmailForTeacher) return;
+    if (!homework) return;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Not authenticated");
+      return;
+    }
     
     setIsSavingTeacherEdits(true);
     try {
-      // Save all modified answers from teacher's LOCAL state to database
-      for (const [exerciseIndex, exerciseAnswers] of Object.entries(teacherLocalAnswers)) {
+      // Save all modified answers to homework_teacher_corrections table (NOT student answers)
+      for (const [exerciseIndex, corrections] of Object.entries(teacherLocalAnswers)) {
         const exercise = homework.selected_exercises[Number(exerciseIndex)];
         if (exercise) {
-          await supabase.rpc('save_homework_answer', {
-            p_homework_id: homework.id,
-            p_student_email: studentEmailForTeacher,
-            p_exercise_index: Number(exerciseIndex),
-            p_exercise_type: exercise.type,
-            p_answers: JSON.parse(JSON.stringify(exerciseAnswers))
-          });
+          // Upsert to teacher_corrections table
+          const { error } = await supabase
+            .from('homework_teacher_corrections')
+            .upsert({
+              homework_id: homework.id,
+              exercise_index: Number(exerciseIndex),
+              exercise_type: exercise.type,
+              teacher_id: user.id,
+              corrections: corrections
+            }, {
+              onConflict: 'homework_id,exercise_index,teacher_id'
+            });
+          
+          if (error) throw error;
         }
       }
       
       setTeacherEditMode(false);
-      toast.success("Changes saved successfully!");
-      // Reload page to refresh answers from DB
-      window.location.reload();
+      toast.success("Teacher corrections saved! (Student answers unchanged)");
     } catch (error) {
-      console.error('Error saving teacher edits:', error);
-      toast.error("Failed to save changes");
+      console.error('Error saving teacher corrections:', error);
+      toast.error("Failed to save corrections");
     } finally {
       setIsSavingTeacherEdits(false);
     }
@@ -340,8 +355,38 @@ export default function HomeworkPage() {
     if (progress.percentageComplete < 100) {
       setShowIncompleteModal(true);
     } else {
-      handleMarkCompleted();
+      // Show complete modal with countdown for 100% complete homework
+      setShowCompleteModal(true);
+      setSubmitCountdown(15);
     }
+  };
+
+  // Countdown effect for complete modal
+  useEffect(() => {
+    if (showCompleteModal && submitCountdown > 0) {
+      countdownIntervalRef.current = setInterval(() => {
+        setSubmitCountdown(prev => prev - 1);
+      }, 1000);
+      
+      return () => {
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+        }
+      };
+    } else if (showCompleteModal && submitCountdown === 0) {
+      // Auto-submit when countdown reaches 0
+      handleMarkCompleted();
+      setShowCompleteModal(false);
+    }
+  }, [showCompleteModal, submitCountdown]);
+
+  // Reset countdown when modal closes
+  const handleCloseCompleteModal = () => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+    }
+    setShowCompleteModal(false);
+    setSubmitCountdown(15);
   };
 
   const handleMarkCompleted = async () => {
@@ -687,9 +732,10 @@ export default function HomeworkPage() {
                 onAnswerChange={
                   isTeacher 
                     ? (teacherEditMode ? handleTeacherLocalAnswerChange(index, exercise.type) : () => () => {})
-                    : handleAnswerChange(index, exercise.type)
+                    : (finalIsSubmitted ? () => () => {} : handleAnswerChange(index, exercise.type))
                 }
                 showCorrectAnswers={isTeacher || showCorrectAnswersToStudent}
+                disabled={finalIsSubmitted && !isTeacher}
               />
             </div>
           ))}
@@ -916,15 +962,57 @@ export default function HomeworkPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Not all exercises completed</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have only completed {progress.answeredExercises} out of {progress.totalExercises} exercises ({progress.percentageComplete}%). 
-              Are you sure you want to submit your homework now?
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                You have only completed {progress.answeredExercises} out of {progress.totalExercises} exercises ({progress.percentageComplete}%).
+              </p>
+              <p className="font-semibold text-orange-600 dark:text-orange-400">
+                ⚠️ Warning: After submission you will NOT be able to continue editing. 
+                If you haven't finished, you can close this and complete your work later.
+              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Continue Working</AlertDialogCancel>
-            <AlertDialogAction onClick={handleMarkCompleted}>
+            <AlertDialogAction onClick={() => { handleMarkCompleted(); setShowIncompleteModal(false); }}>
               Submit Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Complete Homework Modal with Countdown */}
+      <AlertDialog open={showCompleteModal} onOpenChange={(open) => !open && handleCloseCompleteModal()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-6 w-6 text-green-500" />
+              Ready to submit?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>
+                All exercises completed! Great work! 🎉
+              </p>
+              <p className="font-semibold text-orange-600 dark:text-orange-400">
+                ⚠️ After submission you will NOT be able to edit your answers.
+                You will see the correct answers immediately.
+              </p>
+              <div className="text-center py-4">
+                <div className="text-4xl font-bold text-primary tabular-nums">
+                  {submitCountdown}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Auto-submitting in {submitCountdown} seconds...
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCloseCompleteModal}>
+              Wait, I need more time
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => { handleMarkCompleted(); setShowCompleteModal(false); }}>
+              Submit Now
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

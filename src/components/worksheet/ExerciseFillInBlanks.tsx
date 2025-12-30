@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
+import { answersMatch } from "@/utils/textNormalization";
 
 interface ExerciseFillInBlanksProps extends Partial<InteractiveExerciseProps> {
   word_bank?: string[];
@@ -11,6 +12,7 @@ interface ExerciseFillInBlanksProps extends Partial<InteractiveExerciseProps> {
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
   liveSessionAnswer?: Record<number, any>;
+  disabled?: boolean;
 }
 
 // PROBLEM 9 FIX: Seeded random function for deterministic shuffle
@@ -43,7 +45,8 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
   onAnswerChange,
   showCorrectAnswers = false,
   // PROBLEM 1: Live Session
-  liveSessionAnswer
+  liveSessionAnswer,
+  disabled = false
 }) => {
   // PROBLEM 9 FIX: Shuffle word bank with deterministic seed based on content
   const shuffledWordBank = useMemo(() => {
@@ -88,7 +91,8 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
       {sentences.map((sentence, sIndex) => {
           const studentAnswer = studentAnswers[sIndex] || '';
           const correctAnswer = sentence.answer;
-          const isCorrect = showCorrectAnswers && studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+          // Use normalized comparison to ignore punctuation and case
+          const isCorrect = showCorrectAnswers && answersMatch(studentAnswer, correctAnswer);
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
           const isEmpty = showCorrectAnswers && !studentAnswer;
           const liveAnswer = liveSessionAnswer?.[sIndex];
@@ -115,10 +119,12 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
                       value={studentAnswer}
                       onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
                       placeholder="Type your answer..."
+                      disabled={disabled}
                       className={`h-10
                         ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
                         ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
                         ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                        ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
                       `}
                     />
                   )}

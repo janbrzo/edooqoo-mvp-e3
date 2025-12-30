@@ -1,6 +1,7 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
+import { answersMatch } from "@/utils/textNormalization";
 
 interface ExerciseWordOrderProps extends Partial<InteractiveExerciseProps> {
   sentences: any[];
@@ -8,6 +9,7 @@ interface ExerciseWordOrderProps extends Partial<InteractiveExerciseProps> {
   viewMode: "student" | "teacher";
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
+  disabled?: boolean;
 }
 
 const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
@@ -20,7 +22,8 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  disabled = false
 }) => {
   const handleScrambledWordsChange = (sIndex: number, value: string) => {
     onSentenceChange(sIndex, 'scrambled_words', value);
@@ -32,7 +35,8 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
         {sentences.map((sentence, sIndex) => {
           const studentAnswer = studentAnswers[sIndex] || '';
           const correctAnswer = sentence?.correct_order || '';
-          const isCorrect = showCorrectAnswers && studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+          // Use normalized comparison to ignore punctuation and case
+          const isCorrect = showCorrectAnswers && answersMatch(studentAnswer, correctAnswer);
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
           const isEmpty = showCorrectAnswers && !studentAnswer;
 
@@ -69,10 +73,12 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
                     value={studentAnswer}
                     onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
                     placeholder="Write the sentence in correct order..."
+                    disabled={disabled}
                     className={`h-10
                       ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
                       ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
                       ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                      ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
                     `}
                   />
                 )}

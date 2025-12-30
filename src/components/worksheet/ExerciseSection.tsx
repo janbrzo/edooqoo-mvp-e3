@@ -110,6 +110,8 @@ interface ExerciseSectionProps {
   // PROBLEM 5: Mark exercise as done in Live Session
   isMarkedDone?: boolean;
   onMarkDone?: () => void;
+  // A3-A5: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 // Helper function to normalize exercise type (removes -picture suffix for rendering logic)
@@ -157,6 +159,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   // PROBLEM 5: Mark Done props from parent
   isMarkedDone: isMarkedDoneProp,
   onMarkDone: onMarkDoneProp,
+  // A3-A5: Disable inputs after homework submission
+  disabled = false,
 }, ref) => {
   // PROBLEM 4: Persist Mark Done state to localStorage for Live Session
   const worksheetIdForStorage = (editableWorksheet as any)?.id;
