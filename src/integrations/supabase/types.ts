@@ -651,6 +651,47 @@ export type Database = {
           },
         ]
       }
+      homework_teacher_corrections: {
+        Row: {
+          corrections: Json
+          created_at: string | null
+          exercise_index: number
+          exercise_type: string
+          homework_id: string
+          id: string
+          teacher_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          corrections?: Json
+          created_at?: string | null
+          exercise_index: number
+          exercise_type: string
+          homework_id: string
+          id?: string
+          teacher_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          corrections?: Json
+          created_at?: string | null
+          exercise_index?: number
+          exercise_type?: string
+          homework_id?: string
+          id?: string
+          teacher_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_teacher_corrections_homework_id_fkey"
+            columns: ["homework_id"]
+            isOneToOne: false
+            referencedRelation: "homework_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processed_upgrade_sessions: {
         Row: {
           email: string | null
