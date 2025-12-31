@@ -13,6 +13,8 @@ interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   onExpressionInstructionChange: (value: string) => void;
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
   liveSessionAnswer?: Record<number, any>;
+  // A3: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
@@ -30,7 +32,9 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
   onAnswerChange,
   showCorrectAnswers = false,
   // PROBLEM 1: Live Session
-  liveSessionAnswer
+  liveSessionAnswer,
+  // A3: Disable inputs
+  disabled = false
 }) => {
   return (
     <div>
@@ -110,7 +114,8 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
                         value={studentAnswer}
                         onChange={(e) => onAnswerChange?.(eIndex, e.target.value)}
                         placeholder="Use this expression in a sentence..."
-                        className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}`}
+                        className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        disabled={disabled}
                       />
                     </div>
                   )}

@@ -8,6 +8,8 @@ interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
   viewMode: "student" | "teacher";
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
+  // A3: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
@@ -20,7 +22,9 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // A3: Disable inputs
+  disabled = false
 }) => {
   return (
     <div>
@@ -63,7 +67,8 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                     value={studentAnswer}
                     onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
                     placeholder="Write your paraphrased sentence..."
-                    className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}`}
+                    className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    disabled={disabled}
                   />
                 )}
                 

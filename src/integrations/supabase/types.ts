@@ -558,6 +558,7 @@ export type Database = {
       }
       homework_student_answers: {
         Row: {
+          ai_evaluation: Json | null
           answers: Json
           exercise_index: number
           exercise_type: string
@@ -570,6 +571,7 @@ export type Database = {
           submitted_at: string | null
         }
         Insert: {
+          ai_evaluation?: Json | null
           answers?: Json
           exercise_index: number
           exercise_type: string
@@ -582,6 +584,7 @@ export type Database = {
           submitted_at?: string | null
         }
         Update: {
+          ai_evaluation?: Json | null
           answers?: Json
           exercise_index?: number
           exercise_type?: string

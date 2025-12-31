@@ -11,6 +11,8 @@ interface ExerciseDescribeProps extends Partial<InteractiveExerciseProps> {
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
   onImageUrlChange?: (url: string) => void;
   liveSessionAnswer?: Record<number, any>;
+  // A3: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
@@ -26,7 +28,9 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // A3: Disable inputs
+  disabled = false
 }) => {
   return (
     <div className="space-y-4">
@@ -76,7 +80,8 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
                       value={studentAnswer || ''}
                       onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
                       placeholder="Your answer..."
-                      className="h-10"
+                      className={`h-10 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      disabled={disabled}
                     />
                   </div>
                 )}
@@ -94,7 +99,8 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
             value={studentAnswers[0] || ''}
             onChange={(e) => onAnswerChange?.(0, e.target.value)}
             placeholder="Write your description here..."
-            className="h-10"
+            className={`h-10 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+            disabled={disabled}
           />
         </div>
       )}

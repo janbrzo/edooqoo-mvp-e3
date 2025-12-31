@@ -8,6 +8,8 @@ interface ExerciseSentenceTransformationProps extends Partial<InteractiveExercis
   viewMode: "student" | "teacher";
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
+  // A3: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationProps> = ({
@@ -17,7 +19,9 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // A3: Disable inputs
+  disabled = false
 }) => {
   return (
     <div>
@@ -68,7 +72,9 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                       ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
                       ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
                       ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                      ${disabled ? 'opacity-60 cursor-not-allowed' : ''}
                     `}
+                    disabled={disabled}
                   />
                 ) : (
                   <span className="ml-6">→ ___________________________</span>

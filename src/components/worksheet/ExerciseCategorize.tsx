@@ -11,6 +11,8 @@ interface ExerciseCategorizeProps extends Partial<InteractiveExerciseProps> {
   onWordsChange?: (words: string[]) => void;
   onCategoryChange: (cIndex: number, field: string, value: any) => void;
   liveSessionAnswer?: Record<number, any>;
+  // A3: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
@@ -26,7 +28,9 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // A3: Disable inputs
+  disabled = false
 }) => {
   // Use items if available, otherwise fall back to words
   const actualWords = items && items.length > 0 ? items : words;
@@ -73,6 +77,7 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
                   <Select
                     value={studentAnswer?.toString() || ''}
                     onValueChange={(value) => onAnswerChange?.(wIndex, value)}
+                    disabled={disabled}
                   >
                     <SelectTrigger className={`w-36 
                       ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''} 
