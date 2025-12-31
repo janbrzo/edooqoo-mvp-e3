@@ -22,6 +22,7 @@ interface ExerciseMultipleChoiceAudioProps extends Partial<InteractiveExercisePr
   onQuestionChange: (qIndex: number, field: string, value: any) => void;
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
   liveSessionAnswer?: Record<number, any>;
+  disabled?: boolean;
 }
 
 const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = ({
@@ -36,7 +37,8 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
   onAnswerChange,
   showCorrectAnswers = false,
   // PROBLEM 1: Live Session
-  liveSessionAnswer
+  liveSessionAnswer,
+  disabled = false
 }) => {
   return (
     <div>
@@ -65,6 +67,7 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
               <RadioGroup
                 value={studentAnswers[qIndex]?.toString() || ''}
                 onValueChange={(value) => onAnswerChange?.(qIndex, parseInt(value))}
+                disabled={disabled}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {question.options?.map((option: any, oIndex: number) => {

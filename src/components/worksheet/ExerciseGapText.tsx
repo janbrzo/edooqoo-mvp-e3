@@ -8,6 +8,7 @@ interface ExerciseGapTextProps extends Partial<InteractiveExerciseProps> {
   viewMode: "student" | "teacher";
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
+  disabled?: boolean;
 }
 
 const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
@@ -20,7 +21,8 @@ const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  disabled = false
 }) => {
   if (!sentences || sentences.length === 0) {
     return <div className="text-gray-500 italic">No sentences available for this exercise.</div>;
@@ -58,10 +60,12 @@ const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
                   value={studentAnswer}
                   onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
                   placeholder="Type your answer..."
+                  disabled={disabled}
                   className={`h-10
                     ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
                     ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
                     ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                    ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
                   `}
                 />
               )}

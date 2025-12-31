@@ -14,6 +14,7 @@ interface ExerciseAnswerQuestionsAudioProps extends Partial<InteractiveExerciseP
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
+  disabled?: boolean;
 }
 
 const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> = ({
@@ -26,7 +27,8 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
-  onAnswerChange
+  onAnswerChange,
+  disabled = false
 }) => {
   return (
     <div className="space-y-0.5">
@@ -81,7 +83,8 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
               value={studentAnswers[qIndex] || ''}
               onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
               placeholder="Your answer..."
-              className="h-10 mt-1"
+              disabled={disabled}
+              className={`h-10 mt-1 ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}`}
             />
           )}
         </div>

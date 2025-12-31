@@ -15,6 +15,7 @@ interface ExerciseTrueFalseAudioProps extends Partial<InteractiveExerciseProps> 
   viewMode: "student" | "teacher";
   onStatementChange: (sIndex: number, field: string, value: any) => void;
   liveSessionAnswer?: Record<number, any>;
+  disabled?: boolean;
 }
 
 const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
@@ -28,7 +29,8 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  disabled = false
 }) => {
   return (
     <div className="space-y-4">
@@ -66,13 +68,14 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
                     value={studentAnswer === true ? 'true' : studentAnswer === false ? 'false' : ''}
                     onValueChange={(value) => onAnswerChange?.(sIndex, value === 'true')}
                     className="flex gap-4"
+                    disabled={disabled}
                   >
-                    <div className={`flex items-center space-x-2 ${isCorrect && studentAnswer === true ? 'text-green-600' : isIncorrect && studentAnswer === true ? 'text-red-600' : ''}`}>
-                      <RadioGroupItem value="true" id={`true-${sIndex}`} />
+                    <div className={`flex items-center space-x-2 ${isCorrect && studentAnswer === true ? 'text-green-600' : isIncorrect && studentAnswer === true ? 'text-red-600' : ''} ${disabled ? 'opacity-70' : ''}`}>
+                      <RadioGroupItem value="true" id={`true-${sIndex}`} disabled={disabled} />
                       <Label htmlFor={`true-${sIndex}`}>True</Label>
                     </div>
-                    <div className={`flex items-center space-x-2 ${isCorrect && studentAnswer === false ? 'text-green-600' : isIncorrect && studentAnswer === false ? 'text-red-600' : ''}`}>
-                      <RadioGroupItem value="false" id={`false-${sIndex}`} />
+                    <div className={`flex items-center space-x-2 ${isCorrect && studentAnswer === false ? 'text-green-600' : isIncorrect && studentAnswer === false ? 'text-red-600' : ''} ${disabled ? 'opacity-70' : ''}`}>
+                      <RadioGroupItem value="false" id={`false-${sIndex}`} disabled={disabled} />
                       <Label htmlFor={`false-${sIndex}`}>False</Label>
                     </div>
                   </RadioGroup>

@@ -10,6 +10,7 @@ interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
   liveSessionAnswer?: Record<number, any>;
+  disabled?: boolean;
 }
 
 const ExerciseReading: React.FC<ExerciseReadingProps> = ({
@@ -23,7 +24,8 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
   onAnswerChange,
   showCorrectAnswers = false,
   // PROBLEM 1: Live Session
-  liveSessionAnswer
+  liveSessionAnswer,
+  disabled = false
 }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
     {questions.map((question, qIndex) => {
@@ -53,7 +55,11 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
                 value={studentAnswer}
                 onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
                 placeholder="Type your answer..."
-                className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}`}
+                disabled={disabled}
+                className={`h-10 
+                  ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                  ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
+                `}
               />
             )}
             {(viewMode === 'teacher' || showCorrectAnswers) && (

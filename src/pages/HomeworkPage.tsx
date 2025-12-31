@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import ExerciseSection from "@/components/worksheet/ExerciseSection";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock, ArrowUp, Volume2, ImageIcon, X, Unlock, Save, RotateCcw, Maximize2 } from "lucide-react";
+import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock, ArrowUp, Volume2, ImageIcon, X, Presentation, Maximize2 } from "lucide-react";
 import { format } from "date-fns";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { useInteractiveHomework } from "@/hooks/useInteractiveHomework";
@@ -57,11 +57,9 @@ export default function HomeworkPage() {
   const [studentEmailForTeacher, setStudentEmailForTeacher] = useState<string | null>(null);
   const [studentIdForTeacher, setStudentIdForTeacher] = useState<string | null>(null);
   
-  // Teacher edit mode state (Problem 2)
-  const [teacherEditMode, setTeacherEditMode] = useState(false);
-  const [teacherLocalAnswers, setTeacherLocalAnswers] = useState<Record<number, any>>({});
-  const [originalAnswersSnapshot, setOriginalAnswersSnapshot] = useState<Record<number, any>>({});
-  const [isSavingTeacherEdits, setIsSavingTeacherEdits] = useState(false);
+  // Teacher presentation mode state (replaces edit mode)
+  const [presentationMode, setPresentationMode] = useState(false);
+  const [presentationAnswers, setPresentationAnswers] = useState<Record<number, any>>({});
   
   // Navigation state
   const [activeExercise, setActiveExercise] = useState<number | null>(null);
@@ -192,20 +190,23 @@ export default function HomeworkPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Teacher edit mode handlers (Problem 2) - uses LOCAL state to prevent auto-save until Save clicked
-  const handleTeacherUnlockEdit = () => {
-    // Save a deep copy of current answers for potential discard
-    const snapshot = JSON.parse(JSON.stringify(answers));
-    setOriginalAnswersSnapshot(snapshot);
-    setTeacherLocalAnswers(snapshot);
-    setTeacherEditMode(true);
-    toast.info("Edit mode enabled. Changes won't be saved until you click 'Save'.");
+  // Teacher presentation mode handlers - NO SAVING, just local display
+  const handleStartPresentation = () => {
+    setPresentationAnswers(JSON.parse(JSON.stringify(answers)));
+    setPresentationMode(true);
+    toast.info("Presentation mode started. Changes are NOT saved.");
   };
 
-  // Teacher's local answer change handler (does NOT trigger auto-save)
-  const handleTeacherLocalAnswerChange = (exerciseIndex: number, exerciseType: string) => 
+  const handleEndPresentation = () => {
+    setPresentationAnswers({});
+    setPresentationMode(false);
+    toast.info("Presentation ended.");
+  };
+
+  // Teacher's local answer change handler (does NOT save anything)
+  const handlePresentationAnswerChange = (exerciseIndex: number, exerciseType: string) => 
     (questionIndex: number, value: any) => {
-      setTeacherLocalAnswers(prev => ({
+      setPresentationAnswers(prev => ({
         ...prev,
         [exerciseIndex]: {
           ...(prev[exerciseIndex] || {}),
@@ -213,57 +214,6 @@ export default function HomeworkPage() {
         }
       }));
     };
-
-  // Teacher save changes - now saves to homework_teacher_corrections table instead of student answers
-  const handleTeacherSaveChanges = async () => {
-    if (!homework) return;
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error("Not authenticated");
-      return;
-    }
-    
-    setIsSavingTeacherEdits(true);
-    try {
-      // Save all modified answers to homework_teacher_corrections table (NOT student answers)
-      for (const [exerciseIndex, corrections] of Object.entries(teacherLocalAnswers)) {
-        const exercise = homework.selected_exercises[Number(exerciseIndex)];
-        if (exercise) {
-          // Upsert to teacher_corrections table
-          const { error } = await supabase
-            .from('homework_teacher_corrections')
-            .upsert({
-              homework_id: homework.id,
-              exercise_index: Number(exerciseIndex),
-              exercise_type: exercise.type,
-              teacher_id: user.id,
-              corrections: corrections
-            }, {
-              onConflict: 'homework_id,exercise_index,teacher_id'
-            });
-          
-          if (error) throw error;
-        }
-      }
-      
-      setTeacherEditMode(false);
-      toast.success("Teacher corrections saved! (Student answers unchanged)");
-    } catch (error) {
-      console.error('Error saving teacher corrections:', error);
-      toast.error("Failed to save corrections");
-    } finally {
-      setIsSavingTeacherEdits(false);
-    }
-  };
-
-  const handleTeacherDiscardChanges = () => {
-    // Simply exit edit mode - local changes are discarded, DB unchanged
-    setTeacherLocalAnswers({});
-    setOriginalAnswersSnapshot({});
-    setTeacherEditMode(false);
-    toast.info("Changes discarded.");
-  };
 
   // Navigation functions
   const scrollToExercise = useCallback((index: number) => {
@@ -566,18 +516,16 @@ export default function HomeworkPage() {
       
       {/* Main homework content - blocked when verification needed */}
       <div className={needsEmailVerification ? 'pointer-events-none' : ''}>
-      {/* Progress Bar with Teacher Edit Controls */}
+      {/* Progress Bar with Teacher Presentation Controls */}
       <HomeworkProgressBar
         progress={progress}
         isSaving={isSaving}
         lastSavedAt={lastSavedAt}
         isSubmitted={finalIsSubmitted}
         isTeacher={isTeacher}
-        teacherEditMode={teacherEditMode}
-        isSavingTeacherEdits={isSavingTeacherEdits}
-        onUnlockEdit={handleTeacherUnlockEdit}
-        onSaveChanges={handleTeacherSaveChanges}
-        onDiscardChanges={handleTeacherDiscardChanges}
+        presentationMode={presentationMode}
+        onStartPresentation={handleStartPresentation}
+        onEndPresentation={handleEndPresentation}
         studentName={homework.student_name}
         studentId={studentIdForTeacher || undefined}
       />
@@ -722,16 +670,16 @@ export default function HomeworkPage() {
                 editableWorksheet={{ exercises: homework.selected_exercises }}
                 setEditableWorksheet={() => {}}
                 hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
-                // Interactive props - teacher uses LOCAL state when editing
+                // Interactive props - teacher uses presentation state when in presentation mode
                 isInteractive={true}
                 studentAnswers={
-                  isTeacher && teacherEditMode 
-                    ? (teacherLocalAnswers[index] || answers[index] || {}) as any
+                  isTeacher && presentationMode 
+                    ? (presentationAnswers[index] || answers[index] || {}) as any
                     : (answers[index] || {}) as any
                 }
                 onAnswerChange={
                   isTeacher 
-                    ? (teacherEditMode ? handleTeacherLocalAnswerChange(index, exercise.type) : () => () => {})
+                    ? (presentationMode ? handlePresentationAnswerChange(index, exercise.type) : () => () => {})
                     : (finalIsSubmitted ? () => () => {} : handleAnswerChange(index, exercise.type))
                 }
                 showCorrectAnswers={isTeacher || showCorrectAnswersToStudent}
@@ -765,58 +713,42 @@ export default function HomeworkPage() {
             </Button>
           )}
           
-          {/* Teacher view section with Edit controls (Problem 2) */}
+          {/* Teacher view section with Presentation Mode controls */}
           {isTeacher && (
-            <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-2 border-blue-500">
+            <div className="p-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-2 border-purple-500">
               <div className="flex items-center justify-center gap-2 mb-4">
-                <User className="h-8 w-8 text-blue-500" />
-                <p className="text-lg font-semibold text-blue-700 dark:text-blue-300">
+                <User className="h-8 w-8 text-purple-500" />
+                <p className="text-lg font-semibold text-purple-700 dark:text-purple-300">
                   Teacher View
                 </p>
               </div>
               
-              {/* Teacher Edit Mode Buttons */}
+              {/* Teacher Presentation Mode Buttons */}
               <div className="flex flex-wrap justify-center gap-3 mb-4">
-                {!teacherEditMode ? (
+                {!presentationMode ? (
                   <Button 
-                    onClick={handleTeacherUnlockEdit}
+                    onClick={handleStartPresentation}
                     variant="outline"
-                    className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                    className="border-purple-500 text-purple-600 hover:bg-purple-50"
                   >
-                    <Unlock className="h-4 w-4 mr-2" />
-                    Unlock Editing
+                    <Presentation className="h-4 w-4 mr-2" />
+                    Start Presentation
                   </Button>
                 ) : (
-                  <>
-                    <Button 
-                      onClick={handleTeacherSaveChanges}
-                      disabled={isSavingTeacherEdits}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      {isSavingTeacherEdits ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4 mr-2" />
-                      )}
-                      Save Changes
-                    </Button>
-                    <Button 
-                      onClick={handleTeacherDiscardChanges}
-                      disabled={isSavingTeacherEdits}
-                      variant="outline"
-                      className="border-red-500 text-red-600 hover:bg-red-50"
-                    >
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Discard Changes
-                    </Button>
-                  </>
+                  <Button 
+                    onClick={handleEndPresentation}
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    End Presentation
+                  </Button>
                 )}
               </div>
               
-              <p className="text-sm text-blue-600 dark:text-blue-400 text-center">
-                {teacherEditMode 
-                  ? "Edit mode ON. Modify answers and click 'Save Changes' when done."
-                  : "You are viewing student's answers. Click 'Unlock Editing' to make changes."}
+              <p className="text-sm text-purple-600 dark:text-purple-400 text-center">
+                {presentationMode 
+                  ? "Presentation mode ON. You can type answers to demonstrate - nothing is saved."
+                  : "You are viewing student's answers. Use 'Start Presentation' to demo answers on screen."}
               </p>
             </div>
           )}
