@@ -8,6 +8,8 @@ interface ExerciseCompleteWordProps extends Partial<InteractiveExerciseProps> {
   viewMode: "student" | "teacher";
   onWordChange: (wIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
+  // A3: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
@@ -17,7 +19,9 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // A3: Disable inputs
+  disabled = false
 }) => {
   if (!words || words.length === 0) {
     return <div className="text-gray-500 italic">No words available for this exercise.</div>;
@@ -75,7 +79,9 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
                       ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
                       ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
                       ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                      ${disabled ? 'opacity-60 cursor-not-allowed' : ''}
                     `}
+                    disabled={disabled}
                   />
                 )}
                 

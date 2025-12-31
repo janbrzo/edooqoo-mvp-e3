@@ -12,6 +12,8 @@ interface ExerciseMatchingProps extends Partial<InteractiveExerciseProps> {
   worksheetId?: string; // PROBLEM 8: Optional worksheetId for deterministic shuffle
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
   liveSessionAnswer?: Record<number, any>;
+  // A3: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 // PROBLEM 8 FIX: Seeded random for deterministic shuffle
@@ -51,7 +53,9 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
   onAnswerChange,
   showCorrectAnswers = false,
   // PROBLEM 1: Live Session
-  liveSessionAnswer
+  liveSessionAnswer,
+  // A3: Disable inputs
+  disabled = false
 }) => {
   // PROBLEM 8 FIX: Use useRef to ensure shuffle happens only once
   // Create a stable seed from item terms for deterministic order
@@ -91,8 +95,9 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
                   <Select 
                     value={selectedAnswer || ""} 
                     onValueChange={(value) => onAnswerChange?.(iIndex, value)}
+                    disabled={disabled}
                   >
-                    <SelectTrigger className="w-[80px]">
+                    <SelectTrigger className={`w-[80px] ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
                       <SelectValue placeholder="?" />
                     </SelectTrigger>
                     <SelectContent>

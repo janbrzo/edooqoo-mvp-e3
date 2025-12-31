@@ -10,6 +10,8 @@ interface ExerciseMultipleChoiceProps extends Partial<InteractiveExerciseProps> 
   onOptionTextChange: (qIndex: number, oIndex: number, value: string) => void;
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
   liveSessionAnswer?: Record<number, any>;
+  // A3: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
@@ -24,10 +26,12 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
   onAnswerChange,
   showCorrectAnswers = false,
   // PROBLEM 1: Live Session
-  liveSessionAnswer
+  liveSessionAnswer,
+  // A3: Disable inputs
+  disabled = false
 }) => {
   const handleOptionSelect = (qIndex: number, optionText: string) => {
-    if (isInteractive && onAnswerChange) {
+    if (isInteractive && onAnswerChange && !disabled) {
       onAnswerChange(qIndex, optionText);
     }
   };
@@ -67,7 +71,8 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
                     onClick={() => isInteractive && handleOptionSelect(qIndex, option.text)}
                     className={`
                       p-2 border rounded-md flex items-center gap-2 multiple-choice-option
-                      ${isInteractive ? 'cursor-pointer hover:bg-gray-50' : ''}
+                      ${isInteractive && !disabled ? 'cursor-pointer hover:bg-gray-50' : ''}
+                      ${disabled ? 'opacity-60 cursor-not-allowed' : ''}
                       ${isSelected ? 'bg-blue-50 border-blue-300' : 'bg-white'}
                       ${showAsCorrect ? 'bg-green-50 border-green-200' : ''}
                       ${showAsIncorrect ? 'bg-red-50 border-red-200' : ''}

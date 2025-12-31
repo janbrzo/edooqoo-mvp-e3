@@ -8,6 +8,8 @@ interface ExerciseOddOneOutProps extends Partial<InteractiveExerciseProps> {
   onQuestionChange: (qIndex: number, field: string, value: any) => void;
   liveSessionAnswer?: Record<number, any>;
   worksheetId?: string; // PROBLEM 3: For deterministic shuffle
+  // A3: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 // PROBLEM 3 FIX: Seeded random for deterministic shuffle (same as ExerciseMatchingHalves)
@@ -45,7 +47,9 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // A3: Disable inputs
+  disabled = false
 }) => {
   // PROBLEM 3 FIX: Create a stable key based on questions content for deterministic shuffle
   const questionsKey = useMemo(() => 
@@ -110,10 +114,11 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
                     return (
                       <div 
                         key={oIndex} 
-                        onClick={() => isInteractive && onAnswerChange?.(qIndex, option)}
+                        onClick={() => isInteractive && !disabled && onAnswerChange?.(qIndex, option)}
                         className={`
                           border rounded px-3 py-1 text-center
-                          ${isInteractive ? 'cursor-pointer hover:bg-gray-100' : 'bg-gray-50'}
+                          ${isInteractive && !disabled ? 'cursor-pointer hover:bg-gray-100' : 'bg-gray-50'}
+                          ${disabled ? 'opacity-60 cursor-not-allowed' : ''}
                           ${isSelected && !showCorrectAnswers ? 'bg-blue-100 border-blue-500' : ''}
                           ${showAsCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
                           ${showAsIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}

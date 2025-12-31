@@ -21,6 +21,8 @@ interface ExerciseAnswerQuestionsProps extends Partial<InteractiveExerciseProps>
   onMediaUrlChange?: (url: string) => void;
   onMediaTypeChange?: (type: "video" | "audio" | "image") => void;
   liveSessionAnswer?: Record<number, any>;
+  // A3: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
@@ -39,7 +41,9 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // A3: Disable inputs
+  disabled = false
 }) => {
   return (
     <div className="space-y-4">
@@ -157,7 +161,8 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
                     value={studentAnswer || ''}
                     onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
                     placeholder="Your answer..."
-                    className={`h-10 ${showAsCorrect ? 'border-green-500' : ''}`}
+                    className={`h-10 ${showAsCorrect ? 'border-green-500' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    disabled={disabled}
                   />
                   {showCorrectAnswers && correctAnswer && (
                     <p className="text-green-600 text-sm mt-1 italic">

@@ -9,6 +9,8 @@ interface ExerciseMatchingHalvesProps extends Partial<InteractiveExerciseProps> 
   onHalvesChange: (hIndex: number, field: string, value: any) => void;
   worksheetId?: string;
   liveSessionAnswer?: Record<number, any>;
+  // A3: Disable inputs after homework submission
+  disabled?: boolean;
 }
 
 // PROBLEM 8 FIX: Seeded random for deterministic shuffle
