@@ -9,6 +9,7 @@ interface ExerciseListeningComprehensionProps extends Partial<InteractiveExercis
   viewMode: "student" | "teacher";
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
+  disabled?: boolean;
 }
 
 const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionProps> = ({
@@ -22,7 +23,8 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  disabled = false
 }) => {
   return (
     <div className="space-y-2">
@@ -58,7 +60,11 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                   value={studentAnswer}
                   onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
                   placeholder="Type your answer..."
-                  className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}`}
+                  disabled={disabled}
+                  className={`h-10 
+                    ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                    ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
+                  `}
                 />
               )}
               {(viewMode === 'teacher' || showCorrectAnswers) && (

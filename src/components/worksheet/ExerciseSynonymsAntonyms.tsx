@@ -10,6 +10,7 @@ interface ExerciseSynonymsAntonymsProps extends Partial<InteractiveExerciseProps
   exerciseType?: string;
   worksheetId?: string;
   liveSessionAnswer?: Record<number, any>;
+  disabled?: boolean;
 }
 
 // PROBLEM 8 FIX: Seeded random for deterministic shuffle
@@ -48,7 +49,8 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  disabled = false
 }) => {
   // PROBLEM 8 FIX: Use useRef with seeded random for deterministic shuffle
   const itemsKey = items.map(item => item.term).join('|');
@@ -120,11 +122,13 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
                 <Select
                   value={studentAnswer || ''}
                   onValueChange={(value) => onAnswerChange?.(iIndex, value)}
+                  disabled={disabled}
                 >
                   <SelectTrigger className={`w-20 
                     ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''} 
                     ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
                     ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                    ${disabled ? 'opacity-70' : ''}
                   `}>
                     <SelectValue placeholder="?" />
                   </SelectTrigger>

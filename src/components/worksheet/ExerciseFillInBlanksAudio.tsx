@@ -14,6 +14,7 @@ interface ExerciseFillInBlanksAudioProps extends Partial<InteractiveExerciseProp
   onAnswersChange?: (value: string) => void;
   onWordBankChange?: (wIndex: number, value: string) => void;
   onSentenceChange?: (sIndex: number, field: string, value: string) => void;
+  disabled?: boolean;
 }
 
 const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
@@ -32,7 +33,8 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  disabled = false
 }) => {
   // Use new structure if available, fallback to old
   const useNewStructure = sentences && sentences.length > 0;
@@ -96,10 +98,12 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
                                 <Input
                                   value={studentAnswer || ''}
                                   onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
+                                  disabled={disabled}
                                   className={`inline-block w-32 mx-1 h-7 
                                     ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
                                     ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
                                     ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                                    ${disabled ? 'opacity-70' : ''}
                                   `}
                                   placeholder="..."
                                 />

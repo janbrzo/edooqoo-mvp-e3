@@ -1,7 +1,7 @@
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Clock, Loader2, Unlock, Save, RotateCcw, ArrowLeft, Home, User } from 'lucide-react';
+import { CheckCircle2, Clock, Loader2, Presentation, X, ArrowLeft, Home, User } from 'lucide-react';
 import { HomeworkProgress } from '@/types/interactiveHomework';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -10,14 +10,12 @@ interface HomeworkProgressBarProps {
   isSaving: boolean;
   lastSavedAt: Date | null;
   isSubmitted: boolean;
-  // Teacher edit mode props
+  // Teacher presentation mode props (renamed from edit mode)
   isTeacher?: boolean;
-  teacherEditMode?: boolean;
-  isSavingTeacherEdits?: boolean;
-  onUnlockEdit?: () => void;
-  onSaveChanges?: () => void;
-  onDiscardChanges?: () => void;
-  // Navigation props (Problem 3)
+  presentationMode?: boolean;
+  onStartPresentation?: () => void;
+  onEndPresentation?: () => void;
+  // Navigation props
   studentName?: string;
   studentId?: string;
 }
@@ -27,14 +25,12 @@ export const HomeworkProgressBar = ({
   isSaving,
   lastSavedAt,
   isSubmitted,
-  // Teacher edit mode
+  // Teacher presentation mode
   isTeacher = false,
-  teacherEditMode = false,
-  isSavingTeacherEdits = false,
-  onUnlockEdit,
-  onSaveChanges,
-  onDiscardChanges,
-  // Navigation props (Problem 3)
+  presentationMode = false,
+  onStartPresentation,
+  onEndPresentation,
+  // Navigation props
   studentName,
   studentId
 }: HomeworkProgressBarProps) => {
@@ -62,7 +58,7 @@ export const HomeworkProgressBar = ({
             </div>
           </div>
 
-          {/* Teacher Navigation Buttons (Problem 3) */}
+          {/* Teacher Navigation Buttons */}
           {isTeacher && (
             <div className="flex items-center gap-2 mr-4">
               <Button
@@ -98,51 +94,40 @@ export const HomeworkProgressBar = ({
             </div>
           )}
 
-          {/* Teacher Edit Mode Buttons */}
+          {/* Teacher Presentation Mode Button */}
           {isTeacher && (
             <div className="flex items-center gap-2">
-              {!teacherEditMode ? (
+              {!presentationMode ? (
                 <Button 
-                  onClick={onUnlockEdit}
+                  onClick={onStartPresentation}
                   variant="outline"
                   size="sm"
-                  className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                  className="border-purple-500 text-purple-600 hover:bg-purple-50"
                 >
-                  <Unlock className="h-3 w-3 mr-1" />
-                  Unlock Editing
+                  <Presentation className="h-3 w-3 mr-1" />
+                  Start Presentation
                 </Button>
               ) : (
-                <>
-                  <Button 
-                    onClick={onSaveChanges}
-                    disabled={isSavingTeacherEdits}
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    {isSavingTeacherEdits ? (
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                    ) : (
-                      <Save className="h-3 w-3 mr-1" />
-                    )}
-                    Save
-                  </Button>
-                  <Button 
-                    onClick={onDiscardChanges}
-                    disabled={isSavingTeacherEdits}
-                    variant="outline"
-                    size="sm"
-                    className="border-red-500 text-red-600 hover:bg-red-50"
-                  >
-                    <RotateCcw className="h-3 w-3 mr-1" />
-                    Discard
-                  </Button>
-                </>
+                <Button 
+                  onClick={onEndPresentation}
+                  size="sm"
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  End Presentation
+                </Button>
               )}
             </div>
           )}
 
           {/* Status indicators */}
           <div className="flex items-center gap-2">
+            {presentationMode && (
+              <Badge className="bg-purple-500 text-white">
+                <Presentation className="h-3 w-3 mr-1" />
+                Presentation Mode
+              </Badge>
+            )}
             {isSubmitted ? (
               <Badge className="bg-green-500 text-white">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
