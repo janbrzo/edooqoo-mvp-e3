@@ -22,6 +22,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useStudentTests } from '@/hooks/useStudentTests';
 import { toast } from 'sonner';
+import { ShareTestModal } from './ShareTestModal';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   TEST_STATUS_CONFIG, 
   TEST_TYPES, 
@@ -45,9 +47,13 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
   const [test, setTest] = useState<StudentTest | null>(null);
   const [loading, setLoading] = useState(true);
   const [sharingLoading, setSharingLoading] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [studentEmail, setStudentEmail] = useState<string>('');
+  const [teacherName, setTeacherName] = useState<string>('');
 
   useEffect(() => {
     loadTest();
+    loadStudentAndTeacherInfo();
   }, [testId]);
 
   const loadTest = async () => {
@@ -55,6 +61,36 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
     const data = await fetchTestWithQuestions(testId);
     setTest(data);
     setLoading(false);
+  };
+
+  // Load student email and teacher name for ShareTestModal
+  const loadStudentAndTeacherInfo = async () => {
+    try {
+      // Get student email
+      const { data: student } = await supabase
+        .from('students')
+        .select('student_email')
+        .eq('id', studentId)
+        .single();
+      
+      if (student?.student_email) {
+        setStudentEmail(student.student_email);
+      }
+      
+      // Get teacher name
+      const { data: teacher } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, email')
+        .eq('id', teacherId)
+        .single();
+      
+      if (teacher) {
+        const name = [teacher.first_name, teacher.last_name].filter(Boolean).join(' ');
+        setTeacherName(name || teacher.email || '');
+      }
+    } catch (error) {
+      console.error('Error loading student/teacher info:', error);
+    }
   };
 
   const handleGenerateShareLink = async () => {
@@ -120,7 +156,7 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
           Back to Tests
         </Button>
         <div className="flex items-center gap-2">
-          {test.status === 'draft' && (
+          {test.status === 'draft' && !test.share_token && (
             <Button onClick={handleGenerateShareLink} disabled={sharingLoading}>
               {sharingLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -134,19 +170,25 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
           )}
           {test.share_token && (
             <Button 
-              variant="outline"
-              onClick={() => {
-                const url = `${window.location.origin}/test/${test.share_token}`;
-                navigator.clipboard.writeText(url);
-                toast.success('Link copied!');
-              }}
+              variant="default"
+              onClick={() => setShareModalOpen(true)}
             >
-              <Copy className="h-4 w-4 mr-2" />
-              Copy Link
+              <Share2 className="h-4 w-4 mr-2" />
+              Share Test
             </Button>
           )}
         </div>
       </div>
+
+      {/* Share Test Modal */}
+      <ShareTestModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        shareToken={test.share_token}
+        testTitle={test.title}
+        studentEmail={studentEmail}
+        teacherName={teacherName}
+      />
 
       {/* Test Info Card */}
       <Card>

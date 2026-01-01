@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
+import { AiEvaluationBadge, type AiEvaluation } from "@/components/homework/AiEvaluationBadge";
 
 interface HomeworkData {
   id: string;
@@ -42,6 +43,7 @@ interface StudentAnswer {
   answers: Record<number, any>;
   is_submitted: boolean;
   submitted_at: string | null;
+  ai_evaluation?: AiEvaluation | null;
 }
 
 interface TeacherComment {
@@ -117,17 +119,19 @@ export default function HomeworkReviewPage() {
       // Load student answers if student email exists
       const studentEmail = homeworkData.students?.student_email;
       if (studentEmail) {
+        // Use direct query to get ai_evaluation which RPC might not return
         const { data: answersData, error: answersError } = await supabase
-          .rpc('get_student_homework_answers', {
-            p_homework_id: id,
-            p_student_email: studentEmail
-          });
+          .from('homework_student_answers')
+          .select('exercise_index, exercise_type, answers, is_submitted, submitted_at, ai_evaluation')
+          .eq('homework_id', id)
+          .eq('student_email', studentEmail);
 
         if (!answersError && answersData) {
           // Cast answers from JSON to Record<number, any>
-          const typedAnswers = answersData.map((a: any) => ({
+          const typedAnswers: StudentAnswer[] = answersData.map((a: any) => ({
             ...a,
-            answers: (a.answers || {}) as Record<number, any>
+            answers: (a.answers || {}) as Record<number, any>,
+            ai_evaluation: a.ai_evaluation as AiEvaluation | null
           }));
           setStudentAnswers(typedAnswers);
         }
@@ -218,6 +222,12 @@ export default function HomeworkReviewPage() {
   const getStudentAnswerForExercise = (exerciseIndex: number): Record<number, any> => {
     const answer = studentAnswers.find(a => a.exercise_index === exerciseIndex);
     return answer?.answers || {};
+  };
+  
+  // Get AI evaluation for a specific exercise
+  const getAiEvaluationForExercise = (exerciseIndex: number): AiEvaluation | null => {
+    const answer = studentAnswers.find(a => a.exercise_index === exerciseIndex);
+    return answer?.ai_evaluation || null;
   };
 
   // Check if student has submitted
@@ -367,6 +377,7 @@ export default function HomeworkReviewPage() {
           {Array.isArray(homework.selected_exercises) && homework.selected_exercises.map((exercise, index) => {
             const studentAnswer = getStudentAnswerForExercise(index);
             const hasAnswer = Object.keys(studentAnswer).length > 0;
+            const aiEvaluation = getAiEvaluationForExercise(index);
             
             return (
               <div key={index} className="space-y-4">
@@ -384,6 +395,16 @@ export default function HomeworkReviewPage() {
                   studentAnswers={studentAnswer as any}
                   showCorrectAnswers={true}
                 />
+                
+                {/* AI Evaluation Badge - show for open-ended exercises */}
+                {aiEvaluation && (
+                  <div className="ml-4 mt-2">
+                    <AiEvaluationBadge 
+                      evaluation={aiEvaluation} 
+                      showFeedback={true} 
+                    />
+                  </div>
+                )}
                 
                 {/* Teacher comment section */}
                 <Card className="p-4 bg-muted/30 border-dashed">
