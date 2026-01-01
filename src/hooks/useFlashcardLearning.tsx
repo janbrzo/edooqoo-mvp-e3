@@ -162,7 +162,7 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
       const nextReviewDate = new Date();
       nextReviewDate.setDate(nextReviewDate.getDate() + newInterval);
 
-      // Update or insert progress
+      // PROBLEM 5 FIX: Save response_time_ms to database (via last_response_time_ms column)
       const { error } = await supabase
         .from('flashcard_progress')
         .upsert({
@@ -178,6 +178,7 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
           total_reviews: card.total_reviews + 1,
           correct_count: quality >= 2 ? card.correct_count + 1 : card.correct_count,
           incorrect_count: quality < 2 ? card.incorrect_count + 1 : card.incorrect_count,
+          last_response_time_ms: responseTimeMs, // PROBLEM 5 FIX: Save response time
         }, {
           onConflict: 'card_id,learner_identifier,direction'
         });

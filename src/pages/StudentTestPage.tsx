@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useStudentTestSession } from '@/hooks/useStudentTests';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import type { TestQuestion, MultipleChoiceData } from '@/types/studentTests';
 
 export default function StudentTestPage() {
@@ -39,8 +40,79 @@ export default function StudentTestPage() {
   const [submitting, setSubmitting] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [results, setResults] = useState<{ correct: number; total: number } | null>(null);
+  
+  // PROBLEM 4 FIX: Email verification state
+  const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
+  const [emailInput, setEmailInput] = useState('');
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
+  const [isTeacher, setIsTeacher] = useState(false);
 
   const currentQuestion = questions[currentIndex] || null;
+
+  // PROBLEM 4 FIX: Check localStorage for remembered email on mount
+  useEffect(() => {
+    if (!token) return;
+    
+    const storageKey = `test_email_${token}`;
+    const stored = localStorage.getItem(storageKey);
+    
+    if (stored) {
+      try {
+        const { email, expiresAt } = JSON.parse(stored);
+        if (new Date(expiresAt) > new Date()) {
+          console.log('[StudentTestPage] Using remembered email from localStorage:', email);
+          setVerifiedEmail(email);
+        } else {
+          localStorage.removeItem(storageKey);
+        }
+      } catch (e) {
+        localStorage.removeItem(storageKey);
+      }
+    }
+  }, [token]);
+
+  // PROBLEM 4 FIX: Check if logged-in user is the teacher
+  useEffect(() => {
+    const checkTeacher = async () => {
+      if (!test) return;
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && test.teacher_id === user.id) {
+        console.log('[StudentTestPage] Logged-in user is teacher, skipping email verification');
+        setIsTeacher(true);
+        setVerifiedEmail('teacher');
+      }
+    };
+    
+    if (test) checkTeacher();
+  }, [test]);
+
+  // Handle email verification
+  const handleVerifyEmail = async () => {
+    if (!emailInput.trim()) {
+      toast.error('Please enter your email');
+      return;
+    }
+
+    setVerifyingEmail(true);
+    
+    // For tests, we accept any email (no strict verification like homework)
+    // Email is used for progress tracking
+    const email = emailInput.trim().toLowerCase();
+    
+    // Save to localStorage for 24 hours
+    if (token) {
+      const storageKey = `test_email_${token}`;
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+      localStorage.setItem(storageKey, JSON.stringify({ email, expiresAt: expiresAt.toISOString() }));
+      console.log('[StudentTestPage] Saved email to localStorage for 24h:', email);
+    }
+    
+    setVerifiedEmail(email);
+    setVerifyingEmail(false);
+    toast.success('Email verified! You can start the test.');
+  };
 
   // PROBLEM 3 FIX: Pause timer when tab is inactive
   useEffect(() => {
@@ -113,6 +185,9 @@ export default function StudentTestPage() {
 
   const allAnswered = questions.every(q => q.student_answer !== null);
 
+  // PROBLEM 4 FIX: Email verification screen
+  const needsEmailVerification = !verifiedEmail && !isTeacher;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20">
@@ -134,6 +209,46 @@ export default function StudentTestPage() {
             <p className="text-muted-foreground">
               {error || 'This test link may have expired or is invalid.'}
             </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // PROBLEM 4 FIX: Email verification modal
+  if (needsEmailVerification) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Enter Your Email</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Please enter your email to start the test for <strong>"{test.title}"</strong>
+            </p>
+            <p className="text-xs text-muted-foreground text-center">
+              Your progress will be tracked and sent to your teacher.
+            </p>
+            <div className="space-y-3">
+              <Input
+                type="email"
+                placeholder="your.email@example.com"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleVerifyEmail()}
+              />
+              <Button 
+                onClick={handleVerifyEmail} 
+                className="w-full"
+                disabled={verifyingEmail || !emailInput.trim()}
+              >
+                {verifyingEmail ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Start Test
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

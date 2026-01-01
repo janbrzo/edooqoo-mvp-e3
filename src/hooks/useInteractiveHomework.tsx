@@ -195,8 +195,16 @@ export const useInteractiveHomework = ({
       setIsSubmitted(true);
       setSubmittedAt(new Date());
 
-      // PROBLEM 5 FIX: Call AI verification for open-ended exercises
-      const openAnswerTypes = ['reading', 'discussion', 'describe', 'answer-questions', 'dialogue', 'answer-questions-audio'];
+      // PROBLEM 6 FIX: Call AI verification for ALL open-ended exercise types
+      const openAnswerTypes = [
+        'reading', 'discussion', 'describe', 'answer-questions', 
+        'dialogue', 'answer-questions-audio', 'describe-picture',
+        'answer-questions-picture', 'paraphrasing', 'speaking',
+        'sentence-transformation', 'essay', 'gap-text', 'word-order'
+      ];
+      
+      console.log('[submitHomework] Starting AI verification process...');
+      console.log('[submitHomework] Recognized open answer types:', openAnswerTypes);
       
       try {
         // Get exercise types from answers (we need to load them from saved data)
@@ -205,9 +213,19 @@ export const useInteractiveHomework = ({
           p_student_email: studentEmail
         });
 
+        console.log('[submitHomework] Fetched saved answers:', savedAnswers?.length || 0);
+        
         if (savedAnswers && savedAnswers.length > 0) {
+          // Log all exercise types for debugging
+          const allTypes = savedAnswers.map((a: any) => a.exercise_type);
+          console.log('[submitHomework] All exercise types:', allTypes);
+          
           const answersToVerify = savedAnswers
-            .filter((ans: any) => openAnswerTypes.includes(ans.exercise_type))
+            .filter((ans: any) => {
+              const isOpen = openAnswerTypes.includes(ans.exercise_type);
+              console.log(`[submitHomework] Exercise ${ans.exercise_index}: type=${ans.exercise_type}, isOpen=${isOpen}`);
+              return isOpen;
+            })
             .map((ans: any) => {
               // Flatten answers object to string
               const answerValues = Object.values(ans.answers || {});
