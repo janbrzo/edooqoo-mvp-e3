@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { LearningCard, ReviewQuality, LearningSessionStats } from '@/types/flashcards';
@@ -41,6 +41,10 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
   const [cards, setCards] = useState<LearningCard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  // PROBLEM 4 FIX: Track response time for flashcards
+  const [cardShownAt, setCardShownAt] = useState<number>(Date.now());
+  const [pausedTimeMs, setPausedTimeMs] = useState(0);
+  const [isTabActive, setIsTabActive] = useState(true);
   const [sessionStats, setSessionStats] = useState<LearningSessionStats>({
     totalCards: 0,
     newCards: 0,
@@ -50,6 +54,22 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
     averageEasiness: 2.5,
   });
   const { toast } = useToast();
+
+  // PROBLEM 4 FIX: Pause timer when tab is inactive
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setPausedTimeMs(prev => prev + (Date.now() - cardShownAt));
+        setIsTabActive(false);
+      } else {
+        setCardShownAt(Date.now());
+        setIsTabActive(true);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [cardShownAt]);
 
   const loadSession = useCallback(async (includeAll = false, mistakesOnly = false) => {
     if (!setId || !learnerEmail) return;
@@ -126,6 +146,11 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
     const card = cards.find(c => c.card_id === cardId);
     if (!card) return;
 
+    // PROBLEM 4 FIX: Calculate response time (excludes paused time)
+    const activeTime = isTabActive ? (Date.now() - cardShownAt) : 0;
+    const responseTimeMs = pausedTimeMs + activeTime;
+    console.log('[Flashcard] Response time:', responseTimeMs, 'ms');
+
     try {
       const { newRepetition, newEF, newInterval } = calculateSM2(
         quality,
@@ -168,8 +193,12 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
         averageEasiness: ((prev.averageEasiness * prev.reviewedCards) + newEF) / (prev.reviewedCards + 1),
       }));
 
-      // Move to next card
+      // Move to next card and reset timer
       setCurrentIndex(prev => prev + 1);
+      // PROBLEM 4 FIX: Reset timer for next card
+      setCardShownAt(Date.now());
+      setPausedTimeMs(0);
+      setIsTabActive(true);
     } catch (error: any) {
       console.error('Error submitting review:', error);
       toast({

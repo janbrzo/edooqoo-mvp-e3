@@ -34,16 +34,38 @@ export default function StudentTestPage() {
 
   const [currentAnswer, setCurrentAnswer] = useState<string | string[] | boolean | null>(null);
   const [startTime, setStartTime] = useState<number>(Date.now());
+  const [pausedTime, setPausedTime] = useState(0);
+  const [isTabActive, setIsTabActive] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [results, setResults] = useState<{ correct: number; total: number } | null>(null);
 
   const currentQuestion = questions[currentIndex] || null;
 
-  // Reset answer when question changes
+  // PROBLEM 3 FIX: Pause timer when tab is inactive
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab became inactive - save elapsed time and pause
+        setPausedTime(prev => prev + (Date.now() - startTime));
+        setIsTabActive(false);
+      } else {
+        // Tab became active - reset start time to now
+        setStartTime(Date.now());
+        setIsTabActive(true);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [startTime]);
+
+  // Reset answer and timer when question changes
   useEffect(() => {
     setCurrentAnswer(currentQuestion?.student_answer as any || null);
     setStartTime(Date.now());
+    setPausedTime(0);
+    setIsTabActive(true);
   }, [currentIndex, currentQuestion]);
 
   const handleAnswerChange = (value: string | boolean) => {
@@ -54,7 +76,9 @@ export default function StudentTestPage() {
     if (!currentQuestion || currentAnswer === null) return;
 
     setSubmitting(true);
-    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+    // PROBLEM 3 FIX: Calculate actual focused time (excludes time when tab was inactive)
+    const activeTime = isTabActive ? (Date.now() - startTime) : 0;
+    const timeSpent = Math.floor((pausedTime + activeTime) / 1000);
     
     const success = await submitAnswer(currentQuestion.id, currentAnswer, timeSpent);
     

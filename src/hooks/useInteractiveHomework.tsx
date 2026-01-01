@@ -195,6 +195,64 @@ export const useInteractiveHomework = ({
       setIsSubmitted(true);
       setSubmittedAt(new Date());
 
+      // PROBLEM 5 FIX: Call AI verification for open-ended exercises
+      const openAnswerTypes = ['reading', 'discussion', 'describe', 'answer-questions', 'dialogue', 'answer-questions-audio'];
+      
+      try {
+        // Get exercise types from answers (we need to load them from saved data)
+        const { data: savedAnswers } = await supabase.rpc('get_student_homework_answers', {
+          p_homework_id: homeworkId,
+          p_student_email: studentEmail
+        });
+
+        if (savedAnswers && savedAnswers.length > 0) {
+          const answersToVerify = savedAnswers
+            .filter((ans: any) => openAnswerTypes.includes(ans.exercise_type))
+            .map((ans: any) => {
+              // Flatten answers object to string
+              const answerValues = Object.values(ans.answers || {});
+              return {
+                question_index: ans.exercise_index,
+                question_text: `Exercise ${ans.exercise_index + 1}`,
+                student_answer: answerValues.join(', '),
+                exercise_type: ans.exercise_type
+              };
+            })
+            .filter((ans: any) => ans.student_answer.trim() !== '');
+
+          if (answersToVerify.length > 0) {
+            console.log('[submitHomework] Verifying', answersToVerify.length, 'open answers');
+            
+            const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-open-answers', {
+              body: { 
+                answers: answersToVerify, 
+                english_level: 'Intermediate',
+                context: 'Homework submission'
+              }
+            });
+
+            if (!verifyError && verifyResult?.evaluations) {
+              console.log('[submitHomework] AI evaluation received:', verifyResult.evaluations.length, 'results');
+              
+              // Save AI evaluations to each answer
+              for (const evaluation of verifyResult.evaluations) {
+                await supabase
+                  .from('homework_student_answers')
+                  .update({ ai_evaluation: evaluation })
+                  .eq('homework_id', homeworkId)
+                  .eq('student_email', studentEmail)
+                  .eq('exercise_index', evaluation.question_index);
+              }
+            } else if (verifyError) {
+              console.error('[submitHomework] AI verification error:', verifyError);
+            }
+          }
+        }
+      } catch (aiError) {
+        // Don't block submission if AI verification fails
+        console.error('[submitHomework] AI verification failed (non-blocking):', aiError);
+      }
+
       // Create notification for teacher using SECURITY DEFINER function
       // The SQL function fetches all data internally, so anonymous students don't need RLS access
       try {

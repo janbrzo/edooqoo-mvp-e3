@@ -442,33 +442,42 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             {exercise.questions.map((question: string, qIndex: number) => {
               const studentAnswer = studentAnswers[qIndex] || '';
               const isEmpty = showCorrectAnswers && !studentAnswer;
+              const liveAnswer = liveSessionAnswer?.[qIndex];
               
               return (
                 <div key={qIndex} className="border rounded-lg p-3 bg-white">
-                  <p className="leading-snug mb-2">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={question}
-                        onChange={e => {
-                          const updatedExercises = [...editableWorksheet.exercises];
-                          const newQuestions = [...exercise.questions!];
-                          newQuestions[qIndex] = e.target.value;
-                          updatedExercises[arrayIndex] = {
-                            ...updatedExercises[arrayIndex],
-                            questions: newQuestions
-                          };
-                          setEditableWorksheet({
-                            ...editableWorksheet,
-                            exercises: updatedExercises
-                          });
-                        }}
-                        className="w-full border p-1 editable-content"
-                      />
-                    ) : (
-                      <>{qIndex + 1}. {question}</>
+                  <div className="flex items-start gap-2 flex-wrap mb-2">
+                    <p className="leading-snug flex-grow">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={question}
+                          onChange={e => {
+                            const updatedExercises = [...editableWorksheet.exercises];
+                            const newQuestions = [...exercise.questions!];
+                            newQuestions[qIndex] = e.target.value;
+                            updatedExercises[arrayIndex] = {
+                              ...updatedExercises[arrayIndex],
+                              questions: newQuestions
+                            };
+                            setEditableWorksheet({
+                              ...editableWorksheet,
+                              exercises: updatedExercises
+                            });
+                          }}
+                          className="w-full border p-1 editable-content"
+                        />
+                      ) : (
+                        <>{qIndex + 1}. {question}</>
+                      )}
+                    </p>
+                    {/* PROBLEM 7 FIX: Live Session answer display for Discussion Questions */}
+                    {viewMode === 'live-session' && liveAnswer !== undefined && liveAnswer !== '' && (
+                      <span className="text-blue-600 font-medium text-sm bg-blue-50 px-2 py-1 rounded">
+                        [Student: {liveAnswer}]
+                      </span>
                     )}
-                  </p>
+                  </div>
                   {isInteractive && (
                     <input
                       type="text"
