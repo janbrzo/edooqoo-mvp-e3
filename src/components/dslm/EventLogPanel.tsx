@@ -118,7 +118,7 @@ export const EventLogPanel: React.FC<EventLogPanelProps> = ({ studentId, teacher
             <div className="text-sm text-muted-foreground">Last Activity</div>
             <div className="text-sm font-medium">
               {stats.last_event_at 
-                ? format(new Date(stats.last_event_at), 'MMM dd, HH:mm') + ' (UTC)'
+                ? format(new Date(stats.last_event_at), 'MMM dd, HH:mm')
                 : 'No events'
               }
             </div>

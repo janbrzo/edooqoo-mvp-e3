@@ -5,19 +5,20 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - DSLM Stage 1.2 Event Collection Fixes:**
-- **Worksheet Events Trigger**: Added `log_worksheet_answer_event()` trigger on `worksheet_student_answers` - now logs `worksheet_answer_saved` events to `student_events`
-- **Homework Duplicate Events Fix**: Updated `log_homework_answer_event()` with 5-second deduplication check - prevents duplicate events for same exercise
-- **Test Timer Pause**: `StudentTestPage.tsx` now pauses `time_spent_seconds` when tab is inactive using `visibilitychange` listener
-- **Flashcard Time Tracking**: `useFlashcardLearning.tsx` now tracks `response_time_ms` per card with visibility-aware timer
-- **Flashcard Event Payload**: Updated trigger to include `card_front` and `card_back` content in flashcard review events
-- **AI Verification Integration**: `submitHomework()` now calls `verify-open-answers` Edge Function for open-ended exercises (reading, discussion, describe, dialogue)
-- **verify-open-answers URL Fix**: Fixed API URL to `https://ai.gateway.lovable.dev/v1/chat/completions`
-- **Discussion Live Session Fix**: `ExerciseSection.tsx` now shows student answers in blue for Discussion Questions in Live Session mode
-- **Time Display Label**: EventLogPanel now shows "(UTC)" label next to timestamps for clarity
-- **Duplicate Events Cleanup**: Migration removes existing duplicate homework events from `student_events`
+**Latest Update (January 2026) - DSLM Stage 1.3 Full Event Collection Fixes:**
+- **Worksheet Events UPSERT**: Changed `log_worksheet_answer_event()` trigger from INSERT to UPSERT pattern - now only ONE event per worksheet + exercise combination, always with latest data (no more duplicate events)
+- **Worksheet Event Payload**: Now includes full `answers` content in event payload for diagnostic analysis
+- **Homework Email localStorage**: `HomeworkPage.tsx` now remembers verified email for 24 hours in localStorage - students don't need to re-enter email on page refresh
+- **Test Email Verification**: `StudentTestPage.tsx` now requires email before starting test, stored in localStorage for 24h
+- **Share Test Modal**: New `ShareTestModal.tsx` component for sharing tests with students (copy link + send email)
+- **send-test-email Edge Function**: New Edge Function to send test links via email (using Resend API)
+- **AI Verification Expanded Types**: Extended `openAnswerTypes` in `submitHomework()` to include `describe-picture`, `answer-questions-picture`, `paraphrasing`, `speaking`, `sentence-transformation`, `essay`, `gap-text`, `word-order`
+- **AI Verification Logging**: Added detailed console logs for debugging AI verification process
+- **Time Display Fix**: Removed misleading "(UTC)" suffix from EventLogPanel - `format()` already displays local time
+- **Flashcard Response Time DB**: Added `last_response_time_ms` column to `flashcard_progress` table
+- **Flashcard Event Time**: Flashcard review events now include `response_time_ms` in payload from database column
 
-**Previous Update (December 2025) - Intelligent Tests Module:**
+**Previous Update (January 2026) - DSLM Stage 1.2 Event Collection Fixes:**
 - **New Tests Tab**: Added 7th tab "Tests" to StudentPage.tsx with ClipboardCheck icon - for creating and managing AI-powered student tests
 - **Database Tables**: Created `student_tests`, `student_test_questions`, `test_skill_results` with full RLS policies and sharing capabilities
 - **Edge Function**: `generate-test` uses GPT-4o-mini to generate personalized test questions based on:

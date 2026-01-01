@@ -57,6 +57,29 @@ export default function HomeworkPage() {
   const [studentEmailForTeacher, setStudentEmailForTeacher] = useState<string | null>(null);
   const [studentIdForTeacher, setStudentIdForTeacher] = useState<string | null>(null);
   
+  // PROBLEM 2 FIX: Check localStorage for remembered email on mount
+  useEffect(() => {
+    if (!token || isTeacher) return;
+    
+    const storageKey = `homework_email_${token}`;
+    const stored = localStorage.getItem(storageKey);
+    
+    if (stored) {
+      try {
+        const { email, expiresAt } = JSON.parse(stored);
+        if (new Date(expiresAt) > new Date()) {
+          console.log('[HomeworkPage] Using remembered email from localStorage:', email);
+          setVerifiedEmail(email);
+        } else {
+          // Expired - remove it
+          localStorage.removeItem(storageKey);
+        }
+      } catch (e) {
+        localStorage.removeItem(storageKey);
+      }
+    }
+  }, [token, isTeacher]);
+  
   // Teacher presentation mode state (replaces edit mode)
   const [presentationMode, setPresentationMode] = useState(false);
   const [presentationAnswers, setPresentationAnswers] = useState<Record<number, any>>({});
@@ -510,7 +533,17 @@ export default function HomeworkPage() {
           studentName={homework.student_name}
           teacherName={teacherName}
           verifyEmail={verifyStudentEmail}
-          onVerified={setVerifiedEmail}
+          onVerified={(email) => {
+            // PROBLEM 2 FIX: Remember email for 24 hours in localStorage
+            if (token && email) {
+              const storageKey = `homework_email_${token}`;
+              const expiresAt = new Date();
+              expiresAt.setHours(expiresAt.getHours() + 24);
+              localStorage.setItem(storageKey, JSON.stringify({ email, expiresAt: expiresAt.toISOString() }));
+              console.log('[HomeworkPage] Saved email to localStorage for 24h:', email);
+            }
+            setVerifiedEmail(email);
+          }}
         />
       )}
       
