@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - DSLM Stage 1.3 Full Event Collection Fixes:**
+**Latest Update (January 2026) - DSLM Stage 1.4 Full Event Collection Fixes:**
+- **CRITICAL: Timestamp Fix**: Changed `student_events.created_at` DEFAULT from `(now() AT TIME ZONE 'Europe/Warsaw')` to `now()` - all events now store correct UTC time
+- **Homework Events Enhanced**: `log_homework_answer_event()` trigger now includes `time_spent_seconds` (calculated from started_at to submitted_at) and `is_correct` (from ai_evaluation.is_acceptable) in event payload
+- **AI Evaluation Display**: New `AiEvaluationBadge.tsx` component shows AI quality score and feedback in `HomeworkReviewPage.tsx` for teachers reviewing open-ended answers
+- **ShareTestModal Integration**: `TestDetailsView.tsx` now opens `ShareTestModal` when clicking "Share Test" - allows copying link and sending via email (like flashcard sharing)
+- **Edge Function Logging**: Added detailed console logs to `verify-open-answers` for debugging (request body, API key status, response parsing)
+
+**Previous Update (January 2026) - DSLM Stage 1.3 Full Event Collection Fixes:**
 - **Worksheet Events UPSERT**: Changed `log_worksheet_answer_event()` trigger from INSERT to UPSERT pattern - now only ONE event per worksheet + exercise combination, always with latest data (no more duplicate events)
 - **Worksheet Event Payload**: Now includes full `answers` content in event payload for diagnostic analysis
 - **Homework Email localStorage**: `HomeworkPage.tsx` now remembers verified email for 24 hours in localStorage - students don't need to re-enter email on page refresh

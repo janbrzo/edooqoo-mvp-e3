@@ -22,26 +22,33 @@ interface EvaluationResult {
 }
 
 serve(async (req) => {
+  console.log('[verify-open-answers] Function invoked, method:', req.method);
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
+    console.log('[verify-open-answers] Handling CORS preflight');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { answers, english_level, context } = await req.json() as {
+    const body = await req.json();
+    console.log('[verify-open-answers] Request body received:', JSON.stringify(body).slice(0, 500));
+    
+    const { answers, english_level, context } = body as {
       answers: AnswerToEvaluate[];
       english_level: string;
       context?: string;
     };
 
     if (!answers || answers.length === 0) {
+      console.log('[verify-open-answers] ERROR: No answers provided');
       return new Response(
         JSON.stringify({ error: 'No answers to evaluate' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('[verify-open-answers] Evaluating', answers.length, 'open answers');
+    console.log('[verify-open-answers] Evaluating', answers.length, 'open answers, level:', english_level);
 
     // Build prompt for AI evaluation
     const systemPrompt = `You are an English language teacher evaluating student answers.
@@ -79,13 +86,17 @@ Return a JSON array with objects for each answer:
 
     // Call Lovable AI API (google/gemini-2.5-flash)
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    console.log('[verify-open-answers] LOVABLE_API_KEY configured:', !!lovableApiKey);
+    
     if (!lovableApiKey) {
-      console.error('[verify-open-answers] LOVABLE_API_KEY not configured');
+      console.error('[verify-open-answers] ERROR: LOVABLE_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'AI service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('[verify-open-answers] Calling Lovable AI API...');
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
