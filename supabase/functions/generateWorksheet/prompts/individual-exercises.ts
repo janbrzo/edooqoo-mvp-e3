@@ -464,7 +464,24 @@ export const getCategorizeExercise = () => `    {
       "icon": "fa-layer-group",
       "time": 7,
       "instructions": "Sort these food and restaurant-related items into the correct categories.",
-      "items": ["pizza", "waiter", "spoon", "breakfast", "sushi", "chef", "fork", "lunch", "pasta", "customer", "knife", "dinner", "burger", "manager", "plate", "snack"],
+      "items": [
+        {"word": "pizza", "nano_skill": [{"name": "ns.vocab.semantic_category_food", "confidence": 0.95, "reason": "Tests categorization of 'pizza' as food item"}, {"name": "ns.vocab.lexical_set_restaurant", "confidence": 0.90, "reason": "Tests restaurant-related vocabulary recognition"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.95, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "waiter", "nano_skill": [{"name": "ns.vocab.semantic_category_occupation", "confidence": 0.95, "reason": "Tests categorization of 'waiter' as staff"}, {"name": "ns.vocab.lexical_set_restaurant", "confidence": 0.90, "reason": "Tests restaurant staff vocabulary"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.95, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "spoon", "nano_skill": [{"name": "ns.vocab.semantic_category_utensil", "confidence": 0.95, "reason": "Tests categorization of 'spoon' as utensil"}, {"name": "ns.vocab.concrete_noun_recognition", "confidence": 0.88, "reason": "Tests concrete noun identification"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.95, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "breakfast", "nano_skill": [{"name": "ns.vocab.semantic_category_time", "confidence": 0.94, "reason": "Tests categorization of 'breakfast' as meal time"}, {"name": "ns.vocab.daily_routine_vocabulary", "confidence": 0.88, "reason": "Tests daily routine vocabulary"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.94, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "sushi", "nano_skill": [{"name": "ns.vocab.semantic_category_food", "confidence": 0.95, "reason": "Tests categorization of 'sushi' as food item"}, {"name": "ns.vocab.international_food_vocabulary", "confidence": 0.88, "reason": "Tests international cuisine vocabulary"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.95, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "chef", "nano_skill": [{"name": "ns.vocab.semantic_category_occupation", "confidence": 0.95, "reason": "Tests categorization of 'chef' as staff"}, {"name": "ns.vocab.lexical_set_restaurant", "confidence": 0.90, "reason": "Tests restaurant staff vocabulary"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.95, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "fork", "nano_skill": [{"name": "ns.vocab.semantic_category_utensil", "confidence": 0.95, "reason": "Tests categorization of 'fork' as utensil"}, {"name": "ns.vocab.concrete_noun_recognition", "confidence": 0.88, "reason": "Tests concrete noun identification"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.95, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "lunch", "nano_skill": [{"name": "ns.vocab.semantic_category_time", "confidence": 0.94, "reason": "Tests categorization of 'lunch' as meal time"}, {"name": "ns.vocab.daily_routine_vocabulary", "confidence": 0.88, "reason": "Tests daily routine vocabulary"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.94, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "pasta", "nano_skill": [{"name": "ns.vocab.semantic_category_food", "confidence": 0.95, "reason": "Tests categorization of 'pasta' as food item"}, {"name": "ns.vocab.international_food_vocabulary", "confidence": 0.88, "reason": "Tests international cuisine vocabulary"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.95, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "customer", "nano_skill": [{"name": "ns.vocab.semantic_category_person", "confidence": 0.94, "reason": "Tests categorization of 'customer' as restaurant-related person"}, {"name": "ns.vocab.service_industry_vocabulary", "confidence": 0.88, "reason": "Tests service industry vocabulary"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.94, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "knife", "nano_skill": [{"name": "ns.vocab.semantic_category_utensil", "confidence": 0.95, "reason": "Tests categorization of 'knife' as utensil"}, {"name": "ns.vocab.concrete_noun_recognition", "confidence": 0.88, "reason": "Tests concrete noun identification"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.95, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "dinner", "nano_skill": [{"name": "ns.vocab.semantic_category_time", "confidence": 0.94, "reason": "Tests categorization of 'dinner' as meal time"}, {"name": "ns.vocab.daily_routine_vocabulary", "confidence": 0.88, "reason": "Tests daily routine vocabulary"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.94, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "burger", "nano_skill": [{"name": "ns.vocab.semantic_category_food", "confidence": 0.95, "reason": "Tests categorization of 'burger' as food item"}, {"name": "ns.vocab.fast_food_vocabulary", "confidence": 0.88, "reason": "Tests fast food vocabulary"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.95, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "manager", "nano_skill": [{"name": "ns.vocab.semantic_category_occupation", "confidence": 0.94, "reason": "Tests categorization of 'manager' as staff"}, {"name": "ns.vocab.workplace_hierarchy_vocabulary", "confidence": 0.88, "reason": "Tests workplace hierarchy vocabulary"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.94, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "plate", "nano_skill": [{"name": "ns.vocab.semantic_category_utensil", "confidence": 0.94, "reason": "Tests categorization of 'plate' as tableware"}, {"name": "ns.vocab.concrete_noun_recognition", "confidence": 0.88, "reason": "Tests concrete noun identification"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.94, "reason": "Tests ability to classify vocabulary by meaning"}]},
+        {"word": "snack", "nano_skill": [{"name": "ns.vocab.semantic_category_time", "confidence": 0.93, "reason": "Tests categorization of 'snack' as meal time"}, {"name": "ns.vocab.eating_habits_vocabulary", "confidence": 0.88, "reason": "Tests eating habits vocabulary"}], "micro_skill": [{"name": "ms.vocab.semantic_categorization", "confidence": 0.93, "reason": "Tests ability to classify vocabulary by meaning"}]}
+      ],
       "categories": [
         {"name": "Food Items", "correct_items": ["pizza", "sushi", "pasta", "burger"]},
         {"name": "Restaurant Staff", "correct_items": ["waiter", "chef", "manager", "customer"]},
@@ -481,12 +498,12 @@ export const getParaphrasingExercise = () => `    {
       "time": 8,
       "instructions": "Rewrite these sentences about restaurant experiences using different words but keeping the same meaning.",
       "sentences": [
-        {"original": "The food was absolutely delicious.", "paraphrase": "The meal was extremely tasty.", "alternatives": ["The dish was incredibly flavorful.", "The cuisine was wonderfully appetizing."]},
-        {"original": "We had to wait a long time for our order.", "paraphrase": "Our food took ages to arrive.", "alternatives": ["The service was very slow.", "We waited forever for our meal."]},
-        {"original": "The restaurant is always crowded on weekends.", "paraphrase": "The place gets really busy on Saturdays and Sundays.", "alternatives": ["It's packed with customers during weekends.", "Weekend dining there is always hectic."]},
-        {"original": "I complained about the cold soup.", "paraphrase": "I told the waiter that my soup wasn't hot enough.", "alternatives": ["I expressed dissatisfaction with the soup's temperature.", "I mentioned that the soup needed reheating."]},
-        {"original": "This café serves the best coffee in town.", "paraphrase": "You can't find better coffee anywhere else in the city.", "alternatives": ["This place has the finest coffee around.", "No other café makes coffee this good."]},
-        {"original": "The bill was much higher than expected.", "paraphrase": "We were surprised by how expensive the meal was.", "alternatives": ["The cost exceeded our expectations.", "The price was shockingly steep."]}
+        {"original": "The food was absolutely delicious.", "paraphrase": "The meal was extremely tasty.", "alternatives": ["The dish was incredibly flavorful.", "The cuisine was wonderfully appetizing."], "nano_skill": [{"name": "ns.vocab.synonym_selection_delicious", "confidence": 0.95, "reason": "Tests ability to find synonyms for 'delicious'"}, {"name": "ns.vocab.intensifier_alternatives", "confidence": 0.90, "reason": "Tests replacing 'absolutely' with other intensifiers"}], "micro_skill": [{"name": "ms.writing.paraphrasing_technique", "confidence": 0.95, "reason": "Tests sentence-level paraphrasing ability"}]},
+        {"original": "We had to wait a long time for our order.", "paraphrase": "Our food took ages to arrive.", "alternatives": ["The service was very slow.", "We waited forever for our meal."], "nano_skill": [{"name": "ns.vocab.time_expression_alternatives", "confidence": 0.94, "reason": "Tests expressing duration with different phrases"}, {"name": "ns.grammar.sentence_structure_variation", "confidence": 0.88, "reason": "Tests restructuring subject-verb relationships"}], "micro_skill": [{"name": "ms.writing.paraphrasing_technique", "confidence": 0.94, "reason": "Tests sentence-level paraphrasing ability"}]},
+        {"original": "The restaurant is always crowded on weekends.", "paraphrase": "The place gets really busy on Saturdays and Sundays.", "alternatives": ["It's packed with customers during weekends.", "Weekend dining there is always hectic."], "nano_skill": [{"name": "ns.vocab.synonym_selection_crowded", "confidence": 0.94, "reason": "Tests finding synonyms for 'crowded'"}, {"name": "ns.vocab.time_expression_specificity", "confidence": 0.88, "reason": "Tests replacing 'weekends' with specific days"}], "micro_skill": [{"name": "ms.writing.paraphrasing_technique", "confidence": 0.94, "reason": "Tests sentence-level paraphrasing ability"}]},
+        {"original": "I complained about the cold soup.", "paraphrase": "I told the waiter that my soup wasn't hot enough.", "alternatives": ["I expressed dissatisfaction with the soup's temperature.", "I mentioned that the soup needed reheating."], "nano_skill": [{"name": "ns.vocab.complaint_vocabulary_expansion", "confidence": 0.93, "reason": "Tests expressing complaints with different vocabulary"}, {"name": "ns.grammar.indirect_speech_transformation", "confidence": 0.88, "reason": "Tests converting direct statement to indirect"}], "micro_skill": [{"name": "ms.writing.paraphrasing_technique", "confidence": 0.93, "reason": "Tests sentence-level paraphrasing ability"}]},
+        {"original": "This café serves the best coffee in town.", "paraphrase": "You can't find better coffee anywhere else in the city.", "alternatives": ["This place has the finest coffee around.", "No other café makes coffee this good."], "nano_skill": [{"name": "ns.grammar.superlative_to_comparative", "confidence": 0.94, "reason": "Tests converting superlative to comparative structure"}, {"name": "ns.vocab.synonym_selection_best", "confidence": 0.88, "reason": "Tests finding alternatives for 'best'"}], "micro_skill": [{"name": "ms.writing.paraphrasing_technique", "confidence": 0.94, "reason": "Tests sentence-level paraphrasing ability"}]},
+        {"original": "The bill was much higher than expected.", "paraphrase": "We were surprised by how expensive the meal was.", "alternatives": ["The cost exceeded our expectations.", "The price was shockingly steep."], "nano_skill": [{"name": "ns.vocab.price_vocabulary_alternatives", "confidence": 0.93, "reason": "Tests expressing cost with different vocabulary"}, {"name": "ns.grammar.passive_to_active_transformation", "confidence": 0.88, "reason": "Tests restructuring sentence voice"}], "micro_skill": [{"name": "ms.writing.paraphrasing_technique", "confidence": 0.93, "reason": "Tests sentence-level paraphrasing ability"}]}
       ],
       "teacher_tip": "Encourage students to use synonyms and different sentence structures. Discuss how paraphrasing is useful for avoiding repetition in writing and speaking."
     }`;
@@ -498,16 +515,16 @@ export const getCompleteWordExercise = () => `    {
       "time": 6,
       "instructions": "Complete these restaurant and food-related words by filling in the missing letters.",
       "words": [
-        {"partial": "rest_urant", "complete": "restaurant", "clue": "A place where people go to eat meals"},
-        {"partial": "del_cious", "complete": "delicious", "clue": "Having a very pleasant taste"},
-        {"partial": "_ppetizer", "complete": "appetizer", "clue": "A small dish served before the main course"},
-        {"partial": "reserv_tion", "complete": "reservation", "clue": "Booking a table in advance"},
-        {"partial": "cust_mer", "complete": "customer", "clue": "A person who buys food or service"},
-        {"partial": "veget_rian", "complete": "vegetarian", "clue": "Someone who doesn't eat meat"},
-        {"partial": "w_iter", "complete": "waiter", "clue": "A person who serves food in a restaurant"},
-        {"partial": "men_", "complete": "menu", "clue": "A list of food and drinks available"},
-        {"partial": "_xpensive", "complete": "expensive", "clue": "Costing a lot of money"},
-        {"partial": "compl_int", "complete": "complaint", "clue": "An expression of dissatisfaction"}
+        {"partial": "rest_urant", "complete": "restaurant", "clue": "A place where people go to eat meals", "nano_skill": [{"name": "ns.spelling.vowel_placement_a", "confidence": 0.95, "reason": "Tests correct placement of vowel 'a' in 'restaurant'"}, {"name": "ns.vocab.word_recognition_restaurant", "confidence": 0.90, "reason": "Tests recognition of common restaurant vocabulary"}], "micro_skill": [{"name": "ms.spelling.word_completion", "confidence": 0.95, "reason": "Tests spelling completion ability"}]},
+        {"partial": "del_cious", "complete": "delicious", "clue": "Having a very pleasant taste", "nano_skill": [{"name": "ns.spelling.vowel_placement_i", "confidence": 0.94, "reason": "Tests correct placement of vowel 'i' in 'delicious'"}, {"name": "ns.spelling.suffix_icious", "confidence": 0.88, "reason": "Tests knowledge of '-icious' suffix pattern"}], "micro_skill": [{"name": "ms.spelling.word_completion", "confidence": 0.94, "reason": "Tests spelling completion ability"}]},
+        {"partial": "_ppetizer", "complete": "appetizer", "clue": "A small dish served before the main course", "nano_skill": [{"name": "ns.spelling.initial_vowel_a", "confidence": 0.94, "reason": "Tests correct initial vowel 'a' in 'appetizer'"}, {"name": "ns.vocab.course_sequence_vocabulary", "confidence": 0.88, "reason": "Tests meal course vocabulary"}], "micro_skill": [{"name": "ms.spelling.word_completion", "confidence": 0.94, "reason": "Tests spelling completion ability"}]},
+        {"partial": "reserv_tion", "complete": "reservation", "clue": "Booking a table in advance", "nano_skill": [{"name": "ns.spelling.vowel_placement_a", "confidence": 0.94, "reason": "Tests correct vowel 'a' in '-ation' suffix"}, {"name": "ns.spelling.suffix_ation", "confidence": 0.90, "reason": "Tests knowledge of '-ation' noun suffix"}], "micro_skill": [{"name": "ms.spelling.word_completion", "confidence": 0.94, "reason": "Tests spelling completion ability"}]},
+        {"partial": "cust_mer", "complete": "customer", "clue": "A person who buys food or service", "nano_skill": [{"name": "ns.spelling.vowel_placement_o", "confidence": 0.94, "reason": "Tests correct vowel 'o' in 'customer'"}, {"name": "ns.vocab.service_industry_vocabulary", "confidence": 0.88, "reason": "Tests service industry vocabulary"}], "micro_skill": [{"name": "ms.spelling.word_completion", "confidence": 0.94, "reason": "Tests spelling completion ability"}]},
+        {"partial": "veget_rian", "complete": "vegetarian", "clue": "Someone who doesn't eat meat", "nano_skill": [{"name": "ns.spelling.vowel_placement_a", "confidence": 0.93, "reason": "Tests correct vowel 'a' in 'vegetarian'"}, {"name": "ns.spelling.suffix_arian", "confidence": 0.88, "reason": "Tests knowledge of '-arian' suffix"}], "micro_skill": [{"name": "ms.spelling.word_completion", "confidence": 0.93, "reason": "Tests spelling completion ability"}]},
+        {"partial": "w_iter", "complete": "waiter", "clue": "A person who serves food in a restaurant", "nano_skill": [{"name": "ns.spelling.vowel_placement_a", "confidence": 0.95, "reason": "Tests correct vowel 'a' in 'waiter'"}, {"name": "ns.spelling.diphthong_ai", "confidence": 0.90, "reason": "Tests 'ai' diphthong spelling"}], "micro_skill": [{"name": "ms.spelling.word_completion", "confidence": 0.95, "reason": "Tests spelling completion ability"}]},
+        {"partial": "men_", "complete": "menu", "clue": "A list of food and drinks available", "nano_skill": [{"name": "ns.spelling.final_vowel_u", "confidence": 0.94, "reason": "Tests correct final vowel 'u' in 'menu'"}, {"name": "ns.vocab.restaurant_vocabulary_basic", "confidence": 0.90, "reason": "Tests basic restaurant vocabulary"}], "micro_skill": [{"name": "ms.spelling.word_completion", "confidence": 0.94, "reason": "Tests spelling completion ability"}]},
+        {"partial": "_xpensive", "complete": "expensive", "clue": "Costing a lot of money", "nano_skill": [{"name": "ns.spelling.initial_vowel_e", "confidence": 0.94, "reason": "Tests correct initial vowel 'e' in 'expensive'"}, {"name": "ns.vocab.price_adjectives", "confidence": 0.88, "reason": "Tests price-related adjectives"}], "micro_skill": [{"name": "ms.spelling.word_completion", "confidence": 0.94, "reason": "Tests spelling completion ability"}]},
+        {"partial": "compl_int", "complete": "complaint", "clue": "An expression of dissatisfaction", "nano_skill": [{"name": "ns.spelling.vowel_placement_a", "confidence": 0.93, "reason": "Tests correct vowel 'a' in 'complaint'"}, {"name": "ns.spelling.diphthong_ai", "confidence": 0.88, "reason": "Tests 'ai' diphthong spelling"}], "micro_skill": [{"name": "ms.spelling.word_completion", "confidence": 0.93, "reason": "Tests spelling completion ability"}]}
       ],
       "teacher_tip": "After completing the words, ask students to use each word in a sentence about their own restaurant experiences to reinforce meaning and usage."
     }`;
@@ -519,16 +536,16 @@ export const getMatchingHalvesExercise = () => `    {
       "time": 7,
       "instructions": "Match the first half of each sentence with the correct second half.",
       "sentence_halves": [
-        {"first_half": "I'd like to make a reservation", "second_half": "for four people at 7:30 PM this Friday.", "id": 1},
-        {"first_half": "The waiter recommended the grilled salmon", "second_half": "because it's the chef's specialty this week.", "id": 2},
-        {"first_half": "Could you bring us two glasses of sparkling water", "second_half": "and the dessert menu, please?", "id": 3},
-        {"first_half": "I ordered the vegetarian pasta", "second_half": "but they brought me a seafood dish instead.", "id": 4},
-        {"first_half": "This Italian restaurant is famous", "second_half": "for serving the most authentic pizza in town.", "id": 5},
-        {"first_half": "We always leave a generous tip", "second_half": "when the service exceeds our expectations.", "id": 6},
-        {"first_half": "The curry was so incredibly spicy", "second_half": "that I had to order a glass of milk.", "id": 7},
-        {"first_half": "Would you like to try the chocolate lava cake", "second_half": "which our pastry chef made fresh today?", "id": 8},
-        {"first_half": "The restaurant refused to serve us", "second_half": "because we arrived after their closing time.", "id": 9},
-        {"first_half": "My grandmother taught me how to cook", "second_half": "traditional French dishes when I was young.", "id": 10}
+        {"first_half": "I'd like to make a reservation", "second_half": "for four people at 7:30 PM this Friday.", "id": 1, "nano_skill": [{"name": "ns.grammar.would_like_pattern", "confidence": 0.95, "reason": "Tests understanding of 'I'd like to' polite request pattern"}, {"name": "ns.pragmatics.reservation_language", "confidence": 0.90, "reason": "Tests restaurant reservation vocabulary"}], "micro_skill": [{"name": "ms.grammar.sentence_coherence", "confidence": 0.95, "reason": "Tests ability to match coherent sentence halves"}]},
+        {"first_half": "The waiter recommended the grilled salmon", "second_half": "because it's the chef's specialty this week.", "id": 2, "nano_skill": [{"name": "ns.grammar.past_simple_recommend", "confidence": 0.94, "reason": "Tests understanding of recommendation context"}, {"name": "ns.grammar.because_clause_connection", "confidence": 0.90, "reason": "Tests cause-effect clause connection"}], "micro_skill": [{"name": "ms.grammar.sentence_coherence", "confidence": 0.94, "reason": "Tests ability to match coherent sentence halves"}]},
+        {"first_half": "Could you bring us two glasses of sparkling water", "second_half": "and the dessert menu, please?", "id": 3, "nano_skill": [{"name": "ns.grammar.could_polite_request", "confidence": 0.94, "reason": "Tests polite request with 'could'"}, {"name": "ns.grammar.compound_object_coordination", "confidence": 0.88, "reason": "Tests coordination with 'and'"}], "micro_skill": [{"name": "ms.grammar.sentence_coherence", "confidence": 0.94, "reason": "Tests ability to match coherent sentence halves"}]},
+        {"first_half": "I ordered the vegetarian pasta", "second_half": "but they brought me a seafood dish instead.", "id": 4, "nano_skill": [{"name": "ns.grammar.contrast_with_but", "confidence": 0.95, "reason": "Tests contrast connector 'but'"}, {"name": "ns.vocab.complaint_situation_vocabulary", "confidence": 0.88, "reason": "Tests complaint situation understanding"}], "micro_skill": [{"name": "ms.grammar.sentence_coherence", "confidence": 0.95, "reason": "Tests ability to match coherent sentence halves"}]},
+        {"first_half": "This Italian restaurant is famous", "second_half": "for serving the most authentic pizza in town.", "id": 5, "nano_skill": [{"name": "ns.grammar.famous_for_collocation", "confidence": 0.95, "reason": "Tests 'famous for' collocation pattern"}, {"name": "ns.grammar.superlative_usage", "confidence": 0.88, "reason": "Tests superlative 'most authentic'"}], "micro_skill": [{"name": "ms.grammar.sentence_coherence", "confidence": 0.95, "reason": "Tests ability to match coherent sentence halves"}]},
+        {"first_half": "We always leave a generous tip", "second_half": "when the service exceeds our expectations.", "id": 6, "nano_skill": [{"name": "ns.grammar.when_time_clause", "confidence": 0.94, "reason": "Tests 'when' temporal clause connection"}, {"name": "ns.vocab.tipping_culture_vocabulary", "confidence": 0.88, "reason": "Tests tipping vocabulary"}], "micro_skill": [{"name": "ms.grammar.sentence_coherence", "confidence": 0.94, "reason": "Tests ability to match coherent sentence halves"}]},
+        {"first_half": "The curry was so incredibly spicy", "second_half": "that I had to order a glass of milk.", "id": 7, "nano_skill": [{"name": "ns.grammar.so_that_result_clause", "confidence": 0.95, "reason": "Tests 'so...that' result clause pattern"}, {"name": "ns.grammar.had_to_necessity", "confidence": 0.88, "reason": "Tests 'had to' for past necessity"}], "micro_skill": [{"name": "ms.grammar.sentence_coherence", "confidence": 0.95, "reason": "Tests ability to match coherent sentence halves"}]},
+        {"first_half": "Would you like to try the chocolate lava cake", "second_half": "which our pastry chef made fresh today?", "id": 8, "nano_skill": [{"name": "ns.grammar.relative_clause_which", "confidence": 0.94, "reason": "Tests 'which' relative clause for things"}, {"name": "ns.grammar.would_like_offer", "confidence": 0.88, "reason": "Tests 'would you like' offer pattern"}], "micro_skill": [{"name": "ms.grammar.sentence_coherence", "confidence": 0.94, "reason": "Tests ability to match coherent sentence halves"}]},
+        {"first_half": "The restaurant refused to serve us", "second_half": "because we arrived after their closing time.", "id": 9, "nano_skill": [{"name": "ns.grammar.refused_to_infinitive", "confidence": 0.93, "reason": "Tests 'refused to' + infinitive pattern"}, {"name": "ns.grammar.because_reason_clause", "confidence": 0.88, "reason": "Tests 'because' reason clause"}], "micro_skill": [{"name": "ms.grammar.sentence_coherence", "confidence": 0.93, "reason": "Tests ability to match coherent sentence halves"}]},
+        {"first_half": "My grandmother taught me how to cook", "second_half": "traditional French dishes when I was young.", "id": 10, "nano_skill": [{"name": "ns.grammar.how_to_infinitive", "confidence": 0.94, "reason": "Tests 'how to' + infinitive pattern"}, {"name": "ns.grammar.when_past_time_clause", "confidence": 0.88, "reason": "Tests 'when' past time clause"}], "micro_skill": [{"name": "ms.grammar.sentence_coherence", "confidence": 0.94, "reason": "Tests ability to match coherent sentence halves"}]}
       ],
       "teacher_tip": "After matching, have students read the complete sentences aloud to practice pronunciation and natural sentence rhythm."
     }`;
@@ -543,16 +560,16 @@ export const getDescribePictureExercise = () => `    {
       "instructions": "Look at the image and describe what you see using the vocabulary from this lesson.",
       "image_description": "Based on the provided image, create a detailed description of what is visible in the scene.",
       "prompts": [
-        "Describe the overall scene and atmosphere you observe in the image.",
-        "What specific objects, people, or elements can you identify?",
-        "What colors, textures, or visual details stand out to you?",
-        "What activity or situation is taking place in this image?",
-        "How would you describe the mood or feeling this image conveys?",
-        "What details in the image are most interesting or unusual?",
-        "If you were in this scene, what would you notice first?",
-        "What story could you tell based on what you see in the image?",
-        "What questions would you ask about what's happening in the picture?",
-        "Compare this scene to a similar one from your own experience."
+        {"text": "Describe the overall scene and atmosphere you observe in the image.", "nano_skill": [{"name": "ns.speaking.scene_description", "confidence": 0.95, "reason": "Tests ability to describe visual scenes"}, {"name": "ns.vocab.atmosphere_adjectives", "confidence": 0.90, "reason": "Tests atmosphere-related vocabulary"}], "micro_skill": [{"name": "ms.speaking.picture_description", "confidence": 0.95, "reason": "Tests visual description ability"}]},
+        {"text": "What specific objects, people, or elements can you identify?", "nano_skill": [{"name": "ns.speaking.object_identification", "confidence": 0.94, "reason": "Tests ability to identify and name visual elements"}, {"name": "ns.vocab.concrete_noun_usage", "confidence": 0.88, "reason": "Tests concrete noun vocabulary"}], "micro_skill": [{"name": "ms.speaking.picture_description", "confidence": 0.94, "reason": "Tests visual description ability"}]},
+        {"text": "What colors, textures, or visual details stand out to you?", "nano_skill": [{"name": "ns.vocab.color_vocabulary", "confidence": 0.94, "reason": "Tests color-related vocabulary"}, {"name": "ns.vocab.texture_adjectives", "confidence": 0.88, "reason": "Tests texture description vocabulary"}], "micro_skill": [{"name": "ms.speaking.picture_description", "confidence": 0.94, "reason": "Tests visual description ability"}]},
+        {"text": "What activity or situation is taking place in this image?", "nano_skill": [{"name": "ns.grammar.present_continuous_description", "confidence": 0.95, "reason": "Tests present continuous for ongoing actions"}, {"name": "ns.speaking.action_description", "confidence": 0.90, "reason": "Tests describing activities"}], "micro_skill": [{"name": "ms.speaking.picture_description", "confidence": 0.95, "reason": "Tests visual description ability"}]},
+        {"text": "How would you describe the mood or feeling this image conveys?", "nano_skill": [{"name": "ns.vocab.mood_vocabulary", "confidence": 0.93, "reason": "Tests mood and emotion vocabulary"}, {"name": "ns.speaking.inference_expression", "confidence": 0.88, "reason": "Tests expressing inferences"}], "micro_skill": [{"name": "ms.speaking.picture_description", "confidence": 0.93, "reason": "Tests visual description ability"}]},
+        {"text": "What details in the image are most interesting or unusual?", "nano_skill": [{"name": "ns.vocab.superlative_interesting", "confidence": 0.93, "reason": "Tests superlative usage for emphasis"}, {"name": "ns.speaking.detail_observation", "confidence": 0.88, "reason": "Tests observational skills"}], "micro_skill": [{"name": "ms.speaking.picture_description", "confidence": 0.93, "reason": "Tests visual description ability"}]},
+        {"text": "If you were in this scene, what would you notice first?", "nano_skill": [{"name": "ns.grammar.second_conditional_if", "confidence": 0.94, "reason": "Tests hypothetical 'if' clause"}, {"name": "ns.grammar.would_hypothetical", "confidence": 0.88, "reason": "Tests 'would' for hypothetical situations"}], "micro_skill": [{"name": "ms.speaking.picture_description", "confidence": 0.94, "reason": "Tests visual description ability"}]},
+        {"text": "What story could you tell based on what you see in the image?", "nano_skill": [{"name": "ns.speaking.narrative_creation", "confidence": 0.93, "reason": "Tests narrative construction ability"}, {"name": "ns.grammar.modal_could_possibility", "confidence": 0.88, "reason": "Tests 'could' for possibility"}], "micro_skill": [{"name": "ms.speaking.picture_description", "confidence": 0.93, "reason": "Tests visual description ability"}]},
+        {"text": "What questions would you ask about what's happening in the picture?", "nano_skill": [{"name": "ns.grammar.question_formation_wh", "confidence": 0.94, "reason": "Tests wh-question formation"}, {"name": "ns.speaking.curiosity_expression", "confidence": 0.88, "reason": "Tests expressing curiosity"}], "micro_skill": [{"name": "ms.speaking.picture_description", "confidence": 0.94, "reason": "Tests visual description ability"}]},
+        {"text": "Compare this scene to a similar one from your own experience.", "nano_skill": [{"name": "ns.grammar.comparative_structures", "confidence": 0.94, "reason": "Tests comparative language for comparisons"}, {"name": "ns.speaking.personal_connection", "confidence": 0.88, "reason": "Tests relating content to personal experience"}], "micro_skill": [{"name": "ms.speaking.picture_description", "confidence": 0.94, "reason": "Tests visual description ability"}]}
       ],
       "useful_vocabulary": ["visible", "prominent", "background", "foreground", "detailed", "noticeable", "apparent", "striking", "distinctive", "characteristic"],
       "teacher_tip": "Encourage students to use descriptive adjectives and specific details from the image. Ask follow-up questions to extend their descriptions and practice new vocabulary. NOTE: If an image URL is provided in the exercise data, reference that specific image in your instructions and prompts."
@@ -565,14 +582,14 @@ export const getAnswerQuestionsExercise = () => `    {
       "time": 8,
       "instructions": "Answer these questions about your personal food preferences and restaurant experiences.",
       "questions": [
-        {"question": "What's your favorite restaurant in your city, and why do you think it's better than others?", "focus": "Comparatives and personal preferences"},
-        {"question": "Describe the worst restaurant experience you've ever had. What went wrong?", "focus": "Past tense and complaint language"},
-        {"question": "If you could open your own restaurant, what type of cuisine would you serve and why?", "focus": "Conditional and future plans"},
-        {"question": "How do you usually react when you receive poor service in a restaurant?", "focus": "Present habits and complaint strategies"},
-        {"question": "What's the most expensive meal you've ever eaten? Was it worth the price?", "focus": "Superlatives and past experiences"},
-        {"question": "Do you prefer eating at home or dining out? Give three reasons for your preference.", "focus": "Comparisons and justification"},
-        {"question": "What advice would you give to someone visiting a restaurant in your country for the first time?", "focus": "Modal verbs and cultural advice"},
-        {"question": "How has your taste in food changed as you've gotten older?", "focus": "Present perfect and personal development"}
+        {"question": "What's your favorite restaurant in your city, and why do you think it's better than others?", "focus": "Comparatives and personal preferences", "nano_skill": [{"name": "ns.grammar.comparative_better_than", "confidence": 0.95, "reason": "Tests comparative 'better than' structure"}, {"name": "ns.speaking.preference_expression", "confidence": 0.90, "reason": "Tests expressing preferences with reasons"}], "micro_skill": [{"name": "ms.speaking.extended_response", "confidence": 0.95, "reason": "Tests ability to give full extended answers"}]},
+        {"question": "Describe the worst restaurant experience you've ever had. What went wrong?", "focus": "Past tense and complaint language", "nano_skill": [{"name": "ns.grammar.superlative_worst", "confidence": 0.94, "reason": "Tests superlative 'worst'"}, {"name": "ns.grammar.present_perfect_experience", "confidence": 0.90, "reason": "Tests present perfect for life experiences"}], "micro_skill": [{"name": "ms.speaking.extended_response", "confidence": 0.94, "reason": "Tests ability to give full extended answers"}]},
+        {"question": "If you could open your own restaurant, what type of cuisine would you serve and why?", "focus": "Conditional and future plans", "nano_skill": [{"name": "ns.grammar.second_conditional_could", "confidence": 0.95, "reason": "Tests second conditional 'if you could'"}, {"name": "ns.grammar.would_hypothetical_plan", "confidence": 0.90, "reason": "Tests 'would' for hypothetical plans"}], "micro_skill": [{"name": "ms.speaking.extended_response", "confidence": 0.95, "reason": "Tests ability to give full extended answers"}]},
+        {"question": "How do you usually react when you receive poor service in a restaurant?", "focus": "Present habits and complaint strategies", "nano_skill": [{"name": "ns.grammar.present_simple_habits", "confidence": 0.94, "reason": "Tests present simple for habitual actions"}, {"name": "ns.vocab.complaint_strategy_vocabulary", "confidence": 0.88, "reason": "Tests complaint-related vocabulary"}], "micro_skill": [{"name": "ms.speaking.extended_response", "confidence": 0.94, "reason": "Tests ability to give full extended answers"}]},
+        {"question": "What's the most expensive meal you've ever eaten? Was it worth the price?", "focus": "Superlatives and past experiences", "nano_skill": [{"name": "ns.grammar.superlative_most_expensive", "confidence": 0.95, "reason": "Tests superlative 'most expensive'"}, {"name": "ns.grammar.present_perfect_experience", "confidence": 0.90, "reason": "Tests present perfect for experiences"}], "micro_skill": [{"name": "ms.speaking.extended_response", "confidence": 0.95, "reason": "Tests ability to give full extended answers"}]},
+        {"question": "Do you prefer eating at home or dining out? Give three reasons for your preference.", "focus": "Comparisons and justification", "nano_skill": [{"name": "ns.grammar.prefer_gerund_pattern", "confidence": 0.94, "reason": "Tests 'prefer + gerund' pattern"}, {"name": "ns.speaking.justification_giving", "confidence": 0.90, "reason": "Tests giving reasons and justifications"}], "micro_skill": [{"name": "ms.speaking.extended_response", "confidence": 0.94, "reason": "Tests ability to give full extended answers"}]},
+        {"question": "What advice would you give to someone visiting a restaurant in your country for the first time?", "focus": "Modal verbs and cultural advice", "nano_skill": [{"name": "ns.grammar.would_give_advice", "confidence": 0.94, "reason": "Tests 'would give' for hypothetical advice"}, {"name": "ns.grammar.modal_should_advice", "confidence": 0.88, "reason": "Tests 'should' for recommendations"}], "micro_skill": [{"name": "ms.speaking.extended_response", "confidence": 0.94, "reason": "Tests ability to give full extended answers"}]},
+        {"question": "How has your taste in food changed as you've gotten older?", "focus": "Present perfect and personal development", "nano_skill": [{"name": "ns.grammar.present_perfect_change", "confidence": 0.95, "reason": "Tests present perfect for change over time"}, {"name": "ns.grammar.as_time_clause", "confidence": 0.88, "reason": "Tests 'as' temporal clause"}], "micro_skill": [{"name": "ms.speaking.extended_response", "confidence": 0.95, "reason": "Tests ability to give full extended answers"}]}
       ],
       "teacher_tip": "Focus on encouraging full answers rather than just yes/no responses. Ask follow-up questions to help students elaborate and use more complex sentence structures."
     }`;
@@ -593,7 +610,9 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "B", "text": "A busy restaurant scene", "correct": true},
             {"label": "C", "text": "A kitchen interior", "correct": false},
             {"label": "D", "text": "A food delivery", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.reading.main_idea_identification", "confidence": 0.95, "reason": "Tests ability to identify main focus of visual"}, {"name": "ns.vocab.scene_description_vocabulary", "confidence": 0.88, "reason": "Tests scene description vocabulary"}],
+          "micro_skill": [{"name": "ms.reading.visual_comprehension", "confidence": 0.95, "reason": "Tests visual comprehension ability"}]
         },
         {
           "text": "How would you describe the atmosphere in this image?",
@@ -602,7 +621,9 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "B", "text": "Crowded and lively", "correct": true},
             {"label": "C", "text": "Formal and elegant", "correct": false},
             {"label": "D", "text": "Dark and gloomy", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.vocab.atmosphere_adjectives", "confidence": 0.94, "reason": "Tests atmosphere description adjectives"}, {"name": "ns.reading.inference_from_visual", "confidence": 0.88, "reason": "Tests inferring mood from visual cues"}],
+          "micro_skill": [{"name": "ms.reading.visual_comprehension", "confidence": 0.94, "reason": "Tests visual comprehension ability"}]
         },
         {
           "text": "What type of food can you see in the picture?",
@@ -611,7 +632,9 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "B", "text": "Various international dishes", "correct": true},
             {"label": "C", "text": "Only breakfast items", "correct": false},
             {"label": "D", "text": "Only beverages", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.vocab.food_category_vocabulary", "confidence": 0.94, "reason": "Tests food category vocabulary"}, {"name": "ns.reading.detail_identification", "confidence": 0.88, "reason": "Tests identifying specific details in image"}],
+          "micro_skill": [{"name": "ms.reading.visual_comprehension", "confidence": 0.94, "reason": "Tests visual comprehension ability"}]
         },
         {
           "text": "How many people are visible in this restaurant scene?",
@@ -620,7 +643,9 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "B", "text": "One or two", "correct": false},
             {"label": "C", "text": "Several people", "correct": true},
             {"label": "D", "text": "Only staff members", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.vocab.quantifier_several", "confidence": 0.93, "reason": "Tests quantifier vocabulary 'several'"}, {"name": "ns.reading.counting_in_visual", "confidence": 0.88, "reason": "Tests counting elements in image"}],
+          "micro_skill": [{"name": "ms.reading.visual_comprehension", "confidence": 0.93, "reason": "Tests visual comprehension ability"}]
         },
         {
           "text": "What can you infer about the service style from the image?",
@@ -629,7 +654,9 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "B", "text": "Table service by waiters", "correct": true},
             {"label": "C", "text": "Takeaway only", "correct": false},
             {"label": "D", "text": "Food truck style", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.reading.inference_making", "confidence": 0.94, "reason": "Tests making inferences from visual evidence"}, {"name": "ns.vocab.service_style_vocabulary", "confidence": 0.88, "reason": "Tests service style vocabulary"}],
+          "micro_skill": [{"name": "ms.reading.visual_comprehension", "confidence": 0.94, "reason": "Tests visual comprehension ability"}]
         },
         {
           "text": "Which best describes the restaurant's style?",
@@ -638,7 +665,9 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "B", "text": "Casual dining establishment", "correct": true},
             {"label": "C", "text": "Fine dining restaurant", "correct": false},
             {"label": "D", "text": "Street food vendor", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.vocab.restaurant_type_vocabulary", "confidence": 0.94, "reason": "Tests restaurant type vocabulary"}, {"name": "ns.reading.categorization_from_visual", "confidence": 0.88, "reason": "Tests categorizing based on visual cues"}],
+          "micro_skill": [{"name": "ms.reading.visual_comprehension", "confidence": 0.94, "reason": "Tests visual comprehension ability"}]
         },
         {
           "text": "What time of day does this picture suggest?",
@@ -647,7 +676,9 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "B", "text": "Lunch or dinner time", "correct": true},
             {"label": "C", "text": "Late night", "correct": false},
             {"label": "D", "text": "Breakfast time", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.vocab.time_of_day_vocabulary", "confidence": 0.93, "reason": "Tests time of day vocabulary"}, {"name": "ns.reading.contextual_inference", "confidence": 0.88, "reason": "Tests inferring time from context"}],
+          "micro_skill": [{"name": "ms.reading.visual_comprehension", "confidence": 0.93, "reason": "Tests visual comprehension ability"}]
         },
         {
           "text": "What emotion do the customers seem to be showing?",
@@ -656,7 +687,9 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "B", "text": "Enjoyment and satisfaction", "correct": true},
             {"label": "C", "text": "Boredom and disinterest", "correct": false},
             {"label": "D", "text": "Confusion and worry", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.vocab.emotion_vocabulary", "confidence": 0.94, "reason": "Tests emotion vocabulary"}, {"name": "ns.reading.emotion_inference", "confidence": 0.88, "reason": "Tests inferring emotions from body language"}],
+          "micro_skill": [{"name": "ms.reading.visual_comprehension", "confidence": 0.94, "reason": "Tests visual comprehension ability"}]
         },
         {
           "text": "Based on the image, which statement is most accurate?",
@@ -665,7 +698,9 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "B", "text": "The restaurant is popular and busy", "correct": true},
             {"label": "C", "text": "The restaurant has poor service", "correct": false},
             {"label": "D", "text": "The restaurant serves only one type of cuisine", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.reading.evidence_based_conclusion", "confidence": 0.94, "reason": "Tests drawing conclusions from visual evidence"}, {"name": "ns.vocab.descriptive_statement_vocabulary", "confidence": 0.88, "reason": "Tests understanding descriptive statements"}],
+          "micro_skill": [{"name": "ms.reading.visual_comprehension", "confidence": 0.94, "reason": "Tests visual comprehension ability"}]
         },
         {
           "text": "What can you see on the tables in this picture?",
@@ -674,7 +709,9 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "B", "text": "Food dishes and beverages", "correct": true},
             {"label": "C", "text": "Only menus", "correct": false},
             {"label": "D", "text": "Nothing at all", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.reading.detail_observation", "confidence": 0.94, "reason": "Tests observing specific details in image"}, {"name": "ns.vocab.tableware_vocabulary", "confidence": 0.88, "reason": "Tests tableware and dining vocabulary"}],
+          "micro_skill": [{"name": "ms.reading.visual_comprehension", "confidence": 0.94, "reason": "Tests visual comprehension ability"}]
         }
       ],
       "teacher_tip": "After choosing answers, ask students to explain WHY they selected each answer by referencing specific details they can see in the image. This develops critical thinking and descriptive language skills."
@@ -687,16 +724,16 @@ export const getTrueFalsePictureExercise = () => `    {
       "time": 5,
       "instructions": "Look at the image carefully and decide if each statement is true or false based on what you can see.",
       "statements": [
-        {"text": "The restaurant in the picture appears to be busy with customers.", "isTrue": true},
-        {"text": "There is no food visible on any of the tables.", "isTrue": false},
-        {"text": "You can see staff members working in this restaurant.", "isTrue": true},
-        {"text": "The restaurant looks completely empty with no people.", "isTrue": false},
-        {"text": "There are multiple tables with customers in the image.", "isTrue": true},
-        {"text": "The picture shows only the kitchen area of a restaurant.", "isTrue": false},
-        {"text": "People in the image appear to be enjoying their meals.", "isTrue": true},
-        {"text": "The restaurant appears to be closed and dark.", "isTrue": false},
-        {"text": "You can see different types of dishes on the tables.", "isTrue": true},
-        {"text": "The image shows a very formal, expensive fine dining restaurant.", "isTrue": false}
+        {"text": "The restaurant in the picture appears to be busy with customers.", "isTrue": true, "nano_skill": [{"name": "ns.reading.visual_evidence_evaluation", "confidence": 0.95, "reason": "Tests evaluating 'busy' claim against visual"}, {"name": "ns.vocab.crowding_vocabulary", "confidence": 0.88, "reason": "Tests understanding 'busy with customers'"}], "micro_skill": [{"name": "ms.reading.visual_true_false_evaluation", "confidence": 0.95, "reason": "Tests true/false evaluation from image"}]},
+        {"text": "There is no food visible on any of the tables.", "isTrue": false, "nano_skill": [{"name": "ns.reading.negative_statement_verification", "confidence": 0.94, "reason": "Tests verifying negative statement 'no food'"}, {"name": "ns.grammar.negative_quantifier_no", "confidence": 0.88, "reason": "Tests understanding of 'no' as absolute negation"}], "micro_skill": [{"name": "ms.reading.visual_true_false_evaluation", "confidence": 0.94, "reason": "Tests true/false evaluation from image"}]},
+        {"text": "You can see staff members working in this restaurant.", "isTrue": true, "nano_skill": [{"name": "ns.reading.person_role_identification", "confidence": 0.93, "reason": "Tests identifying staff vs customers"}, {"name": "ns.vocab.restaurant_staff_vocabulary", "confidence": 0.88, "reason": "Tests staff-related vocabulary"}], "micro_skill": [{"name": "ms.reading.visual_true_false_evaluation", "confidence": 0.93, "reason": "Tests true/false evaluation from image"}]},
+        {"text": "The restaurant looks completely empty with no people.", "isTrue": false, "nano_skill": [{"name": "ns.reading.absolute_statement_verification", "confidence": 0.94, "reason": "Tests verifying absolute 'completely empty'"}, {"name": "ns.vocab.absolute_adverb_completely", "confidence": 0.88, "reason": "Tests understanding of 'completely' as absolute"}], "micro_skill": [{"name": "ms.reading.visual_true_false_evaluation", "confidence": 0.94, "reason": "Tests true/false evaluation from image"}]},
+        {"text": "There are multiple tables with customers in the image.", "isTrue": true, "nano_skill": [{"name": "ns.vocab.quantifier_multiple", "confidence": 0.94, "reason": "Tests understanding of 'multiple'"}, {"name": "ns.reading.counting_verification", "confidence": 0.88, "reason": "Tests verifying quantity claims"}], "micro_skill": [{"name": "ms.reading.visual_true_false_evaluation", "confidence": 0.94, "reason": "Tests true/false evaluation from image"}]},
+        {"text": "The picture shows only the kitchen area of a restaurant.", "isTrue": false, "nano_skill": [{"name": "ns.reading.scope_limitation_only", "confidence": 0.93, "reason": "Tests recognizing false scope limitation 'only'"}, {"name": "ns.vocab.restaurant_area_vocabulary", "confidence": 0.88, "reason": "Tests kitchen vs dining area vocabulary"}], "micro_skill": [{"name": "ms.reading.visual_true_false_evaluation", "confidence": 0.93, "reason": "Tests true/false evaluation from image"}]},
+        {"text": "People in the image appear to be enjoying their meals.", "isTrue": true, "nano_skill": [{"name": "ns.reading.emotion_inference_appear", "confidence": 0.93, "reason": "Tests inferring enjoyment from appearance"}, {"name": "ns.grammar.appear_to_be_pattern", "confidence": 0.88, "reason": "Tests 'appear to be' inference pattern"}], "micro_skill": [{"name": "ms.reading.visual_true_false_evaluation", "confidence": 0.93, "reason": "Tests true/false evaluation from image"}]},
+        {"text": "The restaurant appears to be closed and dark.", "isTrue": false, "nano_skill": [{"name": "ns.reading.lighting_inference", "confidence": 0.93, "reason": "Tests inferring open/closed from lighting"}, {"name": "ns.vocab.lighting_adjectives", "confidence": 0.88, "reason": "Tests lighting description vocabulary"}], "micro_skill": [{"name": "ms.reading.visual_true_false_evaluation", "confidence": 0.93, "reason": "Tests true/false evaluation from image"}]},
+        {"text": "You can see different types of dishes on the tables.", "isTrue": true, "nano_skill": [{"name": "ns.reading.variety_identification", "confidence": 0.93, "reason": "Tests identifying variety 'different types'"}, {"name": "ns.vocab.dish_variety_vocabulary", "confidence": 0.88, "reason": "Tests food variety vocabulary"}], "micro_skill": [{"name": "ms.reading.visual_true_false_evaluation", "confidence": 0.93, "reason": "Tests true/false evaluation from image"}]},
+        {"text": "The image shows a very formal, expensive fine dining restaurant.", "isTrue": false, "nano_skill": [{"name": "ns.reading.formality_level_inference", "confidence": 0.93, "reason": "Tests distinguishing formal vs casual"}, {"name": "ns.vocab.restaurant_formality_vocabulary", "confidence": 0.88, "reason": "Tests fine dining vocabulary"}], "micro_skill": [{"name": "ms.reading.visual_true_false_evaluation", "confidence": 0.93, "reason": "Tests true/false evaluation from image"}]}
       ],
       "teacher_tip": "After completing the exercise, ask students to provide evidence from the image to support their true/false answers. This helps them practice giving detailed descriptions and justifications."
     }`;
@@ -708,16 +745,16 @@ export const getAnswerQuestionsPictureExercise = () => `    {
       "time": 8,
       "instructions": "Look at the image and answer these questions based on what you can see and your personal opinions.",
       "questions": [
-        {"question": "Describe the atmosphere of the restaurant you see in the picture. Use at least 3 adjectives.", "focus": "Descriptive vocabulary and observation"},
-        {"question": "What types of food can you identify in the image? Compare them to food you enjoy eating.", "focus": "Food vocabulary and comparisons"},
-        {"question": "How many people can you see in the restaurant? What do you think they are doing?", "focus": "Present continuous and speculation"},
-        {"question": "Would you like to eat at this restaurant? Why or why not? Give specific reasons.", "focus": "Expressing preferences and justification"},
-        {"question": "Compare this restaurant to your favorite restaurant. What's similar and what's different?", "focus": "Comparatives and contrasts"},
-        {"question": "What can you say about the service style based on what you see in the picture?", "focus": "Inference and deduction"},
-        {"question": "Imagine you are eating at this restaurant. What would you order and why?", "focus": "Hypothetical situations and food vocabulary"},
-        {"question": "What time of day do you think this picture was taken? What details make you think that?", "focus": "Evidence-based reasoning"},
-        {"question": "How does the restaurant in the picture compare to typical restaurants in your country?", "focus": "Cultural comparison and description"},
-        {"question": "If you were the manager of this restaurant, what would you improve and what would you keep the same?", "focus": "Conditional and critical thinking"}
+        {"question": "Describe the atmosphere of the restaurant you see in the picture. Use at least 3 adjectives.", "focus": "Descriptive vocabulary and observation", "nano_skill": [{"name": "ns.vocab.atmosphere_adjectives", "confidence": 0.95, "reason": "Tests using multiple atmosphere adjectives"}, {"name": "ns.speaking.detailed_description", "confidence": 0.90, "reason": "Tests giving detailed descriptions"}], "micro_skill": [{"name": "ms.speaking.picture_based_response", "confidence": 0.95, "reason": "Tests responding to picture-based questions"}]},
+        {"question": "What types of food can you identify in the image? Compare them to food you enjoy eating.", "focus": "Food vocabulary and comparisons", "nano_skill": [{"name": "ns.vocab.food_identification", "confidence": 0.94, "reason": "Tests identifying food types"}, {"name": "ns.grammar.comparative_structures", "confidence": 0.88, "reason": "Tests comparative language for food"}], "micro_skill": [{"name": "ms.speaking.picture_based_response", "confidence": 0.94, "reason": "Tests responding to picture-based questions"}]},
+        {"question": "How many people can you see in the restaurant? What do you think they are doing?", "focus": "Present continuous and speculation", "nano_skill": [{"name": "ns.grammar.present_continuous_action", "confidence": 0.94, "reason": "Tests present continuous for ongoing actions"}, {"name": "ns.grammar.think_speculation", "confidence": 0.88, "reason": "Tests 'I think' for speculation"}], "micro_skill": [{"name": "ms.speaking.picture_based_response", "confidence": 0.94, "reason": "Tests responding to picture-based questions"}]},
+        {"question": "Would you like to eat at this restaurant? Why or why not? Give specific reasons.", "focus": "Expressing preferences and justification", "nano_skill": [{"name": "ns.grammar.would_like_preference", "confidence": 0.94, "reason": "Tests 'would like' for preferences"}, {"name": "ns.speaking.reason_giving", "confidence": 0.88, "reason": "Tests giving reasons for opinions"}], "micro_skill": [{"name": "ms.speaking.picture_based_response", "confidence": 0.94, "reason": "Tests responding to picture-based questions"}]},
+        {"question": "Compare this restaurant to your favorite restaurant. What's similar and what's different?", "focus": "Comparatives and contrasts", "nano_skill": [{"name": "ns.grammar.comparative_similar_different", "confidence": 0.94, "reason": "Tests 'similar to' and 'different from'"}, {"name": "ns.speaking.comparison_structure", "confidence": 0.88, "reason": "Tests structured comparison"}], "micro_skill": [{"name": "ms.speaking.picture_based_response", "confidence": 0.94, "reason": "Tests responding to picture-based questions"}]},
+        {"question": "What can you say about the service style based on what you see in the picture?", "focus": "Inference and deduction", "nano_skill": [{"name": "ns.reading.visual_inference", "confidence": 0.93, "reason": "Tests making inferences from image"}, {"name": "ns.vocab.service_style_vocabulary", "confidence": 0.88, "reason": "Tests service style vocabulary"}], "micro_skill": [{"name": "ms.speaking.picture_based_response", "confidence": 0.93, "reason": "Tests responding to picture-based questions"}]},
+        {"question": "Imagine you are eating at this restaurant. What would you order and why?", "focus": "Hypothetical situations and food vocabulary", "nano_skill": [{"name": "ns.grammar.second_conditional_imagine", "confidence": 0.94, "reason": "Tests hypothetical with 'imagine'"}, {"name": "ns.grammar.would_hypothetical", "confidence": 0.88, "reason": "Tests 'would' for hypothetical actions"}], "micro_skill": [{"name": "ms.speaking.picture_based_response", "confidence": 0.94, "reason": "Tests responding to picture-based questions"}]},
+        {"question": "What time of day do you think this picture was taken? What details make you think that?", "focus": "Evidence-based reasoning", "nano_skill": [{"name": "ns.reading.evidence_based_reasoning", "confidence": 0.93, "reason": "Tests supporting opinion with evidence"}, {"name": "ns.grammar.make_you_think_pattern", "confidence": 0.88, "reason": "Tests 'make you think' causative pattern"}], "micro_skill": [{"name": "ms.speaking.picture_based_response", "confidence": 0.93, "reason": "Tests responding to picture-based questions"}]},
+        {"question": "How does the restaurant in the picture compare to typical restaurants in your country?", "focus": "Cultural comparison and description", "nano_skill": [{"name": "ns.grammar.comparative_structures", "confidence": 0.93, "reason": "Tests comparative for cultural comparison"}, {"name": "ns.speaking.cultural_comparison", "confidence": 0.88, "reason": "Tests cultural comparison skills"}], "micro_skill": [{"name": "ms.speaking.picture_based_response", "confidence": 0.93, "reason": "Tests responding to picture-based questions"}]},
+        {"question": "If you were the manager of this restaurant, what would you improve and what would you keep the same?", "focus": "Conditional and critical thinking", "nano_skill": [{"name": "ns.grammar.second_conditional_if_were", "confidence": 0.94, "reason": "Tests second conditional 'if you were'"}, {"name": "ns.speaking.suggestion_giving", "confidence": 0.88, "reason": "Tests giving improvement suggestions"}], "micro_skill": [{"name": "ms.speaking.picture_based_response", "confidence": 0.94, "reason": "Tests responding to picture-based questions"}]}
       ],
       "teacher_tip": "Encourage students to refer directly to specific visual details in the picture when answering. This develops their ability to provide evidence and detailed descriptions in English."
     }`;
