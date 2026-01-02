@@ -11,11 +11,11 @@ export const getReadingExercise = () => `    {
       "instructions": "Read the following text and answer the questions below.",
       "content": "New York City is famous for its restaurants. People from all over the world live there, so the city offers many different types of food. You can find Italian, Chinese, Mexican, Japanese, Greek, Thai, Indian, and many more international cuisines. American-style diners and fast food restaurants are also very popular.\\nMost restaurants in New York have menus that include appetizers, main dishes, and desserts. Appetizers are small dishes that people eat before the main meal, such as soups, salads, or garlic bread. Main dishes are usually bigger and include meat, fish, or vegetarian options, often served with rice, potatoes, or pasta. Desserts like cheesecake, brownies, or ice cream are very common.\\nSome of the most popular types of food in New York include pizza, burgers, sushi, and pasta. People also enjoy trying food from food trucks, especially for lunch. One of the most famous dishes in the United States, and especially in New York, is the New York-style pizza. It's a thin, wide slice of pizza, usually eaten with your hands.\\nOf course, not every restaurant visit is perfect. Some common complaints that people make in New York restaurants include:\\n\\"The food is cold.\\"\\n\\"This is not what I ordered.\\"\\n\\"The portion is too small.\\"\\n\\"I waited too long for my food.\\"\\n\\"The bill is incorrect.\\"\\nLearning how to order food and make polite complaints in English is very useful if you ever visit New York or work in customer service.",
       "questions": [
-        {"text": "Why is there such a wide variety of food in New York City restaurants?", "answer": "Because people from all over the world live in New York, so the city offers many different types of international cuisine."},
-        {"text": "What are some typical examples of appetizers, main dishes, and desserts mentioned in the text?", "answer": "Appetizers: soups, salads, garlic bread; Main dishes: meat, fish, or vegetarian options with rice, potatoes, or pasta; Desserts: cheesecake, brownies, ice cream."},
-        {"text": "What is special about New York-style pizza?", "answer": "It is a thin, wide slice of pizza, usually eaten with your hands."},
-        {"text": "What are some of the most popular international cuisines in New York?", "answer": "Italian, Chinese, Mexican, Japanese, Greek, Thai, and Indian cuisines."},
-        {"text": "What are some common complaints that customers make in New York restaurants?", "answer": "The food is cold, This is not what I ordered, The portion is too small, I waited too long for my food, and The bill is incorrect."}
+        {"text": "Why is there such a wide variety of food in New York City restaurants?", "answer": "Because people from all over the world live in New York, so the city offers many different types of international cuisine.", "nano_skill": [{"name": "ns.reading.main_idea_extraction", "confidence": 0.95, "reason": "Requires identifying the main cause-effect relationship from the text"}, {"name": "ns.reading.explicit_detail_location", "confidence": 0.90, "reason": "Answer is directly stated in the first paragraph"}], "micro_skill": [{"name": "ms.reading.comprehension", "confidence": 0.95, "reason": "Tests understanding of text content and main ideas"}]},
+        {"text": "What are some typical examples of appetizers, main dishes, and desserts mentioned in the text?", "answer": "Appetizers: soups, salads, garlic bread; Main dishes: meat, fish, or vegetarian options with rice, potatoes, or pasta; Desserts: cheesecake, brownies, ice cream.", "nano_skill": [{"name": "ns.reading.categorization_from_text", "confidence": 0.92, "reason": "Requires grouping information into given categories"}, {"name": "ns.reading.multiple_detail_extraction", "confidence": 0.90, "reason": "Requires finding multiple specific details from text"}], "micro_skill": [{"name": "ms.reading.detail_comprehension", "confidence": 0.92, "reason": "Tests ability to locate and organize specific information"}]},
+        {"text": "What is special about New York-style pizza?", "answer": "It is a thin, wide slice of pizza, usually eaten with your hands.", "nano_skill": [{"name": "ns.reading.characteristic_identification", "confidence": 0.93, "reason": "Requires identifying distinctive features from description"}, {"name": "ns.reading.explicit_detail_location", "confidence": 0.88, "reason": "Answer is directly stated in the text"}], "micro_skill": [{"name": "ms.reading.detail_comprehension", "confidence": 0.93, "reason": "Tests understanding of specific descriptive details"}]},
+        {"text": "What are some of the most popular international cuisines in New York?", "answer": "Italian, Chinese, Mexican, Japanese, Greek, Thai, and Indian cuisines.", "nano_skill": [{"name": "ns.reading.list_extraction", "confidence": 0.95, "reason": "Requires identifying a list of items from text"}, {"name": "ns.vocab.cuisine_nationality_terms", "confidence": 0.85, "reason": "Tests recognition of nationality-based cuisine vocabulary"}], "micro_skill": [{"name": "ms.reading.detail_comprehension", "confidence": 0.95, "reason": "Tests ability to locate enumerated information"}]},
+        {"text": "What are some common complaints that customers make in New York restaurants?", "answer": "The food is cold, This is not what I ordered, The portion is too small, I waited too long for my food, and The bill is incorrect.", "nano_skill": [{"name": "ns.reading.list_extraction", "confidence": 0.94, "reason": "Requires identifying multiple examples from text"}, {"name": "ns.vocab.complaint_expressions", "confidence": 0.88, "reason": "Tests understanding of complaint language patterns"}], "micro_skill": [{"name": "ms.reading.detail_comprehension", "confidence": 0.94, "reason": "Tests ability to locate and recall specific quoted examples"}]}
       ],
       "teacher_tip": "Use the comprehension questions as a starting point to ask more personal questions related to your student's life and experiences. Encourage them to share their opinions on the topics and situations mentioned in the text."
     }`;
@@ -27,16 +27,16 @@ export const getTrueFalseExercise = () => `    {
       "time": 5,
       "instructions": "Read each statement about the text and decide if it is true or false.",
       "statements": [
-        {"text": "New York City offers many international cuisines because people from all over the world live there.", "isTrue": true},
-        {"text": "American-style diners are not popular in New York.", "isTrue": false},
-        {"text": "Appetizers are usually bigger than main dishes.", "isTrue": false},
-        {"text": "New York-style pizza is thick and eaten with a fork and knife.", "isTrue": false},
-        {"text": "Food trucks are especially popular for lunch in New York.", "isTrue": true},
-        {"text": "All restaurant visits in New York are perfect according to the text.", "isTrue": false},
-        {"text": "One common complaint is that the food arrives cold.", "isTrue": true},
-        {"text": "Desserts like cheesecake and brownies are common in New York restaurants.", "isTrue": true},
-        {"text": "The text mentions that learning to complain politely is useful for customer service work.", "isTrue": true},
-        {"text": "Main dishes in New York restaurants never include vegetarian options.", "isTrue": false}
+        {"text": "New York City offers many international cuisines because people from all over the world live there.", "isTrue": true, "nano_skill": [{"name": "ns.reading.cause_effect_verification", "confidence": 0.94, "reason": "Verifies understanding of causal relationship from text"}, {"name": "ns.reading.paraphrase_recognition", "confidence": 0.88, "reason": "Statement paraphrases original text"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.94, "reason": "Tests ability to verify statements against source text"}]},
+        {"text": "American-style diners are not popular in New York.", "isTrue": false, "nano_skill": [{"name": "ns.reading.negation_detection", "confidence": 0.92, "reason": "Requires detecting false negation of stated fact"}, {"name": "ns.reading.explicit_contradiction", "confidence": 0.90, "reason": "Statement contradicts explicit information in text"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.92, "reason": "Tests recognition of false statements"}]},
+        {"text": "Appetizers are usually bigger than main dishes.", "isTrue": false, "nano_skill": [{"name": "ns.reading.size_comparison_verification", "confidence": 0.93, "reason": "Requires verifying comparative size relationship"}, {"name": "ns.reading.explicit_contradiction", "confidence": 0.88, "reason": "Statement reverses the actual relationship"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.93, "reason": "Tests detection of reversed comparisons"}]},
+        {"text": "New York-style pizza is thick and eaten with a fork and knife.", "isTrue": false, "nano_skill": [{"name": "ns.reading.characteristic_verification", "confidence": 0.95, "reason": "Requires verifying specific characteristics against text"}, {"name": "ns.reading.multiple_error_detection", "confidence": 0.90, "reason": "Statement contains multiple incorrect details"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.95, "reason": "Tests recognition of factually incorrect details"}]},
+        {"text": "Food trucks are especially popular for lunch in New York.", "isTrue": true, "nano_skill": [{"name": "ns.reading.time_context_verification", "confidence": 0.92, "reason": "Verifies time-specific detail from text"}, {"name": "ns.reading.explicit_detail_matching", "confidence": 0.90, "reason": "Statement matches explicit information"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.92, "reason": "Tests accurate recall of time-related details"}]},
+        {"text": "All restaurant visits in New York are perfect according to the text.", "isTrue": false, "nano_skill": [{"name": "ns.reading.absolute_statement_detection", "confidence": 0.94, "reason": "Requires recognizing that 'all' creates a false absolute"}, {"name": "ns.reading.implicit_negation", "confidence": 0.88, "reason": "Text implies the opposite through complaint examples"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.94, "reason": "Tests recognition of overgeneralizations"}]},
+        {"text": "One common complaint is that the food arrives cold.", "isTrue": true, "nano_skill": [{"name": "ns.reading.list_item_verification", "confidence": 0.93, "reason": "Verifies one item from a list in the text"}, {"name": "ns.reading.exact_wording_match", "confidence": 0.90, "reason": "Statement closely matches quoted text"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.93, "reason": "Tests recall of specific listed examples"}]},
+        {"text": "Desserts like cheesecake and brownies are common in New York restaurants.", "isTrue": true, "nano_skill": [{"name": "ns.reading.example_verification", "confidence": 0.92, "reason": "Verifies specific examples mentioned in text"}, {"name": "ns.reading.category_membership", "confidence": 0.88, "reason": "Tests understanding of items belonging to dessert category"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.92, "reason": "Tests accurate recall of examples"}]},
+        {"text": "The text mentions that learning to complain politely is useful for customer service work.", "isTrue": true, "nano_skill": [{"name": "ns.reading.purpose_statement_verification", "confidence": 0.91, "reason": "Verifies stated purpose from conclusion"}, {"name": "ns.reading.paraphrase_recognition", "confidence": 0.87, "reason": "Statement paraphrases concluding sentence"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.91, "reason": "Tests understanding of stated purposes"}]},
+        {"text": "Main dishes in New York restaurants never include vegetarian options.", "isTrue": false, "nano_skill": [{"name": "ns.reading.absolute_statement_detection", "confidence": 0.94, "reason": "Requires recognizing 'never' creates false absolute"}, {"name": "ns.reading.explicit_contradiction", "confidence": 0.90, "reason": "Text explicitly mentions vegetarian options"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.94, "reason": "Tests detection of false absolute statements"}]}
       ],
       "teacher_tip": "Use this exercise to check reading comprehension and ensure students understood the key details from the text."
     }`;
@@ -48,16 +48,16 @@ export const getMatchingExercise = () => `    {
       "time": 7,
       "instructions": "Match each term with its correct definition.",
       "items": [
-        {"term": "Appetizer", "definition": "A small dish served before the main course to stimulate the appetite."},
-        {"term": "Cuisine", "definition": "A style or method of cooking, especially as characteristic of a particular country or region."},
-        {"term": "Portion", "definition": "The amount of food served to one person at a meal."},
-        {"term": "Incorrect", "definition": "Not accurate or wrong; used especially in the context of errors with orders or bills."},
-        {"term": "Complaint", "definition": "A statement that something is wrong or not satisfactory, especially in service or quality."},
-        {"term": "Fine dining", "definition": "A high-end, expensive restaurant experience offering exceptional food, service, and atmosphere."},
-        {"term": "Reservation", "definition": "An arrangement made in advance to secure a table at a restaurant."},
-        {"term": "Signature dish", "definition": "A unique or famous meal that represents a restaurant or chef's style."},
-        {"term": "Undercooked", "definition": "Food that has not been cooked long enough and may be unsafe or unpleasant to eat."},
-        {"term": "Customer service", "definition": "The assistance and advice provided by a restaurant or business to people who use its services."}
+        {"term": "Appetizer", "definition": "A small dish served before the main course to stimulate the appetite.", "nano_skill": [{"name": "ns.vocab.restaurant_terminology", "confidence": 0.95, "reason": "Tests knowledge of meal course vocabulary"}, {"name": "ns.vocab.definition_matching", "confidence": 0.90, "reason": "Requires matching term to its definition"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.95, "reason": "Tests vocabulary comprehension through matching"}]},
+        {"term": "Cuisine", "definition": "A style or method of cooking, especially as characteristic of a particular country or region.", "nano_skill": [{"name": "ns.vocab.food_culture_terms", "confidence": 0.93, "reason": "Tests understanding of culinary terminology"}, {"name": "ns.vocab.abstract_noun_meaning", "confidence": 0.88, "reason": "Requires understanding abstract concept definition"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.93, "reason": "Tests matching abstract vocabulary to definition"}]},
+        {"term": "Portion", "definition": "The amount of food served to one person at a meal.", "nano_skill": [{"name": "ns.vocab.quantity_terms", "confidence": 0.92, "reason": "Tests understanding of portion/quantity vocabulary"}, {"name": "ns.vocab.restaurant_terminology", "confidence": 0.88, "reason": "Common restaurant context word"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.92, "reason": "Tests food quantity vocabulary"}]},
+        {"term": "Incorrect", "definition": "Not accurate or wrong; used especially in the context of errors with orders or bills.", "nano_skill": [{"name": "ns.vocab.negative_adjective_meaning", "confidence": 0.94, "reason": "Tests understanding of negative quality adjective"}, {"name": "ns.vocab.complaint_vocabulary", "confidence": 0.88, "reason": "Word commonly used in complaint contexts"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.94, "reason": "Tests adjective vocabulary comprehension"}]},
+        {"term": "Complaint", "definition": "A statement that something is wrong or not satisfactory, especially in service or quality.", "nano_skill": [{"name": "ns.vocab.service_interaction_terms", "confidence": 0.95, "reason": "Tests customer service vocabulary"}, {"name": "ns.vocab.abstract_noun_meaning", "confidence": 0.90, "reason": "Requires understanding abstract concept"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.95, "reason": "Tests service-related vocabulary"}]},
+        {"term": "Fine dining", "definition": "A high-end, expensive restaurant experience offering exceptional food, service, and atmosphere.", "nano_skill": [{"name": "ns.vocab.compound_noun_meaning", "confidence": 0.93, "reason": "Tests understanding of compound noun phrase"}, {"name": "ns.vocab.restaurant_classification", "confidence": 0.90, "reason": "Tests restaurant type categorization"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.93, "reason": "Tests restaurant classification vocabulary"}]},
+        {"term": "Reservation", "definition": "An arrangement made in advance to secure a table at a restaurant.", "nano_skill": [{"name": "ns.vocab.booking_terminology", "confidence": 0.94, "reason": "Tests reservation/booking vocabulary"}, {"name": "ns.vocab.restaurant_procedures", "confidence": 0.88, "reason": "Common restaurant procedure term"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.94, "reason": "Tests procedural vocabulary"}]},
+        {"term": "Signature dish", "definition": "A unique or famous meal that represents a restaurant or chef's style.", "nano_skill": [{"name": "ns.vocab.compound_noun_meaning", "confidence": 0.92, "reason": "Tests understanding of compound noun phrase"}, {"name": "ns.vocab.culinary_concept_terms", "confidence": 0.88, "reason": "Tests specialized culinary vocabulary"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.92, "reason": "Tests culinary terminology"}]},
+        {"term": "Undercooked", "definition": "Food that has not been cooked long enough and may be unsafe or unpleasant to eat.", "nano_skill": [{"name": "ns.vocab.prefix_under_meaning", "confidence": 0.94, "reason": "Tests understanding of under- prefix meaning"}, {"name": "ns.vocab.food_quality_adjectives", "confidence": 0.90, "reason": "Tests food quality description vocabulary"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.94, "reason": "Tests prefixed adjective comprehension"}]},
+        {"term": "Customer service", "definition": "The assistance and advice provided by a restaurant or business to people who use its services.", "nano_skill": [{"name": "ns.vocab.compound_noun_meaning", "confidence": 0.93, "reason": "Tests understanding of compound noun phrase"}, {"name": "ns.vocab.business_terminology", "confidence": 0.88, "reason": "Common business/service industry term"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.93, "reason": "Tests service industry vocabulary"}]}
       ],
       "teacher_tip": "Before the matching activity, introduce and pronounce each term to ensure students feel confident recognizing and understanding them. If needed, translate the most difficult or abstract vocabulary terms into the student's native language. After the exercise, assign students a follow-up task to write 10 original sentences using the new vocabulary."
     }`;
@@ -70,16 +70,16 @@ export const getFillInBlanksExercise = () => `    {
       "instructions": "Complete each sentence with the correct word from the box.",
       "word_bank": ["famous", "international", "incorrect", "small", "popular", "cold", "different", "thin", "expensive", "common"],
       "sentences": [
-        {"text": "New York is _____ for its wide variety of restaurants and street food.", "answer": "famous"},
-        {"text": "The city offers many _____ cuisines, like Thai, Italian, and Indian.", "answer": "international"},
-        {"text": "Customers often complain when their bill is _____.", "answer": "incorrect"},
-        {"text": "Appetizers are usually _____ dishes served before the main course.", "answer": "small"},
-        {"text": "Pizza is one of the most _____ foods in New York.", "answer": "popular"},
-        {"text": "One common complaint is that the food arrives _____.", "answer": "cold"},
-        {"text": "You can try food from many _____ cultures in New York.", "answer": "different"},
-        {"text": "New York-style pizza is known for its wide and _____ crust.", "answer": "thin"},
-        {"text": "Some restaurants are very _____, but they offer high-quality service.", "answer": "expensive"},
-        {"text": "It is _____ to leave a tip in American restaurants.", "answer": "common"}
+        {"text": "New York is _____ for its wide variety of restaurants and street food.", "answer": "famous", "nano_skill": [{"name": "ns.vocab.adjective_collocation_for", "confidence": 0.94, "reason": "Tests 'famous for' collocation"}, {"name": "ns.vocab.descriptive_adjective_selection", "confidence": 0.90, "reason": "Requires selecting appropriate descriptive adjective"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.94, "reason": "Tests vocabulary selection in context"}]},
+        {"text": "The city offers many _____ cuisines, like Thai, Italian, and Indian.", "answer": "international", "nano_skill": [{"name": "ns.vocab.nationality_category_adjective", "confidence": 0.93, "reason": "Tests adjective describing origin/nationality scope"}, {"name": "ns.vocab.cuisine_collocations", "confidence": 0.88, "reason": "Tests common cuisine modifier"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.93, "reason": "Tests appropriate modifier selection"}]},
+        {"text": "Customers often complain when their bill is _____.", "answer": "incorrect", "nano_skill": [{"name": "ns.vocab.negative_adjective_context", "confidence": 0.92, "reason": "Tests negative adjective in complaint context"}, {"name": "ns.vocab.accuracy_vocabulary", "confidence": 0.88, "reason": "Tests word describing accuracy/correctness"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.92, "reason": "Tests selecting appropriate complaint vocabulary"}]},
+        {"text": "Appetizers are usually _____ dishes served before the main course.", "answer": "small", "nano_skill": [{"name": "ns.vocab.size_adjective_selection", "confidence": 0.94, "reason": "Tests size-describing adjective"}, {"name": "ns.vocab.food_portion_vocabulary", "confidence": 0.88, "reason": "Tests portion-related vocabulary"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.94, "reason": "Tests adjective selection for food description"}]},
+        {"text": "Pizza is one of the most _____ foods in New York.", "answer": "popular", "nano_skill": [{"name": "ns.vocab.popularity_adjective", "confidence": 0.95, "reason": "Tests adjective describing widespread appeal"}, {"name": "ns.grammar.superlative_context", "confidence": 0.85, "reason": "Appears in superlative construction"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.95, "reason": "Tests vocabulary in superlative context"}]},
+        {"text": "One common complaint is that the food arrives _____.", "answer": "cold", "nano_skill": [{"name": "ns.vocab.temperature_adjective", "confidence": 0.94, "reason": "Tests temperature-describing adjective"}, {"name": "ns.vocab.complaint_vocabulary", "confidence": 0.90, "reason": "Tests common restaurant complaint term"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.94, "reason": "Tests sensory adjective selection"}]},
+        {"text": "You can try food from many _____ cultures in New York.", "answer": "different", "nano_skill": [{"name": "ns.vocab.variety_adjective", "confidence": 0.92, "reason": "Tests adjective expressing variety/diversity"}, {"name": "ns.vocab.culture_collocations", "confidence": 0.88, "reason": "Tests modifier for 'cultures'"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.92, "reason": "Tests diversity vocabulary"}]},
+        {"text": "New York-style pizza is known for its wide and _____ crust.", "answer": "thin", "nano_skill": [{"name": "ns.vocab.physical_dimension_adjective", "confidence": 0.94, "reason": "Tests adjective describing physical thickness"}, {"name": "ns.vocab.food_texture_vocabulary", "confidence": 0.88, "reason": "Tests food physical description"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.94, "reason": "Tests physical description vocabulary"}]},
+        {"text": "Some restaurants are very _____, but they offer high-quality service.", "answer": "expensive", "nano_skill": [{"name": "ns.vocab.price_adjective", "confidence": 0.93, "reason": "Tests adjective describing cost/price"}, {"name": "ns.vocab.contrast_context_understanding", "confidence": 0.88, "reason": "Word creates contrast with quality"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.93, "reason": "Tests price vocabulary in contrast"}]},
+        {"text": "It is _____ to leave a tip in American restaurants.", "answer": "common", "nano_skill": [{"name": "ns.vocab.frequency_adjective", "confidence": 0.92, "reason": "Tests adjective describing usual practice"}, {"name": "ns.vocab.cultural_practice_vocabulary", "confidence": 0.88, "reason": "Tests vocabulary for customs/practices"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.92, "reason": "Tests cultural practice vocabulary"}]}
       ],
       "teacher_tip": "You can use this exercise in the next class as a sentence translation activity—provide the sentences in the student's native language and ask them to translate them into English to practice the new vocabulary."
     }`;
@@ -98,7 +98,9 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "B", "text": "better", "correct": true},
             {"label": "C", "text": "best", "correct": false},
             {"label": "D", "text": "the better", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.grammar.comparative_irregular_good", "confidence": 0.95, "reason": "Tests irregular comparative form of 'good'"}, {"name": "ns.grammar.comparative_than_construction", "confidence": 0.90, "reason": "Tests comparative + than structure"}],
+          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.95, "reason": "Tests selection of correct comparative form"}]
         },
         {
           "text": "That was the ______ meal I've ever had!",
@@ -107,7 +109,9 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "B", "text": "more delicious", "correct": false},
             {"label": "C", "text": "deliciouser", "correct": false},
             {"label": "D", "text": "deliciousest", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.grammar.superlative_long_adjective", "confidence": 0.94, "reason": "Tests 'most + adjective' superlative form"}, {"name": "ns.grammar.superlative_the_construction", "confidence": 0.90, "reason": "Tests 'the + superlative' structure"}],
+          "micro_skill": [{"name": "ms.grammar.superlative_forms", "confidence": 0.94, "reason": "Tests correct superlative formation"}]
         },
         {
           "text": "Chinese food is usually ______ than British food.",
@@ -116,7 +120,9 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "B", "text": "the spiciest", "correct": false},
             {"label": "C", "text": "spicier", "correct": true},
             {"label": "D", "text": "most spicy", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.grammar.comparative_y_to_ier", "confidence": 0.95, "reason": "Tests -y to -ier comparative transformation"}, {"name": "ns.grammar.comparative_than_construction", "confidence": 0.88, "reason": "Tests comparative + than structure"}],
+          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.95, "reason": "Tests spelling rule for -y ending adjectives"}]
         },
         {
           "text": "That's the ______ restaurant in our neighborhood.",
@@ -125,7 +131,9 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "B", "text": "most expensive", "correct": true},
             {"label": "C", "text": "more expensive", "correct": false},
             {"label": "D", "text": "expensivest", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.grammar.superlative_long_adjective", "confidence": 0.94, "reason": "Tests 'most + adjective' for long adjectives"}, {"name": "ns.grammar.superlative_context_in", "confidence": 0.88, "reason": "Tests superlative in 'the... in' context"}],
+          "micro_skill": [{"name": "ms.grammar.superlative_forms", "confidence": 0.94, "reason": "Tests recognition of long adjective superlative rule"}]
         },
         {
           "text": "John eats ______ than his brother.",
@@ -134,7 +142,9 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "B", "text": "the slowest", "correct": false},
             {"label": "C", "text": "slow", "correct": false},
             {"label": "D", "text": "more slowly", "correct": true}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.grammar.comparative_adverb_ly", "confidence": 0.94, "reason": "Tests 'more + adverb' comparative for -ly adverbs"}, {"name": "ns.grammar.adverb_vs_adjective", "confidence": 0.88, "reason": "Tests using adverb (slowly) not adjective (slow)"}],
+          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.94, "reason": "Tests adverb comparative formation"}]
         },
         {
           "text": "This soup is ______ than the one I made yesterday.",
@@ -143,7 +153,9 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "B", "text": "the tastiest", "correct": false},
             {"label": "C", "text": "tasty", "correct": false},
             {"label": "D", "text": "more tastiest", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.grammar.comparative_y_to_ier", "confidence": 0.95, "reason": "Tests -y to -ier comparative rule"}, {"name": "ns.grammar.double_comparative_avoidance", "confidence": 0.88, "reason": "Tests avoiding 'more + -er' error"}],
+          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.95, "reason": "Tests correct short adjective comparative"}]
         },
         {
           "text": "Of all the dishes on the menu, the lasagna is the ______.",
@@ -152,7 +164,9 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "B", "text": "better", "correct": false},
             {"label": "C", "text": "best", "correct": true},
             {"label": "D", "text": "more better", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.grammar.superlative_irregular_good", "confidence": 0.95, "reason": "Tests irregular superlative 'best'"}, {"name": "ns.grammar.superlative_of_all", "confidence": 0.90, "reason": "Tests superlative in 'of all' context"}],
+          "micro_skill": [{"name": "ms.grammar.superlative_forms", "confidence": 0.95, "reason": "Tests irregular superlative recognition"}]
         },
         {
           "text": "Pizza is ______ than soup for a quick lunch.",
@@ -161,7 +175,9 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "B", "text": "more convenient", "correct": true},
             {"label": "C", "text": "convenientest", "correct": false},
             {"label": "D", "text": "most convenient", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.grammar.comparative_long_adjective", "confidence": 0.94, "reason": "Tests 'more + adjective' for long adjectives"}, {"name": "ns.grammar.comparative_than_construction", "confidence": 0.88, "reason": "Tests comparative + than structure"}],
+          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.94, "reason": "Tests long adjective comparative rule"}]
         },
         {
           "text": "This is the ______ café in town. Everyone loves it!",
@@ -170,7 +186,9 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "B", "text": "popular", "correct": false},
             {"label": "C", "text": "popularest", "correct": false},
             {"label": "D", "text": "most popular", "correct": true}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.grammar.superlative_long_adjective", "confidence": 0.94, "reason": "Tests 'most + adjective' superlative"}, {"name": "ns.grammar.superlative_context_in", "confidence": 0.88, "reason": "Tests superlative in 'the... in town' context"}],
+          "micro_skill": [{"name": "ms.grammar.superlative_forms", "confidence": 0.94, "reason": "Tests correct superlative for multi-syllable adjectives"}]
         },
         {
           "text": "The weather today is much ______ than it was yesterday.",
@@ -179,7 +197,9 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "B", "text": "the warmest", "correct": false},
             {"label": "C", "text": "warm", "correct": false},
             {"label": "D", "text": "most warm", "correct": false}
-          ]
+          ],
+          "nano_skill": [{"name": "ns.grammar.comparative_short_adjective_er", "confidence": 0.95, "reason": "Tests -er comparative for short adjectives"}, {"name": "ns.grammar.comparative_intensifier_much", "confidence": 0.88, "reason": "Tests 'much + comparative' intensification"}],
+          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.95, "reason": "Tests basic comparative formation"}]
         }
       ],
       "teacher_tip": "After choosing an answer, ask students to explain why they picked it. This encourages deeper thinking and grammar awareness. Show tricky or commonly confused forms (more better, the most nicest) and explain why they are incorrect."
