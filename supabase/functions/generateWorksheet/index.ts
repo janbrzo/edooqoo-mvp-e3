@@ -140,7 +140,7 @@ serve(async (req) => {
 
       // ONE request to OpenAI for all exercises
       const batchResponse = await openai.chat.completions.create({
-        model: "gpt-5-mini-2025-08-07",
+        model: "gpt-5-nano-2025-08-07", //"gpt-5-mini-2025-08-07"
         temperature: 1,
         messages: [
           { role: "system", content: batchSystemMessage },
@@ -286,7 +286,7 @@ serve(async (req) => {
     console.log("🔵 HEARTBEAT: Starting OpenAI API call", {
       timestamp: new Date().toISOString(),
       elapsedSinceStart: Math.round((openaiStartTime - generationStartTime) / 1000) + "s",
-      model: "gpt-5-mini-2025-08-07", //gpt-4.1-2025-04-14
+      model: "gpt-5-nano-2025-08-07", //"gpt-5-mini-2025-08-07" gpt-4.1-2025-04-14
       exerciseCount,
       promptLength: sanitizedPrompt.length,
     });
@@ -319,7 +319,7 @@ serve(async (req) => {
           // OpenAI STREAMING call
           console.log("🔵 Starting OpenAI streaming...");
           const stream = await openai.chat.completions.create({
-            model: "gpt-5-mini-2025-08-07",
+            model: "gpt-5-nano-2025-08-07", //"gpt-5-mini-2025-08-07"
             temperature: 1,
             messages: [
               { role: "system", content: systemMessage },
@@ -457,7 +457,7 @@ serve(async (req) => {
 
     // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({
-      model: "gpt-5-mini-2025-08-07", // gpt-4.1-2025-04-14 Changed back to gpt-4o i można gpt-4.1-2025-04-14
+      model: "gpt-5-nano-2025-08-07", //"gpt-5-mini-2025-08-07" gpt-4.1-2025-04-14 Changed back to gpt-4o i można gpt-4.1-2025-04-14
       temperature: 1, //0.2
       messages: [
         {
@@ -687,7 +687,7 @@ serve(async (req) => {
      • Database Save:      ${!isRegeneration ? "See DB logs above" : "Skipped (regeneration)"}
   
   🎯 Configuration:
-     • Model:              gpt-5-mini-2025-08-07
+     • Model:              "gpt-5-nano-2025-08-07" //"gpt-5-mini-2025-08-07"
      • Exercise Count:     ${exerciseCount}
      • Has Picture:        ${!!selectedImage}
      • Has Audio:          ${!!selectedAudio}
