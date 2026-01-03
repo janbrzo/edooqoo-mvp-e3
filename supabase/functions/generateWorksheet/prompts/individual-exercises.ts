@@ -13,9 +13,9 @@ export const getReadingExercise = () => `    {
       "questions": [
         {"text": "Why is there such a wide variety of food in New York City restaurants?", "answer": "Because people from all over the world live in New York, so the city offers many different types of international cuisine.", "nano_skill": [{"name": "ns.reading.main_idea_extraction", "confidence": 0.95, "reason": "Requires identifying the main cause-effect relationship from the text"}, {"name": "ns.reading.explicit_detail_location", "confidence": 0.90, "reason": "Answer is directly stated in the first paragraph"}], "micro_skill": [{"name": "ms.reading.comprehension", "confidence": 0.95, "reason": "Tests understanding of text content and main ideas"}]},
         {"text": "What are some typical examples of appetizers, main dishes, and desserts mentioned in the text?", "answer": "Appetizers: soups, salads, garlic bread; Main dishes: meat, fish, or vegetarian options with rice, potatoes, or pasta; Desserts: cheesecake, brownies, ice cream.", "nano_skill": [{"name": "ns.reading.categorization_from_text", "confidence": 0.92, "reason": "Requires grouping information into given categories"}, {"name": "ns.reading.multiple_detail_extraction", "confidence": 0.90, "reason": "Requires finding multiple specific details from text"}], "micro_skill": [{"name": "ms.reading.detail_comprehension", "confidence": 0.92, "reason": "Tests ability to locate and organize specific information"}]},
-        {"text": "What is special about New York-style pizza?", "answer": "It is a thin, wide slice of pizza, usually eaten with your hands.", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "What are some of the most popular international cuisines in New York?", "answer": "Italian, Chinese, Mexican, Japanese, Greek, Thai, and Indian cuisines.", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "What are some common complaints that customers make in New York restaurants?", "answer": "The food is cold, This is not what I ordered, The portion is too small, I waited too long for my food, and The bill is incorrect.", "nano_skill": [...], "micro_skill": [...]}
+        {"text": "What is special about New York-style pizza?", "answer": "It is a thin, wide slice of pizza, usually eaten with your hands.", "nano_skill": [{"name": "ns.reading.characteristic_identification", "confidence": 0.93, "reason": "Requires identifying distinctive features from description"}, {"name": "ns.reading.explicit_detail_location", "confidence": 0.88, "reason": "Answer is directly stated in the text"}], "micro_skill": [{"name": "ms.reading.detail_comprehension", "confidence": 0.93, "reason": "Tests understanding of specific descriptive details"}]},
+        {"text": "What are some of the most popular international cuisines in New York?", "answer": "Italian, Chinese, Mexican, Japanese, Greek, Thai, and Indian cuisines.", "nano_skill": [{"name": "ns.reading.list_extraction", "confidence": 0.95, "reason": "Requires identifying a list of items from text"}, {"name": "ns.vocab.cuisine_nationality_terms", "confidence": 0.85, "reason": "Tests recognition of nationality-based cuisine vocabulary"}], "micro_skill": [{"name": "ms.reading.detail_comprehension", "confidence": 0.95, "reason": "Tests ability to locate enumerated information"}]},
+        {"text": "What are some common complaints that customers make in New York restaurants?", "answer": "The food is cold, This is not what I ordered, The portion is too small, I waited too long for my food, and The bill is incorrect.", "nano_skill": [{"name": "ns.reading.list_extraction", "confidence": 0.94, "reason": "Requires identifying multiple examples from text"}, {"name": "ns.vocab.complaint_expressions", "confidence": 0.88, "reason": "Tests understanding of complaint language patterns"}], "micro_skill": [{"name": "ms.reading.detail_comprehension", "confidence": 0.94, "reason": "Tests ability to locate and recall specific quoted examples"}]}
       ],
       "teacher_tip": "Use the comprehension questions as a starting point to ask more personal questions related to your student's life and experiences. Encourage them to share their opinions on the topics and situations mentioned in the text."
     }`;
@@ -29,14 +29,14 @@ export const getTrueFalseExercise = () => `    {
       "statements": [
         {"text": "New York City offers many international cuisines because people from all over the world live there.", "isTrue": true, "nano_skill": [{"name": "ns.reading.cause_effect_verification", "confidence": 0.94, "reason": "Verifies understanding of causal relationship from text"}, {"name": "ns.reading.paraphrase_recognition", "confidence": 0.88, "reason": "Statement paraphrases original text"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.94, "reason": "Tests ability to verify statements against source text"}]},
         {"text": "American-style diners are not popular in New York.", "isTrue": false, "nano_skill": [{"name": "ns.reading.negation_detection", "confidence": 0.92, "reason": "Requires detecting false negation of stated fact"}, {"name": "ns.reading.explicit_contradiction", "confidence": 0.90, "reason": "Statement contradicts explicit information in text"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.92, "reason": "Tests recognition of false statements"}]},
-        {"text": "Appetizers are usually bigger than main dishes.", "isTrue": false, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "New York-style pizza is thick and eaten with a fork and knife.", "isTrue": false, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Food trucks are especially popular for lunch in New York.", "isTrue": true, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "All restaurant visits in New York are perfect according to the text.", "isTrue": false, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "One common complaint is that the food arrives cold.", "isTrue": true, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Desserts like cheesecake and brownies are common in New York restaurants.", "isTrue": true, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "The text mentions that learning to complain politely is useful for customer service work.", "isTrue": true, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Main dishes in New York restaurants never include vegetarian options.", "isTrue": false, "nano_skill": [...], "micro_skill": [...]}
+        {"text": "Appetizers are usually bigger than main dishes.", "isTrue": false, "nano_skill": [{"name": "ns.reading.size_comparison_verification", "confidence": 0.93, "reason": "Requires verifying comparative size relationship"}, {"name": "ns.reading.explicit_contradiction", "confidence": 0.88, "reason": "Statement reverses the actual relationship"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.93, "reason": "Tests detection of reversed comparisons"}]},
+        {"text": "New York-style pizza is thick and eaten with a fork and knife.", "isTrue": false, "nano_skill": [{"name": "ns.reading.characteristic_verification", "confidence": 0.95, "reason": "Requires verifying specific characteristics against text"}, {"name": "ns.reading.multiple_error_detection", "confidence": 0.90, "reason": "Statement contains multiple incorrect details"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.95, "reason": "Tests recognition of factually incorrect details"}]},
+        {"text": "Food trucks are especially popular for lunch in New York.", "isTrue": true, "nano_skill": [{"name": "ns.reading.time_context_verification", "confidence": 0.92, "reason": "Verifies time-specific detail from text"}, {"name": "ns.reading.explicit_detail_matching", "confidence": 0.90, "reason": "Statement matches explicit information"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.92, "reason": "Tests accurate recall of time-related details"}]},
+        {"text": "All restaurant visits in New York are perfect according to the text.", "isTrue": false, "nano_skill": [{"name": "ns.reading.absolute_statement_detection", "confidence": 0.94, "reason": "Requires recognizing that 'all' creates a false absolute"}, {"name": "ns.reading.implicit_negation", "confidence": 0.88, "reason": "Text implies the opposite through complaint examples"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.94, "reason": "Tests recognition of overgeneralizations"}]},
+        {"text": "One common complaint is that the food arrives cold.", "isTrue": true, "nano_skill": [{"name": "ns.reading.list_item_verification", "confidence": 0.93, "reason": "Verifies one item from a list in the text"}, {"name": "ns.reading.exact_wording_match", "confidence": 0.90, "reason": "Statement closely matches quoted text"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.93, "reason": "Tests recall of specific listed examples"}]},
+        {"text": "Desserts like cheesecake and brownies are common in New York restaurants.", "isTrue": true, "nano_skill": [{"name": "ns.reading.example_verification", "confidence": 0.92, "reason": "Verifies specific examples mentioned in text"}, {"name": "ns.reading.category_membership", "confidence": 0.88, "reason": "Tests understanding of items belonging to dessert category"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.92, "reason": "Tests accurate recall of examples"}]},
+        {"text": "The text mentions that learning to complain politely is useful for customer service work.", "isTrue": true, "nano_skill": [{"name": "ns.reading.purpose_statement_verification", "confidence": 0.91, "reason": "Verifies stated purpose from conclusion"}, {"name": "ns.reading.paraphrase_recognition", "confidence": 0.87, "reason": "Statement paraphrases concluding sentence"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.91, "reason": "Tests understanding of stated purposes"}]},
+        {"text": "Main dishes in New York restaurants never include vegetarian options.", "isTrue": false, "nano_skill": [{"name": "ns.reading.absolute_statement_detection", "confidence": 0.94, "reason": "Requires recognizing 'never' creates false absolute"}, {"name": "ns.reading.explicit_contradiction", "confidence": 0.90, "reason": "Text explicitly mentions vegetarian options"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.94, "reason": "Tests detection of false absolute statements"}]}
       ],
       "teacher_tip": "Use this exercise to check reading comprehension and ensure students understood the key details from the text."
     }`;
@@ -50,14 +50,14 @@ export const getMatchingExercise = () => `    {
       "items": [
         {"term": "Appetizer", "definition": "A small dish served before the main course to stimulate the appetite.", "nano_skill": [{"name": "ns.vocab.restaurant_terminology", "confidence": 0.95, "reason": "Tests knowledge of meal course vocabulary"}, {"name": "ns.vocab.definition_matching", "confidence": 0.90, "reason": "Requires matching term to its definition"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.95, "reason": "Tests vocabulary comprehension through matching"}]},
         {"term": "Cuisine", "definition": "A style or method of cooking, especially as characteristic of a particular country or region.", "nano_skill": [{"name": "ns.vocab.food_culture_terms", "confidence": 0.93, "reason": "Tests understanding of culinary terminology"}, {"name": "ns.vocab.abstract_noun_meaning", "confidence": 0.88, "reason": "Requires understanding abstract concept definition"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.93, "reason": "Tests matching abstract vocabulary to definition"}]},
-        {"term": "Portion", "definition": "The amount of food served to one person at a meal.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Incorrect", "definition": "Not accurate or wrong; used especially in the context of errors with orders or bills.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Complaint", "definition": "A statement that something is wrong or not satisfactory, especially in service or quality.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Fine dining", "definition": "A high-end, expensive restaurant experience offering exceptional food, service, and atmosphere.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Reservation", "definition": "An arrangement made in advance to secure a table at a restaurant.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Signature dish", "definition": "A unique or famous meal that represents a restaurant or chef's style.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Undercooked", "definition": "Food that has not been cooked long enough and may be unsafe or unpleasant to eat.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Customer service", "definition": "The assistance and advice provided by a restaurant or business to people who use its services.", "nano_skill": [...], "micro_skill": [...]}
+        {"term": "Portion", "definition": "The amount of food served to one person at a meal.", "nano_skill": [{"name": "ns.vocab.quantity_terms", "confidence": 0.92, "reason": "Tests understanding of portion/quantity vocabulary"}, {"name": "ns.vocab.restaurant_terminology", "confidence": 0.88, "reason": "Common restaurant context word"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.92, "reason": "Tests food quantity vocabulary"}]},
+        {"term": "Incorrect", "definition": "Not accurate or wrong; used especially in the context of errors with orders or bills.", "nano_skill": [{"name": "ns.vocab.negative_adjective_meaning", "confidence": 0.94, "reason": "Tests understanding of negative quality adjective"}, {"name": "ns.vocab.complaint_vocabulary", "confidence": 0.88, "reason": "Word commonly used in complaint contexts"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.94, "reason": "Tests adjective vocabulary comprehension"}]},
+        {"term": "Complaint", "definition": "A statement that something is wrong or not satisfactory, especially in service or quality.", "nano_skill": [{"name": "ns.vocab.service_interaction_terms", "confidence": 0.95, "reason": "Tests customer service vocabulary"}, {"name": "ns.vocab.abstract_noun_meaning", "confidence": 0.90, "reason": "Requires understanding abstract concept"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.95, "reason": "Tests service-related vocabulary"}]},
+        {"term": "Fine dining", "definition": "A high-end, expensive restaurant experience offering exceptional food, service, and atmosphere.", "nano_skill": [{"name": "ns.vocab.compound_noun_meaning", "confidence": 0.93, "reason": "Tests understanding of compound noun phrase"}, {"name": "ns.vocab.restaurant_classification", "confidence": 0.90, "reason": "Tests restaurant type categorization"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.93, "reason": "Tests restaurant classification vocabulary"}]},
+        {"term": "Reservation", "definition": "An arrangement made in advance to secure a table at a restaurant.", "nano_skill": [{"name": "ns.vocab.booking_terminology", "confidence": 0.94, "reason": "Tests reservation/booking vocabulary"}, {"name": "ns.vocab.restaurant_procedures", "confidence": 0.88, "reason": "Common restaurant procedure term"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.94, "reason": "Tests procedural vocabulary"}]},
+        {"term": "Signature dish", "definition": "A unique or famous meal that represents a restaurant or chef's style.", "nano_skill": [{"name": "ns.vocab.compound_noun_meaning", "confidence": 0.92, "reason": "Tests understanding of compound noun phrase"}, {"name": "ns.vocab.culinary_concept_terms", "confidence": 0.88, "reason": "Tests specialized culinary vocabulary"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.92, "reason": "Tests culinary terminology"}]},
+        {"term": "Undercooked", "definition": "Food that has not been cooked long enough and may be unsafe or unpleasant to eat.", "nano_skill": [{"name": "ns.vocab.prefix_under_meaning", "confidence": 0.94, "reason": "Tests understanding of under- prefix meaning"}, {"name": "ns.vocab.food_quality_adjectives", "confidence": 0.90, "reason": "Tests food quality description vocabulary"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.94, "reason": "Tests prefixed adjective comprehension"}]},
+        {"term": "Customer service", "definition": "The assistance and advice provided by a restaurant or business to people who use its services.", "nano_skill": [{"name": "ns.vocab.compound_noun_meaning", "confidence": 0.93, "reason": "Tests understanding of compound noun phrase"}, {"name": "ns.vocab.business_terminology", "confidence": 0.88, "reason": "Common business/service industry term"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.93, "reason": "Tests service industry vocabulary"}]}
       ],
       "teacher_tip": "Before the matching activity, introduce and pronounce each term to ensure students feel confident recognizing and understanding them. If needed, translate the most difficult or abstract vocabulary terms into the student's native language. After the exercise, assign students a follow-up task to write 10 original sentences using the new vocabulary."
     }`;
@@ -72,14 +72,14 @@ export const getFillInBlanksExercise = () => `    {
       "sentences": [
         {"text": "New York is _____ for its wide variety of restaurants and street food.", "answer": "famous", "nano_skill": [{"name": "ns.vocab.adjective_collocation_for", "confidence": 0.94, "reason": "Tests 'famous for' collocation"}, {"name": "ns.vocab.descriptive_adjective_selection", "confidence": 0.90, "reason": "Requires selecting appropriate descriptive adjective"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.94, "reason": "Tests vocabulary selection in context"}]},
         {"text": "The city offers many _____ cuisines, like Thai, Italian, and Indian.", "answer": "international", "nano_skill": [{"name": "ns.vocab.nationality_category_adjective", "confidence": 0.93, "reason": "Tests adjective describing origin/nationality scope"}, {"name": "ns.vocab.cuisine_collocations", "confidence": 0.88, "reason": "Tests common cuisine modifier"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.93, "reason": "Tests appropriate modifier selection"}]},
-        {"text": "Customers often complain when their bill is _____.", "answer": "incorrect", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Appetizers are usually _____ dishes served before the main course.", "answer": "small", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Pizza is one of the most _____ foods in New York.", "answer": "popular", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "One common complaint is that the food arrives _____.", "answer": "cold", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "You can try food from many _____ cultures in New York.", "answer": "different", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "New York-style pizza is known for its wide and _____ crust.", "answer": "thin", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Some restaurants are very _____, but they offer high-quality service.", "answer": "expensive", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "It is _____ to leave a tip in American restaurants.", "answer": "common", "nano_skill": [...], "micro_skill": [...]}
+        {"text": "Customers often complain when their bill is _____.", "answer": "incorrect", "nano_skill": [{"name": "ns.vocab.negative_adjective_context", "confidence": 0.92, "reason": "Tests negative adjective in complaint context"}, {"name": "ns.vocab.accuracy_vocabulary", "confidence": 0.88, "reason": "Tests word describing accuracy/correctness"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.92, "reason": "Tests selecting appropriate complaint vocabulary"}]},
+        {"text": "Appetizers are usually _____ dishes served before the main course.", "answer": "small", "nano_skill": [{"name": "ns.vocab.size_adjective_selection", "confidence": 0.94, "reason": "Tests size-describing adjective"}, {"name": "ns.vocab.food_portion_vocabulary", "confidence": 0.88, "reason": "Tests portion-related vocabulary"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.94, "reason": "Tests adjective selection for food description"}]},
+        {"text": "Pizza is one of the most _____ foods in New York.", "answer": "popular", "nano_skill": [{"name": "ns.vocab.popularity_adjective", "confidence": 0.95, "reason": "Tests adjective describing widespread appeal"}, {"name": "ns.grammar.superlative_context", "confidence": 0.85, "reason": "Appears in superlative construction"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.95, "reason": "Tests vocabulary in superlative context"}]},
+        {"text": "One common complaint is that the food arrives _____.", "answer": "cold", "nano_skill": [{"name": "ns.vocab.temperature_adjective", "confidence": 0.94, "reason": "Tests temperature-describing adjective"}, {"name": "ns.vocab.complaint_vocabulary", "confidence": 0.90, "reason": "Tests common restaurant complaint term"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.94, "reason": "Tests sensory adjective selection"}]},
+        {"text": "You can try food from many _____ cultures in New York.", "answer": "different", "nano_skill": [{"name": "ns.vocab.variety_adjective", "confidence": 0.92, "reason": "Tests adjective expressing variety/diversity"}, {"name": "ns.vocab.culture_collocations", "confidence": 0.88, "reason": "Tests modifier for 'cultures'"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.92, "reason": "Tests diversity vocabulary"}]},
+        {"text": "New York-style pizza is known for its wide and _____ crust.", "answer": "thin", "nano_skill": [{"name": "ns.vocab.physical_dimension_adjective", "confidence": 0.94, "reason": "Tests adjective describing physical thickness"}, {"name": "ns.vocab.food_texture_vocabulary", "confidence": 0.88, "reason": "Tests food physical description"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.94, "reason": "Tests physical description vocabulary"}]},
+        {"text": "Some restaurants are very _____, but they offer high-quality service.", "answer": "expensive", "nano_skill": [{"name": "ns.vocab.price_adjective", "confidence": 0.93, "reason": "Tests adjective describing cost/price"}, {"name": "ns.vocab.contrast_context_understanding", "confidence": 0.88, "reason": "Word creates contrast with quality"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.93, "reason": "Tests price vocabulary in contrast"}]},
+        {"text": "It is _____ to leave a tip in American restaurants.", "answer": "common", "nano_skill": [{"name": "ns.vocab.frequency_adjective", "confidence": 0.92, "reason": "Tests adjective describing usual practice"}, {"name": "ns.vocab.cultural_practice_vocabulary", "confidence": 0.88, "reason": "Tests vocabulary for customs/practices"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.92, "reason": "Tests cultural practice vocabulary"}]}
       ],
       "teacher_tip": "You can use this exercise in the next class as a sentence translation activity—provide the sentences in the student's native language and ask them to translate them into English to practice the new vocabulary."
     }`;
@@ -121,8 +121,8 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "spicier", "correct": true},
             {"label": "D", "text": "most spicy", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [{"name": "ns.grammar.comparative_y_to_ier", "confidence": 0.95, "reason": "Tests -y to -ier comparative transformation"}, {"name": "ns.grammar.comparative_than_construction", "confidence": 0.88, "reason": "Tests comparative + than structure"}],
+          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.95, "reason": "Tests spelling rule for -y ending adjectives"}]
         },
         {
           "text": "That's the ______ restaurant in our neighborhood.",
@@ -132,8 +132,8 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "more expensive", "correct": false},
             {"label": "D", "text": "expensivest", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [{"name": "ns.grammar.superlative_long_adjective", "confidence": 0.94, "reason": "Tests 'most + adjective' for long adjectives"}, {"name": "ns.grammar.superlative_context_in", "confidence": 0.88, "reason": "Tests superlative in 'the... in' context"}],
+          "micro_skill": [{"name": "ms.grammar.superlative_forms", "confidence": 0.94, "reason": "Tests recognition of long adjective superlative rule"}]
         },
         {
           "text": "John eats ______ than his brother.",
@@ -143,8 +143,8 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "slow", "correct": false},
             {"label": "D", "text": "more slowly", "correct": true}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [{"name": "ns.grammar.comparative_adverb_ly", "confidence": 0.94, "reason": "Tests 'more + adverb' comparative for -ly adverbs"}, {"name": "ns.grammar.adverb_vs_adjective", "confidence": 0.88, "reason": "Tests using adverb (slowly) not adjective (slow)"}],
+          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.94, "reason": "Tests adverb comparative formation"}]
         },
         {
           "text": "This soup is ______ than the one I made yesterday.",
@@ -154,8 +154,8 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "tasty", "correct": false},
             {"label": "D", "text": "more tastiest", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [{"name": "ns.grammar.comparative_y_to_ier", "confidence": 0.95, "reason": "Tests -y to -ier comparative rule"}, {"name": "ns.grammar.double_comparative_avoidance", "confidence": 0.88, "reason": "Tests avoiding 'more + -er' error"}],
+          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.95, "reason": "Tests correct short adjective comparative"}]
         },
         {
           "text": "Of all the dishes on the menu, the lasagna is the ______.",
@@ -165,8 +165,8 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "best", "correct": true},
             {"label": "D", "text": "more better", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [{"name": "ns.grammar.superlative_irregular_good", "confidence": 0.95, "reason": "Tests irregular superlative 'best'"}, {"name": "ns.grammar.superlative_of_all", "confidence": 0.90, "reason": "Tests superlative in 'of all' context"}],
+          "micro_skill": [{"name": "ms.grammar.superlative_forms", "confidence": 0.95, "reason": "Tests irregular superlative recognition"}]
         },
         {
           "text": "Pizza is ______ than soup for a quick lunch.",
@@ -176,8 +176,8 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "convenientest", "correct": false},
             {"label": "D", "text": "most convenient", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [{"name": "ns.grammar.comparative_long_adjective", "confidence": 0.94, "reason": "Tests 'more + adjective' for long adjectives"}, {"name": "ns.grammar.comparative_than_construction", "confidence": 0.88, "reason": "Tests comparative + than structure"}],
+          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.94, "reason": "Tests long adjective comparative rule"}]
         },
         {
           "text": "This is the ______ café in town. Everyone loves it!",
@@ -187,8 +187,8 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "popularest", "correct": false},
             {"label": "D", "text": "most popular", "correct": true}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [{"name": "ns.grammar.superlative_long_adjective", "confidence": 0.94, "reason": "Tests 'most + adjective' superlative"}, {"name": "ns.grammar.superlative_context_in", "confidence": 0.88, "reason": "Tests superlative in 'the... in town' context"}],
+          "micro_skill": [{"name": "ms.grammar.superlative_forms", "confidence": 0.94, "reason": "Tests correct superlative for multi-syllable adjectives"}]
         },
         {
           "text": "The weather today is much ______ than it was yesterday.",
@@ -198,8 +198,8 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "warm", "correct": false},
             {"label": "D", "text": "most warm", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [{"name": "ns.grammar.comparative_short_adjective_er", "confidence": 0.95, "reason": "Tests -er comparative for short adjectives"}, {"name": "ns.grammar.comparative_intensifier_much", "confidence": 0.88, "reason": "Tests 'much + comparative' intensification"}],
+          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.95, "reason": "Tests basic comparative formation"}]
         }
       ],
       "teacher_tip": "After choosing an answer, ask students to explain why they picked it. This encourages deeper thinking and grammar awareness. Show tricky or commonly confused forms (more better, the most nicest) and explain why they are incorrect."
@@ -787,16 +787,16 @@ export const getListeningComprehensionExercise = () => `    {
       "instructions": "Listen to the audio carefully and answer the following questions based on what you hear.",
       "audio_url": null,
       "questions": [
-        {"text": "What is the main topic or situation in the audio?", "answer": "The audio discusses [specific topic], where [main situation/event].", "nano_skill": [{"name": "ns.listening.main_idea_identification", "confidence": 0.96, "reason": "Tests identifying main topic from audio"}, {"name": "ns.listening.gist_comprehension", "confidence": 0.90, "reason": "Tests grasping overall situation"}], "micro_skill": [{"name": "ms.listening.audio_comprehension", "confidence": 0.96, "reason": "Tests audio comprehension ability"}]},
-        {"text": "Who are the speakers in the audio? What are their roles or relationships?", "answer": "The speakers are [description of speakers and their relationship].", "nano_skill": [{"name": "ns.listening.speaker_identification", "confidence": 0.95, "reason": "Tests identifying who is speaking"}, {"name": "ns.listening.relationship_inference", "confidence": 0.88, "reason": "Tests inferring speaker relationships"}], "micro_skill": [{"name": "ms.listening.audio_comprehension", "confidence": 0.95, "reason": "Tests audio comprehension ability"}]},
-        {"text": "What specific details or facts are mentioned in the audio?", "answer": "[Specific details from audio: numbers, names, places, times].", "nano_skill": [{"name": "ns.listening.specific_detail_extraction", "confidence": 0.95, "reason": "Tests extracting specific facts"}, {"name": "ns.listening.number_name_recognition", "confidence": 0.88, "reason": "Tests recognizing numbers, names, places"}], "micro_skill": [{"name": "ms.listening.audio_comprehension", "confidence": 0.95, "reason": "Tests audio comprehension ability"}]},
-        {"text": "What problem or challenge is discussed, and how is it addressed?", "answer": "The problem is [description], and it is addressed by [solution/approach].", "nano_skill": [{"name": "ns.listening.problem_identification", "confidence": 0.94, "reason": "Tests identifying problems discussed"}, {"name": "ns.listening.solution_recognition", "confidence": 0.88, "reason": "Tests recognizing proposed solutions"}], "micro_skill": [{"name": "ms.listening.audio_comprehension", "confidence": 0.94, "reason": "Tests audio comprehension ability"}]},
-        {"text": "What is the tone or mood of the audio? (formal/informal, serious/casual, etc.)", "answer": "The tone is [description of tone/mood].", "nano_skill": [{"name": "ns.listening.tone_recognition", "confidence": 0.93, "reason": "Tests recognizing formal vs informal tone"}, {"name": "ns.listening.mood_inference", "confidence": 0.88, "reason": "Tests inferring speaker mood"}], "micro_skill": [{"name": "ms.listening.audio_comprehension", "confidence": 0.93, "reason": "Tests audio comprehension ability"}]},
-        {"text": "What happens at the beginning, middle, and end of the audio?", "answer": "Beginning: [description]. Middle: [description]. End: [description].", "nano_skill": [{"name": "ns.listening.sequence_tracking", "confidence": 0.94, "reason": "Tests following event sequence"}, {"name": "ns.listening.narrative_structure", "confidence": 0.88, "reason": "Tests understanding beginning/middle/end"}], "micro_skill": [{"name": "ms.listening.audio_comprehension", "confidence": 0.94, "reason": "Tests audio comprehension ability"}]},
-        {"text": "What opinions or suggestions are given by the speakers?", "answer": "[Opinions/suggestions mentioned in audio].", "nano_skill": [{"name": "ns.listening.opinion_recognition", "confidence": 0.93, "reason": "Tests distinguishing opinion from fact"}, {"name": "ns.listening.suggestion_identification", "confidence": 0.88, "reason": "Tests identifying suggestions"}], "micro_skill": [{"name": "ms.listening.audio_comprehension", "confidence": 0.93, "reason": "Tests audio comprehension ability"}]},
-        {"text": "What cultural or contextual information can you infer from the audio?", "answer": "[Cultural/contextual details that can be inferred].", "nano_skill": [{"name": "ns.listening.cultural_inference", "confidence": 0.92, "reason": "Tests inferring cultural context"}, {"name": "ns.listening.contextual_clue_recognition", "confidence": 0.88, "reason": "Tests recognizing contextual clues"}], "micro_skill": [{"name": "ms.listening.audio_comprehension", "confidence": 0.92, "reason": "Tests audio comprehension ability"}]},
-        {"text": "What emotions do the speakers express during the conversation?", "answer": "[Emotions and feelings expressed by speakers].", "nano_skill": [{"name": "ns.listening.emotion_recognition", "confidence": 0.93, "reason": "Tests recognizing emotions in speech"}, {"name": "ns.listening.intonation_interpretation", "confidence": 0.88, "reason": "Tests interpreting emotional intonation"}], "micro_skill": [{"name": "ms.listening.audio_comprehension", "confidence": 0.93, "reason": "Tests audio comprehension ability"}]},
-        {"text": "What is the outcome or conclusion of the audio scenario?", "answer": "[Final outcome or resolution mentioned in audio].", "nano_skill": [{"name": "ns.listening.conclusion_identification", "confidence": 0.94, "reason": "Tests identifying final outcome"}, {"name": "ns.listening.resolution_recognition", "confidence": 0.88, "reason": "Tests recognizing resolution"}], "micro_skill": [{"name": "ms.listening.audio_comprehension", "confidence": 0.94, "reason": "Tests audio comprehension ability"}]}
+        {"text": "What is the main topic or situation in the audio?", "answer": "The audio discusses [specific topic], where [main situation/event]."},
+        {"text": "Who are the speakers in the audio? What are their roles or relationships?", "answer": "The speakers are [description of speakers and their relationship]."},
+        {"text": "What specific details or facts are mentioned in the audio?", "answer": "[Specific details from audio: numbers, names, places, times]."},
+        {"text": "What problem or challenge is discussed, and how is it addressed?", "answer": "The problem is [description], and it is addressed by [solution/approach]."},
+        {"text": "What is the tone or mood of the audio? (formal/informal, serious/casual, etc.)", "answer": "The tone is [description of tone/mood]."},
+        {"text": "What happens at the beginning, middle, and end of the audio?", "answer": "Beginning: [description]. Middle: [description]. End: [description]."},
+        {"text": "What opinions or suggestions are given by the speakers?", "answer": "[Opinions/suggestions mentioned in audio]."},
+        {"text": "What cultural or contextual information can you infer from the audio?", "answer": "[Cultural/contextual details that can be inferred]."},
+        {"text": "What emotions do the speakers express during the conversation?", "answer": "[Emotions and feelings expressed by speakers]."},
+        {"text": "What is the outcome or conclusion of the audio scenario?", "answer": "[Final outcome or resolution mentioned in audio]."}
       ],
       "teacher_tip": "Play the audio 2-3 times. First time: general understanding. Second time: focus on details. Third time: verification of answers. Encourage students to take notes while listening."
     }`;
@@ -816,9 +816,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "B", "text": "To entertain", "correct": false},
             {"label": "C", "text": "To complain", "correct": false},
             {"label": "D", "text": "To persuade", "correct": false}
-          ],
-          "nano_skill": [{"name": "ns.listening.purpose_identification", "confidence": 0.96, "reason": "Tests identifying speaker's main purpose"}, {"name": "ns.listening.communicative_function", "confidence": 0.90, "reason": "Tests distinguishing inform vs entertain vs persuade"}],
-          "micro_skill": [{"name": "ms.listening.audio_multiple_choice", "confidence": 0.96, "reason": "Tests audio-based multiple choice ability"}]
+          ]
         },
         {
           "text": "Where does this conversation most likely take place?",
@@ -827,9 +825,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "B", "text": "At a restaurant", "correct": true},
             {"label": "C", "text": "At a school", "correct": false},
             {"label": "D", "text": "At an office", "correct": false}
-          ],
-          "nano_skill": [{"name": "ns.listening.setting_inference", "confidence": 0.95, "reason": "Tests inferring location from audio cues"}, {"name": "ns.listening.contextual_vocabulary", "confidence": 0.88, "reason": "Tests recognizing location-specific vocabulary"}],
-          "micro_skill": [{"name": "ms.listening.audio_multiple_choice", "confidence": 0.95, "reason": "Tests audio-based multiple choice ability"}]
+          ]
         },
         {
           "text": "What time is mentioned in the audio?",
@@ -838,9 +834,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "B", "text": "Afternoon", "correct": true},
             {"label": "C", "text": "Evening", "correct": false},
             {"label": "D", "text": "Night", "correct": false}
-          ],
-          "nano_skill": [{"name": "ns.listening.time_reference_extraction", "confidence": 0.95, "reason": "Tests extracting time references from audio"}, {"name": "ns.vocab.time_of_day_vocabulary", "confidence": 0.88, "reason": "Tests time-related vocabulary recognition"}],
-          "micro_skill": [{"name": "ms.listening.audio_multiple_choice", "confidence": 0.95, "reason": "Tests audio-based multiple choice ability"}]
+          ]
         },
         {
           "text": "How does the speaker feel about the situation?",
@@ -849,9 +843,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "B", "text": "Happy", "correct": false},
             {"label": "C", "text": "Concerned", "correct": true},
             {"label": "D", "text": "Indifferent", "correct": false}
-          ],
-          "nano_skill": [{"name": "ns.listening.emotion_inference", "confidence": 0.94, "reason": "Tests inferring speaker emotion from voice"}, {"name": "ns.listening.tone_interpretation", "confidence": 0.88, "reason": "Tests interpreting emotional tone"}],
-          "micro_skill": [{"name": "ms.listening.audio_multiple_choice", "confidence": 0.94, "reason": "Tests audio-based multiple choice ability"}]
+          ]
         },
         {
           "text": "What specific detail is mentioned about the topic?",
@@ -860,9 +852,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "B", "text": "Detail B", "correct": false},
             {"label": "C", "text": "Detail C", "correct": false},
             {"label": "D", "text": "Detail D", "correct": false}
-          ],
-          "nano_skill": [{"name": "ns.listening.specific_detail_recognition", "confidence": 0.94, "reason": "Tests recognizing specific details in audio"}, {"name": "ns.listening.fact_extraction", "confidence": 0.88, "reason": "Tests extracting factual information"}],
-          "micro_skill": [{"name": "ms.listening.audio_multiple_choice", "confidence": 0.94, "reason": "Tests audio-based multiple choice ability"}]
+          ]
         },
         {
           "text": "What does the speaker plan to do next?",
@@ -871,9 +861,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "B", "text": "Option B", "correct": false},
             {"label": "C", "text": "Option C", "correct": true},
             {"label": "D", "text": "Option D", "correct": false}
-          ],
-          "nano_skill": [{"name": "ns.listening.future_action_inference", "confidence": 0.93, "reason": "Tests inferring planned future actions"}, {"name": "ns.grammar.future_intention_recognition", "confidence": 0.88, "reason": "Tests recognizing future intention markers"}],
-          "micro_skill": [{"name": "ms.listening.audio_multiple_choice", "confidence": 0.93, "reason": "Tests audio-based multiple choice ability"}]
+          ]
         },
         {
           "text": "What tone does the speaker use?",
@@ -882,9 +870,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "B", "text": "Polite but firm", "correct": true},
             {"label": "C", "text": "Sarcastic", "correct": false},
             {"label": "D", "text": "Apologetic", "correct": false}
-          ],
-          "nano_skill": [{"name": "ns.listening.tone_classification", "confidence": 0.94, "reason": "Tests classifying speaker's tone"}, {"name": "ns.listening.register_recognition", "confidence": 0.88, "reason": "Tests recognizing formal/informal register"}],
-          "micro_skill": [{"name": "ms.listening.audio_multiple_choice", "confidence": 0.94, "reason": "Tests audio-based multiple choice ability"}]
+          ]
         },
         {
           "text": "What specific information is mentioned?",
@@ -893,9 +879,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "B", "text": "Information B", "correct": true},
             {"label": "C", "text": "Information C", "correct": false},
             {"label": "D", "text": "Information D", "correct": false}
-          ],
-          "nano_skill": [{"name": "ns.listening.information_extraction", "confidence": 0.93, "reason": "Tests extracting key information"}, {"name": "ns.listening.fact_recall", "confidence": 0.88, "reason": "Tests recalling specific facts"}],
-          "micro_skill": [{"name": "ms.listening.audio_multiple_choice", "confidence": 0.93, "reason": "Tests audio-based multiple choice ability"}]
+          ]
         },
         {
           "text": "Who initiates the conversation in the audio?",
@@ -904,9 +888,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "B", "text": "Person B", "correct": false},
             {"label": "C", "text": "Person C", "correct": false},
             {"label": "D", "text": "Person D", "correct": false}
-          ],
-          "nano_skill": [{"name": "ns.listening.conversation_initiation", "confidence": 0.93, "reason": "Tests identifying who starts conversation"}, {"name": "ns.listening.speaker_turn_tracking", "confidence": 0.88, "reason": "Tests tracking speaker turns"}],
-          "micro_skill": [{"name": "ms.listening.audio_multiple_choice", "confidence": 0.93, "reason": "Tests audio-based multiple choice ability"}]
+          ]
         },
         {
           "text": "What is the relationship between the speakers?",
@@ -915,9 +897,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "B", "text": "Colleagues", "correct": false},
             {"label": "C", "text": "Service provider and customer", "correct": true},
             {"label": "D", "text": "Family members", "correct": false}
-          ],
-          "nano_skill": [{"name": "ns.listening.relationship_inference", "confidence": 0.94, "reason": "Tests inferring speaker relationship"}, {"name": "ns.listening.social_context_recognition", "confidence": 0.88, "reason": "Tests recognizing social context"}],
-          "micro_skill": [{"name": "ms.listening.audio_multiple_choice", "confidence": 0.94, "reason": "Tests audio-based multiple choice ability"}]
+          ]
         }
       ],
       "teacher_tip": "After choosing answers, ask students to explain WHY they selected each answer by referencing specific words or phrases they heard in the audio."
@@ -931,16 +911,16 @@ export const getTrueFalseAudioExercise = () => `    {
       "instructions": "Listen to the audio carefully and decide if each statement is true or false based on what you hear.",
       "audio_url": null,
       "statements": [
-        {"text": "The speakers mention a specific time in the audio.", "isTrue": true, "nano_skill": [{"name": "ns.listening.time_mention_detection", "confidence": 0.95, "reason": "Tests detecting time references in audio"}, {"name": "ns.listening.specific_detail_verification", "confidence": 0.88, "reason": "Tests verifying presence of specific details"}], "micro_skill": [{"name": "ms.listening.audio_true_false_evaluation", "confidence": 0.95, "reason": "Tests true/false evaluation from audio"}]},
-        {"text": "The conversation takes place in the morning.", "isTrue": false, "nano_skill": [{"name": "ns.listening.time_of_day_inference", "confidence": 0.94, "reason": "Tests inferring time of day from context"}, {"name": "ns.listening.contextual_time_markers", "confidence": 0.88, "reason": "Tests recognizing time markers"}], "micro_skill": [{"name": "ms.listening.audio_true_false_evaluation", "confidence": 0.94, "reason": "Tests true/false evaluation from audio"}]},
-        {"text": "One of the speakers expresses dissatisfaction.", "isTrue": true, "nano_skill": [{"name": "ns.listening.emotion_detection", "confidence": 0.94, "reason": "Tests detecting dissatisfaction in voice"}, {"name": "ns.listening.negative_sentiment_recognition", "confidence": 0.88, "reason": "Tests recognizing negative sentiment"}], "micro_skill": [{"name": "ms.listening.audio_true_false_evaluation", "confidence": 0.94, "reason": "Tests true/false evaluation from audio"}]},
-        {"text": "The audio mentions a price or cost.", "isTrue": true, "nano_skill": [{"name": "ns.listening.number_price_detection", "confidence": 0.95, "reason": "Tests detecting price/cost mentions"}, {"name": "ns.vocab.money_vocabulary_recognition", "confidence": 0.88, "reason": "Tests recognizing financial vocabulary"}], "micro_skill": [{"name": "ms.listening.audio_true_false_evaluation", "confidence": 0.95, "reason": "Tests true/false evaluation from audio"}]},
-        {"text": "The speakers are planning to leave immediately.", "isTrue": false, "nano_skill": [{"name": "ns.listening.time_adverb_interpretation", "confidence": 0.93, "reason": "Tests interpreting 'immediately' claim"}, {"name": "ns.listening.future_plan_verification", "confidence": 0.88, "reason": "Tests verifying future plans"}], "micro_skill": [{"name": "ms.listening.audio_true_false_evaluation", "confidence": 0.93, "reason": "Tests true/false evaluation from audio"}]},
-        {"text": "The audio includes a discussion about quality.", "isTrue": true, "nano_skill": [{"name": "ns.listening.topic_identification", "confidence": 0.93, "reason": "Tests identifying quality as topic"}, {"name": "ns.vocab.quality_vocabulary_recognition", "confidence": 0.88, "reason": "Tests recognizing quality-related words"}], "micro_skill": [{"name": "ms.listening.audio_true_false_evaluation", "confidence": 0.93, "reason": "Tests true/false evaluation from audio"}]},
-        {"text": "The speakers sound angry and aggressive.", "isTrue": false, "nano_skill": [{"name": "ns.listening.emotion_intensity_evaluation", "confidence": 0.94, "reason": "Tests evaluating 'angry and aggressive' claim"}, {"name": "ns.listening.tone_analysis", "confidence": 0.88, "reason": "Tests analyzing speaker tone"}], "micro_skill": [{"name": "ms.listening.audio_true_false_evaluation", "confidence": 0.94, "reason": "Tests true/false evaluation from audio"}]},
-        {"text": "A specific location or place is mentioned.", "isTrue": true, "nano_skill": [{"name": "ns.listening.place_mention_detection", "confidence": 0.94, "reason": "Tests detecting location mentions"}, {"name": "ns.vocab.place_vocabulary_recognition", "confidence": 0.88, "reason": "Tests recognizing place vocabulary"}], "micro_skill": [{"name": "ms.listening.audio_true_false_evaluation", "confidence": 0.94, "reason": "Tests true/false evaluation from audio"}]},
-        {"text": "The speakers agree on everything discussed.", "isTrue": false, "nano_skill": [{"name": "ns.listening.agreement_disagreement_detection", "confidence": 0.93, "reason": "Tests detecting agreement/disagreement"}, {"name": "ns.listening.absolute_claim_verification", "confidence": 0.88, "reason": "Tests verifying 'everything' claim"}], "micro_skill": [{"name": "ms.listening.audio_true_false_evaluation", "confidence": 0.93, "reason": "Tests true/false evaluation from audio"}]},
-        {"text": "The audio ends with a clear resolution.", "isTrue": true, "nano_skill": [{"name": "ns.listening.conversation_conclusion_identification", "confidence": 0.93, "reason": "Tests identifying conversation resolution"}, {"name": "ns.listening.narrative_closure_recognition", "confidence": 0.88, "reason": "Tests recognizing narrative closure"}], "micro_skill": [{"name": "ms.listening.audio_true_false_evaluation", "confidence": 0.93, "reason": "Tests true/false evaluation from audio"}]}
+        {"text": "The speakers mention a specific time in the audio.", "isTrue": true},
+        {"text": "The conversation takes place in the morning.", "isTrue": false},
+        {"text": "One of the speakers expresses dissatisfaction.", "isTrue": true},
+        {"text": "The audio mentions a price or cost.", "isTrue": true},
+        {"text": "The speakers are planning to leave immediately.", "isTrue": false},
+        {"text": "The audio includes a discussion about quality.", "isTrue": true},
+        {"text": "The speakers sound angry and aggressive.", "isTrue": false},
+        {"text": "A specific location or place is mentioned.", "isTrue": true},
+        {"text": "The speakers agree on everything discussed.", "isTrue": false},
+        {"text": "The audio ends with a clear resolution.", "isTrue": true}
       ],
       "teacher_tip": "After completing the exercise, ask students to provide evidence from the audio to support their true/false answers. This helps them practice active listening and justification."
     }`;
@@ -952,16 +932,16 @@ export const getFillInBlanksAudioExercise = () => `    {
       "time": 10,
       "instructions": "Listen to the audio and complete the sentences below with the missing words you hear.",
       "sentences": [
-        {"text": "Welcome to _______ Restaurant.", "answer": "Mario's", "nano_skill": [{"name": "ns.listening.proper_noun_recognition", "confidence": 0.95, "reason": "Tests recognizing proper noun from audio"}, {"name": "ns.listening.dictation_accuracy", "confidence": 0.88, "reason": "Tests accurate word transcription"}], "micro_skill": [{"name": "ms.listening.audio_dictation", "confidence": 0.95, "reason": "Tests audio dictation ability"}]},
-        {"text": "I'm _______ and I'll be your _______ today.", "answer": "Jennifer", "nano_skill": [{"name": "ns.listening.name_recognition", "confidence": 0.94, "reason": "Tests recognizing names from audio"}, {"name": "ns.listening.introduction_phrases", "confidence": 0.88, "reason": "Tests understanding introduction patterns"}], "micro_skill": [{"name": "ms.listening.audio_dictation", "confidence": 0.94, "reason": "Tests audio dictation ability"}]},
-        {"text": "Can I start you off with something to _______?", "answer": "drink", "nano_skill": [{"name": "ns.listening.service_phrase_completion", "confidence": 0.94, "reason": "Tests completing common service phrases"}, {"name": "ns.vocab.restaurant_service_vocabulary", "confidence": 0.88, "reason": "Tests restaurant vocabulary"}], "micro_skill": [{"name": "ms.listening.audio_dictation", "confidence": 0.94, "reason": "Tests audio dictation ability"}]},
-        {"text": "We have some _______ specials today.", "answer": "excellent", "nano_skill": [{"name": "ns.listening.adjective_recognition", "confidence": 0.93, "reason": "Tests recognizing descriptive adjectives"}, {"name": "ns.vocab.positive_adjective_vocabulary", "confidence": 0.88, "reason": "Tests positive descriptor vocabulary"}], "micro_skill": [{"name": "ms.listening.audio_dictation", "confidence": 0.93, "reason": "Tests audio dictation ability"}]},
-        {"text": "The chef _______ the grilled salmon.", "answer": "recommends", "nano_skill": [{"name": "ns.listening.verb_form_recognition", "confidence": 0.94, "reason": "Tests recognizing verb forms from audio"}, {"name": "ns.grammar.third_person_singular_s", "confidence": 0.88, "reason": "Tests recognizing 3rd person -s ending"}], "micro_skill": [{"name": "ms.listening.audio_dictation", "confidence": 0.94, "reason": "Tests audio dictation ability"}]},
-        {"text": "It comes with _______ vegetables.", "answer": "seasonal", "nano_skill": [{"name": "ns.listening.adjective_recognition", "confidence": 0.93, "reason": "Tests recognizing adjectives from audio"}, {"name": "ns.vocab.food_description_vocabulary", "confidence": 0.88, "reason": "Tests food description vocabulary"}], "micro_skill": [{"name": "ms.listening.audio_dictation", "confidence": 0.93, "reason": "Tests audio dictation ability"}]},
-        {"text": "This dish is _______ popular with our guests.", "answer": "very", "nano_skill": [{"name": "ns.listening.intensifier_recognition", "confidence": 0.94, "reason": "Tests recognizing intensifier 'very'"}, {"name": "ns.grammar.adverb_of_degree", "confidence": 0.88, "reason": "Tests understanding degree adverbs"}], "micro_skill": [{"name": "ms.listening.audio_dictation", "confidence": 0.94, "reason": "Tests audio dictation ability"}]},
-        {"text": "Would you like to _______ our dessert menu?", "answer": "see", "nano_skill": [{"name": "ns.listening.infinitive_verb_recognition", "confidence": 0.93, "reason": "Tests recognizing infinitive verbs"}, {"name": "ns.grammar.would_like_to_pattern", "confidence": 0.88, "reason": "Tests 'would like to' pattern completion"}], "micro_skill": [{"name": "ms.listening.audio_dictation", "confidence": 0.93, "reason": "Tests audio dictation ability"}]},
-        {"text": "Or would you _______ to order now?", "answer": "like", "nano_skill": [{"name": "ns.listening.modal_pattern_completion", "confidence": 0.93, "reason": "Tests completing modal patterns"}, {"name": "ns.grammar.would_you_like_pattern", "confidence": 0.88, "reason": "Tests 'would you like' pattern"}], "micro_skill": [{"name": "ms.listening.audio_dictation", "confidence": 0.93, "reason": "Tests audio dictation ability"}]},
-        {"text": "I can also bring you some _______ water.", "answer": "cold", "nano_skill": [{"name": "ns.listening.adjective_recognition", "confidence": 0.93, "reason": "Tests recognizing common adjectives"}, {"name": "ns.vocab.temperature_adjective", "confidence": 0.88, "reason": "Tests temperature vocabulary"}], "micro_skill": [{"name": "ms.listening.audio_dictation", "confidence": 0.93, "reason": "Tests audio dictation ability"}]}
+        {"text": "Welcome to _______ Restaurant.", "answer": "Mario's"},
+        {"text": "I'm _______ and I'll be your _______ today.", "answer": "Jennifer"},
+        {"text": "Can I start you off with something to _______?", "answer": "drink"},
+        {"text": "We have some _______ specials today.", "answer": "excellent"},
+        {"text": "The chef _______ the grilled salmon.", "answer": "recommends"},
+        {"text": "It comes with _______ vegetables.", "answer": "seasonal"},
+        {"text": "This dish is _______ popular with our guests.", "answer": "very"},
+        {"text": "Would you like to _______ our dessert menu?", "answer": "see"},
+        {"text": "Or would you _______ to order now?", "answer": "like"},
+        {"text": "I can also bring you some _______ water.", "answer": "cold"}
       ],
       "word_bank": ["Mario's", "Jennifer", "server", "drink", "excellent", "recommends", "seasonal", "very", "see", "like", "cold"],
       "teacher_tip": "CRITICAL: Use EXACT structure matching basic fill-in-blanks exercise - 'sentences' array with 'text' and 'answer' fields, plus 'word_bank' array. Each sentence has ONE blank (represented by _______). Extract key vocabulary from audio transcript. DO NOT use 'full_transcript' or 'transcript_with_blanks' fields."
@@ -975,16 +955,16 @@ export const getAnswerQuestionsAudioExercise = () => `    {
       "instructions": "Listen to the audio and answer these questions based on what you hear and your personal opinions.",
       "audio_url": null,
       "questions": [
-        {"question": "Describe the main situation or event you hear in the audio. What is happening?", "focus": "Comprehension and summary", "nano_skill": [{"name": "ns.listening.main_idea_summary", "confidence": 0.95, "reason": "Tests summarizing main audio content"}, {"name": "ns.speaking.event_description", "confidence": 0.88, "reason": "Tests describing events clearly"}], "micro_skill": [{"name": "ms.listening.audio_response", "confidence": 0.95, "reason": "Tests responding to audio-based questions"}]},
-        {"question": "What emotions or attitudes do you hear in the speakers' voices? How can you tell?", "focus": "Tone analysis and inference", "nano_skill": [{"name": "ns.listening.emotion_analysis", "confidence": 0.94, "reason": "Tests analyzing emotions in speech"}, {"name": "ns.listening.evidence_citing", "confidence": 0.88, "reason": "Tests citing evidence for analysis"}], "micro_skill": [{"name": "ms.listening.audio_response", "confidence": 0.94, "reason": "Tests responding to audio-based questions"}]},
-        {"question": "What specific words or phrases stood out to you? Why?", "focus": "Vocabulary and attention to detail", "nano_skill": [{"name": "ns.listening.salient_vocabulary_identification", "confidence": 0.93, "reason": "Tests identifying notable vocabulary"}, {"name": "ns.speaking.justification_giving", "confidence": 0.88, "reason": "Tests explaining vocabulary choices"}], "micro_skill": [{"name": "ms.listening.audio_response", "confidence": 0.93, "reason": "Tests responding to audio-based questions"}]},
-        {"question": "If you were in this situation, how would you respond? What would you say?", "focus": "Personal application and speaking practice", "nano_skill": [{"name": "ns.grammar.second_conditional_application", "confidence": 0.94, "reason": "Tests 'if I were' hypothetical"}, {"name": "ns.speaking.situational_response", "confidence": 0.88, "reason": "Tests providing situational responses"}], "micro_skill": [{"name": "ms.listening.audio_response", "confidence": 0.94, "reason": "Tests responding to audio-based questions"}]},
-        {"question": "Compare this situation to a similar experience you've had. What's similar or different?", "focus": "Personal connection and comparison", "nano_skill": [{"name": "ns.grammar.comparative_similar_different", "confidence": 0.93, "reason": "Tests 'similar to' and 'different from'"}, {"name": "ns.speaking.personal_experience_connection", "confidence": 0.88, "reason": "Tests connecting to personal experience"}], "micro_skill": [{"name": "ms.listening.audio_response", "confidence": 0.93, "reason": "Tests responding to audio-based questions"}]},
-        {"question": "What cultural insights can you gain from this audio? How might this situation differ in your country?", "focus": "Cultural awareness", "nano_skill": [{"name": "ns.listening.cultural_inference", "confidence": 0.92, "reason": "Tests inferring cultural elements"}, {"name": "ns.speaking.cross_cultural_comparison", "confidence": 0.88, "reason": "Tests cross-cultural comparison"}], "micro_skill": [{"name": "ms.listening.audio_response", "confidence": 0.92, "reason": "Tests responding to audio-based questions"}]},
-        {"question": "What do you think happens after the audio ends? Predict the next part of the conversation.", "focus": "Prediction and creative thinking", "nano_skill": [{"name": "ns.listening.prediction_from_context", "confidence": 0.93, "reason": "Tests predicting based on context"}, {"name": "ns.grammar.future_tense_prediction", "confidence": 0.88, "reason": "Tests using future forms for prediction"}], "micro_skill": [{"name": "ms.listening.audio_response", "confidence": 0.93, "reason": "Tests responding to audio-based questions"}]},
-        {"question": "What advice would you give to the speakers in this situation?", "focus": "Critical thinking and modal verbs", "nano_skill": [{"name": "ns.grammar.modal_advice_should_could", "confidence": 0.94, "reason": "Tests using modals for advice"}, {"name": "ns.speaking.advice_giving", "confidence": 0.88, "reason": "Tests giving appropriate advice"}], "micro_skill": [{"name": "ms.listening.audio_response", "confidence": 0.94, "reason": "Tests responding to audio-based questions"}]},
-        {"question": "What is the most important piece of information you learned from the audio?", "focus": "Main idea identification", "nano_skill": [{"name": "ns.listening.key_information_prioritization", "confidence": 0.94, "reason": "Tests identifying most important info"}, {"name": "ns.speaking.importance_justification", "confidence": 0.88, "reason": "Tests justifying importance claims"}], "micro_skill": [{"name": "ms.listening.audio_response", "confidence": 0.94, "reason": "Tests responding to audio-based questions"}]},
-        {"question": "How would you describe the relationship between the speakers based on their language and tone?", "focus": "Relationship analysis and pragmatics", "nano_skill": [{"name": "ns.listening.relationship_analysis", "confidence": 0.93, "reason": "Tests analyzing speaker relationship"}, {"name": "ns.listening.pragmatic_awareness", "confidence": 0.88, "reason": "Tests understanding pragmatic cues"}], "micro_skill": [{"name": "ms.listening.audio_response", "confidence": 0.93, "reason": "Tests responding to audio-based questions"}]}
+        {"question": "Describe the main situation or event you hear in the audio. What is happening?", "focus": "Comprehension and summary"},
+        {"question": "What emotions or attitudes do you hear in the speakers' voices? How can you tell?", "focus": "Tone analysis and inference"},
+        {"question": "What specific words or phrases stood out to you? Why?", "focus": "Vocabulary and attention to detail"},
+        {"question": "If you were in this situation, how would you respond? What would you say?", "focus": "Personal application and speaking practice"},
+        {"question": "Compare this situation to a similar experience you've had. What's similar or different?", "focus": "Personal connection and comparison"},
+        {"question": "What cultural insights can you gain from this audio? How might this situation differ in your country?", "focus": "Cultural awareness"},
+        {"question": "What do you think happens after the audio ends? Predict the next part of the conversation.", "focus": "Prediction and creative thinking"},
+        {"question": "What advice would you give to the speakers in this situation?", "focus": "Critical thinking and modal verbs"},
+        {"question": "What is the most important piece of information you learned from the audio?", "focus": "Main idea identification"},
+        {"question": "How would you describe the relationship between the speakers based on their language and tone?", "focus": "Relationship analysis and pragmatics"}
       ],
       "teacher_tip": "Encourage students to refer directly to specific words and phrases they heard in the audio when answering. This develops their ability to provide evidence and detailed responses."
     }`;
@@ -992,68 +972,68 @@ export const getAnswerQuestionsAudioExercise = () => `    {
 // Exercise type to function mapping for easy selection - UPDATED WITH AUDIO EXERCISES
 export const exerciseFunctions = {
   reading: getReadingExercise,
-  "true-false": getTrueFalseExercise,
+  'true-false': getTrueFalseExercise,
   matching: getMatchingExercise,
-  "fill-in-blanks": getFillInBlanksExercise,
-  "multiple-choice": getMultipleChoiceExercise,
+  'fill-in-blanks': getFillInBlanksExercise,
+  'multiple-choice': getMultipleChoiceExercise,
   dialogue: getDialogueExercise,
   discussion: getDiscussionExercise,
-  "error-correction": getErrorCorrectionExercise,
-  "odd-one-out": getOddOneOutExercise,
-  synonyms: getSynonymsExercise,
-  antonyms: getAntonymsExercise,
-  "synonyms-antonyms": getSynonymsAntonymsExercise,
-  "sentence-transformation": getSentenceTransformationExercise,
-  "word-order": getWordOrderExercise,
-  "gap-text": getGapTextExercise,
-  "negative-prefixes": getNegativePrefixesExercise,
-  categorize: getCategorizeExercise,
-  paraphrasing: getParaphrasingExercise,
-  "complete-word": getCompleteWordExercise,
-  "matching-halves": getMatchingHalvesExercise,
-  "describe-picture": getDescribePictureExercise,
-  "answer-questions": getAnswerQuestionsExercise,
-  "multiple-choice-picture": getMultipleChoicePictureExercise,
-  "true-false-picture": getTrueFalsePictureExercise,
-  "answer-questions-picture": getAnswerQuestionsPictureExercise,
+  'error-correction': getErrorCorrectionExercise,
+  'odd-one-out': getOddOneOutExercise,
+  'synonyms': getSynonymsExercise,
+  'antonyms': getAntonymsExercise,
+  'synonyms-antonyms': getSynonymsAntonymsExercise,
+  'sentence-transformation': getSentenceTransformationExercise,
+  'word-order': getWordOrderExercise,
+  'gap-text': getGapTextExercise,
+  'negative-prefixes': getNegativePrefixesExercise,
+  'categorize': getCategorizeExercise,
+  'paraphrasing': getParaphrasingExercise,
+  'complete-word': getCompleteWordExercise,
+  'matching-halves': getMatchingHalvesExercise,
+  'describe-picture': getDescribePictureExercise,
+  'answer-questions': getAnswerQuestionsExercise,
+  'multiple-choice-picture': getMultipleChoicePictureExercise,
+  'true-false-picture': getTrueFalsePictureExercise,
+  'answer-questions-picture': getAnswerQuestionsPictureExercise,
   // NEW: Audio exercises
-  "listening-comprehension": getListeningComprehensionExercise,
-  "multiple-choice-audio": getMultipleChoiceAudioExercise,
-  "true-false-audio": getTrueFalseAudioExercise,
-  "fill-in-blanks-audio": getFillInBlanksAudioExercise,
-  "answer-questions-audio": getAnswerQuestionsAudioExercise,
+  'listening-comprehension': getListeningComprehensionExercise,
+  'multiple-choice-audio': getMultipleChoiceAudioExercise,
+  'true-false-audio': getTrueFalseAudioExercise,
+  'fill-in-blanks-audio': getFillInBlanksAudioExercise,
+  'answer-questions-audio': getAnswerQuestionsAudioExercise
 };
 
 export const exerciseOrder = [
-  "reading",
-  "true-false",
-  "matching",
-  "fill-in-blanks",
-  "multiple-choice",
-  "dialogue",
-  "discussion",
-  "error-correction",
-  "odd-one-out",
-  "synonyms",
-  "antonyms",
-  "synonyms-antonyms",
-  "sentence-transformation",
-  "word-order",
-  "gap-text",
-  "negative-prefixes",
-  "categorize",
-  "paraphrasing",
-  "complete-word",
-  "matching-halves",
-  "describe-picture",
-  "answer-questions",
-  "multiple-choice-picture",
-  "true-false-picture",
-  "answer-questions-picture",
+  'reading',
+  'true-false',
+  'matching',
+  'fill-in-blanks',
+  'multiple-choice',
+  'dialogue',
+  'discussion',
+  'error-correction',
+  'odd-one-out',
+  'synonyms',
+  'antonyms',
+  'synonyms-antonyms',
+  'sentence-transformation',
+  'word-order',
+  'gap-text',
+  'negative-prefixes',
+  'categorize',
+  'paraphrasing',
+  'complete-word',
+  'matching-halves',
+  'describe-picture',
+  'answer-questions',
+  'multiple-choice-picture',
+  'true-false-picture',
+  'answer-questions-picture',
   // Audio exercises
-  "listening-comprehension",
-  "multiple-choice-audio",
-  "true-false-audio",
-  "fill-in-blanks-audio",
-  "answer-questions-audio",
+  'listening-comprehension',
+  'multiple-choice-audio',
+  'true-false-audio',
+  'fill-in-blanks-audio',
+  'answer-questions-audio'
 ];

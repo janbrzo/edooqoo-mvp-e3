@@ -208,25 +208,7 @@ serve(async (req) => {
 You create personalized test questions based on student data.
 Always return valid JSON with the exact structure specified.
 Questions should be appropriate for the student's English level.
-Include a mix of question types for variety.
-
-CORE INSTRUCTIONS – PEDAGOGICAL SKILL TAGGING
-
-Each individual question MUST include EXACTLY one micro_skill and AT LEAST two nano_skill.
-A nano_skill represents the smallest observable and testable unit of language ability.
-A nano_skill MUST be verifiable from a single learner answer without external context.
-A nano_skill MUST NOT describe broad grammar topics, lesson goals, exercise types or teaching strategies.
-A micro_skill represents a broader linguistic competence grouping the nano_skills used in the item.
-Each nano_skill and each micro_skill MUST include its own confidence and its own reason.
-Confidence values MUST be in range 0.00–1.00 and express certainty that the item genuinely tests the skill.
-Reason MUST explain why this specific item tests the skill, not how it should be taught.
-
-FINAL REQUIREMENTS – SKILL TAGGING VALIDATION
-
-Nano_skills MUST be minimal and atomic.
-Do NOT reuse identical nano_skill plus reason combinations within the same test unless the linguistic mechanism is identical.
-Nano_skill selection MUST depend solely on the linguistic mechanism tested in the item.
-The presence or absence of other nano_skill MUST NOT influence nano_skill generation.` 
+Include a mix of question types for variety.` 
           },
           { role: 'user', content: prompt }
         ],
@@ -343,7 +325,6 @@ ${flashcards.map(f => `- ${f.front_text} = ${f.back_text}`).join('\n')}
 5. For multiple_choice, provide exactly 4 options
 6. For fill_blank, the blank should be marked with ___
 7. For matching, provide pairs of items
-8. Each question MUST include nano_skill and micro_skill arrays as specified in system instructions
 
 Return ONLY valid JSON in this exact format:
 {
@@ -358,14 +339,7 @@ Return ONLY valid JSON in this exact format:
       "element_type": "grammar",
       "difficulty_level": 3,
       "skill_tags": ["present_simple", "third_person_singular"],
-      "explanation": "We use 'goes' because 'she' is third person singular.",
-      "nano_skill": [
-        {"name": "ns.grammar.third_person_singular_s", "confidence": 0.96, "reason": "Tests adding -s/-es to verbs after he/she/it"},
-        {"name": "ns.grammar.subject_verb_agreement", "confidence": 0.92, "reason": "Tests matching verb form to singular subject 'she'"}
-      ],
-      "micro_skill": [
-        {"name": "ms.grammar.present_simple_form", "confidence": 0.96, "reason": "Tests present simple verb conjugation"}
-      ]
+      "explanation": "We use 'goes' because 'she' is third person singular."
     },
     {
       "question_type": "fill_blank",
@@ -375,14 +349,7 @@ Return ONLY valid JSON in this exact format:
       "element_type": "grammar",
       "difficulty_level": 4,
       "skill_tags": ["present_perfect_continuous"],
-      "explanation": "Present perfect continuous uses have/has been + verb-ing.",
-      "nano_skill": [
-        {"name": "ns.grammar.present_perfect_continuous_form", "confidence": 0.95, "reason": "Tests forming have/has been + -ing"},
-        {"name": "ns.grammar.verb_ing_suffix", "confidence": 0.90, "reason": "Tests adding -ing to base verb 'wait'"}
-      ],
-      "micro_skill": [
-        {"name": "ms.grammar.continuous_aspect_formation", "confidence": 0.95, "reason": "Tests continuous aspect verb formation"}
-      ]
+      "explanation": "Present perfect continuous uses have/has been + verb-ing."
     },
     {
       "question_type": "true_false",
@@ -392,14 +359,7 @@ Return ONLY valid JSON in this exact format:
       "element_type": "vocabulary",
       "difficulty_level": 2,
       "skill_tags": ["parts_of_speech"],
-      "explanation": "'Beautiful' is an adjective, not an adverb. The adverb form is 'beautifully'.",
-      "nano_skill": [
-        {"name": "ns.vocab.adjective_identification", "confidence": 0.94, "reason": "Tests recognizing 'beautiful' as adjective not adverb"},
-        {"name": "ns.vocab.adverb_ly_suffix", "confidence": 0.90, "reason": "Tests knowing adverbs typically end in -ly"}
-      ],
-      "micro_skill": [
-        {"name": "ms.vocab.parts_of_speech_classification", "confidence": 0.94, "reason": "Tests classifying words by part of speech"}
-      ]
+      "explanation": "'Beautiful' is an adjective, not an adverb. The adverb form is 'beautifully'."
     }
   ]
 }`;

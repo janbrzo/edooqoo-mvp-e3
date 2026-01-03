@@ -7,11 +7,7 @@ import { isValidUUID, sanitizeInput, validatePrompt } from "./security.ts";
 import { RateLimiter } from "./rateLimiter.ts";
 import { getGeolocation } from "./geolocation.ts";
 import { composeSystemMessage } from "./prompts/prompt-composer.ts";
-import {
-  createSSEStream,
-  countExercisesInPartialJSON,
-  getExpectedExerciseCount as getExpectedCount,
-} from "./streaming.ts";
+import { createSSEStream, countExercisesInPartialJSON, getExpectedExerciseCount as getExpectedCount } from "./streaming.ts";
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 
@@ -34,17 +30,16 @@ serve(async (req) => {
   const generationStartTime = Date.now();
 
   try {
-    const { prompt, formData, userId, studentId, isRegeneration, isBatchGeneration, enableStreaming } =
-      await req.json();
+    const { prompt, formData, userId, studentId, isRegeneration, isBatchGeneration, enableStreaming } = await req.json();
     const ip =
       req.headers.get("x-forwarded-for") ||
       req.headers.get("cf-connecting-ip") ||
       req.headers.get("x-real-ip") ||
       "unknown";
-
+    
     // Check if streaming is requested
     const useStreaming = enableStreaming === true;
-    console.log("🔍 Streaming mode:", useStreaming ? "ENABLED" : "DISABLED");
+    console.log('🔍 Streaming mode:', useStreaming ? 'ENABLED' : 'DISABLED');
 
     // Input validation
     const promptValidation = validatePrompt(prompt);
@@ -57,17 +52,17 @@ serve(async (req) => {
 
     // Validate userId if provided - allow null/undefined for anonymous mode
     // FIXED: Accept null, undefined, or 'anonymous' for demo mode (non-logged users)
-    if (userId && userId !== "anonymous" && userId !== null && !isValidUUID(userId)) {
-      console.log("❌ Invalid userId format:", userId);
+    if (userId && userId !== 'anonymous' && userId !== null && !isValidUUID(userId)) {
+      console.log('❌ Invalid userId format:', userId);
       return new Response(JSON.stringify({ error: "Invalid user ID format" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
+    
     // Log anonymous mode
-    if (!userId || userId === "anonymous") {
-      console.log("📋 Anonymous mode - worksheet will be created without user association");
+    if (!userId || userId === 'anonymous') {
+      console.log('📋 Anonymous mode - worksheet will be created without user association');
     }
 
     // Enhanced rate limiting with multi-tier limits
@@ -107,83 +102,81 @@ serve(async (req) => {
     const grammarFocusMatch = sanitizedPrompt.match(/grammarFocus:\s*(.+?)(?:\n|$)/);
     const grammarFocus = grammarFocusMatch ? grammarFocusMatch[1].trim() : null;
 
-    // ============================================================
-    // BATCH GENERATION MODE - Generate multiple exercise types in ONE request
-    // ============================================================
-    if (isBatchGeneration && formData?.targetExerciseTypes && Array.isArray(formData.targetExerciseTypes)) {
-      const batchStartTime = Date.now();
-      console.log("🔄 [BATCH-MODE] Batch generation requested for types:", formData.targetExerciseTypes);
-      console.log("🔄 [BATCH-MODE] Exercise count per type:", formData.exerciseCountPerType || 1);
-
-      const exerciseCountPerType = formData.exerciseCountPerType || 1;
-      const totalExerciseCount = formData.targetExerciseTypes.length * exerciseCountPerType;
-
-      // Build ONE system message for ALL exercise types
-      const batchSystemMessage = composeSystemMessage(
-        hasGrammarFocus,
-        grammarFocus,
-        {
-          ...formData,
-          selectedExercises: formData.targetExerciseTypes, // Pass ALL types
-          selectedImage: null, // ❌ No image in batch mode
-          selectedAudio: null, // ❌ No audio in batch mode
-        },
-        totalExerciseCount, // Total count of ALL exercises
-        formData.targetExerciseTypes, // ALL types at once
-        null, // ❌ No image in batch mode
-        null, // ❌ No audio in batch mode
-      );
-
-      console.log(
-        `🔄 [BATCH-MODE] Making ONE OpenAI request for ${totalExerciseCount} exercises across ${formData.targetExerciseTypes.length} types`,
-      );
-
-      // ONE request to OpenAI for all exercises
-      const batchResponse = await openai.chat.completions.create({
-        model: "gpt-5-mini-2025-08-07",
-        temperature: 1,
-        messages: [
-          { role: "system", content: batchSystemMessage },
-          { role: "user", content: sanitizedPrompt },
-        ],
-        max_completion_tokens: 30000,
-      });
-
-      const batchGenerationTime = ((Date.now() - batchStartTime) / 1000).toFixed(2);
-      console.log(`✅ [BATCH-MODE] OpenAI responded in ${batchGenerationTime}s`);
-
-      const batchContent = batchResponse.choices[0].message.content;
-
-      if (!batchContent) {
-        throw new Error("No content received from OpenAI in batch mode");
-      }
-
-      try {
-        const batchData = parseAIResponse(batchContent);
-        if (!batchData.exercises || !Array.isArray(batchData.exercises)) {
-          throw new Error("Invalid exercises structure in batch response");
-        }
-
-        console.log(`✅ [BATCH-MODE] Generated ${batchData.exercises.length} exercises in ONE request`);
-        console.log(`⏱️  [BATCH-MODE] Total batch generation time: ${batchGenerationTime} seconds`);
-
-        // Return batch exercises directly WITH FULL PROMPT for storage in homework_assignments.prompt
-        return new Response(
-          JSON.stringify({
-            exercises: batchData.exercises,
-            fullPrompt: batchSystemMessage, // ✅ Return complete system message for homework_assignments.prompt
-            success: true,
-          }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      } catch (error) {
-        console.error(`❌ [BATCH-MODE] Failed to parse batch response:`, error);
-        throw error;
-      }
+  // ============================================================
+  // BATCH GENERATION MODE - Generate multiple exercise types in ONE request
+  // ============================================================
+  if (isBatchGeneration && formData?.targetExerciseTypes && Array.isArray(formData.targetExerciseTypes)) {
+    const batchStartTime = Date.now();
+    console.log('🔄 [BATCH-MODE] Batch generation requested for types:', formData.targetExerciseTypes);
+    console.log('🔄 [BATCH-MODE] Exercise count per type:', formData.exerciseCountPerType || 1);
+    
+    const exerciseCountPerType = formData.exerciseCountPerType || 1;
+    const totalExerciseCount = formData.targetExerciseTypes.length * exerciseCountPerType;
+    
+    // Build ONE system message for ALL exercise types
+    const batchSystemMessage = composeSystemMessage(
+      hasGrammarFocus,
+      grammarFocus,
+      { 
+        ...formData, 
+        selectedExercises: formData.targetExerciseTypes, // Pass ALL types
+        selectedImage: null, // ❌ No image in batch mode
+        selectedAudio: null  // ❌ No audio in batch mode
+      },
+      totalExerciseCount, // Total count of ALL exercises
+      formData.targetExerciseTypes, // ALL types at once
+      null, // ❌ No image in batch mode
+      null  // ❌ No audio in batch mode
+    );
+    
+    console.log(`🔄 [BATCH-MODE] Making ONE OpenAI request for ${totalExerciseCount} exercises across ${formData.targetExerciseTypes.length} types`);
+    
+    // ONE request to OpenAI for all exercises
+    const batchResponse = await openai.chat.completions.create({
+      model: "gpt-5-mini-2025-08-07",
+      temperature: 1,
+      messages: [
+        { role: "system", content: batchSystemMessage },
+        { role: "user", content: sanitizedPrompt }
+      ],
+      max_completion_tokens: 20000,
+    });
+    
+    const batchGenerationTime = ((Date.now() - batchStartTime) / 1000).toFixed(2);
+    console.log(`✅ [BATCH-MODE] OpenAI responded in ${batchGenerationTime}s`);
+    
+    const batchContent = batchResponse.choices[0].message.content;
+    
+    if (!batchContent) {
+      throw new Error("No content received from OpenAI in batch mode");
     }
+    
+    try {
+      const batchData = parseAIResponse(batchContent);
+      if (!batchData.exercises || !Array.isArray(batchData.exercises)) {
+        throw new Error("Invalid exercises structure in batch response");
+      }
+      
+      console.log(`✅ [BATCH-MODE] Generated ${batchData.exercises.length} exercises in ONE request`);
+      console.log(`⏱️  [BATCH-MODE] Total batch generation time: ${batchGenerationTime} seconds`);
+      
+      // Return batch exercises directly WITH FULL PROMPT for storage in homework_assignments.prompt
+      return new Response(
+        JSON.stringify({ 
+          exercises: batchData.exercises,
+          fullPrompt: batchSystemMessage, // ✅ Return complete system message for homework_assignments.prompt
+          success: true 
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    } catch (error) {
+      console.error(`❌ [BATCH-MODE] Failed to parse batch response:`, error);
+      throw error;
+    }
+  }
 
     // Determine exercise count from lesson duration
     let exerciseCount = 8; // Default for 60+ minutes
@@ -223,7 +216,9 @@ serve(async (req) => {
       "fill-in-blanks-audio",
       "answer-questions-audio",
     ];
-    const requiresAudio = effectiveExercises?.some((ex) => audioRequiredExercises.some((reqEx) => ex.includes(reqEx)));
+    const requiresAudio = effectiveExercises?.some((ex) =>
+      audioRequiredExercises.some((reqEx) => ex.includes(reqEx)),
+    );
 
     console.log("📸 Picture requirement check:", {
       selectedExercises: effectiveExercises,
@@ -236,11 +231,11 @@ serve(async (req) => {
     // ============================================================
     // Media is now generated on the frontend BEFORE this function is called.
     // This reduces backend execution time from 60s+ to <30s, preventing 546 WORKER_LIMIT errors.
-
+    
     const selectedImage = formData?.selectedImage || null;
     const selectedAudio = formData?.selectedAudio || null;
-
-    console.log("📸🎵 [MEDIA-CHECK] Received pre-generated media:", {
+    
+    console.log('📸🎵 [MEDIA-CHECK] Received pre-generated media:', {
       hasImage: !!selectedImage,
       hasAudio: !!selectedAudio,
     });
@@ -261,11 +256,11 @@ serve(async (req) => {
     });
 
     // DEBUG: Log audio data before passing to prompt composer
-    console.log("🎵 [DEBUG] selectedAudio being passed to prompt composer:", {
+    console.log('🎵 [DEBUG] selectedAudio being passed to prompt composer:', {
       hasAudio: !!selectedAudio,
       hasTranscript: !!selectedAudio?.transcript,
       transcriptLength: selectedAudio?.transcript?.length || 0,
-      transcriptPreview: selectedAudio?.transcript?.substring(0, 100) || "[EMPTY]",
+      transcriptPreview: selectedAudio?.transcript?.substring(0, 100) || '[EMPTY]',
       audioDuration: selectedAudio?.duration,
       audioVoice: selectedAudio?.voice,
     });
@@ -278,7 +273,7 @@ serve(async (req) => {
       exerciseCount,
       effectiveExercises,
       selectedImage,
-      selectedAudio,
+      selectedAudio
     );
 
     // HEARTBEAT LOG: Before OpenAI API call
@@ -295,108 +290,100 @@ serve(async (req) => {
     // STREAMING MODE: Real-time progress via SSE
     // ============================================================
     if (useStreaming) {
-      console.log("🌊 Starting STREAMING mode...");
-
+      console.log('🌊 Starting STREAMING mode...');
+      
       const { readable, send, close } = createSSEStream();
-
+      
       // Immediately return SSE response to client
       const responsePromise = new Response(readable, {
         headers: {
           ...corsHeaders,
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        },
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        }
       });
-
+      
       // Background: Generate with streaming
       (async () => {
         try {
-          send("start", { message: "Starting generation..." });
-
+          send('start', { message: 'Starting generation...' });
+          
           const expectedTotal = getExpectedCount(formData?.lessonTime);
-
+          
           // OpenAI STREAMING call
-          console.log("🔵 Starting OpenAI streaming...");
+          console.log('🔵 Starting OpenAI streaming...');
           const stream = await openai.chat.completions.create({
             model: "gpt-5-mini-2025-08-07",
             temperature: 1,
             messages: [
               { role: "system", content: systemMessage },
-              { role: "user", content: sanitizedPrompt },
+              { role: "user", content: sanitizedPrompt }
             ],
-            max_completion_tokens: 30000,
-            stream: true, // ← KEY: Enable streaming
+            max_completion_tokens: 20000,
+            stream: true  // ← KEY: Enable streaming
           });
-
-          let fullContent = "";
+          
+          let fullContent = '';
           let lastExerciseCount = 0;
-
+          
           // Process stream chunks
           for await (const chunk of stream) {
-            const delta = chunk.choices[0]?.delta?.content || "";
+            const delta = chunk.choices[0]?.delta?.content || '';
             fullContent += delta;
-
+            
             // Detect completed exercises
             const newCount = countExercisesInPartialJSON(fullContent);
             if (newCount > lastExerciseCount) {
               lastExerciseCount = newCount;
-              send("progress", {
+              send('progress', { 
                 exercisesGenerated: newCount,
-                expectedTotal,
+                expectedTotal
               });
             }
           }
-
-          console.log("✅ OpenAI streaming completed, parsing final JSON...");
-
+          
+          console.log('✅ OpenAI streaming completed, parsing final JSON...');
+          
           // Parse final JSON
           const worksheetData = parseAIResponse(fullContent);
-
+          
           if (!worksheetData.title || !worksheetData.exercises || !Array.isArray(worksheetData.exercises)) {
             throw new Error("Invalid worksheet structure returned from AI");
           }
-
+          
           // Make sure exercise titles have correct sequential numbering
           worksheetData.exercises.forEach((exercise: any, index: number) => {
             const exerciseNumber = index + 1;
             const exerciseType = exercise.type.charAt(0).toUpperCase() + exercise.type.slice(1).replace(/-/g, " ");
             exercise.title = `Exercise ${exerciseNumber}: ${exerciseType}`;
           });
-
+          
           const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);
           worksheetData.sourceCount = sourceCount;
-
+          
           // Calculate generation time
           const generationTimeSeconds = Math.round((Date.now() - generationStartTime) / 1000);
-
+          
           // Save to database
-          console.log("💾 Saving worksheet to database...");
+          console.log('💾 Saving worksheet to database...');
           const fullPrompt = `SYSTEM MESSAGE:\n${systemMessage}\n\nUSER MESSAGE:\n${sanitizedPrompt}`;
           const sanitizedFormData = formData ? JSON.parse(JSON.stringify(formData)) : {};
-
+          
           // Remove base64 data before saving
-          const sanitizedImage = selectedImage
-            ? {
-                ...selectedImage,
-                url: selectedImage.url?.startsWith("data:") ? null : selectedImage.url,
-                ai_generated_url: selectedImage.ai_generated_url?.startsWith("data:")
-                  ? null
-                  : selectedImage.ai_generated_url,
-                thumbnail: selectedImage.thumbnail?.startsWith("data:") ? null : selectedImage.thumbnail,
-              }
-            : null;
+          const sanitizedImage = selectedImage ? {
+            ...selectedImage,
+            url: selectedImage.url?.startsWith('data:') ? null : selectedImage.url,
+            ai_generated_url: selectedImage.ai_generated_url?.startsWith('data:') ? null : selectedImage.ai_generated_url,
+            thumbnail: selectedImage.thumbnail?.startsWith('data:') ? null : selectedImage.thumbnail
+          } : null;
 
-          const sanitizedAudio = selectedAudio
-            ? {
-                ...selectedAudio,
-                url: selectedAudio.url?.startsWith("data:") ? null : selectedAudio.url,
-                ai_generated_audio_url: selectedAudio.ai_generated_audio_url?.startsWith("data:")
-                  ? null
-                  : selectedAudio.ai_generated_audio_url,
-              }
-            : null;
-
+          const sanitizedAudio = selectedAudio ? {
+            ...selectedAudio,
+            url: selectedAudio.url?.startsWith('data:') ? null : selectedAudio.url,
+            ai_generated_audio_url: selectedAudio.ai_generated_audio_url?.startsWith('data:') ? null : selectedAudio.ai_generated_audio_url
+          } : null;
+          
           const { data: worksheet, error: worksheetError } = await supabase
             .from("worksheets")
             .insert({
@@ -422,39 +409,40 @@ serve(async (req) => {
               city: geoData.city || null,
             })
             .select("id, created_at, title");
-
+          
           if (worksheetError) {
             throw new Error(`Database save failed: ${worksheetError.message}`);
           }
-
+          
           const worksheetId = worksheet?.[0]?.id;
           if (!worksheetId) {
-            throw new Error("No worksheet ID returned from database");
+            throw new Error('No worksheet ID returned from database');
           }
-
+          
           worksheetData.id = worksheetId;
-
-          console.log("✅ Streaming generation complete, sending done event");
-          send("done", {
+          
+          console.log('✅ Streaming generation complete, sending done event');
+          send('done', { 
             worksheetId,
-            worksheet: worksheetData,
+            worksheet: worksheetData
           });
+          
         } catch (error) {
-          console.error("❌ Streaming error:", error);
-          send("error", { message: error instanceof Error ? error.message : "Unknown error" });
+          console.error('❌ Streaming error:', error);
+          send('error', { message: error instanceof Error ? error.message : 'Unknown error' });
         } finally {
           close();
         }
       })();
-
+      
       return responsePromise;
     }
-
+    
     // ============================================================
     // REGULAR MODE: Non-streaming (backward compatibility)
     // ============================================================
-    console.log("📄 Using REGULAR (non-streaming) mode");
-
+    console.log('📄 Using REGULAR (non-streaming) mode');
+    
     // Generate worksheet using OpenAI with complete prompt structure
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-5-mini-2025-08-07", // gpt-4.1-2025-04-14 Changed back to gpt-4o i można gpt-4.1-2025-04-14
@@ -469,7 +457,7 @@ serve(async (req) => {
           content: sanitizedPrompt,
         },
       ],
-      max_completion_tokens: 30000, // nowa nazwa parametru  max_completion_tokens: 7500
+      max_completion_tokens: 20000, // nowa nazwa parametru  max_completion_tokens: 7500
     });
 
     // HEARTBEAT LOG: After OpenAI API call
@@ -564,26 +552,18 @@ serve(async (req) => {
 
         // 🧹 OPTIMIZATION 3A: Remove base64 data URLs before saving to database
         // This saves ~0.5-3MB per worksheet and drastically reduces egress costs
-        const sanitizedImage = selectedImage
-          ? {
-              ...selectedImage,
-              url: selectedImage.url?.startsWith("data:") ? null : selectedImage.url,
-              ai_generated_url: selectedImage.ai_generated_url?.startsWith("data:")
-                ? null
-                : selectedImage.ai_generated_url,
-              thumbnail: selectedImage.thumbnail?.startsWith("data:") ? null : selectedImage.thumbnail,
-            }
-          : null;
+        const sanitizedImage = selectedImage ? {
+          ...selectedImage,
+          url: selectedImage.url?.startsWith('data:') ? null : selectedImage.url,
+          ai_generated_url: selectedImage.ai_generated_url?.startsWith('data:') ? null : selectedImage.ai_generated_url,
+          thumbnail: selectedImage.thumbnail?.startsWith('data:') ? null : selectedImage.thumbnail
+        } : null;
 
-        const sanitizedAudio = selectedAudio
-          ? {
-              ...selectedAudio,
-              url: selectedAudio.url?.startsWith("data:") ? null : selectedAudio.url,
-              ai_generated_audio_url: selectedAudio.ai_generated_audio_url?.startsWith("data:")
-                ? null
-                : selectedAudio.ai_generated_audio_url,
-            }
-          : null;
+        const sanitizedAudio = selectedAudio ? {
+          ...selectedAudio,
+          url: selectedAudio.url?.startsWith('data:') ? null : selectedAudio.url,
+          ai_generated_audio_url: selectedAudio.ai_generated_audio_url?.startsWith('data:') ? null : selectedAudio.ai_generated_audio_url
+        } : null;
 
         const { data: worksheet, error: worksheetError } = await supabase
           .from("worksheets")
@@ -646,11 +626,11 @@ serve(async (req) => {
     // ETAP 4: Add selected_image to response if it exists (so frontend receives it)
     if (selectedImage) {
       worksheetData.selected_image = selectedImage;
-      console.log("📸 [RESPONSE] Returning selected_image in response:", {
+      console.log('📸 [RESPONSE] Returning selected_image in response:', {
         hasUrl: !!selectedImage.url,
         source: selectedImage.source,
-        urlType: selectedImage.url?.startsWith("data:") ? "base64" : "external",
-        urlPreview: selectedImage.url?.substring(0, 80) + "...",
+        urlType: selectedImage.url?.startsWith('data:') ? 'base64' : 'external',
+        urlPreview: selectedImage.url?.substring(0, 80) + '...',
       });
     }
 
@@ -661,13 +641,13 @@ serve(async (req) => {
       worksheetData.audio_duration = selectedAudio.duration || null;
       worksheetData.audio_voice = selectedAudio.voice || null;
       worksheetData.selected_audio = selectedAudio;
-
-      console.log("🎵 [RESPONSE] Returning audio fields in response:", {
+      
+      console.log('🎵 [RESPONSE] Returning audio fields in response:', {
         hasAudioUrl: !!worksheetData.audio_url,
         hasTranscript: !!worksheetData.audio_transcript,
         transcriptLength: worksheetData.audio_transcript?.length || 0,
         duration: worksheetData.audio_duration,
-        voice: worksheetData.audio_voice,
+        voice: worksheetData.audio_voice
       });
     }
 
@@ -681,10 +661,10 @@ serve(async (req) => {
   
   🔹 Phase Breakdown:
      • Geolocation:        ${geoDuration}ms
-     • Media Generation:   ${selectedImage || selectedAudio ? "Pre-generated on frontend" : "Skipped (no media required)"}
+     • Media Generation:   ${selectedImage || selectedAudio ? 'Pre-generated on frontend' : 'Skipped (no media required)'}
      • OpenAI API Call:    ${openaiDuration}s
      • JSON Parsing:       Fast (< 100ms)
-     • Database Save:      ${!isRegeneration ? "See DB logs above" : "Skipped (regeneration)"}
+     • Database Save:      ${!isRegeneration ? 'See DB logs above' : 'Skipped (regeneration)'}
   
   🎯 Configuration:
      • Model:              gpt-5-mini-2025-08-07
@@ -694,9 +674,9 @@ serve(async (req) => {
      • Regeneration Mode:  ${!!isRegeneration}
   
   📍 Context:
-     • Location:           ${geoData.country || "unknown"} / ${geoData.city || "unknown"}
+     • Location:           ${geoData.country || 'unknown'} / ${geoData.city || 'unknown'}
      • IP:                 ${ip}
-     • Teacher:            ${teacherEmail || "anonymous"}
+     • Teacher:            ${teacherEmail || 'anonymous'}
 ╚════════════════════════════════════════════════════════════════════════════╝
     `);
 
