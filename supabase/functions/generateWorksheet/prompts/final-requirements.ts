@@ -97,12 +97,6 @@ export const getFinalRequirements = (
 
   requirements += `
 
-FINAL REQUIREMENTS – SKILL TAGGING VALIDATION
-Nano_skills MUST be minimal and atomic
-Do NOT reuse identical nano_skill plus reason combinations within the same exercise unless the linguistic mechanism is identical
-Nano_skill selection MUST depend solely on the linguistic mechanism tested in the item
-The presence or absence of other nano_skill MUST NOT influence nano_skill generation
-
 `;
 
   requirements += "\nRETURN ONLY VALID JSON. NO MARKDOWN. NO ADDITIONAL TEXT.";
