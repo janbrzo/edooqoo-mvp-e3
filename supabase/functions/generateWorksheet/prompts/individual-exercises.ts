@@ -11,11 +11,11 @@ export const getReadingExercise = () => `    {
       "instructions": "Read the following text and answer the questions below.",
       "content": "New York City is famous for its restaurants. People from all over the world live there, so the city offers many different types of food. You can find Italian, Chinese, Mexican, Japanese, Greek, Thai, Indian, and many more international cuisines. American-style diners and fast food restaurants are also very popular.\\nMost restaurants in New York have menus that include appetizers, main dishes, and desserts. Appetizers are small dishes that people eat before the main meal, such as soups, salads, or garlic bread. Main dishes are usually bigger and include meat, fish, or vegetarian options, often served with rice, potatoes, or pasta. Desserts like cheesecake, brownies, or ice cream are very common.\\nSome of the most popular types of food in New York include pizza, burgers, sushi, and pasta. People also enjoy trying food from food trucks, especially for lunch. One of the most famous dishes in the United States, and especially in New York, is the New York-style pizza. It's a thin, wide slice of pizza, usually eaten with your hands.\\nOf course, not every restaurant visit is perfect. Some common complaints that people make in New York restaurants include:\\n\\"The food is cold.\\"\\n\\"This is not what I ordered.\\"\\n\\"The portion is too small.\\"\\n\\"I waited too long for my food.\\"\\n\\"The bill is incorrect.\\"\\nLearning how to order food and make polite complaints in English is very useful if you ever visit New York or work in customer service.",
       "questions": [
-        {"text": "Why is there such a wide variety of food in New York City restaurants?", "answer": "Because people from all over the world live in New York, so the city offers many different types of international cuisine.", "nano_skill": [{"name": "ns.reading.main_idea_extraction", "confidence": 0.95, "reason": "Requires identifying the main cause-effect relationship from the text"}, {"name": "ns.reading.explicit_detail_location", "confidence": 0.90, "reason": "Answer is directly stated in the first paragraph"}], "micro_skill": [{"name": "ms.reading.comprehension", "confidence": 0.95, "reason": "Tests understanding of text content and main ideas"}]},
-        {"text": "What are some typical examples of appetizers, main dishes, and desserts mentioned in the text?", "answer": "Appetizers: soups, salads, garlic bread; Main dishes: meat, fish, or vegetarian options with rice, potatoes, or pasta; Desserts: cheesecake, brownies, ice cream.", "nano_skill": [{"name": "ns.reading.categorization_from_text", "confidence": 0.92, "reason": "Requires grouping information into given categories"}, {"name": "ns.reading.multiple_detail_extraction", "confidence": 0.90, "reason": "Requires finding multiple specific details from text"}], "micro_skill": [{"name": "ms.reading.detail_comprehension", "confidence": 0.92, "reason": "Tests ability to locate and organize specific information"}]},
-        {"text": "What is special about New York-style pizza?", "answer": "It is a thin, wide slice of pizza, usually eaten with your hands.", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "What are some of the most popular international cuisines in New York?", "answer": "Italian, Chinese, Mexican, Japanese, Greek, Thai, and Indian cuisines.", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "What are some common complaints that customers make in New York restaurants?", "answer": "The food is cold, This is not what I ordered, The portion is too small, I waited too long for my food, and The bill is incorrect.", "nano_skill": [...], "micro_skill": [...]}
+        {"text": "Why is there such a wide variety of food in New York City restaurants?", "answer": "Because people from all over the world live in New York, so the city offers many different types of international cuisine.", "nano_skill": [{"name": "ns.reading.main_idea_extraction", "confidence": 0.95, "reason": "Requires identifying the main cause-effect relationship from the text"}]},
+        {"text": "What are some typical examples of appetizers, main dishes, and desserts mentioned in the text?", "answer": "Appetizers: soups, salads, garlic bread; Main dishes: meat, fish, or vegetarian options with rice, potatoes, or pasta; Desserts: cheesecake, brownies, ice cream.", "nano_skill": [{"name": "ns.reading.categorization_from_text", "confidence": 0.92, "reason": "Requires grouping information into given categories"}]},
+        {"text": "What is special about New York-style pizza?", "answer": "It is a thin, wide slice of pizza, usually eaten with your hands.", "nano_skill": [...]},
+        {"text": "What are some of the most popular international cuisines in New York?", "answer": "Italian, Chinese, Mexican, Japanese, Greek, Thai, and Indian cuisines.", "nano_skill": [...]},
+        {"text": "What are some common complaints that customers make in New York restaurants?", "answer": "The food is cold, This is not what I ordered, The portion is too small, I waited too long for my food, and The bill is incorrect.", "nano_skill": [...]}
       ],
       "teacher_tip": "Use the comprehension questions as a starting point to ask more personal questions related to your student's life and experiences. Encourage them to share their opinions on the topics and situations mentioned in the text."
     }`;
@@ -27,16 +27,16 @@ export const getTrueFalseExercise = () => `    {
       "time": 5,
       "instructions": "Read each statement about the text and decide if it is true or false.",
       "statements": [
-        {"text": "New York City offers many international cuisines because people from all over the world live there.", "isTrue": true, "nano_skill": [{"name": "ns.reading.cause_effect_verification", "confidence": 0.94, "reason": "Verifies understanding of causal relationship from text"}, {"name": "ns.reading.paraphrase_recognition", "confidence": 0.88, "reason": "Statement paraphrases original text"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.94, "reason": "Tests ability to verify statements against source text"}]},
-        {"text": "American-style diners are not popular in New York.", "isTrue": false, "nano_skill": [{"name": "ns.reading.negation_detection", "confidence": 0.92, "reason": "Requires detecting false negation of stated fact"}, {"name": "ns.reading.explicit_contradiction", "confidence": 0.90, "reason": "Statement contradicts explicit information in text"}], "micro_skill": [{"name": "ms.reading.text_verification", "confidence": 0.92, "reason": "Tests recognition of false statements"}]},
-        {"text": "Appetizers are usually bigger than main dishes.", "isTrue": false, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "New York-style pizza is thick and eaten with a fork and knife.", "isTrue": false, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Food trucks are especially popular for lunch in New York.", "isTrue": true, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "All restaurant visits in New York are perfect according to the text.", "isTrue": false, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "One common complaint is that the food arrives cold.", "isTrue": true, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Desserts like cheesecake and brownies are common in New York restaurants.", "isTrue": true, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "The text mentions that learning to complain politely is useful for customer service work.", "isTrue": true, "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Main dishes in New York restaurants never include vegetarian options.", "isTrue": false, "nano_skill": [...], "micro_skill": [...]}
+        {"text": "New York City offers many international cuisines because people from all over the world live there.", "isTrue": true, "nano_skill": [{"name": "ns.reading.paraphrase_recognition", "confidence": 0.88, "reason": "Statement paraphrases original text"}]},
+        {"text": "American-style diners are not popular in New York.", "isTrue": false, "nano_skill": [{"name": "ns.reading.negation_detection", "confidence": 0.92, "reason": "Requires detecting false negation of stated fact"}]},
+        {"text": "Appetizers are usually bigger than main dishes.", "isTrue": false, "nano_skill": [...]},
+        {"text": "New York-style pizza is thick and eaten with a fork and knife.", "isTrue": false, "nano_skill": [...]},
+        {"text": "Food trucks are especially popular for lunch in New York.", "isTrue": true, "nano_skill": [...]},
+        {"text": "All restaurant visits in New York are perfect according to the text.", "isTrue": false, "nano_skill": [...]},
+        {"text": "One common complaint is that the food arrives cold.", "isTrue": true, "nano_skill": [...]},
+        {"text": "Desserts like cheesecake and brownies are common in New York restaurants.", "isTrue": true, "nano_skill": [...]},
+        {"text": "The text mentions that learning to complain politely is useful for customer service work.", "isTrue": true, "nano_skill": [...]},
+        {"text": "Main dishes in New York restaurants never include vegetarian options.", "isTrue": false, "nano_skill": [...]}
       ],
       "teacher_tip": "Use this exercise to check reading comprehension and ensure students understood the key details from the text."
     }`;
@@ -48,16 +48,16 @@ export const getMatchingExercise = () => `    {
       "time": 7,
       "instructions": "Match each term with its correct definition.",
       "items": [
-        {"term": "Appetizer", "definition": "A small dish served before the main course to stimulate the appetite.", "nano_skill": [{"name": "ns.vocab.restaurant_terminology", "confidence": 0.95, "reason": "Tests knowledge of meal course vocabulary"}, {"name": "ns.vocab.definition_matching", "confidence": 0.90, "reason": "Requires matching term to its definition"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.95, "reason": "Tests vocabulary comprehension through matching"}]},
-        {"term": "Cuisine", "definition": "A style or method of cooking, especially as characteristic of a particular country or region.", "nano_skill": [{"name": "ns.vocab.food_culture_terms", "confidence": 0.93, "reason": "Tests understanding of culinary terminology"}, {"name": "ns.vocab.abstract_noun_meaning", "confidence": 0.88, "reason": "Requires understanding abstract concept definition"}], "micro_skill": [{"name": "ms.vocab.term_definition_pairing", "confidence": 0.93, "reason": "Tests matching abstract vocabulary to definition"}]},
-        {"term": "Portion", "definition": "The amount of food served to one person at a meal.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Incorrect", "definition": "Not accurate or wrong; used especially in the context of errors with orders or bills.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Complaint", "definition": "A statement that something is wrong or not satisfactory, especially in service or quality.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Fine dining", "definition": "A high-end, expensive restaurant experience offering exceptional food, service, and atmosphere.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Reservation", "definition": "An arrangement made in advance to secure a table at a restaurant.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Signature dish", "definition": "A unique or famous meal that represents a restaurant or chef's style.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Undercooked", "definition": "Food that has not been cooked long enough and may be unsafe or unpleasant to eat.", "nano_skill": [...], "micro_skill": [...]},
-        {"term": "Customer service", "definition": "The assistance and advice provided by a restaurant or business to people who use its services.", "nano_skill": [...], "micro_skill": [...]}
+        {"term": "Appetizer", "definition": "A small dish served before the main course to stimulate the appetite.", "nano_skill": [{"name": "ns.vocab.definition_matching", "confidence": 0.90, "reason": "Requires matching term to its definition"}]},
+        {"term": "Cuisine", "definition": "A style or method of cooking, especially as characteristic of a particular country or region.", "nano_skill": [{"name": "ns.vocab.food_culture_terms", "confidence": 0.93, "reason": "Tests understanding of culinary terminology"}]},
+        {"term": "Portion", "definition": "The amount of food served to one person at a meal.", "nano_skill": [...]},
+        {"term": "Incorrect", "definition": "Not accurate or wrong; used especially in the context of errors with orders or bills.", "nano_skill": [...]},
+        {"term": "Complaint", "definition": "A statement that something is wrong or not satisfactory, especially in service or quality.", "nano_skill": [...]},
+        {"term": "Fine dining", "definition": "A high-end, expensive restaurant experience offering exceptional food, service, and atmosphere.", "nano_skill": [...]},
+        {"term": "Reservation", "definition": "An arrangement made in advance to secure a table at a restaurant.", "nano_skill": [...]},
+        {"term": "Signature dish", "definition": "A unique or famous meal that represents a restaurant or chef's style.", "nano_skill": [...]},
+        {"term": "Undercooked", "definition": "Food that has not been cooked long enough and may be unsafe or unpleasant to eat.", "nano_skill": [...]},
+        {"term": "Customer service", "definition": "The assistance and advice provided by a restaurant or business to people who use its services.", "nano_skill": [...]}
       ],
       "teacher_tip": "Before the matching activity, introduce and pronounce each term to ensure students feel confident recognizing and understanding them. If needed, translate the most difficult or abstract vocabulary terms into the student's native language. After the exercise, assign students a follow-up task to write 10 original sentences using the new vocabulary."
     }`;
@@ -70,16 +70,16 @@ export const getFillInBlanksExercise = () => `    {
       "instructions": "Complete each sentence with the correct word from the box.",
       "word_bank": ["famous", "international", "incorrect", "small", "popular", "cold", "different", "thin", "expensive", "common"],
       "sentences": [
-        {"text": "New York is _____ for its wide variety of restaurants and street food.", "answer": "famous", "nano_skill": [{"name": "ns.vocab.adjective_collocation_for", "confidence": 0.94, "reason": "Tests 'famous for' collocation"}, {"name": "ns.vocab.descriptive_adjective_selection", "confidence": 0.90, "reason": "Requires selecting appropriate descriptive adjective"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.94, "reason": "Tests vocabulary selection in context"}]},
-        {"text": "The city offers many _____ cuisines, like Thai, Italian, and Indian.", "answer": "international", "nano_skill": [{"name": "ns.vocab.nationality_category_adjective", "confidence": 0.93, "reason": "Tests adjective describing origin/nationality scope"}, {"name": "ns.vocab.cuisine_collocations", "confidence": 0.88, "reason": "Tests common cuisine modifier"}], "micro_skill": [{"name": "ms.vocab.contextual_word_choice", "confidence": 0.93, "reason": "Tests appropriate modifier selection"}]},
-        {"text": "Customers often complain when their bill is _____.", "answer": "incorrect", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Appetizers are usually _____ dishes served before the main course.", "answer": "small", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Pizza is one of the most _____ foods in New York.", "answer": "popular", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "One common complaint is that the food arrives _____.", "answer": "cold", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "You can try food from many _____ cultures in New York.", "answer": "different", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "New York-style pizza is known for its wide and _____ crust.", "answer": "thin", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "Some restaurants are very _____, but they offer high-quality service.", "answer": "expensive", "nano_skill": [...], "micro_skill": [...]},
-        {"text": "It is _____ to leave a tip in American restaurants.", "answer": "common", "nano_skill": [...], "micro_skill": [...]}
+        {"text": "New York is _____ for its wide variety of restaurants and street food.", "answer": "famous", "nano_skill": [{"name": "ns.vocab.adjective_collocation_for", "confidence": 0.94, "reason": "Tests 'famous for' collocation"}]},
+        {"text": "The city offers many _____ cuisines, like Thai, Italian, and Indian.", "answer": "international", "nano_skill": [{"name": "ns.vocab.nationality_category_adjective", "confidence": 0.93, "reason": "Tests adjective describing origin/nationality scope"}]},
+        {"text": "Customers often complain when their bill is _____.", "answer": "incorrect", "nano_skill": [...]},
+        {"text": "Appetizers are usually _____ dishes served before the main course.", "answer": "small", "nano_skill": [...]},
+        {"text": "Pizza is one of the most _____ foods in New York.", "answer": "popular", "nano_skill": [...]},
+        {"text": "One common complaint is that the food arrives _____.", "answer": "cold", "nano_skill": [...]},
+        {"text": "You can try food from many _____ cultures in New York.", "answer": "different", "nano_skill": [...]},
+        {"text": "New York-style pizza is known for its wide and _____ crust.", "answer": "thin", "nano_skill": [...]},
+        {"text": "Some restaurants are very _____, but they offer high-quality service.", "answer": "expensive", "nano_skill": [...]},
+        {"text": "It is _____ to leave a tip in American restaurants.", "answer": "common", "nano_skill": [...]}
       ],
       "teacher_tip": "You can use this exercise in the next class as a sentence translation activity—provide the sentences in the student's native language and ask them to translate them into English to practice the new vocabulary."
     }`;
@@ -99,8 +99,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "best", "correct": false},
             {"label": "D", "text": "the better", "correct": false}
           ],
-          "nano_skill": [{"name": "ns.grammar.comparative_irregular_good", "confidence": 0.95, "reason": "Tests irregular comparative form of 'good'"}, {"name": "ns.grammar.comparative_than_construction", "confidence": 0.90, "reason": "Tests comparative + than structure"}],
-          "micro_skill": [{"name": "ms.grammar.comparative_forms", "confidence": 0.95, "reason": "Tests selection of correct comparative form"}]
+          "nano_skill": [{"name": "ns.grammar.comparative_irregular_good", "confidence": 0.95, "reason": "Tests irregular comparative form of 'good'"}]
         },
         {
           "text": "That was the ______ meal I've ever had!",
@@ -110,8 +109,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "deliciouser", "correct": false},
             {"label": "D", "text": "deliciousest", "correct": false}
           ],
-          "nano_skill": [{"name": "ns.grammar.superlative_long_adjective", "confidence": 0.94, "reason": "Tests 'most + adjective' superlative form"}, {"name": "ns.grammar.superlative_the_construction", "confidence": 0.90, "reason": "Tests 'the + superlative' structure"}],
-          "micro_skill": [{"name": "ms.grammar.superlative_forms", "confidence": 0.94, "reason": "Tests correct superlative formation"}]
+          "nano_skill": [{"name": "ns.grammar.superlative_long_adjective", "confidence": 0.94, "reason": "Tests 'most + adjective' superlative form"}]
         },
         {
           "text": "Chinese food is usually ______ than British food.",
@@ -121,8 +119,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "spicier", "correct": true},
             {"label": "D", "text": "most spicy", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [...]
         },
         {
           "text": "That's the ______ restaurant in our neighborhood.",
@@ -132,8 +129,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "more expensive", "correct": false},
             {"label": "D", "text": "expensivest", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [...]
         },
         {
           "text": "John eats ______ than his brother.",
@@ -143,8 +139,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "slow", "correct": false},
             {"label": "D", "text": "more slowly", "correct": true}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [...]
         },
         {
           "text": "This soup is ______ than the one I made yesterday.",
@@ -154,8 +149,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "tasty", "correct": false},
             {"label": "D", "text": "more tastiest", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [...]
         },
         {
           "text": "Of all the dishes on the menu, the lasagna is the ______.",
@@ -165,8 +159,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "best", "correct": true},
             {"label": "D", "text": "more better", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [...]
         },
         {
           "text": "Pizza is ______ than soup for a quick lunch.",
@@ -176,8 +169,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "convenientest", "correct": false},
             {"label": "D", "text": "most convenient", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [...]
         },
         {
           "text": "This is the ______ café in town. Everyone loves it!",
@@ -187,8 +179,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "popularest", "correct": false},
             {"label": "D", "text": "most popular", "correct": true}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [...]
         },
         {
           "text": "The weather today is much ______ than it was yesterday.",
@@ -198,8 +189,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "warm", "correct": false},
             {"label": "D", "text": "most warm", "correct": false}
           ],
-          "nano_skill": [...],
-          "micro_skill": [...]
+          "nano_skill": [...]
         }
       ],
       "teacher_tip": "After choosing an answer, ask students to explain why they picked it. This encourages deeper thinking and grammar awareness. Show tricky or commonly confused forms (more better, the most nicest) and explain why they are incorrect."
@@ -269,16 +259,16 @@ export const getErrorCorrectionExercise = () => `    {
       "time": 7,
       "instructions": "Find and correct the errors in these sentences.",
       "sentences": [
-        {"text": "This pizza is more better than the one I had yesterday.", "correction": "This pizza is better than the one I had yesterday.", "nano_skill": [{"name": "ns.grammar.double_comparative_error", "confidence": 0.96, "reason": "Tests recognition of redundant 'more' with irregular comparative"}, {"name": "ns.grammar.comparative_irregular_good", "confidence": 0.92, "reason": "Tests knowledge that 'good' becomes 'better' not 'more better'"}], "micro_skill": [{"name": "ms.grammar.comparative_error_correction", "confidence": 0.96, "reason": "Tests ability to identify and fix comparative errors"}]},
-        {"text": "She is the most tallest girl in the class.", "correction": "She is the tallest girl in the class.", "nano_skill": [{"name": "ns.grammar.double_superlative_error", "confidence": 0.95, "reason": "Tests recognition of redundant 'most' with -est ending"}, {"name": "ns.grammar.superlative_short_adjective_est", "confidence": 0.90, "reason": "Tests knowledge that short adjectives use -est only"}], "micro_skill": [{"name": "ms.grammar.superlative_error_correction", "confidence": 0.95, "reason": "Tests fixing double superlative errors"}]},
-        {"text": "My house is more big than yours.", "correction": "My house is bigger than yours.", "nano_skill": [{"name": "ns.grammar.comparative_short_adjective_er", "confidence": 0.94, "reason": "Tests that short adjectives use -er not 'more'"}, {"name": "ns.grammar.comparative_spelling_double_consonant", "confidence": 0.88, "reason": "Tests doubling consonant before -er in 'bigger'"}], "micro_skill": [{"name": "ms.grammar.comparative_error_correction", "confidence": 0.94, "reason": "Tests correcting wrong comparative form"}]},
-        {"text": "Today is the most hottest day of the year.", "correction": "Today is the hottest day of the year.", "nano_skill": [{"name": "ns.grammar.double_superlative_error", "confidence": 0.95, "reason": "Tests recognition of redundant 'most' with -est"}, {"name": "ns.grammar.superlative_spelling_double_consonant", "confidence": 0.88, "reason": "Tests correct spelling of 'hottest'"}], "micro_skill": [{"name": "ms.grammar.superlative_error_correction", "confidence": 0.95, "reason": "Tests fixing double superlative formation"}]},
-        {"text": "This restaurant is more expensiveer than the other one.", "correction": "This restaurant is more expensive than the other one.", "nano_skill": [{"name": "ns.grammar.comparative_long_adjective_more", "confidence": 0.94, "reason": "Tests that long adjectives use 'more' without -er"}, {"name": "ns.grammar.double_marking_error", "confidence": 0.90, "reason": "Tests avoiding both 'more' and -er simultaneously"}], "micro_skill": [{"name": "ms.grammar.comparative_error_correction", "confidence": 0.94, "reason": "Tests correcting double marking in comparatives"}]},
-        {"text": "He is smarter than his brother.", "correction": "He is smarter than his brother.", "nano_skill": [{"name": "ns.grammar.correct_sentence_recognition", "confidence": 0.92, "reason": "Tests ability to recognize grammatically correct sentences"}, {"name": "ns.grammar.comparative_short_adjective_er", "confidence": 0.88, "reason": "Tests recognition of correct comparative form"}], "micro_skill": [{"name": "ms.grammar.comparative_validation", "confidence": 0.92, "reason": "Tests identifying correct vs incorrect comparatives"}]},
-        {"text": "That movie was the most funniest I have ever seen.", "correction": "That movie was the funniest I have ever seen.", "nano_skill": [{"name": "ns.grammar.double_superlative_error", "confidence": 0.95, "reason": "Tests recognition of redundant 'most' with -est"}, {"name": "ns.grammar.superlative_y_to_iest", "confidence": 0.90, "reason": "Tests -y to -iest superlative transformation"}], "micro_skill": [{"name": "ms.grammar.superlative_error_correction", "confidence": 0.95, "reason": "Tests fixing superlative double marking"}]},
-        {"text": "My car is more faster now after the repair.", "correction": "My car is faster now after the repair.", "nano_skill": [{"name": "ns.grammar.double_comparative_error", "confidence": 0.94, "reason": "Tests recognition of redundant 'more' with -er ending"}, {"name": "ns.grammar.comparative_short_adjective_er", "confidence": 0.90, "reason": "Tests that 'fast' uses -er not 'more'"}], "micro_skill": [{"name": "ms.grammar.comparative_error_correction", "confidence": 0.94, "reason": "Tests fixing double comparative formation"}]},
-        {"text": "Winter is colder than summer.", "correction": "Winter is colder than summer.", "nano_skill": [{"name": "ns.grammar.correct_sentence_recognition", "confidence": 0.92, "reason": "Tests ability to recognize grammatically correct sentences"}, {"name": "ns.grammar.comparative_than_construction", "confidence": 0.88, "reason": "Tests recognition of correct comparative structure"}], "micro_skill": [{"name": "ms.grammar.comparative_validation", "confidence": 0.92, "reason": "Tests identifying correct comparative usage"}]},
-        {"text": "She is the more talented singer in our group.", "correction": "She is the most talented singer in our group.", "nano_skill": [{"name": "ns.grammar.superlative_vs_comparative_context", "confidence": 0.94, "reason": "Tests using superlative (not comparative) for 'in group' context"}, {"name": "ns.grammar.superlative_long_adjective_most", "confidence": 0.90, "reason": "Tests 'most + adjective' for long adjectives in superlatives"}], "micro_skill": [{"name": "ms.grammar.superlative_error_correction", "confidence": 0.94, "reason": "Tests correcting comparative used instead of superlative"}]}
+        {"text": "This pizza is more better than the one I had yesterday.", "correction": "This pizza is better than the one I had yesterday.", "nano_skill": [{"name": "ns.grammar.double_comparative_error", "confidence": 0.96, "reason": "Tests recognition of redundant 'more' with irregular comparative"}]},
+        {"text": "She is the most tallest girl in the class.", "correction": "She is the tallest girl in the class.", "nano_skill": [{"name": "ns.grammar.double_superlative_error", "confidence": 0.95, "reason": "Tests recognition of redundant 'most' with -est ending"}]},
+        {"text": "My house is more big than yours.", "correction": "My house is bigger than yours.", "nano_skill": [...]},
+        {"text": "Today is the most hottest day of the year.", "correction": "Today is the hottest day of the year.", "nano_skill": [...]},
+        {"text": "This restaurant is more expensiveer than the other one.", "correction": "This restaurant is more expensive than the other one.", "nano_skill": [...]},
+        {"text": "He is smarter than his brother.", "correction": "He is smarter than his brother.", "nano_skill": [...]},
+        {"text": "That movie was the most funniest I have ever seen.", "correction": "That movie was the funniest I have ever seen.", "nano_skill": [...]},
+        {"text": "My car is more faster now after the repair.", "correction": "My car is faster now after the repair.", "nano_skill": [...]},
+        {"text": "Winter is colder than summer.", "correction": "Winter is colder than summer.", "nano_skill": [...]},
+        {"text": "She is the more talented singer in our group.", "correction": "She is the most talented singer in our group.", "nano_skill": [...]}
       ],
       "teacher_tip": "Highlight frequent errors with comparatives and superlatives, like double comparatives (e.g., more better) or incorrect superlative forms.Ask students to explain why a sentence is incorrect to deepen comprehension."
     }`;
@@ -292,16 +282,16 @@ export const getOddOneOutExercise = () => `    {
       "time": 6,
       "instructions": "In each group, find the word that is grammatically different from the others (different part of speech).",
       "questions": [
-        {"options": ["running", "swimming", "cycling", "sport", "dancing"], "correct_answer": "sport", "nano_skill": [{"name": "ns.vocab.gerund_recognition", "confidence": 0.94, "reason": "Tests identifying gerunds (-ing forms) as a group"}, {"name": "ns.vocab.noun_vs_gerund_distinction", "confidence": 0.90, "reason": "Tests distinguishing simple noun from gerund forms"}], "micro_skill": [{"name": "ms.vocab.part_of_speech_categorization", "confidence": 0.94, "reason": "Tests ability to categorize words by grammatical function"}]},
-        {"options": ["quickly", "slowly", "carefully", "fast", "quietly"], "correct_answer": "fast", "nano_skill": [{"name": "ns.vocab.adverb_ly_pattern", "confidence": 0.93, "reason": "Tests recognition of -ly adverb pattern"}, {"name": "ns.vocab.flat_adverb_recognition", "confidence": 0.90, "reason": "Tests identifying 'fast' as flat adverb without -ly"}], "micro_skill": [{"name": "ms.vocab.part_of_speech_categorization", "confidence": 0.93, "reason": "Tests adverb form recognition"}]},
-        {"options": ["delicious", "tasty", "eat", "spicy", "sweet"], "correct_answer": "eat", "nano_skill": [{"name": "ns.vocab.adjective_recognition", "confidence": 0.95, "reason": "Tests identifying adjectives describing food"}, {"name": "ns.vocab.verb_vs_adjective_distinction", "confidence": 0.92, "reason": "Tests distinguishing verb from adjective group"}], "micro_skill": [{"name": "ms.vocab.part_of_speech_categorization", "confidence": 0.95, "reason": "Tests verb vs adjective differentiation"}]},
-        {"options": ["waiter", "chef", "serve", "cook", "bartender"], "correct_answer": "serve", "nano_skill": [{"name": "ns.vocab.occupation_noun_recognition", "confidence": 0.94, "reason": "Tests identifying job/role nouns"}, {"name": "ns.vocab.verb_vs_noun_distinction", "confidence": 0.90, "reason": "Tests distinguishing verb from noun group"}], "micro_skill": [{"name": "ms.vocab.part_of_speech_categorization", "confidence": 0.94, "reason": "Tests categorizing profession vocabulary"}]},
-        {"options": ["reservation", "booking", "order", "complain", "menu"], "correct_answer": "complain", "nano_skill": [{"name": "ns.vocab.noun_recognition", "confidence": 0.93, "reason": "Tests identifying restaurant-related nouns"}, {"name": "ns.vocab.verb_vs_noun_distinction", "confidence": 0.90, "reason": "Tests recognizing 'complain' as verb among nouns"}], "micro_skill": [{"name": "ms.vocab.part_of_speech_categorization", "confidence": 0.93, "reason": "Tests distinguishing verbs from nouns"}]},
-        {"options": ["hot", "cold", "warmth", "fresh", "spicy"], "correct_answer": "warmth", "nano_skill": [{"name": "ns.vocab.adjective_recognition", "confidence": 0.94, "reason": "Tests identifying temperature/quality adjectives"}, {"name": "ns.vocab.noun_vs_adjective_distinction", "confidence": 0.90, "reason": "Tests recognizing abstract noun among adjectives"}], "micro_skill": [{"name": "ms.vocab.part_of_speech_categorization", "confidence": 0.94, "reason": "Tests noun vs adjective differentiation"}]},
-        {"options": ["eating", "drinking", "table", "cooking", "serving"], "correct_answer": "table", "nano_skill": [{"name": "ns.vocab.gerund_recognition", "confidence": 0.93, "reason": "Tests identifying -ing verb forms as group"}, {"name": "ns.vocab.concrete_noun_vs_gerund", "confidence": 0.90, "reason": "Tests distinguishing concrete noun from gerunds"}], "micro_skill": [{"name": "ms.vocab.part_of_speech_categorization", "confidence": 0.93, "reason": "Tests gerund vs noun categorization"}]},
-        {"options": ["expensive", "cheap", "beautifully", "fresh", "delicious"], "correct_answer": "beautifully", "nano_skill": [{"name": "ns.vocab.adjective_recognition", "confidence": 0.94, "reason": "Tests identifying descriptive adjectives"}, {"name": "ns.vocab.adverb_vs_adjective_distinction", "confidence": 0.92, "reason": "Tests recognizing -ly adverb among adjectives"}], "micro_skill": [{"name": "ms.vocab.part_of_speech_categorization", "confidence": 0.94, "reason": "Tests adverb vs adjective differentiation"}]},
-        {"options": ["starter", "dessert", "appetizer", "main", "eat"], "correct_answer": "eat", "nano_skill": [{"name": "ns.vocab.meal_course_noun_recognition", "confidence": 0.93, "reason": "Tests identifying meal course vocabulary"}, {"name": "ns.vocab.verb_vs_noun_distinction", "confidence": 0.90, "reason": "Tests distinguishing verb from course nouns"}], "micro_skill": [{"name": "ms.vocab.part_of_speech_categorization", "confidence": 0.93, "reason": "Tests food service vocabulary categorization"}]},
-        {"options": ["restaurant", "cafe", "cooking", "bistro", "diner"], "correct_answer": "cooking", "nano_skill": [{"name": "ns.vocab.place_noun_recognition", "confidence": 0.94, "reason": "Tests identifying place/establishment nouns"}, {"name": "ns.vocab.gerund_vs_place_noun", "confidence": 0.90, "reason": "Tests distinguishing gerund from place nouns"}], "micro_skill": [{"name": "ms.vocab.part_of_speech_categorization", "confidence": 0.94, "reason": "Tests venue vocabulary categorization"}]}
+        {"options": ["running", "swimming", "cycling", "sport", "dancing"], "correct_answer": "sport", "nano_skill": [{"name": "ns.vocab.gerund_recognition", "confidence": 0.94, "reason": "Tests identifying gerunds (-ing forms) as a group"}]},
+        {"options": ["quickly", "slowly", "carefully", "fast", "quietly"], "correct_answer": "fast", "nano_skill": [{"name": "ns.vocab.adverb_ly_pattern", "confidence": 0.93, "reason": "Tests recognition of -ly adverb pattern"}]},
+        {"options": ["delicious", "tasty", "eat", "spicy", "sweet"], "correct_answer": "eat", "nano_skill": [...]},
+        {"options": ["waiter", "chef", "serve", "cook", "bartender"], "correct_answer": "serve", "nano_skill": [...]},
+        {"options": ["reservation", "booking", "order", "complain", "menu"], "correct_answer": "complain", "nano_skill": [...]},
+        {"options": ["hot", "cold", "warmth", "fresh", "spicy"], "correct_answer": "warmth", "nano_skill": [...]},
+        {"options": ["eating", "drinking", "table", "cooking", "serving"], "correct_answer": "table", "nano_skill": [...]},
+        {"options": ["expensive", "cheap", "beautifully", "fresh", "delicious"], "correct_answer": "beautifully", "nano_skill": [...]},
+        {"options": ["starter", "dessert", "appetizer", "main", "eat"], "correct_answer": "eat", "nano_skill": [...]},
+        {"options": ["restaurant", "cafe", "cooking", "bistro", "diner"], "correct_answer": "cooking", "nano_skill": [...]}
       ],
       "teacher_tip": "After students identify the odd word, ask them to explain their reasoning. This develops critical thinking and vocabulary categorization skills."
     }`;
@@ -314,16 +304,16 @@ export const getSynonymsExercise = () => `    {
       "time": 5,
       "instructions": "Match each word on the left with its synonym (word with similar meaning) on the right.",
       "items": [
-        { "term": "delicious", "definition": "tasty", "letter": "A", "nano_skill": [{"name": "ns.vocab.synonym_food_adjective", "confidence": 0.95, "reason": "Tests knowledge of synonyms for taste description"}, {"name": "ns.vocab.semantic_similarity_recognition", "confidence": 0.90, "reason": "Tests understanding words with similar meanings"}], "micro_skill": [{"name": "ms.vocab.synonym_matching", "confidence": 0.95, "reason": "Tests ability to match synonymous vocabulary"}] },
-        { "term": "expensive", "definition": "costly", "letter": "B", "nano_skill": [{"name": "ns.vocab.synonym_price_adjective", "confidence": 0.94, "reason": "Tests knowledge of synonyms for high cost"}, {"name": "ns.vocab.formal_informal_register", "confidence": 0.88, "reason": "Tests awareness of slightly different register levels"}], "micro_skill": [{"name": "ms.vocab.synonym_matching", "confidence": 0.94, "reason": "Tests price vocabulary synonyms"}] },
-        { "term": "recommend", "definition": "suggest", "letter": "C", "nano_skill": [{"name": "ns.vocab.synonym_verb_advice", "confidence": 0.93, "reason": "Tests knowledge of advice-giving verb synonyms"}, {"name": "ns.vocab.semantic_similarity_recognition", "confidence": 0.88, "reason": "Tests matching verbs with similar meanings"}], "micro_skill": [{"name": "ms.vocab.synonym_matching", "confidence": 0.93, "reason": "Tests verb synonym recognition"}] },
-        { "term": "popular", "definition": "well-liked", "letter": "D", "nano_skill": [{"name": "ns.vocab.synonym_popularity_adjective", "confidence": 0.94, "reason": "Tests knowledge of synonyms for popularity"}, {"name": "ns.vocab.compound_adjective_meaning", "confidence": 0.88, "reason": "Tests understanding hyphenated compound adjective"}], "micro_skill": [{"name": "ms.vocab.synonym_matching", "confidence": 0.94, "reason": "Tests popularity vocabulary synonyms"}] },
-        { "term": "affordable", "definition": "reasonably priced", "letter": "E", "nano_skill": [{"name": "ns.vocab.synonym_price_adjective", "confidence": 0.93, "reason": "Tests knowledge of synonyms for low cost"}, {"name": "ns.vocab.phrase_vs_single_word_synonym", "confidence": 0.88, "reason": "Tests matching word to phrase synonym"}], "micro_skill": [{"name": "ms.vocab.synonym_matching", "confidence": 0.93, "reason": "Tests affordability vocabulary synonyms"}] },
-        { "term": "authentic", "definition": "genuine", "letter": "F", "nano_skill": [{"name": "ns.vocab.synonym_quality_adjective", "confidence": 0.94, "reason": "Tests knowledge of authenticity synonyms"}, {"name": "ns.vocab.abstract_adjective_meaning", "confidence": 0.88, "reason": "Tests understanding abstract quality descriptors"}], "micro_skill": [{"name": "ms.vocab.synonym_matching", "confidence": 0.94, "reason": "Tests quality description synonyms"}] },
-        { "term": "amazing", "definition": "wonderful", "letter": "G", "nano_skill": [{"name": "ns.vocab.synonym_positive_evaluation", "confidence": 0.95, "reason": "Tests knowledge of positive evaluation synonyms"}, {"name": "ns.vocab.intensity_level_matching", "confidence": 0.90, "reason": "Tests matching similar intensity adjectives"}], "micro_skill": [{"name": "ms.vocab.synonym_matching", "confidence": 0.95, "reason": "Tests positive adjective synonyms"}] },
-        { "term": "cozy", "definition": "comfortable", "letter": "H", "nano_skill": [{"name": "ns.vocab.synonym_atmosphere_adjective", "confidence": 0.93, "reason": "Tests knowledge of comfort/atmosphere synonyms"}, {"name": "ns.vocab.connotation_matching", "confidence": 0.88, "reason": "Tests matching words with similar connotations"}], "micro_skill": [{"name": "ms.vocab.synonym_matching", "confidence": 0.93, "reason": "Tests atmosphere vocabulary synonyms"}] },
-        { "term": "busy", "definition": "crowded", "letter": "I", "nano_skill": [{"name": "ns.vocab.synonym_activity_adjective", "confidence": 0.92, "reason": "Tests knowledge of activity level synonyms"}, {"name": "ns.vocab.context_specific_synonym", "confidence": 0.88, "reason": "Tests synonyms in restaurant context"}], "micro_skill": [{"name": "ms.vocab.synonym_matching", "confidence": 0.92, "reason": "Tests activity description synonyms"}] },
-        { "term": "excellent", "definition": "outstanding", "letter": "J", "nano_skill": [{"name": "ns.vocab.synonym_quality_superlative", "confidence": 0.94, "reason": "Tests knowledge of high-quality synonyms"}, {"name": "ns.vocab.formal_register_synonym", "confidence": 0.88, "reason": "Tests matching formal quality adjectives"}], "micro_skill": [{"name": "ms.vocab.synonym_matching", "confidence": 0.94, "reason": "Tests quality evaluation synonyms"}] }
+        { "term": "delicious", "definition": "tasty", "letter": "A", "nano_skill": [{"name": "ns.vocab.synonym_food_adjective", "confidence": 0.95, "reason": "Tests knowledge of synonyms for taste description"}]},
+        { "term": "expensive", "definition": "costly", "letter": "B", "nano_skill": [{"name": "ns.vocab.synonym_price_adjective", "confidence": 0.94, "reason": "Tests knowledge of synonyms for high cost"}]},
+        { "term": "recommend", "definition": "suggest", "letter": "C", "nano_skill": [...]},
+        { "term": "popular", "definition": "well-liked", "letter": "D", "nano_skill": [...]},
+        { "term": "affordable", "definition": "reasonably priced", "letter": "E", "nano_skill": [...]},
+        { "term": "authentic", "definition": "genuine", "letter": "F", "nano_skill": [...]},
+        { "term": "amazing", "definition": "wonderful", "letter": "G", "nano_skill": [...]},
+        { "term": "cozy", "definition": "comfortable", "letter": "H", "nano_skill": [...]},
+        { "term": "busy", "definition": "crowded", "letter": "I", "nano_skill": [...]},
+        { "term": "excellent", "definition": "outstanding", "letter": "J", "nano_skill": [...]}
       ],
       "teacher_tip": "After completing the exercise, have students create sentences using both words from 2-3 pairs to demonstrate they understand the synonyms have similar meanings in context."
     }`;
@@ -336,16 +326,16 @@ export const getAntonymsExercise = () => `    {
       "time": 5,
       "instructions": "Match each word on the left with its antonym (word with opposite meaning) on the right.",
       "items": [
-        { "term": "expensive", "definition": "cheap", "letter": "A", "nano_skill": [{"name": "ns.vocab.antonym_price_adjective", "confidence": 0.95, "reason": "Tests knowledge of opposite price descriptors"}, {"name": "ns.vocab.semantic_opposition_recognition", "confidence": 0.90, "reason": "Tests understanding of opposite meanings"}], "micro_skill": [{"name": "ms.vocab.antonym_matching", "confidence": 0.95, "reason": "Tests ability to match antonymous vocabulary"}] },
-        { "term": "delicious", "definition": "tasteless", "letter": "B", "nano_skill": [{"name": "ns.vocab.antonym_taste_adjective", "confidence": 0.94, "reason": "Tests knowledge of opposite taste descriptions"}, {"name": "ns.vocab.suffix_less_meaning", "confidence": 0.88, "reason": "Tests understanding -less suffix creates opposite"}], "micro_skill": [{"name": "ms.vocab.antonym_matching", "confidence": 0.94, "reason": "Tests taste vocabulary antonyms"}] },
-        { "term": "spicy", "definition": "mild", "letter": "C", "nano_skill": [{"name": "ns.vocab.antonym_flavor_adjective", "confidence": 0.93, "reason": "Tests knowledge of opposite flavor intensities"}, {"name": "ns.vocab.gradable_adjective_opposition", "confidence": 0.88, "reason": "Tests understanding gradable adjective opposites"}], "micro_skill": [{"name": "ms.vocab.antonym_matching", "confidence": 0.93, "reason": "Tests flavor vocabulary antonyms"}] },
-        { "term": "fresh", "definition": "stale", "letter": "D", "nano_skill": [{"name": "ns.vocab.antonym_food_quality", "confidence": 0.94, "reason": "Tests knowledge of opposite food freshness"}, {"name": "ns.vocab.food_condition_vocabulary", "confidence": 0.88, "reason": "Tests food quality description vocabulary"}], "micro_skill": [{"name": "ms.vocab.antonym_matching", "confidence": 0.94, "reason": "Tests freshness vocabulary antonyms"}] },
-        { "term": "hot", "definition": "cold", "letter": "E", "nano_skill": [{"name": "ns.vocab.antonym_temperature", "confidence": 0.96, "reason": "Tests knowledge of opposite temperature words"}, {"name": "ns.vocab.basic_antonym_pair", "confidence": 0.92, "reason": "Tests fundamental opposite pair recognition"}], "micro_skill": [{"name": "ms.vocab.antonym_matching", "confidence": 0.96, "reason": "Tests temperature vocabulary antonyms"}] },
-        { "term": "crowded", "definition": "empty", "letter": "F", "nano_skill": [{"name": "ns.vocab.antonym_occupancy", "confidence": 0.93, "reason": "Tests knowledge of opposite occupancy states"}, {"name": "ns.vocab.place_description_opposition", "confidence": 0.88, "reason": "Tests place/venue description antonyms"}], "micro_skill": [{"name": "ms.vocab.antonym_matching", "confidence": 0.93, "reason": "Tests occupancy vocabulary antonyms"}] },
-        { "term": "fast", "definition": "slow", "letter": "G", "nano_skill": [{"name": "ns.vocab.antonym_speed", "confidence": 0.95, "reason": "Tests knowledge of opposite speed descriptions"}, {"name": "ns.vocab.basic_antonym_pair", "confidence": 0.90, "reason": "Tests fundamental opposite pair recognition"}], "micro_skill": [{"name": "ms.vocab.antonym_matching", "confidence": 0.95, "reason": "Tests speed vocabulary antonyms"}] },
-        { "term": "polite", "definition": "rude", "letter": "H", "nano_skill": [{"name": "ns.vocab.antonym_behavior_adjective", "confidence": 0.94, "reason": "Tests knowledge of opposite behavior descriptions"}, {"name": "ns.vocab.social_behavior_vocabulary", "confidence": 0.88, "reason": "Tests service/behavior vocabulary opposites"}], "micro_skill": [{"name": "ms.vocab.antonym_matching", "confidence": 0.94, "reason": "Tests behavior vocabulary antonyms"}] },
-        { "term": "clean", "definition": "dirty", "letter": "I", "nano_skill": [{"name": "ns.vocab.antonym_cleanliness", "confidence": 0.95, "reason": "Tests knowledge of opposite cleanliness states"}, {"name": "ns.vocab.basic_antonym_pair", "confidence": 0.90, "reason": "Tests fundamental opposite pair recognition"}], "micro_skill": [{"name": "ms.vocab.antonym_matching", "confidence": 0.95, "reason": "Tests cleanliness vocabulary antonyms"}] },
-        { "term": "quiet", "definition": "noisy", "letter": "J", "nano_skill": [{"name": "ns.vocab.antonym_sound_level", "confidence": 0.94, "reason": "Tests knowledge of opposite sound descriptions"}, {"name": "ns.vocab.atmosphere_description_opposition", "confidence": 0.88, "reason": "Tests atmosphere vocabulary opposites"}], "micro_skill": [{"name": "ms.vocab.antonym_matching", "confidence": 0.94, "reason": "Tests sound vocabulary antonyms"}] }
+        { "term": "expensive", "definition": "cheap", "letter": "A", "nano_skill": [{"name": "ns.vocab.antonym_price_adjective", "confidence": 0.95, "reason": "Tests knowledge of opposite price descriptors"}]},
+        { "term": "delicious", "definition": "tasteless", "letter": "B", "nano_skill": [{"name": "ns.vocab.antonym_taste_adjective", "confidence": 0.94, "reason": "Tests knowledge of opposite taste descriptions"}]},
+        { "term": "spicy", "definition": "mild", "letter": "C", "nano_skill": [...]},
+        { "term": "fresh", "definition": "stale", "letter": "D", "nano_skill": [...]},
+        { "term": "hot", "definition": "cold", "letter": "E", "nano_skill": [...]},
+        { "term": "crowded", "definition": "empty", "letter": "F", "nano_skill": [...]},
+        { "term": "fast", "definition": "slow", "letter": "G", "nano_skill": [...]},
+        { "term": "polite", "definition": "rude", "letter": "H", "nano_skill": [...]},
+        { "term": "clean", "definition": "dirty", "letter": "I", "nano_skill": [...]},
+        { "term": "quiet", "definition": "noisy", "letter": "J", "nano_skill": [...]}
       ],
       "teacher_tip": "After completing the exercise, have students create pairs of contrasting sentences (e.g., 'The restaurant was expensive' vs 'The restaurant was cheap') to reinforce understanding of opposites."
     }`;
@@ -358,16 +348,16 @@ export const getSynonymsAntonymsExercise = () => `    {
       "time": 7,
       "instructions": "Match each word with its synonym or antonym from the options provided.",
       "items": [
-        { "term": "delicious", "definition": "tasty", "letter": "A", "nano_skill": [{"name": "ns.vocab.synonym_food_adjective", "confidence": 0.95, "reason": "Tests knowledge of taste description synonyms"}, {"name": "ns.vocab.semantic_similarity_recognition", "confidence": 0.90, "reason": "Tests matching words with similar meanings"}], "micro_skill": [{"name": "ms.vocab.synonym_antonym_matching", "confidence": 0.95, "reason": "Tests synonym identification"}] },
-        { "term": "expensive", "definition": "cheap", "letter": "B", "nano_skill": [{"name": "ns.vocab.antonym_price_adjective", "confidence": 0.94, "reason": "Tests knowledge of opposite price descriptors"}, {"name": "ns.vocab.semantic_opposition_recognition", "confidence": 0.90, "reason": "Tests matching words with opposite meanings"}], "micro_skill": [{"name": "ms.vocab.synonym_antonym_matching", "confidence": 0.94, "reason": "Tests antonym identification"}] },
-        { "term": "popular", "definition": "famous", "letter": "C", "nano_skill": [{"name": "ns.vocab.synonym_popularity_adjective", "confidence": 0.93, "reason": "Tests knowledge of popularity synonyms"}, {"name": "ns.vocab.semantic_similarity_recognition", "confidence": 0.88, "reason": "Tests near-synonym recognition"}], "micro_skill": [{"name": "ms.vocab.synonym_antonym_matching", "confidence": 0.93, "reason": "Tests synonym identification"}] },
-        { "term": "fresh", "definition": "new", "letter": "D", "nano_skill": [{"name": "ns.vocab.synonym_quality_adjective", "confidence": 0.92, "reason": "Tests knowledge of freshness synonyms"}, {"name": "ns.vocab.context_dependent_synonym", "confidence": 0.88, "reason": "Tests synonym that works in food context"}], "micro_skill": [{"name": "ms.vocab.synonym_antonym_matching", "confidence": 0.92, "reason": "Tests synonym identification"}] },
-        { "term": "hot", "definition": "cold", "letter": "E", "nano_skill": [{"name": "ns.vocab.antonym_temperature", "confidence": 0.96, "reason": "Tests knowledge of temperature opposites"}, {"name": "ns.vocab.basic_antonym_pair", "confidence": 0.92, "reason": "Tests fundamental opposite pair"}], "micro_skill": [{"name": "ms.vocab.synonym_antonym_matching", "confidence": 0.96, "reason": "Tests antonym identification"}] },
-        { "term": "busy", "definition": "quiet", "letter": "F", "nano_skill": [{"name": "ns.vocab.antonym_activity_level", "confidence": 0.93, "reason": "Tests knowledge of activity opposites"}, {"name": "ns.vocab.place_atmosphere_opposition", "confidence": 0.88, "reason": "Tests atmosphere description antonyms"}], "micro_skill": [{"name": "ms.vocab.synonym_antonym_matching", "confidence": 0.93, "reason": "Tests antonym identification"}] },
-        { "term": "polite", "definition": "rude", "letter": "G", "nano_skill": [{"name": "ns.vocab.antonym_behavior_adjective", "confidence": 0.94, "reason": "Tests knowledge of behavior opposites"}, {"name": "ns.vocab.service_vocabulary_opposition", "confidence": 0.88, "reason": "Tests service behavior antonyms"}], "micro_skill": [{"name": "ms.vocab.synonym_antonym_matching", "confidence": 0.94, "reason": "Tests antonym identification"}] },
-        { "term": "satisfied", "definition": "disappointed", "letter": "H", "nano_skill": [{"name": "ns.vocab.antonym_satisfaction", "confidence": 0.93, "reason": "Tests knowledge of satisfaction opposites"}, {"name": "ns.vocab.customer_feeling_opposition", "confidence": 0.88, "reason": "Tests customer experience antonyms"}], "micro_skill": [{"name": "ms.vocab.synonym_antonym_matching", "confidence": 0.93, "reason": "Tests antonym identification"}] },
-        { "term": "complaint", "definition": "criticism", "letter": "I", "nano_skill": [{"name": "ns.vocab.synonym_negative_feedback", "confidence": 0.92, "reason": "Tests knowledge of complaint synonyms"}, {"name": "ns.vocab.noun_semantic_similarity", "confidence": 0.88, "reason": "Tests near-synonym noun matching"}], "micro_skill": [{"name": "ms.vocab.synonym_antonym_matching", "confidence": 0.92, "reason": "Tests synonym identification"}] },
-        { "term": "quick", "definition": "fast", "letter": "J", "nano_skill": [{"name": "ns.vocab.synonym_speed_adjective", "confidence": 0.95, "reason": "Tests knowledge of speed synonyms"}, {"name": "ns.vocab.exact_synonym_recognition", "confidence": 0.92, "reason": "Tests very close synonym matching"}], "micro_skill": [{"name": "ms.vocab.synonym_antonym_matching", "confidence": 0.95, "reason": "Tests synonym identification"}] }
+        { "term": "delicious", "definition": "tasty", "letter": "A", "nano_skill": [{"name": "ns.vocab.synonym_food_adjective", "confidence": 0.95, "reason": "Tests knowledge of taste description synonyms"}] },
+        { "term": "expensive", "definition": "cheap", "letter": "B", "nano_skill": [{"name": "ns.vocab.antonym_price_adjective", "confidence": 0.94, "reason": "Tests knowledge of opposite price descriptors"}] },
+        { "term": "popular", "definition": "famous", "letter": "C", "nano_skill": [...]},
+        { "term": "fresh", "definition": "new", "letter": "D", "nano_skill": [...]},
+        { "term": "hot", "definition": "cold", "letter": "E", "nano_skill": [...]},
+        { "term": "busy", "definition": "quiet", "letter": "F", "nano_skill": [...]},
+        { "term": "polite", "definition": "rude", "letter": "G", "nano_skill": [...]},
+        { "term": "satisfied", "definition": "disappointed", "letter": "H", "nano_skill": [...]},
+        { "term": "complaint", "definition": "criticism", "letter": "I", "nano_skill": [...]},
+        { "term": "quick", "definition": "fast", "letter": "J", "nano_skill": [...]}
       ],
       "teacher_tip": "Use these word pairs to create role-play scenarios where students practice using both positive and negative restaurant vocabulary in context."
     }`;
@@ -379,16 +369,16 @@ export const getSentenceTransformationExercise = () => `    {
       "time": 8,
       "instructions": "Transform these sentences as instructed, keeping the same meaning.",
       "sentences": [
-        {"original": "The chef prepares the meals every morning.", "instruction": "Change to passive voice", "transformed": "The meals are prepared by the chef every morning.", "nano_skill": [{"name": "ns.grammar.passive_present_simple", "confidence": 0.95, "reason": "Tests transformation to present simple passive"}, {"name": "ns.grammar.agent_by_phrase", "confidence": 0.90, "reason": "Tests correct use of 'by + agent' in passive"}], "micro_skill": [{"name": "ms.grammar.sentence_transformation", "confidence": 0.95, "reason": "Tests ability to transform active to passive voice"}]},
-        {"original": "The restaurant is more expensive than the café.", "instruction": "Use 'not as... as'", "transformed": "The café is not as expensive as the restaurant.", "nano_skill": [{"name": "ns.grammar.not_as_as_comparison", "confidence": 0.94, "reason": "Tests 'not as... as' structure formation"}, {"name": "ns.grammar.comparison_subject_reversal", "confidence": 0.88, "reason": "Tests reversing subjects when changing comparison type"}], "micro_skill": [{"name": "ms.grammar.sentence_transformation", "confidence": 0.94, "reason": "Tests comparative structure transformation"}]},
-        {"original": "I have never eaten such delicious pizza.", "instruction": "Use superlative", "transformed": "This is the most delicious pizza I have ever eaten.", "nano_skill": [{"name": "ns.grammar.superlative_ever_construction", "confidence": 0.93, "reason": "Tests 'the most + ever' superlative pattern"}, {"name": "ns.grammar.present_perfect_experience", "confidence": 0.88, "reason": "Tests present perfect with 'ever' for experience"}], "micro_skill": [{"name": "ms.grammar.sentence_transformation", "confidence": 0.93, "reason": "Tests superlative structure transformation"}]},
-        {"original": "The waiter said, 'Your table is ready.'", "instruction": "Change to reported speech", "transformed": "The waiter said that our table was ready.", "nano_skill": [{"name": "ns.grammar.reported_speech_tense_backshift", "confidence": 0.94, "reason": "Tests tense backshift in reported speech"}, {"name": "ns.grammar.reported_speech_pronoun_change", "confidence": 0.90, "reason": "Tests pronoun change from 'your' to 'our'"}], "micro_skill": [{"name": "ms.grammar.sentence_transformation", "confidence": 0.94, "reason": "Tests direct to reported speech transformation"}]},
-        {"original": "We ordered dessert after we finished the main course.", "instruction": "Use 'having + past participle'", "transformed": "Having finished the main course, we ordered dessert.", "nano_skill": [{"name": "ns.grammar.perfect_participle_clause", "confidence": 0.92, "reason": "Tests 'having + past participle' construction"}, {"name": "ns.grammar.clause_reduction", "confidence": 0.88, "reason": "Tests reducing adverbial clause to participle"}], "micro_skill": [{"name": "ms.grammar.sentence_transformation", "confidence": 0.92, "reason": "Tests participle clause transformation"}]},
-        {"original": "The food was so spicy that I couldn't eat it.", "instruction": "Use 'too... to'", "transformed": "The food was too spicy for me to eat.", "nano_skill": [{"name": "ns.grammar.too_to_structure", "confidence": 0.94, "reason": "Tests 'too + adjective + to' construction"}, {"name": "ns.grammar.so_that_to_too_to_conversion", "confidence": 0.90, "reason": "Tests converting 'so... that' to 'too... to'"}], "micro_skill": [{"name": "ms.grammar.sentence_transformation", "confidence": 0.94, "reason": "Tests result clause transformation"}]},
-        {"original": "If you don't make a reservation, you won't get a table.", "instruction": "Use 'unless'", "transformed": "Unless you make a reservation, you won't get a table.", "nano_skill": [{"name": "ns.grammar.unless_if_not_equivalence", "confidence": 0.95, "reason": "Tests 'unless' as replacement for 'if... not'"}, {"name": "ns.grammar.conditional_negative_removal", "confidence": 0.90, "reason": "Tests removing negation when using 'unless'"}], "micro_skill": [{"name": "ms.grammar.sentence_transformation", "confidence": 0.95, "reason": "Tests conditional transformation with unless"}]},
-        {"original": "This restaurant serves better food than that one.", "instruction": "Use superlative", "transformed": "This restaurant serves the best food in the area.", "nano_skill": [{"name": "ns.grammar.comparative_to_superlative", "confidence": 0.92, "reason": "Tests changing comparative to superlative"}, {"name": "ns.grammar.superlative_in_phrase", "confidence": 0.88, "reason": "Tests adding 'in the area' for superlative context"}], "micro_skill": [{"name": "ms.grammar.sentence_transformation", "confidence": 0.92, "reason": "Tests degree comparison transformation"}]},
-        {"original": "I suggest you try the fish today.", "instruction": "Use modal verb", "transformed": "You should try the fish today.", "nano_skill": [{"name": "ns.grammar.modal_should_advice", "confidence": 0.94, "reason": "Tests 'should' for suggestions/advice"}, {"name": "ns.grammar.suggest_to_modal_conversion", "confidence": 0.88, "reason": "Tests converting suggestion verb to modal"}], "micro_skill": [{"name": "ms.grammar.sentence_transformation", "confidence": 0.94, "reason": "Tests modal verb transformation"}]},
-        {"original": "The service was so slow that we left early.", "instruction": "Use 'too... to'", "transformed": "The service was too slow for us to stay.", "nano_skill": [{"name": "ns.grammar.too_to_structure", "confidence": 0.93, "reason": "Tests 'too + adjective + to' construction"}, {"name": "ns.grammar.meaning_preservation_transformation", "confidence": 0.88, "reason": "Tests keeping same meaning with different structure"}], "micro_skill": [{"name": "ms.grammar.sentence_transformation", "confidence": 0.93, "reason": "Tests result clause transformation"}]}
+        {"original": "The chef prepares the meals every morning.", "instruction": "Change to passive voice", "transformed": "The meals are prepared by the chef every morning.", "nano_skill": [{"name": "ns.grammar.passive_present_simple", "confidence": 0.95, "reason": "Tests transformation to present simple passive"}]},
+        {"original": "The restaurant is more expensive than the café.", "instruction": "Use 'not as... as'", "transformed": "The café is not as expensive as the restaurant.", "nano_skill": [{"name": "ns.grammar.not_as_as_comparison", "confidence": 0.94, "reason": "Tests 'not as... as' structure formation"}]},
+        {"original": "I have never eaten such delicious pizza.", "instruction": "Use superlative", "transformed": "This is the most delicious pizza I have ever eaten.", "nano_skill": [...]},
+        {"original": "The waiter said, 'Your table is ready.'", "instruction": "Change to reported speech", "transformed": "The waiter said that our table was ready.", "nano_skill": [...]},
+        {"original": "We ordered dessert after we finished the main course.", "instruction": "Use 'having + past participle'", "transformed": "Having finished the main course, we ordered dessert.", "nano_skill": [...]},
+        {"original": "The food was so spicy that I couldn't eat it.", "instruction": "Use 'too... to'", "transformed": "The food was too spicy for me to eat.", "nano_skill": [...]},
+        {"original": "If you don't make a reservation, you won't get a table.", "instruction": "Use 'unless'", "transformed": "Unless you make a reservation, you won't get a table.", "nano_skill": [...]},
+        {"original": "This restaurant serves better food than that one.", "instruction": "Use superlative", "transformed": "This restaurant serves the best food in the area.", "nano_skill": [...]},
+        {"original": "I suggest you try the fish today.", "instruction": "Use modal verb", "transformed": "You should try the fish today.", "nano_skill": [...]},
+        {"original": "The service was so slow that we left early.", "instruction": "Use 'too... to'", "transformed": "The service was too slow for us to stay.", "nano_skill": [...]}
       ],
       "teacher_tip": "Focus on one transformation type at a time if students struggle. Practice with additional examples before moving to the next transformation pattern."
     }`;
@@ -400,16 +390,16 @@ export const getWordOrderExercise = () => `    {
       "time": 6,
       "instructions": "Put the words in the correct order to make meaningful sentences about restaurants.",
       "sentences": [
-        {"scrambled_words": "this / restaurant / the / in / food / neighborhood / best / serves", "correct_order": "This restaurant serves the best food in the neighborhood.", "nano_skill": [{"name": "ns.grammar.word_order_svo", "confidence": 0.94, "reason": "Tests Subject-Verb-Object word order"}, {"name": "ns.grammar.superlative_position", "confidence": 0.90, "reason": "Tests placing superlative before noun"}], "micro_skill": [{"name": "ms.grammar.word_order_construction", "confidence": 0.94, "reason": "Tests ability to arrange words into grammatical sentence"}]},
-        {"scrambled_words": "always / we / tip / good / service / for / leave / a", "correct_order": "We always leave a tip for good service.", "nano_skill": [{"name": "ns.grammar.adverb_frequency_position", "confidence": 0.93, "reason": "Tests placing 'always' between subject and verb"}, {"name": "ns.grammar.prepositional_phrase_position", "confidence": 0.88, "reason": "Tests 'for + noun phrase' placement at end"}], "micro_skill": [{"name": "ms.grammar.word_order_construction", "confidence": 0.93, "reason": "Tests adverb and phrase positioning"}]},
-        {"scrambled_words": "menu / has / the / variety / wide / of / dishes / a", "correct_order": "The menu has a wide variety of dishes.", "nano_skill": [{"name": "ns.grammar.article_adjective_noun_order", "confidence": 0.94, "reason": "Tests 'a + adjective + noun' order"}, {"name": "ns.grammar.of_phrase_position", "confidence": 0.88, "reason": "Tests 'of + noun' phrase placement"}], "micro_skill": [{"name": "ms.grammar.word_order_construction", "confidence": 0.94, "reason": "Tests noun phrase construction"}]},
-        {"scrambled_words": "complained / customer / the / about / cold / the / food", "correct_order": "The customer complained about the cold food.", "nano_skill": [{"name": "ns.grammar.verb_preposition_collocation", "confidence": 0.93, "reason": "Tests 'complained about' collocation"}, {"name": "ns.grammar.adjective_noun_order", "confidence": 0.88, "reason": "Tests 'adjective + noun' in object position"}], "micro_skill": [{"name": "ms.grammar.word_order_construction", "confidence": 0.93, "reason": "Tests prepositional verb construction"}]},
-        {"scrambled_words": "book / should / you / advance / table / in / a", "correct_order": "You should book a table in advance.", "nano_skill": [{"name": "ns.grammar.modal_verb_position", "confidence": 0.94, "reason": "Tests 'subject + modal + verb' order"}, {"name": "ns.grammar.adverbial_phrase_position", "confidence": 0.88, "reason": "Tests 'in advance' placement at end"}], "micro_skill": [{"name": "ms.grammar.word_order_construction", "confidence": 0.94, "reason": "Tests modal verb sentence construction"}]},
-        {"scrambled_words": "pizza / New York / famous / is / style / for / its", "correct_order": "New York is famous for its pizza style.", "nano_skill": [{"name": "ns.grammar.adjective_preposition_collocation", "confidence": 0.93, "reason": "Tests 'famous for' collocation"}, {"name": "ns.grammar.possessive_adjective_position", "confidence": 0.88, "reason": "Tests 'its + noun' possessive placement"}], "micro_skill": [{"name": "ms.grammar.word_order_construction", "confidence": 0.93, "reason": "Tests adjective complement construction"}]},
-        {"scrambled_words": "eating / prefer / out / to / cooking / I / home / at", "correct_order": "I prefer eating out to cooking at home.", "nano_skill": [{"name": "ns.grammar.prefer_gerund_to_gerund", "confidence": 0.94, "reason": "Tests 'prefer + gerund + to + gerund' structure"}, {"name": "ns.grammar.phrasal_verb_position", "confidence": 0.88, "reason": "Tests 'eating out' phrasal verb in correct position"}], "micro_skill": [{"name": "ms.grammar.word_order_construction", "confidence": 0.94, "reason": "Tests preference expression construction"}]},
-        {"scrambled_words": "been / have / to / you / restaurant / this / before", "correct_order": "Have you been to this restaurant before?", "nano_skill": [{"name": "ns.grammar.question_inversion_present_perfect", "confidence": 0.95, "reason": "Tests 'Have + subject' question inversion"}, {"name": "ns.grammar.adverb_before_position", "confidence": 0.88, "reason": "Tests 'before' placement at sentence end"}], "micro_skill": [{"name": "ms.grammar.word_order_construction", "confidence": 0.95, "reason": "Tests question formation word order"}]},
-        {"scrambled_words": "waiter / recommended / the / special / chef's / today's", "correct_order": "The waiter recommended today's chef's special.", "nano_skill": [{"name": "ns.grammar.possessive_noun_chain", "confidence": 0.92, "reason": "Tests multiple possessives in correct order"}, {"name": "ns.grammar.word_order_svo", "confidence": 0.88, "reason": "Tests basic sentence structure with complex object"}], "micro_skill": [{"name": "ms.grammar.word_order_construction", "confidence": 0.92, "reason": "Tests possessive noun phrase construction"}]},
-        {"scrambled_words": "delicious / was / most / the / I've / meal / ever / had", "correct_order": "It was the most delicious meal I've ever had.", "nano_skill": [{"name": "ns.grammar.superlative_relative_clause", "confidence": 0.93, "reason": "Tests superlative + relative clause structure"}, {"name": "ns.grammar.dummy_subject_it", "confidence": 0.88, "reason": "Tests using 'it' as dummy subject"}], "micro_skill": [{"name": "ms.grammar.word_order_construction", "confidence": 0.93, "reason": "Tests complex superlative sentence construction"}]}
+        {"scrambled_words": "this / restaurant / the / in / food / neighborhood / best / serves", "correct_order": "This restaurant serves the best food in the neighborhood.", "nano_skill": [{"name": "ns.grammar.word_order_svo", "confidence": 0.94, "reason": "Tests Subject-Verb-Object word order"}]},
+        {"scrambled_words": "always / we / tip / good / service / for / leave / a", "correct_order": "We always leave a tip for good service.", "nano_skill": [{"name": "ns.grammar.adverb_frequency_position", "confidence": 0.93, "reason": "Tests placing 'always' between subject and verb"}]},
+        {"scrambled_words": "menu / has / the / variety / wide / of / dishes / a", "correct_order": "The menu has a wide variety of dishes.", "nano_skill": [...]},
+        {"scrambled_words": "complained / customer / the / about / cold / the / food", "correct_order": "The customer complained about the cold food.", "nano_skill": [...]},
+        {"scrambled_words": "book / should / you / advance / table / in / a", "correct_order": "You should book a table in advance.", "nano_skill": [...]},
+        {"scrambled_words": "pizza / New York / famous / is / style / for / its", "correct_order": "New York is famous for its pizza style.", "nano_skill": [...]},
+        {"scrambled_words": "eating / prefer / out / to / cooking / I / home / at", "correct_order": "I prefer eating out to cooking at home.", "nano_skill": [...]},
+        {"scrambled_words": "been / have / to / you / restaurant / this / before", "correct_order": "Have you been to this restaurant before?", "nano_skill": [...]},
+        {"scrambled_words": "waiter / recommended / the / special / chef's / today's", "correct_order": "The waiter recommended today's chef's special.", "nano_skill": [...]},
+        {"scrambled_words": "delicious / was / most / the / I've / meal / ever / had", "correct_order": "It was the most delicious meal I've ever had.", "nano_skill": [...]}
       ],
       "teacher_tip": "Start with shorter sentences and gradually increase complexity. Encourage students to read their sentences aloud to check if they sound natural."
     }`;
@@ -421,16 +411,16 @@ export const getGapTextExercise = () => `    {
       "time": 8,
       "instructions": "Fill in the gaps with the correct form of the verbs in brackets. The word in parentheses after each gap is the incorrect-word that needs transformation:",
       "sentences": [
-        {"text": "Yesterday I _____ (go) to the restaurant to meet my friend.", "answer": "went", "verb": "go", "nano_skill": [{"name": "ns.grammar.past_simple_irregular_go", "confidence": 0.95, "reason": "Tests irregular past form 'go' → 'went'"}, {"name": "ns.grammar.past_time_marker_yesterday", "confidence": 0.88, "reason": "Tests recognizing 'yesterday' requires past tense"}], "micro_skill": [{"name": "ms.grammar.verb_form_transformation", "confidence": 0.95, "reason": "Tests verb conjugation in context"}]},
-        {"text": "The waiter _____ (be) very polite and helpful throughout the meal.", "answer": "was", "verb": "be", "nano_skill": [{"name": "ns.grammar.past_simple_be_singular", "confidence": 0.94, "reason": "Tests 'was' for singular subject in past"}, {"name": "ns.grammar.subject_verb_agreement_past", "confidence": 0.90, "reason": "Tests matching 'waiter' with 'was'"}], "micro_skill": [{"name": "ms.grammar.verb_form_transformation", "confidence": 0.94, "reason": "Tests 'be' verb conjugation"}]},
-        {"text": "She has _____ (work) as a chef in this restaurant for five years now.", "answer": "been working", "verb": "work", "nano_skill": [{"name": "ns.grammar.present_perfect_continuous_form", "confidence": 0.93, "reason": "Tests 'has been + -ing' construction"}, {"name": "ns.grammar.duration_for_with_continuous", "confidence": 0.88, "reason": "Tests 'for + time' requiring continuous aspect"}], "micro_skill": [{"name": "ms.grammar.verb_form_transformation", "confidence": 0.93, "reason": "Tests complex tense formation"}]},
-        {"text": "If I _____ (be) you, I would try the seafood special today.", "answer": "were", "verb": "be", "nano_skill": [{"name": "ns.grammar.second_conditional_were", "confidence": 0.94, "reason": "Tests subjunctive 'were' in conditional"}, {"name": "ns.grammar.hypothetical_past_form", "confidence": 0.90, "reason": "Tests unreal condition verb form"}], "micro_skill": [{"name": "ms.grammar.verb_form_transformation", "confidence": 0.94, "reason": "Tests conditional verb form"}]},
-        {"text": "The food was so _____ (spice) that I had to drink three glasses of water.", "answer": "spicy", "verb": "spice", "nano_skill": [{"name": "ns.grammar.noun_to_adjective_y", "confidence": 0.92, "reason": "Tests 'spice' → 'spicy' word formation"}, {"name": "ns.grammar.adjective_after_so", "confidence": 0.88, "reason": "Tests adjective required after 'so'"}], "micro_skill": [{"name": "ms.grammar.word_form_transformation", "confidence": 0.92, "reason": "Tests word class transformation"}]},
-        {"text": "Can you _____ (recommend) a good wine to go with this dish?", "answer": "recommend", "verb": "recommend", "nano_skill": [{"name": "ns.grammar.base_form_after_modal", "confidence": 0.95, "reason": "Tests bare infinitive after 'can'"}, {"name": "ns.grammar.modal_verb_structure", "confidence": 0.88, "reason": "Tests verb form after modal auxiliary"}], "micro_skill": [{"name": "ms.grammar.verb_form_transformation", "confidence": 0.95, "reason": "Tests modal verb complement"}]},
-        {"text": "I'm looking _____ (forward) to trying their famous dessert menu.", "answer": "forward", "verb": "forward", "nano_skill": [{"name": "ns.grammar.phrasal_verb_look_forward_to", "confidence": 0.93, "reason": "Tests 'look forward to' fixed expression"}, {"name": "ns.grammar.gerund_after_to_exception", "confidence": 0.88, "reason": "Tests gerund after 'to' in this phrase"}], "micro_skill": [{"name": "ms.grammar.phrasal_verb_completion", "confidence": 0.93, "reason": "Tests phrasal verb knowledge"}]},
-        {"text": "The restaurant _____ (open) at 6 PM according to their website.", "answer": "opens", "verb": "open", "nano_skill": [{"name": "ns.grammar.present_simple_third_person_s", "confidence": 0.94, "reason": "Tests -s ending for third person singular"}, {"name": "ns.grammar.present_simple_for_schedules", "confidence": 0.88, "reason": "Tests present simple for timetabled events"}], "micro_skill": [{"name": "ms.grammar.verb_form_transformation", "confidence": 0.94, "reason": "Tests present simple conjugation"}]},
-        {"text": "By next month, they _____ (serve) customers for ten years.", "answer": "will have been serving", "verb": "serve", "nano_skill": [{"name": "ns.grammar.future_perfect_continuous", "confidence": 0.90, "reason": "Tests 'will have been + -ing' formation"}, {"name": "ns.grammar.by_time_marker_future_perfect", "confidence": 0.85, "reason": "Tests 'by + future time' requiring perfect"}], "micro_skill": [{"name": "ms.grammar.verb_form_transformation", "confidence": 0.90, "reason": "Tests complex future tense formation"}]},
-        {"text": "We _____ (wait) for our table for nearly an hour yesterday.", "answer": "waited", "verb": "wait", "nano_skill": [{"name": "ns.grammar.past_simple_regular_ed", "confidence": 0.94, "reason": "Tests regular -ed past tense formation"}, {"name": "ns.grammar.past_time_marker_yesterday", "confidence": 0.88, "reason": "Tests 'yesterday' requiring past simple"}], "micro_skill": [{"name": "ms.grammar.verb_form_transformation", "confidence": 0.94, "reason": "Tests regular past tense conjugation"}]}
+        {"text": "Yesterday I _____ (go) to the restaurant to meet my friend.", "answer": "went", "verb": "go", "nano_skill": [{"name": "ns.grammar.past_simple_irregular_go", "confidence": 0.95, "reason": "Tests irregular past form 'go' → 'went'"}]},
+        {"text": "The waiter _____ (be) very polite and helpful throughout the meal.", "answer": "was", "verb": "be", "nano_skill": [{"name": "ns.grammar.past_simple_be_singular", "confidence": 0.94, "reason": "Tests 'was' for singular subject in past"}]},
+        {"text": "She has _____ (work) as a chef in this restaurant for five years now.", "answer": "been working", "verb": "work", "nano_skill": [...]},
+        {"text": "If I _____ (be) you, I would try the seafood special today.", "answer": "were", "verb": "be", "nano_skill": [...]},
+        {"text": "The food was so _____ (spice) that I had to drink three glasses of water.", "answer": "spicy", "verb": "spice", "nano_skill": [...]},
+        {"text": "Can you _____ (recommend) a good wine to go with this dish?", "answer": "recommend", "verb": "recommend", "nano_skill": [...]},
+        {"text": "I'm looking _____ (forward) to trying their famous dessert menu.", "answer": "forward", "verb": "forward", "nano_skill": [...]},
+        {"text": "The restaurant _____ (open) at 6 PM according to their website.", "answer": "opens", "verb": "open", "nano_skill": [...]},
+        {"text": "By next month, they _____ (serve) customers for ten years.", "answer": "will have been serving", "verb": "serve", "nano_skill": [...]},
+        {"text": "We _____ (wait) for our table for nearly an hour yesterday.", "answer": "waited", "verb": "wait", "nano_skill": [...]}
       ],
       "teacher_tip": "Before students fill the gaps, discuss the topic to help them understand the context and make better choices."
     }`;
@@ -442,16 +432,16 @@ export const getNegativePrefixesExercise = () => `    {
       "time": 6,
       "instructions": "Add the correct negative prefix (un-, in-, im-, dis-) to create the opposite meaning.",
       "words": [
-        {"word": "satisfied", "answer": "dissatisfied", "nano_skill": [{"name": "ns.vocab.prefix_dis_meaning", "confidence": 0.95, "reason": "Tests 'dis-' prefix for negation"}, {"name": "ns.vocab.prefix_word_combination", "confidence": 0.90, "reason": "Tests which prefix combines with 'satisfied'"}], "micro_skill": [{"name": "ms.vocab.negative_prefix_formation", "confidence": 0.95, "reason": "Tests negative prefix selection"}]},
-        {"word": "cooked", "answer": "uncooked", "nano_skill": [{"name": "ns.vocab.prefix_un_meaning", "confidence": 0.94, "reason": "Tests 'un-' prefix for negation"}, {"name": "ns.vocab.prefix_with_past_participle", "confidence": 0.88, "reason": "Tests 'un-' combining with past participle"}], "micro_skill": [{"name": "ms.vocab.negative_prefix_formation", "confidence": 0.94, "reason": "Tests negative prefix selection"}]},
-        {"word": "polite", "answer": "impolite", "nano_skill": [{"name": "ns.vocab.prefix_im_before_p", "confidence": 0.95, "reason": "Tests 'im-' before words starting with 'p'"}, {"name": "ns.vocab.prefix_phonetic_rule", "confidence": 0.90, "reason": "Tests phonetic prefix selection rule"}], "micro_skill": [{"name": "ms.vocab.negative_prefix_formation", "confidence": 0.95, "reason": "Tests phonetically-conditioned prefix"}]},
-        {"word": "correct", "answer": "incorrect", "nano_skill": [{"name": "ns.vocab.prefix_in_meaning", "confidence": 0.94, "reason": "Tests 'in-' prefix for negation"}, {"name": "ns.vocab.prefix_word_combination", "confidence": 0.88, "reason": "Tests 'in-' combining with 'correct'"}], "micro_skill": [{"name": "ms.vocab.negative_prefix_formation", "confidence": 0.94, "reason": "Tests negative prefix selection"}]},
-        {"word": "fresh", "answer": "unfresh", "nano_skill": [{"name": "ns.vocab.prefix_un_meaning", "confidence": 0.93, "reason": "Tests 'un-' prefix for negation"}, {"name": "ns.vocab.prefix_with_adjective", "confidence": 0.88, "reason": "Tests 'un-' combining with adjective"}], "micro_skill": [{"name": "ms.vocab.negative_prefix_formation", "confidence": 0.93, "reason": "Tests negative prefix selection"}]},
-        {"word": "expensive", "answer": "inexpensive", "nano_skill": [{"name": "ns.vocab.prefix_in_meaning", "confidence": 0.94, "reason": "Tests 'in-' prefix for negation"}, {"name": "ns.vocab.prefix_before_vowel", "confidence": 0.88, "reason": "Tests 'in-' before vowel remains 'in-'"}], "micro_skill": [{"name": "ms.vocab.negative_prefix_formation", "confidence": 0.94, "reason": "Tests prefix selection before vowel"}]},
-        {"word": "comfortable", "answer": "uncomfortable", "nano_skill": [{"name": "ns.vocab.prefix_un_meaning", "confidence": 0.94, "reason": "Tests 'un-' prefix for negation"}, {"name": "ns.vocab.prefix_word_combination", "confidence": 0.88, "reason": "Tests 'un-' combining with 'comfortable'"}], "micro_skill": [{"name": "ms.vocab.negative_prefix_formation", "confidence": 0.94, "reason": "Tests common 'un-' combination"}]},
-        {"word": "honest", "answer": "dishonest", "nano_skill": [{"name": "ns.vocab.prefix_dis_meaning", "confidence": 0.93, "reason": "Tests 'dis-' prefix for negation"}, {"name": "ns.vocab.prefix_word_combination", "confidence": 0.88, "reason": "Tests 'dis-' combining with 'honest'"}], "micro_skill": [{"name": "ms.vocab.negative_prefix_formation", "confidence": 0.93, "reason": "Tests negative prefix selection"}]},
-        {"word": "possible", "answer": "impossible", "nano_skill": [{"name": "ns.vocab.prefix_im_before_p", "confidence": 0.95, "reason": "Tests 'im-' before words starting with 'p'"}, {"name": "ns.vocab.prefix_phonetic_rule", "confidence": 0.90, "reason": "Tests phonetic assimilation rule"}], "micro_skill": [{"name": "ms.vocab.negative_prefix_formation", "confidence": 0.95, "reason": "Tests phonetically-conditioned prefix"}]},
-        {"word": "popular", "answer": "unpopular", "nano_skill": [{"name": "ns.vocab.prefix_un_meaning", "confidence": 0.93, "reason": "Tests 'un-' prefix for negation"}, {"name": "ns.vocab.prefix_exception_to_rule", "confidence": 0.88, "reason": "Tests 'un-' despite 'p' start (not 'im-')"}], "micro_skill": [{"name": "ms.vocab.negative_prefix_formation", "confidence": 0.93, "reason": "Tests prefix exception knowledge"}]}
+        {"word": "satisfied", "answer": "dissatisfied", "nano_skill": [{"name": "ns.vocab.prefix_dis_meaning", "confidence": 0.95, "reason": "Tests 'dis-' prefix for negation"}]},
+        {"word": "cooked", "answer": "uncooked", "nano_skill": [{"name": "ns.vocab.prefix_un_meaning", "confidence": 0.94, "reason": "Tests 'un-' prefix for negation"}]},
+        {"word": "polite", "answer": "impolite", "nano_skill": [...]},
+        {"word": "correct", "answer": "incorrect", "nano_skill": [...]},
+        {"word": "fresh", "answer": "unfresh", "nano_skill": [...]},
+        {"word": "expensive", "answer": "inexpensive", "nano_skill": [...]},
+        {"word": "comfortable", "answer": "uncomfortable", "nano_skill": [...]},
+        {"word": "honest", "answer": "dishonest", "nano_skill": [...]},
+        {"word": "possible", "answer": "impossible", "nano_skill": [...]},
+        {"word": "popular", "answer": "unpopular", "nano_skill": [...]}
       ],
       "teacher_tip": "After completing the exercise, have students create sentences using both the positive and negative forms to reinforce understanding of meaning changes."
     }`;
