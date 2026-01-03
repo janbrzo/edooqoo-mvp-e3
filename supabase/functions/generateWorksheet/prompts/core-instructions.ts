@@ -15,15 +15,19 @@ const generateExerciseListInstruction = (
 ) => {
   if (selectedExercises && selectedExercises.length > 0) {
     let orderedExercises = [...selectedExercises].slice(0, exerciseCount);
-
+    
     // SORT: Picture exercises ALWAYS first, then audio exercises, then others
     if (hasSelectedImage || hasSelectedAudio) {
-      const pictureExercises = orderedExercises.filter((ex) => ex.endsWith("-picture"));
-      const audioExercises = orderedExercises.filter((ex) => ex.endsWith("-audio") || ex === "listening-comprehension");
-      const otherExercises = orderedExercises.filter(
-        (ex) => !ex.endsWith("-picture") && !ex.endsWith("-audio") && ex !== "listening-comprehension",
+      const pictureExercises = orderedExercises.filter(ex => ex.endsWith('-picture'));
+      const audioExercises = orderedExercises.filter(ex => 
+        ex.endsWith('-audio') || ex === 'listening-comprehension'
       );
-
+      const otherExercises = orderedExercises.filter(ex => 
+        !ex.endsWith('-picture') && 
+        !ex.endsWith('-audio') && 
+        ex !== 'listening-comprehension'
+      );
+      
       // Priority: picture > audio > others
       orderedExercises = [...pictureExercises, ...audioExercises, ...otherExercises];
     }
@@ -92,19 +96,19 @@ CRITICAL DIVERSITY REQUIREMENTS:
 17. Create unique, fresh content for each exercise type that doesn't echo or repeat themes from other exercises.
 
 AUTHENTICITY CHECK:
-18. Before generating content, ask yourself:
+Before generating content, ask yourself:
 - Would a real person actually say/write this?
 - Does this sound like something from real life, not a textbook?
 - Are the scenarios believable and relatable?
 - Do the characters have realistic motivations and personalities?
 - Is the language natural and conversational, not artificial or perfect?
 
-19. ADAPT TO USER'S INPUT: Carefully analyze all information from the USER MESSAGE. The 'lessonTopic' and 'lessonGoal' must define the theme of all exercises. The 'englishLevel' must dictate the complexity of vocabulary and grammar according to CEFR scale.
+18. ADAPT TO USER'S INPUT: Carefully analyze all information from the USER MESSAGE. The 'lessonTopic' and 'lessonGoal' must define the theme of all exercises. The 'englishLevel' must dictate the complexity of vocabulary and grammar according to CEFR scale.
 
 ${
   hasGrammarFocus
     ? `
-20. GRAMMAR FOCUS REQUIREMENT: The user has specified a grammar focus: "${grammarFocus}". You MUST:
+19. GRAMMAR FOCUS REQUIREMENT: The user has specified a grammar focus: "${grammarFocus}". You MUST:
     - ENSURE grammar complexity matches CERF level: "${formData.englishLevel}"
     - Include a "grammar_rules" section in the JSON with detailed explanation of this grammar topic
     - Design ALL exercises to practice and reinforce this specific grammar point
@@ -113,45 +117,33 @@ ${
     -provide a detailed and comprehensive explanation about the grammatical topic, including a thorough introduction explaining its usage, importance, and general overview, written in the style of well-known grammar reference books (such as My Grammar Lab, Cambridge Grammar, or Virginia Evans).
 `
     : `
-20. NO GRAMMAR FOCUS: The user has not specified a grammar focus, so create a general worksheet focused on the topic and goal without emphasizing any particular grammar point.
+19. NO GRAMMAR FOCUS: The user has not specified a grammar focus, so create a general worksheet focused on the topic and goal without emphasizing any particular grammar point.
 `
 }
 
 ${
   hasSelectedImage
     ? `
-21. IMAGE CONTEXT FOR PICTURE EXERCISES: 
+20. IMAGE CONTEXT FOR PICTURE EXERCISES: 
 IMPORTANT: You have an AI-generated image with detailed description.
-The following exercises MUST use this image: ${selectedExercises?.filter((ex) => ex.endsWith("-picture")).join(", ")}
+The following exercises MUST use this image: ${selectedExercises?.filter(ex => ex.endsWith('-picture')).join(', ')}
 For these picture-based exercises, use SPECIFIC DETAILS from the image description below (people, objects, colors, positions, actions). Each exercise must focus on different aspects of the image.
 ${imageDescription}
 `
     : hasSelectedAudio
-      ? `
-21. AUDIO CONTEXT FOR LISTENING EXERCISES:
+    ? `
+20. AUDIO CONTEXT FOR LISTENING EXERCISES:
 IMPORTANT: You have an AI-generated audio scenario with transcript.
-The following exercises MUST use this audio: ${selectedExercises?.filter((ex) => ex.endsWith("-audio") || ex === "listening-comprehension").join(", ")}
+The following exercises MUST use this audio: ${selectedExercises?.filter(ex => ex.endsWith('-audio') || ex === 'listening-comprehension').join(', ')}
 For these audio-based exercises, use SPECIFIC DETAILS from the audio transcript below. Create questions that test listening comprehension, detail retention, and understanding of spoken context.
 AUDIO TRANSCRIPT:
 ${audioTranscript || "[NO TRANSCRIPT AVAILABLE - Generate generic audio-based exercise]"}
 AUDIO DURATION: ${audioDuration} seconds
 `
-      : ""
+    : ""
 }
 
-22. PEDAGOGICAL SKILL TAGGING
-Each individual exercise item MUST include EXACTLY one micro_skill and AT LEAST two nano_skill
-A nano_skill represents the smallest observable and testable unit of language ability
-A nano_skill MUST be verifiable from a single learner answer without external context.
-A nano_skill MUST NOT describe broad grammar topics lesson goals exercise types or teaching strategies
-A micro_skill represents a broader linguistic competence grouping the nano_skills nano_skills used in the item
-Each nano_skill and Each micro_skill MUST include its own confidence and its own reason
-Confidence values MUST be in range 0.00–1.00 and express certainty that the item genuinely tests the skill.
-Reason MUST explain why this specific item tests the skill, not how it should be taught.
-Skill tagging MUST be logically consistent with lesson topic, lesson focus and exercise type.
-
-23. ENSURE ALL INSTRUCTIONS ARE STRICTLY ADHERED TO AND THAT THE JSON IS COMPLETE AND VALID.
-24. Check your work again before finalizing. Every part of the JSON must be intentional and correct.
-
+21. ENSURE ALL INSTRUCTIONS ARE STRICTLY ADHERED TO AND THAT THE JSON IS COMPLETE AND VALID.
+22. Check your work again before finalizing. Every part of the JSON must be intentional and correct.
   `;
 };
