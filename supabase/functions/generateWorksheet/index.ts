@@ -146,7 +146,7 @@ serve(async (req) => {
           { role: "system", content: batchSystemMessage },
           { role: "user", content: sanitizedPrompt },
         ],
-        max_completion_tokens: 20000,
+        max_completion_tokens: 30000,
       });
 
       const batchGenerationTime = ((Date.now() - batchStartTime) / 1000).toFixed(2);
@@ -325,7 +325,7 @@ serve(async (req) => {
               { role: "system", content: systemMessage },
               { role: "user", content: sanitizedPrompt },
             ],
-            max_completion_tokens: 20000,
+            max_completion_tokens: 30000,
             stream: true, // ← KEY: Enable streaming
           });
 
