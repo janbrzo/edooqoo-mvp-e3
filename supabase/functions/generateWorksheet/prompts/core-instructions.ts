@@ -145,24 +145,5 @@ AUDIO DURATION: ${audioDuration} seconds
 
 21. ENSURE ALL INSTRUCTIONS ARE STRICTLY ADHERED TO AND THAT THE JSON IS COMPLETE AND VALID.
 22. Check your work again before finalizing. Every part of the JSON must be intentional and correct.
-
-CORE INSTRUCTIONS – PEDAGOGICAL SKILL TAGGING
-
-Each individual exercise item MUST include EXACTLY one micro_skill and AT LEAST two nano_skill
-A nano_skill represents the smallest observable and testable unit of language ability
-
-A nano_skill MUST be verifiable from a single learner answer without external context.
-
-A nano_skill MUST NOT describe broad grammar topics lesson goals exercise types or teaching strategies
-
-A micro_skill represents a broader linguistic competence grouping the nano_skills nano_skills used in the item
-
-Each nano_skill and Each micro_skill MUST include its own confidence and its own reason
-
-Confidence values MUST be in range 0.00–1.00 and express certainty that the item genuinely tests the skill.
-
-Reason MUST explain why this specific item tests the skill, not how it should be taught.
-
-Skill tagging MUST be logically consistent with lesson topic, lesson focus and exercise type.
   `;
 };

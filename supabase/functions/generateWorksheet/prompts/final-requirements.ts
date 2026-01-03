@@ -76,22 +76,8 @@ export const getFinalRequirements = (hasGrammarFocus: boolean, exerciseCount: nu
   requirements += `${exerciseCount + 1}. Vocabulary sheet: EXACTLY 15 terms with definitions.\n`;
   
   if (hasGrammarFocus) {
-  requirements += `${exerciseCount + 2}. Grammar Rules: Must include 4-7 grammar rules with title, explanation, and 3 examples each.\n`;
+    requirements += `${exerciseCount + 2}. Grammar Rules: Must include 4-7 grammar rules with title, explanation, and 3 examples each.\n`;
   }
-  
-  requirements += `
-
-FINAL REQUIREMENTS – SKILL TAGGING VALIDATION
-
-Nano_skills MUST be minimal and atomic
-
-Do NOT reuse identical nano_skill plus reason combinations within the same exercise unless the linguistic mechanism is identical
-
-Nano_skill selection MUST depend solely on the linguistic mechanism tested in the item
-
-The presence or absence of other nano_skill MUST NOT influence nano_skill generation
-
-`;
   
   requirements += '\nRETURN ONLY VALID JSON. NO MARKDOWN. NO ADDITIONAL TEXT.';
   
