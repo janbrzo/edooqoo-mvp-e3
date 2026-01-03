@@ -5,12 +5,12 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - DSLM Pedagogical Skill Tagging System:**
-- **nano_skill & micro_skill**: Every exercise item now includes `nano_skill` (2+ atomic skills) and `micro_skill` (1 broader competence) arrays with `name`, `confidence`, `reason` fields
-- **CORE INSTRUCTIONS – PEDAGOGICAL SKILL TAGGING**: Added to `core-instructions.ts` - mandatory tagging rules for all generated content
-- **FINAL REQUIREMENTS – SKILL TAGGING VALIDATION**: Added to `final-requirements.ts` - validation rules for skill atomicity and uniqueness
-- **22 Exercise Types Updated**: All exercises in `individual-exercises.ts` now include skill tagging in examples (Reading, True-False, Matching, Fill-in-blanks, Multiple-choice, Dialogue, Discussion, Error-correction, Odd-one-out, Synonyms, Antonyms, Sentence-transformation, Word-order, Gap-text, Negative-prefixes, Categorize, Paraphrasing, Complete-word, Matching-halves, all Picture exercises, all Audio exercises)
-- **generate-test Updated**: `generate-test/index.ts` system prompt and example JSON now require `nano_skill`/`micro_skill` for each question
+**Latest Update (January 2026) - DSLM Pedagogical Skill Tagging System (v2 - Simplified):**
+- **nano_skill ONLY**: Every exercise item now includes exactly ONE `nano_skill` object with `name`, `confidence`, `reason` fields (micro_skill removed for token optimization)
+- **PEDAGOGICAL SKILL TAGGING**: Section in `core-instructions.ts` defines tagging rules - one atomic nano_skill per item
+- **generate-test Synchronized**: `generate-test/index.ts` system prompt and example JSON updated to require single `nano_skill` (no micro_skill)
+- **Homework Uses generateWorksheet**: Homework generation inherits the same prompts via `useHomeworkExerciseGeneration.tsx`
+- **Syntax Fix**: Corrected `""nano_skill"` syntax error in `individual-exercises.ts` line 851
 
 **Previous Update (January 2026) - DSLM Stage 1.4 Full Event Collection Fixes:**
 - **CRITICAL: Timestamp Fix**: Changed `student_events.created_at` DEFAULT from `(now() AT TIME ZONE 'Europe/Warsaw')` to `now()` - all events now store correct UTC time

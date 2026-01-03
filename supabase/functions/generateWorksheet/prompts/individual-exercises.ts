@@ -848,7 +848,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "C", "text": "Option C", "correct": true},
             {"label": "D", "text": "Option D", "correct": false}
           ],
-          ""nano_skill": [...]
+          "nano_skill": [...]
         },
         {
           "text": "What tone does the speaker use?",
