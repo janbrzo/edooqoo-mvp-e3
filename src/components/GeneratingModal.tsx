@@ -229,8 +229,8 @@ export default function GeneratingModal({
 
         <p className="text-center text-xs text-gray-400">
           {(requiresAudio || requiresImage) 
-            ? `Expected time: ~2:30 min (with ${requiresAudio && requiresImage ? 'audio & image' : requiresAudio ? 'audio' : 'image'})` 
-            : "Expected time: ~1:30 min"}
+            ? `Expected time: ~1:30 min (with ${requiresAudio && requiresImage ? 'audio & image' : requiresAudio ? 'audio' : 'image'})` 
+            : "Expected time: ~60s"}
         </p>
       </div>
     </div>
