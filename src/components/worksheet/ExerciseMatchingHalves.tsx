@@ -1,6 +1,8 @@
 import React, { useRef } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseMatchingHalvesProps extends Partial<InteractiveExerciseProps> {
   sentence_halves: any[];
@@ -11,6 +13,9 @@ interface ExerciseMatchingHalvesProps extends Partial<InteractiveExerciseProps> 
   liveSessionAnswer?: Record<number, any>;
   // A3: Disable inputs after homework submission
   disabled?: boolean;
+  // NanoSkill editing
+  onNanoSkillChange?: (hIndex: number, nanoSkill: NanoSkill) => void;
+  isSharedWorksheet?: boolean;
 }
 
 // PROBLEM 8 FIX: Seeded random for deterministic shuffle
@@ -48,7 +53,10 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  showCorrectAnswers = false
+  showCorrectAnswers = false,
+  // NanoSkill props
+  onNanoSkillChange,
+  isSharedWorksheet = false
 }) => {
   // Process sentence halves to add dots if missing
   const processedHalves = React.useMemo(() => {
@@ -114,31 +122,45 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
           {processedHalves.map((item, hIndex) => {
             const correctAnswer = String.fromCharCode(65 + shuffledSecondHalves.findIndex(shuffled => shuffled.second_half === item.second_half));
             const liveAnswer = liveSessionAnswer?.[hIndex];
+            const nanoSkill = safeGetNanoSkill(item);
+            const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
             
             return (
               <div key={hIndex} className="p-2 border rounded-md bg-white">
-                <span className="text-worksheet-purple font-medium mr-2">{hIndex + 1}.</span>
-                {viewMode === 'student' ? (
-                  <span className="inline-block w-8 h-6 border-b border-gray-400 mr-2"></span>
-                ) : (
-                  <>
-                    <span className="teacher-answer">{correctAnswer}</span>
-                    {/* Live Session: show student answer in blue */}
-                    {liveAnswer !== undefined && (
-                      <span className="text-blue-600 font-medium text-sm ml-2">
-                        [Student: {liveAnswer}]
-                      </span>
-                    )}
-                  </>
-                )}
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={item?.first_half || ''}
-                    onChange={e => handleFirstHalfChange(hIndex, e.target.value)}
-                    className="border p-1 editable-content w-full"
-                  />
-                ) : (item?.first_half || 'Missing first half')}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-worksheet-purple font-medium">{hIndex + 1}.</span>
+                  {viewMode === 'student' ? (
+                    <span className="inline-block w-8 h-6 border-b border-gray-400"></span>
+                  ) : (
+                    <>
+                      <span className="teacher-answer">{correctAnswer}</span>
+                      {/* Live Session: show student answer in blue */}
+                      {liveAnswer !== undefined && (
+                        <span className="text-blue-600 font-medium text-sm">
+                          [Student: {liveAnswer}]
+                        </span>
+                      )}
+                    </>
+                  )}
+                  <span className="flex-grow">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={item?.first_half || ''}
+                        onChange={e => handleFirstHalfChange(hIndex, e.target.value)}
+                        className="border p-1 editable-content w-full"
+                      />
+                    ) : (item?.first_half || 'Missing first half')}
+                  </span>
+                  {/* NanoSkill Badge */}
+                  {showNanoSkill && (
+                    <NanoSkillBadge
+                      nanoSkill={nanoSkill}
+                      isEditing={isEditing}
+                      onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(hIndex, ns) : undefined}
+                    />
+                  )}
+                </div>
               </div>
             );
           })}

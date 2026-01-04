@@ -2,6 +2,8 @@
 import React, { useRef } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseMatchingProps extends Partial<InteractiveExerciseProps> {
   items: any[];
@@ -14,6 +16,9 @@ interface ExerciseMatchingProps extends Partial<InteractiveExerciseProps> {
   liveSessionAnswer?: Record<number, any>;
   // A3: Disable inputs after homework submission
   disabled?: boolean;
+  // NanoSkill editing
+  onNanoSkillChange?: (iIndex: number, nanoSkill: NanoSkill) => void;
+  isSharedWorksheet?: boolean;
 }
 
 // PROBLEM 8 FIX: Seeded random for deterministic shuffle
@@ -55,7 +60,10 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
   // PROBLEM 1: Live Session
   liveSessionAnswer,
   // A3: Disable inputs
-  disabled = false
+  disabled = false,
+  // NanoSkill props
+  onNanoSkillChange,
+  isSharedWorksheet = false
 }) => {
   // PROBLEM 8 FIX: Use useRef to ensure shuffle happens only once
   // Create a stable seed from item terms for deterministic order
@@ -81,6 +89,8 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
           const isIncorrect = showCorrectAnswers && selectedAnswer && !isCorrect;
           const isEmpty = showCorrectAnswers && !selectedAnswer;
           const liveAnswer = liveSessionAnswer?.[iIndex];
+          const nanoSkill = safeGetNanoSkill(item);
+          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
 
           return (
             <div key={iIndex} className={`p-2 border rounded-md bg-white 
@@ -88,7 +98,7 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
               ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
               ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
             `}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-worksheet-purple font-medium">{iIndex + 1}.</span>
                 
                 {isInteractive ? (
@@ -134,6 +144,15 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
                   <span className="text-blue-600 font-medium text-sm">
                     [Student: {liveAnswer}]
                   </span>
+                )}
+                {/* NanoSkill Badge */}
+                {showNanoSkill && (
+                  <NanoSkillBadge
+                    nanoSkill={nanoSkill}
+                    isEditing={isEditing}
+                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(iIndex, ns) : undefined}
+                    className="ml-auto"
+                  />
                 )}
               </div>
             </div>
