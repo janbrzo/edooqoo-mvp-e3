@@ -218,7 +218,7 @@ Reason MUST explain why this specific item tests the skill.`;
     let usedModel: string;
 
     try {
-      console.log('🔵 Trying Gemini 2.5 Flash for test generation...');
+      console.log('🔵 Trying Gemini 2.5 Flash with JSON mode for test generation...');
       
       if (!genAI) {
         throw new Error('GEMINI_API_KEY not configured');
@@ -229,6 +229,7 @@ Reason MUST explain why this specific item tests the skill.`;
         generationConfig: {
           maxOutputTokens: 4000,
           temperature: 0.7,
+          responseMimeType: 'application/json', // FORCE valid JSON output
         },
       });
 
@@ -236,7 +237,7 @@ Reason MUST explain why this specific item tests the skill.`;
       const result = await model.generateContent(fullPrompt);
       generatedContent = result.response.text();
       usedModel = 'gemini-2.5-flash';
-      console.log(`✅ Gemini 2.5 Flash succeeded`);
+      console.log(`✅ Gemini 2.5 Flash with JSON mode succeeded`);
     } catch (geminiError) {
       console.warn('⚠️ Gemini failed, falling back to OpenAI:', (geminiError as Error).message);
 
