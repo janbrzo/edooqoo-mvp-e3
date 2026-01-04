@@ -1,6 +1,8 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
+import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseGapTextProps extends Partial<InteractiveExerciseProps> {
   sentences: any[];
@@ -9,6 +11,9 @@ interface ExerciseGapTextProps extends Partial<InteractiveExerciseProps> {
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
+  // NanoSkill editing
+  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill) => void;
+  isSharedWorksheet?: boolean;
 }
 
 const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
@@ -22,7 +27,10 @@ const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
   studentAnswers = {},
   onAnswerChange,
   showCorrectAnswers = false,
-  disabled = false
+  disabled = false,
+  // NanoSkill props
+  onNanoSkillChange,
+  isSharedWorksheet = false
 }) => {
   if (!sentences || sentences.length === 0) {
     return <div className="text-gray-500 italic">No sentences available for this exercise.</div>;
@@ -36,23 +44,36 @@ const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
         const isCorrect = showCorrectAnswers && studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
         const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
         const isEmpty = showCorrectAnswers && !studentAnswer;
+        const sentenceText = safeGetText(sentence?.text || sentence);
+        const nanoSkill = safeGetNanoSkill(sentence);
+        const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
 
         return (
           <div key={sIndex} className="border rounded-lg p-3 bg-white">
             <div className="flex flex-col gap-2">
               <div className="flex-grow">
-                <p className="leading-snug">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={sentence?.text || ''}
-                      onChange={e => onSentenceChange(sIndex, 'text', e.target.value)}
-                      className="w-full border p-1 editable-content"
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="leading-snug flex-grow">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={sentence?.text || ''}
+                        onChange={e => onSentenceChange(sIndex, 'text', e.target.value)}
+                        className="w-full border p-1 editable-content"
+                      />
+                    ) : (
+                      <>{sIndex + 1}. {sentenceText.replace(/_+/g, "_______________")}</>
+                    )}
+                  </p>
+                  {/* NanoSkill Badge */}
+                  {showNanoSkill && (
+                    <NanoSkillBadge
+                      nanoSkill={nanoSkill}
+                      isEditing={isEditing}
+                      onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
                     />
-                  ) : (
-                    <>{sIndex + 1}. {(sentence?.text || 'Missing text').replace(/_+/g, "_______________")}</>
                   )}
-                </p>
+                </div>
               </div>
               {isInteractive && (
                 <Input

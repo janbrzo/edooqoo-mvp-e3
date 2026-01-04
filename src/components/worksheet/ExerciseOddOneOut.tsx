@@ -1,5 +1,7 @@
 import React, { useRef, useMemo } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseOddOneOutProps extends Partial<InteractiveExerciseProps> {
   questions: any[];
@@ -10,6 +12,9 @@ interface ExerciseOddOneOutProps extends Partial<InteractiveExerciseProps> {
   worksheetId?: string; // PROBLEM 3: For deterministic shuffle
   // A3: Disable inputs after homework submission
   disabled?: boolean;
+  // NanoSkill editing
+  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
+  isSharedWorksheet?: boolean;
 }
 
 // PROBLEM 3 FIX: Seeded random for deterministic shuffle (same as ExerciseMatchingHalves)
@@ -49,7 +54,10 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
   onAnswerChange,
   showCorrectAnswers = false,
   // A3: Disable inputs
-  disabled = false
+  disabled = false,
+  // NanoSkill props
+  onNanoSkillChange,
+  isSharedWorksheet = false
 }) => {
   // PROBLEM 3 FIX: Create a stable key based on questions content for deterministic shuffle
   const questionsKey = useMemo(() => 
@@ -99,10 +107,12 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
           const correctAnswer = question?.correct_answer;
           const hasAnswered = selectedAnswer !== undefined;
           const isEmpty = showCorrectAnswers && !hasAnswered;
+          const nanoSkill = safeGetNanoSkill(question);
+          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
 
           return (
             <div key={qIndex} className="border-b pb-2">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="font-medium">{qIndex + 1}.</span>
                 
                 <div className="flex flex-wrap gap-2 flex-grow">
@@ -161,6 +171,14 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
                       </span>
                     )}
                   </div>
+                )}
+                {/* NanoSkill Badge */}
+                {showNanoSkill && (
+                  <NanoSkillBadge
+                    nanoSkill={nanoSkill}
+                    isEditing={isEditing}
+                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
+                  />
                 )}
               </div>
             </div>

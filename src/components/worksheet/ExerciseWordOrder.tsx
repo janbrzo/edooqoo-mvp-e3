@@ -2,6 +2,8 @@ import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
 import { answersMatch } from "@/utils/textNormalization";
+import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseWordOrderProps extends Partial<InteractiveExerciseProps> {
   sentences: any[];
@@ -10,6 +12,9 @@ interface ExerciseWordOrderProps extends Partial<InteractiveExerciseProps> {
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
+  // NanoSkill editing
+  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill) => void;
+  isSharedWorksheet?: boolean;
 }
 
 const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
@@ -23,7 +28,10 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
   studentAnswers = {},
   onAnswerChange,
   showCorrectAnswers = false,
-  disabled = false
+  disabled = false,
+  // NanoSkill props
+  onNanoSkillChange,
+  isSharedWorksheet = false
 }) => {
   const handleScrambledWordsChange = (sIndex: number, value: string) => {
     onSentenceChange(sIndex, 'scrambled_words', value);
@@ -39,11 +47,13 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
           const isCorrect = showCorrectAnswers && answersMatch(studentAnswer, correctAnswer);
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
           const isEmpty = showCorrectAnswers && !studentAnswer;
+          const nanoSkill = safeGetNanoSkill(sentence);
+          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
 
           return (
             <div key={sIndex} className="border rounded-lg p-3 bg-white">
               <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <span className="font-medium">{sIndex + 1}.</span>
                   
                   {isEditing ? (
@@ -64,6 +74,14 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
                         )
                       ))}
                     </div>
+                  )}
+                  {/* NanoSkill Badge */}
+                  {showNanoSkill && (
+                    <NanoSkillBadge
+                      nanoSkill={nanoSkill}
+                      isEditing={isEditing}
+                      onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
+                    />
                   )}
                 </div>
 
