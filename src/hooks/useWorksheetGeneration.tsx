@@ -409,6 +409,10 @@ export const useWorksheetGeneration = (
         worksheetState.setGeneratedWorksheet(deepFixedWorksheet);
         worksheetState.setEditableWorksheet(deepFixedWorksheet);
         
+        // CRITICAL FIX: Update URL to include worksheet ID after generation
+        console.log('🔗 Updating URL to /worksheet/' + finalWorksheetId);
+        window.history.pushState({}, '', `/worksheet/${finalWorksheetId}`);
+        
         // Mark generation as complete
         setIsGenerating(false);
       }, 100);
