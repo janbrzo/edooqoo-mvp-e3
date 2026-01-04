@@ -2,6 +2,7 @@ import React from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { safeGetText } from "@/utils/textObjectFixer";
 
 interface Statement {
   text: string;
@@ -45,6 +46,8 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
           const studentAnswer = studentAnswers[sIndex];
           const isCorrect = showCorrectAnswers && studentAnswer !== undefined && studentAnswer === statement.isTrue;
           const isIncorrect = showCorrectAnswers && studentAnswer !== undefined && studentAnswer !== statement.isTrue;
+          // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
+          const statementText = safeGetText(statement?.text ?? statement);
 
           return (
             <div key={sIndex} className="border-b pb-2">
@@ -54,12 +57,12 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
                     {isEditing ? (
                       <input
                         type="text"
-                        value={statement.text}
+                        value={statementText}
                         onChange={e => onStatementChange(sIndex, 'text', e.target.value)}
                         className="w-full border p-1 editable-content"
                       />
                     ) : (
-                      <>{sIndex + 1}. {statement.text}</>
+                      <>{sIndex + 1}. {statementText}</>
                     )}
                   </p>
                 </div>

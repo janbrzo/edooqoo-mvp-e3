@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - AI Model Migration to Gemini 2.5 Flash + JSON Mode:**
+**Latest Update (January 2026) - Rendering Safety Fix + Enhanced safeGetText:**
+- **CRITICAL BUG FIX**: Fixed `TypeError: Cannot read properties of undefined (reading 'replace')` that caused blank page after worksheet generation
+- **safeGetText Enhanced**: Function in `textObjectFixer.ts` now handles `undefined`, `null`, nested objects, and always returns a string (never crashes)
+- **safeGetNanoSkill Enhanced**: Now handles `nano_skill` as both object `{...}` and array `[{...}]` formats (Gemini sometimes returns arrays)
+- **Components Updated**: `ExerciseSectionUtils.tsx`, `ExerciseFillInBlanksAudio.tsx`, `ExerciseReading.tsx`, `ExerciseTrueFalseAudio.tsx`, `ExerciseMultipleChoiceAudio.tsx`, `ExerciseAnswerQuestions.tsx` now use `safeGetText()` for all `.text` property access
+- **Pattern**: All components extract text safely: `const sentenceText = safeGetText(sentence?.text ?? sentence);` then use `sentenceText.replace()` which never fails
+
+**Previous Update (January 2026) - AI Model Migration to Gemini 2.5 Flash + JSON Mode:**
 - **Performance Fix**: Migrated from GPT-5-mini to Gemini 2.5 Flash as primary model - 8-exercise worksheets now complete in ~120s (was: timeout at 150s)
 - **JSON Mode Enabled**: Added `responseMimeType: "application/json"` to force Gemini to return valid JSON (fixes SyntaxError crashes)
 - **Fallback System**: GPT-5-mini remains as automatic fallback if Gemini fails (API error, rate limit)

@@ -2,6 +2,7 @@ import React from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { safeGetText } from "@/utils/textObjectFixer";
 
 interface Option {
   label: string;
@@ -49,18 +50,22 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
       )}
       
       <div className="space-y-2">
-        {questions.map((question, qIndex) => (
+        {questions.map((question, qIndex) => {
+          // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
+          const questionText = safeGetText(question?.text ?? question);
+          
+          return (
           <div key={qIndex} className="border-b pb-2 multiple-choice-question">
             <p className="font-medium mb-1 leading-snug">
               {isEditing ? (
                 <input
                   type="text"
-                  value={question.text}
+                  value={questionText}
                   onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
                   className="w-full border p-1 editable-content"
                 />
               ) : (
-                <>{qIndex + 1}. {question.text}</>
+                <>{qIndex + 1}. {questionText}</>
               )}
             </p>
             {isInteractive ? (
@@ -159,7 +164,8 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

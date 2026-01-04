@@ -1,4 +1,4 @@
-
+import { safeGetText } from "@/utils/textObjectFixer";
 
 // This file contains utility functions for the ExerciseSection component
 
@@ -185,6 +185,8 @@ export const renderOtherExerciseTypes = (
         const studentAnswer = studentAnswers[sIndex] || '';
         const isEmpty = showCorrectAnswers && !studentAnswer;
         const liveAnswer = liveSessionAnswer?.[sIndex];
+        // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
+        const sentenceText = safeGetText(sentence?.text ?? sentence);
         
         return (
           <div key={sIndex} className="border rounded-lg p-3 bg-white">
@@ -194,15 +196,15 @@ export const renderOtherExerciseTypes = (
                   {isEditing ? (
                     <input
                       type="text"
-                      value={sentence.text}
+                      value={sentenceText}
                       onChange={e => handleSentenceChange(sIndex, 'text', e.target.value)}
                       className="w-full border p-1 editable-content"
                     />
                   ) : (
                     <>{sIndex + 1}. {
                       exercise.type === 'word-formation' 
-                        ? sentence.text.replace(/_+/g, "_______________") 
-                        : sentence.text
+                        ? sentenceText.replace(/_+/g, "_______________") 
+                        : sentenceText
                     }</>
                   )}
                 </p>
@@ -256,9 +258,13 @@ export const renderTrueFalseExercise = (
   viewMode: 'student' | 'teacher',
   handleStatementChange: (statementIndex: number, field: string, value: string | boolean) => void
 ) => (
-  <div>
+<div>
     <div className="space-y-2">
-      {exercise.statements.map((statement: any, sIndex: number) => (
+      {exercise.statements.map((statement: any, sIndex: number) => {
+        // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
+        const statementText = safeGetText(statement?.text ?? statement);
+        
+        return (
         <div key={sIndex} className="border-b pb-2">
           <div className="flex flex-row items-start">
             <div className="flex-grow">
@@ -266,12 +272,12 @@ export const renderTrueFalseExercise = (
                 {isEditing ? (
                   <input
                     type="text"
-                    value={statement.text}
+                    value={statementText}
                     onChange={e => handleStatementChange(sIndex, 'text', e.target.value)}
                     className="w-full border p-1 editable-content"
                   />
                 ) : (
-                  <>{sIndex + 1}. {statement.text}</>
+                  <>{sIndex + 1}. {statementText}</>
                 )}
               </p>
             </div>
@@ -306,7 +312,8 @@ export const renderTrueFalseExercise = (
             </div>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   </div>
 );
