@@ -5,7 +5,15 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - DSLM Pedagogical Skill Tagging System (v2 - Simplified):**
+**Latest Update (January 2026) - NanoSkill Rendering & URL Fix:**
+- **CRITICAL BUG FIX**: Fixed React Error #31 where AI-generated items with `{text, nano_skill}` structure crashed rendering
+- **textObjectFixer Enhanced**: Added `safeGetText()` and `safeGetNanoSkill()` helpers in `src/utils/textObjectFixer.ts` for safe text extraction
+- **ExerciseSection Fixed**: Discussion questions now safely handle both string and object question formats
+- **URL After Generation**: Worksheet URL now updates to `/worksheet/{id}` immediately after generation (uses `window.history.pushState`)
+- **NanoSkillBadge Component**: New `src/components/worksheet/NanoSkillBadge.tsx` displays nano_skill as colored badge with tooltip (confidence-based colors)
+- **Exercise Components Updated**: `ExerciseFillInBlanks.tsx` and `ExerciseMultipleChoice.tsx` now display nano_skill badges for teachers (not on shared worksheets)
+
+**Previous Update (January 2026) - DSLM Pedagogical Skill Tagging System (v2 - Simplified):**
 - **nano_skill ONLY**: Every exercise item now includes exactly ONE `nano_skill` object with `name`, `confidence`, `reason` fields (micro_skill removed for token optimization)
 - **PEDAGOGICAL SKILL TAGGING**: Section in `core-instructions.ts` defines tagging rules - one atomic nano_skill per item
 - **generate-test Synchronized**: `generate-test/index.ts` system prompt and example JSON updated to require single `nano_skill` (no micro_skill)

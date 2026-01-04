@@ -2,6 +2,8 @@ import React, { useMemo } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
 import { answersMatch } from "@/utils/textNormalization";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
+import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
 
 interface ExerciseFillInBlanksProps extends Partial<InteractiveExerciseProps> {
   word_bank?: string[];
@@ -13,6 +15,10 @@ interface ExerciseFillInBlanksProps extends Partial<InteractiveExerciseProps> {
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
+  // For NanoSkill editing
+  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill) => void;
+  // Hide nano skills on shared worksheets
+  isSharedWorksheet?: boolean;
 }
 
 // PROBLEM 9 FIX: Seeded random function for deterministic shuffle
@@ -46,7 +52,10 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
   showCorrectAnswers = false,
   // PROBLEM 1: Live Session
   liveSessionAnswer,
-  disabled = false
+  disabled = false,
+  // NanoSkill props
+  onNanoSkillChange,
+  isSharedWorksheet = false
 }) => {
   // PROBLEM 9 FIX: Shuffle word bank with deterministic seed based on content
   const shuffledWordBank = useMemo(() => {
@@ -89,6 +98,9 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
       )}
       <div className="space-y-2">
       {sentences.map((sentence, sIndex) => {
+          // Safely extract text and nano_skill
+          const sentenceText = safeGetText(sentence.text || sentence);
+          const nanoSkill = safeGetNanoSkill(sentence);
           const studentAnswer = studentAnswers[sIndex] || '';
           const correctAnswer = sentence.answer;
           // Use normalized comparison to ignore punctuation and case
@@ -96,23 +108,34 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
           const isEmpty = showCorrectAnswers && !studentAnswer;
           const liveAnswer = liveSessionAnswer?.[sIndex];
+          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
 
           return (
             <div key={sIndex} className="border rounded-lg p-3 bg-white">
               <div className="flex flex-row items-start gap-2">
                 <div className="flex-grow">
-                  <p className="leading-snug mb-2">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={sentence.text}
-                        onChange={e => onSentenceChange(sIndex, 'text', e.target.value)}
-                        className="w-full border p-1 editable-content"
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="leading-snug flex-grow">
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={typeof sentence.text === 'string' ? sentence.text : sentenceText}
+                          onChange={e => onSentenceChange(sIndex, 'text', e.target.value)}
+                          className="w-full border p-1 editable-content"
+                        />
+                      ) : (
+                        <>{sIndex + 1}. {sentenceText.replace(/_+/g, "_______________")}</>
+                      )}
+                    </p>
+                    {/* NanoSkill Badge - only for teachers, not on shared worksheets */}
+                    {showNanoSkill && (
+                      <NanoSkillBadge
+                        nanoSkill={nanoSkill}
+                        isEditing={isEditing}
+                        onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
                       />
-                    ) : (
-                      <>{sIndex + 1}. {sentence.text.replace(/_+/g, "_______________")}</>
                     )}
-                  </p>
+                  </div>
                   {isInteractive && (
                     <Input
                       type="text"

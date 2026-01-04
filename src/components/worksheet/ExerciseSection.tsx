@@ -439,7 +439,9 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         {normalizedType === 'discussion' && exercise.questions && (
           <div className="space-y-3">
             <h3 className="font-medium text-gray-700 mb-2">Discussion Questions:</h3>
-            {exercise.questions.map((question: string, qIndex: number) => {
+            {exercise.questions.map((question: any, qIndex: number) => {
+              // CRITICAL FIX: Safely extract text from question (may be string or {text, nano_skill})
+              const questionText = typeof question === 'string' ? question : (question?.text || '');
               const studentAnswer = studentAnswers[qIndex] || '';
               const isEmpty = showCorrectAnswers && !studentAnswer;
               const liveAnswer = liveSessionAnswer?.[qIndex];
@@ -451,11 +453,16 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                       {isEditing ? (
                         <input
                           type="text"
-                          value={question}
+                          value={questionText}
                           onChange={e => {
                             const updatedExercises = [...editableWorksheet.exercises];
                             const newQuestions = [...exercise.questions!];
-                            newQuestions[qIndex] = e.target.value;
+                            // Preserve nano_skill if present, update only text
+                            if (typeof question === 'object' && question?.nano_skill) {
+                              newQuestions[qIndex] = { ...question, text: e.target.value };
+                            } else {
+                              newQuestions[qIndex] = e.target.value;
+                            }
                             updatedExercises[arrayIndex] = {
                               ...updatedExercises[arrayIndex],
                               questions: newQuestions
@@ -468,7 +475,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                           className="w-full border p-1 editable-content"
                         />
                       ) : (
-                        <>{qIndex + 1}. {question}</>
+                        <>{qIndex + 1}. {questionText}</>
                       )}
                     </p>
                     {/* PROBLEM 7 FIX: Live Session answer display for Discussion Questions */}

@@ -1,6 +1,8 @@
 
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
+import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
 
 interface ExerciseMultipleChoiceProps extends Partial<InteractiveExerciseProps> {
   questions: any[];
@@ -12,6 +14,10 @@ interface ExerciseMultipleChoiceProps extends Partial<InteractiveExerciseProps> 
   liveSessionAnswer?: Record<number, any>;
   // A3: Disable inputs after homework submission
   disabled?: boolean;
+  // NanoSkill editing
+  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
+  // Hide nano skills on shared worksheets
+  isSharedWorksheet?: boolean;
 }
 
 const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
@@ -28,7 +34,10 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
   // PROBLEM 1: Live Session
   liveSessionAnswer,
   // A3: Disable inputs
-  disabled = false
+  disabled = false,
+  // NanoSkill props
+  onNanoSkillChange,
+  isSharedWorksheet = false
 }) => {
   const handleOptionSelect = (qIndex: number, optionText: string) => {
     if (isInteractive && onAnswerChange && !disabled) {
@@ -39,23 +48,37 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
   return (
     <div className="space-y-2">
       {questions.map((question, qIndex) => {
+        // Safely extract text and nano_skill
+        const questionText = safeGetText(question.text || question);
+        const nanoSkill = safeGetNanoSkill(question);
         const selectedAnswer = studentAnswers[qIndex];
         const liveAnswer = liveSessionAnswer?.[qIndex];
+        const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
         
         return (
           <div key={qIndex} className="border-b pb-2 multiple-choice-question">
-            <p className="font-medium mb-1 leading-snug">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={question.text}
-                  onChange={e => onQuestionTextChange(qIndex, e.target.value)}
-                  className="w-full border p-1 editable-content"
+            <div className="flex items-center gap-2 mb-1">
+              <p className="font-medium leading-snug flex-grow">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={typeof question.text === 'string' ? question.text : questionText}
+                    onChange={e => onQuestionTextChange(qIndex, e.target.value)}
+                    className="w-full border p-1 editable-content"
+                  />
+                ) : (
+                  <>{qIndex + 1}. {questionText}</>
+                )}
+              </p>
+              {/* NanoSkill Badge - only for teachers, not on shared worksheets */}
+              {showNanoSkill && (
+                <NanoSkillBadge
+                  nanoSkill={nanoSkill}
+                  isEditing={isEditing}
+                  onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
                 />
-              ) : (
-                <>{qIndex + 1}. {question.text}</>
               )}
-            </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
               {question.options?.map((option: any, oIndex: number) => {
                 const isSelected = isInteractive && selectedAnswer === option.text;
