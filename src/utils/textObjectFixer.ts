@@ -1,4 +1,3 @@
-
 // Enhanced deep fix for {text} objects and nano_skill structures
 export const deepFixTextObjects = (obj: any, path: string = 'root'): any => {
   console.log(`🔧 Checking path: ${path}, type: ${typeof obj}`);
@@ -59,21 +58,68 @@ export const deepFixTextObjects = (obj: any, path: string = 'root'): any => {
   return fixed;
 };
 
-// NEW: Helper to safely extract text from potentially wrapped objects
+// ENHANCED: Helper to safely extract text from potentially wrapped objects
 // Use this in rendering components to get displayable text
+// CRITICAL: This function ALWAYS returns a string, never undefined
 export const safeGetText = (item: any): string => {
-  if (typeof item === 'string') return item;
-  if (typeof item === 'object' && item !== null) {
-    if (typeof item.text === 'string') return item.text;
-    if (typeof item.text === 'object') return safeGetText(item.text);
+  // Handle null/undefined - return empty string
+  if (item === null || item === undefined) {
+    return '';
   }
+  
+  // If it's already a string, return it
+  if (typeof item === 'string') {
+    return item;
+  }
+  
+  // If it's an object, try to extract text
+  if (typeof item === 'object') {
+    // Direct text property
+    if (typeof item.text === 'string') {
+      return item.text;
+    }
+    // Nested text object
+    if (typeof item.text === 'object' && item.text !== null) {
+      return safeGetText(item.text);
+    }
+    // Alternative: question property (some exercises use this)
+    if (typeof item.question === 'string') {
+      return item.question;
+    }
+  }
+  
+  // Fallback: convert to string
   return String(item || '');
 };
 
-// NEW: Helper to safely extract nano_skill from an item
-export const safeGetNanoSkill = (item: any): { name: string; confidence: number; reason: string } | null => {
-  if (typeof item === 'object' && item !== null && item.nano_skill) {
-    return item.nano_skill;
+// Interface for NanoSkill
+interface NanoSkill {
+  name: string;
+  confidence: number;
+  reason: string;
+}
+
+// ENHANCED: Helper to safely extract nano_skill from an item
+// Handles both object and array formats (Gemini sometimes returns array)
+export const safeGetNanoSkill = (item: any): NanoSkill | null => {
+  if (typeof item !== 'object' || item === null) {
+    return null;
   }
+  
+  const ns = item.nano_skill;
+  if (!ns) {
+    return null;
+  }
+  
+  // If nano_skill is an array, take the first element
+  if (Array.isArray(ns)) {
+    return ns[0] || null;
+  }
+  
+  // If it's an object, return it directly
+  if (typeof ns === 'object') {
+    return ns;
+  }
+  
   return null;
 };

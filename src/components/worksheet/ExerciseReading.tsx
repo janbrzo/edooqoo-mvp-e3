@@ -1,7 +1,7 @@
-
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
+import { safeGetText } from "@/utils/textObjectFixer";
 
 interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   questions: any[];
@@ -32,6 +32,8 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
       const studentAnswer = studentAnswers[qIndex] || '';
       const isEmpty = showCorrectAnswers && !studentAnswer;
       const liveAnswer = liveSessionAnswer?.[qIndex];
+      // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
+      const questionText = safeGetText(question?.text ?? question);
       
       return (
         <div key={qIndex} className="border rounded-lg p-3 bg-white">
@@ -41,12 +43,12 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
                 {isEditing ? (
                   <input
                     type="text"
-                    value={question.text}
+                    value={questionText}
                     onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
                     className="w-full border p-1 editable-content"
                   />
                 ) : (
-                  <>{qIndex + 1}. {question.text}</>
+                  <>{qIndex + 1}. {questionText}</>
                 )}
               </p>
             </div>

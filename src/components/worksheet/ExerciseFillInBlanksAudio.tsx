@@ -1,6 +1,7 @@
 import React from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
+import { safeGetText } from "@/utils/textObjectFixer";
 
 interface ExerciseFillInBlanksAudioProps extends Partial<InteractiveExerciseProps> {
   word_bank?: string[];
@@ -76,6 +77,8 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
             const isCorrect = showCorrectAnswers && studentAnswer?.toLowerCase().trim() === correctAnswer?.toLowerCase().trim();
             const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
             const isEmpty = showCorrectAnswers && !studentAnswer;
+            // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
+            const sentenceText = safeGetText(sentence?.text ?? sentence);
 
             return (
               <div key={sIndex} className="border rounded-lg p-3 bg-white">
@@ -85,13 +88,13 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
                       {isEditing && onSentenceChange ? (
                         <input
                           type="text"
-                          value={sentence.text}
+                          value={sentenceText}
                           onChange={e => onSentenceChange(sIndex, 'text', e.target.value)}
                           className="w-full border p-1 editable-content"
                         />
                       ) : isInteractive ? (
                         <span>
-                          {sIndex + 1}. {sentence.text.split(/_+/).map((part: string, pIndex: number, arr: string[]) => (
+                          {sIndex + 1}. {sentenceText.split(/_+/).map((part: string, pIndex: number, arr: string[]) => (
                             <React.Fragment key={pIndex}>
                               {part}
                               {pIndex < arr.length - 1 && (
@@ -112,7 +115,7 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
                           ))}
                         </span>
                       ) : (
-                        <>{sIndex + 1}. {sentence.text.replace(/_+/g, "_______________")}</>
+                        <>{sIndex + 1}. {sentenceText.replace(/_+/g, "_______________")}</>
                       )}
                     </p>
                   </div>
