@@ -1,7 +1,7 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetNanoSkill, safeGetWord } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseCategorizeProps extends Partial<InteractiveExerciseProps> {
@@ -44,10 +44,19 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
   const actualWords = items && items.length > 0 ? items : words;
   
   const handleWordChange = (wIndex: number, value: string) => {
-    const updatedWords = [...actualWords];
-    updatedWords[wIndex] = value;
+    const updatedWords = actualWords.map((item, idx) => {
+      if (idx !== wIndex) return item;
+      // If original was object with nano_skill, preserve structure
+      if (item !== null && typeof item === 'object') {
+        const objItem = item as Record<string, unknown>;
+        if ('word' in objItem) {
+          return { ...objItem, word: value };
+        }
+      }
+      return value;
+    });
     if (onWordsChange) {
-      onWordsChange(updatedWords);
+      onWordsChange(updatedWords as string[]);
     }
   };
 
@@ -70,10 +79,14 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
         <h4 className="font-medium text-gray-700 mb-2">Words to categorize:</h4>
         {isInteractive ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            {actualWords.map((word, wIndex) => {
+            {actualWords.map((wordItem, wIndex) => {
+              const word = safeGetWord(wordItem);
               const studentAnswer = studentAnswers[wIndex];
               const correctCategory = categories.findIndex(cat => 
-                cat.correct_items?.includes(word) || cat.words?.includes(word)
+                cat.correct_items?.some((i: any) => safeGetWord(i) === word) || 
+                cat.words?.some((w: any) => safeGetWord(w) === word) ||
+                cat.correct_items?.includes(word) || 
+                cat.words?.includes(word)
               );
               const isCorrect = showCorrectAnswers && studentAnswer !== undefined && parseInt(studentAnswer) === correctCategory;
               const isIncorrect = showCorrectAnswers && studentAnswer !== undefined && parseInt(studentAnswer) !== correctCategory;
@@ -111,20 +124,29 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {actualWords.map((word, wIndex) => (
-              <div key={wIndex} className="bg-blue-100 px-3 py-1 rounded-md">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={word || ''}
-                    onChange={e => handleWordChange(wIndex, e.target.value)}
-                    className="border p-1 editable-content w-20"
-                  />
-                ) : (
-                  word || 'Word'
-                )}
-              </div>
-            ))}
+            {actualWords.map((wordItem, wIndex) => {
+              const word = safeGetWord(wordItem);
+              const nanoSkill = typeof wordItem === 'object' ? safeGetNanoSkill(wordItem) : null;
+              const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+              
+              return (
+                <div key={wIndex} className="bg-blue-100 px-3 py-1 rounded-md flex items-center gap-1">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={word || ''}
+                      onChange={e => handleWordChange(wIndex, e.target.value)}
+                      className="border p-1 editable-content w-20"
+                    />
+                  ) : (
+                    word || 'Word'
+                  )}
+                  {showNanoSkill && (
+                    <NanoSkillBadge nanoSkill={nanoSkill} isEditing={isEditing} />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -177,9 +199,10 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
                     {/* Live Session: show student selections for this category */}
                     {liveSessionAnswer && (
                       <div className="text-blue-600 font-medium text-xs">
-                        [Student: {actualWords.filter((_, wIndex) => 
-                          parseInt(liveSessionAnswer[wIndex]) === cIndex
-                        ).join(', ') || 'none'}]
+                        [Student: {actualWords
+                          .filter((_, wIndex) => parseInt(liveSessionAnswer[wIndex]) === cIndex)
+                          .map(w => safeGetWord(w))
+                          .join(', ') || 'none'}]
                       </div>
                     )}
                   </div>
