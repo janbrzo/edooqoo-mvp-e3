@@ -1,10 +1,15 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+// Initialize Gemini AI (primary model for faster generation)
+const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -190,21 +195,10 @@ serve(async (req) => {
       questionCount
     );
 
-    console.log('Calling OpenAI to generate test questions...');
+    console.log('Calling AI to generate test questions...');
 
-    // 6. Call OpenAI
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { 
-            role: 'system', 
-            content: `You are an expert English language test creator for ESL teachers.
+    // System prompt for test generation
+    const systemPrompt = `You are an expert English language test creator for ESL teachers.
 You create personalized test questions based on student data.
 Always return valid JSON with the exact structure specified.
 Questions should be appropriate for the student's English level.
@@ -217,26 +211,68 @@ A nano_skill represents the smallest observable and testable unit of language ab
 A nano_skill MUST be verifiable from a single learner answer without external context.
 A nano_skill MUST NOT describe broad grammar topics, lesson goals, exercise types or teaching strategies.
 Each nano_skill MUST include name, confidence (0.00–1.00), and reason.
-Reason MUST explain why this specific item tests the skill.`
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-      }),
-    });
+Reason MUST explain why this specific item tests the skill.`;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
-      return new Response(
-        JSON.stringify({ error: 'Failed to generate test questions', details: errorText }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Try Gemini first, fallback to OpenAI
+    let generatedContent: string;
+    let usedModel: string;
+
+    try {
+      console.log('🔵 Trying Gemini 2.5 Flash for test generation...');
+      
+      if (!genAI) {
+        throw new Error('GEMINI_API_KEY not configured');
+      }
+
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        generationConfig: {
+          maxOutputTokens: 4000,
+          temperature: 0.7,
+        },
+      });
+
+      const fullPrompt = `${systemPrompt}\n\n---\n\n${prompt}`;
+      const result = await model.generateContent(fullPrompt);
+      generatedContent = result.response.text();
+      usedModel = 'gemini-2.5-flash';
+      console.log(`✅ Gemini 2.5 Flash succeeded`);
+    } catch (geminiError) {
+      console.warn('⚠️ Gemini failed, falling back to OpenAI:', (geminiError as Error).message);
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 4000,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OpenAI API error:', errorText);
+        return new Response(
+          JSON.stringify({ error: 'Failed to generate test questions', details: errorText }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const data = await response.json();
+      generatedContent = data.choices[0].message.content;
+      usedModel = 'gpt-4o-mini';
+      console.log(`✅ OpenAI fallback succeeded`);
     }
 
-    const data = await response.json();
-    const generatedContent = data.choices[0].message.content;
+    console.log(`📊 Test generation used model: ${usedModel}`);
 
     // 7. Parse the response
     let questions;
@@ -260,7 +296,7 @@ Reason MUST explain why this specific item tests the skill.`
     // 8. Generate test title
     const testTitle = generateTestTitle(testType, learningElements, student);
 
-    console.log('Generated', questions.questions?.length || 0, 'questions');
+    console.log('Generated', questions.questions?.length || 0, 'questions using', usedModel);
 
     return new Response(
       JSON.stringify({
@@ -273,6 +309,7 @@ Reason MUST explain why this specific item tests the skill.`
           elementsCount: learningElements.length,
           weaknessesCount: knowledgeEntries.length,
           flashcardsCount: flashcards.length,
+          model: usedModel,
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
