@@ -5,7 +5,16 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - NanoSkill Rendering & URL Fix:**
+**Latest Update (January 2026) - AI Model Migration to Gemini 2.5 Flash:**
+- **Performance Fix**: Migrated from GPT-5-mini to Gemini 2.5 Flash as primary model - 8-exercise worksheets now complete in ~120s (was: timeout at 150s)
+- **Fallback System**: GPT-5-mini remains as automatic fallback if Gemini fails (API error, rate limit)
+- **Uses Existing Key**: Leverages `GEMINI_API_KEY` already configured in Supabase secrets (shared with image generation)
+- **Speed Improvement**: ~90 tokens/second (Gemini) vs ~40 tokens/second (GPT-5-mini) = 2.25x faster
+- **Logging Enhanced**: Edge Functions now log which model was used (`📊 Used model: gemini-2.5-flash` or `📊 Used model: gpt-5-mini-2025-08-07`)
+- **Both Functions Updated**: `generateWorksheet` and `generate-test` now use Gemini with OpenAI fallback
+- **No Quality Degradation**: Gemini 2.5 Flash is excellent for structured JSON generation
+
+**Previous Update (January 2026) - NanoSkill Rendering & URL Fix:**
 - **CRITICAL BUG FIX**: Fixed React Error #31 where AI-generated items with `{text, nano_skill}` structure crashed rendering
 - **textObjectFixer Enhanced**: Added `safeGetText()` and `safeGetNanoSkill()` helpers in `src/utils/textObjectFixer.ts` for safe text extraction
 - **ExerciseSection Fixed**: Discussion questions now safely handle both string and object question formats

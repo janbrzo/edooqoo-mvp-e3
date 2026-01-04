@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import OpenAI from "https://esm.sh/openai@4.28.0";
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0";
 import { getExerciseTypesForCount, parseAIResponse } from "./helpers.ts";
 import { validateExercise } from "./validators.ts";
 import { isValidUUID, sanitizeInput, validatePrompt } from "./security.ts";
@@ -15,6 +16,10 @@ import {
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 
+// Initialize Gemini AI (primary model for faster generation)
+const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+const genAI = geminiApiKey ? new GoogleGenerativeAI(geminiApiKey) : null;
+
 const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
 const corsHeaders = {
@@ -23,6 +28,75 @@ const corsHeaders = {
 };
 
 const rateLimiter = new RateLimiter();
+
+// ============================================================
+// GEMINI HELPER FUNCTIONS
+// ============================================================
+
+/**
+ * Generate content using Gemini 2.5 Flash (primary model - faster)
+ */
+async function generateWithGemini(
+  systemMessage: string,
+  userMessage: string,
+  maxTokens: number = 30000
+): Promise<{ content: string; model: string }> {
+  if (!genAI) {
+    throw new Error("GEMINI_API_KEY not configured");
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      temperature: 1,
+    },
+  });
+
+  // Gemini uses a single prompt, combine system + user message
+  const fullPrompt = `${systemMessage}\n\n---\n\nUser Request:\n${userMessage}`;
+
+  const result = await model.generateContent(fullPrompt);
+  const response = result.response;
+  const text = response.text();
+
+  return { content: text, model: "gemini-2.5-flash" };
+}
+
+/**
+ * Generate content with streaming using Gemini 2.5 Flash
+ */
+async function generateWithGeminiStream(
+  systemMessage: string,
+  userMessage: string,
+  onChunk: (text: string) => void,
+  maxTokens: number = 30000
+): Promise<{ content: string; model: string }> {
+  if (!genAI) {
+    throw new Error("GEMINI_API_KEY not configured");
+  }
+
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      temperature: 1,
+    },
+  });
+
+  const fullPrompt = `${systemMessage}\n\n---\n\nUser Request:\n${userMessage}`;
+
+  const result = await model.generateContentStream(fullPrompt);
+
+  let fullContent = "";
+  for await (const chunk of result.stream) {
+    const chunkText = chunk.text();
+    fullContent += chunkText;
+    onChunk(chunkText);
+  }
+
+  return { content: fullContent, model: "gemini-2.5-flash" };
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -135,27 +209,41 @@ serve(async (req) => {
       );
 
       console.log(
-        `🔄 [BATCH-MODE] Making ONE OpenAI request for ${totalExerciseCount} exercises across ${formData.targetExerciseTypes.length} types`,
+        `🔄 [BATCH-MODE] Making ONE AI request for ${totalExerciseCount} exercises across ${formData.targetExerciseTypes.length} types`,
       );
 
-      // ONE request to OpenAI for all exercises
-      const batchResponse = await openai.chat.completions.create({
-        model: "gpt-5-mini-2025-08-07",
-        temperature: 1,
-        messages: [
-          { role: "system", content: batchSystemMessage },
-          { role: "user", content: sanitizedPrompt },
-        ],
-        max_completion_tokens: 30000,
-      });
+      // Try Gemini first, fallback to OpenAI
+      let batchContent: string;
+      let usedModel: string;
+
+      try {
+        console.log("🔵 [BATCH-MODE] Trying Gemini 2.5 Flash as primary model...");
+        const geminiResult = await generateWithGemini(batchSystemMessage, sanitizedPrompt, 30000);
+        batchContent = geminiResult.content;
+        usedModel = geminiResult.model;
+        console.log(`✅ [BATCH-MODE] Gemini 2.5 Flash succeeded`);
+      } catch (geminiError) {
+        console.warn("⚠️ [BATCH-MODE] Gemini failed, falling back to GPT-5-mini:", (geminiError as Error).message);
+        const batchResponse = await openai.chat.completions.create({
+          model: "gpt-5-mini-2025-08-07",
+          temperature: 1,
+          messages: [
+            { role: "system", content: batchSystemMessage },
+            { role: "user", content: sanitizedPrompt },
+          ],
+          max_completion_tokens: 30000,
+        });
+        batchContent = batchResponse.choices[0].message.content || "";
+        usedModel = "gpt-5-mini-2025-08-07";
+        console.log(`✅ [BATCH-MODE] GPT-5-mini fallback succeeded`);
+      }
 
       const batchGenerationTime = ((Date.now() - batchStartTime) / 1000).toFixed(2);
-      console.log(`✅ [BATCH-MODE] OpenAI responded in ${batchGenerationTime}s`);
-
-      const batchContent = batchResponse.choices[0].message.content;
+      console.log(`📊 [BATCH-MODE] Used model: ${usedModel}`);
+      console.log(`⏱️ [BATCH-MODE] AI responded in ${batchGenerationTime}s`);
 
       if (!batchContent) {
-        throw new Error("No content received from OpenAI in batch mode");
+        throw new Error("No content received from AI in batch mode");
       }
 
       try {
@@ -164,7 +252,7 @@ serve(async (req) => {
           throw new Error("Invalid exercises structure in batch response");
         }
 
-        console.log(`✅ [BATCH-MODE] Generated ${batchData.exercises.length} exercises in ONE request`);
+        console.log(`✅ [BATCH-MODE] Generated ${batchData.exercises.length} exercises in ONE request (${usedModel})`);
         console.log(`⏱️  [BATCH-MODE] Total batch generation time: ${batchGenerationTime} seconds`);
 
         // Return batch exercises directly WITH FULL PROMPT for storage in homework_assignments.prompt
@@ -281,15 +369,19 @@ serve(async (req) => {
       selectedAudio,
     );
 
-    // HEARTBEAT LOG: Before OpenAI API call
+    // HEARTBEAT LOG: Before AI API call
     const openaiStartTime = Date.now();
-    console.log("🔵 HEARTBEAT: Starting OpenAI API call", {
+    console.log("🔵 HEARTBEAT: Starting AI API call", {
       timestamp: new Date().toISOString(),
       elapsedSinceStart: Math.round((openaiStartTime - generationStartTime) / 1000) + "s",
-      model: "gpt-5-mini-2025-08-07", //gpt-4.1-2025-04-14
+      primaryModel: "gemini-2.5-flash",
+      fallbackModel: "gpt-5-mini-2025-08-07",
       exerciseCount,
       promptLength: sanitizedPrompt.length,
     });
+
+    // Track which model was used for logging
+    let usedModel = "unknown";
 
     // ============================================================
     // STREAMING MODE: Real-time progress via SSE
@@ -316,39 +408,65 @@ serve(async (req) => {
 
           const expectedTotal = getExpectedCount(formData?.lessonTime);
 
-          // OpenAI STREAMING call
-          console.log("🔵 Starting OpenAI streaming...");
-          const stream = await openai.chat.completions.create({
-            model: "gpt-5-mini-2025-08-07",
-            temperature: 1,
-            messages: [
-              { role: "system", content: systemMessage },
-              { role: "user", content: sanitizedPrompt },
-            ],
-            max_completion_tokens: 30000,
-            stream: true, // ← KEY: Enable streaming
-          });
-
+          // Try Gemini streaming first, fallback to OpenAI
           let fullContent = "";
           let lastExerciseCount = 0;
+          let streamUsedModel = "";
 
-          // Process stream chunks
-          for await (const chunk of stream) {
-            const delta = chunk.choices[0]?.delta?.content || "";
-            fullContent += delta;
+          try {
+            console.log("🔵 Trying Gemini 2.5 Flash streaming...");
+            streamUsedModel = "gemini-2.5-flash";
 
-            // Detect completed exercises
-            const newCount = countExercisesInPartialJSON(fullContent);
-            if (newCount > lastExerciseCount) {
-              lastExerciseCount = newCount;
-              send("progress", {
-                exercisesGenerated: newCount,
-                expectedTotal,
-              });
+            const geminiResult = await generateWithGeminiStream(
+              systemMessage,
+              sanitizedPrompt,
+              (chunkText) => {
+                fullContent += chunkText;
+                const newCount = countExercisesInPartialJSON(fullContent);
+                if (newCount > lastExerciseCount) {
+                  lastExerciseCount = newCount;
+                  send("progress", {
+                    exercisesGenerated: newCount,
+                    expectedTotal,
+                  });
+                }
+              },
+              30000
+            );
+
+            fullContent = geminiResult.content;
+            console.log(`✅ Gemini streaming completed`);
+          } catch (geminiError) {
+            console.warn("⚠️ Gemini streaming failed, falling back to OpenAI:", (geminiError as Error).message);
+            streamUsedModel = "gpt-5-mini-2025-08-07";
+            fullContent = "";
+            lastExerciseCount = 0;
+
+            const stream = await openai.chat.completions.create({
+              model: "gpt-5-mini-2025-08-07",
+              temperature: 1,
+              messages: [
+                { role: "system", content: systemMessage },
+                { role: "user", content: sanitizedPrompt },
+              ],
+              max_completion_tokens: 30000,
+              stream: true,
+            });
+
+            for await (const chunk of stream) {
+              const delta = chunk.choices[0]?.delta?.content || "";
+              fullContent += delta;
+              const newCount = countExercisesInPartialJSON(fullContent);
+              if (newCount > lastExerciseCount) {
+                lastExerciseCount = newCount;
+                send("progress", { exercisesGenerated: newCount, expectedTotal });
+              }
             }
+            console.log(`✅ OpenAI fallback streaming completed`);
           }
 
-          console.log("✅ OpenAI streaming completed, parsing final JSON...");
+          console.log(`📊 Streaming used model: ${streamUsedModel}`);
+          console.log("✅ Streaming completed, parsing final JSON...");
 
           // Parse final JSON
           const worksheetData = parseAIResponse(fullContent);
@@ -455,34 +573,45 @@ serve(async (req) => {
     // ============================================================
     console.log("📄 Using REGULAR (non-streaming) mode");
 
-    // Generate worksheet using OpenAI with complete prompt structure
-    const aiResponse = await openai.chat.completions.create({
-      model: "gpt-5-mini-2025-08-07", // gpt-4.1-2025-04-14 Changed back to gpt-4o i można gpt-4.1-2025-04-14
-      temperature: 1, //0.2
-      messages: [
-        {
-          role: "system",
-          content: systemMessage,
-        },
-        {
-          role: "user",
-          content: sanitizedPrompt,
-        },
-      ],
-      max_completion_tokens: 30000, // nowa nazwa parametru  max_completion_tokens: 7500
-    });
+    // Generate worksheet - Try Gemini first, fallback to OpenAI
+    let jsonContent: string | null = null;
 
-    // HEARTBEAT LOG: After OpenAI API call
+    try {
+      console.log("🔵 Trying Gemini 2.5 Flash for regular generation...");
+      const geminiResult = await generateWithGemini(systemMessage, sanitizedPrompt, 30000);
+      jsonContent = geminiResult.content;
+      usedModel = geminiResult.model;
+      console.log(`✅ Gemini 2.5 Flash succeeded`);
+    } catch (geminiError) {
+      console.warn("⚠️ Gemini failed, falling back to GPT-5-mini:", (geminiError as Error).message);
+      const aiResponse = await openai.chat.completions.create({
+        model: "gpt-5-mini-2025-08-07",
+        temperature: 1,
+        messages: [
+          { role: "system", content: systemMessage },
+          { role: "user", content: sanitizedPrompt },
+        ],
+        max_completion_tokens: 30000,
+      });
+      jsonContent = aiResponse.choices[0].message.content;
+      usedModel = "gpt-5-mini-2025-08-07";
+      console.log(`✅ GPT-5-mini fallback succeeded`);
+    }
+
+    // HEARTBEAT LOG: After AI API call
     const openaiEndTime = Date.now();
     const openaiDuration = Math.round((openaiEndTime - openaiStartTime) / 1000);
-    console.log("🟢 HEARTBEAT: OpenAI API call completed", {
+    console.log("🟢 HEARTBEAT: AI API call completed", {
       timestamp: new Date().toISOString(),
-      openaiDuration: openaiDuration + "s",
+      model: usedModel,
+      duration: openaiDuration + "s",
       totalElapsed: Math.round((openaiEndTime - generationStartTime) / 1000) + "s",
-      responseLength: aiResponse.choices[0].message.content?.length || 0,
+      responseLength: jsonContent?.length || 0,
     });
 
-    const jsonContent = aiResponse.choices[0].message.content;
+    console.log(`📊 Regular mode used model: ${usedModel}`);
+
+    // jsonContent is already set above from Gemini or OpenAI
 
     // Parse the JSON response with error handling
     let worksheetData;
@@ -687,7 +816,9 @@ serve(async (req) => {
      • Database Save:      ${!isRegeneration ? "See DB logs above" : "Skipped (regeneration)"}
   
   🎯 Configuration:
-     • Model:              gpt-5-mini-2025-08-07
+     • Model Used:         ${usedModel}
+     • Primary Model:      gemini-2.5-flash
+     • Fallback Model:     gpt-5-mini-2025-08-07
      • Exercise Count:     ${exerciseCount}
      • Has Picture:        ${!!selectedImage}
      • Has Audio:          ${!!selectedAudio}
