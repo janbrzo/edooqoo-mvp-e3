@@ -1,8 +1,6 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { safeGetNanoSkill, safeGetWord } from "@/utils/textObjectFixer";
-import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseCategorizeProps extends Partial<InteractiveExerciseProps> {
   items?: string[];
@@ -15,9 +13,6 @@ interface ExerciseCategorizeProps extends Partial<InteractiveExerciseProps> {
   liveSessionAnswer?: Record<number, any>;
   // A3: Disable inputs after homework submission
   disabled?: boolean;
-  // NanoSkill editing (for categories)
-  onNanoSkillChange?: (cIndex: number, nanoSkill: NanoSkill) => void;
-  isSharedWorksheet?: boolean;
 }
 
 const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
@@ -35,28 +30,16 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
   onAnswerChange,
   showCorrectAnswers = false,
   // A3: Disable inputs
-  disabled = false,
-  // NanoSkill props
-  onNanoSkillChange,
-  isSharedWorksheet = false
+  disabled = false
 }) => {
   // Use items if available, otherwise fall back to words
   const actualWords = items && items.length > 0 ? items : words;
   
   const handleWordChange = (wIndex: number, value: string) => {
-    const updatedWords = actualWords.map((item, idx) => {
-      if (idx !== wIndex) return item;
-      // If original was object with nano_skill, preserve structure
-      if (item !== null && typeof item === 'object') {
-        const objItem = item as Record<string, unknown>;
-        if ('word' in objItem) {
-          return { ...objItem, word: value };
-        }
-      }
-      return value;
-    });
+    const updatedWords = [...actualWords];
+    updatedWords[wIndex] = value;
     if (onWordsChange) {
-      onWordsChange(updatedWords as string[]);
+      onWordsChange(updatedWords);
     }
   };
 
@@ -79,14 +62,10 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
         <h4 className="font-medium text-gray-700 mb-2">Words to categorize:</h4>
         {isInteractive ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-            {actualWords.map((wordItem, wIndex) => {
-              const word = safeGetWord(wordItem);
+            {actualWords.map((word, wIndex) => {
               const studentAnswer = studentAnswers[wIndex];
               const correctCategory = categories.findIndex(cat => 
-                cat.correct_items?.some((i: any) => safeGetWord(i) === word) || 
-                cat.words?.some((w: any) => safeGetWord(w) === word) ||
-                cat.correct_items?.includes(word) || 
-                cat.words?.includes(word)
+                cat.correct_items?.includes(word) || cat.words?.includes(word)
               );
               const isCorrect = showCorrectAnswers && studentAnswer !== undefined && parseInt(studentAnswer) === correctCategory;
               const isIncorrect = showCorrectAnswers && studentAnswer !== undefined && parseInt(studentAnswer) !== correctCategory;
@@ -124,93 +103,69 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {actualWords.map((wordItem, wIndex) => {
-              const word = safeGetWord(wordItem);
-              const nanoSkill = typeof wordItem === 'object' ? safeGetNanoSkill(wordItem) : null;
-              const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
-              
-              return (
-                <div key={wIndex} className="bg-blue-100 px-3 py-1 rounded-md flex items-center gap-1">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={word || ''}
-                      onChange={e => handleWordChange(wIndex, e.target.value)}
-                      className="border p-1 editable-content w-20"
-                    />
-                  ) : (
-                    word || 'Word'
-                  )}
-                  {showNanoSkill && (
-                    <NanoSkillBadge nanoSkill={nanoSkill} isEditing={isEditing} />
-                  )}
-                </div>
-              );
-            })}
+            {actualWords.map((word, wIndex) => (
+              <div key={wIndex} className="bg-blue-100 px-3 py-1 rounded-md">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={word || ''}
+                    onChange={e => handleWordChange(wIndex, e.target.value)}
+                    className="border p-1 editable-content w-20"
+                  />
+                ) : (
+                  word || 'Word'
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
 
       {/* Categories section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {categories.map((category, cIndex) => {
-          const nanoSkill = safeGetNanoSkill(category);
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
-          
-          return (
-            <div key={cIndex} className="border rounded-lg p-3">
-              <div className="flex items-center gap-2 flex-wrap mb-2">
-                <h4 className="font-medium flex-grow">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={category?.name || ''}
-                      onChange={e => onCategoryChange(cIndex, 'name', e.target.value)}
-                      className="border p-1 editable-content w-full"
-                    />
-                  ) : (
-                    category?.name || 'Category'
-                  )}
-                </h4>
-                {showNanoSkill && (
-                  <NanoSkillBadge
-                    nanoSkill={nanoSkill}
-                    isEditing={isEditing}
-                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(cIndex, ns) : undefined}
-                  />
-                )}
-              </div>
-              <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded p-2">
-                {viewMode === 'teacher' && (
-                  <div className="space-y-1">
-                    <div className="text-green-600 italic text-sm">
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={category?.correct_items ? category.correct_items.join(', ') : (category?.words ? category.words.join(', ') : '')}
-                          onChange={e => handleCategoryAnswerChange(cIndex, e.target.value)}
-                          className="border p-1 editable-content w-full"
-                          placeholder="word1, word2, word3"
-                        />
-                      ) : (
-                        <span>({category?.correct_items ? category.correct_items.join(', ') : (category?.words ? category.words.join(', ') : 'No words')})</span>
-                      )}
-                    </div>
-                    {/* Live Session: show student selections for this category */}
-                    {liveSessionAnswer && (
-                      <div className="text-blue-600 font-medium text-xs">
-                        [Student: {actualWords
-                          .filter((_, wIndex) => parseInt(liveSessionAnswer[wIndex]) === cIndex)
-                          .map(w => safeGetWord(w))
-                          .join(', ') || 'none'}]
-                      </div>
+        {categories.map((category, cIndex) => (
+          <div key={cIndex} className="border rounded-lg p-3">
+            <h4 className="font-medium mb-2">
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={category?.name || ''}
+                  onChange={e => onCategoryChange(cIndex, 'name', e.target.value)}
+                  className="border p-1 editable-content w-full"
+                />
+              ) : (
+                category?.name || 'Category'
+              )}
+            </h4>
+            <div className="min-h-[60px] border-2 border-dashed border-gray-300 rounded p-2">
+              {viewMode === 'teacher' && (
+                <div className="space-y-1">
+                  <div className="text-green-600 italic text-sm">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={category?.correct_items ? category.correct_items.join(', ') : (category?.words ? category.words.join(', ') : '')}
+                        onChange={e => handleCategoryAnswerChange(cIndex, e.target.value)}
+                        className="border p-1 editable-content w-full"
+                        placeholder="word1, word2, word3"
+                      />
+                    ) : (
+                      <span>({category?.correct_items ? category.correct_items.join(', ') : (category?.words ? category.words.join(', ') : 'No words')})</span>
                     )}
                   </div>
-                )}
-              </div>
+                  {/* Live Session: show student selections for this category */}
+                  {liveSessionAnswer && (
+                    <div className="text-blue-600 font-medium text-xs">
+                      [Student: {actualWords.filter((_, wIndex) => 
+                        parseInt(liveSessionAnswer[wIndex]) === cIndex
+                      ).join(', ') || 'none'}]
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );

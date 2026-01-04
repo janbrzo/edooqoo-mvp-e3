@@ -1,8 +1,6 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
-import { safeGetNanoSkill } from "@/utils/textObjectFixer";
-import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   dialogue: any[];
@@ -17,9 +15,6 @@ interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   liveSessionAnswer?: Record<number, any>;
   // A3: Disable inputs after homework submission
   disabled?: boolean;
-  // NanoSkill editing
-  onNanoSkillChange?: (eIndex: number, nanoSkill: NanoSkill) => void;
-  isSharedWorksheet?: boolean;
 }
 
 const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
@@ -39,10 +34,7 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
   // PROBLEM 1: Live Session
   liveSessionAnswer,
   // A3: Disable inputs
-  disabled = false,
-  // NanoSkill props
-  onNanoSkillChange,
-  isSharedWorksheet = false
+  disabled = false
 }) => {
   return (
     <div>

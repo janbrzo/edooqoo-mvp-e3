@@ -1,8 +1,6 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
-import { safeGetNanoSkill } from "@/utils/textObjectFixer";
-import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
   sentences: any[];
@@ -12,9 +10,6 @@ interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
   liveSessionAnswer?: Record<number, any>;
   // A3: Disable inputs after homework submission
   disabled?: boolean;
-  // NanoSkill editing
-  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill) => void;
-  isSharedWorksheet?: boolean;
 }
 
 const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
@@ -29,10 +24,7 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
   onAnswerChange,
   showCorrectAnswers = false,
   // A3: Disable inputs
-  disabled = false,
-  // NanoSkill props
-  onNanoSkillChange,
-  isSharedWorksheet = false
+  disabled = false
 }) => {
   return (
     <div>
@@ -40,13 +32,11 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
         {sentences.map((sentence, sIndex) => {
           const studentAnswer = studentAnswers[sIndex] || '';
           const isEmpty = showCorrectAnswers && !studentAnswer;
-          const nanoSkill = safeGetNanoSkill(sentence);
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
 
           return (
             <div key={sIndex} className="border rounded-lg p-3 bg-white">
               <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
                   <span className="font-medium">{sIndex + 1}.</span>
                   
                   {isEditing ? (
@@ -69,14 +59,6 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                       <span className="flex-grow">{sentence.original}</span>
                       <span className="text-sm text-gray-600">Use: <strong>{sentence.word_to_use}</strong></span>
                     </>
-                  )}
-                  {/* NanoSkill Badge */}
-                  {showNanoSkill && (
-                    <NanoSkillBadge
-                      nanoSkill={nanoSkill}
-                      isEditing={isEditing}
-                      onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
-                    />
                   )}
                 </div>
 

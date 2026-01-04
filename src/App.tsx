@@ -23,7 +23,6 @@ import SharedWorksheet from "./pages/SharedWorksheet";
 import TestExercises from "./pages/TestExercises";
 import AllWorksheetsPage from "./pages/AllWorksheetsPage";
 import WorksheetPage from "./pages/WorksheetPage";
-import WorksheetExpiredPage from "./pages/WorksheetExpiredPage";
 import HomeworkPage from "./pages/HomeworkPage";
 import HomeworkReviewPage from "./pages/HomeworkReviewPage";
 import FlashcardsLearning from "./pages/FlashcardsLearning";
@@ -58,7 +57,6 @@ const App = () => (
               <Route path="/student/:id" element={<StudentPage />} />
               <Route path="/worksheets" element={<AllWorksheetsPage />} />
               <Route path="/worksheet/:id" element={<WorksheetPage />} />
-              <Route path="/worksheet-expired" element={<WorksheetExpiredPage />} />
               <Route path="/homework/:token" element={<HomeworkPage />} />
               <Route path="/homework/:id/review" element={<HomeworkReviewPage />} />
               <Route path="/flashcards/:token" element={<FlashcardsLearning />} />

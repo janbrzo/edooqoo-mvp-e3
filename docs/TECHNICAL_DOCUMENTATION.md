@@ -5,18 +5,11 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 7 Problem Fixes:**
-- **#1 Link Expiration**: Worksheets for anonymous users expire after 24h → redirect to `/worksheet-expired` page with signup CTA
-- **#2 NanoSkill Badges**: Added to ALL 16 exercise components (Reading, Matching, Dialogue, Categorize, etc.) with edit capability in teacher view
-- **#3 Generating Modal Icons**: Replaced emoji icons with professional Lucide icons (Circle=pending, Loader2=generating, CheckCircle2=done)
-- **#6 Audio Link Copy**: QR code clickable + "Copy audio link" button in AudioPlayer with toast confirmation
-- **#7 Default Live Session**: Logged-in users now default to "Live Session" view instead of "Teacher" view
-
-**Previous Update (January 2026) - Rendering Safety Fix + Enhanced safeGetText:**
+**Latest Update (January 2026) - Rendering Safety Fix + Enhanced safeGetText:**
 - **CRITICAL BUG FIX**: Fixed `TypeError: Cannot read properties of undefined (reading 'replace')` that caused blank page after worksheet generation
 - **safeGetText Enhanced**: Function in `textObjectFixer.ts` now handles `undefined`, `null`, nested objects, and always returns a string (never crashes)
 - **safeGetNanoSkill Enhanced**: Now handles `nano_skill` as both object `{...}` and array `[{...}]` formats (Gemini sometimes returns arrays)
-- **Components Updated**: All 16 exercise components now use `safeGetText()` for safe `.text` property access
+- **Components Updated**: `ExerciseSectionUtils.tsx`, `ExerciseFillInBlanksAudio.tsx`, `ExerciseReading.tsx`, `ExerciseTrueFalseAudio.tsx`, `ExerciseMultipleChoiceAudio.tsx`, `ExerciseAnswerQuestions.tsx` now use `safeGetText()` for all `.text` property access
 - **Pattern**: All components extract text safely: `const sentenceText = safeGetText(sentence?.text ?? sentence);` then use `sentenceText.replace()` which never fails
 
 **Previous Update (January 2026) - AI Model Migration to Gemini 2.5 Flash + JSON Mode:**

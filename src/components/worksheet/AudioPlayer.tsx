@@ -1,8 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { Play, Pause, Volume2, VolumeX, Copy, Check } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { useToast } from '@/hooks/use-toast';
 import QRCode from 'react-qr-code';
 
 interface AudioPlayerProps {
@@ -24,8 +23,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [audioDuration, setAudioDuration] = useState(duration || 0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
-  const { toast } = useToast();
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -81,24 +78,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(audioUrl);
-      setIsCopied(true);
-      toast({
-        title: "Audio link copied!",
-        description: "Share it with your students",
-      });
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Failed to copy",
-        description: "Please try again",
-      });
-    }
   };
 
   return (
@@ -180,33 +159,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         {/* RIGHT: QR Code (20-25%) - only for non-base64 URLs */}
         {!audioUrl.startsWith('data:') && (
           <div className="flex flex-col items-center justify-center bg-white rounded-lg border-2 border-worksheet-purple p-4 shadow-sm min-w-[160px]">
-            <div 
-              className="cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={handleCopyLink}
-              title="Click to copy audio link"
-            >
-              <QRCode value={audioUrl} size={120} />
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleCopyLink}
-              className="mt-2 text-xs h-8 px-2"
-            >
-              {isCopied ? (
-                <>
-                  <Check className="h-3 w-3 mr-1 text-green-600" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3 w-3 mr-1" />
-                  Copy audio link
-                </>
-              )}
-            </Button>
-            <p className="text-xs text-gray-500 text-center mt-1">
-              Scan QR or click to copy
+            <QRCode value={audioUrl} size={120} />
+            <p className="text-xs text-gray-600 text-center mt-2 font-medium">
+              Scan to listen on your phone
             </p>
           </div>
         )}

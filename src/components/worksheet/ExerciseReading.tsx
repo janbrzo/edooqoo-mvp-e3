@@ -1,8 +1,7 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
-import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
-import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
+import { safeGetText } from "@/utils/textObjectFixer";
 
 interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   questions: any[];
@@ -12,9 +11,6 @@ interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
-  // NanoSkill editing
-  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
-  isSharedWorksheet?: boolean;
 }
 
 const ExerciseReading: React.FC<ExerciseReadingProps> = ({
@@ -29,10 +25,7 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
   showCorrectAnswers = false,
   // PROBLEM 1: Live Session
   liveSessionAnswer,
-  disabled = false,
-  // NanoSkill props
-  onNanoSkillChange,
-  isSharedWorksheet = false
+  disabled = false
 }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
     {questions.map((question, qIndex) => {
@@ -41,35 +34,23 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
       const liveAnswer = liveSessionAnswer?.[qIndex];
       // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
       const questionText = safeGetText(question?.text ?? question);
-      const nanoSkill = safeGetNanoSkill(question);
-      const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
       
       return (
         <div key={qIndex} className="border rounded-lg p-3 bg-white">
           <div className="flex flex-col gap-2">
             <div className="flex-grow">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-medium leading-snug flex-grow">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={questionText}
-                      onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
-                      className="w-full border p-1 editable-content"
-                    />
-                  ) : (
-                    <>{qIndex + 1}. {questionText}</>
-                  )}
-                </p>
-                {/* NanoSkill Badge */}
-                {showNanoSkill && (
-                  <NanoSkillBadge
-                    nanoSkill={nanoSkill}
-                    isEditing={isEditing}
-                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
+              <p className="font-medium leading-snug">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={questionText}
+                    onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
+                    className="w-full border p-1 editable-content"
                   />
+                ) : (
+                  <>{qIndex + 1}. {questionText}</>
                 )}
-              </div>
+              </p>
             </div>
             {isInteractive && (
               <Input
