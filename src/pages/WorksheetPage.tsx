@@ -77,15 +77,18 @@ export default function WorksheetPage() {
           return;
         }
 
-        // If no user, they should be redirected to login
+        // If no user, check if worksheet is older than 24 hours
         if (!user) {
-          toast({
-            variant: "destructive",
-            title: "Authentication Required",
-            description: "Please log in to view this worksheet.",
-          });
-          navigate('/login');
-          return;
+          const createdAt = new Date(worksheet.created_at);
+          const now = new Date();
+          const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursDiff > 24) {
+            // Worksheet expired for anonymous users
+            navigate('/worksheet-expired');
+            return;
+          }
+          // Allow access for anonymous users within 24 hours
         }
 
         // Parse ai_response

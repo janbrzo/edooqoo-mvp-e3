@@ -1,6 +1,8 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
+import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseDescribeProps extends Partial<InteractiveExerciseProps> {
   image_url?: string;
@@ -13,6 +15,9 @@ interface ExerciseDescribeProps extends Partial<InteractiveExerciseProps> {
   liveSessionAnswer?: Record<number, any>;
   // A3: Disable inputs after homework submission
   disabled?: boolean;
+  // NanoSkill editing
+  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
+  isSharedWorksheet?: boolean;
 }
 
 const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
@@ -30,7 +35,10 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
   onAnswerChange,
   showCorrectAnswers = false,
   // A3: Disable inputs
-  disabled = false
+  disabled = false,
+  // NanoSkill props
+  onNanoSkillChange,
+  isSharedWorksheet = false
 }) => {
   return (
     <div className="space-y-4">
@@ -49,6 +57,8 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
             const questionText = typeof question === 'string' ? question : (question.text || question.question || '');
             const studentAnswer = studentAnswers[qIndex];
             const liveAnswer = liveSessionAnswer?.[qIndex];
+            const nanoSkill = safeGetNanoSkill(question);
+            const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
             
             return (
               <div key={qIndex} className="border-b pb-2">
@@ -65,6 +75,14 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
                       <>{qIndex + 1}. {questionText}</>
                     )}
                   </p>
+                  {/* NanoSkill Badge */}
+                  {showNanoSkill && (
+                    <NanoSkillBadge
+                      nanoSkill={nanoSkill}
+                      isEditing={isEditing}
+                      onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
+                    />
+                  )}
                   {/* Live Session: show student answer in blue for teacher view */}
                   {viewMode === 'teacher' && liveAnswer !== undefined && (
                     <span className="text-blue-600 font-medium text-sm">

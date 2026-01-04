@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress";
+import { Circle, Loader2, CheckCircle2 } from "lucide-react";
 
 interface GeneratingModalProps {
   isOpen: boolean;
@@ -17,7 +18,6 @@ interface GeneratingModalProps {
 // Section completion status
 interface SectionStatus {
   label: string;
-  icon: string;
   status: 'pending' | 'generating' | 'done';
 }
 
@@ -31,23 +31,23 @@ const getGenerationSections = (
   
   // Media first (if required by exercises)
   if (requiresAudio) {
-    sections.push({ label: 'Audio', icon: '🎵', status: 'pending' });
+    sections.push({ label: 'Audio', status: 'pending' });
   }
   if (requiresImage) {
-    sections.push({ label: 'Image', icon: '🖼️', status: 'pending' });
+    sections.push({ label: 'Image', status: 'pending' });
   }
   
   // Core sections
-  sections.push({ label: 'Warmup', icon: '🔥', status: 'pending' });
+  sections.push({ label: 'Warmup', status: 'pending' });
   
   // Grammar Rules - only if selected in form
   if (hasGrammar) {
-    sections.push({ label: 'Grammar Rules', icon: '📘', status: 'pending' });
+    sections.push({ label: 'Grammar Rules', status: 'pending' });
   }
   
   sections.push(
-    { label: 'Exercises', icon: '📝', status: 'pending' },
-    { label: 'Vocabulary Sheet', icon: '📚', status: 'pending' }
+    { label: 'Exercises', status: 'pending' },
+    { label: 'Vocabulary Sheet', status: 'pending' }
   );
   
   return sections;
@@ -189,14 +189,17 @@ export default function GeneratingModal({
         <div className="space-y-3 bg-muted/30 p-4 rounded-lg">
           {sections.map((section, index) => (
             <div key={index} className="flex items-center gap-3">
-              <div className={`text-2xl transition-all duration-300 ${
-                section.status === 'done' 
-                  ? 'scale-100 opacity-100' 
-                  : section.status === 'generating'
-                    ? 'animate-bounce scale-110'
-                    : 'opacity-40 grayscale'
-              }`}>
-                {section.status === 'done' ? '✅' : section.icon}
+              {/* Status Icon: Circle (pending), Loader2 (generating), CheckCircle2 (done) */}
+              <div className="w-8 h-8 flex items-center justify-center">
+                {section.status === 'pending' && (
+                  <Circle className="h-6 w-6 text-muted-foreground stroke-[1.5]" />
+                )}
+                {section.status === 'generating' && (
+                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                )}
+                {section.status === 'done' && (
+                  <CheckCircle2 className="h-6 w-6 text-green-600" />
+                )}
               </div>
               <div className="flex-1">
                 <div className={`font-medium text-sm ${
@@ -226,8 +229,8 @@ export default function GeneratingModal({
 
         <p className="text-center text-xs text-gray-400">
           {(requiresAudio || requiresImage) 
-            ? `Expected time: ~2:30 min (with ${requiresAudio && requiresImage ? 'audio & image' : requiresAudio ? 'audio' : 'image'})` 
-            : "Expected time: ~1:30 min"}
+            ? `Expected time: ~1:30 min (with ${requiresAudio && requiresImage ? 'audio & image' : requiresAudio ? 'audio' : 'image'})` 
+            : "Expected time: ~60s"}
         </p>
       </div>
     </div>

@@ -92,6 +92,20 @@ export const safeGetText = (item: any): string => {
   return String(item || '');
 };
 
+// Safely extract word text from potentially wrapped objects
+// Handles: "string", {word: "string"}, {word: "string", nano_skill: {...}}
+export const safeGetWord = (item: any): string => {
+  if (item === null || item === undefined) return '';
+  if (typeof item === 'string') return item;
+  if (typeof item === 'object') {
+    // Handle {word: "..."} structure
+    if (typeof item.word === 'string') return item.word;
+    // Fallback to text property
+    if (typeof item.text === 'string') return item.text;
+  }
+  return String(item || '');
+};
+
 // Interface for NanoSkill
 interface NanoSkill {
   name: string;

@@ -111,7 +111,10 @@ export default function WorksheetDisplay({
   audioUrl,
   tokenLeft
 }: WorksheetDisplayProps) {
-  const [viewMode, setViewMode] = useState<'student' | 'teacher' | 'live-session'>('teacher');
+  // Problem #7: Default to Live Session for logged-in users, Teacher for anonymous
+  const [viewMode, setViewMode] = useState<'student' | 'teacher' | 'live-session'>(
+    userId ? 'live-session' : 'teacher'
+  );
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [expandAllRef, setExpandAllRef] = useState<(() => void) | null>(null);

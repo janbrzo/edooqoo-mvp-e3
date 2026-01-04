@@ -1,6 +1,8 @@
 import React, { useRef } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseSynonymsAntonymsProps extends Partial<InteractiveExerciseProps> {
   items: any[];
@@ -11,6 +13,9 @@ interface ExerciseSynonymsAntonymsProps extends Partial<InteractiveExerciseProps
   worksheetId?: string;
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
+  // NanoSkill editing
+  onNanoSkillChange?: (iIndex: number, nanoSkill: NanoSkill) => void;
+  isSharedWorksheet?: boolean;
 }
 
 // PROBLEM 8 FIX: Seeded random for deterministic shuffle
@@ -50,7 +55,10 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
   studentAnswers = {},
   onAnswerChange,
   showCorrectAnswers = false,
-  disabled = false
+  disabled = false,
+  // NanoSkill props
+  onNanoSkillChange,
+  isSharedWorksheet = false
 }) => {
   // PROBLEM 8 FIX: Use useRef with seeded random for deterministic shuffle
   const itemsKey = items.map(item => item.term).join('|');
@@ -75,31 +83,45 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
         {items.map((item, iIndex) => {
           const correctAnswer = String.fromCharCode(65 + shuffledDefinitions.findIndex(i => i.term === item.term));
           const liveAnswer = liveSessionAnswer?.[iIndex];
+          const nanoSkill = safeGetNanoSkill(item);
+          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
           
           return (
             <div key={iIndex} className="p-2 border rounded-md bg-white">
-              <span className="text-worksheet-purple font-medium mr-2">{iIndex + 1}.</span>
-              {viewMode === 'teacher' ? (
-                <>
-                  <span className="teacher-answer">{correctAnswer}</span>
-                  {/* Live Session: show student answer in blue */}
-                  {liveAnswer !== undefined && (
-                    <span className="text-blue-600 font-medium text-sm ml-2">
-                      [Student: {liveAnswer}]
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className="student-answer-blank"></span>
-              )}
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={item.term}
-                  onChange={e => onItemChange(iIndex, 'term', e.target.value)}
-                  className="border p-1 editable-content w-full"
-                />
-              ) : item.term}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-worksheet-purple font-medium">{iIndex + 1}.</span>
+                {viewMode === 'teacher' ? (
+                  <>
+                    <span className="teacher-answer">{correctAnswer}</span>
+                    {/* Live Session: show student answer in blue */}
+                    {liveAnswer !== undefined && (
+                      <span className="text-blue-600 font-medium text-sm">
+                        [Student: {liveAnswer}]
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="student-answer-blank"></span>
+                )}
+                <span className="flex-grow">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={item.term}
+                      onChange={e => onItemChange(iIndex, 'term', e.target.value)}
+                      className="border p-1 editable-content w-full"
+                    />
+                  ) : item.term}
+                </span>
+                {/* NanoSkill Badge */}
+                {showNanoSkill && (
+                  <NanoSkillBadge
+                    nanoSkill={nanoSkill}
+                    isEditing={isEditing}
+                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(iIndex, ns) : undefined}
+                  />
+                )}
+              </div>
             </div>
           );
         })}

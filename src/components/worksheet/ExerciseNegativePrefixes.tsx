@@ -1,6 +1,8 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
+import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseNegativePrefixesProps extends Partial<InteractiveExerciseProps> {
   words: any[];
@@ -10,6 +12,9 @@ interface ExerciseNegativePrefixesProps extends Partial<InteractiveExerciseProps
   liveSessionAnswer?: Record<number, any>;
   // A3: Disable inputs after homework submission
   disabled?: boolean;
+  // NanoSkill editing
+  onNanoSkillChange?: (wIndex: number, nanoSkill: NanoSkill) => void;
+  isSharedWorksheet?: boolean;
 }
 
 const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
@@ -24,7 +29,10 @@ const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
   onAnswerChange,
   showCorrectAnswers = false,
   // A3: Disable inputs
-  disabled = false
+  disabled = false,
+  // NanoSkill props
+  onNanoSkillChange,
+  isSharedWorksheet = false
 }) => {
   return (
     <div>
@@ -35,23 +43,35 @@ const ExerciseNegativePrefixes: React.FC<ExerciseNegativePrefixesProps> = ({
           const isCorrect = showCorrectAnswers && studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
           const isEmpty = showCorrectAnswers && !studentAnswer;
+          const nanoSkill = safeGetNanoSkill(wordItem);
+          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
 
           return (
             <div key={wIndex} className="border rounded-lg p-3 bg-white">
               <div className="flex flex-col gap-2">
                 <div className="flex-grow">
-                  <p className="leading-snug">
-                    {wIndex + 1}. {isEditing ? (
-                      <input
-                        type="text"
-                        value={wordItem?.word || ''}
-                        onChange={e => onWordChange(wIndex, 'word', e.target.value)}
-                        className="border p-1 editable-content"
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="leading-snug flex-grow">
+                      {wIndex + 1}. {isEditing ? (
+                        <input
+                          type="text"
+                          value={wordItem?.word || ''}
+                          onChange={e => onWordChange(wIndex, 'word', e.target.value)}
+                          className="border p-1 editable-content"
+                        />
+                      ) : (
+                        wordItem?.word || 'Missing word'
+                      )} → ______
+                    </p>
+                    {/* NanoSkill Badge */}
+                    {showNanoSkill && (
+                      <NanoSkillBadge
+                        nanoSkill={nanoSkill}
+                        isEditing={isEditing}
+                        onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(wIndex, ns) : undefined}
                       />
-                    ) : (
-                      wordItem?.word || 'Missing word'
-                    )} → ______
-                  </p>
+                    )}
+                  </div>
                 </div>
                 {isInteractive && (
                   <Input
