@@ -50,15 +50,25 @@ async function generateWithGemini(
     generationConfig: {
       maxOutputTokens: maxTokens,
       temperature: 1,
+      responseMimeType: "application/json", // FORCE valid JSON output
     },
   });
 
   // Gemini uses a single prompt, combine system + user message
   const fullPrompt = `${systemMessage}\n\n---\n\nUser Request:\n${userMessage}`;
 
+  console.log("🔵 Gemini 2.5 Flash with JSON mode enabled...");
   const result = await model.generateContent(fullPrompt);
   const response = result.response;
   const text = response.text();
+
+  // Validate JSON before returning
+  try {
+    JSON.parse(text);
+    console.log("✅ Gemini returned valid JSON");
+  } catch (jsonError) {
+    console.warn("⚠️ Gemini JSON validation failed, will attempt repair in parseAIResponse");
+  }
 
   return { content: text, model: "gemini-2.5-flash" };
 }
@@ -81,11 +91,13 @@ async function generateWithGeminiStream(
     generationConfig: {
       maxOutputTokens: maxTokens,
       temperature: 1,
+      responseMimeType: "application/json", // FORCE valid JSON output
     },
   });
 
   const fullPrompt = `${systemMessage}\n\n---\n\nUser Request:\n${userMessage}`;
 
+  console.log("🔵 Gemini 2.5 Flash streaming with JSON mode enabled...");
   const result = await model.generateContentStream(fullPrompt);
 
   let fullContent = "";

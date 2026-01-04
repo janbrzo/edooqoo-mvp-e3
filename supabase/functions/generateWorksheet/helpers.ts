@@ -132,10 +132,15 @@ export function getIconForType(type: string): string {
 
 /**
  * Parses and cleans JSON content from AI response
+ * Enhanced with JSON repair capabilities for common AI output issues
  */
 export function parseAIResponse(jsonContent: string): any {
   // Clean the JSON content
   let cleanJsonContent = jsonContent;
+  
+  // Remove markdown wrappers if present
+  cleanJsonContent = cleanJsonContent.replace(/^```json?\s*/i, '');
+  cleanJsonContent = cleanJsonContent.replace(/```\s*$/i, '');
   
   // Find the first occurrence of { and the last occurrence of }
   const firstBrace = cleanJsonContent.indexOf('{');
@@ -146,6 +151,52 @@ export function parseAIResponse(jsonContent: string): any {
     cleanJsonContent = cleanJsonContent.substring(firstBrace, lastBrace + 1);
   }
   
-  console.log('Attempting to parse cleaned JSON content');
-  return JSON.parse(cleanJsonContent);
+  // First attempt - standard parsing
+  try {
+    console.log('Attempting to parse cleaned JSON content');
+    return JSON.parse(cleanJsonContent);
+  } catch (firstError) {
+    console.warn('⚠️ First JSON parse failed, attempting repairs...', (firstError as Error).message);
+    
+    // Attempt repairs for common AI output issues
+    let repairedContent = cleanJsonContent;
+    
+    // 1. Remove trailing commas before } or ]
+    repairedContent = repairedContent.replace(/,(\s*[}\]])/g, '$1');
+    
+    // 2. Fix missing commas between objects in arrays
+    repairedContent = repairedContent.replace(/}(\s*){/g, '},{');
+    
+    // 3. Fix missing commas between array elements
+    repairedContent = repairedContent.replace(/](\s*)\[/g, '],[');
+    
+    // 4. Fix unescaped quotes in string values (common issue)
+    // This is a simple heuristic - replace ": " followed by unquoted content
+    
+    // 5. Ensure the content ends properly
+    const openBraces = (repairedContent.match(/{/g) || []).length;
+    const closeBraces = (repairedContent.match(/}/g) || []).length;
+    const openBrackets = (repairedContent.match(/\[/g) || []).length;
+    const closeBrackets = (repairedContent.match(/]/g) || []).length;
+    
+    // Add missing closing braces/brackets
+    for (let i = 0; i < openBraces - closeBraces; i++) {
+      repairedContent += '}';
+    }
+    for (let i = 0; i < openBrackets - closeBrackets; i++) {
+      repairedContent += ']';
+    }
+    
+    try {
+      console.log('✅ JSON repair succeeded');
+      return JSON.parse(repairedContent);
+    } catch (secondError) {
+      console.error('❌ JSON repair failed:', (secondError as Error).message);
+      console.error('❌ Original error:', (firstError as Error).message);
+      console.error('❌ Content length:', cleanJsonContent.length);
+      console.error('❌ Content preview (first 500 chars):', cleanJsonContent.substring(0, 500));
+      console.error('❌ Content preview (last 500 chars):', cleanJsonContent.substring(cleanJsonContent.length - 500));
+      throw new Error(`Invalid JSON from AI: ${(firstError as Error).message}`);
+    }
+  }
 }

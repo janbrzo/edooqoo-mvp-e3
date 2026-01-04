@@ -5,9 +5,11 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - AI Model Migration to Gemini 2.5 Flash:**
+**Latest Update (January 2026) - AI Model Migration to Gemini 2.5 Flash + JSON Mode:**
 - **Performance Fix**: Migrated from GPT-5-mini to Gemini 2.5 Flash as primary model - 8-exercise worksheets now complete in ~120s (was: timeout at 150s)
+- **JSON Mode Enabled**: Added `responseMimeType: "application/json"` to force Gemini to return valid JSON (fixes SyntaxError crashes)
 - **Fallback System**: GPT-5-mini remains as automatic fallback if Gemini fails (API error, rate limit)
+- **JSON Repair**: Enhanced `parseAIResponse()` in `helpers.ts` with automatic JSON repair for trailing commas, missing braces, etc.
 - **Uses Existing Key**: Leverages `GEMINI_API_KEY` already configured in Supabase secrets (shared with image generation)
 - **Speed Improvement**: ~90 tokens/second (Gemini) vs ~40 tokens/second (GPT-5-mini) = 2.25x faster
 - **Logging Enhanced**: Edge Functions now log which model was used (`📊 Used model: gemini-2.5-flash` or `📊 Used model: gpt-5-mini-2025-08-07`)
