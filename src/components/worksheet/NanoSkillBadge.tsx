@@ -96,7 +96,7 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
           </TooltipContent>
         </Tooltip>
 
-        {isEditing && onEdit && (
+        {onEdit && (
           <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
             <PopoverTrigger asChild>
               <Button

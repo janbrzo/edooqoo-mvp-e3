@@ -263,8 +263,8 @@ const Index = () => {
       {/* FREE DEMO WEEK Banner */}
       <FreeWeekBanner />
       
-      {/* Navigation based on auth status */}
-      {isRegisteredUser ? <AuthenticatedNav /> : <AnonymousNav />}
+      {/* Navigation based on auth status - hide when worksheet is displayed (WorksheetHeader has its own nav) */}
+      {!bothWorksheetsReady && (isRegisteredUser ? <AuthenticatedNav /> : <AnonymousNav />)}
       
       {!bothWorksheetsReady ? (
         <>
