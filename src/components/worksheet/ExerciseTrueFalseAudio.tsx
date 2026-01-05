@@ -2,11 +2,13 @@ import React from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { safeGetText } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge from "./NanoSkillBadge";
 
 interface Statement {
   text: string;
   isTrue: boolean;
+  nano_skill?: any;
 }
 
 interface ExerciseTrueFalseAudioProps extends Partial<InteractiveExerciseProps> {
@@ -17,6 +19,8 @@ interface ExerciseTrueFalseAudioProps extends Partial<InteractiveExerciseProps> 
   onStatementChange: (sIndex: number, field: string, value: any) => void;
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
+  isSharedWorksheet?: boolean;
+  onNanoSkillChange?: (sIndex: number, nanoSkill: any) => void;
 }
 
 const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
@@ -31,7 +35,9 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
   studentAnswers = {},
   onAnswerChange,
   showCorrectAnswers = false,
-  disabled = false
+  disabled = false,
+  isSharedWorksheet = false,
+  onNanoSkillChange
 }) => {
   return (
     <div className="space-y-4">
@@ -48,11 +54,14 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
           const isIncorrect = showCorrectAnswers && studentAnswer !== undefined && studentAnswer !== statement.isTrue;
           // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
           const statementText = safeGetText(statement?.text ?? statement);
+          // Extract nano skill for badge display
+          const nanoSkill = safeGetNanoSkill(statement);
+          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
 
           return (
             <div key={sIndex} className="border-b pb-2">
               <div className="flex flex-col gap-2">
-                <div className="flex-grow">
+                <div className="flex-grow flex items-center gap-2 flex-wrap">
                   <p className="leading-snug">
                     {isEditing ? (
                       <input
@@ -65,6 +74,12 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
                       <>{sIndex + 1}. {statementText}</>
                     )}
                   </p>
+                  {showNanoSkill && (
+                    <NanoSkillBadge
+                      nanoSkill={nanoSkill}
+                      onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(sIndex, newSkill) : undefined}
+                    />
+                  )}
                 </div>
                 {isInteractive ? (
                   <RadioGroup

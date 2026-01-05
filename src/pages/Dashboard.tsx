@@ -372,7 +372,7 @@ const Dashboard = () => {
                           
                           {/* Second line: Topic */}
                           {worksheet.form_data?.lessonTopic && (
-                            <p className="text-sm text-muted-foreground mb-2">
+                            <p className="text-sm text-muted-foreground mb-2 truncate">
                               Topic: {worksheet.form_data.lessonTopic}
                             </p>
                           )}
