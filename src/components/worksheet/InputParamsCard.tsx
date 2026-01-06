@@ -131,7 +131,7 @@ const formatExerciseName = (id: string): string => {
 
 const InputParamsCard = ({ inputParams, selectedExercises, onExerciseClick }: InputParamsCardProps) => {
   const [expandedFields, setExpandedFields] = useState<Record<string, boolean>>({});
-  const MAX_CHARS = 60;
+  const MAX_CHARS = 55;
 
   // Helper to render text with truncate and "Show more" button (character-based)
   const renderTruncatableText = (fieldKey: string, text: string) => {

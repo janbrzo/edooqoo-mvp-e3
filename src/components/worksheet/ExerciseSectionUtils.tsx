@@ -1,4 +1,5 @@
-import { safeGetText } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge from "./NanoSkillBadge";
 
 // This file contains utility functions for the ExerciseSection component
 
@@ -177,7 +178,9 @@ export const renderOtherExerciseTypes = (
   onAnswerChange?: (questionIndex: number, value: any) => void,
   showCorrectAnswers: boolean = false,
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
-  liveSessionAnswer?: Record<number, any>
+  liveSessionAnswer?: Record<number, any>,
+  // NanoSkill edit callback
+  onNanoSkillChange?: (sentenceIndex: number, newSkill: any) => void
 ) => (
   <div>
     <div className="space-y-2">
@@ -187,27 +190,38 @@ export const renderOtherExerciseTypes = (
         const liveAnswer = liveSessionAnswer?.[sIndex];
         // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
         const sentenceText = safeGetText(sentence?.text ?? sentence);
+        // Extract nano skill for badge display
+        const nanoSkill = typeof sentence === 'object' ? safeGetNanoSkill(sentence) : null;
+        const showNanoSkill = viewMode === 'teacher' && nanoSkill;
         
         return (
           <div key={sIndex} className="border rounded-lg p-3 bg-white">
             <div className="flex flex-col gap-2">
               <div className="flex-grow">
-                <p className="leading-snug">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={sentenceText}
-                      onChange={e => handleSentenceChange(sIndex, 'text', e.target.value)}
-                      className="w-full border p-1 editable-content"
+                <div className="flex items-start gap-2 flex-wrap">
+                  <p className="leading-snug flex-grow">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={sentenceText}
+                        onChange={e => handleSentenceChange(sIndex, 'text', e.target.value)}
+                        className="w-full border p-1 editable-content"
+                      />
+                    ) : (
+                      <>{sIndex + 1}. {
+                        exercise.type === 'word-formation' 
+                          ? sentenceText.replace(/_+/g, "_______________") 
+                          : sentenceText
+                      }</>
+                    )}
+                  </p>
+                  {showNanoSkill && (
+                    <NanoSkillBadge
+                      nanoSkill={nanoSkill}
+                      onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(sIndex, newSkill) : undefined}
                     />
-                  ) : (
-                    <>{sIndex + 1}. {
-                      exercise.type === 'word-formation' 
-                        ? sentenceText.replace(/_+/g, "_______________") 
-                        : sentenceText
-                    }</>
                   )}
-                </p>
+                </div>
               </div>
               {isInteractive && (
                 <input

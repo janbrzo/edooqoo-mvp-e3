@@ -136,7 +136,7 @@ export const StudentKnowledgeFloatingPanel = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
       <Card className="w-full max-w-[460px] max-h-[90vh] shadow-2xl border-2">
         <CardHeader className="border-b">
           <div className="flex items-start justify-between">

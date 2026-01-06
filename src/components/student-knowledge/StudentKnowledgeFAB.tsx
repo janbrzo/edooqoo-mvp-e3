@@ -17,7 +17,7 @@ export const StudentKnowledgeFAB = ({ onClick }: StudentKnowledgeFABProps) => {
   }, []);
 
   return (
-    <div className="fixed top-[calc(50%+5px)] right-6 z-50 flex items-center gap-2">
+    <div className="fixed top-[calc(50%+5px)] right-6 z-[100] flex items-center gap-2">
       {/* Animated label */}
       <div 
         className={`bg-amber-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg transition-all duration-300 whitespace-nowrap ${
@@ -32,7 +32,7 @@ export const StudentKnowledgeFAB = ({ onClick }: StudentKnowledgeFABProps) => {
         onClick={onClick}
         size="icon"
         className="p-3 rounded-full shadow-lg bg-amber-500 text-white opacity-80 hover:opacity-100 transition-opacity"
-        title="Add Student Note (N)"
+        
       >
         <Plus className="h-5 w-5" />
       </Button>

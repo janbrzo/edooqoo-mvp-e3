@@ -5,14 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 7 Problem Fixes:**
-- **#1 Link Expiration**: Worksheets for anonymous users expire after 24h → redirect to `/worksheet-expired` page with signup CTA
-- **#2 NanoSkill Badges**: Added to ALL 16 exercise components (Reading, Matching, Dialogue, Categorize, etc.) with edit capability in teacher view
-- **#3 Generating Modal Icons**: Replaced emoji icons with professional Lucide icons (Circle=pending, Loader2=generating, CheckCircle2=done)
-- **#6 Audio Link Copy**: QR code clickable + "Copy audio link" button in AudioPlayer with toast confirmation
-- **#7 Default Live Session**: Logged-in users now default to "Live Session" view instead of "Teacher" view
+**Latest Update (January 2026) - 5 Bug Fixes:**
+- **#1 NanoSkill Editable**: NanoSkillBadge edit pencil now shows when `onEdit` prop is passed (removed `isEditing` condition). Added NanoSkill support to `error-correction`, `true-false`, and `discussion` exercises with full edit callbacks
+- **#2 z-index Fix**: Increased z-index to `z-[100]` for StudentKnowledgeFAB, StudentKnowledgeMiniList, StudentKnowledgeFloatingPanel, and FlashcardFABs - all modals/FABs now display above WorksheetToolbar (z-[60])
+- **#3 FAB Tooltips Unified**: Removed native `title=""` attributes from FAB buttons - all FABs now show consistent animated labels (not ugly browser tooltips)
+- **#4 InputParamsCard Truncation**: Reduced MAX_CHARS from 60 to 55 - parameters now fit in single line with "Show more" button
+- **#5 Flashcards Null Fix**: Added null fallback `studentName || 'Student'` in FlashcardSetsSection - prevents "Cannot read properties of null (reading 'trim')" crash
 
-**Previous Update (January 2026) - Rendering Safety Fix + Enhanced safeGetText:**
+**Previous Update (January 2026) - 7 Problem Fixes:**
 - **CRITICAL BUG FIX**: Fixed `TypeError: Cannot read properties of undefined (reading 'replace')` that caused blank page after worksheet generation
 - **safeGetText Enhanced**: Function in `textObjectFixer.ts` now handles `undefined`, `null`, nested objects, and always returns a string (never crashes)
 - **safeGetNanoSkill Enhanced**: Now handles `nano_skill` as both object `{...}` and array `[{...}]` formats (Gemini sometimes returns arrays)

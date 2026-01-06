@@ -541,7 +541,26 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers,
             onAnswerChange,
             showCorrectAnswers,
-            liveSessionAnswer
+            liveSessionAnswer,
+            // Pass nano skill change handler for error-correction
+            (sentenceIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newSentences = [...exercise.sentences];
+              const sentence = newSentences[sentenceIndex];
+              if (typeof sentence === 'object') {
+                newSentences[sentenceIndex] = { ...sentence, nano_skill: newSkill };
+              } else {
+                newSentences[sentenceIndex] = { text: sentence, nano_skill: newSkill };
+              }
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
+                sentences: newSentences
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }
           )}
         
         {normalizedType === 'true-false' && exercise.statements && (
@@ -557,6 +576,19 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(sIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newStatements = [...exercise.statements];
+              newStatements[sIndex] = { ...newStatements[sIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
+                statements: newStatements
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
           />
         )}
 
@@ -891,6 +923,19 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(sIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newStatements = [...exercise.statements];
+              newStatements[sIndex] = { ...newStatements[sIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = {
+                ...updatedExercises[arrayIndex],
+                statements: newStatements
+              };
+              setEditableWorksheet({
+                ...editableWorksheet,
+                exercises: updatedExercises
+              });
+            }}
           />
         )}
 
