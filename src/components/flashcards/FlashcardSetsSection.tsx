@@ -130,7 +130,7 @@ export function FlashcardSetsSection({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <BookOpen className="w-5 h-5 text-primary" />
-          <h2 className="text-2xl font-semibold">Flashcard Sets for {studentName}</h2>
+          <h2 className="text-2xl font-semibold">Flashcard Sets for {studentName || 'Student'}</h2>
         </div>
         <div className="flex items-center gap-2">
           <Select 
@@ -180,7 +180,7 @@ export function FlashcardSetsSection({
         <div className="text-center py-12 bg-muted/50 rounded-lg">
           <div className="text-lg font-medium mb-2">No flashcard sets yet</div>
           <p className="text-muted-foreground mb-4">
-            Create your first flashcard set to help {studentName} learn vocabulary
+            Create your first flashcard set to help {studentName || 'Student'} learn vocabulary
           </p>
           <Button onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />

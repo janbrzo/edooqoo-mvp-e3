@@ -17,7 +17,7 @@ export const SelectWordFAB = ({ onClick }: SelectWordFABProps) => {
   }, []);
 
   return (
-    <div className="fixed top-[calc(50%-90px)] right-6 z-50 flex items-center gap-2">
+    <div className="fixed top-[calc(50%-90px)] right-6 z-[100] flex items-center gap-2">
       <div 
         className={`bg-green-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg transition-all duration-300 whitespace-nowrap ${
           showLabel ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'
@@ -29,7 +29,7 @@ export const SelectWordFAB = ({ onClick }: SelectWordFABProps) => {
         onClick={onClick}
         size="icon"
         className="p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white"
-        title="Select Word to Add (S)"
+        
       >
         <TextSelect className="h-5 w-5" />
       </Button>
@@ -52,7 +52,7 @@ export const QuickAddWordFAB = ({ onClick, flashcardSetsCount = 0 }: QuickAddWor
   }, []);
 
   return (
-    <div className="fixed top-[calc(50%-45px)] right-6 z-50 flex items-center gap-2">
+    <div className="fixed top-[calc(50%-45px)] right-6 z-[100] flex items-center gap-2">
       <div 
         className={`bg-green-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg transition-all duration-300 whitespace-nowrap ${
           showLabel ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'
@@ -65,7 +65,7 @@ export const QuickAddWordFAB = ({ onClick, flashcardSetsCount = 0 }: QuickAddWor
           onClick={onClick}
           size="icon"
           className="p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white"
-          title="Quick Add Word to Flashcards (F)"
+          
         >
           <Plus className="h-5 w-5" />
         </Button>
