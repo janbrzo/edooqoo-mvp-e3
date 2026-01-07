@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface StudentKnowledgeFABProps {
   onClick: () => void;
@@ -27,15 +28,23 @@ export const StudentKnowledgeFAB = ({ onClick }: StudentKnowledgeFABProps) => {
         Add Student Note (N)
       </div>
       
-      {/* Button */}
-      <Button
-        onClick={onClick}
-        size="icon"
-        className="p-3 rounded-full shadow-lg bg-amber-500 text-white opacity-80 hover:opacity-100 transition-opacity"
-        
-      >
-        <Plus className="h-5 w-5" />
-      </Button>
+      {/* Button with Tooltip */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={onClick}
+              size="icon"
+              className="p-3 rounded-full shadow-lg bg-amber-500 text-white opacity-80 hover:opacity-100 transition-opacity"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="bg-amber-500 text-white border-amber-500">
+            <p>Add Student Note (N)</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 };

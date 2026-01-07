@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, TextSelect } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SelectWordFABProps {
   onClick: () => void;
@@ -25,14 +26,22 @@ export const SelectWordFAB = ({ onClick }: SelectWordFABProps) => {
       >
         Select Word to Add (S)
       </div>
-      <Button
-        onClick={onClick}
-        size="icon"
-        className="p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white"
-        
-      >
-        <TextSelect className="h-5 w-5" />
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={onClick}
+              size="icon"
+              className="p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white"
+            >
+              <TextSelect className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="bg-green-500 text-white border-green-500">
+            <p>Select Word to Add (S)</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 };
@@ -61,14 +70,22 @@ export const QuickAddWordFAB = ({ onClick, flashcardSetsCount = 0 }: QuickAddWor
         Quick Add Word to Flashcards (F)
       </div>
       <div className="relative">
-        <Button
-          onClick={onClick}
-          size="icon"
-          className="p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white"
-          
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={onClick}
+                size="icon"
+                className="p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white"
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="bg-green-500 text-white border-green-500">
+              <p>Quick Add Word to Flashcards (F)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         {flashcardSetsCount > 0 && (
           <Badge 
             variant="secondary" 

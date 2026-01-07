@@ -750,7 +750,7 @@ const StudentPage = () => {
             <FlashcardSetsSection
               studentId={id || ''}
               teacherId={student.teacher_id}
-              studentName={student.name}
+              studentName={student.name || 'Student'}
               studentNativeLanguage={student.native_language || 'Spanish'}
               initialEditingSetId={activeTab === 'flashcards' ? flashcardSetId : null}
               onSetChange={handleFlashcardSetChange}
