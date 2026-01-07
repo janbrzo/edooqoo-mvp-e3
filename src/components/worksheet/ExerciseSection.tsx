@@ -339,6 +339,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(qIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newQuestions = [...exercise.questions];
+              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], questions: newQuestions };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -355,6 +362,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(iIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newItems = [...exercise.items];
+              newItems[iIndex] = { ...newItems[iIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], items: newItems };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -384,6 +398,15 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(sIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newSentences = [...exercise.sentences];
+              newSentences[sIndex] = typeof newSentences[sIndex] === 'object' 
+                ? { ...newSentences[sIndex], nano_skill: newSkill }
+                : { text: newSentences[sIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], sentences: newSentences };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -416,6 +439,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(qIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newQuestions = [...exercise.questions];
+              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], questions: newQuestions };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -435,6 +465,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(dIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newDialogue = [...exercise.dialogue];
+              newDialogue[dIndex] = { ...newDialogue[dIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], dialogue: newDialogue };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -606,6 +643,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             liveSessionAnswer={liveSessionAnswer}
             worksheetId={worksheetId}
             disabled={disabled}
+            onNanoSkillChange={(qIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newQuestions = [...exercise.questions];
+              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], questions: newQuestions };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -622,6 +666,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(iIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newItems = [...exercise.items];
+              newItems[iIndex] = { ...newItems[iIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], items: newItems };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -667,6 +718,15 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(sIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newSentences = [...exercise.sentences];
+              newSentences[sIndex] = typeof newSentences[sIndex] === 'object'
+                ? { ...newSentences[sIndex], nano_skill: newSkill }
+                : { text: newSentences[sIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], sentences: newSentences };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -697,6 +757,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(wIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newWords = [...exercise.words];
+              newWords[wIndex] = { ...newWords[wIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], words: newWords };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -757,6 +824,15 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(sIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newSentences = [...exercise.sentences];
+              newSentences[sIndex] = typeof newSentences[sIndex] === 'object'
+                ? { ...newSentences[sIndex], nano_skill: newSkill }
+                : { text: newSentences[sIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], sentences: newSentences };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -787,6 +863,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(wIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newWords = [...exercise.words];
+              newWords[wIndex] = { ...newWords[wIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], words: newWords };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -817,6 +900,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(hIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newHalves = [...exercise.sentence_halves];
+              newHalves[hIndex] = { ...newHalves[hIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], sentence_halves: newHalves };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -853,6 +943,15 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(qIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newPrompts = [...(exercise.prompts || exercise.questions || [])];
+              newPrompts[qIndex] = typeof newPrompts[qIndex] === 'object' 
+                ? { ...newPrompts[qIndex], nano_skill: newSkill }
+                : { text: newPrompts[qIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], prompts: newPrompts };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 

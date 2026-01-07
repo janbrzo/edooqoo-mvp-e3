@@ -1,6 +1,7 @@
 import { Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface StudentKnowledgeLessonIdeasButtonProps {
   onClick: () => void;
@@ -17,7 +18,7 @@ export const StudentKnowledgeLessonIdeasButton = ({ onClick }: StudentKnowledgeL
   }, []);
 
   return (
-    <div className="fixed top-[calc(50%+55px)] right-6 z-50 flex items-center gap-2">
+    <div className="fixed top-[calc(50%+55px)] right-6 z-[100] flex items-center gap-2">
       {/* Animated label */}
       <div 
         className={`bg-yellow-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg transition-all duration-300 whitespace-nowrap ${
@@ -27,15 +28,23 @@ export const StudentKnowledgeLessonIdeasButton = ({ onClick }: StudentKnowledgeL
         Add Lesson Idea (I)
       </div>
       
-      {/* Button */}
-      <Button
-        onClick={onClick}
-        size="icon"
-        className="p-3 rounded-full shadow-lg bg-yellow-500 text-white opacity-80 hover:opacity-100 transition-opacity"
-        title="Add Lesson Idea (I)"
-      >
-        <Lightbulb className="h-5 w-5" />
-      </Button>
+      {/* Button with Tooltip */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={onClick}
+              size="icon"
+              className="p-3 rounded-full shadow-lg bg-yellow-500 text-white opacity-80 hover:opacity-100 transition-opacity"
+            >
+              <Lightbulb className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="bg-yellow-500 text-white border-yellow-500">
+            <p>Add Lesson Idea (I)</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 };

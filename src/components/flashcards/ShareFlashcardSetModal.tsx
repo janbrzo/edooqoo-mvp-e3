@@ -25,12 +25,12 @@ export function ShareFlashcardSetModal({
   teacherName = '',
 }: ShareFlashcardSetModalProps) {
   const [copied, setCopied] = useState(false);
-  const [email, setEmail] = useState(studentEmail);
+  const [email, setEmail] = useState(studentEmail || '');
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    setEmail(studentEmail);
+    setEmail(studentEmail || '');
   }, [studentEmail, open]);
 
   const shareUrl = shareToken 
@@ -63,7 +63,7 @@ export function ShareFlashcardSetModal({
   };
 
   const handleSendEmail = async () => {
-    if (!email.trim() || !shareToken) return;
+    if (!(email || '').trim() || !shareToken) return;
 
     setSending(true);
     try {
@@ -148,7 +148,7 @@ export function ShareFlashcardSetModal({
               <Button
                 variant="outline"
                 onClick={handleSendEmail}
-                disabled={!email.trim() || sending}
+                disabled={!(email || '').trim() || sending}
               >
                 {sending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

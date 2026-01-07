@@ -15,7 +15,7 @@ export const useFlashcardDefinition = ({ enabled }: UseFlashcardDefinitionProps)
 
   const fetchDefinition = useCallback(
     async (englishTerm: string) => {
-      if (!enabled || !englishTerm.trim()) {
+      if (!enabled || !(englishTerm || '').trim()) {
         setDefinition('');
         return;
       }

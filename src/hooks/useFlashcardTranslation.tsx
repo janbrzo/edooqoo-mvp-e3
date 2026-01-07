@@ -18,7 +18,7 @@ export const useFlashcardTranslation = ({ targetLanguage, enabled }: UseFlashcar
 
   const translateText = useCallback(
     async (englishText: string) => {
-      if (!enabled || !englishText.trim()) {
+      if (!enabled || !(englishText || '').trim()) {
         setTranslation('');
         return;
       }
