@@ -1,7 +1,8 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
-import { safeGetText } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface Question {
   text?: string;          // Old format (reading exercises)
@@ -24,6 +25,9 @@ interface ExerciseAnswerQuestionsProps extends Partial<InteractiveExerciseProps>
   liveSessionAnswer?: Record<number, any>;
   // A3: Disable inputs after homework submission
   disabled?: boolean;
+  // NanoSkill editing
+  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
+  isSharedWorksheet?: boolean;
 }
 
 const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
@@ -44,7 +48,10 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
   onAnswerChange,
   showCorrectAnswers = false,
   // A3: Disable inputs
-  disabled = false
+  disabled = false,
+  // NanoSkill props
+  onNanoSkillChange,
+  isSharedWorksheet = false
 }) => {
   return (
     <div className="space-y-4">
@@ -109,6 +116,8 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
           const showAsCorrect = showCorrectAnswers && studentAnswer && correctAnswer;
           // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
           const questionText = safeGetText(question?.text ?? question?.question ?? question);
+          const nanoSkill = safeGetNanoSkill(question);
+          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
 
           return (
             <div key={qIndex} className="border-b pb-3">
@@ -127,6 +136,14 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
                     )}
                   </p>
                 </div>
+                {/* NanoSkill Badge */}
+                {showNanoSkill && (
+                  <NanoSkillBadge
+                    nanoSkill={nanoSkill}
+                    isEditing={isEditing}
+                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
+                  />
+                )}
                 {viewMode === 'teacher' && (question.answer || question.focus) && !isInteractive && (
                   <div className="flex items-center gap-2 flex-wrap ml-3">
                     <div className="text-green-600 italic text-sm">

@@ -713,28 +713,35 @@ export default function WorksheetDisplay({
       {/* Flashcard FAB Buttons - Green group (top) - FOR REGISTERED USERS */}
       {shouldShowFAB && (
         <>
-          {/* View Flashcard Sets - with badge */}
-          <div className="fixed top-[calc(50%-135px)] right-6 z-50">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => setShowViewSetsModal(true)}
-                  size="icon"
-                  className="p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white"
+          {/* View Flashcard Sets - with badge and animated label */}
+          <div className="fixed top-[calc(50%-135px)] right-6 z-50 flex items-center gap-2 pointer-events-none">
+            <div className="bg-green-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap opacity-0">
+              View Flashcard Sets
+            </div>
+            <div className="relative pointer-events-auto">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setShowViewSetsModal(true)}
+                    size="icon"
+                    className="p-3 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white"
+                  >
+                    <Layers className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="bg-green-500 text-white border-green-500">
+                  <p>View Flashcard Sets</p>
+                </TooltipContent>
+              </Tooltip>
+              {flashcardSetsCount > 0 && (
+                <Badge 
+                  variant="secondary" 
+                  className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 text-xs bg-green-600 text-white border-2 border-background shadow-md z-10"
                 >
-                  <Layers className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left">View Flashcard Sets</TooltipContent>
-            </Tooltip>
-            {flashcardSetsCount > 0 && (
-              <Badge 
-                variant="secondary" 
-                className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 text-xs bg-green-600 text-white border-2 border-background shadow-md z-10"
-              >
-                {flashcardSetsCount > 9 ? '9+' : flashcardSetsCount}
-              </Badge>
-            )}
+                  {flashcardSetsCount > 9 ? '9+' : flashcardSetsCount}
+                </Badge>
+              )}
+            </div>
           </div>
           
           {/* Select Word from Worksheet - with animated label */}
