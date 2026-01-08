@@ -1,12 +1,12 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
-import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetNanoSkill, safeGetText } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   dialogue: any[];
-  expressions?: string[];
+  expressions?: any[];
   expression_instruction?: string;
   isEditing: boolean;
   viewMode: "student" | "teacher";
@@ -96,6 +96,10 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
               const studentAnswer = studentAnswers[eIndex] || '';
               const isEmpty = showCorrectAnswers && !studentAnswer;
               const liveAnswer = liveSessionAnswer?.[eIndex];
+              // Support expressions as objects with nano_skill
+              const expressionText = typeof expr === 'object' ? safeGetText(expr?.text || expr?.expression || expr) : expr;
+              const nanoSkill = typeof expr === 'object' ? safeGetNanoSkill(expr) : null;
+              const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
               
               return (
                 <div key={eIndex} className="p-3 border rounded-lg bg-white">
@@ -105,14 +109,22 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
                       {isEditing ? (
                         <input
                           type="text"
-                          value={expr}
+                          value={expressionText}
                           onChange={e => onExpressionChange(eIndex, e.target.value)}
                           className="border p-1 editable-content w-full"
                         />
                       ) : (
-                        <span className="font-medium">{expr}</span>
+                        <span className="font-medium">{expressionText}</span>
                       )}
                     </div>
+                    {/* NanoSkill Badge for expression */}
+                    {showNanoSkill && (
+                      <NanoSkillBadge
+                        nanoSkill={nanoSkill}
+                        isEditing={isEditing}
+                        onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(eIndex, ns) : undefined}
+                      />
+                    )}
                   </div>
                   
                   {/* Interactive answer input under each expression */}

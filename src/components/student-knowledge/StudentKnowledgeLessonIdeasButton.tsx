@@ -18,11 +18,11 @@ export const StudentKnowledgeLessonIdeasButton = ({ onClick }: StudentKnowledgeL
   }, []);
 
   return (
-    <div className="fixed top-[calc(50%+55px)] right-6 z-[100] flex items-center gap-2">
+    <div className="fixed top-[calc(50%+55px)] right-6 z-[100] flex items-center gap-2 pointer-events-none">
       {/* Animated label */}
       <div 
         className={`bg-yellow-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg transition-all duration-300 whitespace-nowrap ${
-          showLabel ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'
+          showLabel ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
         }`}
       >
         Add Lesson Idea (I)
@@ -35,7 +35,7 @@ export const StudentKnowledgeLessonIdeasButton = ({ onClick }: StudentKnowledgeL
             <Button
               onClick={onClick}
               size="icon"
-              className="p-3 rounded-full shadow-lg bg-yellow-500 text-white opacity-80 hover:opacity-100 transition-opacity"
+              className="p-3 rounded-full shadow-lg bg-yellow-500 text-white opacity-80 hover:opacity-100 transition-opacity pointer-events-auto"
             >
               <Lightbulb className="h-5 w-5" />
             </Button>
