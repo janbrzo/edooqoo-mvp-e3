@@ -216,16 +216,16 @@ export const getDialogueExercise = () => `    {
         {"speaker": "Customer", "text": "No problem. Thank you for your help."}
       ],
       "expressions": [
-        "I'd like to order the ……, please.",
-        "Can I see the menu, please?",
-        "Could you recommend something vegetarian?",
-        "I think there's a mistake with my order.",
-        "Excuse me, but this isn't what I asked for.",
-        "Could I get the bill, please?",
-        "Can I have this to go?",
-        "The food was delicious, thank you!",
-        "I'm afraid my dish is cold.",
-        "Can you bring us some more water, please?"
+        {"text": "I'd like to order the ……, please.", "nano_skill": [{"name": "ns.speaking.polite_request_ordering", "confidence": 0.95, "reason": "Tests polite ordering structure with 'I'd like'"}]},
+        {"text": "Can I see the menu, please?", "nano_skill": [{"name": "ns.speaking.polite_request_can", "confidence": 0.94, "reason": "Tests 'Can I' for polite requests"}]},
+        {"text": "Could you recommend something vegetarian?", "nano_skill": [...]},
+        {"text": "I think there's a mistake with my order.", "nano_skill": [...]},
+        {"text": "Excuse me, but this isn't what I asked for.", "nano_skill": [...]},
+        {"text": "Could I get the bill, please?", "nano_skill": [...]},
+        {"text": "Can I have this to go?", "nano_skill": [...]},
+        {"text": "The food was delicious, thank you!", "nano_skill": [...]},
+        {"text": "I'm afraid my dish is cold.", "nano_skill": [...]},
+        {"text": "Can you bring us some more water, please?", "nano_skill": [...]}
       ],
       "expression_instruction": "Practice using these expressions in your own dialogues and real-life situations.",
       "teacher_tip": "Include unexpected issues (e.g., the order is cold, the waiter forgets the drink) to keep the role-play dynamic and spontaneous. Assign students to write a restaurant review or a list of useful expressions they used or learned."
@@ -238,16 +238,16 @@ export const getDiscussionExercise = () => `    {
       "time": 8,
       "instructions": "Discuss these questions with your teacher or partner.",
       "questions": [
-        {"text": "What is your favorite type of restaurant and why?"},
-        {"text": "Have you ever had a bad experience in a restaurant? What happened?"},
-        {"text": "Do you prefer eating at home or dining out? Give reasons using comparatives."},
-        {"text": "What dish would you recommend to someone visiting your country for the first time?"},
-        {"text": "Which restaurant in your city is the most popular? Why do you think it's the best?"},
-        {"text": "How do you usually react if your order is wrong or the food isn't good?"},
-        {"text": "What is more important to you: good food or good service? Why?"},
-        {"text": "Can you describe the most expensive meal you've ever had? Was it worth it?"},
-        {"text": "What makes a restaurant better than others in your opinion?"},
-        {"text": "Have you ever tried a dish that was better than you expected? What was it?"}
+        {"text": "What is your favorite type of restaurant and why?", "nano_skill": [{"name": "ns.speaking.opinion_expression", "confidence": 0.95, "reason": "Tests ability to express and justify personal preferences"}]},
+        {"text": "Have you ever had a bad experience in a restaurant? What happened?", "nano_skill": [{"name": "ns.speaking.narrative_past_experience", "confidence": 0.93, "reason": "Tests past tense narrative and sequencing"}]},
+        {"text": "Do you prefer eating at home or dining out? Give reasons using comparatives.", "nano_skill": [...]},
+        {"text": "What dish would you recommend to someone visiting your country for the first time?", "nano_skill": [...]},
+        {"text": "Which restaurant in your city is the most popular? Why do you think it's the best?", "nano_skill": [...]},
+        {"text": "How do you usually react if your order is wrong or the food isn't good?", "nano_skill": [...]},
+        {"text": "What is more important to you: good food or good service? Why?", "nano_skill": [...]},
+        {"text": "Can you describe the most expensive meal you've ever had? Was it worth it?", "nano_skill": [...]},
+        {"text": "What makes a restaurant better than others in your opinion?", "nano_skill": [...]},
+        {"text": "Have you ever tried a dish that was better than you expected? What was it?", "nano_skill": [...]}
       ],
       "teacher_tip": "Encourage deeper thinking by asking students to explain, justify, or give examples for their answers.Focus on major errors or repeated mistakes after the discussion, not during."
     }`;
@@ -473,10 +473,10 @@ export const getCategorizeExercise = () => `    {
         {"word": "snack", "nano_skill": [...]}
       ],
       "categories": [
-        {"name": "Food Items", "correct_items": ["pizza", "sushi", "pasta", "burger"]},
-        {"name": "Restaurant Staff", "correct_items": ["waiter", "chef", "manager", "customer"]},
-        {"name": "Eating Utensils", "correct_items": ["spoon", "fork", "knife", "plate"]},
-        {"name": "Meal Times", "correct_items": ["breakfast", "lunch", "dinner", "snack"]}
+        {"name": "Food Items", "correct_items": ["pizza", "sushi", "pasta", "burger"], "nano_skill": [{"name": "ns.vocab.semantic_grouping_food", "confidence": 0.95, "reason": "Tests ability to group food vocabulary"}]},
+        {"name": "Restaurant Staff", "correct_items": ["waiter", "chef", "manager", "customer"], "nano_skill": [{"name": "ns.vocab.semantic_grouping_people", "confidence": 0.94, "reason": "Tests ability to group restaurant personnel vocabulary"}]},
+        {"name": "Eating Utensils", "correct_items": ["spoon", "fork", "knife", "plate"], "nano_skill": [...]},
+        {"name": "Meal Times", "correct_items": ["breakfast", "lunch", "dinner", "snack"], "nano_skill": [...]}
       ],
       "teacher_tip": "After categorizing, ask students to add two more items to each category to expand their vocabulary and test their understanding of the categories."
     }`;

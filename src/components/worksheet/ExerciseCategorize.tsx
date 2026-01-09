@@ -17,6 +17,8 @@ interface ExerciseCategorizeProps extends Partial<InteractiveExerciseProps> {
   disabled?: boolean;
   // NanoSkill editing (for categories)
   onNanoSkillChange?: (cIndex: number, nanoSkill: NanoSkill) => void;
+  // NanoSkill editing (for individual items/words)
+  onItemNanoSkillChange?: (wIndex: number, nanoSkill: NanoSkill) => void;
   isSharedWorksheet?: boolean;
 }
 
@@ -38,6 +40,7 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
   disabled = false,
   // NanoSkill props
   onNanoSkillChange,
+  onItemNanoSkillChange,
   isSharedWorksheet = false
 }) => {
   // Use items if available, otherwise fall back to words
@@ -142,7 +145,11 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
                     word || 'Word'
                   )}
                   {showNanoSkill && (
-                    <NanoSkillBadge nanoSkill={nanoSkill} isEditing={isEditing} />
+                    <NanoSkillBadge 
+                      nanoSkill={nanoSkill} 
+                      isEditing={isEditing}
+                      onEdit={onItemNanoSkillChange ? (ns) => onItemNanoSkillChange(wIndex, ns) : undefined}
+                    />
                   )}
                 </div>
               );

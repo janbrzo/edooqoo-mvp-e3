@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, forwardRef } from "react";
+import React, { useEffect, useCallback, forwardRef, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { updateWorksheet } from "@/services/worksheetService";
 import { useExerciseRegeneration } from "@/hooks/useExerciseRegeneration";
@@ -29,6 +29,7 @@ import ExerciseMultipleChoiceAudio from "./ExerciseMultipleChoiceAudio";
 import ExerciseTrueFalseAudio from "./ExerciseTrueFalseAudio";
 import ExerciseFillInBlanksAudio from "./ExerciseFillInBlanksAudio";
 import ExerciseAnswerQuestionsAudio from "./ExerciseAnswerQuestionsAudio";
+import NanoSkillMasteryModal from "./NanoSkillMasteryModal";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Loader2, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -46,7 +47,8 @@ import {
   renderOtherExerciseTypes
 } from "./ExerciseSectionUtils";
 import { safeGetNanoSkill } from "@/utils/textObjectFixer";
-import NanoSkillBadge from "./NanoSkillBadge";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Exercise {
   type: string;
@@ -826,6 +828,19 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
               const newCategories = [...exercise.categories];
               newCategories[cIndex] = { ...newCategories[cIndex], nano_skill: newSkill };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], categories: newCategories };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
+            onItemNanoSkillChange={(wIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const actualItems = exercise.items?.length > 0 ? [...exercise.items] : [...(exercise.words || [])];
+              actualItems[wIndex] = typeof actualItems[wIndex] === 'object'
+                ? { ...actualItems[wIndex], nano_skill: newSkill }
+                : { word: actualItems[wIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { 
+                ...updatedExercises[arrayIndex], 
+                items: actualItems,
+                words: actualItems 
+              };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
             }}
           />

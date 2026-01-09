@@ -43,6 +43,7 @@ export type StudentEventType =
   | 'teacher_rating_update'
   | 'lesson_started'
   | 'lesson_completed'
+  | 'exercise_mastery_evaluation'  // NEW: Teacher evaluates student mastery per nano_skill
   
   // System events
   | 'knowledge_entry_added'
@@ -138,6 +139,17 @@ export interface LessonPayload {
   duration_minutes?: number;
   topics_covered?: string[];
   notes?: string;
+}
+
+export interface ExerciseMasteryEvaluationPayload {
+  exercise_index: number;
+  exercise_title: string;
+  exercise_type: string;
+  nano_skill_ratings: Array<{
+    name: string;
+    reason: string;
+    mastery: number; // 0-100
+  }>;
 }
 
 // =====================================================
