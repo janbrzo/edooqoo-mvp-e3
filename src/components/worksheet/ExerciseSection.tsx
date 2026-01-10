@@ -1333,6 +1333,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 exercises: updatedExercises
               });
             }}
+            onNanoSkillChange={(sIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newSentences = [...(exercise.sentences || [])];
+              newSentences[sIndex] = { ...newSentences[sIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], sentences: newSentences };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}

@@ -90,6 +90,8 @@ interface WorksheetDisplayProps {
   selectedAudio?: any;
   audioUrl?: string;
   tokenLeft?: number;
+  // PROBLEM 5: Title from database for proper rename sync
+  worksheetTitle?: string;
 }
 
 export default function WorksheetDisplay({
@@ -112,7 +114,8 @@ export default function WorksheetDisplay({
   selectedImage,
   selectedAudio,
   audioUrl,
-  tokenLeft
+  tokenLeft,
+  worksheetTitle
 }: WorksheetDisplayProps) {
   // Problem #7: Default to Live Session for logged-in users, Teacher for anonymous
   const [viewMode, setViewMode] = useState<'student' | 'teacher' | 'live-session'>(
@@ -930,7 +933,8 @@ export default function WorksheetDisplay({
             studentId={studentId}
             onStudentChange={onStudentChange}
             tokenLeft={tokenLeft}
-            worksheetTitle={editableWorksheet?.title}
+            // PROBLEM 5: Use props worksheetTitle (from database) first, fallback to editableWorksheet.title
+            worksheetTitle={worksheetTitle || editableWorksheet?.title}
             onTitleChange={(newTitle) => setEditableWorksheet((prev: any) => ({ ...prev, title: newTitle }))}
           />
           <InputParamsCard 

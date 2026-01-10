@@ -49,6 +49,14 @@ export default function WorksheetContainer({
   const [showScrollTop, setShowScrollTop] = useState(false);
   const worksheetRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  // PROBLEM 2: Animated labels for Pin buttons (show for 5 seconds)
+  const [showPinLabels, setShowPinLabels] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setShowPinLabels(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -136,26 +144,48 @@ export default function WorksheetContainer({
         <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-50">
           {/* Pin Image button - only show if image exists and no audio */}
           {selectedImage && !selectedAudio && onTogglePin && (
-            <button 
-              onClick={onTogglePin}
-              className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
-              aria-label={isPinned ? "Unpin image" : "Pin image"}
-              title={isPinned ? "Unpin image" : "Pin image"}
-            >
-              <Image className="h-5 w-5" />
-            </button>
+            <div className="relative flex items-center">
+              {/* Animated label */}
+              {showPinLabels && (
+                <span 
+                  className="absolute right-full mr-2 whitespace-nowrap bg-worksheet-purple text-white text-xs px-2 py-1 rounded shadow-lg animate-in slide-in-from-right-2 duration-300"
+                  style={{ opacity: showPinLabels ? 1 : 0, transition: 'opacity 0.3s' }}
+                >
+                  {isPinned ? "Unpin image" : "Pin image"}
+                </span>
+              )}
+              <button 
+                onClick={onTogglePin}
+                className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+                aria-label={isPinned ? "Unpin image" : "Pin image"}
+                title={isPinned ? "Unpin image" : "Pin image"}
+              >
+                <Image className="h-5 w-5" />
+              </button>
+            </div>
           )}
           
           {/* Pin Audio button - only show if audio exists */}
           {selectedAudio && onTogglePin && (
-            <button 
-              onClick={onTogglePin}
-              className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
-              aria-label={isPinned ? "Unpin audio player" : "Pin audio player"}
-              title={isPinned ? "Unpin audio player" : "Pin audio player"}
-            >
-              <Headphones className="h-5 w-5" />
-            </button>
+            <div className="relative flex items-center">
+              {/* Animated label */}
+              {showPinLabels && (
+                <span 
+                  className="absolute right-full mr-2 whitespace-nowrap bg-worksheet-purple text-white text-xs px-2 py-1 rounded shadow-lg animate-in slide-in-from-right-2 duration-300"
+                  style={{ opacity: showPinLabels ? 1 : 0, transition: 'opacity 0.3s' }}
+                >
+                  {isPinned ? "Unpin audio player" : "Pin audio player"}
+                </span>
+              )}
+              <button 
+                onClick={onTogglePin}
+                className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+                aria-label={isPinned ? "Unpin audio player" : "Pin audio player"}
+                title={isPinned ? "Unpin audio player" : "Pin audio player"}
+              >
+                <Headphones className="h-5 w-5" />
+              </button>
+            </div>
           )}
           
           {/* Scroll to top button */}
