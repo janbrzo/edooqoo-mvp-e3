@@ -638,7 +638,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
               const liveAnswer = liveSessionAnswer?.[qIndex];
               // Extract nano skill for badge display
               const nanoSkill = typeof question === 'object' ? safeGetNanoSkill(question) : null;
-              const showNanoSkill = viewMode === 'teacher' && nanoSkill;
+              // PROBLEM 1 FIX: Show NanoSkill in both teacher AND live-session modes
+              const showNanoSkill = (viewMode === 'teacher' || viewMode === 'live-session') && nanoSkill;
               
               return (
                 <div key={qIndex} className="border rounded-lg p-3 bg-white">
@@ -675,6 +676,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                     {showNanoSkill && (
                       <NanoSkillBadge
                         nanoSkill={nanoSkill}
+                        isEditing={isEditing}
                         onEdit={(newSkill) => {
                           const updatedExercises = [...editableWorksheet.exercises];
                           const newQuestions = [...exercise.questions!];
@@ -1203,6 +1205,13 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(qIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newQuestions = [...exercise.questions];
+              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], questions: newQuestions };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 
@@ -1292,6 +1301,15 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            onNanoSkillChange={(qIndex, newSkill) => {
+              const updatedExercises = [...editableWorksheet.exercises];
+              const newQuestions = [...exercise.questions];
+              newQuestions[qIndex] = typeof newQuestions[qIndex] === 'object'
+                ? { ...newQuestions[qIndex], nano_skill: newSkill }
+                : { text: newQuestions[qIndex], nano_skill: newSkill };
+              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], questions: newQuestions };
+              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+            }}
           />
         )}
 

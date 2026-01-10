@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Brain } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckCircle2, Brain, SkipForward, Undo2 } from "lucide-react";
 import { NanoSkill } from "./NanoSkillBadge";
 
 interface NanoSkillRating {
@@ -22,21 +23,92 @@ interface NanoSkillMasteryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (ratings: NanoSkillRating[]) => void;
+  onSkip?: () => void;
   nanoSkills: NanoSkill[];
   exerciseTitle: string;
 }
+
+// Undo Mark Done Modal
+interface UndoMarkDoneModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (deleteFromEvents: boolean) => void;
+  exerciseTitle: string;
+}
+
+export const UndoMarkDoneModal: React.FC<UndoMarkDoneModalProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  exerciseTitle,
+}) => {
+  const [deleteFromEvents, setDeleteFromEvents] = useState(true);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Undo2 className="h-5 w-5 text-orange-500" />
+            Undo Mark Done
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="py-4 space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to unmark <span className="font-medium">"{exerciseTitle}"</span> as done?
+          </p>
+
+          <div className="flex items-center space-x-2 p-3 border rounded-lg bg-muted/30">
+            <Checkbox
+              id="delete-events"
+              checked={deleteFromEvents}
+              onCheckedChange={(checked) => setDeleteFromEvents(checked === true)}
+            />
+            <label
+              htmlFor="delete-events"
+              className="text-sm font-medium leading-none cursor-pointer"
+            >
+              Also delete mastery evaluation from student events
+            </label>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => {
+              onConfirm(deleteFromEvents);
+              onClose();
+            }} 
+            variant="destructive"
+            className="gap-2"
+          >
+            <Undo2 className="h-4 w-4" />
+            Confirm Undo
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onSkip,
   nanoSkills,
   exerciseTitle,
 }) => {
   const [ratings, setRatings] = useState<NanoSkillRating[]>([]);
+  // FIX: Track if we've initialized to prevent slider reset
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
-    if (isOpen && nanoSkills.length > 0) {
+    if (isOpen && nanoSkills.length > 0 && !hasInitialized.current) {
       setRatings(
         nanoSkills.map((skill) => ({
           name: skill.name,
@@ -44,17 +116,30 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
           mastery: 70, // Default starting value
         }))
       );
+      hasInitialized.current = true;
+    }
+    
+    // Reset when modal closes
+    if (!isOpen) {
+      hasInitialized.current = false;
     }
   }, [isOpen, nanoSkills]);
 
   const handleMasteryChange = (index: number, value: number[]) => {
-    const newRatings = [...ratings];
-    newRatings[index].mastery = value[0];
-    setRatings(newRatings);
+    setRatings(prevRatings => {
+      const newRatings = [...prevRatings];
+      newRatings[index] = { ...newRatings[index], mastery: value[0] };
+      return newRatings;
+    });
   };
 
   const handleSubmit = () => {
     onSubmit(ratings);
+    onClose();
+  };
+  
+  const handleSkip = () => {
+    onSkip?.();
     onClose();
   };
 
@@ -83,8 +168,36 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
     return 'Struggling';
   };
 
+  // Show modal even without nano skills (with skip option)
   if (nanoSkills.length === 0) {
-    return null;
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" />
+              Mark Exercise Done
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              No nano skills detected for this exercise. Mark as done without evaluation?
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSkip} className="gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Mark Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   return (
@@ -142,14 +255,20 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
           ))}
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
+        <DialogFooter className="gap-2 flex-wrap">
+          <Button variant="ghost" onClick={handleSkip} className="gap-2 text-muted-foreground">
+            <SkipForward className="h-4 w-4" />
+            Skip (mark done without evaluation)
           </Button>
-          <Button onClick={handleSubmit} className="gap-2">
-            <CheckCircle2 className="h-4 w-4" />
-            Save Evaluation
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} className="gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Save Evaluation
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

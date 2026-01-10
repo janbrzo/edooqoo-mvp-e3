@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ExternalLink, Pin, X, ChevronDown, ChevronUp, Maximize2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import DemoWatermark from './DemoWatermark';
@@ -43,10 +44,18 @@ export default function MediaSection({
   isFullScreen = false,
   onToggleFullScreen
 }: MediaSectionProps) {
-  const [isCollapsed, setIsCollapsed] = React.useState(false);
-  const [imageError, setImageError] = React.useState(false);
-  const [imageLoading, setImageLoading] = React.useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  // PROBLEM 2: Show animated labels for 5 seconds
+  const [showPinLabel, setShowPinLabel] = useState(true);
   const { toast } = useToast();
+  
+  // PROBLEM 2: Hide labels after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => setShowPinLabel(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
   
   // DEBUGGING: Log media data
   console.log('🖼️ [MEDIASECTION] Rendering with media:', {
@@ -81,21 +90,38 @@ export default function MediaSection({
           </h2>
           
           <div className="flex items-center gap-2">
-            {/* Pin Button for Audio */}
+            {/* Pin Button for Audio with animated label */}
             {onTogglePin && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onTogglePin}
-                className={cn(
-                  "flex items-center gap-2",
-                  isPinned && "bg-worksheet-purple text-white hover:bg-worksheet-purple/90"
-                )}
-                title={isPinned ? "Unpin audio player" : "Pin audio player"}
-              >
-                <Pin className={cn("h-4 w-4", isPinned && "fill-current")} />
-                {isPinned ? 'Unpin' : 'Pin'}
-              </Button>
+              <div className="flex items-center gap-2 pointer-events-none">
+                {/* Animated label */}
+                <div 
+                  className={cn(
+                    "bg-worksheet-purple text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap transition-opacity duration-500",
+                    showPinLabel ? "opacity-100" : "opacity-0"
+                  )}
+                >
+                  {isPinned ? "Unpin audio player" : "Pin audio player"}
+                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onTogglePin}
+                      className={cn(
+                        "flex items-center gap-2 pointer-events-auto",
+                        isPinned && "bg-worksheet-purple text-white hover:bg-worksheet-purple/90"
+                      )}
+                    >
+                      <Pin className={cn("h-4 w-4", isPinned && "fill-current")} />
+                      {isPinned ? 'Unpin' : 'Pin'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{isPinned ? "Unpin audio player" : "Pin audio player"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             )}
             
             {/* Collapse Button */}
@@ -237,21 +263,36 @@ export default function MediaSection({
             />
             {onTogglePin && onToggleFullScreen && (
               <div className="absolute top-2 right-2 flex flex-col gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onTogglePin();
-                  }}
+                {/* Animated Pin Image label */}
+                <div 
                   className={cn(
-                    "bg-white/90 hover:bg-white shadow-md",
-                    isPinned && "bg-worksheet-purple text-white"
+                    "absolute -left-32 top-0 bg-worksheet-purple text-white text-xs font-medium px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap transition-opacity duration-500",
+                    showPinLabel ? "opacity-100" : "opacity-0"
                   )}
-                  title={isPinned ? "Unpin image" : "Pin image"}
                 >
-                  <Pin className={cn("h-4 w-4", isPinned && "fill-current")} />
-                </Button>
+                  {isPinned ? "Unpin image" : "Pin image"}
+                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onTogglePin();
+                      }}
+                      className={cn(
+                        "bg-white/90 hover:bg-white shadow-md",
+                        isPinned && "bg-worksheet-purple text-white"
+                      )}
+                    >
+                      <Pin className={cn("h-4 w-4", isPinned && "fill-current")} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>{isPinned ? "Unpin image" : "Pin image"}</p>
+                  </TooltipContent>
+                </Tooltip>
                 <Button
                   variant="ghost"
                   size="sm"

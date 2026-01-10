@@ -1,10 +1,13 @@
 import React from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
+import { safeGetNanoSkill, safeGetText } from "@/utils/textObjectFixer";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface Question {
   question: string;
   focus: string;
+  nano_skill?: NanoSkill;
 }
 
 interface ExerciseAnswerQuestionsAudioProps extends Partial<InteractiveExerciseProps> {
@@ -15,6 +18,7 @@ interface ExerciseAnswerQuestionsAudioProps extends Partial<InteractiveExerciseP
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
+  onNanoSkillChange?: (qIndex: number, newSkill: NanoSkill) => void;
 }
 
 const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> = ({
@@ -28,7 +32,8 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
-  disabled = false
+  disabled = false,
+  onNanoSkillChange
 }) => {
   return (
     <div className="space-y-0.5">
@@ -38,57 +43,71 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
         </div>
       )}
       
-      {questions.map((q, qIndex) => (
-        <div key={qIndex} className="border-b pb-3 space-y-2">
-          <div className="flex flex-row items-start">
-            <div className="flex-grow">
-              <p className="font-medium leading-snug">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={q.question}
-                    onChange={e => onQuestionChange(qIndex, 'question', e.target.value)}
-                    className="w-full border p-1 editable-content"
-                  />
-                ) : (
-                  <>{qIndex + 1}. {q.question}</>
-                )}
-              </p>
-            </div>
-            {viewMode === 'teacher' && (
-              <div className="flex items-center gap-2 flex-wrap ml-3">
-                <div className="text-green-600 italic text-sm">
+      {questions.map((q, qIndex) => {
+        // Extract nano_skill from question object
+        const nanoSkill = safeGetNanoSkill(q);
+        const questionText = typeof q === 'object' ? (q.question || safeGetText(q)) : String(q);
+        
+        return (
+          <div key={qIndex} className="border-b pb-3 space-y-2">
+            <div className="flex flex-row items-start">
+              <div className="flex-grow">
+                <p className="font-medium leading-snug">
                   {isEditing ? (
                     <input
                       type="text"
-                      value={q.focus}
-                      onChange={e => onQuestionChange(qIndex, 'focus', e.target.value)}
-                      className="border p-1 editable-content w-full"
+                      value={questionText}
+                      onChange={e => onQuestionChange(qIndex, 'question', e.target.value)}
+                      className="w-full border p-1 editable-content"
                     />
                   ) : (
-                    <span>Focus: {q.focus}</span>
+                    <>{qIndex + 1}. {questionText}</>
+                  )}
+                </p>
+              </div>
+              {viewMode === 'teacher' && (
+                <div className="flex items-center gap-2 flex-wrap ml-3">
+                  <div className="text-green-600 italic text-sm">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={q.focus || ''}
+                        onChange={e => onQuestionChange(qIndex, 'focus', e.target.value)}
+                        className="border p-1 editable-content w-full"
+                      />
+                    ) : (
+                      q.focus && <span>Focus: {q.focus}</span>
+                    )}
+                  </div>
+                  {/* NanoSkill Badge */}
+                  {nanoSkill && (
+                    <NanoSkillBadge
+                      nanoSkill={nanoSkill}
+                      isEditing={isEditing}
+                      onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(qIndex, newSkill) : undefined}
+                    />
+                  )}
+                  {/* Live Session: show student answer in blue */}
+                  {liveSessionAnswer?.[qIndex] !== undefined && (
+                    <span className="text-blue-600 font-medium text-sm">
+                      [Student: {liveSessionAnswer[qIndex]}]
+                    </span>
                   )}
                 </div>
-                {/* Live Session: show student answer in blue */}
-                {liveSessionAnswer?.[qIndex] !== undefined && (
-                  <span className="text-blue-600 font-medium text-sm">
-                    [Student: {liveSessionAnswer[qIndex]}]
-                  </span>
-                )}
-              </div>
+              )}
+            </div>
+            {isInteractive && (
+              <Input
+                value={studentAnswers[qIndex] || ''}
+                onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                placeholder="Your answer..."
+                disabled={disabled}
+                className={`h-10 mt-1 ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}`}
+              />
             )}
           </div>
-          {isInteractive && (
-            <Input
-              value={studentAnswers[qIndex] || ''}
-              onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
-              placeholder="Your answer..."
-              disabled={disabled}
-              className={`h-10 mt-1 ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}`}
-            />
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
