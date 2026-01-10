@@ -37,6 +37,9 @@ import { DrawingToolbar, DrawingOverlay, type DrawingOverlayRef } from "@/compon
 import type { DrawingTool, DrawingColor, StrokeWidth } from "@/types/drawing";
 import { DRAWING_COLORS, HIGHLIGHTER_COLORS, STROKE_WIDTHS } from "@/types/drawing";
 import { supabase } from "@/integrations/supabase/client";
+// Live Session Quick Notes panels
+import { LiveSessionQuickNotes } from "./worksheet/LiveSessionQuickNotes";
+import { DraftTeacherNotes } from "./worksheet/DraftTeacherNotes";
 
 interface Exercise {
   type: string;
@@ -927,6 +930,8 @@ export default function WorksheetDisplay({
             studentId={studentId}
             onStudentChange={onStudentChange}
             tokenLeft={tokenLeft}
+            worksheetTitle={editableWorksheet?.title}
+            onTitleChange={(newTitle) => setEditableWorksheet((prev: any) => ({ ...prev, title: newTitle }))}
           />
           <InputParamsCard 
             inputParams={inputParams} 
@@ -1059,6 +1064,22 @@ export default function WorksheetDisplay({
           </div>
         </div>
       </WorksheetContainer>
+      
+      {/* Live Session Quick Notes Panels - only in live-session mode with assigned student */}
+      {viewMode === 'live-session' && studentId && userId && (
+        <>
+          <LiveSessionQuickNotes
+            studentId={studentId}
+            teacherId={userId}
+            worksheetId={worksheetId || undefined}
+            isVisible={true}
+          />
+          <DraftTeacherNotes
+            worksheetId={worksheetId || undefined}
+            isVisible={true}
+          />
+        </>
+      )}
       
       {/* Homework Modal */}
       <CreateHomeworkModal

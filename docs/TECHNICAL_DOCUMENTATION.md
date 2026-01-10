@@ -5,7 +5,19 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 5 Bug Fixes:**
+**Latest Update (January 2026) - Live Session Enhancements & UI Fixes:**
+- **#1 NanoSkill Badges Visibility Fixed**: NanoSkillBadge now displays in both `teacher` and `live-session` modes for Discussion Questions and Audio exercises
+- **#2 Pin Audio/Image Labels**: Animated tooltips display for 5 seconds on worksheet open (like other FABs)
+- **#3 Mark Done Modal Complete**: Fixed slider reset issue (useRef pattern), added Skip button, proper save to `student_events`
+- **#3.4 Undo Mark Done**: Clicking "Done" on already-marked exercise opens `UndoMarkDoneModal` with option to delete mastery evaluation from database
+- **#4 Worksheet Title Display**: WorksheetHeader now shows actual worksheet title instead of "Your Generated Worksheet"
+- **#5.2 Rename Icon Position**: Pencil icon moved next to worksheet title in `/student` worksheets tab (not next to date)
+- **#5.3 Dashboard Rename**: Added pencil icon and RenameDialog to Recent Worksheets section on `/dashboard`
+- **#6 Live Session Notes Panels**: Two new floating panels in Live Session mode:
+  - `LiveSessionQuickNotes`: Fast notes input with category buttons (Personal, To Practice, Notes, Next Lesson Ideas)
+  - `DraftTeacherNotes`: Local-only notes saved to localStorage (auto-save with 1s debounce)
+
+**Previous Update (January 2026) - 5 Bug Fixes:**
 - **#1 NanoSkill Editable**: NanoSkillBadge edit pencil now shows when `onEdit` prop is passed (removed `isEditing` condition). Added NanoSkill support to `error-correction`, `true-false`, and `discussion` exercises with full edit callbacks
 - **#2 z-index Fix**: Increased z-index to `z-[100]` for StudentKnowledgeFAB, StudentKnowledgeMiniList, StudentKnowledgeFloatingPanel, and FlashcardFABs - all modals/FABs now display above WorksheetToolbar (z-[60])
 - **#3 FAB Tooltips Unified**: Removed native `title=""` attributes from FAB buttons - all FABs now show consistent animated labels (not ugly browser tooltips)
