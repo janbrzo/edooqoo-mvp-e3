@@ -22,7 +22,7 @@ import { FlashcardSetsSection } from '@/components/flashcards/FlashcardSetsSecti
 import { StudentProgressTab } from '@/components/student-progress/StudentProgressTab';
 import { StudentTestsTab } from '@/components/student-tests/StudentTestsTab';
 import { EventLogPanel } from '@/components/dslm/EventLogPanel';
-import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2, TrendingUp, ClipboardCheck, Activity } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2, TrendingUp, ClipboardCheck, Activity, Pencil } from 'lucide-react';
 import { formatGoalLabel } from '@/constants/studentGoals';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
@@ -41,6 +41,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import ShareWorksheetModal from '@/components/ShareWorksheetModal';
+import RenameDialog from '@/components/RenameDialog';
+import { toast } from 'sonner';
 
 const StudentPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -81,6 +83,9 @@ const StudentPage = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareWorksheetData, setShareWorksheetData] = useState<{id: string; title: string; shareToken?: string; shareExpiresAt?: string} | null>(null);
+  
+  // Rename worksheet state
+  const [renameWorksheetData, setRenameWorksheetData] = useState<{id: string; title: string} | null>(null);
 
   // Get recent notes for overview
   const studentKnowledge = useStudentKnowledge({
@@ -135,6 +140,25 @@ const StudentPage = () => {
       }
     } catch (error) {
       console.error('Error deleting student:', error);
+    }
+  };
+  
+  // Rename worksheet handler
+  const handleRenameWorksheet = async (worksheetId: string, newTitle: string) => {
+    try {
+      const { error } = await supabase
+        .from('worksheets')
+        .update({ title: newTitle })
+        .eq('id', worksheetId);
+      
+      if (error) throw error;
+      
+      toast.success('Worksheet renamed successfully');
+      refetchWorksheets();
+    } catch (error) {
+      console.error('Error renaming worksheet:', error);
+      toast.error('Failed to rename worksheet');
+      throw error;
     }
   };
 
@@ -517,6 +541,21 @@ const StudentPage = () => {
                                 </div>
                               </Link>
                               <div className="flex items-center space-x-2">
+                                {/* Rename button */}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRenameWorksheetData({
+                                      id: worksheet.id,
+                                      title: worksheet.title || 'Untitled Worksheet'
+                                    });
+                                  }}
+                                  title="Rename worksheet"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
                                 {/* PROBLEM 8: Date and time on same line */}
                                 <div className="text-sm font-medium whitespace-nowrap">
                                   {format(new Date(worksheet.created_at), 'MMM dd, yyyy HH:mm')}
@@ -786,6 +825,17 @@ const StudentPage = () => {
               setShareWorksheetData(null);
               refetchWorksheets();
             }}
+          />
+        )}
+        
+        {/* Rename Worksheet Dialog */}
+        {renameWorksheetData && (
+          <RenameDialog
+            isOpen={!!renameWorksheetData}
+            onClose={() => setRenameWorksheetData(null)}
+            currentTitle={renameWorksheetData.title}
+            onRename={(newTitle) => handleRenameWorksheet(renameWorksheetData.id, newTitle)}
+            type="worksheet"
           />
         )}
       </div>

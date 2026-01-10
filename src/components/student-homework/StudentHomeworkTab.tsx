@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Calendar, Eye, Copy, ExternalLink, Trash2, FileText, CheckCircle2, Mail, Clock } from 'lucide-react';
+import { Plus, Calendar, Eye, Copy, ExternalLink, Trash2, FileText, CheckCircle2, Mail, Clock, Pencil } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import RenameDialog from '@/components/RenameDialog';
 
 interface StudentHomeworkTabProps {
   studentId: string;
@@ -43,6 +44,7 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedHomeworkForEmail, setSelectedHomeworkForEmail] = useState<HomeworkAssignment | null>(null);
   const [editingDeadline, setEditingDeadline] = useState<{id: string, date: Date, time: string} | null>(null);
+  const [renameHomeworkData, setRenameHomeworkData] = useState<{id: string; title: string} | null>(null);
   
   const { students } = useStudents();
   const { worksheets } = useWorksheetHistory(studentId);
@@ -229,6 +231,26 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
     setIsCreateModalOpen(true);
   };
   
+  // Rename homework handler
+  const handleRenameHomework = async (homeworkId: string, newTitle: string) => {
+    try {
+      const { error } = await supabase
+        .from('homework_assignments')
+        .update({ title: newTitle })
+        .eq('id', homeworkId)
+        .eq('teacher_id', teacherId);
+      
+      if (error) throw error;
+      
+      toast.success('Homework renamed successfully');
+      refetch();
+    } catch (error) {
+      console.error('Error renaming homework:', error);
+      toast.error('Failed to rename homework');
+      throw error;
+    }
+  };
+  
   // Get the first worksheet for the modal
   const firstWorksheet = worksheets[0];
   
@@ -294,18 +316,36 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
               <Card key={hw.id} className="p-4">
                 <div className="flex justify-between items-start gap-4">
                 <div className="flex-1 min-w-0">
-                    {hw.share_token ? (
-                      <Link 
-                        to={`/homework/${hw.share_token}`}
-                        className="font-semibold mb-2 truncate block hover:text-primary hover:underline transition-colors"
+                    <div className="flex items-center gap-2">
+                      {hw.share_token ? (
+                        <Link 
+                          to={`/homework/${hw.share_token}`}
+                          className="font-semibold mb-2 truncate block hover:text-primary hover:underline transition-colors"
+                        >
+                          {hw.title}
+                        </Link>
+                      ) : (
+                        <span className="font-semibold mb-2 truncate block">
+                          {hw.title}
+                        </span>
+                      )}
+                      {/* Rename button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRenameHomeworkData({
+                            id: hw.id,
+                            title: hw.title
+                          });
+                        }}
+                        title="Rename homework"
                       >
-                        {hw.title}
-                      </Link>
-                    ) : (
-                      <span className="font-semibold mb-2 truncate block">
-                        {hw.title}
-                      </span>
-                    )}
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                    </div>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
                       {/* Completed Badge - only one badge, shown when homework is submitted */}
                       {hw.completed_at && (
@@ -564,6 +604,17 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
           currentReminderHours={selectedHomeworkForEmail.reminder_hours || 24}
           deadline={selectedHomeworkForEmail.deadline}
           reminderScheduledAt={selectedHomeworkForEmail.reminder_scheduled_at}
+        />
+      )}
+      
+      {/* Rename Homework Dialog */}
+      {renameHomeworkData && (
+        <RenameDialog
+          isOpen={!!renameHomeworkData}
+          onClose={() => setRenameHomeworkData(null)}
+          currentTitle={renameHomeworkData.title}
+          onRename={(newTitle) => handleRenameHomework(renameHomeworkData.id, newTitle)}
+          type="homework"
         />
       )}
     </div>

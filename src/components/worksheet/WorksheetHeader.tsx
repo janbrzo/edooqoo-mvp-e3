@@ -1,12 +1,15 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Zap, Database, Clock, GraduationCap, User } from "lucide-react";
+import { ArrowLeft, Zap, Database, Clock, GraduationCap, User, Pencil } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { StudentSelector } from "@/components/StudentSelector";
 import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
 import { useAuthFlow } from "@/hooks/useAuthFlow";
+import RenameDialog from "@/components/RenameDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface WorksheetHeaderProps {
   onBack: () => void;
@@ -18,6 +21,8 @@ interface WorksheetHeaderProps {
   studentId?: string;
   onStudentChange?: () => void;
   tokenLeft?: number;
+  worksheetTitle?: string;
+  onTitleChange?: (newTitle: string) => void;
 }
 
 function WorksheetHeader({
@@ -29,10 +34,13 @@ function WorksheetHeader({
   worksheetId,
   studentId: propsStudentId,
   onStudentChange,
-  tokenLeft
+  tokenLeft,
+  worksheetTitle,
+  onTitleChange
 }: WorksheetHeaderProps) {
   const { isRegisteredUser } = useAuthFlow();
   const navigate = useNavigate();
+  const [isRenameOpen, setIsRenameOpen] = useState(false);
   
   // Try to get student name from multiple sources
   const displayStudentName = studentName || 
@@ -55,6 +63,26 @@ function WorksheetHeader({
     // Update sessionStorage with new student info after transfer
     if (onStudentChange) {
       onStudentChange();
+    }
+  };
+  
+  const handleRenameWorksheet = async (newTitle: string) => {
+    if (!worksheetId) return;
+    
+    try {
+      const { error } = await supabase
+        .from('worksheets')
+        .update({ title: newTitle })
+        .eq('id', worksheetId);
+      
+      if (error) throw error;
+      
+      toast.success('Worksheet renamed successfully');
+      if (onTitleChange) onTitleChange(newTitle);
+    } catch (error) {
+      console.error('Error renaming worksheet:', error);
+      toast.error('Failed to rename worksheet');
+      throw error;
     }
   };
 
@@ -108,7 +136,19 @@ function WorksheetHeader({
         <div className="flex flex-col md:flex-row justify-between">
           <div>
             <h1 className="mb-1 font-bald text-white text-2xl font-semibold flex items-center gap-2">
-              <span>Your Generated Worksheet</span>
+              <span>{worksheetTitle || 'Your Generated Worksheet'}</span>
+              {/* Rename button */}
+              {worksheetId && isRegisteredUser && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsRenameOpen(true)}
+                  className="h-8 w-8 text-yellow-300 hover:bg-white/20"
+                  title="Rename worksheet"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              )}
               <span className="text-yellow-300 flex items-center gap-2">
                 <span>for</span>
                 {displayStudentName ? (
@@ -151,6 +191,15 @@ function WorksheetHeader({
           </div>
         </div>
       </div>
+      
+      {/* Rename Dialog */}
+      <RenameDialog
+        isOpen={isRenameOpen}
+        onClose={() => setIsRenameOpen(false)}
+        currentTitle={worksheetTitle || 'Untitled Worksheet'}
+        onRename={handleRenameWorksheet}
+        type="worksheet"
+      />
     </div>
   );
 }
