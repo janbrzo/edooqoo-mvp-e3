@@ -9,7 +9,9 @@ import {
   StickyNote, 
   Lightbulb, 
   MoreHorizontal,
-  X 
+  X,
+  Minus,
+  Maximize2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
@@ -56,6 +58,7 @@ export const LiveSessionQuickNotes: React.FC<LiveSessionQuickNotesProps> = ({
   const [noteText, setNoteText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<KnowledgeCategory>('Notes');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   
   const { addEntry } = useStudentKnowledge({ studentId, teacherId });
 
@@ -92,24 +95,53 @@ export const LiveSessionQuickNotes: React.FC<LiveSessionQuickNotesProps> = ({
   };
 
   if (!isVisible) return null;
+  
+  // PROBLEM 7: Minimized state - show only a small button
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-4 left-4 z-[100]">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => setIsMinimized(false)}
+              size="icon"
+              className="rounded-full bg-primary text-primary-foreground shadow-lg h-12 w-12"
+            >
+              <StickyNote className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Open Quick Notes</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed bottom-4 left-4 z-[100] bg-white border-2 border-primary/30 rounded-lg shadow-xl p-3 w-80">
-      {/* Header */}
+    <div className="fixed bottom-4 left-4 z-[100] bg-white border-2 border-primary/30 rounded-lg shadow-xl p-3 w-[420px]">
+      {/* Header with minimize and close buttons */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-primary flex items-center gap-2">
           <StickyNote className="h-4 w-4" />
-          Quick Note {studentName && <span className="text-muted-foreground">for {studentName}</span>}
+          Quick Note {studentName && <span className="text-muted-foreground text-xs">for {studentName}</span>}
         </span>
-        {onClose && (
-          <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
-            <X className="h-4 w-4" />
+        <div className="flex items-center gap-1">
+          {/* Minimize button */}
+          <Button variant="ghost" size="sm" onClick={() => setIsMinimized(true)} className="h-6 w-6 p-0">
+            <Minus className="h-4 w-4" />
           </Button>
-        )}
+          {onClose && (
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
       
-      {/* Category Buttons */}
-      <div className="flex items-center gap-1 mb-2">
+      {/* PROBLEM 6A: Horizontal layout - icons next to input */}
+      <div className="flex items-center gap-1">
+        {/* Quick Category Buttons */}
         {QUICK_CATEGORIES.map(({ category, icon, label }) => (
           <Tooltip key={category}>
             <TooltipTrigger asChild>
@@ -118,7 +150,7 @@ export const LiveSessionQuickNotes: React.FC<LiveSessionQuickNotesProps> = ({
                 size="sm"
                 onClick={() => setSelectedCategory(category)}
                 className={cn(
-                  "h-8 w-8 p-0",
+                  "h-9 w-9 p-0 flex-shrink-0",
                   selectedCategory === category && "bg-primary text-primary-foreground"
                 )}
               >
@@ -134,7 +166,7 @@ export const LiveSessionQuickNotes: React.FC<LiveSessionQuickNotesProps> = ({
         {/* More categories dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+            <Button variant="outline" size="sm" className="h-9 w-9 p-0 flex-shrink-0">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -150,22 +182,22 @@ export const LiveSessionQuickNotes: React.FC<LiveSessionQuickNotesProps> = ({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-      
-      {/* Input */}
-      <div className="flex items-center gap-2">
+        
+        {/* Input */}
         <Input
           value={noteText}
           onChange={(e) => setNoteText(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder={`Add ${selectedCategory.toLowerCase()} note...`}
-          className="flex-1 h-9 text-sm"
+          className="flex-1 h-9 text-sm min-w-0"
           disabled={isSubmitting}
         />
+        
+        {/* Send button */}
         <Button 
           onClick={handleSubmit} 
           size="sm" 
-          className="h-9 w-9 p-0"
+          className="h-9 w-9 p-0 flex-shrink-0"
           disabled={isSubmitting || !noteText.trim()}
         >
           <Send className="h-4 w-4" />

@@ -1,7 +1,8 @@
 import React from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
-import { safeGetText } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge from "./NanoSkillBadge";
 
 interface ExerciseFillInBlanksAudioProps extends Partial<InteractiveExerciseProps> {
   word_bank?: string[];
@@ -10,11 +11,12 @@ interface ExerciseFillInBlanksAudioProps extends Partial<InteractiveExerciseProp
   answers?: string[];
   audio_url?: string;
   isEditing: boolean;
-  viewMode: "student" | "teacher";
+  viewMode: "student" | "teacher" | "live-session";
   onTranscriptChange?: (value: string) => void;
   onAnswersChange?: (value: string) => void;
   onWordBankChange?: (wIndex: number, value: string) => void;
   onSentenceChange?: (sIndex: number, field: string, value: string) => void;
+  onNanoSkillChange?: (sIndex: number, nanoSkill: any) => void;
   disabled?: boolean;
 }
 
@@ -30,6 +32,7 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
   onAnswersChange,
   onWordBankChange,
   onSentenceChange,
+  onNanoSkillChange,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -39,6 +42,9 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
 }) => {
   // Use new structure if available, fallback to old
   const useNewStructure = sentences && sentences.length > 0;
+  
+  // Show NanoSkill badges in teacher or live-session mode
+  const showNanoSkillBadges = viewMode === 'teacher' || viewMode === 'live-session';
 
   // NEW STRUCTURE (sentences + word_bank) - like basic Fill in Blanks
   if (useNewStructure) {
@@ -80,6 +86,9 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
             // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
             const sentenceText = safeGetText(sentence?.text ?? sentence);
 
+            // Extract nano_skill for display
+            const nanoSkill = safeGetNanoSkill(sentence);
+            
             return (
               <div key={sIndex} className="border rounded-lg p-3 bg-white">
                 <div className="flex flex-row items-start gap-2">
@@ -118,8 +127,20 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
                         <>{sIndex + 1}. {sentenceText.replace(/_+/g, "_______________")}</>
                       )}
                     </p>
+                    
+                    {/* NanoSkill Badge */}
+                    {showNanoSkillBadges && nanoSkill && (
+                      <div className="mt-1">
+                        <NanoSkillBadge
+                          nanoSkill={nanoSkill}
+                          isEditing={isEditing}
+                          onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(sIndex, newSkill) : undefined}
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
                   </div>
-                  {(viewMode === 'teacher' || showCorrectAnswers) && !isInteractive && (
+                  {(viewMode === 'teacher' || viewMode === 'live-session' || showCorrectAnswers) && !isInteractive && (
                     <div className="text-green-600 italic ml-3 text-sm">
                       {isEditing && onSentenceChange ? (
                         <input

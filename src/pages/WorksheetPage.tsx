@@ -188,6 +188,8 @@ export default function WorksheetPage() {
         selectedAudio={worksheetData.selected_audio}
         audioUrl={worksheetData.audio_url}
         tokenLeft={tokenLeft}
+        // PROBLEM 5: Pass database title (not ai_response title) for proper sync after rename
+        worksheetTitle={worksheetData.title}
       />
     </>
   );
