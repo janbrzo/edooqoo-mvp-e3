@@ -49,6 +49,7 @@ import {
 import { safeGetNanoSkill } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { supabase } from "@/integrations/supabase/client";
+import { useStudentEvents } from "@/hooks/dslm/useStudentEvents";
 
 interface Exercise {
   type: string;
@@ -116,6 +117,9 @@ interface ExerciseSectionProps {
   onMarkDone?: () => void;
   // A3-A5: Disable inputs after homework submission
   disabled?: boolean;
+  // DSLM: Student info for mastery evaluation
+  studentId?: string;
+  teacherId?: string;
 }
 
 // Helper function to normalize exercise type (removes -picture suffix for rendering logic)
@@ -165,6 +169,9 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   onMarkDone: onMarkDoneProp,
   // A3-A5: Disable inputs after homework submission
   disabled = false,
+  // DSLM: Student info for mastery evaluation
+  studentId: studentIdProp,
+  teacherId: teacherIdProp,
 }, ref) => {
   // PROBLEM 4: Persist Mark Done state to localStorage for Live Session
   const worksheetIdForStorage = (editableWorksheet as any)?.id;
@@ -175,12 +182,152 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
     return localStorage.getItem(storageKey) === 'true';
   });
   
+  // DSLM: NanoSkill Mastery Modal state
+  const [isMasteryModalOpen, setIsMasteryModalOpen] = useState(false);
+  
+  // Get student events hook if we have student and teacher IDs
+  const { addEvent } = useStudentEvents({
+    studentId: studentIdProp || '',
+    teacherId: teacherIdProp || ''
+  });
+  
   const isMarkedDone = isMarkedDoneProp ?? localMarkedDone;
-  const handleMarkDone = onMarkDoneProp ?? (() => {
-    const newValue = !localMarkedDone;
+  
+  // Extract all nano_skills from exercise for mastery evaluation
+  const extractNanoSkillsFromExercise = (ex: any): NanoSkill[] => {
+    const skills: NanoSkill[] = [];
+    
+    // Check questions
+    if (ex.questions) {
+      ex.questions.forEach((q: any) => {
+        const ns = safeGetNanoSkill(q);
+        if (ns && ns.name) skills.push(ns);
+      });
+    }
+    // Check items
+    if (ex.items) {
+      ex.items.forEach((item: any) => {
+        const ns = safeGetNanoSkill(item);
+        if (ns && ns.name) skills.push(ns);
+      });
+    }
+    // Check sentences
+    if (ex.sentences) {
+      ex.sentences.forEach((s: any) => {
+        const ns = safeGetNanoSkill(s);
+        if (ns && ns.name) skills.push(ns);
+      });
+    }
+    // Check statements
+    if (ex.statements) {
+      ex.statements.forEach((st: any) => {
+        const ns = safeGetNanoSkill(st);
+        if (ns && ns.name) skills.push(ns);
+      });
+    }
+    // Check words (for categorize, word order, etc.)
+    if (ex.words) {
+      ex.words.forEach((w: any) => {
+        const ns = safeGetNanoSkill(w);
+        if (ns && ns.name) skills.push(ns);
+      });
+    }
+    // Check expressions (dialogue)
+    if (ex.expressions) {
+      ex.expressions.forEach((expr: any) => {
+        const ns = safeGetNanoSkill(expr);
+        if (ns && ns.name) skills.push(ns);
+      });
+    }
+    // Check categories (categorize)
+    if (ex.categories) {
+      ex.categories.forEach((cat: any) => {
+        const ns = safeGetNanoSkill(cat);
+        if (ns && ns.name) skills.push(ns);
+      });
+    }
+    // Check sentence_halves
+    if (ex.sentence_halves) {
+      ex.sentence_halves.forEach((sh: any) => {
+        const ns = safeGetNanoSkill(sh);
+        if (ns && ns.name) skills.push(ns);
+      });
+    }
+    // Check prompts (describe)
+    if (ex.prompts) {
+      ex.prompts.forEach((p: any) => {
+        const ns = safeGetNanoSkill(p);
+        if (ns && ns.name) skills.push(ns);
+      });
+    }
+    
+    // Remove duplicates by name
+    const uniqueSkills = skills.filter((skill, idx, arr) => 
+      arr.findIndex(s => s.name === skill.name) === idx
+    );
+    
+    return uniqueSkills;
+  };
+  
+  const handleMarkDoneWithModal = () => {
+    // Open mastery modal instead of just toggling done
+    setIsMasteryModalOpen(true);
+  };
+  
+  const handleMasterySubmit = async (ratings: { name: string; reason: string; mastery: number }[]) => {
+    // Save to student_events if we have student/teacher IDs
+    if (studentIdProp && teacherIdProp) {
+      try {
+        await addEvent({
+          event_type: 'exercise_mastery_evaluation',
+          event_source: 'teacher',
+          source_id: worksheetIdForStorage || undefined,
+          element_type: exercise.type,
+          event_payload: {
+            exercise_index: originalIndex !== undefined ? originalIndex : index - 1,
+            exercise_title: exercise.title,
+            nano_skill_ratings: ratings
+          },
+          skill_ids: ratings.map(r => r.name)
+        });
+        
+        toast({
+          title: "Mastery evaluation saved",
+          description: `Recorded ${ratings.length} skill evaluation(s) to student profile.`
+        });
+      } catch (error) {
+        console.error('Error saving mastery evaluation:', error);
+        toast({
+          title: "Error saving evaluation",
+          description: "Failed to save mastery evaluation. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
+    
+    // Mark as done
+    const newValue = true;
     setLocalMarkedDone(newValue);
     localStorage.setItem(storageKey, String(newValue));
+    
+    if (onMarkDoneProp) {
+      onMarkDoneProp();
+    }
+  };
+  
+  const handleMarkDone = onMarkDoneProp ?? (() => {
+    // If in live-session mode, open modal for mastery evaluation
+    if (viewMode === 'live-session') {
+      handleMarkDoneWithModal();
+    } else {
+      const newValue = !localMarkedDone;
+      setLocalMarkedDone(newValue);
+      localStorage.setItem(storageKey, String(newValue));
+    }
   });
+  
+  // Get nano skills for mastery modal
+  const exerciseNanoSkills = extractNanoSkillsFromExercise(exercise);
   // Use originalIndex for array operations, index for display
   const arrayIndex = originalIndex !== undefined ? originalIndex : index - 1;
   
@@ -1168,6 +1315,15 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         guidelines={guidelines}
         onGuidelinesChange={setGuidelines}
         exerciseType={exercise.type}
+        exerciseTitle={exercise.title}
+      />
+      
+      {/* NanoSkill Mastery Evaluation Modal */}
+      <NanoSkillMasteryModal
+        isOpen={isMasteryModalOpen}
+        onClose={() => setIsMasteryModalOpen(false)}
+        onSubmit={handleMasterySubmit}
+        nanoSkills={exerciseNanoSkills}
         exerciseTitle={exercise.title}
       />
     </>
