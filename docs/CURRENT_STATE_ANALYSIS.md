@@ -6,30 +6,25 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2025-12):** 
+**Ostatnia naprawa (2025-01):** 
+- ✅ **NAPRAWIONO NanoSkill Badges**: Wyświetlają się teraz w trybie Teacher i Live Session dla Discussion Questions i ćwiczeń Audio
+- ✅ **DODANO Animowane etykiety Pin**: Przyciski "Pin audio player" i "Pin image" mają teraz eleganckie animowane etykiety (5 sekund)
+- ✅ **NAPRAWIONO Mark Done Modal**: Slider nie resetuje się już do 70%, dodano przycisk Skip, poprawiono zapisywanie do `student_events`
+- ✅ **DODANO Undo Mark Done**: Kliknięcie "Done" na oznaczonym zadaniu otwiera modal potwierdzenia z opcją usunięcia oceny z bazy
+- ✅ **NAPRAWIONO Tytuł Worksheet**: WorksheetHeader wyświetla teraz rzeczywisty tytuł worksheet zamiast "Your Generated Worksheet"
+- ✅ **NAPRAWIONO Pozycję Rename**: Ikona ołówka jest teraz obok tytułu w zakładce worksheets na stronie studenta
+- ✅ **DODANO Rename na Dashboard**: Ikona ołówka i dialog rename dodane do Recent Worksheets na `/dashboard`
+- ✅ **DODANO Live Session Notes**: Dwa nowe panele w trybie Live Session:
+  - `LiveSessionQuickNotes`: Szybkie notatki z kategoriami (Personal, To Practice, Notes, Next Lesson Ideas)
+  - `DraftTeacherNotes`: Lokalne notatki nauczyciela zapisywane w localStorage
 - ✅ **DODANO Moduł Intelligent Tests**: Nowa 7. zakładka "Tests" na stronie studenta - AI generuje testy na podstawie danych ucznia
   - Tabele: `student_tests`, `student_test_questions`, `test_skill_results`
   - Edge function: `generate-test` używa GPT-4o-mini do generowania pytań
   - Typy testów: Placement, Progress Check, Skill Verification, Goal Achievement
   - Integracja z Progress (aktualizacja ratingów), Knowledge Base (słabości), Flashcards (słownictwo)
-- ✅ **NAPRAWIONO Biała strona Flashcards (v2)**: Warunek `editingSetId` sprawdzany jest teraz dopiero PO załadowaniu danych - zapobiega białej stronie gdy sets jest puste podczas loading
-- ✅ **NAPRAWIONO Generate New Worksheet Button**: Przycisk na wygenerowanym worksheet działa poprawnie - używa `navigate()` z unikalnym parametrem
-- ✅ **NAPRAWIONO Onboarding Modal z-index**: Modal "Get started with Edooqoo" wyświetla się nad toolbarem (z-[70])
-- ✅ **NAPRAWIONO Full-Time Plan Dropdown**: Kalkulator nie nadpisuje już ręcznych zmian dropdownu
-- ✅ **DODANO Pulsing Badge "2 FREE"**: Animowany badge przy przycisku Sign Up dla niezalogowanych użytkowników
-- ✅ **DODANO Progress Bar**: Wizualna ścieżka "Demo → Free Account → Side-Gig → Full-Time" pod formularzem
-- ✅ **DODANO Welcome Back Modal**: Modal powitalny dla powracających użytkowników (po wygenerowaniu worksheetu wcześniej)
-- ✅ **DODANO Lock Icons**: Ikona zamka przy Student Selector dla niezalogowanych użytkowników z tooltipem
-- ✅ **NAPRAWIONO Live Session Flow**: Odpowiedzi studentów poprawnie przekazywane z `liveSessionAnswers` → `ExerciseSection` → komponenty ćwiczeń z niebieskim podświetleniem inline
-- ✅ **NAPRAWIONO Navigation Sidebar na Shared Worksheet**: Klikanie numerków scrolluje do odpowiedniego ćwiczenia dzięki przekazaniu `exerciseRefs` do `SharedWorksheetContent`
-- ✅ **DODANO Pin Audio/Picture na Shared Worksheet**: Floating buttons Pin i Maximize z pinned audio player (identycznie jak na głównym worksheet)
-- ✅ **NAPRAWIONO Teacher Toolbar na Shared Worksheet**: Nauczyciel widzi toolbar z przyciskami "Dashboard" i "Student Page" zamiast prostego notice
-- ✅ **NAPRAWIONO Mark Done Persistence**: Stan "Mark Done" zapisywany do `localStorage` - przetrwa odświeżenie strony
-- ✅ **NAPRAWIONO Mark Done Button Visibility**: Ulepszone stylowanie z lepszym kontrastem (białe/zielone tło) na fioletowym pasku
-- ✅ **NAPRAWIONO Share Modal Email na /student**: ShareWorksheetModal uzupełnia automatycznie email studenta
-- ✅ **NAPRAWIONO Lightbulb Button**: Po kliknięciu żarówki panel pokazuje tylko kategorię "Next Lesson Ideas" (bez grida)
-- ✅ Naprawiono wyświetlanie wszystkich zadań audio (Listening Comprehension, Answer Questions Audio, True/False Audio, Multiple Choice Audio, Fill in Blanks Audio) w udostępnianych worksheetach
-- ✅ Naprawiono wyświetlanie wszystkich zadań picture (Answer Questions Picture, True/False Picture, Describe Picture, Multiple Choice Picture) w udostępnianych worksheetach
+- ✅ **NAPRAWIONO Biała strona Flashcards (v2)**: Warunek `editingSetId` sprawdzany jest teraz dopiero PO załadowaniu danych
+- ✅ **NAPRAWIONO Generate New Worksheet Button**: Przycisk na wygenerowanym worksheet działa poprawnie
+- ✅ **NAPRAWIONO Live Session Flow**: Odpowiedzi studentów poprawnie przekazywane z niebieskim podświetleniem inline
 
 ## Wygląd i Interface
 

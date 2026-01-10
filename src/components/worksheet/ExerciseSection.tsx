@@ -29,7 +29,7 @@ import ExerciseMultipleChoiceAudio from "./ExerciseMultipleChoiceAudio";
 import ExerciseTrueFalseAudio from "./ExerciseTrueFalseAudio";
 import ExerciseFillInBlanksAudio from "./ExerciseFillInBlanksAudio";
 import ExerciseAnswerQuestionsAudio from "./ExerciseAnswerQuestionsAudio";
-import NanoSkillMasteryModal from "./NanoSkillMasteryModal";
+import NanoSkillMasteryModal, { UndoMarkDoneModal } from "./NanoSkillMasteryModal";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Loader2, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -184,6 +184,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   
   // DSLM: NanoSkill Mastery Modal state
   const [isMasteryModalOpen, setIsMasteryModalOpen] = useState(false);
+  const [isUndoModalOpen, setIsUndoModalOpen] = useState(false);
   
   // Get student events hook if we have student and teacher IDs
   const { addEvent } = useStudentEvents({
@@ -315,11 +316,63 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
     }
   };
   
+  // Handle Skip - mark as done without saving evaluation
+  const handleSkip = () => {
+    setLocalMarkedDone(true);
+    localStorage.setItem(storageKey, 'true');
+    if (onMarkDoneProp) {
+      onMarkDoneProp();
+    }
+  };
+  
+  // Handle Undo Mark Done - optionally delete events from database
+  const handleUndoConfirm = async (deleteFromEvents: boolean) => {
+    if (deleteFromEvents && studentIdProp && worksheetIdForStorage) {
+      try {
+        const { error } = await supabase
+          .from('student_events')
+          .delete()
+          .eq('student_id', studentIdProp)
+          .eq('source_id', worksheetIdForStorage)
+          .eq('event_type', 'exercise_mastery_evaluation')
+          .contains('event_payload', { exercise_index: originalIndex !== undefined ? originalIndex : index - 1 });
+        
+        if (error) {
+          console.error('Error deleting mastery events:', error);
+          toast({
+            title: "Warning",
+            description: "Failed to delete evaluation from records, but exercise unmarked.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Evaluation deleted",
+            description: "Mastery evaluation removed from student records."
+          });
+        }
+      } catch (error) {
+        console.error('Error deleting events:', error);
+      }
+    }
+    
+    // Unmark exercise
+    setLocalMarkedDone(false);
+    localStorage.setItem(storageKey, 'false');
+    setIsUndoModalOpen(false);
+  };
+  
   const handleMarkDone = onMarkDoneProp ?? (() => {
-    // If in live-session mode, open modal for mastery evaluation
+    // If in live-session mode
     if (viewMode === 'live-session') {
-      handleMarkDoneWithModal();
+      if (isMarkedDone) {
+        // Already marked done - open undo modal
+        setIsUndoModalOpen(true);
+      } else {
+        // Not marked done yet - open mastery modal
+        handleMarkDoneWithModal();
+      }
     } else {
+      // Teacher mode - simple toggle
       const newValue = !localMarkedDone;
       setLocalMarkedDone(newValue);
       localStorage.setItem(storageKey, String(newValue));
@@ -1341,7 +1394,16 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         isOpen={isMasteryModalOpen}
         onClose={() => setIsMasteryModalOpen(false)}
         onSubmit={handleMasterySubmit}
+        onSkip={handleSkip}
         nanoSkills={exerciseNanoSkills}
+        exerciseTitle={exercise.title}
+      />
+      
+      {/* Undo Mark Done Modal */}
+      <UndoMarkDoneModal
+        isOpen={isUndoModalOpen}
+        onClose={() => setIsUndoModalOpen(false)}
+        onConfirm={handleUndoConfirm}
         exerciseTitle={exercise.title}
       />
     </>

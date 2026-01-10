@@ -26,7 +26,8 @@ import {
   Clock,
   Target,
   Coins,
-  Bell
+  Bell,
+  Pencil
 } from "lucide-react";
 import { useWorksheetStats } from "@/hooks/useWorksheetStats";
 import { DeleteWorksheetButton } from "@/components/DeleteWorksheetButton";
@@ -39,6 +40,8 @@ import { WorksheetHomeworkList } from "@/components/dashboard/WorksheetHomeworkL
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
+import RenameDialog from "@/components/RenameDialog";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
@@ -51,6 +54,7 @@ const Dashboard = () => {
   const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
   const navigate = useNavigate();
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("month");
+  const [renameWorksheetData, setRenameWorksheetData] = useState<{id: string; title: string} | null>(null);
   
   // ✅ FIX: Track if initial data has ever been loaded
   const [hasEverLoaded, setHasEverLoaded] = useState(false);
@@ -100,6 +104,27 @@ const Dashboard = () => {
   const handleGenerateWorksheet = () => {
     sessionStorage.setItem('forceNewWorksheet', 'true');
     navigate('/');
+  };
+
+  const handleRenameWorksheet = async (newTitle: string) => {
+    if (!renameWorksheetData) return;
+    
+    try {
+      const { error } = await supabase
+        .from('worksheets')
+        .update({ title: newTitle })
+        .eq('id', renameWorksheetData.id);
+      
+      if (error) throw error;
+      
+      toast.success('Worksheet renamed successfully');
+      setRenameWorksheetData(null);
+      await refetchWorksheets();
+    } catch (error) {
+      console.error('Error renaming worksheet:', error);
+      toast.error('Failed to rename worksheet');
+      throw error;
+    }
   };
 
   const handleWorksheetOpen = (worksheet: any) => {
@@ -337,6 +362,22 @@ const Dashboard = () => {
                               <h3 className="font-semibold text-base truncate">
                                 {formatWorksheetTitle(worksheet)}
                               </h3>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 shrink-0"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setRenameWorksheetData({
+                                    id: worksheet.id,
+                                    title: formatWorksheetTitle(worksheet)
+                                  });
+                                }}
+                                title="Rename worksheet"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
                               <Badge variant="secondary" className="text-xs shrink-0">
                                 for {getStudentNameForWorksheet(worksheet) || 'Unassigned'}
                               </Badge>
@@ -425,6 +466,15 @@ const Dashboard = () => {
           setAddStudentModalOpen(false);
           refetchStudents();
         }}
+      />
+      
+      {/* Rename Worksheet Dialog */}
+      <RenameDialog
+        isOpen={!!renameWorksheetData}
+        onClose={() => setRenameWorksheetData(null)}
+        currentTitle={renameWorksheetData?.title || ''}
+        onRename={handleRenameWorksheet}
+        type="worksheet"
       />
     </div>
   );

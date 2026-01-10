@@ -527,6 +527,22 @@ const StudentPage = () => {
                                     <h3 className="font-medium">
                                       {worksheet.title || 'Untitled Worksheet'}
                                     </h3>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setRenameWorksheetData({
+                                          id: worksheet.id,
+                                          title: worksheet.title || 'Untitled Worksheet'
+                                        });
+                                      }}
+                                      title="Rename worksheet"
+                                    >
+                                      <Pencil className="h-3 w-3" />
+                                    </Button>
                                     <MediaBadges 
                                       hasImage={hasImage(worksheet)} 
                                       hasAudio={hasAudio(worksheet)}
@@ -541,21 +557,6 @@ const StudentPage = () => {
                                 </div>
                               </Link>
                               <div className="flex items-center space-x-2">
-                                {/* Rename button */}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setRenameWorksheetData({
-                                      id: worksheet.id,
-                                      title: worksheet.title || 'Untitled Worksheet'
-                                    });
-                                  }}
-                                  title="Rename worksheet"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
                                 {/* PROBLEM 8: Date and time on same line */}
                                 <div className="text-sm font-medium whitespace-nowrap">
                                   {format(new Date(worksheet.created_at), 'MMM dd, yyyy HH:mm')}
