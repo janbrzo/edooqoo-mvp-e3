@@ -494,7 +494,7 @@ export default function WorksheetContent({
             return (
               <div key={originalIndex} className="relative">
                 {!isDownloadUnlocked && <DemoWatermark />}
-                <ExerciseSection
+              <ExerciseSection
                   ref={(el) => (navigation.exerciseRefs.current[sortedIndex] = el)}
                   exercise={exercise}
                   index={sortedIndex + 1}
@@ -513,6 +513,8 @@ export default function WorksheetContent({
                   isCollapsed={navigation.collapsedExercises.get(sortedIndex)}
                   onToggleCollapse={() => navigation.toggleExercise(sortedIndex)}
                   liveSessionAnswer={viewMode === 'live-session' ? liveSessionAnswers?.[originalIndex] : undefined}
+                  studentId={studentId}
+                  teacherId={userId}
                 />
               </div>
             );

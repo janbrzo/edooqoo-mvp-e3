@@ -2,7 +2,8 @@ import React from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { safeGetText } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface Option {
   label: string;
@@ -13,6 +14,7 @@ interface Option {
 interface Question {
   text: string;
   options: Option[];
+  nano_skill?: NanoSkill;
 }
 
 interface ExerciseMultipleChoiceAudioProps extends Partial<InteractiveExerciseProps> {
@@ -24,6 +26,7 @@ interface ExerciseMultipleChoiceAudioProps extends Partial<InteractiveExercisePr
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
+  onNanoSkillChange?: (qIndex: number, newSkill: NanoSkill) => void;
 }
 
 const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = ({
@@ -39,7 +42,8 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
   showCorrectAnswers = false,
   // PROBLEM 1: Live Session
   liveSessionAnswer,
-  disabled = false
+  disabled = false,
+  onNanoSkillChange
 }) => {
   return (
     <div>
@@ -53,21 +57,32 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
         {questions.map((question, qIndex) => {
           // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
           const questionText = safeGetText(question?.text ?? question);
+          const nanoSkill = safeGetNanoSkill(question);
           
           return (
           <div key={qIndex} className="border-b pb-2 multiple-choice-question">
-            <p className="font-medium mb-1 leading-snug">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={questionText}
-                  onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
-                  className="w-full border p-1 editable-content"
+            <div className="flex items-start gap-2 mb-1">
+              <p className="font-medium leading-snug flex-1">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={questionText}
+                    onChange={e => onQuestionChange(qIndex, 'text', e.target.value)}
+                    className="w-full border p-1 editable-content"
+                  />
+                ) : (
+                  <>{qIndex + 1}. {questionText}</>
+                )}
+              </p>
+              {/* NanoSkill Badge - show in teacher mode */}
+              {viewMode === 'teacher' && nanoSkill && (
+                <NanoSkillBadge
+                  nanoSkill={nanoSkill}
+                  isEditing={isEditing}
+                  onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(qIndex, newSkill) : undefined}
                 />
-              ) : (
-                <>{qIndex + 1}. {questionText}</>
               )}
-            </p>
+            </div>
             {isInteractive ? (
               <RadioGroup
                 value={studentAnswers[qIndex]?.toString() || ''}
