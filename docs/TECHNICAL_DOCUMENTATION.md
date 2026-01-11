@@ -5,19 +5,18 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - Live Session Enhancements & UI Fixes:**
-- **#1 NanoSkill Badges Visibility Fixed**: NanoSkillBadge now displays in both `teacher` and `live-session` modes for Discussion Questions and Audio exercises
-- **#2 Pin Audio/Image Labels**: Animated tooltips display for 5 seconds on worksheet open (like other FABs)
-- **#3 Mark Done Modal Complete**: Fixed slider reset issue (useRef pattern), added Skip button, proper save to `student_events`
-- **#3.4 Undo Mark Done**: Clicking "Done" on already-marked exercise opens `UndoMarkDoneModal` with option to delete mastery evaluation from database
-- **#4 Worksheet Title Display**: WorksheetHeader now shows actual worksheet title instead of "Your Generated Worksheet"
-- **#5.2 Rename Icon Position**: Pencil icon moved next to worksheet title in `/student` worksheets tab (not next to date)
-- **#5.3 Dashboard Rename**: Added pencil icon and RenameDialog to Recent Worksheets section on `/dashboard`
-- **#6 Live Session Notes Panels**: Two new floating panels in Live Session mode:
-  - `LiveSessionQuickNotes`: Fast notes input with category buttons (Personal, To Practice, Notes, Next Lesson Ideas)
-  - `DraftTeacherNotes`: Local-only notes saved to localStorage (auto-save with 1s debounce)
+**Latest Update (January 2026) - 8 Problem Fixes:**
+- **#1 Mastery Slider Presets**: NanoSkillMasteryModal now pre-fills slider values based on student answers from Live Session (80% correct, 30% incorrect, 50% partial, null=no answer). Only skills with explicitly set values are saved to `student_events`
+- **#2 Pin Labels Animation**: Added 5-second animated labels for "Pin image" and "Pin audio player" buttons (matching FAB style)
+- **#3 Save Evaluation UPSERT**: Fixed Save Evaluation to properly save to `student_events` - now uses UPSERT pattern to update existing records instead of creating duplicates
+- **#4 Multiple Choice Shuffle**: Implemented deterministic shuffle using worksheetId as seed for Multiple Choice (including Audio/Picture variants) - ensures consistent A/B/C/D distribution across views
+- **#5.1 Rename Immediate Update**: Worksheet title now updates immediately in UI after rename (uses localTitle state)
+- **#5.2 Student Assignment Immediate**: Student name updates immediately after transfer (uses localStudentName state with onStudentNameChange callback)
+- **#6.1 Quick Note Dropdown**: Category dropdown now displays above panel (`side="top"`)
+- **#6.2 Minimized Icons Position**: Quick Notes icon at `bottom-20 left-4`, Draft Notes at `bottom-4 left-4` - arranged vertically
+- **#6.3 Auto-hide Panel Headers**: Panel headers now auto-hide and appear on hover, with Pin button to keep permanently visible
 
-**Previous Update (January 2026) - 5 Bug Fixes:**
+**Previous Update (January 2026) - Live Session Enhancements & UI Fixes:**
 - **#1 NanoSkill Editable**: NanoSkillBadge edit pencil now shows when `onEdit` prop is passed (removed `isEditing` condition). Added NanoSkill support to `error-correction`, `true-false`, and `discussion` exercises with full edit callbacks
 - **#2 z-index Fix**: Increased z-index to `z-[100]` for StudentKnowledgeFAB, StudentKnowledgeMiniList, StudentKnowledgeFloatingPanel, and FlashcardFABs - all modals/FABs now display above WorksheetToolbar (z-[60])
 - **#3 FAB Tooltips Unified**: Removed native `title=""` attributes from FAB buttons - all FABs now show consistent animated labels (not ugly browser tooltips)

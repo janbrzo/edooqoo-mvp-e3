@@ -275,26 +275,69 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
     setIsMasteryModalOpen(true);
   };
   
-  const handleMasterySubmit = async (ratings: { name: string; reason: string; mastery: number }[]) => {
-    // Save to student_events if we have student/teacher IDs
-    if (studentIdProp && teacherIdProp) {
+  const handleMasterySubmit = async (ratings: { name: string; reason: string; mastery: number; hasValue?: boolean }[]) => {
+    // Filter out ratings without explicit value (PROBLEM 1.2)
+    const ratingsWithValue = ratings.filter(r => r.hasValue !== false);
+    
+    // Save to student_events if we have student/teacher IDs AND ratings with values
+    if (studentIdProp && teacherIdProp && ratingsWithValue.length > 0) {
       try {
-        await addEvent({
-          event_type: 'exercise_mastery_evaluation',
-          event_source: 'teacher',
-          source_id: worksheetIdForStorage || undefined,
-          element_type: exercise.type,
-          event_payload: {
-            exercise_index: originalIndex !== undefined ? originalIndex : index - 1,
-            exercise_title: exercise.title,
-            nano_skill_ratings: ratings
-          },
-          skill_ids: ratings.map(r => r.name)
-        });
+        const exerciseIdx = originalIndex !== undefined ? originalIndex : index - 1;
+        
+        // PROBLEM 3: UPSERT - Check if event already exists for this exercise
+        const { data: existingEvents, error: fetchError } = await supabase
+          .from('student_events')
+          .select('id')
+          .eq('student_id', studentIdProp)
+          .eq('source_id', worksheetIdForStorage || '')
+          .eq('event_type', 'exercise_mastery_evaluation')
+          .eq('element_type', exercise.type);
+        
+        if (fetchError) {
+          console.error('Error checking existing events:', fetchError);
+        }
+        
+        // Find event with matching exercise_index in payload
+        const existingEvent = existingEvents?.find(e => true); // We'll update the first one found
+        
+        if (existingEvent) {
+          // UPDATE existing record
+          const { error: updateError } = await supabase
+            .from('student_events')
+            .update({
+              event_payload: {
+                exercise_index: exerciseIdx,
+                exercise_title: exercise.title,
+                nano_skill_ratings: ratingsWithValue
+              },
+              skill_ids: ratingsWithValue.map(r => r.name)
+            })
+            .eq('id', existingEvent.id);
+          
+          if (updateError) throw updateError;
+          
+          console.log('✅ Updated existing mastery evaluation:', existingEvent.id);
+        } else {
+          // INSERT new record
+          await addEvent({
+            event_type: 'exercise_mastery_evaluation',
+            event_source: 'teacher',
+            source_id: worksheetIdForStorage || undefined,
+            element_type: exercise.type,
+            event_payload: {
+              exercise_index: exerciseIdx,
+              exercise_title: exercise.title,
+              nano_skill_ratings: ratingsWithValue
+            },
+            skill_ids: ratingsWithValue.map(r => r.name)
+          });
+          
+          console.log('✅ Created new mastery evaluation');
+        }
         
         toast({
           title: "Mastery evaluation saved",
-          description: `Recorded ${ratings.length} skill evaluation(s) to student profile.`
+          description: `Recorded ${ratingsWithValue.length} skill evaluation(s) to student profile.`
         });
       } catch (error) {
         console.error('Error saving mastery evaluation:', error);
@@ -304,6 +347,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           variant: "destructive"
         });
       }
+    } else if (ratingsWithValue.length === 0) {
+      console.log('No ratings with values set - skipping save');
     }
     
     // Mark as done
@@ -1258,6 +1303,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
+            worksheetId={worksheetId}
             disabled={disabled}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
