@@ -99,80 +99,89 @@ export const UndoMarkDoneModal: React.FC<UndoMarkDoneModalProps> = ({
   );
 };
 
-// Helper to calculate initial mastery based on student answers
-const calculateInitialMastery = (
-  skillIndex: number,
+// PROBLEM 1: Helper to calculate initial mastery for SPECIFIC item index
+// Each nano_skill corresponds to a specific item in the exercise
+const calculateInitialMasteryForItem = (
+  itemIndex: number,
   studentAnswers?: Record<number, any>,
   exerciseData?: any
 ): { mastery: number | null; hasValue: boolean } => {
-  // PROBLEM 1.2: No answers = slider starts with no value
+  // No answers = slider starts with no value
   if (!studentAnswers || Object.keys(studentAnswers).length === 0) {
     return { mastery: null, hasValue: false };
   }
   
-  // Try to determine correctness from student answers
-  let correctCount = 0;
-  let totalCount = 0;
+  // Get the student's answer for this specific item
+  const studentAnswer = studentAnswers[itemIndex];
   
-  // Analyze answers based on exercise type
-  if (exerciseData?.questions) {
-    exerciseData.questions.forEach((q: any, idx: number) => {
-      const answer = studentAnswers[idx];
-      if (answer !== undefined && answer !== null && answer !== '') {
-        totalCount++;
-        // For multiple choice - check if answer matches correct option
-        if (q.options) {
-          const correctOption = q.options.find((o: any) => o.correct);
-          if (correctOption && answer === correctOption.text) {
-            correctCount++;
-          }
-        }
+  // If no answer for this item, return no value
+  if (studentAnswer === undefined || studentAnswer === null || studentAnswer === '') {
+    return { mastery: null, hasValue: false };
+  }
+  
+  // Try to determine correctness for this specific item
+  let isCorrect: boolean | null = null;
+  
+  // Check questions array
+  if (exerciseData?.questions && exerciseData.questions[itemIndex]) {
+    const question = exerciseData.questions[itemIndex];
+    
+    // Multiple choice - check if answer matches correct option
+    if (question.options && Array.isArray(question.options)) {
+      const correctOption = question.options.find((o: any) => o.correct === true);
+      if (correctOption) {
+        isCorrect = studentAnswer === correctOption.text || 
+                   studentAnswer === correctOption.label ||
+                   studentAnswer === correctOption.value;
       }
-    });
+    }
+    
+    // Reading/answer questions with expected answer
+    if (question.answer || question.correct || question.expected) {
+      const expected = question.answer || question.correct || question.expected;
+      isCorrect = studentAnswer.toLowerCase().trim() === expected.toLowerCase().trim();
+    }
   }
   
-  if (exerciseData?.items) {
-    exerciseData.items.forEach((item: any, idx: number) => {
-      const answer = studentAnswers[idx];
-      if (answer !== undefined && answer !== null && answer !== '') {
-        totalCount++;
-        // Check match
-        if (item.match && answer === item.match) {
-          correctCount++;
-        }
-      }
-    });
+  // Check items array (matching, categorize, etc.)
+  if (exerciseData?.items && exerciseData.items[itemIndex]) {
+    const item = exerciseData.items[itemIndex];
+    if (item.match) {
+      isCorrect = studentAnswer === item.match;
+    }
+    if (item.category) {
+      isCorrect = studentAnswer === item.category;
+    }
   }
   
-  if (exerciseData?.sentences) {
-    exerciseData.sentences.forEach((s: any, idx: number) => {
-      const answer = studentAnswers[idx];
-      if (answer !== undefined && answer !== null && answer !== '') {
-        totalCount++;
-        // Check answer against correct value
-        const correctAnswer = s.answer || s.correct;
-        if (correctAnswer && answer.toLowerCase().trim() === correctAnswer.toLowerCase().trim()) {
-          correctCount++;
-        }
-      }
-    });
+  // Check sentences array (fill in blanks, transformation, etc.)
+  if (exerciseData?.sentences && exerciseData.sentences[itemIndex]) {
+    const sentence = exerciseData.sentences[itemIndex];
+    const correctAnswer = sentence.answer || sentence.correct || sentence.missing_word;
+    if (correctAnswer) {
+      isCorrect = studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+    }
   }
   
-  // If we have data, calculate mastery percentage
-  if (totalCount > 0) {
-    const ratio = correctCount / totalCount;
-    if (ratio >= 0.8) return { mastery: 80, hasValue: true }; // Good
-    if (ratio >= 0.5) return { mastery: 50, hasValue: true }; // Partial
-    return { mastery: 30, hasValue: true }; // Needs work
+  // Check statements array (true/false)
+  if (exerciseData?.statements && exerciseData.statements[itemIndex]) {
+    const statement = exerciseData.statements[itemIndex];
+    if (statement.correct !== undefined) {
+      isCorrect = studentAnswer === statement.correct || 
+                 (studentAnswer === 'true' && statement.correct === true) ||
+                 (studentAnswer === 'false' && statement.correct === false);
+    }
   }
   
-  // If student provided some answers but we can't verify them, use neutral value
-  if (Object.values(studentAnswers).some(v => v !== undefined && v !== null && v !== '')) {
-    return { mastery: 60, hasValue: true }; // Neutral starting point
+  // Return mastery based on correctness
+  if (isCorrect === true) {
+    return { mastery: 80, hasValue: true }; // Correct answer
+  } else if (isCorrect === false) {
+    return { mastery: 30, hasValue: true }; // Incorrect answer
   }
   
-  // No answers = no value
-  return { mastery: null, hasValue: false };
+  // Answer exists but we can't verify correctness (open-ended questions)
+  return { mastery: 50, hasValue: true }; // Neutral - needs teacher evaluation
 };
 
 const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
@@ -190,10 +199,11 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
 
   useEffect(() => {
     if (isOpen && nanoSkills.length > 0 && !hasInitialized.current) {
-      // PROBLEM 1.1 & 1.2: Initialize with values based on student answers
+      // PROBLEM 1: Initialize each skill with INDIVIDUAL value based on its corresponding item's answer
       setRatings(
         nanoSkills.map((skill, idx) => {
-          const { mastery, hasValue } = calculateInitialMastery(idx, studentAnswers, exerciseData);
+          // Each nano_skill at index idx corresponds to item at index idx
+          const { mastery, hasValue } = calculateInitialMasteryForItem(idx, studentAnswers, exerciseData);
           return {
             name: skill.name,
             reason: skill.reason,

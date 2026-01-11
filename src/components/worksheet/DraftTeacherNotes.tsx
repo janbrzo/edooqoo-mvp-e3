@@ -51,10 +51,10 @@ export const DraftTeacherNotes: React.FC<DraftTeacherNotesProps> = ({
 
   if (!isVisible) return null;
   
-  // PROBLEM 6.2 & 7: Minimized state - show only a small button, positioned at bottom
+  // PROBLEM 6: Minimized state - positioned ABOVE Quick Notes
   if (isMinimized) {
     return (
-      <div className="fixed bottom-4 left-4 z-[100]">
+      <div className="fixed bottom-20 left-4 z-[100]">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useStudents } from '@/hooks/useStudents';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
+import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { NATIVE_LANGUAGES } from '@/types/flashcards';
 import { MAIN_GOALS, ENGLISH_LEVELS } from '@/constants/studentGoals';
@@ -32,6 +33,7 @@ export const AddStudentDialog = ({
   variant = 'default'
 }: AddStudentDialogProps) => {
   const [internalOpen, setInternalOpen] = useState(false);
+  const navigate = useNavigate();
   
   // Use external state if provided, otherwise use internal state
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
@@ -115,7 +117,9 @@ export const AddStudentDialog = ({
 
     setLoading(true);
     try {
-      await addStudent(name, englishLevel, finalGoal, studentEmail || undefined, sendOverdueEmails, nativeLanguage);
+      // PROBLEM 7: addStudent returns the new student data
+      const newStudent = await addStudent(name, englishLevel, finalGoal, studentEmail || undefined, sendOverdueEmails, nativeLanguage);
+      
       // Reset form and close dialog
       setName('');
       setEnglishLevel('');
@@ -127,48 +131,24 @@ export const AddStudentDialog = ({
       sessionStorage.removeItem(ADD_STUDENT_DRAFT_KEY);
       setOpen(false);
       
-      // MAXIMUM-ENHANCED: Extreme aggressive refresh for INSTANT onboarding update
-      console.log('[AddStudentDialog] Force refreshing students hook and onboarding - MAXIMUM MODE');
-      
-      // Immediate multiple refresh bursts
+      // Refresh onboarding progress
+      console.log('[AddStudentDialog] Force refreshing students hook and onboarding');
       refreshProgress();
-      refreshProgress(); // Double immediate
       
-      // Force refresh students hook MULTIPLE TIMES to ensure update
-      const performRefreshCycle = async () => {
-        try {
-          console.log('[AddStudentDialog] Starting refresh cycle...');
-          await refetch();  // Force refresh students
-          
-          console.log('[AddStudentDialog] Students refreshed, now triggering EXTREME onboarding refreshes');
-          
-          // EXTREME refresh pattern for maximum responsiveness
-          refreshProgress();                              // 0ms - Immediate
-          setTimeout(refreshProgress, 50);               // 50ms - Super fast
-          setTimeout(refreshProgress, 100);              // 100ms - Fast
-          setTimeout(refreshProgress, 200);              // 200ms - Quick
-          setTimeout(refreshProgress, 400);              // 400ms - Medium
-          setTimeout(refreshProgress, 800);              // 800ms - Delayed
-          setTimeout(refreshProgress, 1500);             // 1.5s - Final
-          
-        } catch (error) {
-          console.error('[AddStudentDialog] Error refreshing students:', error);
-          // STILL try multiple onboarding refreshes even on error
-          refreshProgress();
-          setTimeout(refreshProgress, 100);
-          setTimeout(refreshProgress, 300);
-          setTimeout(refreshProgress, 1000);
-        }
-      };
-      
-      // Start refresh immediately AND with small delay
-      performRefreshCycle();
-      setTimeout(performRefreshCycle, 100);  // Backup refresh cycle
+      // Force refresh students
+      await refetch();
+      refreshProgress();
       
       // Notify parent component that student was added
       if (onStudentAdded) {
         console.log('🔄 Calling onStudentAdded callback...');
         onStudentAdded();
+      }
+      
+      // PROBLEM 7: Navigate to new student's page with overview tab
+      if (newStudent?.id) {
+        console.log('🚀 Navigating to new student page:', newStudent.id);
+        navigate(`/student/${newStudent.id}?tab=overview`);
       }
     } catch (error) {
       // Error handled in hook

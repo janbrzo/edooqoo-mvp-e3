@@ -174,13 +174,28 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   teacherId: teacherIdProp,
 }, ref) => {
   // PROBLEM 4: Persist Mark Done state to localStorage for Live Session
-  const worksheetIdForStorage = (editableWorksheet as any)?.id;
-  const storageKey = `exercise-done-${worksheetIdForStorage}-${originalIndex !== undefined ? originalIndex : index}`;
+  // Use worksheetId prop as fallback, ensure we have a valid ID before creating storage key
+  const worksheetIdForStorage = (editableWorksheet as any)?.id || worksheetId;
+  const exerciseIdx = originalIndex !== undefined ? originalIndex : index;
+  
+  // Only create storage key if we have a valid worksheet ID
+  const storageKey = worksheetIdForStorage 
+    ? `exercise-done-${worksheetIdForStorage}-${exerciseIdx}`
+    : null;
   
   const [localMarkedDone, setLocalMarkedDone] = React.useState(() => {
-    if (typeof window === 'undefined') return false;
+    // Don't check localStorage if we don't have a valid key
+    if (typeof window === 'undefined' || !storageKey) return false;
     return localStorage.getItem(storageKey) === 'true';
   });
+  
+  // PROBLEM 4: Update state when worksheetId becomes available
+  React.useEffect(() => {
+    if (storageKey && typeof window !== 'undefined') {
+      const stored = localStorage.getItem(storageKey) === 'true';
+      setLocalMarkedDone(stored);
+    }
+  }, [storageKey]);
   
   // DSLM: NanoSkill Mastery Modal state
   const [isMasteryModalOpen, setIsMasteryModalOpen] = useState(false);
@@ -279,15 +294,37 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
     // Filter out ratings without explicit value (PROBLEM 1.2)
     const ratingsWithValue = ratings.filter(r => r.hasValue !== false);
     
-    // Save to student_events if we have student/teacher IDs AND ratings with values
-    if (studentIdProp && teacherIdProp && ratingsWithValue.length > 0) {
+    // PROBLEM 3: Validate required IDs before attempting to save
+    if (!studentIdProp || !teacherIdProp) {
+      console.error('❌ Missing studentId or teacherId:', { studentIdProp, teacherIdProp });
+      toast({
+        title: "Cannot save evaluation",
+        description: "Student or teacher information is missing. Please ensure a student is assigned to this worksheet.",
+        variant: "destructive"
+      });
+      // Still mark as done locally even if we can't save to DB
+      setLocalMarkedDone(true);
+      if (storageKey) localStorage.setItem(storageKey, 'true');
+      return;
+    }
+    
+    // Save to student_events if we have ratings with values
+    if (ratingsWithValue.length > 0) {
       try {
         const exerciseIdx = originalIndex !== undefined ? originalIndex : index - 1;
+        
+        console.log('📝 Saving mastery evaluation:', {
+          studentId: studentIdProp,
+          teacherId: teacherIdProp,
+          worksheetId: worksheetIdForStorage,
+          exerciseIdx,
+          ratingsCount: ratingsWithValue.length
+        });
         
         // PROBLEM 3: UPSERT - Check if event already exists for this exercise
         const { data: existingEvents, error: fetchError } = await supabase
           .from('student_events')
-          .select('id')
+          .select('id, event_payload')
           .eq('student_id', studentIdProp)
           .eq('source_id', worksheetIdForStorage || '')
           .eq('event_type', 'exercise_mastery_evaluation')
@@ -298,7 +335,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         }
         
         // Find event with matching exercise_index in payload
-        const existingEvent = existingEvents?.find(e => true); // We'll update the first one found
+        const existingEvent = existingEvents?.find((e: any) => {
+          const payload = e.event_payload as any;
+          return payload?.exercise_index === exerciseIdx;
+        });
         
         if (existingEvent) {
           // UPDATE existing record
@@ -318,8 +358,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           
           console.log('✅ Updated existing mastery evaluation:', existingEvent.id);
         } else {
-          // INSERT new record
-          await addEvent({
+          // INSERT new record using addEvent
+          const eventResult = await addEvent({
             event_type: 'exercise_mastery_evaluation',
             event_source: 'teacher',
             source_id: worksheetIdForStorage || undefined,
@@ -332,7 +372,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             skill_ids: ratingsWithValue.map(r => r.name)
           });
           
-          console.log('✅ Created new mastery evaluation');
+          console.log('✅ Created new mastery evaluation, result:', eventResult);
         }
         
         toast({
@@ -340,21 +380,20 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           description: `Recorded ${ratingsWithValue.length} skill evaluation(s) to student profile.`
         });
       } catch (error) {
-        console.error('Error saving mastery evaluation:', error);
+        console.error('❌ Error saving mastery evaluation:', error);
         toast({
           title: "Error saving evaluation",
           description: "Failed to save mastery evaluation. Please try again.",
           variant: "destructive"
         });
       }
-    } else if (ratingsWithValue.length === 0) {
-      console.log('No ratings with values set - skipping save');
+    } else {
+      console.log('No ratings with values set - skipping save to DB');
     }
     
-    // Mark as done
-    const newValue = true;
-    setLocalMarkedDone(newValue);
-    localStorage.setItem(storageKey, String(newValue));
+    // Mark as done locally
+    setLocalMarkedDone(true);
+    if (storageKey) localStorage.setItem(storageKey, 'true');
     
     if (onMarkDoneProp) {
       onMarkDoneProp();
@@ -364,7 +403,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   // Handle Skip - mark as done without saving evaluation
   const handleSkip = () => {
     setLocalMarkedDone(true);
-    localStorage.setItem(storageKey, 'true');
+    if (storageKey) localStorage.setItem(storageKey, 'true');
     if (onMarkDoneProp) {
       onMarkDoneProp();
     }
@@ -402,7 +441,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
     
     // Unmark exercise
     setLocalMarkedDone(false);
-    localStorage.setItem(storageKey, 'false');
+    if (storageKey) localStorage.setItem(storageKey, 'false');
     setIsUndoModalOpen(false);
   };
   
@@ -420,7 +459,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
       // Teacher mode - simple toggle
       const newValue = !localMarkedDone;
       setLocalMarkedDone(newValue);
-      localStorage.setItem(storageKey, String(newValue));
+      if (storageKey) localStorage.setItem(storageKey, String(newValue));
     }
   });
   
