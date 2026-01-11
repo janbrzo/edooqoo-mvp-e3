@@ -11,7 +11,7 @@ import {
   MoreHorizontal,
   X,
   Minus,
-  Maximize2
+  Pin
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStudentKnowledge } from "@/hooks/useStudentKnowledge";
@@ -59,6 +59,9 @@ export const LiveSessionQuickNotes: React.FC<LiveSessionQuickNotesProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<KnowledgeCategory>('Notes');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  // PROBLEM 6.3: Auto-hide header, show on hover or when pinned
+  const [isHovered, setIsHovered] = useState(false);
+  const [isHeaderPinned, setIsHeaderPinned] = useState(false);
   
   const { addEntry } = useStudentKnowledge({ studentId, teacherId });
 
@@ -96,10 +99,10 @@ export const LiveSessionQuickNotes: React.FC<LiveSessionQuickNotesProps> = ({
 
   if (!isVisible) return null;
   
-  // PROBLEM 7: Minimized state - show only a small button
+  // PROBLEM 6.2 & 7: Minimized state - show only a small button, positioned ABOVE Draft Notes
   if (isMinimized) {
     return (
-      <div className="fixed bottom-4 left-4 z-[100]">
+      <div className="fixed bottom-20 left-4 z-[100]">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -118,29 +121,53 @@ export const LiveSessionQuickNotes: React.FC<LiveSessionQuickNotesProps> = ({
     );
   }
 
+  const showHeader = isHovered || isHeaderPinned;
+
   return (
-    <div className="fixed bottom-4 left-4 z-[100] bg-white border-2 border-primary/30 rounded-lg shadow-xl p-3 w-[420px]">
-      {/* Header with minimize and close buttons */}
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-semibold text-primary flex items-center gap-2">
-          <StickyNote className="h-4 w-4" />
-          Quick Note {studentName && <span className="text-muted-foreground text-xs">for {studentName}</span>}
-        </span>
-        <div className="flex items-center gap-1">
-          {/* Minimize button */}
-          <Button variant="ghost" size="sm" onClick={() => setIsMinimized(true)} className="h-6 w-6 p-0">
-            <Minus className="h-4 w-4" />
-          </Button>
-          {onClose && (
-            <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
-              <X className="h-4 w-4" />
+    <div 
+      className="fixed bottom-4 left-4 z-[100] bg-white border-2 border-primary/30 rounded-lg shadow-xl w-[420px]"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* PROBLEM 6.3: Header - hidden by default, visible on hover or when pinned */}
+      {showHeader && (
+        <div className="flex items-center justify-between p-2 border-b animate-in fade-in duration-200">
+          <span className="text-sm font-semibold text-primary flex items-center gap-2">
+            <StickyNote className="h-4 w-4" />
+            Quick Note {studentName && <span className="text-muted-foreground text-xs">for {studentName}</span>}
+          </span>
+          <div className="flex items-center gap-1">
+            {/* Pin button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setIsHeaderPinned(!isHeaderPinned)} 
+                  className={cn("h-6 w-6 p-0", isHeaderPinned && "text-primary bg-primary/10")}
+                >
+                  <Pin className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>{isHeaderPinned ? 'Unpin header' : 'Pin header'}</p>
+              </TooltipContent>
+            </Tooltip>
+            {/* Minimize button */}
+            <Button variant="ghost" size="sm" onClick={() => setIsMinimized(true)} className="h-6 w-6 p-0">
+              <Minus className="h-4 w-4" />
             </Button>
-          )}
+            {onClose && (
+              <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       
       {/* PROBLEM 6A: Horizontal layout - icons next to input */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 p-2">
         {/* Quick Category Buttons */}
         {QUICK_CATEGORIES.map(({ category, icon, label }) => (
           <Tooltip key={category}>
@@ -163,14 +190,14 @@ export const LiveSessionQuickNotes: React.FC<LiveSessionQuickNotesProps> = ({
           </Tooltip>
         ))}
         
-        {/* More categories dropdown */}
+        {/* PROBLEM 6.1: More categories dropdown - side="top" to show above */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-9 w-9 p-0 flex-shrink-0">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
+          <DropdownMenuContent align="start" side="top" className="z-[200]">
             {REMAINING_CATEGORIES.map((cat) => (
               <DropdownMenuItem
                 key={cat.id}

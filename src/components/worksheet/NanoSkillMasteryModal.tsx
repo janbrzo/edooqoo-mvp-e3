@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle2, Brain, SkipForward, Undo2 } from "lucide-react";
+import { CheckCircle2, Brain, SkipForward, Undo2, AlertCircle } from "lucide-react";
 import { NanoSkill } from "./NanoSkillBadge";
 
 interface NanoSkillRating {
   name: string;
   reason: string;
-  mastery: number; // 0-100
+  mastery: number | null; // null = no value set
+  hasValue: boolean; // PROBLEM 1.2: Track if user has set a value
 }
 
 interface NanoSkillMasteryModalProps {
@@ -26,6 +27,9 @@ interface NanoSkillMasteryModalProps {
   onSkip?: () => void;
   nanoSkills: NanoSkill[];
   exerciseTitle: string;
+  // PROBLEM 1.1: Student answers and exercise data for pre-filling
+  studentAnswers?: Record<number, any>;
+  exerciseData?: any;
 }
 
 // Undo Mark Done Modal
@@ -95,6 +99,82 @@ export const UndoMarkDoneModal: React.FC<UndoMarkDoneModalProps> = ({
   );
 };
 
+// Helper to calculate initial mastery based on student answers
+const calculateInitialMastery = (
+  skillIndex: number,
+  studentAnswers?: Record<number, any>,
+  exerciseData?: any
+): { mastery: number | null; hasValue: boolean } => {
+  // PROBLEM 1.2: No answers = slider starts with no value
+  if (!studentAnswers || Object.keys(studentAnswers).length === 0) {
+    return { mastery: null, hasValue: false };
+  }
+  
+  // Try to determine correctness from student answers
+  let correctCount = 0;
+  let totalCount = 0;
+  
+  // Analyze answers based on exercise type
+  if (exerciseData?.questions) {
+    exerciseData.questions.forEach((q: any, idx: number) => {
+      const answer = studentAnswers[idx];
+      if (answer !== undefined && answer !== null && answer !== '') {
+        totalCount++;
+        // For multiple choice - check if answer matches correct option
+        if (q.options) {
+          const correctOption = q.options.find((o: any) => o.correct);
+          if (correctOption && answer === correctOption.text) {
+            correctCount++;
+          }
+        }
+      }
+    });
+  }
+  
+  if (exerciseData?.items) {
+    exerciseData.items.forEach((item: any, idx: number) => {
+      const answer = studentAnswers[idx];
+      if (answer !== undefined && answer !== null && answer !== '') {
+        totalCount++;
+        // Check match
+        if (item.match && answer === item.match) {
+          correctCount++;
+        }
+      }
+    });
+  }
+  
+  if (exerciseData?.sentences) {
+    exerciseData.sentences.forEach((s: any, idx: number) => {
+      const answer = studentAnswers[idx];
+      if (answer !== undefined && answer !== null && answer !== '') {
+        totalCount++;
+        // Check answer against correct value
+        const correctAnswer = s.answer || s.correct;
+        if (correctAnswer && answer.toLowerCase().trim() === correctAnswer.toLowerCase().trim()) {
+          correctCount++;
+        }
+      }
+    });
+  }
+  
+  // If we have data, calculate mastery percentage
+  if (totalCount > 0) {
+    const ratio = correctCount / totalCount;
+    if (ratio >= 0.8) return { mastery: 80, hasValue: true }; // Good
+    if (ratio >= 0.5) return { mastery: 50, hasValue: true }; // Partial
+    return { mastery: 30, hasValue: true }; // Needs work
+  }
+  
+  // If student provided some answers but we can't verify them, use neutral value
+  if (Object.values(studentAnswers).some(v => v !== undefined && v !== null && v !== '')) {
+    return { mastery: 60, hasValue: true }; // Neutral starting point
+  }
+  
+  // No answers = no value
+  return { mastery: null, hasValue: false };
+};
+
 const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
   isOpen,
   onClose,
@@ -102,19 +182,25 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
   onSkip,
   nanoSkills,
   exerciseTitle,
+  studentAnswers,
+  exerciseData,
 }) => {
   const [ratings, setRatings] = useState<NanoSkillRating[]>([]);
-  // FIX: Track if we've initialized to prevent slider reset
   const hasInitialized = useRef(false);
 
   useEffect(() => {
     if (isOpen && nanoSkills.length > 0 && !hasInitialized.current) {
+      // PROBLEM 1.1 & 1.2: Initialize with values based on student answers
       setRatings(
-        nanoSkills.map((skill) => ({
-          name: skill.name,
-          reason: skill.reason,
-          mastery: 70, // Default starting value
-        }))
+        nanoSkills.map((skill, idx) => {
+          const { mastery, hasValue } = calculateInitialMastery(idx, studentAnswers, exerciseData);
+          return {
+            name: skill.name,
+            reason: skill.reason,
+            mastery: mastery,
+            hasValue: hasValue,
+          };
+        })
       );
       hasInitialized.current = true;
     }
@@ -123,18 +209,24 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
     if (!isOpen) {
       hasInitialized.current = false;
     }
-  }, [isOpen, nanoSkills]);
+  }, [isOpen, nanoSkills, studentAnswers, exerciseData]);
 
   const handleMasteryChange = (index: number, value: number[]) => {
     setRatings(prevRatings => {
       const newRatings = [...prevRatings];
-      newRatings[index] = { ...newRatings[index], mastery: value[0] };
+      newRatings[index] = { 
+        ...newRatings[index], 
+        mastery: value[0],
+        hasValue: true // User has now set a value
+      };
       return newRatings;
     });
   };
 
   const handleSubmit = () => {
-    onSubmit(ratings);
+    // PROBLEM 1.2: Only submit ratings that have values set
+    const ratingsWithValues = ratings.filter(r => r.hasValue && r.mastery !== null);
+    onSubmit(ratingsWithValues);
     onClose();
   };
   
@@ -144,7 +236,6 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
   };
 
   const formatSkillName = (name: string) => {
-    // Convert ns.grammar.word_order_svo to "Word Order SVO"
     const parts = name.split('.');
     const skillPart = parts[parts.length - 1] || name;
     return skillPart
@@ -153,20 +244,25 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
       .join(' ');
   };
 
-  const getMasteryColor = (mastery: number) => {
+  const getMasteryColor = (mastery: number | null) => {
+    if (mastery === null) return 'text-gray-400';
     if (mastery >= 80) return 'text-green-600';
     if (mastery >= 60) return 'text-yellow-600';
     if (mastery >= 40) return 'text-orange-500';
     return 'text-red-500';
   };
 
-  const getMasteryLabel = (mastery: number) => {
+  const getMasteryLabel = (mastery: number | null) => {
+    if (mastery === null) return 'Not set';
     if (mastery >= 90) return 'Excellent';
     if (mastery >= 75) return 'Good';
     if (mastery >= 60) return 'Satisfactory';
     if (mastery >= 40) return 'Needs Work';
     return 'Struggling';
   };
+  
+  // Count how many ratings have values
+  const ratingsWithValues = ratings.filter(r => r.hasValue && r.mastery !== null).length;
 
   // Show modal even without nano skills (with skip option)
   if (nanoSkills.length === 0) {
@@ -217,12 +313,23 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
           <p className="text-sm text-muted-foreground">
             Rate how well the student demonstrated each skill during this exercise:
           </p>
+          
+          {/* PROBLEM 1.2: Info about unset values */}
+          {ratings.some(r => !r.hasValue) && (
+            <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg">
+              <AlertCircle className="h-4 w-4" />
+              Skills without a set value won't be saved.
+            </div>
+          )}
 
           {ratings.map((rating, index) => (
-            <div key={index} className="space-y-3 p-4 border rounded-lg bg-muted/20">
+            <div 
+              key={index} 
+              className={`space-y-3 p-4 border rounded-lg ${rating.hasValue ? 'bg-muted/20' : 'bg-gray-50 border-dashed'}`}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
-                  <Badge variant="secondary" className="mb-2">
+                  <Badge variant={rating.hasValue ? "secondary" : "outline"} className="mb-2">
                     {formatSkillName(rating.name)}
                   </Badge>
                   <p className="text-sm text-muted-foreground italic">
@@ -230,18 +337,18 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
                   </p>
                 </div>
                 <div className={`text-2xl font-bold ${getMasteryColor(rating.mastery)}`}>
-                  {rating.mastery}%
+                  {rating.mastery !== null ? `${rating.mastery}%` : '—'}
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Slider
-                  value={[rating.mastery]}
+                  value={rating.mastery !== null ? [rating.mastery] : [50]}
                   onValueChange={(value) => handleMasteryChange(index, value)}
                   max={100}
                   min={0}
                   step={5}
-                  className="w-full"
+                  className={`w-full ${!rating.hasValue ? 'opacity-50' : ''}`}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>0% - Struggling</span>
@@ -266,7 +373,7 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
             </Button>
             <Button onClick={handleSubmit} className="gap-2">
               <CheckCircle2 className="h-4 w-4" />
-              Save Evaluation
+              Save Evaluation {ratingsWithValues > 0 && `(${ratingsWithValues})`}
             </Button>
           </div>
         </DialogFooter>

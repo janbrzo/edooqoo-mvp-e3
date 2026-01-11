@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useMemo } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
@@ -18,7 +18,34 @@ interface ExerciseMultipleChoiceProps extends Partial<InteractiveExerciseProps> 
   onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
   // Hide nano skills on shared worksheets
   isSharedWorksheet?: boolean;
+  // PROBLEM 4: Worksheet ID for deterministic shuffle
+  worksheetId?: string;
 }
+
+// PROBLEM 4: Seeded random for deterministic shuffle
+const seededRandom = (seed: string): (() => number) => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  
+  return () => {
+    const x = Math.sin(hash++) * 10000;
+    return x - Math.floor(x);
+  };
+};
+
+const shuffleArrayWithSeed = <T,>(array: T[], seed: string): T[] => {
+  const random = seededRandom(seed);
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
 const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
   questions, 
@@ -37,8 +64,31 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
   disabled = false,
   // NanoSkill props
   onNanoSkillChange,
-  isSharedWorksheet = false
+  isSharedWorksheet = false,
+  // PROBLEM 4: Worksheet ID for shuffle
+  worksheetId
 }) => {
+  // PROBLEM 4: Shuffle options deterministically (only when not editing)
+  const questionsWithShuffledOptions = useMemo(() => {
+    if (isEditing || !worksheetId) return questions;
+    
+    return questions.map((question, qIndex) => {
+      if (!question.options || question.options.length === 0) return question;
+      
+      // Create seed from worksheetId and question content for consistency
+      const seed = `${worksheetId}-mc-${qIndex}-${question.options.map((o: any) => o.text).join('|')}`;
+      const shuffledOptions = shuffleArrayWithSeed([...question.options], seed);
+      
+      // Reassign labels A, B, C, D after shuffle
+      const relabeled = shuffledOptions.map((opt: any, idx: number) => ({
+        ...opt,
+        label: String.fromCharCode(65 + idx) // A, B, C, D...
+      }));
+      
+      return { ...question, options: relabeled };
+    });
+  }, [questions, isEditing, worksheetId]);
+  
   const handleOptionSelect = (qIndex: number, optionText: string) => {
     if (isInteractive && onAnswerChange && !disabled) {
       onAnswerChange(qIndex, optionText);
@@ -47,7 +97,7 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
 
   return (
     <div className="space-y-2">
-      {questions.map((question, qIndex) => {
+      {questionsWithShuffledOptions.map((question, qIndex) => {
         // Safely extract text and nano_skill
         const questionText = safeGetText(question.text || question);
         const nanoSkill = safeGetNanoSkill(question);

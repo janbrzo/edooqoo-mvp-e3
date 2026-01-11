@@ -641,6 +641,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            worksheetId={worksheetId}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
@@ -1404,6 +1405,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         onSkip={handleSkip}
         nanoSkills={exerciseNanoSkills}
         exerciseTitle={exercise.title}
+        studentAnswers={liveSessionAnswer}
+        exerciseData={exercise}
       />
       
       {/* Undo Mark Done Modal */}
