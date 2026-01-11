@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -27,7 +27,34 @@ interface ExerciseMultipleChoiceAudioProps extends Partial<InteractiveExercisePr
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
   onNanoSkillChange?: (qIndex: number, newSkill: NanoSkill) => void;
+  // PROBLEM 4: Worksheet ID for deterministic shuffle
+  worksheetId?: string;
 }
+
+// PROBLEM 4: Seeded random for deterministic shuffle
+const seededRandom = (seed: string): (() => number) => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  
+  return () => {
+    const x = Math.sin(hash++) * 10000;
+    return x - Math.floor(x);
+  };
+};
+
+const shuffleArrayWithSeed = <T,>(array: T[], seed: string): T[] => {
+  const random = seededRandom(seed);
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
 
 const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = ({
   questions = [],
@@ -43,8 +70,31 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
   // PROBLEM 1: Live Session
   liveSessionAnswer,
   disabled = false,
-  onNanoSkillChange
+  onNanoSkillChange,
+  // PROBLEM 4: Worksheet ID
+  worksheetId
 }) => {
+  // PROBLEM 4: Shuffle options deterministically (only when not editing)
+  const questionsWithShuffledOptions = useMemo(() => {
+    if (isEditing || !worksheetId) return questions;
+    
+    return questions.map((question, qIndex) => {
+      if (!question.options || question.options.length === 0) return question;
+      
+      // Create seed from worksheetId and question content for consistency
+      const seed = `${worksheetId}-mca-${qIndex}-${question.options.map((o: any) => o.text).join('|')}`;
+      const shuffledOptions = shuffleArrayWithSeed([...question.options], seed);
+      
+      // Reassign labels A, B, C, D after shuffle
+      const relabeled = shuffledOptions.map((opt: any, idx: number) => ({
+        ...opt,
+        label: String.fromCharCode(65 + idx) // A, B, C, D...
+      }));
+      
+      return { ...question, options: relabeled };
+    });
+  }, [questions, isEditing, worksheetId]);
+
   return (
     <div>
       {!audio_url && (
@@ -54,7 +104,7 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
       )}
       
       <div className="space-y-2">
-        {questions.map((question, qIndex) => {
+        {questionsWithShuffledOptions.map((question, qIndex) => {
           // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
           const questionText = safeGetText(question?.text ?? question);
           const nanoSkill = safeGetNanoSkill(question);
