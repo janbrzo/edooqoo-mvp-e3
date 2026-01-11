@@ -127,6 +127,19 @@ export default function WorksheetDisplay({
   // ✅ NEW: Ref for scrollToExercise function from WorksheetContent
   const [scrollToExerciseRef, setScrollToExerciseRef] = useState<((index: number) => void) | null>(null);
   
+  // PROBLEM 5.1 & 5.2: Local state for immediate UI updates
+  const [localTitle, setLocalTitle] = useState(worksheetTitle || editableWorksheet?.title);
+  const [localStudentName, setLocalStudentName] = useState(studentName);
+  
+  // Sync local states when props change
+  useEffect(() => {
+    setLocalTitle(worksheetTitle || editableWorksheet?.title);
+  }, [worksheetTitle, editableWorksheet?.title]);
+  
+  useEffect(() => {
+    setLocalStudentName(studentName);
+  }, [studentName]);
+  
   // ✅ Wrap onDiscardChanges to ALSO exit edit mode
   const handleDiscardChanges = () => {
     onDiscardChanges?.();
@@ -928,14 +941,20 @@ export default function WorksheetDisplay({
             generationTime={generationTime}
             sourceCount={sourceCount}
             inputParams={inputParams}
-            studentName={studentName}
+            studentName={localStudentName}
             worksheetId={worksheetId}
             studentId={studentId}
-            onStudentChange={onStudentChange}
+            onStudentChange={() => {
+              onStudentChange?.();
+            }}
+            onStudentNameChange={(newName) => setLocalStudentName(newName)}
             tokenLeft={tokenLeft}
-            // PROBLEM 5: Use props worksheetTitle (from database) first, fallback to editableWorksheet.title
-            worksheetTitle={worksheetTitle || editableWorksheet?.title}
-            onTitleChange={(newTitle) => setEditableWorksheet((prev: any) => ({ ...prev, title: newTitle }))}
+            // PROBLEM 5.1: Use local title for immediate UI update
+            worksheetTitle={localTitle}
+            onTitleChange={(newTitle) => {
+              setLocalTitle(newTitle); // Immediate UI update
+              setEditableWorksheet((prev: any) => ({ ...prev, title: newTitle }));
+            }}
           />
           <InputParamsCard 
             inputParams={inputParams} 

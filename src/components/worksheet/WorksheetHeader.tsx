@@ -20,6 +20,7 @@ interface WorksheetHeaderProps {
   worksheetId?: string;
   studentId?: string;
   onStudentChange?: () => void;
+  onStudentNameChange?: (newName: string) => void;
   tokenLeft?: number;
   worksheetTitle?: string;
   onTitleChange?: (newTitle: string) => void;
@@ -34,6 +35,7 @@ function WorksheetHeader({
   worksheetId,
   studentId: propsStudentId,
   onStudentChange,
+  onStudentNameChange,
   tokenLeft,
   worksheetTitle,
   onTitleChange
@@ -59,7 +61,11 @@ function WorksheetHeader({
     navigate('/?forceNew=' + Date.now());
   };
 
-  const handleStudentTransferSuccess = () => {
+  const handleStudentTransferSuccess = (newStudentName?: string) => {
+    // PROBLEM 5.2: Immediately update UI with new student name
+    if (onStudentNameChange && newStudentName) {
+      onStudentNameChange(newStudentName);
+    }
     // Update sessionStorage with new student info after transfer
     if (onStudentChange) {
       onStudentChange();

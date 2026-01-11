@@ -15,7 +15,7 @@ interface StudentSelectorProps {
   worksheetId: string;
   currentStudentId?: string | null;
   worksheetTitle?: string;
-  onTransferSuccess?: () => void;
+  onTransferSuccess?: (newStudentName?: string) => void;
   size?: 'sm' | 'default';
   className?: string;
 }
@@ -29,13 +29,12 @@ export const StudentSelector: React.FC<StudentSelectorProps> = ({
   className = ''
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [lastTransferredStudentName, setLastTransferredStudentName] = useState<string | undefined>();
   const { user } = useAuthFlow();
   const { students } = useStudents();
   const { updateWorksheetStudent, isLoading } = useStudentSelector(() => {
-    if (onTransferSuccess) {
-      onTransferSuccess();
-    }
-    setIsOpen(false);
+    // Note: onTransferSuccess is now called directly in handleStudentChange
+    // to pass the new student name
   });
 
   console.log('🔍 StudentSelector render debug:', {
@@ -72,6 +71,10 @@ export const StudentSelector: React.FC<StudentSelectorProps> = ({
     );
     
     if (success) {
+      // PROBLEM 5.2: Pass new student name to callback for immediate UI update
+      if (onTransferSuccess) {
+        onTransferSuccess(newStudentName || 'Unassigned');
+      }
       setIsOpen(false);
     }
   };
