@@ -99,10 +99,10 @@ export const LiveSessionQuickNotes: React.FC<LiveSessionQuickNotesProps> = ({
 
   if (!isVisible) return null;
   
-  // PROBLEM 6.2 & 7: Minimized state - show only a small button, positioned ABOVE Draft Notes
+  // PROBLEM 6: Minimized state - positioned BELOW Draft Notes (at bottom)
   if (isMinimized) {
     return (
-      <div className="fixed bottom-20 left-4 z-[100]">
+      <div className="fixed bottom-4 left-4 z-[100]">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

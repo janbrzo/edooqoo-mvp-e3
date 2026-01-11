@@ -139,21 +139,18 @@ export default function WorksheetContainer({
       
       {children}
       
-      {/* Fixed action buttons in bottom right */}
-      {showScrollTop && (
-        <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-50">
+      {/* PROBLEM 2: Pin buttons - ALWAYS visible when media exists (not dependent on scroll) */}
+      {(selectedImage || selectedAudio) && onTogglePin && (
+        <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-50 pointer-events-none">
           {/* Pin Image button - only show if image exists and no audio */}
-          {selectedImage && !selectedAudio && onTogglePin && (
-            <div className="relative flex items-center">
-              {/* Animated label */}
-              {showPinLabels && (
-                <span 
-                  className="absolute right-full mr-2 whitespace-nowrap bg-worksheet-purple text-white text-xs px-2 py-1 rounded shadow-lg animate-in slide-in-from-right-2 duration-300"
-                  style={{ opacity: showPinLabels ? 1 : 0, transition: 'opacity 0.3s' }}
-                >
-                  {isPinned ? "Unpin image" : "Pin image"}
-                </span>
-              )}
+          {selectedImage && !selectedAudio && (
+            <div className="relative flex items-center pointer-events-auto">
+              {/* Animated label - shows for 5 seconds */}
+              <span 
+                className={`absolute right-full mr-2 whitespace-nowrap bg-worksheet-purple text-white text-xs px-2 py-1 rounded shadow-lg transition-opacity duration-300 ${showPinLabels ? 'opacity-100 animate-in slide-in-from-right-2' : 'opacity-0 pointer-events-none'}`}
+              >
+                {isPinned ? "Unpin image" : "Pin image"}
+              </span>
               <button 
                 onClick={onTogglePin}
                 className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
@@ -166,17 +163,14 @@ export default function WorksheetContainer({
           )}
           
           {/* Pin Audio button - only show if audio exists */}
-          {selectedAudio && onTogglePin && (
-            <div className="relative flex items-center">
-              {/* Animated label */}
-              {showPinLabels && (
-                <span 
-                  className="absolute right-full mr-2 whitespace-nowrap bg-worksheet-purple text-white text-xs px-2 py-1 rounded shadow-lg animate-in slide-in-from-right-2 duration-300"
-                  style={{ opacity: showPinLabels ? 1 : 0, transition: 'opacity 0.3s' }}
-                >
-                  {isPinned ? "Unpin audio player" : "Pin audio player"}
-                </span>
-              )}
+          {selectedAudio && (
+            <div className="relative flex items-center pointer-events-auto">
+              {/* Animated label - shows for 5 seconds */}
+              <span 
+                className={`absolute right-full mr-2 whitespace-nowrap bg-worksheet-purple text-white text-xs px-2 py-1 rounded shadow-lg transition-opacity duration-300 ${showPinLabels ? 'opacity-100 animate-in slide-in-from-right-2' : 'opacity-0 pointer-events-none'}`}
+              >
+                {isPinned ? "Unpin audio player" : "Pin audio player"}
+              </span>
               <button 
                 onClick={onTogglePin}
                 className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
@@ -187,8 +181,12 @@ export default function WorksheetContainer({
               </button>
             </div>
           )}
-          
-          {/* Scroll to top button */}
+        </div>
+      )}
+      
+      {/* Scroll to top button - only visible after scrolling */}
+      {showScrollTop && (
+        <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-40" style={{ marginBottom: (selectedImage || selectedAudio) ? '60px' : '0' }}>
           <button 
             onClick={scrollToTop}
             className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
