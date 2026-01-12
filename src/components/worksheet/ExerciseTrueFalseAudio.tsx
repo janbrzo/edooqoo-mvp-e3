@@ -100,40 +100,50 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
                 ) : (
                   <div className="ml-4 flex items-center space-x-4">
                     {/* Show radio buttons for all views (including Teacher View and Live Session) */}
-                    <div className="flex space-x-4">
-                      <label className={`inline-flex items-center ${
-                        liveSessionAnswer?.[sIndex] === true ? 'bg-blue-100 px-2 py-1 rounded' : ''
-                      }`}>
-                        <input 
-                          type="radio" 
-                          name={`statement-audio-${sIndex}`} 
-                          className="form-radio h-4 w-4" 
-                          disabled={true}
-                          // ✅ FIX: Only show checked state for teacher view, hide from students
-                          checked={viewMode === 'teacher' && statement.isTrue === true}
-                        />
-                        <span className="ml-2">True</span>
-                        {liveSessionAnswer?.[sIndex] === true && (
-                          <span className="ml-1 text-blue-600 font-medium text-xs">(Student)</span>
-                        )}
-                      </label>
-                      <label className={`inline-flex items-center ${
-                        liveSessionAnswer?.[sIndex] === false ? 'bg-blue-100 px-2 py-1 rounded' : ''
-                      }`}>
-                        <input 
-                          type="radio" 
-                          name={`statement-audio-${sIndex}`} 
-                          className="form-radio h-4 w-4"
-                          disabled={true}
-                          // ✅ FIX: Only show checked state for teacher view, hide from students
-                          checked={viewMode === 'teacher' && statement.isTrue === false}
-                        />
-                        <span className="ml-2">False</span>
-                        {liveSessionAnswer?.[sIndex] === false && (
-                          <span className="ml-1 text-blue-600 font-medium text-xs">(Student)</span>
-                        )}
-                      </label>
-                    </div>
+                    {/* PROBLEM 4 FIX: Normalize student answer to handle both boolean and string values */}
+                    {(() => {
+                      const rawAnswer = liveSessionAnswer?.[sIndex];
+                      const normalizedAnswer = rawAnswer === true || rawAnswer === 'true' 
+                        ? true 
+                        : rawAnswer === false || rawAnswer === 'false' 
+                          ? false 
+                          : null;
+                      
+                      return (
+                        <div className="flex space-x-4">
+                          <label className={`inline-flex items-center ${
+                            normalizedAnswer === true ? 'bg-blue-100 px-2 py-1 rounded' : ''
+                          }`}>
+                            <input 
+                              type="radio" 
+                              name={`statement-audio-${sIndex}`} 
+                              className="form-radio h-4 w-4" 
+                              disabled={true}
+                              checked={viewMode === 'teacher' && statement.isTrue === true}
+                            />
+                            <span className="ml-2">True</span>
+                            {normalizedAnswer === true && (
+                              <span className="ml-1 text-blue-600 font-medium text-xs">(Student)</span>
+                            )}
+                          </label>
+                          <label className={`inline-flex items-center ${
+                            normalizedAnswer === false ? 'bg-blue-100 px-2 py-1 rounded' : ''
+                          }`}>
+                            <input 
+                              type="radio" 
+                              name={`statement-audio-${sIndex}`} 
+                              className="form-radio h-4 w-4"
+                              disabled={true}
+                              checked={viewMode === 'teacher' && statement.isTrue === false}
+                            />
+                            <span className="ml-2">False</span>
+                            {normalizedAnswer === false && (
+                              <span className="ml-1 text-blue-600 font-medium text-xs">(Student)</span>
+                            )}
+                          </label>
+                        </div>
+                      );
+                    })()}
                     {viewMode === 'teacher' && (
                       <span className="text-green-600 italic text-sm">
                         {isEditing ? (

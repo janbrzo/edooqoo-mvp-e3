@@ -1,10 +1,10 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { ArrowUp, Image, X, Maximize2, Headphones } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generatePDF } from "@/utils/pdfUtils";
 import { FormData } from "@/components/WorksheetForm";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 interface WorksheetContainerProps {
   children: React.ReactNode;
@@ -139,49 +139,63 @@ export default function WorksheetContainer({
       
       {children}
       
-      {/* PROBLEM 2: Pin buttons - ALWAYS visible when media exists (not dependent on scroll) */}
+      {/* PROBLEM 2: Pin buttons - ALWAYS visible when media exists with elegant Tooltips */}
       {(selectedImage || selectedAudio) && onTogglePin && (
-        <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-50 pointer-events-none">
-          {/* Pin Image button - only show if image exists and no audio */}
-          {selectedImage && !selectedAudio && (
-            <div className="relative flex items-center pointer-events-auto">
-              {/* Animated label - shows for 5 seconds */}
-              <span 
-                className={`absolute right-full mr-2 whitespace-nowrap bg-worksheet-purple text-white text-xs px-2 py-1 rounded shadow-lg transition-opacity duration-300 ${showPinLabels ? 'opacity-100 animate-in slide-in-from-right-2' : 'opacity-0 pointer-events-none'}`}
-              >
-                {isPinned ? "Unpin image" : "Pin image"}
-              </span>
-              <button 
-                onClick={onTogglePin}
-                className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
-                aria-label={isPinned ? "Unpin image" : "Pin image"}
-                title={isPinned ? "Unpin image" : "Pin image"}
-              >
-                <Image className="h-5 w-5" />
-              </button>
-            </div>
-          )}
-          
-          {/* Pin Audio button - only show if audio exists */}
-          {selectedAudio && (
-            <div className="relative flex items-center pointer-events-auto">
-              {/* Animated label - shows for 5 seconds */}
-              <span 
-                className={`absolute right-full mr-2 whitespace-nowrap bg-worksheet-purple text-white text-xs px-2 py-1 rounded shadow-lg transition-opacity duration-300 ${showPinLabels ? 'opacity-100 animate-in slide-in-from-right-2' : 'opacity-0 pointer-events-none'}`}
-              >
-                {isPinned ? "Unpin audio player" : "Pin audio player"}
-              </span>
-              <button 
-                onClick={onTogglePin}
-                className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
-                aria-label={isPinned ? "Unpin audio player" : "Pin audio player"}
-                title={isPinned ? "Unpin audio player" : "Pin audio player"}
-              >
-                <Headphones className="h-5 w-5" />
-              </button>
-            </div>
-          )}
-        </div>
+        <TooltipProvider>
+          <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-50 pointer-events-none">
+            {/* Pin Image button - only show if image exists and no audio */}
+            {selectedImage && !selectedAudio && (
+              <div className="relative flex items-center pointer-events-auto">
+                {/* Animated label - shows for 5 seconds on first load */}
+                <span 
+                  className={`absolute right-full mr-2 whitespace-nowrap bg-worksheet-purple text-white text-xs px-2 py-1 rounded shadow-lg transition-opacity duration-300 ${showPinLabels ? 'opacity-100 animate-in slide-in-from-right-2' : 'opacity-0 pointer-events-none'}`}
+                >
+                  {isPinned ? "Unpin image" : "Pin image"}
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button 
+                      onClick={onTogglePin}
+                      className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+                      aria-label={isPinned ? "Unpin image" : "Pin image"}
+                    >
+                      <Image className="h-5 w-5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-worksheet-purple text-white border-worksheet-purple">
+                    <p>{isPinned ? "Unpin image" : "Pin image"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
+            
+            {/* Pin Audio button - only show if audio exists */}
+            {selectedAudio && (
+              <div className="relative flex items-center pointer-events-auto">
+                {/* Animated label - shows for 5 seconds on first load */}
+                <span 
+                  className={`absolute right-full mr-2 whitespace-nowrap bg-worksheet-purple text-white text-xs px-2 py-1 rounded shadow-lg transition-opacity duration-300 ${showPinLabels ? 'opacity-100 animate-in slide-in-from-right-2' : 'opacity-0 pointer-events-none'}`}
+                >
+                  {isPinned ? "Unpin audio player" : "Pin audio player"}
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button 
+                      onClick={onTogglePin}
+                      className="rounded-full bg-worksheet-purple text-white p-3 shadow-lg cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+                      aria-label={isPinned ? "Unpin audio player" : "Pin audio player"}
+                    >
+                      <Headphones className="h-5 w-5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="bg-worksheet-purple text-white border-worksheet-purple">
+                    <p>{isPinned ? "Unpin audio player" : "Pin audio player"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
+          </div>
+        </TooltipProvider>
       )}
       
       {/* Scroll to top button - only visible after scrolling */}
