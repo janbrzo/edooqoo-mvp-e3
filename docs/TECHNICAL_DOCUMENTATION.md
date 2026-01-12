@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 8 Problem Fixes:**
+**Latest Update (January 2026) - 5 Problem Fixes (UI & Data Integrity):**
+- **#1 Mastery Slider INDIVIDUAL Values**: FIXED - NanoSkillMasteryModal now correctly maps each nano_skill to its specific exercise item index. Uses `nanoSkillToItemIndex` mapping to track positions and applies INDIVIDUAL mastery values (80% correct, 30% incorrect, 50% partial) per item - no more averaging across all items
+- **#2 Pin Buttons Elegant Tooltips**: FIXED - Replaced ugly `title=""` tooltips with elegant shadcn/ui `<Tooltip>` components on Pin Image/Audio buttons (purple background, white text, appears on left side)
+- **#3 Save Evaluation UPSERT**: ENHANCED - Added detailed logging (`console.log`) before and after `addEvent` call. Validation now shows toast error if `studentId` or `teacherId` is missing. Uses UPSERT pattern to update existing records
+- **#4 True/False Live Session Answers**: FIXED - Normalized student answer parsing to handle both boolean (`true`/`false`) and string (`"true"`/`"false"`) values using `normalizeAnswer()` helper - blue highlighting now works correctly
+- **#5 Modal Dropdowns z-index**: FIXED - Increased SelectContent z-index from `z-50` to `z-[200]` globally in `select.tsx` - dropdowns in Add Student and Edit Student dialogs now appear above modal backdrop
+
+**Previous Update (January 2026) - 8 Problem Fixes:**
 - **#1 Mastery Slider Presets**: NanoSkillMasteryModal now pre-fills slider values based on student answers from Live Session (80% correct, 30% incorrect, 50% partial, null=no answer). Only skills with explicitly set values are saved to `student_events`
 - **#2 Pin Labels Animation**: Added 5-second animated labels for "Pin image" and "Pin audio player" buttons (matching FAB style)
 - **#3 Save Evaluation UPSERT**: Fixed Save Evaluation to properly save to `student_events` - now uses UPSERT pattern to update existing records instead of creating duplicates
