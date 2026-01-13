@@ -166,11 +166,28 @@ export default function WorksheetForm({
     // Auto-complete exercises if not enough are selected in manual mode
     const maxExercises = lessonTime === '45min' ? 6 : 8;
     let finalExercises = [...selectedExercises];
+    
     if (!finalExercises || finalExercises.length < maxExercises) {
       console.log(`🔧 [WORKSHEET-FORM] Auto-completing exercises: ${finalExercises.length} < ${maxExercises}`);
 
+      // PROBLEM 4.2/4.3: Define media-specific exercises
+      const PICTURE_EXERCISES = ['describe-picture', 'answer-questions-picture', 'true-false-picture', 'multiple-choice-picture'];
+      const AUDIO_EXERCISES = ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'multiple-choice-audio', 'fill-in-blanks-audio'];
+      
       // Get available exercises (excluding coming soon ones)
-      const availableExercises = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms', 'antonyms', 'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 'categorize', 'paraphrasing', 'complete-word', 'matching-halves'];
+      const allAvailableExercises = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms', 'antonyms', 'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 'categorize', 'paraphrasing', 'complete-word', 'matching-halves'];
+      
+      // PROBLEM 4.2/4.3: Filter out media-specific exercises if media not selected
+      const isPictureMode = selectedMediaTypes.includes('picture');
+      const isAudioMode = selectedMediaTypes.includes('audio');
+      
+      const availableExercises = allAvailableExercises.filter(ex => {
+        // Skip picture exercises if no picture media selected
+        if (!isPictureMode && PICTURE_EXERCISES.includes(ex)) return false;
+        // Skip audio exercises if no audio media selected
+        if (!isAudioMode && AUDIO_EXERCISES.includes(ex)) return false;
+        return true;
+      });
 
       // Add random exercises to reach the target count
       const remainingSlots = maxExercises - finalExercises.length;
@@ -178,7 +195,7 @@ export default function WorksheetForm({
       const shuffledUnused = [...unusedExercises].sort(() => Math.random() - 0.5);
       const autoSelected = shuffledUnused.slice(0, remainingSlots);
       finalExercises = [...finalExercises, ...autoSelected];
-      console.log(`🔧 [WORKSHEET-FORM] Auto-completed exercises:`, finalExercises);
+      console.log(`🔧 [WORKSHEET-FORM] Auto-completed exercises (media-aware):`, finalExercises);
 
       // Update the form state
       setSelectedExercises(finalExercises);
@@ -251,32 +268,52 @@ export default function WorksheetForm({
         newExercises = lessonTime === '45min' ? ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out'] : ['reading', 'true-false', 'matching', 'fill-in-blanks', 'categorize', 'odd-one-out', 'multiple-choice', 'discussion'];
       }
     } else if (mode === 'random') {
-      // Random mode - CRITICAL FIX: Prioritize media exercises
+      // Random mode - PROBLEM 4.1 CRITICAL FIX: Always select exactly maxExercises
 
       const PICTURE_EXERCISES = ['describe-picture', 'answer-questions-picture', 'true-false-picture', 'multiple-choice-picture'];
       const AUDIO_EXERCISES = ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'multiple-choice-audio', 'fill-in-blanks-audio'];
       const GENERAL_EXERCISES = ['reading', 'true-false', 'matching', 'fill-in-blanks', 'multiple-choice', 'dialogue', 'discussion', 'error-correction', 'odd-one-out', 'synonyms', 'antonyms', 'sentence-transformation', 'word-order', 'gap-text', 'negative-prefixes', 'categorize', 'paraphrasing', 'complete-word', 'matching-halves'];
+      
       if (isPictureMode) {
         // Always select 2 picture exercises + fill rest with general
         const shuffledPicture = [...PICTURE_EXERCISES].sort(() => Math.random() - 0.5);
         const selectedPicture = shuffledPicture.slice(0, Math.min(2, PICTURE_EXERCISES.length));
+        
+        // PROBLEM 4.1 FIX: Ensure we fill remaining slots with EXACTLY maxExercises - selectedPicture.length
+        const remainingSlots = maxExercises - selectedPicture.length;
         const shuffledGeneral = [...GENERAL_EXERCISES].sort(() => Math.random() - 0.5);
-        const selectedGeneral = shuffledGeneral.slice(0, maxExercises - selectedPicture.length);
+        const selectedGeneral = shuffledGeneral.slice(0, remainingSlots);
+        
         newExercises = [...selectedPicture, ...selectedGeneral];
-        console.log('🎲 [RANDOM-PICTURE] Selected exercises:', newExercises);
+        console.log('🎲 [RANDOM-PICTURE] Selected exercises:', newExercises, `(${newExercises.length}/${maxExercises})`);
       } else if (isAudioMode) {
         // Always select 2 audio exercises + fill rest with general
         const shuffledAudio = [...AUDIO_EXERCISES].sort(() => Math.random() - 0.5);
         const selectedAudio = shuffledAudio.slice(0, Math.min(2, AUDIO_EXERCISES.length));
+        
+        // PROBLEM 4.1 FIX: Ensure we fill remaining slots
+        const remainingSlots = maxExercises - selectedAudio.length;
         const shuffledGeneral = [...GENERAL_EXERCISES].sort(() => Math.random() - 0.5);
-        const selectedGeneral = shuffledGeneral.slice(0, maxExercises - selectedAudio.length);
+        const selectedGeneral = shuffledGeneral.slice(0, remainingSlots);
+        
         newExercises = [...selectedAudio, ...selectedGeneral];
-        console.log('🎲 [RANDOM-AUDIO] Selected exercises:', newExercises);
+        console.log('🎲 [RANDOM-AUDIO] Selected exercises:', newExercises, `(${newExercises.length}/${maxExercises})`);
       } else {
-        // No media - pure random
+        // No media - pure random from general exercises
         const shuffled = [...GENERAL_EXERCISES].sort(() => Math.random() - 0.5);
         newExercises = shuffled.slice(0, maxExercises);
-        console.log('🎲 [RANDOM-NONE] Selected exercises:', newExercises);
+        console.log('🎲 [RANDOM-NONE] Selected exercises:', newExercises, `(${newExercises.length}/${maxExercises})`);
+      }
+      
+      // PROBLEM 4.1 SAFETY: Verify we have exactly maxExercises
+      if (newExercises.length !== maxExercises) {
+        console.warn(`⚠️ [RANDOM] Exercise count mismatch: ${newExercises.length} vs ${maxExercises}, padding...`);
+        const allExercises = [...GENERAL_EXERCISES];
+        while (newExercises.length < maxExercises) {
+          const unused = allExercises.filter(ex => !newExercises.includes(ex));
+          if (unused.length === 0) break;
+          newExercises.push(unused[Math.floor(Math.random() * unused.length)]);
+        }
       }
     } else {
       // Smart mode - use manual defaults for now
