@@ -277,12 +277,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
       });
     }
     
-    // Remove duplicates by name
-    const uniqueSkills = skills.filter((skill, idx, arr) => 
-      arr.findIndex(s => s.name === skill.name) === idx
-    );
-    
-    return uniqueSkills;
+    // PROBLEM 1 FIX: DO NOT remove duplicates - we need 1:1 mapping with items
+    // Each skill position corresponds to a specific exercise item
+    // The mastery modal needs this to match skills with student answers
+    return skills;
   };
   
   const handleMarkDoneWithModal = () => {

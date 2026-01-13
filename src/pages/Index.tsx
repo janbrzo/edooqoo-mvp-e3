@@ -347,6 +347,7 @@ const Index = () => {
         hasGrammar={!!worksheetState.inputParams?.hasGrammar}
         streamProgress={streamProgress}
         mediaGenerating={mediaGenerating}
+        selectedExercises={worksheetState.inputParams?.selectedExercises}
       />
       
       <TokenPaywallModal

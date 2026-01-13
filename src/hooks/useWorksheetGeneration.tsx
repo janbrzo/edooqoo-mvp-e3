@@ -56,8 +56,10 @@ export const useWorksheetGeneration = (
       }
     }
 
-    // Check token requirements for authenticated users
-    if (!isDemo && !hasTokens) {
+    // PROBLEM 4 FIX: Check token requirements ONLY for authenticated users
+    // Anonymous users (userId=null) can generate worksheets in demo mode
+    // Blocking happens later on download (PaymentPopup)
+    if (userId && !isDemo && !hasTokens) {
       toast({
         title: "No tokens available",
         description: "You need tokens to generate worksheets. Please upgrade your plan or purchase tokens.",

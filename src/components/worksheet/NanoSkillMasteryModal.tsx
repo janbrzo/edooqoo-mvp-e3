@@ -197,67 +197,59 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
   const [ratings, setRatings] = useState<NanoSkillRating[]>([]);
   const hasInitialized = useRef(false);
 
-  // PROBLEM 1 FIX: Create a mapping from nano_skill name to their original item indices
-  // This ensures we don't lose the mapping when there are duplicate skill names
-  const nanoSkillToItemIndex = useMemo(() => {
-    const mapping: Map<string, number[]> = new Map();
-    
-    // Track all nano_skills with their positions
+  // PROBLEM 1 FIX: Create a direct mapping from skill index to item index
+  // This preserves the 1:1 relationship between skills and exercise items
+  const skillToItemMapping = useMemo(() => {
     const allSkillsWithPositions: { skill: NanoSkill; itemIndex: number }[] = [];
     
-    // Process exercise data to extract skill positions
-    const processItems = (items: any[] | undefined, startIndex: number = 0) => {
+    // Process exercise data to extract ALL skills with their original positions
+    // This keeps the order and allows proper mapping to studentAnswers
+    const processItems = (items: any[] | undefined) => {
       if (!items) return;
       items.forEach((item, idx) => {
         const ns = item?.nano_skill || item?.nanoSkill;
         if (ns && ns.name) {
-          allSkillsWithPositions.push({ skill: ns, itemIndex: startIndex + idx });
+          allSkillsWithPositions.push({ skill: ns, itemIndex: idx });
         }
       });
     };
     
     if (exerciseData) {
+      // Process in order of priority - usually only ONE of these arrays is populated per exercise
       processItems(exerciseData.questions);
-      processItems(exerciseData.items);
-      processItems(exerciseData.sentences);
-      processItems(exerciseData.statements);
-      processItems(exerciseData.words);
-      processItems(exerciseData.expressions);
-      processItems(exerciseData.categories);
-      processItems(exerciseData.sentence_halves);
-      processItems(exerciseData.prompts);
+      if (allSkillsWithPositions.length === 0) processItems(exerciseData.items);
+      if (allSkillsWithPositions.length === 0) processItems(exerciseData.sentences);
+      if (allSkillsWithPositions.length === 0) processItems(exerciseData.statements);
+      if (allSkillsWithPositions.length === 0) processItems(exerciseData.words);
+      if (allSkillsWithPositions.length === 0) processItems(exerciseData.expressions);
+      if (allSkillsWithPositions.length === 0) processItems(exerciseData.categories);
+      if (allSkillsWithPositions.length === 0) processItems(exerciseData.sentence_halves);
+      if (allSkillsWithPositions.length === 0) processItems(exerciseData.prompts);
     }
     
-    // Build mapping from skill name to item indices
-    allSkillsWithPositions.forEach(({ skill, itemIndex }) => {
-      const existing = mapping.get(skill.name) || [];
-      existing.push(itemIndex);
-      mapping.set(skill.name, existing);
-    });
+    console.log('[Mastery] All skills with positions:', allSkillsWithPositions.map(s => ({
+      name: s.skill.name,
+      itemIndex: s.itemIndex
+    })));
     
-    return { mapping, allSkillsWithPositions };
+    return allSkillsWithPositions;
   }, [exerciseData]);
 
   useEffect(() => {
     if (isOpen && nanoSkills.length > 0 && !hasInitialized.current) {
-      // PROBLEM 1 FIX: Initialize each skill with value based on its SPECIFIC item's answer
-      // Use the mapping to find the correct item index for each unique nano_skill
-      const skillIndexTracker: Map<string, number> = new Map(); // Track which occurrence of each skill we're on
-      
+      // PROBLEM 1 FIX: Use direct index mapping - each skill in nanoSkills array
+      // corresponds to the same position in skillToItemMapping
       setRatings(
-        nanoSkills.map((skill) => {
-          // Find the item index for this skill occurrence
-          const indices = nanoSkillToItemIndex.mapping.get(skill.name) || [];
-          const occurrenceIndex = skillIndexTracker.get(skill.name) || 0;
-          const itemIndex = indices[occurrenceIndex] ?? occurrenceIndex;
+        nanoSkills.map((skill, skillIndex) => {
+          // CRITICAL: Use skill's position in the array to find corresponding item index
+          // skillToItemMapping[skillIndex] gives us the original exercise item this skill came from
+          const mappedItem = skillToItemMapping[skillIndex];
+          const itemIndex = mappedItem?.itemIndex ?? skillIndex;
           
-          // Update tracker for next occurrence of this skill
-          skillIndexTracker.set(skill.name, occurrenceIndex + 1);
-          
-          // Get mastery for this SPECIFIC item
+          // Get mastery for this SPECIFIC item based on its answer
           const { mastery, hasValue } = calculateInitialMasteryForItem(itemIndex, studentAnswers, exerciseData);
           
-          console.log(`[Mastery Init] Skill: ${skill.name}, ItemIndex: ${itemIndex}, Answer: ${studentAnswers?.[itemIndex]}, Mastery: ${mastery}`);
+          console.log(`[Mastery Init] SkillIndex: ${skillIndex}, Skill: ${skill.name}, ItemIndex: ${itemIndex}, Answer: ${studentAnswers?.[itemIndex]}, Mastery: ${mastery}`);
           
           return {
             name: skill.name,
@@ -274,7 +266,7 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
     if (!isOpen) {
       hasInitialized.current = false;
     }
-  }, [isOpen, nanoSkills, studentAnswers, exerciseData, nanoSkillToItemIndex]);
+  }, [isOpen, nanoSkills, studentAnswers, exerciseData, skillToItemMapping]);
 
   const handleMasteryChange = (index: number, value: number[]) => {
     setRatings(prevRatings => {
