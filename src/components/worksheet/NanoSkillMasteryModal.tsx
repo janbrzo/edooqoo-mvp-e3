@@ -99,12 +99,29 @@ export const UndoMarkDoneModal: React.FC<UndoMarkDoneModalProps> = ({
   );
 };
 
+// PROBLEM 1.1: List of OPEN-ENDED exercise types that require AI verification
+export const OPEN_ENDED_EXERCISES = [
+  'dialogue', 'discussion', 'describe-picture', 'answer-questions', 
+  'answer-questions-picture', 'answer-questions-audio', 'paraphrasing', 
+  'reading', 'listening-comprehension', 'speaking'
+];
+
+// PROBLEM 1.1: List of CLOSED exercise types with deterministic answers
+export const CLOSED_EXERCISES = [
+  'fill-in-blanks', 'fill-in-blanks-audio', 'multiple-choice', 'multiple-choice-audio',
+  'multiple-choice-picture', 'true-false', 'true-false-audio', 'true-false-picture',
+  'matching', 'matching-halves', 'odd-one-out', 'categorize', 'complete-word',
+  'synonyms', 'antonyms', 'negative-prefixes', 'word-order', 'gap-text',
+  'sentence-transformation', 'error-correction'
+];
+
 // PROBLEM 1: Helper to calculate initial mastery for SPECIFIC item index
 // Each nano_skill corresponds to a specific item in the exercise
 const calculateInitialMasteryForItem = (
   itemIndex: number,
   studentAnswers?: Record<number, any>,
-  exerciseData?: any
+  exerciseData?: any,
+  aiVerificationResults?: Record<number, { quality_score: number; is_acceptable: boolean }>
 ): { mastery: number | null; hasValue: boolean } => {
   // No answers = slider starts with no value
   if (!studentAnswers || Object.keys(studentAnswers).length === 0) {
@@ -119,15 +136,69 @@ const calculateInitialMasteryForItem = (
     return { mastery: null, hasValue: false };
   }
   
+  // PROBLEM 1.2: Check if we have AI verification results for this item
+  if (aiVerificationResults && aiVerificationResults[itemIndex]) {
+    const aiResult = aiVerificationResults[itemIndex];
+    // Convert 0.0-1.0 score to 0-100 mastery
+    const mastery = Math.round(aiResult.quality_score * 100);
+    return { mastery, hasValue: true };
+  }
+  
   // Try to determine correctness for this specific item
   let isCorrect: boolean | null = null;
   
-  // Check questions array
+  // PROBLEM 1.1 FIX: Check statements array (TRUE-FALSE)
+  if (exerciseData?.statements && exerciseData.statements[itemIndex]) {
+    const statement = exerciseData.statements[itemIndex];
+    // Handle isTrue field (primary) or correct field (fallback)
+    const expectedAnswer = statement.isTrue !== undefined ? statement.isTrue : statement.correct;
+    
+    if (expectedAnswer !== undefined) {
+      // Normalize student answer to boolean
+      const normalizedAnswer = 
+        studentAnswer === true || studentAnswer === 'true' || studentAnswer === 'True' ? true :
+        studentAnswer === false || studentAnswer === 'false' || studentAnswer === 'False' ? false :
+        null;
+      
+      if (normalizedAnswer !== null) {
+        isCorrect = normalizedAnswer === expectedAnswer;
+        console.log(`[Mastery TRUE-FALSE] idx=${itemIndex}, expected=${expectedAnswer}, got=${normalizedAnswer}, isCorrect=${isCorrect}`);
+      }
+    }
+  }
+  
+  // PROBLEM 1.1 FIX: Check sentence_halves array (MATCHING HALVES)
+  if (exerciseData?.sentence_halves && exerciseData.sentence_halves[itemIndex]) {
+    const half = exerciseData.sentence_halves[itemIndex];
+    // Student answers with letter (A, B, C, etc.)
+    // We need to check if it matches the correct_match field
+    // OR compute it from position
+    const correctMatch = half.correct_match;
+    
+    if (correctMatch !== undefined) {
+      // Direct comparison (if correct_match is stored)
+      isCorrect = String(studentAnswer).toUpperCase() === String(correctMatch).toUpperCase();
+    } else {
+      // If correct_match not stored, the correct answer is the letter at the same index
+      const expectedLetter = String.fromCharCode(65 + itemIndex); // A=0, B=1, etc.
+      isCorrect = String(studentAnswer).toUpperCase() === expectedLetter;
+    }
+    console.log(`[Mastery MATCHING-HALVES] idx=${itemIndex}, answer=${studentAnswer}, isCorrect=${isCorrect}`);
+  }
+  
+  // PROBLEM 1.1 FIX: Check questions array for ODD ONE OUT
   if (exerciseData?.questions && exerciseData.questions[itemIndex]) {
     const question = exerciseData.questions[itemIndex];
     
+    // ODD ONE OUT - correct_answer field contains the odd word
+    if (question.correct_answer) {
+      const correctAnswer = question.correct_answer;
+      isCorrect = String(studentAnswer).toLowerCase().trim() === String(correctAnswer).toLowerCase().trim();
+      console.log(`[Mastery ODD-ONE-OUT] idx=${itemIndex}, expected=${correctAnswer}, got=${studentAnswer}, isCorrect=${isCorrect}`);
+    }
+    
     // Multiple choice - check if answer matches correct option
-    if (question.options && Array.isArray(question.options)) {
+    if (isCorrect === null && question.options && Array.isArray(question.options)) {
       const correctOption = question.options.find((o: any) => o.correct === true);
       if (correctOption) {
         isCorrect = studentAnswer === correctOption.text || 
@@ -137,39 +208,29 @@ const calculateInitialMasteryForItem = (
     }
     
     // Reading/answer questions with expected answer
-    if (question.answer || question.correct || question.expected) {
+    if (isCorrect === null && (question.answer || question.correct || question.expected)) {
       const expected = question.answer || question.correct || question.expected;
-      isCorrect = studentAnswer.toLowerCase().trim() === expected.toLowerCase().trim();
+      isCorrect = String(studentAnswer).toLowerCase().trim() === String(expected).toLowerCase().trim();
     }
   }
   
   // Check items array (matching, categorize, etc.)
-  if (exerciseData?.items && exerciseData.items[itemIndex]) {
+  if (isCorrect === null && exerciseData?.items && exerciseData.items[itemIndex]) {
     const item = exerciseData.items[itemIndex];
     if (item.match) {
       isCorrect = studentAnswer === item.match;
     }
-    if (item.category) {
+    if (isCorrect === null && item.category) {
       isCorrect = studentAnswer === item.category;
     }
   }
   
   // Check sentences array (fill in blanks, transformation, etc.)
-  if (exerciseData?.sentences && exerciseData.sentences[itemIndex]) {
+  if (isCorrect === null && exerciseData?.sentences && exerciseData.sentences[itemIndex]) {
     const sentence = exerciseData.sentences[itemIndex];
     const correctAnswer = sentence.answer || sentence.correct || sentence.missing_word;
     if (correctAnswer) {
-      isCorrect = studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
-    }
-  }
-  
-  // Check statements array (true/false)
-  if (exerciseData?.statements && exerciseData.statements[itemIndex]) {
-    const statement = exerciseData.statements[itemIndex];
-    if (statement.correct !== undefined) {
-      isCorrect = studentAnswer === statement.correct || 
-                 (studentAnswer === 'true' && statement.correct === true) ||
-                 (studentAnswer === 'false' && statement.correct === false);
+      isCorrect = String(studentAnswer).toLowerCase().trim() === String(correctAnswer).toLowerCase().trim();
     }
   }
   

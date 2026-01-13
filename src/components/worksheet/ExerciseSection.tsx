@@ -356,21 +356,34 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           
           console.log('✅ Updated existing mastery evaluation:', existingEvent.id);
         } else {
-          // INSERT new record using addEvent
-          const eventResult = await addEvent({
-            event_type: 'exercise_mastery_evaluation',
-            event_source: 'teacher',
-            source_id: worksheetIdForStorage || undefined,
-            element_type: exercise.type,
-            event_payload: {
-              exercise_index: exerciseIdx,
-              exercise_title: exercise.title,
-              nano_skill_ratings: ratingsWithValue
-            },
-            skill_ids: ratingsWithValue.map(r => r.name)
-          });
+          // PROBLEM 2 FIX: Use direct INSERT instead of RPC as it's more reliable
+          console.log('📝 Attempting direct INSERT to student_events...');
           
-          console.log('✅ Created new mastery evaluation, result:', eventResult);
+          const { data: insertData, error: insertError } = await supabase
+            .from('student_events')
+            .insert({
+              student_id: studentIdProp,
+              teacher_id: teacherIdProp,
+              event_type: 'exercise_mastery_evaluation',
+              event_source: 'teacher',
+              source_id: worksheetIdForStorage || null,
+              element_type: exercise.type,
+              event_payload: {
+                exercise_index: exerciseIdx,
+                exercise_title: exercise.title,
+                nano_skill_ratings: ratingsWithValue
+              },
+              skill_ids: ratingsWithValue.map(r => r.name)
+            })
+            .select('id')
+            .single();
+          
+          if (insertError) {
+            console.error('❌ Direct INSERT failed:', insertError);
+            throw insertError;
+          }
+          
+          console.log('✅ Created new mastery evaluation via direct INSERT:', insertData?.id);
         }
         
         toast({
