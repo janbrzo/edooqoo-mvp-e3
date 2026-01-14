@@ -82,39 +82,6 @@ const getGenerationSections = (
   return sections;
 };
 
-// PROBLEM 5: Calculate expected generation time based on parameters
-const calculateExpectedTime = (
-  requiresAudio: boolean,
-  requiresImage: boolean,
-  hasGrammar: boolean,
-  exerciseCount: number
-): number => {
-  let baseTime = 50; // Base time in seconds
-  
-  // Media adds significant time
-  if (requiresAudio) baseTime += 30;
-  if (requiresImage) baseTime += 20;
-  
-  // Grammar rules add time
-  if (hasGrammar) baseTime += 10;
-  
-  // Extra exercises beyond 6 add time
-  const extraExercises = Math.max(0, exerciseCount - 6);
-  baseTime += Math.floor(extraExercises / 2) * 5;
-  
-  // Round to nearest 10 seconds
-  return Math.ceil(baseTime / 10) * 10;
-};
-
-// Format expected time for display
-const formatExpectedTime = (seconds: number): string => {
-  if (seconds < 60) return `~${seconds}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  if (secs === 0) return `~${mins}:00 min`;
-  return `~${mins}:${secs < 10 ? '0' : ''}${secs} min`;
-};
-
 export default function GeneratingModal({ 
   isOpen, 
   requiresAudio = false, 
@@ -316,18 +283,9 @@ export default function GeneratingModal({
         </div>
 
         <p className="text-center text-xs text-gray-400">
-          {/* PROBLEM 5: Dynamic expected time calculation */}
-          Expected time: {formatExpectedTime(calculateExpectedTime(
-            requiresAudio, 
-            requiresImage, 
-            hasGrammar, 
-            selectedExercises?.length || 6
-          ))}
-          {(requiresAudio || requiresImage) && (
-            <span className="ml-1">
-              (with {requiresAudio && requiresImage ? 'audio & image' : requiresAudio ? 'audio' : 'image'})
-            </span>
-          )}
+          {(requiresAudio || requiresImage) 
+            ? `Expected time: ~1:30 min (with ${requiresAudio && requiresImage ? 'audio & image' : requiresAudio ? 'audio' : 'image'})` 
+            : "Expected time: ~60s"}
         </p>
       </div>
     </div>
