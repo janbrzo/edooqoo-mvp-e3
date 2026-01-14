@@ -51,6 +51,24 @@ import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudentEvents } from "@/hooks/dslm/useStudentEvents";
 
+// PROBLEM 1.2: Define which exercise types are open-ended (require AI verification)
+// Closed exercises have definitive correct answers (fill-in-blanks, multiple-choice, true-false, etc.)
+// Open exercises require subjective evaluation (discussion, dialogue, describe, essay, etc.)
+const OPEN_ENDED_EXERCISE_TYPES = [
+  'dialogue',           // Dialogue Practice - student writes expressions
+  'discussion',         // Discussion Questions - open-ended responses
+  'describe',           // Describe Picture - descriptive writing
+  'describe-picture',   // Same as above
+  'answer-questions',   // Answer Questions - can be open-ended
+  'answer-questions-picture', // Picture-based questions
+  'answer-questions-audio',   // Audio-based questions  
+  'paraphrasing',       // Rewriting sentences
+  'reading',            // Reading comprehension - often open-ended
+  'listening-comprehension', // Open-ended audio comprehension
+  'essay',              // Essay writing
+  'speaking',           // Speaking tasks
+];
+
 interface Exercise {
   type: string;
   title: string;
@@ -200,6 +218,9 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   // DSLM: NanoSkill Mastery Modal state
   const [isMasteryModalOpen, setIsMasteryModalOpen] = useState(false);
   const [isUndoModalOpen, setIsUndoModalOpen] = useState(false);
+  // PROBLEM 1.2: AI evaluations for open-ended exercises
+  const [aiEvaluations, setAiEvaluations] = useState<Array<{ question_index: number; quality_score: number; is_acceptable: boolean; feedback?: string }>>([]);
+  const [isLoadingAiEvaluation, setIsLoadingAiEvaluation] = useState(false);
   
   // Get student events hook if we have student and teacher IDs
   const { addEvent } = useStudentEvents({
@@ -283,8 +304,70 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
     return skills;
   };
   
-  const handleMarkDoneWithModal = () => {
-    // Open mastery modal instead of just toggling done
+  // PROBLEM 1.2: Handle Mark Done with AI verification for open-ended exercises
+  const handleMarkDoneWithModal = async () => {
+    const normalizedType = normalizeExerciseType(exercise.type);
+    const isOpenEnded = OPEN_ENDED_EXERCISE_TYPES.includes(normalizedType);
+    
+    // PROBLEM 1.2: For open-ended exercises, call AI to evaluate answers first
+    if (isOpenEnded && liveSessionAnswer && Object.keys(liveSessionAnswer).length > 0) {
+      setIsLoadingAiEvaluation(true);
+      
+      try {
+        // Prepare answers for AI evaluation
+        const answersToEvaluate = Object.entries(liveSessionAnswer)
+          .filter(([_, answer]) => answer && String(answer).trim())
+          .map(([idx, answer]) => {
+            const questionIndex = parseInt(idx);
+            // Get question text from various exercise structures
+            let questionText = `Question ${questionIndex + 1}`;
+            
+            if (exercise.questions?.[questionIndex]?.question) {
+              questionText = exercise.questions[questionIndex].question;
+            } else if (exercise.questions?.[questionIndex]?.text) {
+              questionText = exercise.questions[questionIndex].text;
+            } else if (exercise.expressions?.[questionIndex]) {
+              const expr = exercise.expressions[questionIndex];
+              questionText = typeof expr === 'string' ? expr : (expr?.text || `Expression ${questionIndex + 1}`);
+            } else if (exercise.prompts?.[questionIndex]) {
+              const prompt = exercise.prompts[questionIndex];
+              questionText = typeof prompt === 'string' ? prompt : (prompt?.text || `Prompt ${questionIndex + 1}`);
+            }
+            
+            return {
+              question_index: questionIndex,
+              question_text: questionText,
+              student_answer: String(answer),
+              exercise_type: normalizedType
+            };
+          });
+        
+        if (answersToEvaluate.length > 0) {
+          console.log('🤖 Calling AI to evaluate open-ended answers:', answersToEvaluate);
+          
+          const { data, error } = await supabase.functions.invoke('verify-open-answers', {
+            body: {
+              answers: answersToEvaluate,
+              english_level: originalFormData?.englishLevel || 'B1',
+              context: exercise.title
+            }
+          });
+          
+          if (error) {
+            console.error('❌ AI evaluation error:', error);
+          } else if (data?.evaluations) {
+            console.log('✅ AI evaluation results:', data.evaluations);
+            setAiEvaluations(data.evaluations);
+          }
+        }
+      } catch (err) {
+        console.error('❌ Error calling AI evaluation:', err);
+      } finally {
+        setIsLoadingAiEvaluation(false);
+      }
+    }
+    
+    // Open mastery modal
     setIsMasteryModalOpen(true);
   };
   
@@ -356,7 +439,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           
           console.log('✅ Updated existing mastery evaluation:', existingEvent.id);
         } else {
-          // INSERT new record using addEvent
+          // PROBLEM 2 FIX: Try addEvent first, then fallback to direct INSERT
           const eventResult = await addEvent({
             event_type: 'exercise_mastery_evaluation',
             event_source: 'teacher',
@@ -370,7 +453,39 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             skill_ids: ratingsWithValue.map(r => r.name)
           });
           
-          console.log('✅ Created new mastery evaluation, result:', eventResult);
+          // PROBLEM 2 FIX: If addEvent returns null, use direct INSERT as fallback
+          if (!eventResult) {
+            console.log('⚠️ addEvent returned null, trying direct INSERT...');
+            
+            const { data: insertedEvent, error: insertError } = await supabase
+              .from('student_events')
+              .insert({
+                student_id: studentIdProp,
+                teacher_id: teacherIdProp,
+                event_type: 'exercise_mastery_evaluation',
+                event_source: 'teacher',
+                source_id: worksheetIdForStorage || null,
+                element_type: exercise.type,
+                event_payload: {
+                  exercise_index: exerciseIdx,
+                  exercise_title: exercise.title,
+                  nano_skill_ratings: ratingsWithValue
+                },
+                skill_ids: ratingsWithValue.map(r => r.name),
+                is_processed: false
+              })
+              .select('id')
+              .single();
+            
+            if (insertError) {
+              console.error('❌ Direct INSERT failed:', insertError);
+              throw insertError;
+            } else {
+              console.log('✅ Direct INSERT success, event ID:', insertedEvent?.id);
+            }
+          } else {
+            console.log('✅ Created new mastery evaluation via addEvent, result:', eventResult);
+          }
         }
         
         toast({
@@ -1483,13 +1598,17 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
       {/* NanoSkill Mastery Evaluation Modal */}
       <NanoSkillMasteryModal
         isOpen={isMasteryModalOpen}
-        onClose={() => setIsMasteryModalOpen(false)}
+        onClose={() => {
+          setIsMasteryModalOpen(false);
+          setAiEvaluations([]); // Clear AI evaluations when modal closes
+        }}
         onSubmit={handleMasterySubmit}
         onSkip={handleSkip}
         nanoSkills={exerciseNanoSkills}
         exerciseTitle={exercise.title}
         studentAnswers={liveSessionAnswer}
         exerciseData={exercise}
+        aiEvaluations={aiEvaluations} // PROBLEM 1.2: Pass AI evaluations for open-ended exercises
       />
       
       {/* Undo Mark Done Modal */}
