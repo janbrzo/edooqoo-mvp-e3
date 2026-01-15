@@ -142,21 +142,13 @@ function WorksheetHeader({
         <div className="flex flex-col md:flex-row justify-between">
           <div>
             <h1 className="mb-1 font-bald text-white text-2xl font-semibold flex items-center gap-2">
-              {/* PROBLEM 3 FIX: Dynamic title truncation based on student name length */}
-              {(() => {
-                const fullTitle = worksheetTitle || 'Your Generated Worksheet';
-                const studentNameLength = displayStudentName?.length || 10;
-                // Formula: 59 total chars - 5 (" for ") - student name length = max title length
-                const maxTitleLength = Math.max(59 - 5 - studentNameLength, 20);
-                const truncatedTitle = fullTitle.length > maxTitleLength 
-                  ? fullTitle.substring(0, maxTitleLength) + '...'
-                  : fullTitle;
-                return (
-                  <span title={fullTitle}>
-                    {truncatedTitle}
-                  </span>
-                );
-              })()}
+              {/* PROBLEM 4: Truncate title to 50 chars */}
+              <span title={worksheetTitle || 'Your Generated Worksheet'}>
+                {(worksheetTitle || 'Your Generated Worksheet').length > 50 
+                  ? (worksheetTitle || 'Your Generated Worksheet').substring(0, 50) + '...'
+                  : (worksheetTitle || 'Your Generated Worksheet')
+                }
+              </span>
               {/* Rename button */}
               {worksheetId && isRegisteredUser && (
                 <Button

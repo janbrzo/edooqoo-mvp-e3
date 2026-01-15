@@ -5,17 +5,7 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 4 Problem Fixes (Mastery Evaluation & UX):**
-- **#1.1 Mastery Slider FIX for True-False, Matching Halves, Odd One Out**: FIXED - `calculateInitialMasteryForItem` now correctly handles:
-  - **True-False**: Uses `statement.isTrue` (was incorrectly checking `statement.correct`)
-  - **Matching Halves**: Compares student letter answer with `correct_match` or position-based expected letter
-  - **Odd One Out**: Case-insensitive string comparison of `correct_answer` field
-  - Each item now gets INDIVIDUAL mastery value (80% correct, 30% incorrect, 50% unverified)
-- **#1.2 AI Verification for Open-Ended Exercises**: NEW - Added `OPEN_ENDED_EXERCISE_TYPES` constant defining 12 open-ended exercise types (dialogue, discussion, describe, answer-questions, paraphrasing, reading, etc.). When teacher clicks "Mark Done" on open-ended exercise, system calls `verify-open-answers` Edge Function to get AI quality scores (0-100%) which are then used as pre-filled slider values in the mastery modal
-- **#2 Save Evaluation DIRECT INSERT FALLBACK**: ENHANCED - If `addEvent()` returns null (due to missing RPC or validation), system now falls back to direct `INSERT INTO student_events` - ensures mastery evaluations are ALWAYS saved to database
-- **#3 Dynamic Worksheet Title Length**: FIXED - Title truncation now calculated dynamically based on student name length: `maxTitleLength = 59 - 5 - studentNameLength` (minimum 20 chars). Examples: "JULIA" (5 chars) → max 49 char title, "MATE Galloway" (13 chars) → max 41 char title. Title always fits in one line regardless of name length
-
-**Previous Update (January 2026) - 5 New Problem Fixes (UX & Demo Mode):**
+**Latest Update (January 2026) - 5 New Problem Fixes (UX & Demo Mode):**
 - **#1 Mastery Slider CORRECT Index Mapping**: FIXED - NanoSkillMasteryModal now uses direct 1:1 mapping between skill array position and exercise item index. `skillToItemMapping` extracts ALL skills with original positions (no deduplication). Each skill in the modal corresponds directly to its item's answer - 80% correct, 30% incorrect, 50% partial per INDIVIDUAL item
 - **#2 Save Evaluation VALIDATION**: ENHANCED - Added comprehensive console logging before/after save. Validation shows clear toast error if `studentId` or `teacherId` is missing. UPSERT pattern (check existing → UPDATE or INSERT) prevents duplicate records
 - **#3 sourceCount DETERMINISTIC**: FIXED - Replaced hardcoded `sourceCount={0}` with `calculateSourceCount(formData)` function that computes 50-95 based on: level bonus (5-30), exercise count (×2), topic length bonus, grammar bonus

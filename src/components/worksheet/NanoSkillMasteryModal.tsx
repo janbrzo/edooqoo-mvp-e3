@@ -30,8 +30,6 @@ interface NanoSkillMasteryModalProps {
   // PROBLEM 1.1: Student answers and exercise data for pre-filling
   studentAnswers?: Record<number, any>;
   exerciseData?: any;
-  // PROBLEM 1.2: AI evaluations for open-ended exercises
-  aiEvaluations?: Array<{ question_index: number; quality_score: number; is_acceptable: boolean; feedback?: string }>;
 }
 
 // Undo Mark Done Modal
@@ -101,14 +99,12 @@ export const UndoMarkDoneModal: React.FC<UndoMarkDoneModalProps> = ({
   );
 };
 
-// PROBLEM 1.1 FIX: Helper to calculate initial mastery for SPECIFIC item index
+// PROBLEM 1: Helper to calculate initial mastery for SPECIFIC item index
 // Each nano_skill corresponds to a specific item in the exercise
-// IMPORTANT: This function handles different data structures for different exercise types
 const calculateInitialMasteryForItem = (
   itemIndex: number,
   studentAnswers?: Record<number, any>,
-  exerciseData?: any,
-  aiEvaluations?: Array<{ question_index: number; quality_score: number; is_acceptable: boolean }> // PROBLEM 1.2
+  exerciseData?: any
 ): { mastery: number | null; hasValue: boolean } => {
   // No answers = slider starts with no value
   if (!studentAnswers || Object.keys(studentAnswers).length === 0) {
@@ -123,94 +119,15 @@ const calculateInitialMasteryForItem = (
     return { mastery: null, hasValue: false };
   }
   
-  // PROBLEM 1.2: Check if we have AI evaluation for this item (open-ended exercises)
-  if (aiEvaluations && aiEvaluations.length > 0) {
-    const aiEval = aiEvaluations.find(e => e.question_index === itemIndex);
-    if (aiEval && typeof aiEval.quality_score === 'number') {
-      // Use AI quality_score (0-1) converted to percentage (0-100)
-      const mastery = Math.round(aiEval.quality_score * 100);
-      return { mastery, hasValue: true };
-    }
-  }
-  
   // Try to determine correctness for this specific item
   let isCorrect: boolean | null = null;
   
-  // ============================================
-  // PROBLEM 1.1: TRUE-FALSE EXERCISE
-  // Structure: exerciseData.statements[].isTrue (boolean)
-  // Student answers: true/false or "true"/"false"
-  // ============================================
-  if (exerciseData?.statements && exerciseData.statements[itemIndex]) {
-    const statement = exerciseData.statements[itemIndex];
-    // CRITICAL FIX: Use isTrue (not correct) - this is the actual field name
-    const expectedAnswer = statement.isTrue;
-    
-    if (expectedAnswer !== undefined) {
-      // Normalize student answer to boolean
-      let normalizedAnswer: boolean | null = null;
-      if (studentAnswer === true || studentAnswer === 'true' || studentAnswer === 'True') {
-        normalizedAnswer = true;
-      } else if (studentAnswer === false || studentAnswer === 'false' || studentAnswer === 'False') {
-        normalizedAnswer = false;
-      }
-      
-      if (normalizedAnswer !== null) {
-        isCorrect = normalizedAnswer === expectedAnswer;
-        console.log(`[Mastery] True-False item ${itemIndex}: expected=${expectedAnswer}, student=${normalizedAnswer}, correct=${isCorrect}`);
-      }
-    }
-  }
-  
-  // ============================================
-  // PROBLEM 1.1: MATCHING HALVES EXERCISE
-  // Structure: exerciseData.sentence_halves[].second_half
-  // Student answers with letter (A, B, C...) which maps to shuffled position
-  // Since we don't have shuffle info here, we use correct_match if available
-  // Otherwise we check if the answer is a valid letter
-  // ============================================
-  if (exerciseData?.sentence_halves && exerciseData.sentence_halves[itemIndex]) {
-    const halfItem = exerciseData.sentence_halves[itemIndex];
-    
-    // If correct_match is stored in data, use it
-    if (halfItem.correct_match) {
-      const studentLetter = String(studentAnswer).toUpperCase().trim();
-      const correctLetter = String(halfItem.correct_match).toUpperCase().trim();
-      isCorrect = studentLetter === correctLetter;
-      console.log(`[Mastery] Matching Halves item ${itemIndex}: expected=${correctLetter}, student=${studentLetter}, correct=${isCorrect}`);
-    } else {
-      // Otherwise, we can only verify the answer is a letter
-      // In this case, assume teacher evaluation is needed
-      const studentLetter = String(studentAnswer).toUpperCase().trim();
-      const isValidLetter = /^[A-Z]$/.test(studentLetter);
-      
-      if (isValidLetter) {
-        // Check if letter matches position (original order = A for 0, B for 1, etc.)
-        const expectedLetter = String.fromCharCode(65 + itemIndex);
-        isCorrect = studentLetter === expectedLetter;
-        console.log(`[Mastery] Matching Halves item ${itemIndex} (position check): expected=${expectedLetter}, student=${studentLetter}, correct=${isCorrect}`);
-      }
-    }
-  }
-  
-  // ============================================
-  // PROBLEM 1.1: ODD ONE OUT EXERCISE  
-  // Structure: exerciseData.questions[].correct_answer (string - the word that doesn't fit)
-  // Student answers with the word text
-  // ============================================
+  // Check questions array
   if (exerciseData?.questions && exerciseData.questions[itemIndex]) {
     const question = exerciseData.questions[itemIndex];
     
-    // Odd One Out has correct_answer as string (the odd word)
-    if (question.correct_answer && typeof question.correct_answer === 'string') {
-      const studentText = String(studentAnswer).toLowerCase().trim();
-      const correctText = String(question.correct_answer).toLowerCase().trim();
-      isCorrect = studentText === correctText;
-      console.log(`[Mastery] Odd One Out item ${itemIndex}: expected="${correctText}", student="${studentText}", correct=${isCorrect}`);
-    }
-    
     // Multiple choice - check if answer matches correct option
-    if (question.options && Array.isArray(question.options) && !question.correct_answer) {
+    if (question.options && Array.isArray(question.options)) {
       const correctOption = question.options.find((o: any) => o.correct === true);
       if (correctOption) {
         isCorrect = studentAnswer === correctOption.text || 
@@ -220,9 +137,9 @@ const calculateInitialMasteryForItem = (
     }
     
     // Reading/answer questions with expected answer
-    if ((question.answer || question.correct || question.expected) && !question.correct_answer && !question.options) {
+    if (question.answer || question.correct || question.expected) {
       const expected = question.answer || question.correct || question.expected;
-      isCorrect = String(studentAnswer).toLowerCase().trim() === String(expected).toLowerCase().trim();
+      isCorrect = studentAnswer.toLowerCase().trim() === expected.toLowerCase().trim();
     }
   }
   
@@ -242,7 +159,17 @@ const calculateInitialMasteryForItem = (
     const sentence = exerciseData.sentences[itemIndex];
     const correctAnswer = sentence.answer || sentence.correct || sentence.missing_word;
     if (correctAnswer) {
-      isCorrect = String(studentAnswer).toLowerCase().trim() === String(correctAnswer).toLowerCase().trim();
+      isCorrect = studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+    }
+  }
+  
+  // Check statements array (true/false)
+  if (exerciseData?.statements && exerciseData.statements[itemIndex]) {
+    const statement = exerciseData.statements[itemIndex];
+    if (statement.correct !== undefined) {
+      isCorrect = studentAnswer === statement.correct || 
+                 (studentAnswer === 'true' && statement.correct === true) ||
+                 (studentAnswer === 'false' && statement.correct === false);
     }
   }
   
@@ -266,7 +193,6 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
   exerciseTitle,
   studentAnswers,
   exerciseData,
-  aiEvaluations, // PROBLEM 1.2: AI evaluations for open-ended exercises
 }) => {
   const [ratings, setRatings] = useState<NanoSkillRating[]>([]);
   const hasInitialized = useRef(false);
@@ -320,15 +246,10 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
           const mappedItem = skillToItemMapping[skillIndex];
           const itemIndex = mappedItem?.itemIndex ?? skillIndex;
           
-          // PROBLEM 1.2: Pass aiEvaluations to calculate mastery (for open-ended exercises)
-          const { mastery, hasValue } = calculateInitialMasteryForItem(
-            itemIndex, 
-            studentAnswers, 
-            exerciseData,
-            aiEvaluations // NEW: AI evaluation results for open-ended exercises
-          );
+          // Get mastery for this SPECIFIC item based on its answer
+          const { mastery, hasValue } = calculateInitialMasteryForItem(itemIndex, studentAnswers, exerciseData);
           
-          console.log(`[Mastery Init] SkillIndex: ${skillIndex}, Skill: ${skill.name}, ItemIndex: ${itemIndex}, Answer: ${studentAnswers?.[itemIndex]}, Mastery: ${mastery}, HasAiEval: ${!!aiEvaluations?.find(e => e.question_index === itemIndex)}`);
+          console.log(`[Mastery Init] SkillIndex: ${skillIndex}, Skill: ${skill.name}, ItemIndex: ${itemIndex}, Answer: ${studentAnswers?.[itemIndex]}, Mastery: ${mastery}`);
           
           return {
             name: skill.name,
@@ -345,7 +266,7 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
     if (!isOpen) {
       hasInitialized.current = false;
     }
-  }, [isOpen, nanoSkills, studentAnswers, exerciseData, skillToItemMapping, aiEvaluations]);
+  }, [isOpen, nanoSkills, studentAnswers, exerciseData, skillToItemMapping]);
 
   const handleMasteryChange = (index: number, value: number[]) => {
     setRatings(prevRatings => {
