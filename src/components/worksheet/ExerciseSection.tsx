@@ -51,6 +51,13 @@ import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudentEvents } from "@/hooks/dslm/useStudentEvents";
 
+// PROBLEM 1.2: Open-ended exercise types that require AI verification
+const OPEN_ENDED_EXERCISE_TYPES = [
+  'dialogue', 'discussion', 'describe-picture', 
+  'answer-questions', 'answer-questions-picture', 'answer-questions-audio',
+  'paraphrasing', 'reading'
+];
+
 interface Exercise {
   type: string;
   title: string;
@@ -201,10 +208,18 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   const [isMasteryModalOpen, setIsMasteryModalOpen] = useState(false);
   const [isUndoModalOpen, setIsUndoModalOpen] = useState(false);
   
+  // PROBLEM 1.2: AI evaluation state for open-ended exercises
+  const [aiEvaluations, setAiEvaluations] = useState<Record<number, number> | null>(null);
+  const [isLoadingAiEvaluation, setIsLoadingAiEvaluation] = useState(false);
+  
+  // PROBLEM 2 FIX: Validate IDs before passing to hook - use undefined instead of empty string
+  const validStudentId = studentIdProp && studentIdProp.trim() !== '' ? studentIdProp : undefined;
+  const validTeacherId = teacherIdProp && teacherIdProp.trim() !== '' ? teacherIdProp : undefined;
+  
   // Get student events hook if we have student and teacher IDs
   const { addEvent } = useStudentEvents({
-    studentId: studentIdProp || '',
-    teacherId: teacherIdProp || ''
+    studentId: validStudentId || '',
+    teacherId: validTeacherId || ''
   });
   
   const isMarkedDone = isMarkedDoneProp ?? localMarkedDone;
@@ -283,8 +298,76 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
     return skills;
   };
   
-  const handleMarkDoneWithModal = () => {
-    // Open mastery modal instead of just toggling done
+  // PROBLEM 1.2: Handle Mark Done with AI verification for open-ended exercises
+  const handleMarkDoneWithModal = async () => {
+    const exerciseType = normalizeExerciseType(exercise.type);
+    
+    // Check if this is an open-ended exercise that needs AI verification
+    if (OPEN_ENDED_EXERCISE_TYPES.includes(exerciseType) && liveSessionAnswer && Object.keys(liveSessionAnswer).length > 0) {
+      setIsLoadingAiEvaluation(true);
+      setAiEvaluations(null);
+      
+      console.log('[AI Evaluation] Starting for exercise type:', exerciseType);
+      
+      // Prepare answers to evaluate
+      const answersToEvaluate = Object.entries(liveSessionAnswer)
+        .filter(([_, answer]) => answer && String(answer).trim())
+        .map(([idx, answer]) => {
+          const qIndex = parseInt(idx);
+          // Get question/prompt text based on exercise structure
+          let questionText = `Question ${qIndex + 1}`;
+          let suggestedAnswer: string | undefined;
+          
+          if (exercise.questions?.[qIndex]) {
+            questionText = exercise.questions[qIndex].question || exercise.questions[qIndex].text || questionText;
+            suggestedAnswer = exercise.questions[qIndex].answer || exercise.questions[qIndex].suggested;
+          } else if (exercise.expressions?.[qIndex]) {
+            const expr = exercise.expressions[qIndex];
+            questionText = typeof expr === 'string' ? expr : expr.text || questionText;
+          } else if (exercise.prompts?.[qIndex]) {
+            questionText = exercise.prompts[qIndex].prompt || exercise.prompts[qIndex].text || questionText;
+          }
+          
+          return {
+            question_index: qIndex,
+            question_text: questionText,
+            student_answer: String(answer),
+            suggested_answer: suggestedAnswer,
+            exercise_type: exerciseType
+          };
+        });
+      
+      console.log('[AI Evaluation] Answers to evaluate:', answersToEvaluate.length);
+      
+      if (answersToEvaluate.length > 0) {
+        try {
+          const { data, error } = await supabase.functions.invoke('verify-open-answers', {
+            body: {
+              answers: answersToEvaluate,
+              english_level: originalFormData?.englishLevel || 'B1',
+              context: exercise.title
+            }
+          });
+          
+          if (error) {
+            console.error('[AI Evaluation] Error:', error);
+          } else if (data?.evaluations) {
+            // Convert quality_score (0-1) to percentage (0-100)
+            const evaluationsMap: Record<number, number> = {};
+            data.evaluations.forEach((e: any) => {
+              evaluationsMap[e.question_index] = Math.round(e.quality_score * 100);
+            });
+            setAiEvaluations(evaluationsMap);
+            console.log('[AI Evaluation] Results:', evaluationsMap);
+          }
+        } catch (err) {
+          console.error('[AI Evaluation] Exception:', err);
+        }
+      }
+      setIsLoadingAiEvaluation(false);
+    }
+    
+    // Open mastery modal
     setIsMasteryModalOpen(true);
   };
   
