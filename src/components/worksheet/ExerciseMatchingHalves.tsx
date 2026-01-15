@@ -117,7 +117,7 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">
-        <div className="md:col-span-5 space-y-2">
+        <div className="md:col-span-6 space-y-2">
           <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence beginnings</h4>
           {processedHalves.map((item, hIndex) => {
             const correctAnswer = String.fromCharCode(65 + shuffledSecondHalves.findIndex(shuffled => shuffled.second_half === item.second_half));
@@ -125,13 +125,48 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
             const nanoSkill = safeGetNanoSkill(item);
             const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
             
+            // PROBLEM 5: Get student answer for inline display
+            const studentAnswer = studentAnswers[hIndex];
+            const isCorrect = showCorrectAnswers && studentAnswer === correctAnswer;
+            const isIncorrect = showCorrectAnswers && studentAnswer && studentAnswer !== correctAnswer;
+            const isEmpty = showCorrectAnswers && !studentAnswer;
+            
             return (
-              <div key={hIndex} className="p-2 border rounded-md bg-white">
+              <div key={hIndex} className={`p-2 border rounded-md bg-white
+                ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
+                ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
+                ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+              `}>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-worksheet-purple font-medium">{hIndex + 1}.</span>
-                  {viewMode === 'student' ? (
+                  
+                  {/* PROBLEM 5: Inline Select dropdown for interactive mode */}
+                  {isInteractive && (
+                    <Select
+                      value={studentAnswer || ''}
+                      onValueChange={(value) => onAnswerChange?.(hIndex, value)}
+                    >
+                      <SelectTrigger className="w-14 h-8">
+                        <SelectValue placeholder="?" />
+                      </SelectTrigger>
+                      <SelectContent className="z-[200]">
+                        {shuffledSecondHalves.map((_, idx) => (
+                          <SelectItem key={idx} value={String.fromCharCode(65 + idx)}>
+                            {String.fromCharCode(65 + idx)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  
+                  {/* Show correct answer after submission */}
+                  {showCorrectAnswers && (
+                    <span className="text-green-600 text-sm font-medium">({correctAnswer})</span>
+                  )}
+                  
+                  {viewMode === 'student' && !isInteractive ? (
                     <span className="inline-block w-8 h-6 border-b border-gray-400"></span>
-                  ) : (
+                  ) : viewMode === 'teacher' && !isInteractive ? (
                     <>
                       <span className="teacher-answer">{correctAnswer}</span>
                       {/* Live Session: show student answer in blue */}
@@ -141,7 +176,8 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
                         </span>
                       )}
                     </>
-                  )}
+                  ) : null}
+                  
                   <span className="flex-grow">
                     {isEditing ? (
                       <input
@@ -166,9 +202,9 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
           })}
         </div>
 
-        <div className="md:col-span-7 space-y-2">
+        <div className="md:col-span-6 space-y-2">
           <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence endings</h4>
-          {/* PROBLEM 2 FIX: Always show shuffled second halves with A, B, C labels */}
+          {/* Show shuffled second halves with A, B, C labels */}
           {shuffledIndices.map((originalIndex, displayIndex) => {
             const item = processedHalves[originalIndex];
             return (
@@ -188,49 +224,7 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
         </div>
       </div>
 
-      {/* Interactive matching - student picks letter for each sentence beginning */}
-      {isInteractive && (
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <h4 className="font-medium text-blue-800 mb-2">Match each beginning (1, 2, 3...) with an ending (A, B, C...):</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {processedHalves.map((half, hIndex) => {
-              const studentAnswer = studentAnswers[hIndex];
-              const correctAnswer = String.fromCharCode(65 + shuffledSecondHalves.findIndex(s => s.second_half === half.second_half));
-              const isCorrect = showCorrectAnswers && studentAnswer === correctAnswer;
-              const isIncorrect = showCorrectAnswers && studentAnswer && studentAnswer !== correctAnswer;
-              const isEmpty = showCorrectAnswers && !studentAnswer;
-
-              return (
-                <div key={hIndex} className={`p-2 border rounded-md bg-white flex items-center gap-2
-                  ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
-                  ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
-                  ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
-                `}>
-                  <span className="text-worksheet-purple font-medium">{hIndex + 1} →</span>
-                  <Select
-                    value={studentAnswer || ''}
-                    onValueChange={(value) => onAnswerChange?.(hIndex, value)}
-                  >
-                    <SelectTrigger className="w-16">
-                      <SelectValue placeholder="?" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {shuffledSecondHalves.map((_, idx) => (
-                        <SelectItem key={idx} value={String.fromCharCode(65 + idx)}>
-                          {String.fromCharCode(65 + idx)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {showCorrectAnswers && (
-                    <span className="text-green-600 text-sm">({correctAnswer})</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* PROBLEM 5: Interactive matching is now inline above - this section removed */}
 
       {/* Teacher answers in editing mode */}
       {viewMode === 'teacher' && isEditing && (

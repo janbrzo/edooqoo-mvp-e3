@@ -35,6 +35,7 @@ interface SharedWorksheetContentProps {
     selected_image?: any;
     selected_audio?: any;
     audio_url?: string;
+    id?: string; // PROBLEM 4: Add worksheet ID for consistent shuffle
   };
   // Interactive mode props
   isInteractive?: boolean;
@@ -360,6 +361,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                 />
               )}
 
+              {/* PROBLEM 4: Pass worksheetId for consistent answer order */}
               {(exercise.type === 'multiple-choice' || exercise.type === 'multiple-choice-picture') && exercise.questions && (
                 <ExerciseMultipleChoice
                   questions={exercise.questions}
@@ -370,6 +372,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+                  worksheetId={worksheet.id}
                 />
               )}
 
@@ -540,6 +543,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                 />
               )}
 
+              {/* PROBLEM 4 & 5: Pass worksheetId for consistent shuffle */}
               {exercise.type === 'matching-halves' && exercise.sentence_halves && (
                 <ExerciseMatchingHalves
                   sentence_halves={exercise.sentence_halves}
@@ -549,6 +553,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+                  worksheetId={worksheet.id}
+                  isSharedWorksheet={true}
                 />
               )}
 

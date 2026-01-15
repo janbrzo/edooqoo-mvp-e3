@@ -5,14 +5,15 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 5 New Problem Fixes (UX & Demo Mode):**
-- **#1 Mastery Slider CORRECT Index Mapping**: FIXED - NanoSkillMasteryModal now uses direct 1:1 mapping between skill array position and exercise item index. `skillToItemMapping` extracts ALL skills with original positions (no deduplication). Each skill in the modal corresponds directly to its item's answer - 80% correct, 30% incorrect, 50% partial per INDIVIDUAL item
-- **#2 Save Evaluation VALIDATION**: ENHANCED - Added comprehensive console logging before/after save. Validation shows clear toast error if `studentId` or `teacherId` is missing. UPSERT pattern (check existing → UPDATE or INSERT) prevents duplicate records
-- **#3 sourceCount DETERMINISTIC**: FIXED - Replaced hardcoded `sourceCount={0}` with `calculateSourceCount(formData)` function that computes 50-95 based on: level bonus (5-30), exercise count (×2), topic length bonus, grammar bonus
-- **#4 Anonymous Users Token Check**: FIXED - Added `userId &&` condition to token check - anonymous users (userId=null) can now generate worksheets in demo mode. Token blocking happens later on download (PaymentPopup)
-- **#5 GeneratingModal EXERCISE LIST**: ENHANCED - Modal now shows detailed list of selected exercises with individual status (pending/generating/done). New `selectedExercises` prop passed from Index.tsx. Each exercise updates its status based on `streamProgress.exercisesGenerated`
+**Latest Update (January 2026) - 5 New UX Fixes:**
+- **#1 Dynamic Title Truncation**: WorksheetHeader now dynamically calculates `maxTitleLength = 59 - 5 - studentNameLength` ensuring titles always fit in one line regardless of student name length. Full title shown in tooltip on hover
+- **#2.1 Random Selection EXACT Count**: Random mode now always selects exact `maxExercises` (6 or 8). Added validation loop to fill any missing slots from general exercises pool
+- **#2.2/2.3 Media-Aware Auto-Complete**: Fallback auto-complete in `submitForm()` filters exercises by media type - no Picture exercises without Picture mode, no Audio exercises without Audio mode. Uses `PICTURE_COMPATIBLE_EXERCISES` and `AUDIO_COMPATIBLE_EXERCISES` constants
+- **#3 Generation Time Calculator**: New `calculateExpectedTime()` function: base 45s + 25s(audio) + 20s(image) + 8s(grammar) + 4s(per extra exercise over 6). Results rounded to 10s for clean display ("~50s", "~1:20 min")
+- **#4 Multiple Choice Consistent Order**: `worksheetId` now passed to `ExerciseMultipleChoice` in SharedWorksheetContent.tsx - ensures identical A/B/C/D answer order for teacher and student views
+- **#5 Matching Halves Inline Dropdowns**: Moved Select dropdown directly into "Sentence beginnings" section (next to number). Removed old separate interactive section below grid. Student now picks answer inline with each sentence
 
-**Previous Update (January 2026) - 5 Problem Fixes (UI & Data Integrity):**
+**Previous Update (January 2026) - 5 New Problem Fixes (UX & Demo Mode):**
 
 **Previous Update (January 2026) - 8 Problem Fixes:**
 - **#1 Mastery Slider Presets**: NanoSkillMasteryModal now pre-fills slider values based on student answers from Live Session (80% correct, 30% incorrect, 50% partial, null=no answer). Only skills with explicitly set values are saved to `student_events`

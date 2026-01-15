@@ -82,6 +82,38 @@ const getGenerationSections = (
   return sections;
 };
 
+// PROBLEM 3: Improved time calculator - rounded to 10s
+const calculateExpectedTime = (
+  requiresAudio: boolean,
+  requiresImage: boolean,
+  hasGrammar: boolean,
+  exerciseCount: number
+): number => {
+  let time = 45; // Base time in seconds
+  
+  // Media adds time
+  if (requiresAudio) time += 25; // TTS generation + upload
+  if (requiresImage) time += 20; // Image generation + upload
+  
+  // Grammar adds time
+  if (hasGrammar) time += 8;
+  
+  // Extra exercises beyond 6 add time
+  const extraExercises = Math.max(0, exerciseCount - 6);
+  time += extraExercises * 4;
+  
+  // Round to nearest 10 seconds
+  return Math.ceil(time / 10) * 10;
+};
+
+// PROBLEM 3: Format expected time nicely
+const formatExpectedTime = (seconds: number): string => {
+  if (seconds < 60) return `~${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return secs > 0 ? `~${mins}:${secs < 10 ? '0' : ''}${secs} min` : `~${mins} min`;
+};
+
 export default function GeneratingModal({ 
   isOpen, 
   requiresAudio = false, 
@@ -95,6 +127,10 @@ export default function GeneratingModal({
   const [elapsedTime, setElapsedTime] = useState(0);
   const [sections, setSections] = useState<SectionStatus[]>([]);
 
+  // PROBLEM 3: Calculate expected time based on configuration
+  const exerciseCount = selectedExercises?.length || 6;
+  const expectedSeconds = calculateExpectedTime(requiresAudio, requiresImage, hasGrammar, exerciseCount);
+
   useEffect(() => {
     if (!isOpen) {
       setProgress(0);
@@ -106,8 +142,8 @@ export default function GeneratingModal({
     // Initialize sections with grammar condition and selected exercises
     setSections(getGenerationSections(requiresAudio, requiresImage, hasGrammar, selectedExercises));
 
-    // Dynamic total duration: 150s with media, 90s without
-    const totalDuration = (requiresAudio || requiresImage) ? 150 : 90;
+    // PROBLEM 3: Use calculated expected time for progress bar
+    const totalDuration = expectedSeconds;
     const progressIncrement = 100 / totalDuration;
 
     const progressInterval = setInterval(() => {
@@ -126,7 +162,7 @@ export default function GeneratingModal({
       clearInterval(progressInterval);
       clearInterval(timerInterval);
     };
-  }, [isOpen, requiresAudio, requiresImage, hasGrammar, selectedExercises]);
+  }, [isOpen, requiresAudio, requiresImage, hasGrammar, selectedExercises, expectedSeconds]);
 
   // Update sections based on progress - SEQUENTIAL ACTIVATION with exercise details
   useEffect(() => {
@@ -282,10 +318,14 @@ export default function GeneratingModal({
           ))}
         </div>
 
+        {/* PROBLEM 3: Dynamic expected time display */}
         <p className="text-center text-xs text-gray-400">
-          {(requiresAudio || requiresImage) 
-            ? `Expected time: ~1:30 min (with ${requiresAudio && requiresImage ? 'audio & image' : requiresAudio ? 'audio' : 'image'})` 
-            : "Expected time: ~60s"}
+          Expected time: {formatExpectedTime(expectedSeconds)}
+          {(requiresAudio || requiresImage) && (
+            <span className="ml-1">
+              (with {requiresAudio && requiresImage ? 'audio & image' : requiresAudio ? 'audio' : 'image'})
+            </span>
+          )}
         </p>
       </div>
     </div>
