@@ -24,7 +24,7 @@ import ExerciseFillInBlanksAudio from '../worksheet/ExerciseFillInBlanksAudio';
 import ExerciseDescribe from '../worksheet/ExerciseDescribe';
 import ExerciseAnswerQuestions from '../worksheet/ExerciseAnswerQuestions';
 import MediaSection from '../worksheet/MediaSection';
-import { deepFixTextObjects } from '../../utils/textObjectFixer';
+import { deepFixTextObjects, safeGetText } from '../../utils/textObjectFixer';
 import { getIconComponent } from '../../utils/iconUtils';
 
 interface SharedWorksheetContentProps {
@@ -181,7 +181,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   <span className="text-worksheet-purple font-semibold mr-3 mt-1">
                     {index + 1}.
                   </span>
-                  <p className="flex-1 leading-relaxed">{question}</p>
+                  <p className="flex-1 leading-relaxed">{safeGetText(question)}</p>
                 </div>
               ))}
             </div>
@@ -401,7 +401,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                     return (
                       <div key={qIndex} className="p-2 border rounded-lg bg-white">
                         <p className="leading-snug mb-2">
-                          {qIndex + 1}. {question}
+                          {qIndex + 1}. {safeGetText(question)}
                         </p>
                         {effectiveInteractive && (
                           <input
@@ -489,7 +489,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                     return (
                       <div key={sIndex} className="border rounded-lg p-3 bg-white">
                         <p className="leading-snug mb-2">
-                          <span className="font-medium">{sIndex + 1}.</span> {sentence.incorrect || sentence.text}
+                          <span className="font-medium">{sIndex + 1}.</span> {safeGetText(sentence.incorrect) || safeGetText(sentence.text)}
                         </p>
                         {effectiveInteractive && (
                           <input
@@ -691,7 +691,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                         <div className="flex flex-row items-start">
                           <div className="flex-grow">
                             <p className="leading-snug">
-                              {sIndex + 1}. {statement.text}
+                              {sIndex + 1}. {safeGetText(statement.text)}
                             </p>
                           </div>
                           <div className="ml-4 flex space-x-4">

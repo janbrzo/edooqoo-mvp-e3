@@ -5,7 +5,10 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - Mastery Evaluation Fixes (3 Problems):**
+**Latest Update (January 2026) - Shared Worksheet White Screen Fix:**
+- **React Error #31 Fix**: SharedWorksheetContent.tsx now uses `safeGetText()` to extract text from `{text, nano_skill}` objects before rendering. Fixed in 4 locations: Warmup Questions (line 184), Discussion Questions (line 404), Error Correction (line 492), True/False Statements (line 694). Prevents "Objects are not valid as a React child" crash for worksheets with nano_skill data.
+
+**Previous Update (January 2026) - Mastery Evaluation Fixes (3 Problems):**
 - **#1.1 True-False/Matching/OddOneOut Fix**: `calculateInitialMasteryForItem` now correctly handles: True-False uses `statement.isTrue` (not `.correct`), Matching Halves compares with `half.correct_match`, Odd One Out uses case-insensitive `question.correct_answer`. Each item displays individual mastery value (80% correct, 30% incorrect)
 - **#1.2 AI Verification for Open-Ended**: Before opening mastery modal for open-ended exercises (dialogue, discussion, describe-picture, answer-questions, paraphrasing, reading), system calls `verify-open-answers` Edge Function. AI returns `quality_score` (0-1) converted to percentage (0-100%) and displayed as slider initial value
 - **#2 Save Evaluation Fixed**: Added validation for `studentIdProp`/`teacherIdProp` before calling `addEvent`. Props `aiEvaluations` and `isLoadingAiEvaluation` now properly passed to NanoSkillMasteryModal
