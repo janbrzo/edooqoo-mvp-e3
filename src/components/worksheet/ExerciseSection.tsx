@@ -1573,6 +1573,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
         exerciseTitle={exercise.title}
         studentAnswers={liveSessionAnswer}
         exerciseData={exercise}
+        aiEvaluations={aiEvaluations}
+        isLoadingAiEvaluation={isLoadingAiEvaluation}
       />
       
       {/* Undo Mark Done Modal */}
