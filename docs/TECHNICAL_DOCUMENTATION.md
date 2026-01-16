@@ -5,7 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 5 New UX Fixes:**
+**Latest Update (January 2026) - Mastery Evaluation Fixes (3 Problems):**
+- **#1.1 True-False/Matching/OddOneOut Fix**: `calculateInitialMasteryForItem` now correctly handles: True-False uses `statement.isTrue` (not `.correct`), Matching Halves compares with `half.correct_match`, Odd One Out uses case-insensitive `question.correct_answer`. Each item displays individual mastery value (80% correct, 30% incorrect)
+- **#1.2 AI Verification for Open-Ended**: Before opening mastery modal for open-ended exercises (dialogue, discussion, describe-picture, answer-questions, paraphrasing, reading), system calls `verify-open-answers` Edge Function. AI returns `quality_score` (0-1) converted to percentage (0-100%) and displayed as slider initial value
+- **#2 Save Evaluation Fixed**: Added validation for `studentIdProp`/`teacherIdProp` before calling `addEvent`. Props `aiEvaluations` and `isLoadingAiEvaluation` now properly passed to NanoSkillMasteryModal
+- **Exercise Type Classification**: Open-ended (AI verification): dialogue, discussion, describe-picture, answer-questions*, paraphrasing, reading. Closed (automatic 0/1): fill-in-blanks, multiple-choice, true-false, matching*, odd-one-out, categorize, complete-word, synonyms-antonyms, negative-prefixes, word-order, gap-text, sentence-transformation, listening-comprehension
+
+**Previous Update (January 2026) - 5 New UX Fixes:**
 - **#1 Dynamic Title Truncation**: WorksheetHeader now dynamically calculates `maxTitleLength = 59 - 5 - studentNameLength` ensuring titles always fit in one line regardless of student name length. Full title shown in tooltip on hover
 - **#2.1 Random Selection EXACT Count**: Random mode now always selects exact `maxExercises` (6 or 8). Added validation loop to fill any missing slots from general exercises pool
 - **#2.2/2.3 Media-Aware Auto-Complete**: Fallback auto-complete in `submitForm()` filters exercises by media type - no Picture exercises without Picture mode, no Audio exercises without Audio mode. Uses `PICTURE_COMPATIBLE_EXERCISES` and `AUDIO_COMPATIBLE_EXERCISES` constants
