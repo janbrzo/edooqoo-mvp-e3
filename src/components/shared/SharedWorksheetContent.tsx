@@ -558,6 +558,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                 />
               )}
 
+              {/* PROBLEM 5 FIX: Pass worksheetId and isSharedWorksheet to ensure proper shuffle */}
               {(exercise.type === 'synonyms-antonyms' || exercise.type === 'synonyms' || exercise.type === 'antonyms') && exercise.items && (
                 <ExerciseSynonymsAntonyms
                   items={exercise.items}
@@ -565,6 +566,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   viewMode="student"
                   onItemChange={() => {}}
                   exerciseType={exercise.type}
+                  worksheetId={worksheet.id}
+                  isSharedWorksheet={true}
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}

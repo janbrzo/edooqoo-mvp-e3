@@ -5,14 +5,21 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - Shared Worksheet White Screen Fix:**
+**Latest Update (January 2026) - 5 Mastery Evaluation & Shared Worksheet Fixes:**
+- **#1.1 Slider Values for 7 Exercise Types**: Extended `calculateInitialMasteryForItem` to correctly handle Error Correction (sentence.correct), Word Order (sentence.correct_order), Negative Prefixes/Complete Word (word.answer/complete), Categorize (categories.correct_items mapping), and improved Matching Halves (half.correct_match only). Each item now shows individual 80%/30% value based on correctness.
+- **#2 AI Verification Extended**: Added `listening-comprehension` to OPEN_ENDED_EXERCISE_TYPES. Fixed `describe-picture` question retrieval to check `exercise.prompts` array. Full response now logged to console for debugging.
+- **#3 Exercise Type Classification**: New `EXERCISE_TYPE_CLASSIFICATION` constant defines all 29 exercise types as `open` (9 types requiring AI) or `closed` (20 types with automatic verification).
+- **#4 Instant Modal with Loading State**: Modal opens IMMEDIATELY when clicking "Mark Done" for open-ended exercises. Shows "AI is evaluating student answers..." spinner while AI processes. Buttons disabled during evaluation.
+- **#5 Synonyms/Antonyms in Shared Worksheet**: Added `worksheetId` and `isSharedWorksheet={true}` props to ExerciseSynonymsAntonyms in SharedWorksheetContent.tsx. Ensures consistent shuffle between teacher and student views.
+
+**Previous Update (January 2026) - Shared Worksheet White Screen Fix:**
 - **React Error #31 Fix**: SharedWorksheetContent.tsx now uses `safeGetText()` to extract text from `{text, nano_skill}` objects before rendering. Fixed in 4 locations: Warmup Questions (line 184), Discussion Questions (line 404), Error Correction (line 492), True/False Statements (line 694). Prevents "Objects are not valid as a React child" crash for worksheets with nano_skill data.
 
 **Previous Update (January 2026) - Mastery Evaluation Fixes (3 Problems):**
 - **#1.1 True-False/Matching/OddOneOut Fix**: `calculateInitialMasteryForItem` now correctly handles: True-False uses `statement.isTrue` (not `.correct`), Matching Halves compares with `half.correct_match`, Odd One Out uses case-insensitive `question.correct_answer`. Each item displays individual mastery value (80% correct, 30% incorrect)
 - **#1.2 AI Verification for Open-Ended**: Before opening mastery modal for open-ended exercises (dialogue, discussion, describe-picture, answer-questions, paraphrasing, reading), system calls `verify-open-answers` Edge Function. AI returns `quality_score` (0-1) converted to percentage (0-100%) and displayed as slider initial value
 - **#2 Save Evaluation Fixed**: Added validation for `studentIdProp`/`teacherIdProp` before calling `addEvent`. Props `aiEvaluations` and `isLoadingAiEvaluation` now properly passed to NanoSkillMasteryModal
-- **Exercise Type Classification**: Open-ended (AI verification): dialogue, discussion, describe-picture, answer-questions*, paraphrasing, reading. Closed (automatic 0/1): fill-in-blanks, multiple-choice, true-false, matching*, odd-one-out, categorize, complete-word, synonyms-antonyms, negative-prefixes, word-order, gap-text, sentence-transformation, listening-comprehension
+- **Exercise Type Classification**: Open-ended (AI verification): dialogue, discussion, describe-picture, answer-questions*, paraphrasing, reading, listening-comprehension. Closed (automatic 0/1): fill-in-blanks, multiple-choice, true-false, matching*, odd-one-out, categorize, complete-word, synonyms-antonyms, negative-prefixes, word-order, gap-text, sentence-transformation, error-correction
 
 **Previous Update (January 2026) - 5 New UX Fixes:**
 - **#1 Dynamic Title Truncation**: WorksheetHeader now dynamically calculates `maxTitleLength = 59 - 5 - studentNameLength` ensuring titles always fit in one line regardless of student name length. Full title shown in tooltip on hover

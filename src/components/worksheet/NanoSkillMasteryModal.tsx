@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle2, Brain, SkipForward, Undo2, AlertCircle } from "lucide-react";
+import { CheckCircle2, Brain, SkipForward, Undo2, AlertCircle, Loader2 } from "lucide-react";
 import { NanoSkill } from "./NanoSkillBadge";
 
 interface NanoSkillRating {
@@ -176,9 +176,65 @@ const calculateInitialMasteryForItem = (
   // Check sentences array (fill in blanks, transformation, etc.)
   if (exerciseData?.sentences && exerciseData.sentences[itemIndex]) {
     const sentence = exerciseData.sentences[itemIndex];
-    const correctAnswer = sentence.answer || sentence.correct || sentence.missing_word;
+    
+    // PROBLEM 1.1 FIX: Error Correction - compare with sentence.correct
+    if (sentence.correct && !sentence.answer && !sentence.missing_word) {
+      if (typeof studentAnswer === 'string') {
+        isCorrect = studentAnswer.toLowerCase().trim() === sentence.correct.toLowerCase().trim();
+        console.log(`[Mastery] Error Correction item ${itemIndex}: student="${studentAnswer}", correct="${sentence.correct}", isCorrect=${isCorrect}`);
+      }
+    }
+    
+    // PROBLEM 1.1 FIX: Word Order - compare with correct_order
+    if (sentence.correct_order) {
+      if (typeof studentAnswer === 'string') {
+        isCorrect = studentAnswer.toLowerCase().trim() === sentence.correct_order.toLowerCase().trim();
+        console.log(`[Mastery] Word Order item ${itemIndex}: student="${studentAnswer}", correct="${sentence.correct_order}", isCorrect=${isCorrect}`);
+      }
+    }
+    
+    // Standard fill in blanks
+    const correctAnswer = sentence.answer || sentence.missing_word;
     if (correctAnswer && typeof studentAnswer === 'string') {
       isCorrect = studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+    }
+  }
+  
+  // PROBLEM 1.1 FIX: Check words array (Negative Prefixes, Complete Word)
+  if (exerciseData?.words && exerciseData.words[itemIndex]) {
+    const word = exerciseData.words[itemIndex];
+    // Negative Prefixes uses 'answer', Complete Word uses 'complete' or 'complete_word'
+    const correctAnswer = word.answer || word.complete || word.complete_word;
+    if (correctAnswer && typeof studentAnswer === 'string') {
+      isCorrect = studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+      console.log(`[Mastery] Words item ${itemIndex}: student="${studentAnswer}", correct="${correctAnswer}", isCorrect=${isCorrect}`);
+    }
+  }
+  
+  // PROBLEM 1.1 FIX: Check categories array (Categorize exercise)
+  // For categorize, student selects a category index for each word
+  if (exerciseData?.categories && exerciseData?.items) {
+    // The student answer is the category index they selected
+    // We need to find which category this item actually belongs to
+    const item = exerciseData.items[itemIndex];
+    if (item) {
+      const itemWord = typeof item === 'string' ? item : (item.word || item.text);
+      // Find which category contains this word in correct_items
+      let correctCategoryIndex = -1;
+      exerciseData.categories.forEach((cat: any, catIdx: number) => {
+        if (cat.correct_items) {
+          const found = cat.correct_items.some((ci: any) => {
+            const ciWord = typeof ci === 'string' ? ci : (ci.word || ci.text);
+            return ciWord && itemWord && ciWord.toLowerCase() === itemWord.toLowerCase();
+          });
+          if (found) correctCategoryIndex = catIdx;
+        }
+      });
+      if (correctCategoryIndex !== -1) {
+        const studentCatIdx = typeof studentAnswer === 'number' ? studentAnswer : parseInt(studentAnswer);
+        isCorrect = studentCatIdx === correctCategoryIndex;
+        console.log(`[Mastery] Categorize item ${itemIndex}: word="${itemWord}", studentCat=${studentCatIdx}, correctCat=${correctCategoryIndex}, isCorrect=${isCorrect}`);
+      }
     }
   }
   
@@ -209,11 +265,10 @@ const calculateInitialMasteryForItem = (
   if (exerciseData?.sentence_halves && exerciseData.sentence_halves[itemIndex]) {
     const half = exerciseData.sentence_halves[itemIndex];
     // Expected answer is the letter matching the second half position
-    // If correct_match exists, use it. Otherwise, the default is A, B, C, etc. based on original position
-    const expectedLetter = half.correct_match || String.fromCharCode(65 + itemIndex);
-    if (typeof studentAnswer === 'string') {
-      isCorrect = studentAnswer.toUpperCase() === expectedLetter.toUpperCase();
-      console.log(`[Mastery] Matching Halves item ${itemIndex}: student="${studentAnswer}", expected="${expectedLetter}", isCorrect=${isCorrect}`);
+    // Use correct_match if available
+    if (half.correct_match && typeof studentAnswer === 'string') {
+      isCorrect = studentAnswer.toUpperCase() === half.correct_match.toUpperCase();
+      console.log(`[Mastery] Matching Halves item ${itemIndex}: student="${studentAnswer}", correct="${half.correct_match}", isCorrect=${isCorrect}`);
     }
   }
   
@@ -413,19 +468,35 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          <p className="text-sm text-muted-foreground">
-            Rate how well the student demonstrated each skill during this exercise:
-          </p>
-          
-          {/* PROBLEM 1.2: Info about unset values */}
-          {ratings.some(r => !r.hasValue) && (
-            <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg">
-              <AlertCircle className="h-4 w-4" />
-              Skills without a set value won't be saved.
+          {/* PROBLEM 4: Loading state while AI evaluates answers */}
+          {isLoadingAiEvaluation && (
+            <div className="flex items-center justify-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <span className="text-sm text-blue-700">
+                AI is evaluating student answers...
+              </span>
             </div>
           )}
+          
+          {/* Only show content when NOT loading */}
+          {!isLoadingAiEvaluation && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Rate how well the student demonstrated each skill during this exercise:
+              </p>
+              
+              {/* PROBLEM 1.2: Info about unset values */}
+              {ratings.some(r => !r.hasValue) && (
+                <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-2 rounded-lg">
+                  <AlertCircle className="h-4 w-4" />
+                  Skills without a set value won't be saved.
+                </div>
+              )}
+            </>
+          )}
 
-          {ratings.map((rating, index) => (
+          {/* PROBLEM 4: Only show ratings when not loading */}
+          {!isLoadingAiEvaluation && ratings.map((rating, index) => (
             <div 
               key={index} 
               className={`space-y-3 p-4 border rounded-lg ${rating.hasValue ? 'bg-muted/20' : 'bg-gray-50 border-dashed'}`}
@@ -465,18 +536,33 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
           ))}
         </div>
 
+        {/* PROBLEM 4: Disable buttons while loading */}
         <DialogFooter className="gap-2 flex-wrap">
-          <Button variant="ghost" onClick={handleSkip} className="gap-2 text-muted-foreground">
+          <Button 
+            variant="ghost" 
+            onClick={handleSkip} 
+            className="gap-2 text-muted-foreground"
+            disabled={isLoadingAiEvaluation}
+          >
             <SkipForward className="h-4 w-4" />
             Skip (mark done without evaluation)
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} disabled={isLoadingAiEvaluation}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} className="gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              Save Evaluation {ratingsWithValues > 0 && `(${ratingsWithValues})`}
+            <Button onClick={handleSubmit} className="gap-2" disabled={isLoadingAiEvaluation}>
+              {isLoadingAiEvaluation ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Evaluating...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  Save Evaluation {ratingsWithValues > 0 && `(${ratingsWithValues})`}
+                </>
+              )}
             </Button>
           </div>
         </DialogFooter>
