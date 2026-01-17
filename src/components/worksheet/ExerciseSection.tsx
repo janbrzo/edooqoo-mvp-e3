@@ -51,12 +51,30 @@ import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudentEvents } from "@/hooks/dslm/useStudentEvents";
 
+// PROBLEM 3: Complete classification of all 29 exercise types
+export const EXERCISE_TYPE_CLASSIFICATION = {
+  // OPEN-ENDED: Require AI verification or teacher evaluation
+  open: [
+    'dialogue', 'discussion', 'describe-picture', 
+    'answer-questions', 'answer-questions-picture', 'answer-questions-audio',
+    'paraphrasing', 'reading',
+    'listening-comprehension' // PROBLEM 2: Added - open-ended audio comprehension
+  ],
+  // CLOSED: Automatic verification (correct/incorrect)
+  closed: [
+    'fill-in-blanks', 'fill-in-blanks-audio',
+    'multiple-choice', 'multiple-choice-audio', 'multiple-choice-picture',
+    'true-false', 'true-false-audio', 'true-false-picture',
+    'matching', 'matching-halves',
+    'odd-one-out', 'word-order', 'gap-text',
+    'negative-prefixes', 'categorize', 'complete-word',
+    'sentence-transformation', 'synonyms', 'antonyms', 'synonyms-antonyms',
+    'error-correction'
+  ]
+};
+
 // PROBLEM 1.2: Open-ended exercise types that require AI verification
-const OPEN_ENDED_EXERCISE_TYPES = [
-  'dialogue', 'discussion', 'describe-picture', 
-  'answer-questions', 'answer-questions-picture', 'answer-questions-audio',
-  'paraphrasing', 'reading'
-];
+const OPEN_ENDED_EXERCISE_TYPES = EXERCISE_TYPE_CLASSIFICATION.open;
 
 interface Exercise {
   type: string;
@@ -299,8 +317,12 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   };
   
   // PROBLEM 1.2: Handle Mark Done with AI verification for open-ended exercises
+  // PROBLEM 4: Open modal IMMEDIATELY, then load AI in background
   const handleMarkDoneWithModal = async () => {
     const exerciseType = normalizeExerciseType(exercise.type);
+    
+    // PROBLEM 4 FIX: Open modal IMMEDIATELY for instant feedback
+    setIsMasteryModalOpen(true);
     
     // Check if this is an open-ended exercise that needs AI verification
     if (OPEN_ENDED_EXERCISE_TYPES.includes(exerciseType) && liveSessionAnswer && Object.keys(liveSessionAnswer).length > 0) {
@@ -325,7 +347,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             const expr = exercise.expressions[qIndex];
             questionText = typeof expr === 'string' ? expr : expr.text || questionText;
           } else if (exercise.prompts?.[qIndex]) {
-            questionText = exercise.prompts[qIndex].prompt || exercise.prompts[qIndex].text || questionText;
+            // PROBLEM 2 FIX: Better handling for describe-picture (prompts)
+            const prompt = exercise.prompts[qIndex];
+            questionText = typeof prompt === 'string' ? prompt : prompt.prompt || prompt.text || questionText;
+            suggestedAnswer = typeof prompt === 'object' ? (prompt.suggested || prompt.answer) : undefined;
           }
           
           return {
@@ -359,6 +384,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             });
             setAiEvaluations(evaluationsMap);
             console.log('[AI Evaluation] Results:', evaluationsMap);
+            console.log('[AI Evaluation] FULL Response from AI:', JSON.stringify(data, null, 2));
           }
         } catch (err) {
           console.error('[AI Evaluation] Exception:', err);
@@ -366,9 +392,6 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
       }
       setIsLoadingAiEvaluation(false);
     }
-    
-    // Open mastery modal
-    setIsMasteryModalOpen(true);
   };
   
   const handleMasterySubmit = async (ratings: { name: string; reason: string; mastery: number; hasValue?: boolean }[]) => {
