@@ -5,7 +5,12 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - JSON Parsing Crash Fix & Monitoring:**
+**Latest Update (January 2026) - Mastery Evaluation Save Fix:**
+- **Direct RPC Call**: ExerciseSection.tsx now uses direct `supabase.rpc('add_student_event', {...})` call instead of `addEvent` hook for saving mastery evaluations. This bypasses the issue where hook received empty string fallbacks that failed validation.
+- **Enhanced Logging**: Added detailed `📤 [Mastery]` and `✅ [Mastery]` logs showing exact RPC parameters and results for debugging.
+- **Hook Warning Logs**: useStudentEvents.tsx now logs `⚠️ [useStudentEvents] addEvent skipped` when invalid IDs are passed, making debugging easier.
+
+**Previous Update (January 2026) - JSON Parsing Crash Fix & Monitoring:**
 - **#1 WorksheetPage Fallback**: Added graceful fallback to `html_content` when `ai_response` JSON parsing fails. Logs ai_response length for monitoring truncation issues. Shows toast notification when using fallback data.
 - **#2 StudentHomeworkTab Crash Fix**: Added try-catch around `JSON.parse(firstWorksheet.ai_response)` in CreateHomeworkModal exercises prop - prevents white screen crash on corrupted worksheet data.
 - **#3 ai_response Limit Increased**: Backend `generateWorksheet` function now saves up to 200,000 characters instead of 50,000 (lines 535 and 734). Prevents truncation for large worksheets.

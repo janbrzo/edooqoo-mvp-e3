@@ -102,7 +102,16 @@ export const useStudentEvents = ({
   const addEvent = useCallback(async (
     input: Omit<CreateStudentEventInput, 'student_id' | 'teacher_id'>
   ): Promise<string | null> => {
-    if (!studentId || !teacherId) return null;
+    // CRITICAL FIX: Validate for actual UUIDs, not just truthy values
+    // Empty strings are falsy but pass through || fallbacks
+    if (!studentId || studentId.trim() === '' || !teacherId || teacherId.trim() === '') {
+      console.warn('⚠️ [useStudentEvents] addEvent skipped - invalid IDs:', { 
+        studentId: studentId || '(empty)', 
+        teacherId: teacherId || '(empty)',
+        eventType: input.event_type 
+      });
+      return null;
+    }
     
     try {
       // Use RPC function for inserting events
