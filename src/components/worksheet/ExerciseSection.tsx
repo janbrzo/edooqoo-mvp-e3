@@ -462,21 +462,41 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           
           console.log('✅ Updated existing mastery evaluation:', existingEvent.id);
         } else {
-          // INSERT new record using addEvent
-          const eventResult = await addEvent({
-            event_type: 'exercise_mastery_evaluation',
-            event_source: 'teacher',
-            source_id: worksheetIdForStorage || undefined,
-            element_type: exercise.type,
-            event_payload: {
+          // INSERT new record - use direct RPC call with validated props to bypass hook issues
+          console.log('📤 [Mastery] Calling add_student_event RPC with:', {
+            p_student_id: studentIdProp,
+            p_teacher_id: teacherIdProp,
+            p_event_type: 'exercise_mastery_evaluation',
+            p_source_id: worksheetIdForStorage
+          });
+          
+          const { data: eventResult, error: rpcError } = await supabase.rpc('add_student_event', {
+            p_student_id: studentIdProp,
+            p_teacher_id: teacherIdProp,
+            p_event_type: 'exercise_mastery_evaluation',
+            p_event_source: 'teacher',
+            p_source_id: worksheetIdForStorage || null,
+            p_event_payload: {
               exercise_index: exerciseIdx,
               exercise_title: exercise.title,
               nano_skill_ratings: ratingsWithValue
-            },
-            skill_ids: ratingsWithValue.map(r => r.name)
+            } as unknown as Record<string, never>,
+            p_skill_ids: ratingsWithValue.map(r => r.name),
+            p_element_type: exercise.type,
+            p_session_id: null
           });
           
-          console.log('✅ Created new mastery evaluation, result:', eventResult);
+          if (rpcError) {
+            console.error('❌ [Mastery] RPC error:', rpcError);
+            throw rpcError;
+          }
+          
+          if (!eventResult) {
+            console.error('❌ [Mastery] RPC returned null - event may not be saved');
+            throw new Error('Event creation returned null');
+          }
+          
+          console.log('✅ [Mastery] Created new mastery evaluation, event ID:', eventResult);
         }
         
         toast({
