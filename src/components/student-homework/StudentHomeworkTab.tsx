@@ -580,7 +580,18 @@ export const StudentHomeworkTab = ({ studentId, teacherId, studentName }: Studen
           onOpenChange={setIsCreateModalOpen}
           worksheetId={selectedWorksheetForHomework || firstWorksheet.id}
           worksheetTitle={firstWorksheet.title || 'Worksheet'}
-          exercises={firstWorksheet.ai_response ? JSON.parse(firstWorksheet.ai_response).exercises || [] : []}
+          exercises={(() => {
+            // Safe parsing with try-catch to prevent crashes on corrupted ai_response
+            if (!firstWorksheet.ai_response) return [];
+            try {
+              const parsed = JSON.parse(firstWorksheet.ai_response);
+              return parsed.exercises || [];
+            } catch (e) {
+              console.error('❌ Failed to parse worksheet ai_response for homework modal:', e);
+              console.log(`⚠️ Worksheet ${firstWorksheet.id} ai_response length: ${firstWorksheet.ai_response?.length || 0}`);
+              return [];
+            }
+          })()}
           teacherId={teacherId}
           students={students.map(s => ({
             id: s.id,
