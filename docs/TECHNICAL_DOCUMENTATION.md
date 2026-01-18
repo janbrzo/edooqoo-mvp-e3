@@ -5,7 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 5 Mastery Evaluation & Shared Worksheet Fixes:**
+**Latest Update (January 2026) - JSON Parsing Crash Fix & Monitoring:**
+- **#1 WorksheetPage Fallback**: Added graceful fallback to `html_content` when `ai_response` JSON parsing fails. Logs ai_response length for monitoring truncation issues. Shows toast notification when using fallback data.
+- **#2 StudentHomeworkTab Crash Fix**: Added try-catch around `JSON.parse(firstWorksheet.ai_response)` in CreateHomeworkModal exercises prop - prevents white screen crash on corrupted worksheet data.
+- **#3 ai_response Limit Increased**: Backend `generateWorksheet` function now saves up to 200,000 characters instead of 50,000 (lines 535 and 734). Prevents truncation for large worksheets.
+- **#4 Truncation Monitoring**: Added logging in Edge Function: `📊 [MONITORING] ai_response length: X chars, limit: 200000, truncated: true/false`. Console warnings appear when data is truncated for later analysis.
+
+**Previous Update (January 2026) - 5 Mastery Evaluation & Shared Worksheet Fixes:**
 - **#1.1 Slider Values for 7 Exercise Types**: Extended `calculateInitialMasteryForItem` to correctly handle Error Correction (sentence.correct), Word Order (sentence.correct_order), Negative Prefixes/Complete Word (word.answer/complete), Categorize (categories.correct_items mapping), and improved Matching Halves (half.correct_match only). Each item now shows individual 80%/30% value based on correctness.
 - **#2 AI Verification Extended**: Added `listening-comprehension` to OPEN_ENDED_EXERCISE_TYPES. Fixed `describe-picture` question retrieval to check `exercise.prompts` array. Full response now logged to console for debugging.
 - **#3 Exercise Type Classification**: New `EXERCISE_TYPE_CLASSIFICATION` constant defines all 29 exercise types as `open` (9 types requiring AI) or `closed` (20 types with automatic verification).

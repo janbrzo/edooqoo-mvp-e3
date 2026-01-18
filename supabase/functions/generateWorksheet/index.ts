@@ -527,12 +527,21 @@ serve(async (req) => {
               }
             : null;
 
+          // 📊 MONITORING: Log ai_response length for truncation tracking
+          const aiResponseLength = fullContent?.length || 0;
+          const aiResponseLimit = 200000;
+          const wasTruncated = aiResponseLength > aiResponseLimit;
+          console.log(`📊 [MONITORING] ai_response length: ${aiResponseLength} chars, limit: ${aiResponseLimit}, truncated: ${wasTruncated}`);
+          if (wasTruncated) {
+            console.warn(`⚠️ [MONITORING] Worksheet ai_response TRUNCATED from ${aiResponseLength} to ${aiResponseLimit} chars`);
+          }
+
           const { data: worksheet, error: worksheetError } = await supabase
             .from("worksheets")
             .insert({
               prompt: fullPrompt,
               form_data: sanitizedFormData,
-              ai_response: fullContent?.substring(0, 50000) || "",
+              ai_response: fullContent?.substring(0, aiResponseLimit) || "", // Increased from 50000 to 200000
               html_content: JSON.stringify(worksheetData),
               user_id: userId || null,
               teacher_id: userId || null,
@@ -726,12 +735,21 @@ serve(async (req) => {
             }
           : null;
 
+        // 📊 MONITORING: Log ai_response length for truncation tracking
+        const aiResponseLength = jsonContent?.length || 0;
+        const aiResponseLimit = 200000;
+        const wasTruncated = aiResponseLength > aiResponseLimit;
+        console.log(`📊 [MONITORING] ai_response length: ${aiResponseLength} chars, limit: ${aiResponseLimit}, truncated: ${wasTruncated}`);
+        if (wasTruncated) {
+          console.warn(`⚠️ [MONITORING] Worksheet ai_response TRUNCATED from ${aiResponseLength} to ${aiResponseLimit} chars`);
+        }
+
         const { data: worksheet, error: worksheetError } = await supabase
           .from("worksheets")
           .insert({
             prompt: fullPrompt,
             form_data: sanitizedFormData,
-            ai_response: jsonContent?.substring(0, 50000) || "",
+            ai_response: jsonContent?.substring(0, aiResponseLimit) || "", // Increased from 50000 to 200000
             html_content: JSON.stringify(worksheetData),
             user_id: userId || null,
             teacher_id: userId || null,
