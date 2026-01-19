@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - Mastery Evaluation Save Fix (skill_ids Type Change):**
+**Latest Update (January 2026) - 4 Live Session & HTML Export Fixes:**
+- **#1 TRUE/FALSE in Student HTML**: `htmlExport.ts` now removes answer indicators (`.text-green-600`, `True/False` text, `.teacher-answer`) when exporting in student view mode - students no longer see correct answers in downloaded HTML
+- **#2 Mastery Evaluation Fix for 4 Exercise Types**: Extended `calculateInitialMasteryForItem` in `NanoSkillMasteryModal.tsx` to handle: Synonyms/Antonyms (match letter with definition position), Error Correction (check BOTH `sentence.correction` AND `sentence.correct`), Matching Halves (use `correct_match`). Each item now shows correct 80%/30% instead of 50%
+- **#3 Describe-Picture AI Verification**: Fixed `ExerciseSection.tsx` to check `exercise.prompts` FIRST for describe-picture exercises before falling back to questions - AI evaluation now triggers correctly
+- **#4.1 Audio/Image Context for AI**: AI verification now includes `audio_transcript` and `image_description` from exercise data for better evaluation context
+- **#4.2 Enhanced AI Logging**: `verify-open-answers` Edge Function now logs full request, system prompt, user prompt, raw AI response, and parsed evaluations for debugging in Supabase logs
+
+**Previous Update (January 2026) - Mastery Evaluation Save Fix (skill_ids Type Change):**
 - **Column Type Changed**: `student_events.skill_ids` column type changed from `uuid[]` to `text[]` via SQL migration - allows storing skill names directly instead of requiring UUID foreign keys
 - **RPC Function Updated**: `add_student_event` function recreated with `p_skill_ids text[]` parameter - now accepts array of skill name strings
 - **Direct RPC Call**: ExerciseSection.tsx uses direct `supabase.rpc('add_student_event', {...})` call for saving mastery evaluations with skill names in `p_skill_ids` parameter

@@ -340,14 +340,20 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           let questionText = `Question ${qIndex + 1}`;
           let suggestedAnswer: string | undefined;
           
-          if (exercise.questions?.[qIndex]) {
+          // PROBLEM 3 FIX: Check prompts FIRST for describe-picture type
+          if (exerciseType === 'describe-picture' && exercise.prompts?.[qIndex]) {
+            const prompt = exercise.prompts[qIndex];
+            questionText = typeof prompt === 'string' ? prompt : prompt.prompt || prompt.text || questionText;
+            suggestedAnswer = typeof prompt === 'object' ? (prompt.suggested || prompt.answer) : undefined;
+            console.log(`[AI Evaluation] Describe-picture using prompts[${qIndex}]:`, questionText);
+          } else if (exercise.questions?.[qIndex]) {
             questionText = exercise.questions[qIndex].question || exercise.questions[qIndex].text || questionText;
             suggestedAnswer = exercise.questions[qIndex].answer || exercise.questions[qIndex].suggested;
           } else if (exercise.expressions?.[qIndex]) {
             const expr = exercise.expressions[qIndex];
             questionText = typeof expr === 'string' ? expr : expr.text || questionText;
           } else if (exercise.prompts?.[qIndex]) {
-            // PROBLEM 2 FIX: Better handling for describe-picture (prompts)
+            // Fallback for other exercise types with prompts
             const prompt = exercise.prompts[qIndex];
             questionText = typeof prompt === 'string' ? prompt : prompt.prompt || prompt.text || questionText;
             suggestedAnswer = typeof prompt === 'object' ? (prompt.suggested || prompt.answer) : undefined;
@@ -366,11 +372,26 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
       
       if (answersToEvaluate.length > 0) {
         try {
+          // PROBLEM 4.1 FIX: Build comprehensive context with audio transcript and image description
+          const contextParts: string[] = [exercise.title || ''];
+          if (exercise.audio_transcript) {
+            contextParts.push(`Audio transcript: ${exercise.audio_transcript}`);
+          }
+          if (exercise.image_description || exercise.picture_description) {
+            contextParts.push(`Image description: ${exercise.image_description || exercise.picture_description}`);
+          }
+          if (exercise.content) {
+            contextParts.push(`Reading text: ${String(exercise.content).slice(0, 500)}...`);
+          }
+          const fullContext = contextParts.filter(p => p).join('\n\n');
+          
+          console.log('[AI Evaluation] Context being sent:', fullContext);
+          
           const { data, error } = await supabase.functions.invoke('verify-open-answers', {
             body: {
               answers: answersToEvaluate,
               english_level: originalFormData?.englishLevel || 'B1',
-              context: exercise.title
+              context: fullContext
             }
           });
           

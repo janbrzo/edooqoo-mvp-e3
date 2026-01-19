@@ -32,13 +32,21 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    console.log('[verify-open-answers] Request body received:', JSON.stringify(body).slice(0, 500));
+    
+    // PROBLEM 4.2 FIX: Detailed logging for debugging
+    console.log('[verify-open-answers] ========== FULL REQUEST ==========');
+    console.log('[verify-open-answers] Request body:', JSON.stringify(body, null, 2));
     
     const { answers, english_level, context } = body as {
       answers: AnswerToEvaluate[];
       english_level: string;
       context?: string;
     };
+    
+    console.log('[verify-open-answers] Parsed data:');
+    console.log('[verify-open-answers] - Answers count:', answers?.length || 0);
+    console.log('[verify-open-answers] - English level:', english_level);
+    console.log('[verify-open-answers] - Context:', context || '(none)');
 
     if (!answers || answers.length === 0) {
       console.log('[verify-open-answers] ERROR: No answers provided');
@@ -84,6 +92,12 @@ ${context ? `Context: ${context}` : ''}
 Return a JSON array with objects for each answer:
 [{"question_index": 0, "quality_score": 0.85, "is_acceptable": true, "feedback": "..."}]`;
 
+    // PROBLEM 4.2 FIX: Log the full prompts being sent to AI
+    console.log('[verify-open-answers] ========== SYSTEM PROMPT ==========');
+    console.log(systemPrompt);
+    console.log('[verify-open-answers] ========== USER PROMPT ==========');
+    console.log(userPrompt);
+    
     // Call Lovable AI API (google/gemini-2.5-flash)
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
     console.log('[verify-open-answers] LOVABLE_API_KEY configured:', !!lovableApiKey);
@@ -127,7 +141,10 @@ Return a JSON array with objects for each answer:
     const aiData = await aiResponse.json();
     const rawContent = aiData.choices?.[0]?.message?.content || '[]';
     
-    console.log('[verify-open-answers] Raw AI response:', rawContent);
+    // PROBLEM 4.2 FIX: Log full AI response for debugging
+    console.log('[verify-open-answers] ========== RAW AI RESPONSE ==========');
+    console.log('[verify-open-answers] Full aiData:', JSON.stringify(aiData, null, 2));
+    console.log('[verify-open-answers] Raw content:', rawContent);
 
     // Parse AI response - handle potential markdown wrapping
     let evaluations: EvaluationResult[];
@@ -153,6 +170,10 @@ Return a JSON array with objects for each answer:
         is_acceptable: e.is_acceptable ?? (e.quality_score >= 0.7),
         feedback: e.feedback || 'Thank you for your answer.'
       }));
+      
+      // PROBLEM 4.2 FIX: Log parsed evaluations
+      console.log('[verify-open-answers] ========== PARSED EVALUATIONS ==========');
+      console.log('[verify-open-answers] Evaluations:', JSON.stringify(evaluations, null, 2));
     } catch (parseError) {
       console.error('[verify-open-answers] Failed to parse AI response:', parseError);
       // Return neutral evaluation on parse failure

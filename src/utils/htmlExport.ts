@@ -453,6 +453,31 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
     const elementsToRemove = clonedElement.querySelectorAll('[data-no-pdf="true"]:not([data-teacher-tip="true"])');
     console.log(`[HTML EXPORT] Removing ${elementsToRemove.length} non-exportable elements (e.g., rating section).`);
     elementsToRemove.forEach(el => el.remove());
+    
+    // PROBLEM 1 FIX: For student view, remove all visible answers (True/False green text, teacher answers)
+    if (exportViewMode === 'student') {
+      // Remove green answer text (correct answers shown in teacher view)
+      const greenAnswers = clonedElement.querySelectorAll('.text-green-600, .text-green-700, .text-emerald-600');
+      greenAnswers.forEach(el => {
+        // Only remove if it looks like an answer indicator (short text, specific patterns)
+        const text = el.textContent?.trim() || '';
+        if (text === 'True' || text === 'False' || text === '✓' || text === '(True)' || text === '(False)' || 
+            text.startsWith('Answer:') || text.startsWith('Correct:') ||
+            el.classList.contains('teacher-answer') || el.closest('[data-answer]')) {
+          el.remove();
+        }
+      });
+      
+      // Remove elements explicitly marked as teacher-only answers
+      const teacherAnswers = clonedElement.querySelectorAll('.teacher-answer, [data-teacher-answer], [data-correct-answer]');
+      teacherAnswers.forEach(el => el.remove());
+      
+      // Remove True/False answer badges and indicators
+      const tfIndicators = clonedElement.querySelectorAll('[data-answer-true], [data-answer-false], .answer-indicator');
+      tfIndicators.forEach(el => el.remove());
+      
+      console.log(`[HTML EXPORT] Student view: Removed answer indicators for clean student worksheet.`);
+    }
 
     // Copy existing navigation elements from the current DOM
     const existingMenuButton = document.querySelector('.nav-menu-button');
