@@ -162,7 +162,7 @@ const calculateInitialMasteryForItem = (
     }
   }
   
-  // Check items array (matching, categorize, etc.)
+  // Check items array (matching, categorize, synonyms/antonyms, etc.)
   if (exerciseData?.items && exerciseData.items[itemIndex]) {
     const item = exerciseData.items[itemIndex];
     if (item.match) {
@@ -171,17 +171,33 @@ const calculateInitialMasteryForItem = (
     if (item.category) {
       isCorrect = studentAnswer === item.category;
     }
+    
+    // PROBLEM 2 FIX: Synonyms/Antonyms - student selects letter (A, B, C...) that matches this item
+    // The correct answer is the letter corresponding to the position where the matching definition is
+    if (item.definition && typeof studentAnswer === 'string') {
+      // For synonyms/antonyms, items have: word, definition
+      // Student selects which letter (A, B, C...) matches the word
+      // The shuffled definitions are in order, so we need to find where this item's definition is
+      const allDefinitions = exerciseData.items.map((i: any) => i.definition);
+      const correctIndex = allDefinitions.indexOf(item.definition);
+      if (correctIndex !== -1) {
+        const correctLetter = String.fromCharCode(65 + correctIndex); // 0=A, 1=B, 2=C...
+        isCorrect = studentAnswer.toUpperCase().trim() === correctLetter;
+        console.log(`[Mastery] Synonyms/Antonyms item ${itemIndex}: word="${item.word}", student="${studentAnswer}", correctLetter="${correctLetter}", isCorrect=${isCorrect}`);
+      }
+    }
   }
   
   // Check sentences array (fill in blanks, transformation, etc.)
   if (exerciseData?.sentences && exerciseData.sentences[itemIndex]) {
     const sentence = exerciseData.sentences[itemIndex];
     
-    // PROBLEM 1.1 FIX: Error Correction - compare with sentence.correct
-    if (sentence.correct && !sentence.answer && !sentence.missing_word) {
+    // PROBLEM 2 FIX: Error Correction - check BOTH 'correct' AND 'correction' fields
+    const errorCorrectionAnswer = sentence.correction || sentence.correct;
+    if (errorCorrectionAnswer && !sentence.answer && !sentence.missing_word) {
       if (typeof studentAnswer === 'string') {
-        isCorrect = studentAnswer.toLowerCase().trim() === sentence.correct.toLowerCase().trim();
-        console.log(`[Mastery] Error Correction item ${itemIndex}: student="${studentAnswer}", correct="${sentence.correct}", isCorrect=${isCorrect}`);
+        isCorrect = studentAnswer.toLowerCase().trim() === errorCorrectionAnswer.toLowerCase().trim();
+        console.log(`[Mastery] Error Correction item ${itemIndex}: student="${studentAnswer}", correct="${errorCorrectionAnswer}", isCorrect=${isCorrect}`);
       }
     }
     
