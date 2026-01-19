@@ -5,10 +5,12 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - Mastery Evaluation Save Fix:**
-- **Direct RPC Call**: ExerciseSection.tsx now uses direct `supabase.rpc('add_student_event', {...})` call instead of `addEvent` hook for saving mastery evaluations. This bypasses the issue where hook received empty string fallbacks that failed validation.
-- **Enhanced Logging**: Added detailed `📤 [Mastery]` and `✅ [Mastery]` logs showing exact RPC parameters and results for debugging.
-- **Hook Warning Logs**: useStudentEvents.tsx now logs `⚠️ [useStudentEvents] addEvent skipped` when invalid IDs are passed, making debugging easier.
+**Latest Update (January 2026) - Mastery Evaluation Save Fix (skill_ids Type Change):**
+- **Column Type Changed**: `student_events.skill_ids` column type changed from `uuid[]` to `text[]` via SQL migration - allows storing skill names directly instead of requiring UUID foreign keys
+- **RPC Function Updated**: `add_student_event` function recreated with `p_skill_ids text[]` parameter - now accepts array of skill name strings
+- **Direct RPC Call**: ExerciseSection.tsx uses direct `supabase.rpc('add_student_event', {...})` call for saving mastery evaluations with skill names in `p_skill_ids` parameter
+- **Enhanced Logging**: Added detailed `📤 [Mastery]` and `✅ [Mastery]` logs showing exact RPC parameters and results for debugging
+- **Hook Warning Logs**: useStudentEvents.tsx logs `⚠️ [useStudentEvents] addEvent skipped` when invalid IDs are passed
 
 **Previous Update (January 2026) - JSON Parsing Crash Fix & Monitoring:**
 - **#1 WorksheetPage Fallback**: Added graceful fallback to `html_content` when `ai_response` JSON parsing fails. Logs ai_response length for monitoring truncation issues. Shows toast notification when using fallback data.
