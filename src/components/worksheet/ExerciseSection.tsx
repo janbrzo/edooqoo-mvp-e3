@@ -54,9 +54,10 @@ import { useStudentEvents } from "@/hooks/dslm/useStudentEvents";
 // PROBLEM 3: Complete classification of all 29 exercise types
 export const EXERCISE_TYPE_CLASSIFICATION = {
   // OPEN-ENDED: Require AI verification or teacher evaluation
+  // NOTE: Include BOTH original and normalized versions for proper matching
   open: [
     'dialogue', 'discussion', 
-    'describe-picture', // PROBLEM 2 FIX: Explicitly included for AI verification
+    'describe-picture', 'describe', // Both original and normalized versions
     'answer-questions', 'answer-questions-picture', 'answer-questions-audio',
     'paraphrasing', 'reading',
     'listening-comprehension'
@@ -341,8 +342,9 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           let questionText = `Question ${qIndex + 1}`;
           let suggestedAnswer: string | undefined;
           
-          // PROBLEM 3 FIX: Check prompts FIRST for describe-picture type
-          if (exerciseType === 'describe-picture' && exercise.prompts?.[qIndex]) {
+          // PROBLEM 1 FIX: Check prompts FIRST for describe/describe-picture type
+          // Note: exerciseType is normalized, so 'describe-picture' becomes 'describe'
+          if ((exerciseType === 'describe' || exercise.type === 'describe-picture') && exercise.prompts?.[qIndex]) {
             const prompt = exercise.prompts[qIndex];
             questionText = typeof prompt === 'string' ? prompt : prompt.prompt || prompt.text || questionText;
             suggestedAnswer = typeof prompt === 'object' ? (prompt.suggested || prompt.answer) : undefined;

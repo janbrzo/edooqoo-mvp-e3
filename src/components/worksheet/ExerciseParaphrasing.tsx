@@ -96,12 +96,12 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                       {isEditing ? (
                         <input
                           type="text"
-                          value={sentence.answer}
+                          value={safeGetText(sentence.answer)}
                           onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
                           className="border p-1 editable-content w-full"
                         />
                       ) : (
-                        <span>Suggested answer: {sentence.answer}</span>
+                        <span>Suggested answer: {safeGetText(sentence.answer)}</span>
                       )}
                     </div>
                     {/* Live Session: show student answer in blue */}

@@ -86,11 +86,47 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
           const nanoSkill = safeGetNanoSkill(item);
           const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
           
+          // PROBLEM 3 FIX: Get student answer for inline display (like Matching Halves)
+          const studentAnswer = studentAnswers[iIndex];
+          const isCorrect = showCorrectAnswers && studentAnswer === correctAnswer;
+          const isIncorrect = showCorrectAnswers && studentAnswer && studentAnswer !== correctAnswer;
+          const isEmpty = showCorrectAnswers && !studentAnswer;
+          
           return (
-            <div key={iIndex} className="p-2 border rounded-md bg-white">
+            <div key={iIndex} className={`p-2 border rounded-md bg-white
+              ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
+              ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
+              ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+            `}>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-worksheet-purple font-medium">{iIndex + 1}.</span>
-                {viewMode === 'teacher' ? (
+                
+                {/* PROBLEM 3 FIX: Inline Select dropdown for interactive mode (like Matching Halves) */}
+                {isInteractive && (
+                  <Select
+                    value={studentAnswer || ''}
+                    onValueChange={(value) => onAnswerChange?.(iIndex, value)}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger className="w-14 h-8">
+                      <SelectValue placeholder="?" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[200]">
+                      {shuffledDefinitions.map((_, idx) => (
+                        <SelectItem key={idx} value={String.fromCharCode(65 + idx)}>
+                          {String.fromCharCode(65 + idx)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                
+                {/* Show correct answer after submission */}
+                {showCorrectAnswers && (
+                  <span className="text-green-600 text-sm font-medium">({correctAnswer})</span>
+                )}
+                
+                {viewMode === 'teacher' && !isInteractive ? (
                   <>
                     <span className="teacher-answer">{correctAnswer}</span>
                     {/* Live Session: show student answer in blue */}
@@ -100,9 +136,10 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
                       </span>
                     )}
                   </>
-                ) : (
+                ) : !isInteractive ? (
                   <span className="student-answer-blank"></span>
-                )}
+                ) : null}
+                
                 <span className="flex-grow">
                   {isEditing ? (
                     <input
@@ -152,50 +189,7 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
         ))}
       </div>
       
-      {/* Interactive mode: Show separate matching section below */}
-      {isInteractive && (
-        <div className="md:col-span-12 mt-4 space-y-2">
-          <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Match the Words</h4>
-          {items.map((item, iIndex) => {
-            const studentAnswer = studentAnswers[iIndex];
-            const correctAnswer = String.fromCharCode(65 + shuffledDefinitions.findIndex(d => d.definition === item.definition));
-            const isCorrect = showCorrectAnswers && studentAnswer === correctAnswer;
-            const isIncorrect = showCorrectAnswers && studentAnswer && studentAnswer !== correctAnswer;
-            const isEmpty = showCorrectAnswers && !studentAnswer;
-
-            return (
-              <div key={iIndex} className="p-2 border rounded-md bg-white flex items-center gap-2">
-                <span className="text-worksheet-purple font-medium">{iIndex + 1}.</span>
-                <span className="flex-grow">{item.term}</span>
-                <Select
-                  value={studentAnswer || ''}
-                  onValueChange={(value) => onAnswerChange?.(iIndex, value)}
-                  disabled={disabled}
-                >
-                  <SelectTrigger className={`w-20 
-                    ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''} 
-                    ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
-                    ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
-                    ${disabled ? 'opacity-70' : ''}
-                  `}>
-                    <SelectValue placeholder="?" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {shuffledDefinitions.map((_, idx) => (
-                      <SelectItem key={idx} value={String.fromCharCode(65 + idx)}>
-                        {String.fromCharCode(65 + idx)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {showCorrectAnswers && (
-                  <span className="text-green-600 text-sm">({correctAnswer})</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* REMOVED: Separate matching section - now inline in left column (like Matching Halves) */}
     </div>
   );
 };
