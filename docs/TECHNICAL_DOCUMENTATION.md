@@ -5,7 +5,12 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 5 New Bug Fixes:**
+**Latest Update (January 2026) - 3 Critical Bug Fixes:**
+- **#1 Describe-Picture AI Verification Not Triggering**: FIXED the root cause - `normalizeExerciseType()` was converting `describe-picture` to `describe`, but `EXERCISE_TYPE_CLASSIFICATION.open` only contained `describe-picture`. Added BOTH `describe-picture` AND `describe` to the open array. Also fixed condition in `handleMarkDoneWithModal` to check `exerciseType === 'describe' || exercise.type === 'describe-picture'`
+- **#2 Paraphrasing Shows NanoSkill & Empty Suggested Answer**: Applied `safeGetText()` to BOTH `sentence.word_to_use` (lines 62, 70) AND `sentence.answer` (lines 99, 104) in `ExerciseParaphrasing.tsx`. Now displays clean "Use: nearby" and proper "Suggested answer: ..."
+- **#3 Synonyms/Antonyms Matching Section Location**: Redesigned to match `ExerciseMatchingHalves.tsx` layout - Select dropdown is now INLINE in the left Words column, not in a separate section below. Removed redundant "Match the Words" section
+
+**Previous Update (January 2026) - 5 Bug Fixes:**
 - **#1 Matching Halves Mastery 50% Fix**: `NanoSkillMasteryModal.tsx` now calculates correct answer letter dynamically using the same seeded shuffle algorithm as `ExerciseMatchingHalves.tsx`. Previously used non-existent `correct_match` field - now calculates `shuffledPosition` of item and compares with student letter. Each item shows individual 80%/30% score
 - **#2 Describe-Picture AI Verification**: Added `'describe-picture'` to `EXERCISE_TYPE_CLASSIFICATION.open` array. AI evaluation now triggers correctly for this exercise type
 - **#3 TRUE/FALSE Radio Buttons in Student HTML**: `htmlExport.ts` now unchecks ALL radio buttons (`input[type="radio"]`) by setting `checked = false` and removing `checked` attribute. Student exports show empty radio buttons
