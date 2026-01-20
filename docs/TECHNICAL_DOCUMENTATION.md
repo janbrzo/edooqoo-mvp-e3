@@ -5,12 +5,18 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 4 Live Session & HTML Export Fixes:**
-- **#1 TRUE/FALSE in Student HTML**: `htmlExport.ts` now removes answer indicators (`.text-green-600`, `True/False` text, `.teacher-answer`) when exporting in student view mode - students no longer see correct answers in downloaded HTML
-- **#2 Mastery Evaluation Fix for 4 Exercise Types**: Extended `calculateInitialMasteryForItem` in `NanoSkillMasteryModal.tsx` to handle: Synonyms/Antonyms (match letter with definition position), Error Correction (check BOTH `sentence.correction` AND `sentence.correct`), Matching Halves (use `correct_match`). Each item now shows correct 80%/30% instead of 50%
-- **#3 Describe-Picture AI Verification**: Fixed `ExerciseSection.tsx` to check `exercise.prompts` FIRST for describe-picture exercises before falling back to questions - AI evaluation now triggers correctly
-- **#4.1 Audio/Image Context for AI**: AI verification now includes `audio_transcript` and `image_description` from exercise data for better evaluation context
-- **#4.2 Enhanced AI Logging**: `verify-open-answers` Edge Function now logs full request, system prompt, user prompt, raw AI response, and parsed evaluations for debugging in Supabase logs
+**Latest Update (January 2026) - 5 New Bug Fixes:**
+- **#1 Matching Halves Mastery 50% Fix**: `NanoSkillMasteryModal.tsx` now calculates correct answer letter dynamically using the same seeded shuffle algorithm as `ExerciseMatchingHalves.tsx`. Previously used non-existent `correct_match` field - now calculates `shuffledPosition` of item and compares with student letter. Each item shows individual 80%/30% score
+- **#2 Describe-Picture AI Verification**: Added `'describe-picture'` to `EXERCISE_TYPE_CLASSIFICATION.open` array. AI evaluation now triggers correctly for this exercise type
+- **#3 TRUE/FALSE Radio Buttons in Student HTML**: `htmlExport.ts` now unchecks ALL radio buttons (`input[type="radio"]`) by setting `checked = false` and removing `checked` attribute. Student exports show empty radio buttons
+- **#4 Paraphrasing "Use:" Shows NanoSkill**: `ExerciseParaphrasing.tsx` now uses `safeGetText()` for `word_to_use` field (lines 62, 70). Displays clean "Use: nearby" instead of `{text: "nearby", nano_skill: {...}}`
+- **#5 Synonyms/Antonyms Missing Definitions**: `ExerciseSynonymsAntonyms.tsx` now ALWAYS renders the shuffled definitions column (A, B, C...) regardless of `isInteractive` state. Shared worksheets now correctly show terms on left, definitions on right, with matching section below for interactive mode
+
+**Previous Update (January 2026) - 4 Live Session & HTML Export Fixes:**
+- **TRUE/FALSE in Student HTML**: `htmlExport.ts` removes answer indicators (`.text-green-600`, `True/False` text, `.teacher-answer`) when exporting in student view mode
+- **Mastery Evaluation Fix for 4 Exercise Types**: Extended `calculateInitialMasteryForItem` to handle: Synonyms/Antonyms (match letter with definition position), Error Correction (check BOTH `sentence.correction` AND `sentence.correct`)
+- **Audio/Image Context for AI**: AI verification includes `audio_transcript` and `image_description` from exercise data
+- **Enhanced AI Logging**: `verify-open-answers` Edge Function logs full request, prompts, and responses for debugging
 
 **Previous Update (January 2026) - Mastery Evaluation Save Fix (skill_ids Type Change):**
 - **Column Type Changed**: `student_events.skill_ids` column type changed from `uuid[]` to `text[]` via SQL migration - allows storing skill names directly instead of requiring UUID foreign keys
