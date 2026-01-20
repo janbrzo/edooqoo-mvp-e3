@@ -278,13 +278,47 @@ const calculateInitialMasteryForItem = (
   }
   
   // PROBLEM 1.1 FIX: Check sentence_halves array (Matching Halves)
+  // Calculate correct letter dynamically using the same shuffle algorithm as ExerciseMatchingHalves
   if (exerciseData?.sentence_halves && exerciseData.sentence_halves[itemIndex]) {
     const half = exerciseData.sentence_halves[itemIndex];
-    // Expected answer is the letter matching the second half position
-    // Use correct_match if available
-    if (half.correct_match && typeof studentAnswer === 'string') {
-      isCorrect = studentAnswer.toUpperCase() === half.correct_match.toUpperCase();
-      console.log(`[Mastery] Matching Halves item ${itemIndex}: student="${studentAnswer}", correct="${half.correct_match}", isCorrect=${isCorrect}`);
+    const allHalves = exerciseData.sentence_halves;
+    
+    // Recreate the seed used in ExerciseMatchingHalves component
+    const halvesKey = allHalves.map((h: any) => (h.first_half || '').trim()).join('|');
+    const worksheetId = exerciseData?.worksheetId || 'default';
+    const seed = `${worksheetId}-halves-${halvesKey}`;
+    
+    // Apply same deterministic shuffle to get shuffled indices
+    const shuffleIndicesWithSeed = (length: number, seedStr: string): number[] => {
+      // Seeded random number generator
+      let hash = 0;
+      for (let i = 0; i < seedStr.length; i++) {
+        const char = seedStr.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      const random = () => {
+        hash = (hash * 1103515245 + 12345) & 0x7fffffff;
+        return (hash % 1000) / 1000;
+      };
+      
+      const indices = Array.from({ length }, (_, i) => i);
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      return indices;
+    };
+    
+    const shuffledIndices = shuffleIndicesWithSeed(allHalves.length, seed);
+    
+    // Find where THIS item's index appears in shuffled array to get correct letter
+    const shuffledPosition = shuffledIndices.indexOf(itemIndex);
+    
+    if (shuffledPosition !== -1 && typeof studentAnswer === 'string') {
+      const correctLetter = String.fromCharCode(65 + shuffledPosition);
+      isCorrect = studentAnswer.toUpperCase() === correctLetter;
+      console.log(`[Mastery] Matching Halves item ${itemIndex}: student="${studentAnswer}", shuffledPos=${shuffledPosition}, correct="${correctLetter}", isCorrect=${isCorrect}`);
     }
   }
   

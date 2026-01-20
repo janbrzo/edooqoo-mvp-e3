@@ -476,6 +476,14 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
       const tfIndicators = clonedElement.querySelectorAll('[data-answer-true], [data-answer-false], .answer-indicator');
       tfIndicators.forEach(el => el.remove());
       
+      // PROBLEM 3 FIX: Uncheck ALL radio buttons to hide True/False answers in student export
+      const radioButtons = clonedElement.querySelectorAll('input[type="radio"]');
+      radioButtons.forEach(radio => {
+        (radio as HTMLInputElement).checked = false;
+        radio.removeAttribute('checked');
+      });
+      console.log(`[HTML EXPORT] Student view: Unchecked ${radioButtons.length} radio buttons for clean export.`);
+      
       console.log(`[HTML EXPORT] Student view: Removed answer indicators for clean student worksheet.`);
     }
 

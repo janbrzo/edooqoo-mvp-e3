@@ -129,8 +129,34 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
 
       <div className="md:col-span-7 space-y-2">
         <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">{rightColumnTitle}</h4>
-        {isInteractive ? (
-          items.map((item, iIndex) => {
+        
+        {/* PROBLEM 5 FIX: ALWAYS show the definitions column (A, B, C...) */}
+        {/* This ensures shared worksheets display definitions correctly */}
+        {shuffledDefinitions.map((item, iIndex) => (
+          <div key={iIndex} className="p-2 border rounded-md bg-white">
+            <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + iIndex)}.</span>
+            {isEditing ? (
+              <input
+                type="text"
+                value={item.definition}
+                onChange={e => {
+                  const originalIndex = items.findIndex(i => i.term === item.term);
+                  if (originalIndex !== -1) {
+                    onItemChange(originalIndex, 'definition', e.target.value);
+                  }
+                }}
+                className="border p-1 editable-content w-full"
+              />
+            ) : item.definition}
+          </div>
+        ))}
+      </div>
+      
+      {/* Interactive mode: Show separate matching section below */}
+      {isInteractive && (
+        <div className="md:col-span-12 mt-4 space-y-2">
+          <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Match the Words</h4>
+          {items.map((item, iIndex) => {
             const studentAnswer = studentAnswers[iIndex];
             const correctAnswer = String.fromCharCode(65 + shuffledDefinitions.findIndex(d => d.definition === item.definition));
             const isCorrect = showCorrectAnswers && studentAnswer === correctAnswer;
@@ -167,28 +193,9 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
                 )}
               </div>
             );
-          })
-        ) : (
-          shuffledDefinitions.map((item, iIndex) => (
-            <div key={iIndex} className="p-2 border rounded-md bg-white">
-              <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + iIndex)}.</span>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={item.definition}
-                  onChange={e => {
-                    const originalIndex = items.findIndex(i => i.term === item.term);
-                    if (originalIndex !== -1) {
-                      onItemChange(originalIndex, 'definition', e.target.value);
-                    }
-                  }}
-                  className="border p-1 editable-content w-full"
-                />
-              ) : item.definition}
-            </div>
-          ))
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 };

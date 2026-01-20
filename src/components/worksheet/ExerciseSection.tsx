@@ -55,10 +55,11 @@ import { useStudentEvents } from "@/hooks/dslm/useStudentEvents";
 export const EXERCISE_TYPE_CLASSIFICATION = {
   // OPEN-ENDED: Require AI verification or teacher evaluation
   open: [
-    'dialogue', 'discussion', 'describe-picture', 
+    'dialogue', 'discussion', 
+    'describe-picture', // PROBLEM 2 FIX: Explicitly included for AI verification
     'answer-questions', 'answer-questions-picture', 'answer-questions-audio',
     'paraphrasing', 'reading',
-    'listening-comprehension' // PROBLEM 2: Added - open-ended audio comprehension
+    'listening-comprehension'
   ],
   // CLOSED: Automatic verification (correct/incorrect)
   closed: [

@@ -1,7 +1,7 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
-import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetNanoSkill, safeGetText } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
@@ -59,7 +59,7 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                       />
                       <input
                         type="text"
-                        value={sentence.word_to_use}
+                        value={safeGetText(sentence.word_to_use)}
                         onChange={e => onSentenceChange(sIndex, 'word_to_use', e.target.value)}
                         className="w-32 border p-1 editable-content text-sm"
                       />
@@ -67,7 +67,7 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                   ) : (
                     <>
                       <span className="flex-grow">{sentence.original}</span>
-                      <span className="text-sm text-gray-600">Use: <strong>{sentence.word_to_use}</strong></span>
+                      <span className="text-sm text-gray-600">Use: <strong>{safeGetText(sentence.word_to_use)}</strong></span>
                     </>
                   )}
                   {/* NanoSkill Badge */}
