@@ -82,16 +82,21 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
               variant="outline"
               className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
             >
-              {displayName} ({confidencePercent}%)
+              ns ({confidencePercent}%)
             </Badge>
           </TooltipTrigger>
-          <TooltipContent className="max-w-xs">
-            <div className="space-y-1">
-              <p className="font-medium text-xs">{nanoSkill.name}</p>
-              <p className="text-xs">{nanoSkill.reason}</p>
-              <p className="text-xs text-muted-foreground">
-                Confidence: {confidencePercent}%
-              </p>
+          <TooltipContent className="max-w-xs p-3 bg-white border shadow-lg rounded-lg">
+            <div className="space-y-2">
+              <p className="font-semibold text-sm text-gray-900">{displayName}</p>
+              <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
+              <div className="flex items-center gap-2 pt-1 border-t">
+                <span className="text-xs text-muted-foreground">Full ID:</span>
+                <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{nanoSkill.name}</code>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Confidence:</span>
+                <span className="text-xs font-medium">{confidencePercent}%</span>
+              </div>
             </div>
           </TooltipContent>
         </Tooltip>

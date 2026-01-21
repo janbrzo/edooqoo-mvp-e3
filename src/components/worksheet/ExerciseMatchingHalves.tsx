@@ -94,12 +94,14 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
     onHalvesChange(hIndex, 'correct_match', value);
   };
 
-  // PROBLEM 8 FIX: Use useRef with seeded random for deterministic shuffle
+  // PROBLEM 3 FIX: Use ONLY content-based key for seed - NOT worksheetId
+  // This ensures consistent shuffle order between teacher panel and shared worksheet
   const halvesKey = sentence_halves.map(h => h.first_half).join('|');
   const shuffledIndicesRef = useRef<number[] | null>(null);
   
   if (!shuffledIndicesRef.current || shuffledIndicesRef.current.length !== processedHalves.length) {
-    const seed = worksheetId ? `${worksheetId}-halves-${halvesKey}` : `halves-${halvesKey}`;
+    // CRITICAL: Use only content-based seed for cross-view consistency
+    const seed = `halves-${halvesKey}`;
     shuffledIndicesRef.current = shuffleIndicesWithSeed(processedHalves.length, seed);
   }
   
@@ -117,7 +119,8 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">
-        <div className="md:col-span-6 space-y-2">
+        {/* Left column: Sentence beginnings with inline Select */}
+        <div className="md:col-span-6 space-y-2 flex flex-col">
           <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence beginnings</h4>
           {processedHalves.map((item, hIndex) => {
             const correctAnswer = String.fromCharCode(65 + shuffledSecondHalves.findIndex(shuffled => shuffled.second_half === item.second_half));
@@ -132,12 +135,12 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
             const isEmpty = showCorrectAnswers && !studentAnswer;
             
             return (
-              <div key={hIndex} className={`p-2 border rounded-md bg-white
+              <div key={hIndex} className={`p-2 border rounded-md bg-white min-h-[48px] flex items-center
                 ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
                 ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
                 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
               `}>
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap w-full">
                   <span className="text-worksheet-purple font-medium">{hIndex + 1}.</span>
                   
                   {/* PROBLEM 5: Inline Select dropdown for interactive mode */}
@@ -202,22 +205,25 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
           })}
         </div>
 
-        <div className="md:col-span-6 space-y-2">
+        {/* Right column: Sentence endings with A, B, C labels */}
+        <div className="md:col-span-6 space-y-2 flex flex-col">
           <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Sentence endings</h4>
           {/* Show shuffled second halves with A, B, C labels */}
           {shuffledIndices.map((originalIndex, displayIndex) => {
             const item = processedHalves[originalIndex];
             return (
-              <div key={`shuffled-${displayIndex}`} className="p-2 border rounded-md bg-white">
+              <div key={`shuffled-${displayIndex}`} className="p-2 border rounded-md bg-white min-h-[48px] flex items-center">
                 <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + displayIndex)}.</span>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={item?.second_half || ''}
-                    onChange={e => handleSecondHalfChange(originalIndex, e.target.value)}
-                    className="border p-1 editable-content w-full"
-                  />
-                ) : (item?.second_half || 'Missing second half')}
+                <span className="flex-grow">
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={item?.second_half || ''}
+                      onChange={e => handleSecondHalfChange(originalIndex, e.target.value)}
+                      className="border p-1 editable-content w-full"
+                    />
+                  ) : (item?.second_half || 'Missing second half')}
+                </span>
               </div>
             );
           })}

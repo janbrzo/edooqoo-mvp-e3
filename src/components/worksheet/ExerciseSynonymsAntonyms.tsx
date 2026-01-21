@@ -60,12 +60,14 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
   onNanoSkillChange,
   isSharedWorksheet = false
 }) => {
-  // PROBLEM 8 FIX: Use useRef with seeded random for deterministic shuffle
+  // PROBLEM 3 FIX: Use ONLY itemsKey for seed - NOT worksheetId
+  // This ensures consistent shuffle order between teacher panel and shared worksheet
   const itemsKey = items.map(item => item.term).join('|');
   const shuffledRef = useRef<any[] | null>(null);
   
   if (!shuffledRef.current || shuffledRef.current.length !== items.length) {
-    const seed = worksheetId ? `${worksheetId}-syn-${itemsKey}` : `syn-${itemsKey}`;
+    // CRITICAL: Use only content-based seed for cross-view consistency
+    const seed = `syn-${itemsKey}`;
     shuffledRef.current = shuffleArrayWithSeed([...items], seed);
   }
   
@@ -78,7 +80,8 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">
-      <div className="md:col-span-5 space-y-2">
+      {/* Left column: Words with inline Select for interactive mode */}
+      <div className="md:col-span-6 space-y-2 flex flex-col">
         <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Words</h4>
         {items.map((item, iIndex) => {
           const correctAnswer = String.fromCharCode(65 + shuffledDefinitions.findIndex(i => i.term === item.term));
@@ -86,22 +89,22 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
           const nanoSkill = safeGetNanoSkill(item);
           const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
           
-          // PROBLEM 3 FIX: Get student answer for inline display (like Matching Halves)
+          // Get student answer for inline display (like Matching Halves)
           const studentAnswer = studentAnswers[iIndex];
           const isCorrect = showCorrectAnswers && studentAnswer === correctAnswer;
           const isIncorrect = showCorrectAnswers && studentAnswer && studentAnswer !== correctAnswer;
           const isEmpty = showCorrectAnswers && !studentAnswer;
           
           return (
-            <div key={iIndex} className={`p-2 border rounded-md bg-white
+            <div key={iIndex} className={`p-2 border rounded-md bg-white min-h-[48px] flex items-center
               ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
               ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
               ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
             `}>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap w-full">
                 <span className="text-worksheet-purple font-medium">{iIndex + 1}.</span>
                 
-                {/* PROBLEM 3 FIX: Inline Select dropdown for interactive mode (like Matching Halves) */}
+                {/* Inline Select dropdown for interactive mode (like Matching Halves) */}
                 {isInteractive && (
                   <Select
                     value={studentAnswer || ''}
@@ -164,32 +167,32 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
         })}
       </div>
 
-      <div className="md:col-span-7 space-y-2">
+      {/* Right column: Definitions with A, B, C labels */}
+      <div className="md:col-span-6 space-y-2 flex flex-col">
         <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">{rightColumnTitle}</h4>
         
-        {/* PROBLEM 5 FIX: ALWAYS show the definitions column (A, B, C...) */}
-        {/* This ensures shared worksheets display definitions correctly */}
+        {/* ALWAYS show the definitions column (A, B, C...) */}
         {shuffledDefinitions.map((item, iIndex) => (
-          <div key={iIndex} className="p-2 border rounded-md bg-white">
+          <div key={iIndex} className="p-2 border rounded-md bg-white min-h-[48px] flex items-center">
             <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + iIndex)}.</span>
-            {isEditing ? (
-              <input
-                type="text"
-                value={item.definition}
-                onChange={e => {
-                  const originalIndex = items.findIndex(i => i.term === item.term);
-                  if (originalIndex !== -1) {
-                    onItemChange(originalIndex, 'definition', e.target.value);
-                  }
-                }}
-                className="border p-1 editable-content w-full"
-              />
-            ) : item.definition}
+            <span className="flex-grow">
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={item.definition}
+                  onChange={e => {
+                    const originalIndex = items.findIndex(i => i.term === item.term);
+                    if (originalIndex !== -1) {
+                      onItemChange(originalIndex, 'definition', e.target.value);
+                    }
+                  }}
+                  className="border p-1 editable-content w-full"
+                />
+              ) : item.definition}
+            </span>
           </div>
         ))}
       </div>
-      
-      {/* REMOVED: Separate matching section - now inline in left column (like Matching Halves) */}
     </div>
   );
 };
