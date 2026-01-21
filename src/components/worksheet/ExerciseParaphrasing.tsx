@@ -17,6 +17,37 @@ interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
   isSharedWorksheet?: boolean;
 }
 
+// Helper to extract word_to_use from multiple possible data formats
+// Format A: {word_to_use: "word"} or {word_to_use: {text: "word", nano_skill: {...}}}
+// Format B: AI format with {paraphrase: "...", alternatives: [...]}
+const getWordToUse = (sentence: any): string => {
+  // First try direct word_to_use field
+  if (sentence.word_to_use !== undefined && sentence.word_to_use !== null) {
+    const rawText = safeGetText(sentence.word_to_use);
+    // Filter out if it looks like a nano_skill name (contains dots or underscores in specific patterns)
+    if (rawText && !rawText.match(/^ns\.|^[a-z]+\.[a-z]+\.|_[a-z]+_/)) {
+      return rawText;
+    }
+  }
+  // Format B: no word_to_use, return empty (optional field)
+  return '';
+};
+
+// Helper to extract suggested answer from multiple possible data formats
+// Format A: {answer: "..."}  
+// Format B: AI format {paraphrase: "..."}
+const getSuggestedAnswer = (sentence: any): string => {
+  // First try direct answer field
+  if (sentence.answer !== undefined && sentence.answer !== null) {
+    return safeGetText(sentence.answer);
+  }
+  // Format B: AI uses 'paraphrase' field
+  if (sentence.paraphrase !== undefined && sentence.paraphrase !== null) {
+    return safeGetText(sentence.paraphrase);
+  }
+  return '';
+};
+
 const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
   sentences, 
   isEditing, 
@@ -42,6 +73,10 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
           const isEmpty = showCorrectAnswers && !studentAnswer;
           const nanoSkill = safeGetNanoSkill(sentence);
           const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+          
+          // Extract values using helpers for multi-format support
+          const wordToUse = getWordToUse(sentence);
+          const suggestedAnswer = getSuggestedAnswer(sentence);
 
           return (
             <div key={sIndex} className="border rounded-lg p-3 bg-white">
@@ -59,15 +94,18 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                       />
                       <input
                         type="text"
-                        value={safeGetText(sentence.word_to_use)}
+                        value={wordToUse}
                         onChange={e => onSentenceChange(sIndex, 'word_to_use', e.target.value)}
                         className="w-32 border p-1 editable-content text-sm"
+                        placeholder="Word to use..."
                       />
                     </>
                   ) : (
                     <>
                       <span className="flex-grow">{sentence.original}</span>
-                      <span className="text-sm text-gray-600">Use: <strong>{safeGetText(sentence.word_to_use)}</strong></span>
+                      {wordToUse && (
+                        <span className="text-sm text-gray-600">Use: <strong>{wordToUse}</strong></span>
+                      )}
                     </>
                   )}
                   {/* NanoSkill Badge */}
@@ -96,12 +134,13 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                       {isEditing ? (
                         <input
                           type="text"
-                          value={safeGetText(sentence.answer)}
+                          value={suggestedAnswer}
                           onChange={e => onSentenceChange(sIndex, 'answer', e.target.value)}
                           className="border p-1 editable-content w-full"
+                          placeholder="Suggested answer..."
                         />
                       ) : (
-                        <span>Suggested answer: {safeGetText(sentence.answer)}</span>
+                        suggestedAnswer && <span>Suggested answer: {suggestedAnswer}</span>
                       )}
                     </div>
                     {/* Live Session: show student answer in blue */}
