@@ -1,65 +1,61 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Calculator, TrendingUp, Clock, Plus, Minus, Info } from 'lucide-react';
-import { useProfile } from '@/hooks/useProfile';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Calculator, TrendingUp, Clock, Plus, Minus, Info } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
 interface PricingCalculatorProps {
-  onRecommendation: (plan: 'side-gig' | 'full-time', worksheetsNeeded: number, lessonsPerWeek?: number) => void;
+  onRecommendation: (plan: "side-gig" | "full-time", worksheetsNeeded: number, lessonsPerWeek?: number) => void;
 }
-export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
-  onRecommendation
-}) => {
-  const {
-    profile
-  } = useProfile();
+export const PricingCalculator: React.FC<PricingCalculatorProps> = ({ onRecommendation }) => {
+  const { profile } = useProfile();
   const [prepTime, setPrepTime] = useState(25);
   const [lessonPrice, setLessonPrice] = useState(25);
   const [lessonsPerWeek, setLessonsPerWeek] = useState(7);
   const [monthlySavings, setMonthlySavings] = useState(0);
   const [timeSavings, setTimeSavings] = useState(0);
-  const [recommendedPlan, setRecommendedPlan] = useState<'side-gig' | 'full-time'>('side-gig');
+  const [recommendedPlan, setRecommendedPlan] = useState<"side-gig" | "full-time">("side-gig");
   const [recommendedWorksheets, setRecommendedWorksheets] = useState(15);
   const isCurrentPlanLower = (planType: string) => {
-    const currentPlan = profile?.subscription_type || 'Free Demo';
-    if (planType === 'Free Demo') {
-      return currentPlan === 'Side-Gig' || currentPlan.includes('Full-Time');
+    const currentPlan = profile?.subscription_type || "Free Demo";
+    if (planType === "Free Demo") {
+      return currentPlan === "Side-Gig" || currentPlan.includes("Full-Time");
     }
-    if (planType === 'Side-Gig') {
-      return currentPlan.includes('Full-Time');
+    if (planType === "Side-Gig") {
+      return currentPlan.includes("Full-Time");
     }
     return false;
   };
   const getPlanButtonText = (planType: string) => {
     if (isCurrentPlanLower(planType)) {
-      return 'Lower Plan';
+      return "Lower Plan";
     }
-    const currentPlan = profile?.subscription_type || 'Free Demo';
-    if (planType === 'Free Demo') {
-      return currentPlan === 'Free Demo' ? 'Current Plan' : 'Get Started Free';
+    const currentPlan = profile?.subscription_type || "Free Demo";
+    if (planType === "Free Demo") {
+      return currentPlan === "Free Demo" ? "Current Plan" : "Get Started Free";
     }
-    if (planType === 'Side-Gig') {
-      return currentPlan === 'Side-Gig' ? 'Current Plan' : 'Upgrade to Side-Gig';
+    if (planType === "Side-Gig") {
+      return currentPlan === "Side-Gig" ? "Current Plan" : "Upgrade to Side-Gig";
     }
-    return 'Upgrade Plan';
+    return "Upgrade Plan";
   };
   useEffect(() => {
     // Calculate monthly prep time and cost
-    const monthlyPrepHours = prepTime * lessonsPerWeek * 4 / 60;
+    const monthlyPrepHours = (prepTime * lessonsPerWeek * 4) / 60;
     const monthlyCost = monthlyPrepHours * lessonPrice;
     const monthlyPrepMinutes = prepTime * lessonsPerWeek * 4;
 
     // Determine recommended plan based on lessons per week
     const worksheetsNeeded = lessonsPerWeek * 4; // Assume 1 worksheet per lesson
 
-    let planType: 'side-gig' | 'full-time' = 'side-gig';
+    let planType: "side-gig" | "full-time" = "side-gig";
     let planCost = 9;
     let recommendedWorksheetCount = 15;
     if (worksheetsNeeded > 15) {
-      planType = 'full-time';
+      planType = "full-time";
       // Find the best Full-Time plan
       if (worksheetsNeeded <= 30) {
         planCost = 19;
@@ -84,33 +80,34 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
     // Pass lessons per week to parent for proper dropdown handling
     onRecommendation(planType, recommendedWorksheetCount, lessonsPerWeek);
   }, [prepTime, lessonPrice, lessonsPerWeek, onRecommendation, profile]);
-  const handleIncrement = (field: 'prepTime' | 'lessonPrice' | 'lessonsPerWeek') => {
+  const handleIncrement = (field: "prepTime" | "lessonPrice" | "lessonsPerWeek") => {
     switch (field) {
-      case 'prepTime':
-        setPrepTime(prev => Math.min(prev + 5, 120));
+      case "prepTime":
+        setPrepTime((prev) => Math.min(prev + 5, 120));
         break;
-      case 'lessonPrice':
-        setLessonPrice(prev => Math.min(prev + 5, 200));
+      case "lessonPrice":
+        setLessonPrice((prev) => Math.min(prev + 5, 200));
         break;
-      case 'lessonsPerWeek':
-        setLessonsPerWeek(prev => Math.min(prev + 1, 50));
+      case "lessonsPerWeek":
+        setLessonsPerWeek((prev) => Math.min(prev + 1, 50));
         break;
     }
   };
-  const handleDecrement = (field: 'prepTime' | 'lessonPrice' | 'lessonsPerWeek') => {
+  const handleDecrement = (field: "prepTime" | "lessonPrice" | "lessonsPerWeek") => {
     switch (field) {
-      case 'prepTime':
-        setPrepTime(prev => Math.max(prev - 5, 1));
+      case "prepTime":
+        setPrepTime((prev) => Math.max(prev - 5, 1));
         break;
-      case 'lessonPrice':
-        setLessonPrice(prev => Math.max(prev - 5, 1));
+      case "lessonPrice":
+        setLessonPrice((prev) => Math.max(prev - 5, 1));
         break;
-      case 'lessonsPerWeek':
-        setLessonsPerWeek(prev => Math.max(prev - 1, 1));
+      case "lessonsPerWeek":
+        setLessonsPerWeek((prev) => Math.max(prev - 1, 1));
         break;
     }
   };
-  return <Card className="mb-6 bg-white border-2 shadow-md" style={{ backgroundColor: 'white', opacity: 1 }}>
+  return (
+    <Card className="mb-6 bg-white border-2 shadow-md" style={{ backgroundColor: "white", opacity: 1 }}>
       <CardHeader className="text-center pb-3 bg-white rounded-none">
         <div className="flex items-center justify-center gap-4 mb-2">
           <div className="flex items-center gap-2">
@@ -118,11 +115,11 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
             <CardTitle className="text-lg">Calculate Your Savings</CardTitle>
           </div>
           <p className="text-muted-foreground text-sm">
-            See how much time and money you'll save with our worksheet generator
+            See how much time and money you'll earn with our worksheet generator
           </p>
         </div>
       </CardHeader>
-      
+
       <CardContent className="bg-white">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -141,16 +138,34 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
                 </Tooltip>
               </div>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleDecrement('prepTime')}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none"
+                  onClick={() => handleDecrement("prepTime")}
+                >
                   <Minus className="h-3 w-3" />
                 </Button>
-                <Input id="prep-time" type="number" value={prepTime} onChange={e => setPrepTime(Math.max(1, Math.min(120, Number(e.target.value))))} min="1" max="120" className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
-                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleIncrement('prepTime')}>
+                <Input
+                  id="prep-time"
+                  type="number"
+                  value={prepTime}
+                  onChange={(e) => setPrepTime(Math.max(1, Math.min(120, Number(e.target.value))))}
+                  min="1"
+                  max="120"
+                  className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none"
+                  onClick={() => handleIncrement("prepTime")}
+                >
                   <Plus className="h-3 w-3" />
                 </Button>
               </div>
             </div>
-            
+
             <div className="space-y-1">
               <div className="flex items-center gap-1">
                 <Label htmlFor="lesson-price" className="text-sm">
@@ -166,16 +181,34 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
                 </Tooltip>
               </div>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleDecrement('lessonPrice')}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none"
+                  onClick={() => handleDecrement("lessonPrice")}
+                >
                   <Minus className="h-3 w-3" />
                 </Button>
-                <Input id="lesson-price" type="number" value={lessonPrice} onChange={e => setLessonPrice(Math.max(1, Math.min(200, Number(e.target.value))))} min="1" max="200" className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
-                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleIncrement('lessonPrice')}>
+                <Input
+                  id="lesson-price"
+                  type="number"
+                  value={lessonPrice}
+                  onChange={(e) => setLessonPrice(Math.max(1, Math.min(200, Number(e.target.value))))}
+                  min="1"
+                  max="200"
+                  className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none"
+                  onClick={() => handleIncrement("lessonPrice")}
+                >
                   <Plus className="h-3 w-3" />
                 </Button>
               </div>
             </div>
-            
+
             <div className="space-y-1">
               <div className="flex items-center gap-1">
                 <Label htmlFor="lessons-week" className="text-sm">
@@ -191,47 +224,60 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
                 </Tooltip>
               </div>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleDecrement('lessonsPerWeek')}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none"
+                  onClick={() => handleDecrement("lessonsPerWeek")}
+                >
                   <Minus className="h-3 w-3" />
                 </Button>
-                <Input id="lessons-week" type="number" value={lessonsPerWeek} onChange={e => setLessonsPerWeek(Math.max(1, Math.min(50, Number(e.target.value))))} min="1" max="50" className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]" />
-                <Button variant="ghost" size="sm" className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none" onClick={() => handleIncrement('lessonsPerWeek')}>
+                <Input
+                  id="lessons-week"
+                  type="number"
+                  value={lessonsPerWeek}
+                  onChange={(e) => setLessonsPerWeek(Math.max(1, Math.min(50, Number(e.target.value))))}
+                  min="1"
+                  max="50"
+                  className="h-9 w-14 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-8 p-0 bg-primary text-primary-foreground hover:bg-primary/90 border-none"
+                  onClick={() => handleIncrement("lessonsPerWeek")}
+                >
                   <Plus className="h-3 w-3" />
                 </Button>
               </div>
             </div>
           </div>
-          
-          {monthlySavings > 0 && <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+
+          {monthlySavings > 0 && (
+            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="font-medium text-green-800 dark:text-green-200 text-sm">
-                    Your Monthly Savings
-                  </span>
+                  <span className="font-medium text-green-800 dark:text-green-200 text-sm">Your Monthly Savings</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      ${monthlySavings.toFixed(0)}
-                    </div>
-                    <div className="text-xs text-green-600">
-                      money you will save with edooqoo
-                    </div>
+                    <div className="text-2xl font-bold text-green-600">${monthlySavings.toFixed(0)}</div>
+                    <div className="text-xs text-green-600">money you will save with edooqoo</div>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center gap-1 text-green-600">
                       <Clock className="h-4 w-4" />
                       <span className="text-2xl font-bold">{timeSavings}min</span>
                     </div>
-                    <div className="text-xs text-green-600">
-                      time you will save with edooqoo
-                    </div>
+                    <div className="text-xs text-green-600">time you will save with edooqoo</div>
                   </div>
                 </div>
               </div>
-            </div>}
+            </div>
+          )}
         </div>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
