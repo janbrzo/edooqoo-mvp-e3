@@ -14,6 +14,7 @@ import ExerciseMultipleChoice from "./ExerciseMultipleChoice";
 import ExerciseOddOneOut from "./ExerciseOddOneOut";
 import ExerciseDialogue from "./ExerciseDialogue";
 import ExerciseDescribe from "./ExerciseDescribe";
+import ExerciseWritingTask from "./ExerciseWritingTask";
 import ExerciseAnswerQuestions from "./ExerciseAnswerQuestions";
 import ExerciseGapText from "./ExerciseGapText";
 import ExerciseMatchingHalves from "./ExerciseMatchingHalves";
@@ -1378,51 +1379,101 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             }}
           />
         )}
-
         {/* New additional exercise types */}
-        {normalizedType === 'describe' && (
-          <ExerciseDescribe
-            image_url={exercise.image_url || hasSelectedImage?.unsplash_url || hasSelectedImage?.ai_generated_url}
-            questions={exercise.prompts || exercise.questions || []}
-            isEditing={isEditing}
-            viewMode={exerciseViewMode}
-            showImage={true}
-            onQuestionChange={(qIndex, field, value) => {
-              const updatedExercises = [...editableWorksheet.exercises];
-              const newPrompts = [...(exercise.prompts || exercise.questions || [])];
-              
-              if (field === 'text' || field === 'question') {
-                newPrompts[qIndex] = value;
-              }
-              
-              updatedExercises[arrayIndex] = {
-                ...updatedExercises[arrayIndex],
-                prompts: newPrompts
-              };
-              
-              setEditableWorksheet({
-                ...editableWorksheet,
-                exercises: updatedExercises
-              });
-            }}
-            onImageUrlChange={(url) => handleExerciseChangeLocal('image_url', url)}
-            isInteractive={isInteractive}
-            studentAnswers={studentAnswers}
-            onAnswerChange={onAnswerChange}
-            showCorrectAnswers={showCorrectAnswers}
-            liveSessionAnswer={liveSessionAnswer}
-            disabled={disabled}
-            onNanoSkillChange={(qIndex, newSkill) => {
-              const updatedExercises = [...editableWorksheet.exercises];
-              const newPrompts = [...(exercise.prompts || exercise.questions || [])];
-              newPrompts[qIndex] = typeof newPrompts[qIndex] === 'object' 
-                ? { ...newPrompts[qIndex], nano_skill: newSkill }
-                : { text: newPrompts[qIndex], nano_skill: newSkill };
-              updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], prompts: newPrompts };
-              setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
-            }}
-          />
-        )}
+        {/* Detect scenario_prompt + tasks format for describe exercises */}
+        {normalizedType === 'describe' && (() => {
+          // Parse content if it's a JSON string
+          let parsedContent = exercise.content;
+          if (typeof exercise.content === 'string') {
+            try {
+              parsedContent = JSON.parse(exercise.content);
+            } catch (e) {
+              parsedContent = null;
+            }
+          }
+          
+          // Check if this is the scenario_prompt + tasks format
+          const hasScenarioPromptFormat = 
+            parsedContent &&
+            typeof parsedContent === 'object' &&
+            parsedContent.scenario_prompt && 
+            Array.isArray(parsedContent.tasks);
+          
+          if (hasScenarioPromptFormat) {
+            // Render the ExerciseWritingTask component for this format
+            return (
+              <ExerciseWritingTask
+                content={parsedContent}
+                isEditing={isEditing}
+                viewMode={exerciseViewMode}
+                isInteractive={isInteractive}
+                studentAnswers={studentAnswers}
+                onAnswerChange={onAnswerChange}
+                showCorrectAnswers={showCorrectAnswers}
+                liveSessionAnswer={liveSessionAnswer}
+                disabled={disabled}
+                onNanoSkillChange={(taskIdx, qIdx, newSkill) => {
+                  // Update nano_skill in the tasks structure
+                  const updatedExercises = [...editableWorksheet.exercises];
+                  const updatedContent = JSON.parse(JSON.stringify(parsedContent));
+                  if (updatedContent.tasks[taskIdx]?.questions?.[qIdx]) {
+                    updatedContent.tasks[taskIdx].questions[qIdx].nano_skill = newSkill;
+                  }
+                  updatedExercises[arrayIndex] = {
+                    ...updatedExercises[arrayIndex],
+                    content: updatedContent
+                  };
+                  setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+                }}
+              />
+            );
+          }
+          
+          // Standard describe format - render ExerciseDescribe
+          return (
+            <ExerciseDescribe
+              image_url={exercise.image_url || hasSelectedImage?.unsplash_url || hasSelectedImage?.ai_generated_url}
+              questions={exercise.prompts || exercise.questions || []}
+              isEditing={isEditing}
+              viewMode={exerciseViewMode}
+              showImage={true}
+              onQuestionChange={(qIndex, field, value) => {
+                const updatedExercises = [...editableWorksheet.exercises];
+                const newPrompts = [...(exercise.prompts || exercise.questions || [])];
+                
+                if (field === 'text' || field === 'question') {
+                  newPrompts[qIndex] = value;
+                }
+                
+                updatedExercises[arrayIndex] = {
+                  ...updatedExercises[arrayIndex],
+                  prompts: newPrompts
+                };
+                
+                setEditableWorksheet({
+                  ...editableWorksheet,
+                  exercises: updatedExercises
+                });
+              }}
+              onImageUrlChange={(url) => handleExerciseChangeLocal('image_url', url)}
+              isInteractive={isInteractive}
+              studentAnswers={studentAnswers}
+              onAnswerChange={onAnswerChange}
+              showCorrectAnswers={showCorrectAnswers}
+              liveSessionAnswer={liveSessionAnswer}
+              disabled={disabled}
+              onNanoSkillChange={(qIndex, newSkill) => {
+                const updatedExercises = [...editableWorksheet.exercises];
+                const newPrompts = [...(exercise.prompts || exercise.questions || [])];
+                newPrompts[qIndex] = typeof newPrompts[qIndex] === 'object' 
+                  ? { ...newPrompts[qIndex], nano_skill: newSkill }
+                  : { text: newPrompts[qIndex], nano_skill: newSkill };
+                updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], prompts: newPrompts };
+                setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
+              }}
+            />
+          );
+        })()}
 
         {normalizedType === 'answer-questions' && exercise.questions && (
           <ExerciseAnswerQuestions
