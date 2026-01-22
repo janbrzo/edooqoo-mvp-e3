@@ -5,7 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 3 Critical Bug Fixes:**
+**Latest Update (January 2026) - Scenario/Writing Task Format Support:**
+- **ExerciseWritingTask Component**: NEW component to handle AI-generated `scenario_prompt + tasks` JSON format. Supports homework with complex structure containing scenario context, task sections with headings, and individual questions with nano_skills
+- **Format Detection**: ExerciseSection.tsx now detects `scenario_prompt + tasks` format in `describe` exercises and renders ExerciseWritingTask instead of ExerciseDescribe
+- **Interactive Support**: Full support for student answers with unique keys (`taskIndex-questionIndex`), auto-save, and teacher/live-session views
+- **Backward Compatible**: Standard `describe` exercises continue to render with ExerciseDescribe
+
+**Previous Update (January 2026) - 3 Critical Bug Fixes:**
 - **#1 Describe-Picture AI Verification Not Triggering**: FIXED the root cause - `normalizeExerciseType()` was converting `describe-picture` to `describe`, but `EXERCISE_TYPE_CLASSIFICATION.open` only contained `describe-picture`. Added BOTH `describe-picture` AND `describe` to the open array. Also fixed condition in `handleMarkDoneWithModal` to check `exerciseType === 'describe' || exercise.type === 'describe-picture'`
 - **#2 Paraphrasing Shows NanoSkill & Empty Suggested Answer**: Applied `safeGetText()` to BOTH `sentence.word_to_use` (lines 62, 70) AND `sentence.answer` (lines 99, 104) in `ExerciseParaphrasing.tsx`. Now displays clean "Use: nearby" and proper "Suggested answer: ..."
 - **#3 Synonyms/Antonyms Matching Section Location**: Redesigned to match `ExerciseMatchingHalves.tsx` layout - Select dropdown is now INLINE in the left Words column, not in a separate section below. Removed redundant "Match the Words" section
