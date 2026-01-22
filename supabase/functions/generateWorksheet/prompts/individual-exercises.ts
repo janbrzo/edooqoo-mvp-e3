@@ -488,12 +488,12 @@ export const getParaphrasingExercise = () => `    {
       "time": 8,
       "instructions": "Rewrite these sentences about restaurant experiences using different words but keeping the same meaning.",
       "sentences": [
-        {"original": "The food was absolutely delicious.", "paraphrase": "The meal was extremely tasty.", "alternatives": ["The dish was incredibly flavorful.", "The cuisine was wonderfully appetizing."], "nano_skill": [{"name": "ns.vocab.synonym_selection_delicious", "confidence": 0.95, "reason": "Tests ability to find synonyms for 'delicious'"}]},
-        {"original": "We had to wait a long time for our order.", "paraphrase": "Our food took ages to arrive.", "alternatives": ["The service was very slow.", "We waited forever for our meal."], "nano_skill": [{"name": "ns.vocab.time_expression_alternatives", "confidence": 0.94, "reason": "Tests expressing duration with different phrases"}]},
-        {"original": "The restaurant is always crowded on weekends.", "paraphrase": "The place gets really busy on Saturdays and Sundays.", "alternatives": ["It's packed with customers during weekends.", "Weekend dining there is always hectic."], "nano_skill": [...]},
-        {"original": "I complained about the cold soup.", "paraphrase": "I told the waiter that my soup wasn't hot enough.", "alternatives": ["I expressed dissatisfaction with the soup's temperature.", "I mentioned that the soup needed reheating."], "nano_skill": [...]},
-        {"original": "This café serves the best coffee in town.", "paraphrase": "You can't find better coffee anywhere else in the city.", "alternatives": ["This place has the finest coffee around.", "No other café makes coffee this good."], "nano_skill": [...]},
-        {"original": "The bill was much higher than expected.", "paraphrase": "We were surprised by how expensive the meal was.", "alternatives": ["The cost exceeded our expectations.", "The price was shockingly steep."], "nano_skill": [...]}
+        {"original": "The food was absolutely delicious.", "word_to_use": "tasty", "answer": "The meal was extremely tasty.", "nano_skill": [{"name": "ns.vocab.synonym_selection_delicious", "confidence": 0.95, "reason": "Tests ability to find synonyms for 'delicious'"}]},
+        {"original": "We had to wait a long time for our order.", "word_to_use": "ages", "answer": "Our food took ages to arrive.", "nano_skill": [{"name": "ns.vocab.time_expression_alternatives", "confidence": 0.94, "reason": "Tests expressing duration with different phrases"}]},
+        {"original": "The restaurant is always crowded on weekends.", "word_to_use": "busy", "answer": "The place gets really busy on Saturdays and Sundays.", "nano_skill": [...]},
+        {"original": "I complained about the cold soup.", "word_to_use": "temperature", "answer": "I told the waiter that my soup wasn't the right temperature.", "nano_skill": [...]},
+        {"original": "This café serves the best coffee in town.", "word_to_use": "finest", "answer": "This place has the finest coffee around.", "nano_skill": [...]},
+        {"original": "The bill was much higher than expected.", "word_to_use": "expensive", "answer": "We were surprised by how expensive the meal was.", "nano_skill": [...]}
       ],
       "teacher_tip": "Encourage students to use synonyms and different sentence structures. Discuss how paraphrasing is useful for avoiding repetition in writing and speaking."
     }`;
