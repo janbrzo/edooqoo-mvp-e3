@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import {
   Popover,
   PopoverContent,
@@ -74,32 +73,31 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
   };
 
   return (
-    <TooltipProvider>
-      <div className={`inline-flex items-center gap-1 ${className}`}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge
-              variant="outline"
-              className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
-            >
-              ns ({confidencePercent}%)
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs p-3 bg-white border shadow-lg rounded-lg">
-            <div className="space-y-2">
-              <p className="font-semibold text-sm text-gray-900">{displayName}</p>
-              <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
-              <div className="flex items-center gap-2 pt-1 border-t">
-                <span className="text-xs text-muted-foreground">Full ID:</span>
-                <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{nanoSkill.name}</code>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Confidence:</span>
-                <span className="text-xs font-medium">{confidencePercent}%</span>
-              </div>
+    <div className={`inline-flex items-center gap-1 ${className}`}>
+      <HoverCard openDelay={0} closeDelay={150}>
+        <HoverCardTrigger asChild>
+          <Badge
+            variant="outline"
+            className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
+          >
+            ns ({confidencePercent}%)
+          </Badge>
+        </HoverCardTrigger>
+        <HoverCardContent className="w-72 p-3 bg-white border shadow-lg rounded-lg z-[9999]" side="top" align="start">
+          <div className="space-y-2">
+            <p className="font-semibold text-sm text-gray-900">{displayName}</p>
+            <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
+            <div className="flex items-center gap-2 pt-1 border-t">
+              <span className="text-xs text-muted-foreground">Full ID:</span>
+              <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
             </div>
-          </TooltipContent>
-        </Tooltip>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Confidence:</span>
+              <span className="text-xs font-medium">{confidencePercent}%</span>
+            </div>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
 
         {onEdit && (
           <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
@@ -184,7 +182,6 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
           </Popover>
         )}
       </div>
-    </TooltipProvider>
   );
 };
 
