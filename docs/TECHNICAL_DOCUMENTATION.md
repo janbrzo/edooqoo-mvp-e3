@@ -5,7 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - Scenario/Writing Task Format Support:**
+**Latest Update (January 2026) - 4 Bug Fixes:**
+- **#1.1 Homework Modal Exercise Filtering**: CreateHomeworkModal now filters available exercise types based on worksheet media - Picture exercises only shown if worksheet has image, Audio exercises only shown if worksheet has audio. Uses `worksheetHasPicture` and `worksheetHasAudio` props from WorksheetDisplay
+- **#1.2 Homework NanoSkill Badges for Teachers**: HomeworkPage now passes `viewMode={isTeacher ? "teacher" : "student"}` to ExerciseSection, enabling NanoSkill badge visibility for logged-in teachers
+- **#2 Matching Box Size Consistency**: All matching exercises (Matching, SynonymsAntonyms, MatchingHalves) now use `min-h-[48px] h-auto` for both left and right columns - ensures identical box heights regardless of Select dropdown presence
+- **#3 NanoSkill Tooltip Portal Fix**: NanoSkillBadge now wraps HoverCardContent in `HoverCardPrimitive.Portal` - ensures tooltip renders outside parent's overflow:hidden and displays correctly
+
+**Previous Update (January 2026) - Scenario/Writing Task Format Support:**
 - **ExerciseWritingTask Component**: NEW component to handle AI-generated `scenario_prompt + tasks` JSON format. Supports homework with complex structure containing scenario context, task sections with headings, and individual questions with nano_skills
 - **Format Detection**: ExerciseSection.tsx now detects `scenario_prompt + tasks` format in `describe` exercises and renders ExerciseWritingTask instead of ExerciseDescribe
 - **Interactive Support**: Full support for student answers with unique keys (`taskIndex-questionIndex`), auto-save, and teacher/live-session views

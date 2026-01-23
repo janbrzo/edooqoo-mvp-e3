@@ -96,7 +96,7 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
           const isEmpty = showCorrectAnswers && !studentAnswer;
           
           return (
-            <div key={iIndex} className={`p-2 border rounded-md bg-white min-h-[48px] flex items-center
+            <div key={iIndex} className={`p-2 border rounded-md bg-white min-h-[48px] h-auto flex items-center
               ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
               ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
               ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
@@ -173,7 +173,7 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
         
         {/* ALWAYS show the definitions column (A, B, C...) */}
         {shuffledDefinitions.map((item, iIndex) => (
-          <div key={iIndex} className="p-2 border rounded-md bg-white min-h-[48px] flex items-center">
+          <div key={iIndex} className="p-2 border rounded-md bg-white min-h-[48px] h-auto flex items-center">
             <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + iIndex)}.</span>
             <span className="flex-grow">
               {isEditing ? (

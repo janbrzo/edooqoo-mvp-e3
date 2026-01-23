@@ -33,7 +33,20 @@ interface CreateHomeworkModalProps {
   }>;
   preselectedStudent?: string;
   worksheetFormData?: any;
+  // PROBLEM 1.1: Media availability for exercise type filtering
+  worksheetHasPicture?: boolean;
+  worksheetHasAudio?: boolean;
 }
+
+// PROBLEM 1.1: Exercise type categories for filtering
+const PICTURE_EXERCISES = ['describe-picture', 'answer-questions-picture', 'true-false-picture', 'multiple-choice-picture', 'describe'];
+const AUDIO_EXERCISES = ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'multiple-choice-audio', 'fill-in-blanks-audio'];
+const GENERAL_EXERCISES = [
+  'fill-in-blanks', 'multiple-choice', 'matching', 'true-false', 'word-order', 
+  'gap-text', 'answer-questions', 'paraphrasing', 'sentence-transformation', 
+  'odd-one-out', 'synonyms-antonyms', 'matching-halves', 'complete-word', 
+  'categorize', 'negative-prefixes', 'dialogue', 'discussion', 'error-correction', 'reading'
+];
 
 export function CreateHomeworkModal({
   open,
@@ -44,7 +57,9 @@ export function CreateHomeworkModal({
   teacherId,
   students,
   preselectedStudent,
-  worksheetFormData
+  worksheetFormData,
+  worksheetHasPicture = false,
+  worksheetHasAudio = false
 }: CreateHomeworkModalProps) {
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [selectedExercises, setSelectedExercises] = useState<Set<number>>(new Set());
@@ -561,8 +576,9 @@ export function CreateHomeworkModal({
                   <Label className="text-sm">Select Exercise Types:</Label>
                   <div className="border rounded-md p-3 max-h-32 overflow-y-auto space-y-1.5">
                     {(() => {
-                      // ALL 21 exercise types (excluding -picture and -audio variants)
+                      // PROBLEM 1.1: All exercise types with labels
                       const EXERCISE_TYPES_MAP: Record<string, string> = {
+                        // General exercises (always available)
                         'fill-in-blanks': 'Fill in the Blanks',
                         'multiple-choice': 'Multiple Choice',
                         'matching': 'Matching',
@@ -582,10 +598,37 @@ export function CreateHomeworkModal({
                         'discussion': 'Discussion Questions',
                         'error-correction': 'Error Correction',
                         'reading': 'Reading Comprehension',
-                        'describe': 'Describe',
+                        // Picture exercises (only if worksheet has picture)
+                        'describe': 'Describe (Picture)',
+                        'describe-picture': 'Describe Picture',
+                        'answer-questions-picture': 'Answer Questions (Picture)',
+                        'true-false-picture': 'True/False (Picture)',
+                        'multiple-choice-picture': 'Multiple Choice (Picture)',
+                        // Audio exercises (only if worksheet has audio)
+                        'listening-comprehension': 'Listening Comprehension',
+                        'answer-questions-audio': 'Answer Questions (Audio)',
+                        'true-false-audio': 'True/False (Audio)',
+                        'multiple-choice-audio': 'Multiple Choice (Audio)',
+                        'fill-in-blanks-audio': 'Fill in the Blanks (Audio)',
                       };
                       
-                      return Object.entries(EXERCISE_TYPES_MAP).map(([exerciseId, exerciseName]) => (
+                      // PROBLEM 1.1: Filter available types based on worksheet media
+                      const getAvailableTypes = () => {
+                        let available = [...GENERAL_EXERCISES];
+                        if (worksheetHasPicture) {
+                          available = [...available, ...PICTURE_EXERCISES];
+                        }
+                        if (worksheetHasAudio) {
+                          available = [...available, ...AUDIO_EXERCISES];
+                        }
+                        return available;
+                      };
+                      
+                      const availableTypes = getAvailableTypes();
+                      
+                      return Object.entries(EXERCISE_TYPES_MAP)
+                        .filter(([exerciseId]) => availableTypes.includes(exerciseId))
+                        .map(([exerciseId, exerciseName]) => (
                         <div key={exerciseId} className="flex items-center space-x-2">
                           <Checkbox
                             id={`gen-type-${exerciseId}`}
