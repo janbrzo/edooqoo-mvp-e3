@@ -1115,6 +1115,9 @@ export default function WorksheetDisplay({
         students={students}
         preselectedStudent={studentId}
         worksheetFormData={inputParams}
+        // PROBLEM 1.1: Pass media availability for exercise type filtering
+        worksheetHasPicture={!!(selectedImage || editableWorksheet?.selected_image)}
+        worksheetHasAudio={!!(selectedAudio || editableWorksheet?.selected_audio || editableWorksheet?.audio_url || audioUrl)}
       />
       
       {/* Login Required Modal for anonymous users */}

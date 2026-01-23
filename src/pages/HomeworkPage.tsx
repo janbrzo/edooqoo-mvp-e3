@@ -699,7 +699,8 @@ export default function HomeworkPage() {
                 exercise={exercise}
                 index={index + 1}
                 isEditing={false}
-                viewMode="student"
+                // PROBLEM 1.2: Pass correct viewMode so NanoSkill badges show for teachers
+                viewMode={isTeacher ? "teacher" : "student"}
                 editableWorksheet={{ exercises: homework.selected_exercises }}
                 setEditableWorksheet={() => {}}
                 hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}

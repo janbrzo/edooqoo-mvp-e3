@@ -5,6 +5,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 import {
   Popover,
   PopoverContent,
@@ -83,20 +84,23 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
             ns ({confidencePercent}%)
           </Badge>
         </HoverCardTrigger>
-        <HoverCardContent className="w-72 p-3 bg-white border shadow-lg rounded-lg z-[9999]" side="top" align="start">
-          <div className="space-y-2">
-            <p className="font-semibold text-sm text-gray-900">{displayName}</p>
-            <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
-            <div className="flex items-center gap-2 pt-1 border-t">
-              <span className="text-xs text-muted-foreground">Full ID:</span>
-              <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
+        {/* PROBLEM 3: Portal wrapper ensures HoverCard renders outside parent's overflow */}
+        <HoverCardPrimitive.Portal>
+          <HoverCardContent className="w-72 p-3 bg-white border shadow-lg rounded-lg z-[9999]" side="top" align="start" sideOffset={8}>
+            <div className="space-y-2">
+              <p className="font-semibold text-sm text-gray-900">{displayName}</p>
+              <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
+              <div className="flex items-center gap-2 pt-1 border-t">
+                <span className="text-xs text-muted-foreground">Full ID:</span>
+                <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Confidence:</span>
+                <span className="text-xs font-medium">{confidencePercent}%</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Confidence:</span>
-              <span className="text-xs font-medium">{confidencePercent}%</span>
-            </div>
-          </div>
-        </HoverCardContent>
+          </HoverCardContent>
+        </HoverCardPrimitive.Portal>
       </HoverCard>
 
         {onEdit && (
