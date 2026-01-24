@@ -1,10 +1,5 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 import {
   Popover,
@@ -75,18 +70,23 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
 
   return (
     <div className={`inline-flex items-center gap-1 ${className}`}>
-      <HoverCard openDelay={0} closeDelay={150}>
-        <HoverCardTrigger asChild>
+      <HoverCardPrimitive.Root openDelay={0} closeDelay={150}>
+        <HoverCardPrimitive.Trigger asChild>
           <Badge
             variant="outline"
             className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
           >
             ns ({confidencePercent}%)
           </Badge>
-        </HoverCardTrigger>
-        {/* PROBLEM 3: Portal wrapper ensures HoverCard renders outside parent's overflow */}
+        </HoverCardPrimitive.Trigger>
+        {/* PROBLEM 3 FIX: Use HoverCardPrimitive.Content directly inside Portal */}
         <HoverCardPrimitive.Portal>
-          <HoverCardContent className="w-72 p-3 bg-white border shadow-lg rounded-lg z-[9999]" side="top" align="start" sideOffset={8}>
+          <HoverCardPrimitive.Content 
+            className="w-72 p-3 bg-white border shadow-lg rounded-lg z-[9999] animate-in fade-in-0 zoom-in-95" 
+            side="top" 
+            align="start" 
+            sideOffset={8}
+          >
             <div className="space-y-2">
               <p className="font-semibold text-sm text-gray-900">{displayName}</p>
               <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
@@ -99,11 +99,11 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
                 <span className="text-xs font-medium">{confidencePercent}%</span>
               </div>
             </div>
-          </HoverCardContent>
+          </HoverCardPrimitive.Content>
         </HoverCardPrimitive.Portal>
-      </HoverCard>
+      </HoverCardPrimitive.Root>
 
-        {onEdit && (
+      {onEdit && (
           <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
             <PopoverTrigger asChild>
               <Button

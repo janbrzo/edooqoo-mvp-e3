@@ -39,7 +39,8 @@ interface CreateHomeworkModalProps {
 }
 
 // PROBLEM 1.1: Exercise type categories for filtering
-const PICTURE_EXERCISES = ['describe-picture', 'answer-questions-picture', 'true-false-picture', 'multiple-choice-picture', 'describe'];
+// PROBLEM 4.2: Removed 'describe' duplicate - only 'describe-picture' exists
+const PICTURE_EXERCISES = ['describe-picture', 'answer-questions-picture', 'true-false-picture', 'multiple-choice-picture'];
 const AUDIO_EXERCISES = ['listening-comprehension', 'answer-questions-audio', 'true-false-audio', 'multiple-choice-audio', 'fill-in-blanks-audio'];
 const GENERAL_EXERCISES = [
   'fill-in-blanks', 'multiple-choice', 'matching', 'true-false', 'word-order', 
@@ -543,7 +544,10 @@ export function CreateHomeworkModal({
 
             {/* Exercise Selection */}
             <div className="space-y-2">
-              <Label>Select Exercises</Label>
+              <Label>Select Exercises from Worksheet</Label>
+              <p className="text-xs text-muted-foreground -mt-1">
+                These are the exact exercises from the original worksheet
+              </p>
               <div className="border rounded-md p-4 max-h-60 overflow-y-auto space-y-2">
                 {exercises.map((exercise, index) => (
                   <div key={index} className="flex items-center space-x-2">
@@ -577,6 +581,7 @@ export function CreateHomeworkModal({
                   <div className="border rounded-md p-3 max-h-32 overflow-y-auto space-y-1.5">
                     {(() => {
                       // PROBLEM 1.1: All exercise types with labels
+                      // PROBLEM 4.2: Removed 'describe' duplicate entry
                       const EXERCISE_TYPES_MAP: Record<string, string> = {
                         // General exercises (always available)
                         'fill-in-blanks': 'Fill in the Blanks',
@@ -599,7 +604,6 @@ export function CreateHomeworkModal({
                         'error-correction': 'Error Correction',
                         'reading': 'Reading Comprehension',
                         // Picture exercises (only if worksheet has picture)
-                        'describe': 'Describe (Picture)',
                         'describe-picture': 'Describe Picture',
                         'answer-questions-picture': 'Answer Questions (Picture)',
                         'true-false-picture': 'True/False (Picture)',
@@ -633,8 +637,14 @@ export function CreateHomeworkModal({
                           <Checkbox
                             id={`gen-type-${exerciseId}`}
                             checked={selectedGeneratedTypes.includes(exerciseId)}
+                            disabled={!selectedGeneratedTypes.includes(exerciseId) && selectedGeneratedTypes.length >= 6}
                             onCheckedChange={(checked) => {
                               if (checked) {
+                                // PROBLEM 4.4: Max 6 exercise types
+                                if (selectedGeneratedTypes.length >= 6) {
+                                  toast.error("Maximum 6 exercise types can be selected");
+                                  return;
+                                }
                                 setSelectedGeneratedTypes(prev => [...prev, exerciseId]);
                               } else {
                                 setSelectedGeneratedTypes(prev => prev.filter(t => t !== exerciseId));
@@ -643,7 +653,7 @@ export function CreateHomeworkModal({
                           />
                           <Label
                             htmlFor={`gen-type-${exerciseId}`}
-                            className="text-sm font-normal cursor-pointer"
+                            className={`text-sm font-normal cursor-pointer ${!selectedGeneratedTypes.includes(exerciseId) && selectedGeneratedTypes.length >= 6 ? 'opacity-50' : ''}`}
                           >
                             {exerciseName}
                           </Label>
@@ -707,7 +717,16 @@ export function CreateHomeworkModal({
                 </Button>
                 {isGeneratingExercises && (
                   <p className="text-xs text-muted-foreground text-center mt-2">
-                    Expected time: ~{50 + selectedGeneratedTypes.length * 10}s (60s for first + {selectedGeneratedTypes.length - 1 > 0 ? `${(selectedGeneratedTypes.length - 1) * 10}s for ${selectedGeneratedTypes.length - 1} more` : '0s'})
+                    {/* PROBLEM 4.6: Better time prediction - 25s base + 7s per type */}
+                    Expected time: ~{(() => {
+                      const expectedSeconds = 25 + selectedGeneratedTypes.length * 7;
+                      if (expectedSeconds >= 60) {
+                        const mins = Math.floor(expectedSeconds / 60);
+                        const secs = expectedSeconds % 60;
+                        return `${mins}:${secs.toString().padStart(2, '0')} min`;
+                      }
+                      return `${expectedSeconds}s`;
+                    })()}
                   </p>
                 )}
                 

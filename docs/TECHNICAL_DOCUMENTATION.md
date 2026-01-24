@@ -5,11 +5,22 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 4 Bug Fixes:**
+**Latest Update (January 2026) - 6 Bug Fixes:**
+- **#1 DSLM student_events Structure Verification**: Confirmed existing architecture is correct - single record per exercise with JSON map of answers `{"0": "A", "1": "B", ...}` enables per-item analysis in Stage 2 without schema changes
+- **#2 Matching Box Size Consistency**: All matching exercises (Matching, SynonymsAntonyms, MatchingHalves) now use `min-h-[52px]` for both columns - ensures identical box heights regardless of Select dropdown presence
+- **#3 NanoSkill Tooltip Portal Fix**: NanoSkillBadge now uses `HoverCardPrimitive.Root/Trigger/Portal/Content` directly - ensures tooltip renders outside parent's overflow:hidden and displays correctly on hover
+- **#4.1 Homework Modal Immediate Media Detection**: WorksheetDisplay now includes `inputParams?.selectedImage/Audio` in media check - Picture/Audio exercises appear immediately after worksheet generation without page refresh
+- **#4.2 Homework Modal Duplicate Describe Removed**: Removed duplicate 'describe' entry from PICTURE_EXERCISES and EXERCISE_TYPES_MAP - only 'describe-picture' remains
+- **#4.3 Homework Modal Better Labels**: "Select Exercises" → "Select Exercises from Worksheet" with subtitle explaining these are exact exercises from original worksheet
+- **#4.4 Homework Modal Max 6 Types**: Generate Additional Exercises now limits selection to 6 exercise types with toast notification and disabled checkboxes when limit reached
+- **#4.5 Homework Generated Exercises Auto-Select**: Newly generated exercises are automatically selected (`selected: true`) in the list
+- **#4.6 Homework Time Prediction**: Improved estimate formula: `25s base + 7s per type` with proper minute:second formatting for longer durations
+
+**Previous Update (January 2026) - 4 Bug Fixes:**
 - **#1.1 Homework Modal Exercise Filtering**: CreateHomeworkModal now filters available exercise types based on worksheet media - Picture exercises only shown if worksheet has image, Audio exercises only shown if worksheet has audio. Uses `worksheetHasPicture` and `worksheetHasAudio` props from WorksheetDisplay
 - **#1.2 Homework NanoSkill Badges for Teachers**: HomeworkPage now passes `viewMode={isTeacher ? "teacher" : "student"}` to ExerciseSection, enabling NanoSkill badge visibility for logged-in teachers
-- **#2 Matching Box Size Consistency**: All matching exercises (Matching, SynonymsAntonyms, MatchingHalves) now use `min-h-[48px] h-auto` for both left and right columns - ensures identical box heights regardless of Select dropdown presence
-- **#3 NanoSkill Tooltip Portal Fix**: NanoSkillBadge now wraps HoverCardContent in `HoverCardPrimitive.Portal` - ensures tooltip renders outside parent's overflow:hidden and displays correctly
+- **#2 Matching Box Size Consistency**: All matching exercises (Matching, SynonymsAntonyms, MatchingHalves) now use `min-h-[52px]` for both left and right columns
+- **#3 NanoSkill Tooltip Portal Fix**: NanoSkillBadge now uses HoverCardPrimitive directly for correct tooltip rendering
 
 **Previous Update (January 2026) - Scenario/Writing Task Format Support:**
 - **ExerciseWritingTask Component**: NEW component to handle AI-generated `scenario_prompt + tasks` JSON format. Supports homework with complex structure containing scenario context, task sections with headings, and individual questions with nano_skills
