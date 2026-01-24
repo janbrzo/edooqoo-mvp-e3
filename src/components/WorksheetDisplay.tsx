@@ -1115,9 +1115,20 @@ export default function WorksheetDisplay({
         students={students}
         preselectedStudent={studentId}
         worksheetFormData={inputParams}
-        // PROBLEM 1.1: Pass media availability for exercise type filtering
-        worksheetHasPicture={!!(selectedImage || editableWorksheet?.selected_image)}
-        worksheetHasAudio={!!(selectedAudio || editableWorksheet?.selected_audio || editableWorksheet?.audio_url || audioUrl)}
+        // PROBLEM 4.1: Include inputParams in media check for immediate detection after generation
+        worksheetHasPicture={!!(
+          selectedImage || 
+          editableWorksheet?.selected_image || 
+          editableWorksheet?.image_url ||
+          inputParams?.selectedImage
+        )}
+        worksheetHasAudio={!!(
+          selectedAudio || 
+          editableWorksheet?.selected_audio || 
+          editableWorksheet?.audio_url || 
+          audioUrl ||
+          inputParams?.selectedAudio
+        )}
       />
       
       {/* Login Required Modal for anonymous users */}

@@ -92,7 +92,8 @@ export const useHomeworkExerciseGeneration = () => {
           const exercisesWithState = data.exercises.map((exercise: any, index: number) => ({
             ...exercise,
             id: `generated-${Date.now()}-${index}`,
-            selected: false,
+            // PROBLEM 4.5: Auto-select generated exercises
+            selected: true,
             title: normalizeExerciseField(exercise.title),
             instructions: normalizeExerciseField(exercise.instructions),
             content: normalizeExerciseField(exercise.content),
@@ -138,7 +139,8 @@ export const useHomeworkExerciseGeneration = () => {
           const exercisesWithState = data.exercises.map((exercise: any, index: number) => ({
             ...exercise,
             id: `generated-${Date.now()}-${index}`,
-            selected: false,
+            // PROBLEM 4.5: Auto-select generated exercises
+            selected: true,
             title: normalizeExerciseField(exercise.title),
             instructions: normalizeExerciseField(exercise.instructions),
             content: normalizeExerciseField(exercise.content),
