@@ -900,7 +900,7 @@ export function CreateHomeworkModal({
               </Button>
               <Button
                 onClick={generateHomework}
-                disabled={isGenerating || !selectedStudentId || (selectedExercises.size === 0 && getSelectedGeneratedExercises().length === 0)}
+                disabled={isGenerating || isGeneratingExercises || !selectedStudentId || (selectedExercises.size === 0 && getSelectedGeneratedExercises().length === 0)}
                 className="flex-1"
               >
                 {isGenerating ? (

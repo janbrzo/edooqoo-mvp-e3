@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Popover,
   PopoverContent,
@@ -70,22 +75,20 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
 
   return (
     <div className={`inline-flex items-center gap-1 ${className}`}>
-      <HoverCardPrimitive.Root openDelay={0} closeDelay={150}>
-        <HoverCardPrimitive.Trigger asChild>
-          <Badge
-            variant="outline"
-            className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
-          >
-            ns ({confidencePercent}%)
-          </Badge>
-        </HoverCardPrimitive.Trigger>
-        {/* PROBLEM 3 FIX: Use HoverCardPrimitive.Content directly inside Portal */}
-        <HoverCardPrimitive.Portal>
-          <HoverCardPrimitive.Content 
-            className="w-72 p-3 bg-white border shadow-lg rounded-lg z-[9999] animate-in fade-in-0 zoom-in-95" 
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge
+              variant="outline"
+              className={`text-xs cursor-help pointer-events-auto ${getBadgeColor(nanoSkill.confidence)}`}
+            >
+              ns ({confidencePercent}%)
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent 
             side="top" 
-            align="start" 
-            sideOffset={8}
+            align="start"
+            className="w-72 p-3 bg-white border shadow-lg z-[9999]"
           >
             <div className="space-y-2">
               <p className="font-semibold text-sm text-gray-900">{displayName}</p>
@@ -99,9 +102,9 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
                 <span className="text-xs font-medium">{confidencePercent}%</span>
               </div>
             </div>
-          </HoverCardPrimitive.Content>
-        </HoverCardPrimitive.Portal>
-      </HoverCardPrimitive.Root>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {onEdit && (
           <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
