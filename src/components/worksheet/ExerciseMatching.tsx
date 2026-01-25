@@ -107,7 +107,7 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
                     onValueChange={(value) => onAnswerChange?.(iIndex, value)}
                     disabled={disabled}
                   >
-                    <SelectTrigger className={`w-[80px] ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                    <SelectTrigger className={`w-[80px] h-[36px] ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
                       <SelectValue placeholder="?" />
                     </SelectTrigger>
                     <SelectContent>

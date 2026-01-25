@@ -1,7 +1,5 @@
 import React, { useMemo } from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
@@ -134,38 +132,41 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
               )}
             </div>
             {isInteractive ? (
-              <RadioGroup
-                value={studentAnswers[qIndex]?.toString() || ''}
-                onValueChange={(value) => onAnswerChange?.(qIndex, parseInt(value))}
-                disabled={disabled}
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {question.options?.map((option: any, oIndex: number) => {
-                    const isSelected = studentAnswers[qIndex] === oIndex;
-                    const isCorrect = showCorrectAnswers && isSelected && option.correct;
-                    const isIncorrect = showCorrectAnswers && isSelected && !option.correct;
-                    const shouldShowAsCorrect = showCorrectAnswers && option.correct;
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                {question.options?.map((option: any, oIndex: number) => {
+                  const isSelected = studentAnswers[qIndex] === option.text;
+                  const isCorrect = option.correct;
+                  const showAsCorrect = showCorrectAnswers && isCorrect;
+                  const showAsIncorrect = showCorrectAnswers && isSelected && !isCorrect;
 
-                    return (
+                  return (
+                    <div
+                      key={oIndex}
+                      onClick={() => !disabled && onAnswerChange?.(qIndex, option.text)}
+                      className={`
+                        p-2 border rounded-md flex items-center gap-2 multiple-choice-option
+                        ${!disabled ? 'cursor-pointer hover:bg-gray-50' : 'opacity-60 cursor-not-allowed'}
+                        ${isSelected ? 'bg-blue-50 border-blue-300' : 'bg-white'}
+                        ${showAsCorrect ? 'bg-green-50 border-green-200' : ''}
+                        ${showAsIncorrect ? 'bg-red-50 border-red-200' : ''}
+                      `}
+                    >
                       <div
-                        key={oIndex}
                         className={`
-                          p-2 border rounded-md flex items-center gap-2
-                          ${isCorrect ? 'bg-green-50 border-green-500' : ''}
-                          ${isIncorrect ? 'bg-red-50 border-red-500' : ''}
-                          ${shouldShowAsCorrect && !isSelected ? 'bg-green-50/30 border-green-300' : ''}
+                          w-5 h-5 rounded-full border flex items-center justify-center option-icon
+                          ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}
+                          ${showAsCorrect ? 'bg-green-500 border-green-500 text-white' : ''}
+                          ${showAsIncorrect ? 'bg-red-500 border-red-500 text-white' : ''}
                         `}
                       >
-                        <RadioGroupItem value={oIndex.toString()} id={`q${qIndex}-o${oIndex}`} />
-                        <Label htmlFor={`q${qIndex}-o${oIndex}`} className="flex-grow cursor-pointer">
-                          {option.label}. {option.text}
-                        </Label>
-                        {shouldShowAsCorrect && <span className="text-green-600 text-sm">✓</span>}
+                        {(isSelected || showAsCorrect) && <span className="text-white text-xs">✓</span>}
+                        {showAsIncorrect && <span className="text-white text-xs">✗</span>}
                       </div>
-                    );
-                  })}
-                </div>
-              </RadioGroup>
+                      <span>{option.label}. {option.text}</span>
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
                 {question.options?.map((option: any, oIndex: number) => {
@@ -183,7 +184,7 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
                     >
                       <div
                         className={`
-                          w-5 h-5 rounded-md border flex items-center justify-center option-icon
+                          w-5 h-5 rounded-full border flex items-center justify-center option-icon
                           ${viewMode === 'teacher' && option.correct ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}
                           ${isLiveSelected ? 'bg-blue-500 border-blue-500 text-white' : ''}
                         `}

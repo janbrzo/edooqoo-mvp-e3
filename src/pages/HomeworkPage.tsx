@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import ExerciseSection from "@/components/worksheet/ExerciseSection";
+import HomeworkExerciseRenderer from "@/components/homework/HomeworkExerciseRenderer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Calendar, User, Mail, CheckCircle2, FileText, Send, Clock, ArrowUp, Volume2, ImageIcon, X, Presentation, Maximize2 } from "lucide-react";
@@ -695,16 +695,10 @@ export default function HomeworkPage() {
               onBlur={handleExerciseBlur(index, exercise.type)}
               data-exercise-index={index}
             >
-              <ExerciseSection
+              <HomeworkExerciseRenderer
                 exercise={exercise}
-                index={index + 1}
-                isEditing={false}
-                // PROBLEM 1.2: Pass correct viewMode so NanoSkill badges show for teachers
-                viewMode={isTeacher ? "teacher" : "student"}
-                editableWorksheet={{ exercises: homework.selected_exercises }}
-                setEditableWorksheet={() => {}}
-                hideExerciseMedia={media?.hasImageMedia || media?.hasAudioMedia}
-                // Interactive props - teacher uses presentation state when in presentation mode
+                index={index}
+                homeworkId={homework.id}
                 isInteractive={true}
                 studentAnswers={
                   isTeacher && presentationMode 
@@ -713,11 +707,16 @@ export default function HomeworkPage() {
                 }
                 onAnswerChange={
                   isTeacher 
-                    ? (presentationMode ? handlePresentationAnswerChange(index, exercise.type) : () => () => {})
-                    : (finalIsSubmitted ? () => () => {} : handleAnswerChange(index, exercise.type))
+                    ? (presentationMode 
+                        ? (qIndex: number, value: any) => handlePresentationAnswerChange(index, exercise.type)(qIndex, value)
+                        : () => {})
+                    : (finalIsSubmitted 
+                        ? () => {} 
+                        : (qIndex: number, value: any) => handleAnswerChange(index, exercise.type)(qIndex, value))
                 }
                 showCorrectAnswers={isTeacher || showCorrectAnswersToStudent}
                 disabled={finalIsSubmitted && !isTeacher}
+                viewMode={isTeacher ? "teacher" : "student"}
               />
             </div>
           ))}
