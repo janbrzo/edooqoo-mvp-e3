@@ -29,6 +29,11 @@ export const useInteractiveHomework = ({
   
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingSavesRef = useRef<Set<number>>(new Set());
+  
+  // PROBLEM 2 FIX: Active time tracking per exercise
+  const exerciseStartTimeRef = useRef<Record<number, number>>({});
+  const exerciseActiveTimeRef = useRef<Record<number, number>>({});
+  const isTabActiveRef = useRef(true);
 
   // Verify student email against database
   const verifyStudentEmail = useCallback(async (homeworkId: string, email: string): Promise<boolean> => {
@@ -93,17 +98,32 @@ export const useInteractiveHomework = ({
     }
   }, [homeworkId, studentEmail]);
 
+  // PROBLEM 2 FIX: Calculate active time for an exercise
+  const getActiveTimeMs = useCallback((exerciseIndex: number): number => {
+    const accumulated = exerciseActiveTimeRef.current[exerciseIndex] || 0;
+    const startTime = exerciseStartTimeRef.current[exerciseIndex];
+    
+    if (startTime && isTabActiveRef.current) {
+      return accumulated + (Date.now() - startTime);
+    }
+    return accumulated;
+  }, []);
+
   // Save a single exercise answer to database
   const saveAnswer = useCallback(async (exerciseIndex: number, exerciseType: string, exerciseAnswers: ExerciseAnswers) => {
     try {
       setIsSaving(true);
+      
+      // PROBLEM 2 FIX: Include active time in save
+      const activeTimeMs = getActiveTimeMs(exerciseIndex);
       
       const { error } = await supabase.rpc('save_homework_answer', {
         p_homework_id: homeworkId,
         p_student_email: studentEmail,
         p_exercise_index: exerciseIndex,
         p_exercise_type: exerciseType,
-        p_answers: exerciseAnswers as any
+        p_answers: exerciseAnswers as any,
+        p_time_spent_ms: activeTimeMs
       });
 
       if (error) throw error;
@@ -124,7 +144,7 @@ export const useInteractiveHomework = ({
       });
       setIsSaving(false);
     }
-  }, [homeworkId, studentEmail]);
+  }, [homeworkId, studentEmail, getActiveTimeMs]);
 
   // Debounced auto-save function (Problem 3: reduced from 5 seconds to 1.5 seconds)
   const scheduleAutoSave = useCallback((exerciseIndex: number, exerciseType: string, exerciseAnswers: ExerciseAnswers) => {
@@ -150,6 +170,11 @@ export const useInteractiveHomework = ({
     questionIndex: number, 
     value: any
   ) => {
+    // PROBLEM 2 FIX: Start tracking time for this exercise if not already
+    if (!exerciseStartTimeRef.current[exerciseIndex]) {
+      exerciseStartTimeRef.current[exerciseIndex] = Date.now();
+    }
+    
     setAnswers(prev => {
       const exerciseAnswers = prev[exerciseIndex] || {};
       const updated = {
@@ -341,6 +366,34 @@ export const useInteractiveHomework = ({
       loadAnswers();
     }
   }, [homeworkId, studentEmail, loadAnswers]);
+
+  // PROBLEM 2 FIX: Visibility change tracking for active time
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab became inactive - pause all timers
+        isTabActiveRef.current = false;
+        Object.keys(exerciseStartTimeRef.current).forEach(indexStr => {
+          const idx = parseInt(indexStr);
+          const startTime = exerciseStartTimeRef.current[idx];
+          if (startTime) {
+            exerciseActiveTimeRef.current[idx] = (exerciseActiveTimeRef.current[idx] || 0) + (Date.now() - startTime);
+            exerciseStartTimeRef.current[idx] = 0;
+          }
+        });
+      } else {
+        // Tab became active - restart timers
+        isTabActiveRef.current = true;
+        Object.keys(exerciseActiveTimeRef.current).forEach(indexStr => {
+          const idx = parseInt(indexStr);
+          exerciseStartTimeRef.current[idx] = Date.now();
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   // Cleanup timeout on unmount
   useEffect(() => {

@@ -5,7 +5,16 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 5 UI/UX Fixes:**
+**Latest Update (January 2026) - DSLM Event Improvements + 2 UI Fixes:**
+- **#1 Worksheet Active Time Tracking**: Added visibility change listener to `useInteractiveSharedWorksheet.tsx` - pauses timer when tab inactive, resumes when active. `time_spent_seconds` now correctly reflects only active time in `student_events`
+- **#1B Worksheet AI Verification on Close**: Added `beforeunload` listener that triggers `verify-open-answers` Edge Function for open-ended exercises when student closes tab. Uses `keepalive: true` for reliable unload saving
+- **#2 Homework Active Time Tracking**: Same visibility change mechanism added to `useInteractiveHomework.tsx`. Active time saved via `p_time_spent_ms` parameter to `save_homework_answer` RPC
+- **#2B Homework is_correct Fix**: New SQL trigger `trigger_update_homework_ai_evaluation` updates `student_events.event_payload.is_correct` AFTER `ai_evaluation` is received (not during initial save)
+- **#3 Flashcard Time Unification**: SQL trigger `log_flashcard_review_event()` now uses `time_spent_seconds` (converted from ms) instead of `response_time_ms` - consistent naming across all event types
+- **#4 Matching Box Sizes**: Added `min-h-[44px] max-h-[52px]` to BOTH columns in `ExerciseMatching.tsx` - ensures equal height boxes between terms and definitions
+- **#5 NanoSkill Tooltip Portal Fix**: Added `TooltipPrimitive.Portal` wrapper to `TooltipContent` in `src/components/ui/tooltip.tsx` - fixes tooltip not showing due to `overflow: hidden` in parent elements
+
+**Previous Update (January 2026) - 5 UI/UX Fixes:**
 - **#1 Matching Box Size Consistency**: Added `h-[36px]` to SelectTrigger in ExerciseMatching.tsx - ensures left column boxes (with dropdowns) match right column box heights
 - **#2 NanoSkill Tooltip Fix**: Replaced unreliable HoverCard with Tooltip component in NanoSkillBadge.tsx - now reliably shows skill details (name, reason, confidence) on hover
 - **#3 Create Homework Button Disable**: Added `isGeneratingExercises` to disabled condition - prevents creating homework while exercises are still being generated
