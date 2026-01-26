@@ -80,7 +80,7 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 vocabulary-matching-container">
-      <div className="md:col-span-5 space-y-2 flex flex-col">
+      <div className="md:col-span-5 space-y-2 flex flex-col matching-terms-column">
         <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Terms</h4>
         {items.map((item, iIndex) => {
           const selectedAnswer = studentAnswers[iIndex];
@@ -93,7 +93,7 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
           const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
 
           return (
-            <div key={iIndex} className={`p-2 border rounded-md bg-white min-h-[52px] flex items-center
+            <div key={iIndex} className={`p-2 border rounded-md bg-white min-h-[44px] max-h-[52px] flex items-center
               ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''} 
               ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
               ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
@@ -160,10 +160,10 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
         })}
       </div>
 
-      <div className="md:col-span-7 space-y-2 flex flex-col">
+      <div className="md:col-span-7 space-y-2 flex flex-col matching-definitions-column">
         <h4 className="font-semibold bg-worksheet-purpleLight p-2 rounded-md">Definitions</h4>
         {shuffledDefinitions.map((item, iIndex) => (
-          <div key={iIndex} className="p-2 border rounded-md bg-white min-h-[52px] flex items-center">
+          <div key={iIndex} className="p-2 border rounded-md bg-white min-h-[44px] max-h-[52px] flex items-center overflow-hidden">
             <span className="text-worksheet-purple font-medium mr-2">{String.fromCharCode(65 + iIndex)}.</span>
             {isEditing ? (
               <input

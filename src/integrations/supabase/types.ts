@@ -572,6 +572,7 @@ export type Database = {
           started_at: string
           student_email: string
           submitted_at: string | null
+          time_spent_ms: number | null
         }
         Insert: {
           ai_evaluation?: Json | null
@@ -585,6 +586,7 @@ export type Database = {
           started_at?: string
           student_email: string
           submitted_at?: string | null
+          time_spent_ms?: number | null
         }
         Update: {
           ai_evaluation?: Json | null
@@ -598,6 +600,7 @@ export type Database = {
           started_at?: string
           student_email?: string
           submitted_at?: string | null
+          time_spent_ms?: number | null
         }
         Relationships: [
           {
@@ -1564,6 +1567,7 @@ export type Database = {
           last_saved_at: string
           started_at: string
           student_email: string
+          time_spent_ms: number | null
           worksheet_id: string
         }
         Insert: {
@@ -1576,6 +1580,7 @@ export type Database = {
           last_saved_at?: string
           started_at?: string
           student_email: string
+          time_spent_ms?: number | null
           worksheet_id: string
         }
         Update: {
@@ -1588,6 +1593,7 @@ export type Database = {
           last_saved_at?: string
           started_at?: string
           student_email?: string
+          time_spent_ms?: number | null
           worksheet_id?: string
         }
         Relationships: [
@@ -2021,16 +2027,28 @@ export type Database = {
         Args: { user_email: string }
         Returns: boolean
       }
-      save_homework_answer: {
-        Args: {
-          p_answers: Json
-          p_exercise_index: number
-          p_exercise_type: string
-          p_homework_id: string
-          p_student_email: string
-        }
-        Returns: string
-      }
+      save_homework_answer:
+        | {
+            Args: {
+              p_answers: Json
+              p_exercise_index: number
+              p_exercise_type: string
+              p_homework_id: string
+              p_student_email: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_answers: Json
+              p_exercise_index: number
+              p_exercise_type: string
+              p_homework_id: string
+              p_student_email: string
+              p_time_spent_ms?: number
+            }
+            Returns: string
+          }
       save_teacher_comment: {
         Args: {
           p_comment_text: string
@@ -2041,16 +2059,28 @@ export type Database = {
         }
         Returns: string
       }
-      save_worksheet_answer: {
-        Args: {
-          p_answers: Json
-          p_exercise_index: number
-          p_exercise_type: string
-          p_student_email: string
-          p_worksheet_id: string
-        }
-        Returns: string
-      }
+      save_worksheet_answer:
+        | {
+            Args: {
+              p_answers: Json
+              p_exercise_index: number
+              p_exercise_type: string
+              p_student_email: string
+              p_worksheet_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_answers: Json
+              p_exercise_index: number
+              p_exercise_type: string
+              p_student_email: string
+              p_time_spent_ms?: number
+              p_worksheet_id: string
+            }
+            Returns: string
+          }
       should_show_onboarding: { Args: { user_id: string }; Returns: boolean }
       soft_delete_flashcard_set: {
         Args: { p_set_id: string; p_teacher_id: string }
