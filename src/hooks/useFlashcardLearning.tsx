@@ -178,7 +178,8 @@ export const useFlashcardLearning = (setId: string, learnerEmail: string) => {
           total_reviews: card.total_reviews + 1,
           correct_count: quality >= 2 ? card.correct_count + 1 : card.correct_count,
           incorrect_count: quality < 2 ? card.incorrect_count + 1 : card.incorrect_count,
-          last_response_time_ms: responseTimeMs, // PROBLEM 5 FIX: Save response time
+          last_response_time_ms: responseTimeMs,
+          last_quality_rating: quality, // 0=Again, 2=I Know This
         }, {
           onConflict: 'card_id,learner_identifier,direction'
         });
