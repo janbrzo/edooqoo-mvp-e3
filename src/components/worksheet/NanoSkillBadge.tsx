@@ -1,11 +1,6 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import {
   Popover,
   PopoverContent,
@@ -74,37 +69,42 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
   };
 
   return (
-    <div className={`inline-flex items-center gap-1 ${className}`}>
-      <TooltipProvider delayDuration={0}>
-        <Tooltip>
-          <TooltipTrigger asChild>
+    <div className={`inline-flex items-center gap-1 ${className}`} style={{ pointerEvents: 'auto' }}>
+      <TooltipPrimitive.Provider delayDuration={0}>
+        <TooltipPrimitive.Root>
+          <TooltipPrimitive.Trigger asChild>
             <Badge
               variant="outline"
-              className={`text-xs cursor-help pointer-events-auto ${getBadgeColor(nanoSkill.confidence)}`}
+              className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
+              style={{ pointerEvents: 'auto' }}
             >
               ns ({confidencePercent}%)
             </Badge>
-          </TooltipTrigger>
-          <TooltipContent 
-            side="top" 
-            align="start"
-            className="w-72 p-3 bg-white border shadow-lg z-[9999]"
-          >
-            <div className="space-y-2">
-              <p className="font-semibold text-sm text-gray-900">{displayName}</p>
-              <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
-              <div className="flex items-center gap-2 pt-1 border-t">
-                <span className="text-xs text-muted-foreground">Full ID:</span>
-                <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
+          </TooltipPrimitive.Trigger>
+          <TooltipPrimitive.Portal>
+            <TooltipPrimitive.Content 
+              side="top" 
+              align="start"
+              sideOffset={8}
+              className="z-[9999] w-72 p-3 bg-white border rounded-lg shadow-lg animate-in fade-in-0 zoom-in-95 data-[state=delayed-open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+            >
+              <div className="space-y-2">
+                <p className="font-semibold text-sm text-gray-900">{displayName}</p>
+                <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
+                <div className="flex items-center gap-2 pt-1 border-t">
+                  <span className="text-xs text-muted-foreground">Full ID:</span>
+                  <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Confidence:</span>
+                  <span className="text-xs font-medium">{confidencePercent}%</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Confidence:</span>
-                <span className="text-xs font-medium">{confidencePercent}%</span>
-              </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+              <TooltipPrimitive.Arrow className="fill-white" />
+            </TooltipPrimitive.Content>
+          </TooltipPrimitive.Portal>
+        </TooltipPrimitive.Root>
+      </TooltipPrimitive.Provider>
 
       {onEdit && (
           <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>

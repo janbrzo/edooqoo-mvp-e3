@@ -5,7 +5,12 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - DSLM Event Improvements + 2 UI Fixes:**
+**Latest Update (January 2026) - 3 DSLM/UI Fixes:**
+- **#1 Flashcard quality_rating**: Added `last_quality_rating` column to `flashcard_progress` table. SQL trigger now includes `quality_rating` (0=Again, 2=I Know This) in event payload - provides explicit tracking of button clicks independent of `correct_count` delta
+- **#2 Matching Box Sizes**: Changed grid from `5:7` to `6:6` split, set `min-h-[52px]` (was `min-h-[44px]`), and reduced SelectTrigger to `w-14 h-8` - now matches Synonyms/Antonyms and MatchingHalves exactly
+- **#3 NanoSkill Tooltip Fix**: Refactored `NanoSkillBadge.tsx` to use `TooltipPrimitive.Portal` directly with proper `z-[9999]` and animation classes - tooltip now renders outside DOM hierarchy reliably
+
+**Previous Update (January 2026) - DSLM Event Improvements + 2 UI Fixes:**
 - **#1 Worksheet Active Time Tracking**: Added visibility change listener to `useInteractiveSharedWorksheet.tsx` - pauses timer when tab inactive, resumes when active. `time_spent_seconds` now correctly reflects only active time in `student_events`
 - **#1B Worksheet AI Verification on Close**: Added `beforeunload` listener that triggers `verify-open-answers` Edge Function for open-ended exercises when student closes tab. Uses `keepalive: true` for reliable unload saving
 - **#2 Homework Active Time Tracking**: Same visibility change mechanism added to `useInteractiveHomework.tsx`. Active time saved via `p_time_spent_ms` parameter to `save_homework_answer` RPC

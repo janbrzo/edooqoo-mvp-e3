@@ -183,6 +183,7 @@ export type Database = {
           id: string
           incorrect_count: number | null
           interval_days: number | null
+          last_quality_rating: number | null
           last_response_time_ms: number | null
           last_reviewed_at: string | null
           learner_identifier: string
@@ -201,6 +202,7 @@ export type Database = {
           id?: string
           incorrect_count?: number | null
           interval_days?: number | null
+          last_quality_rating?: number | null
           last_response_time_ms?: number | null
           last_reviewed_at?: string | null
           learner_identifier: string
@@ -219,6 +221,7 @@ export type Database = {
           id?: string
           incorrect_count?: number | null
           interval_days?: number | null
+          last_quality_rating?: number | null
           last_response_time_ms?: number | null
           last_reviewed_at?: string | null
           learner_identifier?: string
