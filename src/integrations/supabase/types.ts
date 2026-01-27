@@ -572,6 +572,7 @@ export type Database = {
           id: string
           is_submitted: boolean
           last_saved_at: string
+          mastery: number | null
           started_at: string
           student_email: string
           submitted_at: string | null
@@ -586,6 +587,7 @@ export type Database = {
           id?: string
           is_submitted?: boolean
           last_saved_at?: string
+          mastery?: number | null
           started_at?: string
           student_email: string
           submitted_at?: string | null
@@ -600,6 +602,7 @@ export type Database = {
           id?: string
           is_submitted?: boolean
           last_saved_at?: string
+          mastery?: number | null
           started_at?: string
           student_email?: string
           submitted_at?: string | null
@@ -1568,6 +1571,7 @@ export type Database = {
           id: string
           is_completed: boolean
           last_saved_at: string
+          mastery: number | null
           started_at: string
           student_email: string
           time_spent_ms: number | null
@@ -1581,6 +1585,7 @@ export type Database = {
           id?: string
           is_completed?: boolean
           last_saved_at?: string
+          mastery?: number | null
           started_at?: string
           student_email: string
           time_spent_ms?: number | null
@@ -1594,6 +1599,7 @@ export type Database = {
           id?: string
           is_completed?: boolean
           last_saved_at?: string
+          mastery?: number | null
           started_at?: string
           student_email?: string
           time_spent_ms?: number | null
@@ -2052,6 +2058,18 @@ export type Database = {
             }
             Returns: string
           }
+        | {
+            Args: {
+              p_answers: Json
+              p_exercise_index: number
+              p_exercise_type: string
+              p_homework_id: string
+              p_mastery?: number
+              p_student_email: string
+              p_time_spent_ms?: number
+            }
+            Returns: string
+          }
       save_teacher_comment: {
         Args: {
           p_comment_text: string
@@ -2078,6 +2096,18 @@ export type Database = {
               p_answers: Json
               p_exercise_index: number
               p_exercise_type: string
+              p_student_email: string
+              p_time_spent_ms?: number
+              p_worksheet_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_answers: Json
+              p_exercise_index: number
+              p_exercise_type: string
+              p_mastery?: number
               p_student_email: string
               p_time_spent_ms?: number
               p_worksheet_id: string

@@ -117,7 +117,7 @@ export const useInteractiveSharedWorksheet = ({
   }, []);
 
   // Save a single exercise answer to database
-  const saveAnswer = useCallback(async (exerciseIndex: number, exerciseType: string, exerciseAnswers: ExerciseAnswers) => {
+  const saveAnswer = useCallback(async (exerciseIndex: number, exerciseType: string, exerciseAnswers: ExerciseAnswers, mastery?: number | null) => {
     try {
       setIsSaving(true);
       
@@ -130,7 +130,8 @@ export const useInteractiveSharedWorksheet = ({
         p_exercise_index: exerciseIndex,
         p_exercise_type: exerciseType,
         p_answers: exerciseAnswers as any,
-        p_time_spent_ms: activeTimeMs
+        p_time_spent_ms: activeTimeMs,
+        p_mastery: mastery ?? null
       });
 
       if (error) throw error;
