@@ -86,7 +86,14 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
               side="top" 
               align="start"
               sideOffset={8}
+              avoidCollisions={true}
+              collisionPadding={16}
+              sticky="always"
               className="z-[9999] w-72 p-3 bg-white border rounded-lg shadow-lg animate-in fade-in-0 zoom-in-95 data-[state=delayed-open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+              style={{ 
+                position: 'fixed' as const,
+                zIndex: 10000 
+              }}
             >
               <div className="space-y-2">
                 <p className="font-semibold text-sm text-gray-900">{displayName}</p>

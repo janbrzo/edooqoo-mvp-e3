@@ -717,7 +717,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
 
   return (
     <>
-      <div ref={ref} className="mb-4 bg-white border rounded-lg overflow-hidden shadow-sm relative">
+      <div ref={ref} className="mb-4 bg-white border rounded-lg shadow-sm relative">
         <ExerciseHeader
           icon={exercise.icon}
           title={updateExerciseNumber(exercise.title, index)}
