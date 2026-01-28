@@ -6,21 +6,25 @@ import {
   ExerciseAnswers,
   HomeworkProgress 
 } from '@/types/interactiveHomework';
+import { AiEvaluation } from '@/components/homework/AiEvaluationBadge';
 
 interface UseInteractiveHomeworkProps {
   homeworkId: string;
   studentEmail: string;
   totalExercises: number;
   exerciseQuestionCounts?: Record<number, number>;
+  exercises?: any[]; // PROBLEM 4.2: Accept exercises array to get question texts and suggested answers
 }
 
 export const useInteractiveHomework = ({
   homeworkId,
   studentEmail,
   totalExercises,
-  exerciseQuestionCounts = {}
+  exerciseQuestionCounts = {},
+  exercises = []
 }: UseInteractiveHomeworkProps) => {
   const [answers, setAnswers] = useState<Record<number, ExerciseAnswers>>({});
+  const [aiEvaluations, setAiEvaluations] = useState<Record<number, AiEvaluation>>({}); // PROBLEM 4.1: Store AI evaluations
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -71,10 +75,17 @@ export const useInteractiveHomework = ({
 
       if (data && data.length > 0) {
         const loadedAnswers: Record<number, ExerciseAnswers> = {};
+        const loadedEvaluations: Record<number, AiEvaluation> = {}; // PROBLEM 4.1: Load AI evaluations
         let allSubmitted = true;
 
         data.forEach((answer: any) => {
           loadedAnswers[answer.exercise_index] = answer.answers;
+          
+          // PROBLEM 4.1: Load AI evaluation if present
+          if (answer.ai_evaluation) {
+            loadedEvaluations[answer.exercise_index] = answer.ai_evaluation as AiEvaluation;
+          }
+          
           if (!answer.is_submitted) {
             allSubmitted = false;
           }
@@ -84,6 +95,7 @@ export const useInteractiveHomework = ({
         });
 
         setAnswers(loadedAnswers);
+        setAiEvaluations(loadedEvaluations); // PROBLEM 4.1: Store loaded evaluations
         setIsSubmitted(allSubmitted);
       }
     } catch (error: any) {
@@ -246,6 +258,7 @@ export const useInteractiveHomework = ({
           const allTypes = savedAnswers.map((a: any) => a.exercise_type);
           console.log('[submitHomework] All exercise types:', allTypes);
           
+          // PROBLEM 4.2: Build answers with proper question_text and suggested_answer from exercises prop
           const answersToVerify = savedAnswers
             .filter((ans: any) => {
               const isOpen = openAnswerTypes.includes(ans.exercise_type);
@@ -253,19 +266,75 @@ export const useInteractiveHomework = ({
               return isOpen;
             })
             .map((ans: any) => {
-              // Flatten answers object to string
-              const answerValues = Object.values(ans.answers || {});
+              const exerciseData = exercises[ans.exercise_index];
+              
+              // PROBLEM 4.2: Extract proper question texts and suggested answers from exercise data
+              let questionText = exerciseData?.title || `Exercise ${ans.exercise_index + 1}`;
+              let suggestedAnswer = '';
+              
+              // Build comprehensive question context based on exercise type
+              if (exerciseData?.questions && Array.isArray(exerciseData.questions)) {
+                // For exercises with questions array, include all question texts
+                questionText = exerciseData.questions.map((q: any, idx: number) => {
+                  const qText = typeof q === 'string' ? q : (q.text || q.question || '');
+                  const suggested = q.suggested_answer || q.answer || q.correct_answer || '';
+                  return `Q${idx + 1}: ${qText}${suggested ? ` (Expected: ${suggested})` : ''}`;
+                }).join('\n');
+                
+                // Collect all suggested answers
+                suggestedAnswer = exerciseData.questions
+                  .map((q: any) => q.suggested_answer || q.answer || q.correct_answer || '')
+                  .filter(Boolean)
+                  .join('; ');
+              } else if (exerciseData?.sentences && Array.isArray(exerciseData.sentences)) {
+                // For sentence-based exercises
+                questionText = exerciseData.sentences.map((s: any, idx: number) => {
+                  const sText = typeof s === 'string' ? s : (s.text || s.original || '');
+                  const suggested = s.answer || s.correct || s.transformed || '';
+                  return `${idx + 1}. ${sText}${suggested ? ` → ${suggested}` : ''}`;
+                }).join('\n');
+                
+                suggestedAnswer = exerciseData.sentences
+                  .map((s: any) => s.answer || s.correct || s.transformed || '')
+                  .filter(Boolean)
+                  .join('; ');
+              } else if (exerciseData?.prompts && Array.isArray(exerciseData.prompts)) {
+                // For describe-picture or prompt-based exercises
+                questionText = exerciseData.prompts.map((p: any, idx: number) => 
+                  `${idx + 1}. ${typeof p === 'string' ? p : p.text || ''}`
+                ).join('\n');
+              }
+              
+              // Add exercise instructions if available
+              if (exerciseData?.instructions) {
+                questionText = `Instructions: ${exerciseData.instructions}\n\n${questionText}`;
+              }
+              
+              // Flatten answers object to string with question context
+              const answerEntries = Object.entries(ans.answers || {});
+              const studentAnswer = answerEntries.map(([key, val]) => 
+                `Answer ${parseInt(key) + 1}: ${val}`
+              ).join('\n');
+              
+              console.log('[submitHomework] Prepared answer for verification:', {
+                exercise_index: ans.exercise_index,
+                question_text_length: questionText.length,
+                has_suggested_answer: !!suggestedAnswer,
+                student_answer_length: studentAnswer.length
+              });
+              
               return {
                 question_index: ans.exercise_index,
-                question_text: `Exercise ${ans.exercise_index + 1}`,
-                student_answer: answerValues.join(', '),
+                question_text: questionText,
+                student_answer: studentAnswer,
+                suggested_answer: suggestedAnswer || undefined,
                 exercise_type: ans.exercise_type
               };
             })
             .filter((ans: any) => ans.student_answer.trim() !== '');
 
           if (answersToVerify.length > 0) {
-            console.log('[submitHomework] Verifying', answersToVerify.length, 'open answers');
+            console.log('[submitHomework] Verifying', answersToVerify.length, 'open answers with full context');
             
             const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-open-answers', {
               body: { 
@@ -278,7 +347,9 @@ export const useInteractiveHomework = ({
             if (!verifyError && verifyResult?.evaluations) {
               console.log('[submitHomework] AI evaluation received:', verifyResult.evaluations.length, 'results');
               
-              // Save AI evaluations to each answer
+              // PROBLEM 4.1: Save evaluations and update local state
+              const newEvaluations: Record<number, AiEvaluation> = {};
+              
               for (const evaluation of verifyResult.evaluations) {
                 await supabase
                   .from('homework_student_answers')
@@ -286,7 +357,13 @@ export const useInteractiveHomework = ({
                   .eq('homework_id', homeworkId)
                   .eq('student_email', studentEmail)
                   .eq('exercise_index', evaluation.question_index);
+                
+                // Store in local state for immediate display
+                newEvaluations[evaluation.question_index] = evaluation;
               }
+              
+              // Update aiEvaluations state immediately
+              setAiEvaluations(prev => ({ ...prev, ...newEvaluations }));
             } else if (verifyError) {
               console.error('[submitHomework] AI verification error:', verifyError);
             }
@@ -407,6 +484,7 @@ export const useInteractiveHomework = ({
 
   return {
     answers,
+    aiEvaluations, // PROBLEM 4.1: Expose AI evaluations
     isLoading,
     isSaving,
     lastSavedAt,

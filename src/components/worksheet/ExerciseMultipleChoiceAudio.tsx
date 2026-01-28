@@ -171,7 +171,8 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
                 {question.options?.map((option: any, oIndex: number) => {
                   // PROBLEM 1: Check if this option is selected by student in Live Session
-                  const isLiveSelected = liveSessionAnswer?.[qIndex] === oIndex;
+                  // Fix: Compare with option.text (not oIndex) to match how answers are stored
+                  const isLiveSelected = liveSessionAnswer?.[qIndex] === option.text;
                   
                   return (
                     <div

@@ -119,6 +119,7 @@ export default function HomeworkPage() {
   
   const {
     answers,
+    aiEvaluations, // PROBLEM 4.1: Get AI evaluations from hook
     isLoading: answersLoading,
     isSaving,
     lastSavedAt,
@@ -133,7 +134,8 @@ export default function HomeworkPage() {
     homeworkId: homework?.id || '',
     studentEmail: emailForAnswers,
     totalExercises,
-    exerciseQuestionCounts
+    exerciseQuestionCounts,
+    exercises: Array.isArray(homework?.selected_exercises) ? homework.selected_exercises : [] // PROBLEM 4.2: Pass exercises for question context
   });
 
   useEffect(() => {
@@ -717,6 +719,7 @@ export default function HomeworkPage() {
                 showCorrectAnswers={isTeacher || showCorrectAnswersToStudent}
                 disabled={finalIsSubmitted && !isTeacher}
                 viewMode={isTeacher ? "teacher" : "student"}
+                aiEvaluation={aiEvaluations[index]} // PROBLEM 4.1: Pass AI evaluation for this exercise
               />
             </div>
           ))}

@@ -6,6 +6,7 @@ import React from 'react';
 import { Clock } from 'lucide-react';
 import { getIconComponent } from '@/utils/iconUtils';
 import { safeGetText } from '@/utils/textObjectFixer';
+import { AiEvaluationBadge, AiEvaluation } from './AiEvaluationBadge';
 
 // Exercise components
 import ExerciseMatching from '@/components/worksheet/ExerciseMatching';
@@ -41,12 +42,22 @@ interface HomeworkExerciseRendererProps {
   showCorrectAnswers: boolean;
   disabled: boolean;
   viewMode: 'student' | 'teacher';
+  aiEvaluation?: AiEvaluation; // PROBLEM 4.1: AI evaluation for open-ended exercises
 }
 
 // Helper function to normalize exercise type (removes -picture and -audio suffixes for component matching)
 const normalizeExerciseType = (type: string): string => {
   return type.replace('-picture', '').replace('-audio', '');
 };
+
+// Open-ended exercise types that can have AI evaluation
+const OPEN_ENDED_TYPES = [
+  'reading', 'discussion', 'describe', 'answer-questions', 
+  'dialogue', 'answer-questions-audio', 'describe-picture',
+  'answer-questions-picture', 'paraphrasing', 'speaking',
+  'sentence-transformation', 'essay', 'gap-text', 'word-order',
+  'error-correction'
+];
 
 const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
   exercise,
@@ -57,9 +68,11 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
   onAnswerChange,
   showCorrectAnswers,
   disabled,
-  viewMode
+  viewMode,
+  aiEvaluation
 }) => {
   const normalizedType = normalizeExerciseType(exercise.type);
+  const isOpenEnded = OPEN_ENDED_TYPES.includes(exercise.type) || OPEN_ENDED_TYPES.includes(normalizedType);
   
   // Render the exercise title - matching SharedWorksheetContent style exactly
   const renderTitle = () => {
@@ -546,6 +559,16 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
                 </div>
               );
             })}
+          </div>
+        )}
+        
+        {/* PROBLEM 4.1: Show AI Evaluation for open-ended exercises after submission */}
+        {isOpenEnded && aiEvaluation && disabled && (
+          <div className="mt-4 pt-4 border-t">
+            <AiEvaluationBadge 
+              evaluation={aiEvaluation} 
+              showFeedback={true} 
+            />
           </div>
         )}
       </div>
