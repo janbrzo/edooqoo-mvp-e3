@@ -70,7 +70,7 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
 
   return (
     <div className={`inline-flex items-center gap-1 ${className}`} style={{ pointerEvents: 'auto' }}>
-      <TooltipPrimitive.Provider delayDuration={0}>
+      <TooltipPrimitive.Provider delayDuration={0} skipDelayDuration={0}>
         <TooltipPrimitive.Root>
           <TooltipPrimitive.Trigger asChild>
             <Badge
@@ -88,12 +88,7 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
               sideOffset={8}
               avoidCollisions={true}
               collisionPadding={16}
-              sticky="always"
-              className="z-[9999] w-72 p-3 bg-white border rounded-lg shadow-lg animate-in fade-in-0 zoom-in-95 data-[state=delayed-open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
-              style={{ 
-                position: 'fixed' as const,
-                zIndex: 10000 
-              }}
+              className="z-[9999] w-72 p-3 bg-white border rounded-lg shadow-lg animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
             >
               <div className="space-y-2">
                 <p className="font-semibold text-sm text-gray-900">{displayName}</p>

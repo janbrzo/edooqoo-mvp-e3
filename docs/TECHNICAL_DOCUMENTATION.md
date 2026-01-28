@@ -5,7 +5,15 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - DSLM Mastery Unification + NanoSkill Tooltip Fix:**
+**Latest Update (January 2026) - 5 Critical Fixes (Event Logging, Tooltip, AI Display, Live Session):**
+- **#1 SQL Triggers Fixed (DELETE+INSERT)**: Replaced failing `ON CONFLICT` clauses with `DELETE + INSERT` pattern in `log_worksheet_answer_event` and `log_homework_answer_event` triggers. Previous version failed because `student_events` table lacked required unique index for the JSONB expression
+- **#2 NanoSkill Tooltip Positioning**: Removed `position: fixed` style that was causing tooltip to render at (0,0). Now uses default Radix positioning with `skipDelayDuration={0}` for instant disappearance
+- **#3 Multiple Choice Audio Live Session**: Changed `liveSessionAnswer?.[qIndex] === oIndex` to `liveSessionAnswer?.[qIndex] === option.text` - now correctly matches how answers are stored (text not index)
+- **#4.1 AI Evaluation Display**: `useInteractiveHomework` hook now loads and exposes `aiEvaluations` state. `HomeworkExerciseRenderer` displays `AiEvaluationBadge` for open-ended exercises after submission
+- **#4.2 AI Verification Context**: Frontend now passes full `question_text` (including instructions), `suggested_answer` from exercise data to `verify-open-answers` - AI receives complete context for accurate evaluation
+- **#5 Flashcard Mastery**: Trigger now converts `quality_rating` (0 or ≥2) to `mastery` (0 or 100%) - replaces `is_correct` and `quality_rating` fields
+
+**Previous Update (January 2026) - DSLM Mastery Unification + NanoSkill Tooltip Fix:**
 - **#1 Unified Mastery Field**: All student events now include `mastery` (0-100%) in `event_payload`:
   - `worksheet_answer_saved`: `mastery` passed via RPC `p_mastery` parameter
   - `homework_answer_submitted`: `mastery` calculated from AI `quality_score × 100` or passed directly
