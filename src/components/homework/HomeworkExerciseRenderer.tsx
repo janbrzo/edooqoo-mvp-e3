@@ -42,7 +42,7 @@ interface HomeworkExerciseRendererProps {
   showCorrectAnswers: boolean;
   disabled: boolean;
   viewMode: 'student' | 'teacher';
-  aiEvaluation?: AiEvaluation; // PROBLEM 4.1: AI evaluation for open-ended exercises
+  aiEvaluation?: Record<number, AiEvaluation>; // PROBLEM 4: AI evaluations per question index
 }
 
 // Helper function to normalize exercise type (removes -picture and -audio suffixes for component matching)
@@ -562,13 +562,22 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
           </div>
         )}
         
-        {/* PROBLEM 4.1: Show AI Evaluation for open-ended exercises after submission */}
-        {isOpenEnded && aiEvaluation && disabled && (
-          <div className="mt-4 pt-4 border-t">
-            <AiEvaluationBadge 
-              evaluation={aiEvaluation} 
-              showFeedback={true} 
-            />
+        {/* PROBLEM 4: Show AI Evaluations for open-ended exercises after submission - per question */}
+        {isOpenEnded && aiEvaluation && disabled && Object.keys(aiEvaluation).length > 0 && (
+          <div className="mt-4 pt-4 border-t space-y-3">
+            <h4 className="text-sm font-medium text-muted-foreground">AI Evaluation:</h4>
+            {Object.entries(aiEvaluation).map(([qIdxStr, evaluation]) => {
+              const qIdx = parseInt(qIdxStr);
+              return (
+                <div key={qIdx} className="pl-3 border-l-2 border-muted">
+                  <p className="text-xs text-muted-foreground mb-1">Question {qIdx + 1}:</p>
+                  <AiEvaluationBadge 
+                    evaluation={evaluation} 
+                    showFeedback={true} 
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

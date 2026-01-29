@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Popover,
   PopoverContent,
@@ -69,128 +74,123 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
   };
 
   return (
-    <div className={`inline-flex items-center gap-1 ${className}`} style={{ pointerEvents: 'auto' }}>
-      <TooltipPrimitive.Provider delayDuration={0} skipDelayDuration={0}>
-        <TooltipPrimitive.Root>
-          <TooltipPrimitive.Trigger asChild>
+    <div className={`inline-flex items-center gap-1 ${className}`}>
+      {/* PROBLEM 3 FIX: Use standard shadcn/ui Tooltip for reliable positioning */}
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger asChild>
             <Badge
               variant="outline"
               className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
-              style={{ pointerEvents: 'auto' }}
             >
               ns ({confidencePercent}%)
             </Badge>
-          </TooltipPrimitive.Trigger>
-          <TooltipPrimitive.Portal>
-            <TooltipPrimitive.Content 
-              side="top" 
-              align="start"
-              sideOffset={8}
-              avoidCollisions={true}
-              collisionPadding={16}
-              className="z-[9999] w-72 p-3 bg-white border rounded-lg shadow-lg animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
-            >
-              <div className="space-y-2">
-                <p className="font-semibold text-sm text-gray-900">{displayName}</p>
-                <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
-                <div className="flex items-center gap-2 pt-1 border-t">
-                  <span className="text-xs text-muted-foreground">Full ID:</span>
-                  <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Confidence:</span>
-                  <span className="text-xs font-medium">{confidencePercent}%</span>
-                </div>
+          </TooltipTrigger>
+          <TooltipContent 
+            side="top" 
+            align="start"
+            sideOffset={8}
+            className="w-72 p-3 z-[9999] bg-white border shadow-lg"
+          >
+            <div className="space-y-2">
+              <p className="font-semibold text-sm text-gray-900">{displayName}</p>
+              <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
+              <div className="flex items-center gap-2 pt-1 border-t">
+                <span className="text-xs text-muted-foreground">Full ID:</span>
+                <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
               </div>
-              <TooltipPrimitive.Arrow className="fill-white" />
-            </TooltipPrimitive.Content>
-          </TooltipPrimitive.Portal>
-        </TooltipPrimitive.Root>
-      </TooltipPrimitive.Provider>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Confidence:</span>
+                <span className="text-xs font-medium">{confidencePercent}%</span>
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {onEdit && (
-          <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0"
-                onClick={handleEditStart}
-              >
-                <Pencil className="h-3 w-3" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-3">
-                <h4 className="font-medium text-sm">Edit Nano Skill</h4>
-                <div className="space-y-2">
-                  <label className="text-xs text-muted-foreground">Skill Name</label>
-                  <Input
-                    value={editedSkill?.name || ""}
-                    onChange={(e) =>
-                      setEditedSkill((prev) =>
-                        prev ? { ...prev, name: e.target.value } : null
-                      )
-                    }
-                    placeholder="ns.grammar.example"
-                    className="h-8 text-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs text-muted-foreground">
-                    Confidence (0.0 - 1.0)
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="1"
-                    step="0.1"
-                    value={editedSkill?.confidence || 0}
-                    onChange={(e) =>
-                      setEditedSkill((prev) =>
-                        prev
-                          ? { ...prev, confidence: parseFloat(e.target.value) || 0 }
-                          : null
-                      )
-                    }
-                    className="h-8 text-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs text-muted-foreground">Reason</label>
-                  <Input
-                    value={editedSkill?.reason || ""}
-                    onChange={(e) =>
-                      setEditedSkill((prev) =>
-                        prev ? { ...prev, reason: e.target.value } : null
-                      )
-                    }
-                    placeholder="Why this skill..."
-                    className="h-8 text-sm"
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleEditCancel}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleEditSave}
-                  >
-                    <Check className="h-4 w-4 mr-1" />
-                    Save
-                  </Button>
-                </div>
+        <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 w-5 p-0"
+              onClick={handleEditStart}
+            >
+              <Pencil className="h-3 w-3" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm">Edit Nano Skill</h4>
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">Skill Name</label>
+                <Input
+                  value={editedSkill?.name || ""}
+                  onChange={(e) =>
+                    setEditedSkill((prev) =>
+                      prev ? { ...prev, name: e.target.value } : null
+                    )
+                  }
+                  placeholder="ns.grammar.example"
+                  className="h-8 text-sm"
+                />
               </div>
-            </PopoverContent>
-          </Popover>
-        )}
-      </div>
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">
+                  Confidence (0.0 - 1.0)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={editedSkill?.confidence || 0}
+                  onChange={(e) =>
+                    setEditedSkill((prev) =>
+                      prev
+                        ? { ...prev, confidence: parseFloat(e.target.value) || 0 }
+                        : null
+                    )
+                  }
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">Reason</label>
+                <Input
+                  value={editedSkill?.reason || ""}
+                  onChange={(e) =>
+                    setEditedSkill((prev) =>
+                      prev ? { ...prev, reason: e.target.value } : null
+                    )
+                  }
+                  placeholder="Why this skill..."
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleEditCancel}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleEditSave}
+                >
+                  <Check className="h-4 w-4 mr-1" />
+                  Save
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
   );
 };
 

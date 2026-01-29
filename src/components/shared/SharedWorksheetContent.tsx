@@ -616,7 +616,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                 />
               )}
 
-              {/* Audio exercises - Multiple Choice Audio */}
+              {/* Audio exercises - Multiple Choice Audio - PROBLEM 5 FIX: Pass worksheetId for consistent shuffle */}
               {exercise.type === 'multiple-choice-audio' && exercise.questions && (
                 <ExerciseMultipleChoiceAudio
                   questions={exercise.questions}
@@ -627,6 +627,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+                  worksheetId={worksheet.id}
                 />
               )}
 
