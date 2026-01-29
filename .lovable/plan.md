@@ -1,210 +1,42 @@
 
 # Plan naprawy 5 problemów
 
-## Podsumowanie zidentyfikowanych przyczyn
+## Podsumowanie znalezionych przyczyn
 
-### PROBLEM 1 & 2: Brak eventów worksheet_answer_saved i homework_answer_submitted
-
-**Przyczyna znaleziona w logach PostgreSQL:**
-```
-Failed to log worksheet answer event: there is no unique or exclusion constraint matching the ON CONFLICT specification
-```
-
-Problem jest w triggerach SQL. Ostatnia migracja dodała klauzulę `ON CONFLICT`:
-```sql
-ON CONFLICT (student_id, source_id, event_type, (event_payload->>'exercise_index'))
-```
-
-Ale tabela `student_events` **nie ma takiego UNIQUE INDEX** dla tej kombinacji kolumn. SQL wymaga istniejącego unikalnego constraintu aby ON CONFLICT działał.
-
-**Rozwiązanie:**
-1. Utworzyć brakujący UNIQUE INDEX na tabeli `student_events`:
-```sql
-CREATE UNIQUE INDEX IF NOT EXISTS idx_student_events_upsert 
-ON public.student_events (student_id, source_id, event_type, (event_payload->>'exercise_index'))
-WHERE event_type IN ('worksheet_answer_saved', 'homework_answer_submitted');
-```
-
-LUB alternatywnie:
-2. Zamienić `ON CONFLICT` na podejście z `DELETE + INSERT` w triggerach.
-
-**Rekomenduję podejście 2** (DELETE + INSERT) ponieważ:
-- Jest bardziej uniwersalne
-- Nie wymaga tworzenia nowych indeksów na JSONB
-- Jest mniej podatne na błędy
-
----
-
-### PROBLEM 3: NanoSkill tooltip w lewym górnym rogu
-
-**Przyczyna:**
-W `NanoSkillBadge.tsx` dodano `style={{ position: 'fixed' }}` do `TooltipPrimitive.Content`. Ustawienie `position: fixed` **bez jawnych współrzędnych** (top, left) powoduje że element ląduje w lewym górnym rogu (0,0).
-
-Radix Tooltip automatycznie oblicza pozycję używając Floating UI (Popper.js), ale `position: fixed` nadpisuje te obliczenia.
-
-**Rozwiązanie:**
-1. Usunąć `style={{ position: 'fixed', zIndex: 10000 }}` z TooltipPrimitive.Content
-2. Polegać na domyślnym pozycjonowaniu Radix (które używa CSS transform)
-3. Zachować wysokie `z-index` w className
-4. Dla natychmiastowego znikania: `delayDuration={0}` już jest ustawiony, ale trzeba też dodać `closeDelay={0}`
-
----
-
-### PROBLEM 4.1: AI evaluation nie wyświetla się na homework
+### PROBLEM 1 i 2: Brak `nano_skill_ratings` per-item i `mastery: null` w eventach worksheet/homework
 
 **Analiza:**
-W `useInteractiveHomework.tsx` linia 278-289:
-- AI evaluation jest pobierane: `verifyResult?.evaluations`
-- Następnie jest zapisywane do bazy: `update({ ai_evaluation: evaluation })`
-
-**Ale problem polega na tym, że:**
-1. Po zapisaniu `ai_evaluation` do bazy, frontend nie odświeża danych
-2. Komponent `HomeworkExerciseRenderer` nie pobiera ani nie wyświetla `ai_evaluation`
-3. Brakuje integracji z `AiEvaluationBadge` w widoku homework
-
-**Rozwiązanie:**
-1. Dodać pobieranie `ai_evaluation` z bazy w `loadAnswers()` w `useInteractiveHomework.tsx`
-2. Przekazać evaluation do `HomeworkExerciseRenderer`
-3. Wyświetlić `AiEvaluationBadge` dla zadań otwartych
-
----
-
-### PROBLEM 4.2: Prompt w verify-open-answers
-
-**Analiza promptu:**
-Prompt zawiera tylko:
-```
-Question: ${a.question_text}
-Student's answer: ${a.student_answer}
-Suggested answer: ${a.suggested_answer}
-```
-
-Ale `suggested_answer` nie jest przekazywane poprawnie z `useInteractiveHomework.tsx` linia 256-264:
-```tsx
-.map((ans: any) => {
-  return {
-    question_index: ans.exercise_index,
-    question_text: `Exercise ${ans.exercise_index + 1}`,  // <-- Brak prawdziwego question_text
-    student_answer: answerValues.join(', '),
-    exercise_type: ans.exercise_type
-    // <-- Brak suggested_answer!
-  };
-})
-```
-
-**Rozwiązanie:**
-1. Pobierać dane ćwiczenia (pytania, poprawne odpowiedzi) przed wysłaniem do AI
-2. Przekazać `suggested_answer` dla każdego pytania
-3. Przekazać pełny `question_text` zamiast "Exercise X"
-
----
-
-### PROBLEM 5: Multiple Choice Audio w Live Session
+Porównując format eventów:
+- **exercise_mastery_evaluation** (wzorcowy): zawiera `nano_skill_ratings` jako tablicę z osobnym `mastery` dla każdego przykładu
+- **worksheet_answer_saved** i **homework_answer_submitted**: zawierają tylko ogólne `mastery` dla całego ćwiczenia (i jest null)
 
 **Przyczyna:**
-W `ExerciseMultipleChoiceAudio.tsx` linia 174:
-```tsx
-const isLiveSelected = liveSessionAnswer?.[qIndex] === oIndex;
-```
+1. Triggery SQL (`log_worksheet_answer_event` i `log_homework_answer_event`) nie mają dostępu do danych nano_skill z poziomu tabeli answers - te dane są w JSON worksheeta
+2. Frontend nie oblicza `mastery` per-item przed zapisem - wysyła tylko odpowiedzi
 
-Porównuje `liveSessionAnswer` z **indeksem opcji** (`oIndex`).
+**Wymagane zmiany:**
+To jest **fundamentalna zmiana architektury** - aby mieć `nano_skill_ratings` per-item w eventach studenta, system musi:
+1. Pobierać nano_skill z danych ćwiczenia dla każdego pytania
+2. Obliczać poprawność każdej odpowiedzi
+3. Zapisywać to jako tablicę podobną do teacher events
 
-Ale w `ExerciseMultipleChoice.tsx` linia 139:
-```tsx
-const isLiveSelected = liveAnswer === option.text;
-```
+**Rozwiązanie - podejście etapowe:**
 
-Porównuje z **tekstem opcji** (`option.text`).
+**Faza A - Natychmiastowa (obliczanie mastery):**
+- Dodać obliczanie ogólnego `mastery` dla zamkniętych ćwiczeń w hookach `useInteractiveSharedWorksheet.tsx` i `useInteractiveHomework.tsx`
+- Przekazać `mastery` do RPC przy zapisie
 
-Problem: student zapisuje odpowiedź jako **tekst opcji** (np. "Paris"), ale `ExerciseMultipleChoiceAudio` szuka **indeksu** (np. 0, 1, 2).
-
-**Rozwiązanie:**
-Zmienić porównanie w `ExerciseMultipleChoiceAudio.tsx` na `option.text`:
-```tsx
-const isLiveSelected = liveSessionAnswer?.[qIndex] === option.text;
-```
+**Faza B - Pełna integracja nano_skill (wymaga więcej pracy):**
+- Rozszerzyć triggery SQL o pole `item_evaluations` w payloadzie
+- Frontend musi przekazywać strukturę podobną do `nano_skill_ratings`
 
 ---
 
-## Pliki do edycji
+### PROBLEM 3: NanoSkill tooltip się nie pokazuje
 
-| Problem | Plik | Zmiana |
-|---------|------|--------|
-| 1, 2 | SQL Migration | Naprawić triggery - usunąć ON CONFLICT i użyć DELETE+INSERT |
-| 3 | `NanoSkillBadge.tsx` | Usunąć `position: fixed`, dodać `closeDelay={0}` |
-| 4.1 | `useInteractiveHomework.tsx` | Pobierać i zwracać `ai_evaluation` |
-| 4.1 | `HomeworkExerciseRenderer.tsx` | Wyświetlić `AiEvaluationBadge` |
-| 4.2 | `useInteractiveHomework.tsx` | Przekazać pełne dane pytań do verify-open-answers |
-| 5 | `ExerciseMultipleChoiceAudio.tsx` | Zmienić `=== oIndex` na `=== option.text` |
-
----
-
-## Szczegóły implementacji
-
-### SQL Migration - Naprawka triggerów (Problem 1 & 2)
-
-```sql
--- Naprawka log_worksheet_answer_event - zamień ON CONFLICT na DELETE+INSERT
-CREATE OR REPLACE FUNCTION public.log_worksheet_answer_event()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $function$
-DECLARE
-  v_student_id UUID;
-  v_teacher_id UUID;
-BEGIN
-  -- Get student_id and teacher_id
-  SELECT s.id INTO v_student_id
-  FROM public.students s
-  WHERE s.student_email = NEW.student_email
-  LIMIT 1;
-
-  SELECT w.user_id INTO v_teacher_id
-  FROM public.worksheets w
-  WHERE w.id = NEW.worksheet_id;
-
-  IF v_student_id IS NOT NULL AND v_teacher_id IS NOT NULL THEN
-    -- DELETE existing event for this exercise (UPSERT pattern without ON CONFLICT)
-    DELETE FROM public.student_events
-    WHERE student_id = v_student_id
-      AND source_id = NEW.worksheet_id
-      AND event_type = 'worksheet_answer_saved'
-      AND (event_payload->>'exercise_index')::INTEGER = NEW.exercise_index;
-    
-    -- INSERT new event
-    INSERT INTO public.student_events (
-      student_id, teacher_id, event_type, event_source, source_id, event_payload
-    ) VALUES (
-      v_student_id, v_teacher_id,
-      'worksheet_answer_saved', 'worksheet', NEW.worksheet_id,
-      jsonb_build_object(
-        'answer_id', NEW.id,
-        'exercise_index', NEW.exercise_index,
-        'exercise_type', NEW.exercise_type,
-        'answers', NEW.answers,
-        'mastery', NEW.mastery,
-        'time_spent_seconds', ROUND(COALESCE(NEW.time_spent_ms, 0) / 1000.0, 1)
-      )
-    );
-  END IF;
-
-  RETURN NEW;
-EXCEPTION
-  WHEN OTHERS THEN
-    RAISE WARNING 'Failed to log worksheet answer event: %', SQLERRM;
-    RETURN NEW;
-END;
-$function$;
-
--- Analogiczna naprawka dla log_homework_answer_event
-```
-
-### NanoSkillBadge.tsx - Naprawka tooltipa (Problem 3)
-
+**Analiza kodu NanoSkillBadge.tsx:**
 ```tsx
-<TooltipPrimitive.Provider delayDuration={0}>
+<TooltipPrimitive.Provider delayDuration={0} skipDelayDuration={0}>
   <TooltipPrimitive.Root>
     <TooltipPrimitive.Trigger asChild>
       <Badge ... />
@@ -215,80 +47,283 @@ $function$;
         align="start"
         sideOffset={8}
         avoidCollisions={true}
-        className="z-[9999] w-72 p-3 bg-white border rounded-lg shadow-lg animate-in fade-in-0 zoom-in-95"
-        // USUNIĘTO: style={{ position: 'fixed', zIndex: 10000 }}
+        collisionPadding={16}
+        className="z-[9999] w-72 p-3 bg-white border rounded-lg shadow-lg animate-in ..."
       >
-        ...
-      </TooltipPrimitive.Content>
-    </TooltipPrimitive.Portal>
-  </TooltipPrimitive.Root>
-</TooltipPrimitive.Provider>
 ```
 
-### ExerciseMultipleChoiceAudio.tsx - Live Session fix (Problem 5)
+**Przyczyna:**
+Brak propsa `open` lub kontroli stanu - Radix Tooltip wymaga interakcji użytkownika, ale może być blokowany przez:
+1. `pointer-events` problemy w parent elementach
+2. Brak odpowiedniego trigger behavior
+
+**Rozwiązanie:**
+Uprościć implementację - zamiast `TooltipPrimitive` użyć standardowego `Tooltip` z shadcn/ui który jest przetestowany i działa poprawnie:
 
 ```tsx
-// Linia 174 - PRZED:
-const isLiveSelected = liveSessionAnswer?.[qIndex] === oIndex;
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// PO:
-const isLiveSelected = liveSessionAnswer?.[qIndex] === option.text;
+<TooltipProvider delayDuration={0}>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Badge ... />
+    </TooltipTrigger>
+    <TooltipContent side="top" align="start" className="w-72 p-3 z-[9999]">
+      ...
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
 ```
 
 ---
 
-## Co zobaczysz po implementacji
+### PROBLEM 4: AI evaluation pokazuje się dla całego zadania zamiast per-question
 
-1. **Eventy w student_events:** Worksheet i homework odpowiedzi będą poprawnie logowane z polem `mastery`
+**Analiza:**
+Obecny system wysyła wszystkie odpowiedzi jako jeden string do AI i otrzymuje jedną ocenę dla całego ćwiczenia:
+```tsx
+student_answer: Object.values(exerciseAnswers).join(', ')
+```
 
-2. **NanoSkill tooltip:** Pojawi się bezpośrednio przy badge "ns (94%)" i zniknie natychmiast po odsunięciu kursora
+**Przyczyna:**
+`verify-open-answers` otrzymuje jeden zbiorczy tekst odpowiedzi zamiast osobnych pytań.
 
-3. **AI Evaluation na homework:** Po submit pojawi się badge z wynikiem AI i feedback dla zadań otwartych
-
-4. **Live Session Multiple Choice Audio:** Odpowiedzi studenta będą widoczne jako niebieskie zaznaczenia (tak jak w zwykłym Multiple Choice)
-
----
-
-## Sekcja techniczna - szczegóły zmian
-
-### Kolejność implementacji
-
-1. **Najpierw SQL Migration** - naprawia logowanie eventów
-2. **Potem NanoSkillBadge.tsx** - naprawia tooltip
-3. **Potem ExerciseMultipleChoiceAudio.tsx** - naprawia Live Session
-4. **Na koniec useInteractiveHomework.tsx + HomeworkExerciseRenderer.tsx** - naprawia AI evaluation display
-
-### Zmiany w useInteractiveHomework.tsx dla problemu 4
+**Rozwiązanie:**
+Zmienić strukturę w `useInteractiveHomework.tsx` aby wysyłać **każde pytanie osobno**:
 
 ```tsx
-// W loadAnswers() - dodać pobieranie ai_evaluation
-const loadedAnswers: Record<number, ExerciseAnswers> = {};
-const loadedEvaluations: Record<number, any> = {};
-
-data.forEach((answer: any) => {
-  loadedAnswers[answer.exercise_index] = answer.answers;
-  if (answer.ai_evaluation) {
-    loadedEvaluations[answer.exercise_index] = answer.ai_evaluation;
-  }
+// PRZED: jedna odpowiedź na całe ćwiczenie
+answersToVerify.push({
+  question_index: exerciseIndex,
+  student_answer: allAnswers.join(', '),
+  ...
 });
 
-setAnswers(loadedAnswers);
-setAiEvaluations(loadedEvaluations);  // Nowy state
+// PO: osobna odpowiedź per-question
+exercise.questions.forEach((question, qIndex) => {
+  answersToVerify.push({
+    question_index: exerciseIndex * 100 + qIndex, // unikalne ID per-question
+    question_text: question.text,
+    student_answer: answers[qIndex],
+    suggested_answer: question.suggested_answer,
+    ...
+  });
+});
 ```
 
+Następnie zapisać `aiEvaluations` jako `Record<number, Record<number, AiEvaluation>>` (exerciseIndex -> questionIndex -> evaluation).
+
+---
+
+### PROBLEM 5: Multiple Choice Audio - różna kolejność w Live Session vs Shared Worksheet
+
+**Analiza:**
+- **ExerciseSection.tsx** (linia 1544): przekazuje `worksheetId={worksheetId}` do `ExerciseMultipleChoiceAudio`
+- **SharedWorksheetContent.tsx** (linia 620-630): **NIE przekazuje** `worksheetId`!
+
 ```tsx
-// W submitHomework() - przekazać pełne dane pytań
-// Pobierz exercises z homework aby mieć dostęp do question_text i suggested_answer
+// SharedWorksheetContent.tsx linia 620-630 - BRAKUJE worksheetId!
+<ExerciseMultipleChoiceAudio
+  questions={exercise.questions}
+  audio_url={exercise.audio_url}
+  isEditing={false}
+  viewMode="student"
+  onQuestionChange={() => {}}
+  isInteractive={effectiveInteractive}
+  studentAnswers={studentAnswers[index] || {}}
+  onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+  // ❌ BRAKUJE: worksheetId={worksheet.id}
+/>
 ```
 
-### Nowy state w hook
+**Przyczyna:**
+Bez `worksheetId` funkcja `shuffleArrayWithSeed` w `ExerciseMultipleChoiceAudio` używa pustego seeda lub nie wykonuje shuffle w ogóle, co powoduje inną kolejność niż w widoku nauczyciela.
+
+**Rozwiązanie:**
+Dodać `worksheetId={worksheet.id}` do komponentu `ExerciseMultipleChoiceAudio` w `SharedWorksheetContent.tsx`:
 
 ```tsx
-const [aiEvaluations, setAiEvaluations] = useState<Record<number, any>>({});
+{exercise.type === 'multiple-choice-audio' && exercise.questions && (
+  <ExerciseMultipleChoiceAudio
+    questions={exercise.questions}
+    audio_url={exercise.audio_url}
+    isEditing={false}
+    viewMode="student"
+    onQuestionChange={() => {}}
+    isInteractive={effectiveInteractive}
+    studentAnswers={studentAnswers[index] || {}}
+    onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+    worksheetId={worksheet.id}  // ✅ DODAĆ
+  />
+)}
+```
 
-// Zwrócić w return
-return {
-  ...
-  aiEvaluations,
+---
+
+## Plan implementacji
+
+### Kolejność zmian:
+
+| # | Problem | Plik | Zmiana | Priorytet |
+|---|---------|------|--------|-----------|
+| 1 | P5 | `SharedWorksheetContent.tsx` | Dodać `worksheetId={worksheet.id}` do `ExerciseMultipleChoiceAudio` | WYSOKI |
+| 2 | P3 | `NanoSkillBadge.tsx` | Uprościć tooltip używając shadcn/ui `Tooltip` zamiast `TooltipPrimitive` | WYSOKI |
+| 3 | P4 | `useInteractiveHomework.tsx` | Wysyłać pytania osobno do AI zamiast zbiorczo | ŚREDNI |
+| 4 | P4 | `HomeworkExerciseRenderer.tsx` | Wyświetlać AI evaluation per-question | ŚREDNI |
+| 5 | P1/P2 | `useInteractiveSharedWorksheet.tsx` | Obliczać mastery dla zamkniętych ćwiczeń | ŚREDNI |
+| 6 | P1/P2 | `useInteractiveHomework.tsx` | Obliczać mastery dla zamkniętych ćwiczeń | ŚREDNI |
+
+---
+
+## Szczegóły techniczne
+
+### Zmiana 1: SharedWorksheetContent.tsx (Problem 5)
+
+```tsx
+// Linia 620-630 - dodać worksheetId
+{exercise.type === 'multiple-choice-audio' && exercise.questions && (
+  <ExerciseMultipleChoiceAudio
+    questions={exercise.questions}
+    audio_url={exercise.audio_url}
+    isEditing={false}
+    viewMode="student"
+    onQuestionChange={() => {}}
+    isInteractive={effectiveInteractive}
+    studentAnswers={studentAnswers[index] || {}}
+    onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+    worksheetId={worksheet.id}  // DODAĆ
+  />
+)}
+```
+
+### Zmiana 2: NanoSkillBadge.tsx (Problem 3)
+
+Zamienić `TooltipPrimitive` na standardowy `Tooltip` z shadcn/ui:
+
+```tsx
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+// W komponencie:
+<TooltipProvider delayDuration={0}>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Badge
+        variant="outline"
+        className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
+      >
+        ns ({confidencePercent}%)
+      </Badge>
+    </TooltipTrigger>
+    <TooltipContent 
+      side="top" 
+      align="start" 
+      className="w-72 p-3 z-[9999] bg-white border shadow-lg"
+    >
+      <div className="space-y-2">
+        <p className="font-semibold text-sm text-gray-900">{displayName}</p>
+        <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
+        <div className="flex items-center gap-2 pt-1 border-t">
+          <span className="text-xs text-muted-foreground">Full ID:</span>
+          <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Confidence:</span>
+          <span className="text-xs font-medium">{confidencePercent}%</span>
+        </div>
+      </div>
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+```
+
+### Zmiana 3-4: useInteractiveHomework.tsx i HomeworkExerciseRenderer.tsx (Problem 4)
+
+**useInteractiveHomework.tsx** - zmienić wysyłanie do AI:
+
+```tsx
+// Zamiast wysyłać jedno pytanie na ćwiczenie, wysyłamy każde pytanie osobno
+const answersToVerify: any[] = [];
+
+for (const ans of savedAnswers.filter(a => openAnswerTypes.includes(a.exercise_type))) {
+  const exerciseData = exercises[ans.exercise_index];
+  const questions = exerciseData?.questions || exerciseData?.prompts || [];
+  
+  // Iteruj przez każde pytanie osobno
+  Object.entries(ans.answers || {}).forEach(([qIdxStr, studentAnswer]) => {
+    const qIdx = parseInt(qIdxStr);
+    const question = questions[qIdx];
+    
+    answersToVerify.push({
+      question_index: qIdx, // index pytania wewnątrz ćwiczenia
+      exercise_index: ans.exercise_index, // index ćwiczenia
+      question_text: typeof question === 'string' ? question : (question?.text || question?.prompt || ''),
+      student_answer: String(studentAnswer),
+      suggested_answer: question?.suggested_answer || question?.answer || '',
+      exercise_type: ans.exercise_type
+    });
+  });
+}
+```
+
+**HomeworkExerciseRenderer.tsx** - wyświetlać per-question:
+
+```tsx
+// Zmienić typ aiEvaluation z AiEvaluation na Record<number, AiEvaluation>
+// I wyświetlać przy każdym pytaniu osobno
+{isOpenEnded && disabled && questionEvaluations && (
+  <AiEvaluationBadge 
+    evaluation={questionEvaluations[qIndex]} 
+    showFeedback={true}
+    compact={true}
+  />
+)}
+```
+
+### Zmiana 5-6: Obliczanie mastery (Problem 1 i 2)
+
+W hookach dodać funkcję obliczającą mastery dla zamkniętych ćwiczeń:
+
+```tsx
+const calculateClosedExerciseMastery = (
+  exerciseType: string,
+  exerciseData: any,
+  answers: Record<number, any>
+): number | null => {
+  // Tylko dla zamkniętych ćwiczeń
+  const closedTypes = ['multiple-choice', 'true-false', 'matching', 'fill-in-blanks', ...];
+  if (!closedTypes.includes(exerciseType)) return null;
+  
+  let correct = 0;
+  let total = 0;
+  
+  // Logika porównania zależy od typu ćwiczenia
+  if (exerciseType === 'multiple-choice' && exerciseData.questions) {
+    exerciseData.questions.forEach((q: any, idx: number) => {
+      const correctOption = q.options?.find((o: any) => o.correct)?.text;
+      if (answers[idx] === correctOption) correct++;
+      total++;
+    });
+  }
+  // ... analogicznie dla innych typów
+  
+  return total > 0 ? Math.round((correct / total) * 100) : null;
 };
 ```
+
+---
+
+## Oczekiwane rezultaty
+
+1. **Problem 5 (MC Audio shuffle):** Odpowiedzi A, B, C, D będą w tej samej kolejności w SharedWorksheet i LiveSession
+2. **Problem 3 (Tooltip):** Tooltip pojawi się natychmiast po najechaniu na badge "ns (94%)" i zniknie po odsunięciu kursora
+3. **Problem 4 (AI per-question):** Każde pytanie otwarte będzie miało osobną ocenę AI z feedbackiem
+4. **Problem 1 i 2 (Mastery):** Pole `mastery` będzie wypełnione dla zamkniętych ćwiczeń (0-100%)
+
+---
+
+## Uwaga o pełnej integracji nano_skill_ratings
+
+Aby eventy worksheet/homework miały pełną strukturę `nano_skill_ratings` jak eventy nauczyciela, potrzebna jest większa refaktoryzacja:
+- Frontend musi przekazywać dane nano_skill z worksheet JSON do RPC
+- Triggery SQL muszą obsługiwać nową strukturę
+- To może być zrealizowane w osobnym zadaniu po podstawowych naprawkach
