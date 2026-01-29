@@ -5,13 +5,21 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 5 Critical Fixes (Event Logging, Tooltip, AI Display, Live Session):**
-- **#1 SQL Triggers Fixed (DELETE+INSERT)**: Replaced failing `ON CONFLICT` clauses with `DELETE + INSERT` pattern in `log_worksheet_answer_event` and `log_homework_answer_event` triggers. Previous version failed because `student_events` table lacked required unique index for the JSONB expression
-- **#2 NanoSkill Tooltip Positioning**: Removed `position: fixed` style that was causing tooltip to render at (0,0). Now uses default Radix positioning with `skipDelayDuration={0}` for instant disappearance
-- **#3 Multiple Choice Audio Live Session**: Changed `liveSessionAnswer?.[qIndex] === oIndex` to `liveSessionAnswer?.[qIndex] === option.text` - now correctly matches how answers are stored (text not index)
-- **#4.1 AI Evaluation Display**: `useInteractiveHomework` hook now loads and exposes `aiEvaluations` state. `HomeworkExerciseRenderer` displays `AiEvaluationBadge` for open-ended exercises after submission
-- **#4.2 AI Verification Context**: Frontend now passes full `question_text` (including instructions), `suggested_answer` from exercise data to `verify-open-answers` - AI receives complete context for accurate evaluation
-- **#5 Flashcard Mastery**: Trigger now converts `quality_rating` (0 or ≥2) to `mastery` (0 or 100%) - replaces `is_correct` and `quality_rating` fields
+**Latest Update (January 2026) - 5 Critical Fixes (Tooltip, AI Per-Question, MC Audio Shuffle, Mastery Calculation):**
+- **#1 P5 - MC Audio Shuffle Consistency**: Added `worksheetId={worksheet.id}` prop to `ExerciseMultipleChoiceAudio` in `SharedWorksheetContent.tsx` - ensures same A,B,C,D order in both student view and Live Session
+- **#2 P3 - NanoSkill Tooltip Fixed**: Replaced `TooltipPrimitive` with standard shadcn/ui `Tooltip` component in `NanoSkillBadge.tsx`. Now appears instantly on hover and disappears immediately when cursor leaves
+- **#3 P4 - AI Evaluation Per-Question**: Complete refactor of AI verification system:
+  - `useInteractiveHomework` now sends each question separately to `verify-open-answers` (not aggregated per exercise)
+  - AI evaluations stored as `Record<number, Record<number, AiEvaluation>>` (exercise_index → question_index → evaluation)
+  - `HomeworkExerciseRenderer` displays individual `AiEvaluationBadge` per question with "Question X:" labels
+  - Database stores `{ question_evaluations: [{question_index, is_acceptable, quality_score, feedback}, ...] }` per exercise
+- **#4 P1/P2 - Mastery Calculation for Closed Exercises**: New `calculateClosedExerciseMastery()` function in both hooks:
+  - Automatically calculates 0-100% score for 14 closed exercise types (multiple-choice, true-false, matching, fill-in-blanks, etc.)
+  - Called in `scheduleAutoSave()` and `saveOnBlur()` before saving to database
+  - Compares student answers against correct answers from exercise data structure
+  - `mastery` field now populated in `worksheet_answer_saved` and `homework_answer_submitted` events
+
+**Previous Update (January 2026) - 5 Critical Fixes (Event Logging, Tooltip, AI Display, Live Session):**
 
 **Previous Update (January 2026) - DSLM Mastery Unification + NanoSkill Tooltip Fix:**
 - **#1 Unified Mastery Field**: All student events now include `mastery` (0-100%) in `event_payload`:

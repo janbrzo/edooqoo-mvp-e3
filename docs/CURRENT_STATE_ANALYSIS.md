@@ -7,12 +7,12 @@
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
 **Ostatnia naprawa (2025-01):** 
-- ✅ **NAPRAWIONO Logowanie Eventów SQL**: Triggery worksheet/homework używają teraz DELETE+INSERT zamiast ON CONFLICT (który nie działał bez unikalnego indeksu)
-- ✅ **NAPRAWIONO NanoSkill Tooltip**: Usunięto `position: fixed` powodujący wyświetlanie w lewym górnym rogu. Dodano `skipDelayDuration={0}` dla natychmiastowego znikania
+- ✅ **NAPRAWIONO P5 MC Audio Shuffle**: Dodano `worksheetId` do ExerciseMultipleChoiceAudio w SharedWorksheetContent - ta sama kolejność A,B,C,D w obu widokach
+- ✅ **NAPRAWIONO P3 NanoSkill Tooltip**: Zamieniono TooltipPrimitive na standardowy shadcn/ui Tooltip - pokazuje się natychmiast przy badge i znika od razu
+- ✅ **NAPRAWIONO P4 AI Evaluation Per-Question**: Każde pytanie otwarte wysyłane osobno do AI, evaluation wyświetlane per-question z etykietami "Question X:"
+- ✅ **NAPRAWIONO P1/P2 Mastery Calculation**: Nowa funkcja `calculateClosedExerciseMastery()` oblicza 0-100% dla 14 zamkniętych typów ćwiczeń automatycznie
+- ✅ **NAPRAWIONO Logowanie Eventów SQL**: Triggery worksheet/homework używają DELETE+INSERT zamiast ON CONFLICT
 - ✅ **NAPRAWIONO Multiple Choice Audio Live Session**: Porównanie odpowiedzi teraz używa `option.text` zamiast `oIndex`
-- ✅ **NAPRAWIONO Wyświetlanie AI Evaluation**: Hook useInteractiveHomework ładuje i eksponuje `aiEvaluations`. HomeworkExerciseRenderer wyświetla AiEvaluationBadge
-- ✅ **NAPRAWIONO Kontekst AI Verification**: Frontend przekazuje pełne `question_text` i `suggested_answer` do verify-open-answers
-- ✅ **NAPRAWIONO NanoSkill Badges**: Wyświetlają się teraz w trybie Teacher i Live Session dla Discussion Questions i ćwiczeń Audio
 - ✅ **DODANO Animowane etykiety Pin**: Przyciski "Pin audio player" i "Pin image" mają teraz eleganckie animowane etykiety (5 sekund)
 - ✅ **NAPRAWIONO Mark Done Modal**: Slider nie resetuje się już do 70%, dodano przycisk Skip, poprawiono zapisywanie do `student_events`
 - ✅ **DODANO Undo Mark Done**: Kliknięcie "Done" na oznaczonym zadaniu otwiera modal potwierdzenia z opcją usunięcia oceny z bazy
