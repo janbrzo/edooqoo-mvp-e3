@@ -108,7 +108,8 @@ const SharedWorksheet = () => {
     worksheetId: worksheet?.id || '',
     studentEmail: verifiedEmail || '',
     totalExercises,
-    exerciseQuestionCounts
+    exerciseQuestionCounts,
+    exercises: worksheetData?.exercises || [] // PROBLEM 1/2 FIX: Pass exercises for mastery calculation
   });
 
   // PROBLEM 3: Navigation sidebar for shared worksheet

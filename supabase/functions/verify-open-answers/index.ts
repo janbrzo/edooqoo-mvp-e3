@@ -163,8 +163,9 @@ Return a JSON array with objects for each answer:
       
       evaluations = JSON.parse(cleanContent.trim());
       
-      // Ensure quality_score is clamped and is_acceptable is set
+      // PROBLEM 4 FIX: Map evaluations back with original exercise_index from input
       evaluations = evaluations.map((e, idx) => ({
+        exercise_index: answers[idx]?.exercise_index, // Preserve original exercise_index from request
         question_index: e.question_index ?? answers[idx]?.question_index ?? idx,
         quality_score: Math.max(0, Math.min(1, e.quality_score || 0)),
         is_acceptable: e.is_acceptable ?? (e.quality_score >= 0.7),
@@ -176,8 +177,9 @@ Return a JSON array with objects for each answer:
       console.log('[verify-open-answers] Evaluations:', JSON.stringify(evaluations, null, 2));
     } catch (parseError) {
       console.error('[verify-open-answers] Failed to parse AI response:', parseError);
-      // Return neutral evaluation on parse failure
+      // Return neutral evaluation on parse failure - include exercise_index
       evaluations = answers.map((a, idx) => ({
+        exercise_index: a.exercise_index,
         question_index: a.question_index,
         quality_score: 0.7,
         is_acceptable: true,
