@@ -5,7 +5,34 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - 5 Critical Fixes (Tooltip, AI Per-Question, MC Audio Shuffle, Mastery Calculation):**
+**Latest Update (January 2026) - Per-Item Nano Skill Ratings in Events:**
+- **#1 New `item_evaluations` Column**: Added `item_evaluations JSONB` column to `worksheet_student_answers` and `homework_student_answers` tables. Stores per-item `nano_skill_ratings` array matching `exercise_mastery_evaluation` format
+- **#2 RPC Functions Updated**: `save_worksheet_answer` and `save_homework_answer` now accept `p_item_evaluations JSONB` parameter
+- **#3 SQL Triggers Updated**: `log_worksheet_answer_to_events` and `log_homework_answer_to_events` now include `nano_skill_ratings` from `item_evaluations` column in event payload
+- **#4 New Utility `masteryCalculator.ts`**: Centralized per-item mastery calculation logic exported from new utility file:
+  - `calculateItemMastery()` - calculates 0-100% for single item in closed exercises
+  - `buildItemEvaluations()` - builds array of `{name, reason, mastery}` for all items with nano_skill
+  - `calculateOverallMastery()` - calculates average mastery for entire exercise
+  - `safeGetNanoSkill()` - safely extracts nano_skill data from various item structures
+- **#5 Frontend Hooks Updated**: `useInteractiveSharedWorksheet` and `useInteractiveHomework` now use `buildItemEvaluations()` to build per-item ratings and pass to RPC
+- **#6 NanoSkill Tooltip Fixed**: Replaced `Tooltip` with `HoverCard` component in `NanoSkillBadge.tsx` - more reliable for rich content display with proper z-index handling
+
+**Event Payload Structure After Update:**
+```json
+{
+  "exercise_index": 0,
+  "exercise_type": "multiple-choice-picture",
+  "answers": { "0": "A", "1": "B" },
+  "mastery": 60,
+  "nano_skill_ratings": [
+    { "name": "ns.reading.main_activity_identification", "reason": "Tests ability to identify central action", "mastery": 100 },
+    { "name": "ns.reading.detail_inference", "reason": "Tests inference from visual context", "mastery": 0 }
+  ],
+  "time_spent_seconds": 7.4
+}
+```
+
+**Previous Update (January 2026) - 5 Critical Fixes (Tooltip, AI Per-Question, MC Audio Shuffle, Mastery Calculation):**
 - **#1 P5 - MC Audio Shuffle Consistency**: Added `worksheetId={worksheet.id}` prop to `ExerciseMultipleChoiceAudio` in `SharedWorksheetContent.tsx` - ensures same A,B,C,D order in both student view and Live Session
 - **#2 P3 - NanoSkill Tooltip Fixed**: Replaced `TooltipPrimitive` with standard shadcn/ui `Tooltip` component in `NanoSkillBadge.tsx`. Now appears instantly on hover and disappears immediately when cursor leaves
 - **#3 P4 - AI Evaluation Per-Question**: Complete refactor of AI verification system:
