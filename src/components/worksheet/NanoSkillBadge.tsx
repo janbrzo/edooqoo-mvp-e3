@@ -36,6 +36,8 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
 }) => {
   const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
   const [editedSkill, setEditedSkill] = useState<NanoSkill | null>(null);
+  // PROBLEM 3 FIX: Controlled tooltip state for immediate show/hide
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
 
   if (!nanoSkill) return null;
 
@@ -75,13 +77,15 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
 
   return (
     <div className={`inline-flex items-center gap-1 ${className}`}>
-      {/* PROBLEM 3 FIX: Use standard shadcn/ui Tooltip for reliable positioning */}
+      {/* PROBLEM 3 FIX: Controlled tooltip with explicit open state for immediate show/hide */}
       <TooltipProvider delayDuration={0}>
-        <Tooltip>
+        <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
           <TooltipTrigger asChild>
             <Badge
               variant="outline"
               className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
+              onMouseEnter={() => setIsTooltipOpen(true)}
+              onMouseLeave={() => setIsTooltipOpen(false)}
             >
               ns ({confidencePercent}%)
             </Badge>
@@ -91,6 +95,8 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
             align="start"
             sideOffset={8}
             className="w-72 p-3 z-[9999] bg-white border shadow-lg"
+            onMouseEnter={() => setIsTooltipOpen(true)}
+            onMouseLeave={() => setIsTooltipOpen(false)}
           >
             <div className="space-y-2">
               <p className="font-semibold text-sm text-gray-900">{displayName}</p>
