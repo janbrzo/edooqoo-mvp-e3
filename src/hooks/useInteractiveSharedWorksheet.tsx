@@ -7,117 +7,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { ExerciseAnswers } from '@/types/interactiveHomework';
 import { SharedWorksheetProgress } from '@/types/interactiveSharedWorksheet';
-
-// Exercise type classification
-const OPEN_ENDED_EXERCISE_TYPES = [
-  'reading', 'discussion', 'describe', 'answer-questions', 
-  'dialogue', 'answer-questions-audio', 'describe-picture',
-  'answer-questions-picture', 'paraphrasing', 'speaking',
-  'sentence-transformation', 'essay', 'gap-text', 'word-order'
-];
-
-const CLOSED_EXERCISE_TYPES = [
-  'multiple-choice', 'multiple-choice-audio', 'multiple-choice-picture',
-  'true-false', 'true-false-audio', 'matching', 'matching-halves',
-  'fill-in-blanks', 'fill-in-blanks-audio', 'categorize',
-  'complete-word', 'negative-prefixes', 'odd-one-out', 'synonyms-antonyms'
-];
-
-// PROBLEM 1/2: Calculate mastery for closed exercises (automatic scoring)
-const calculateClosedExerciseMastery = (
-  exerciseType: string,
-  exerciseData: any,
-  answers: Record<string | number, any>
-): number | null => {
-  if (!exerciseData || !answers || Object.keys(answers).length === 0) return null;
-  
-  // Only calculate for closed types
-  const normalizedType = exerciseType.replace('-picture', '').replace('-audio', '');
-  const isClosed = CLOSED_EXERCISE_TYPES.some(t => 
-    exerciseType === t || normalizedType === t.replace('-audio', '').replace('-picture', '')
-  );
-  if (!isClosed) return null;
-  
-  let correct = 0;
-  let total = 0;
-  
-  try {
-    if ((exerciseType.startsWith('multiple-choice') || normalizedType === 'multiple-choice') && exerciseData.questions) {
-      exerciseData.questions.forEach((q: any, idx: number) => {
-        const correctOption = q.options?.find((o: any) => o.correct)?.text;
-        if (correctOption && answers[idx] === correctOption) correct++;
-        total++;
-      });
-    } else if ((exerciseType.startsWith('true-false') || normalizedType === 'true-false') && exerciseData.statements) {
-      exerciseData.statements.forEach((s: any, idx: number) => {
-        const correctAnswer = s.isTrue ? 'true' : 'false';
-        if (answers[idx] === correctAnswer) correct++;
-        total++;
-      });
-    } else if (exerciseType === 'matching' && exerciseData.items) {
-      exerciseData.items.forEach((item: any, idx: number) => {
-        // Matching uses item index as answer - correct when student selects correct_match
-        const correctMatch = item.correct_match;
-        if (correctMatch !== undefined && answers[idx] === correctMatch) correct++;
-        total++;
-      });
-    } else if (exerciseType === 'matching-halves' && exerciseData.sentence_halves) {
-      exerciseData.sentence_halves.forEach((item: any, idx: number) => {
-        const correctMatch = item.correct_match;
-        if (correctMatch !== undefined && answers[idx] === correctMatch) correct++;
-        total++;
-      });
-    } else if (exerciseType === 'categorize' && (exerciseData.items || exerciseData.words)) {
-      const items = exerciseData.items || exerciseData.words || [];
-      items.forEach((item: any, idx: number) => {
-        const correctCategory = typeof item === 'string' ? null : item.category;
-        if (correctCategory !== null && answers[idx] === correctCategory) correct++;
-        total++;
-      });
-    } else if (exerciseType === 'fill-in-blanks' && exerciseData.sentences) {
-      exerciseData.sentences.forEach((s: any, idx: number) => {
-        const correctAnswer = typeof s === 'string' ? null : (s.answer || s.correct);
-        if (correctAnswer && answers[idx]?.toLowerCase().trim() === correctAnswer.toLowerCase().trim()) correct++;
-        total++;
-      });
-    } else if (exerciseType === 'complete-word' && exerciseData.words) {
-      exerciseData.words.forEach((w: any, idx: number) => {
-        const correctWord = typeof w === 'string' ? w : w.word;
-        if (correctWord && answers[idx]?.toLowerCase().trim() === correctWord.toLowerCase().trim()) correct++;
-        total++;
-      });
-    } else if (exerciseType === 'odd-one-out' && exerciseData.questions) {
-      exerciseData.questions.forEach((q: any, idx: number) => {
-        const correctAnswer = q.odd_word || q.correct;
-        if (correctAnswer && answers[idx] === correctAnswer) correct++;
-        total++;
-      });
-    } else if ((exerciseType === 'synonyms-antonyms' || exerciseType === 'synonyms' || exerciseType === 'antonyms') && exerciseData.items) {
-      exerciseData.items.forEach((item: any, idx: number) => {
-        const correctAnswer = item.answer || item.synonym || item.antonym;
-        if (correctAnswer && answers[idx]?.toLowerCase().trim() === correctAnswer.toLowerCase().trim()) correct++;
-        total++;
-      });
-    } else if (exerciseType === 'negative-prefixes' && exerciseData.words) {
-      exerciseData.words.forEach((w: any, idx: number) => {
-        const correctPrefix = typeof w === 'string' ? null : w.prefix;
-        if (correctPrefix && answers[idx] === correctPrefix) correct++;
-        total++;
-      });
-    } else {
-      // Default: count answered questions
-      total = Object.keys(answers).length;
-      if (total === 0) return null;
-      // Can't auto-grade, return null
-      return null;
-    }
-    
-    return total > 0 ? Math.round((correct / total) * 100) : null;
-  } catch (e) {
-    console.error('[calculateClosedExerciseMastery] Error:', e);
-    return null;
-  }
-};
+import { 
+  buildItemEvaluations, 
+  calculateOverallMastery,
+  OPEN_ENDED_EXERCISE_TYPES,
+  ItemEvaluation 
+} from '@/utils/masteryCalculator';
 
 interface UseInteractiveSharedWorksheetProps {
   worksheetId: string;
@@ -220,7 +115,13 @@ export const useInteractiveSharedWorksheet = ({
   }, []);
 
   // Save a single exercise answer to database
-  const saveAnswer = useCallback(async (exerciseIndex: number, exerciseType: string, exerciseAnswers: ExerciseAnswers, mastery?: number | null) => {
+  const saveAnswer = useCallback(async (
+    exerciseIndex: number, 
+    exerciseType: string, 
+    exerciseAnswers: ExerciseAnswers, 
+    mastery?: number | null,
+    itemEvaluations?: ItemEvaluation[] | null
+  ) => {
     try {
       setIsSaving(true);
       
@@ -234,7 +135,8 @@ export const useInteractiveSharedWorksheet = ({
         p_exercise_type: exerciseType,
         p_answers: exerciseAnswers as any,
         p_time_spent_ms: activeTimeMs,
-        p_mastery: mastery ?? null
+        p_mastery: mastery ?? null,
+        p_item_evaluations: itemEvaluations ? JSON.parse(JSON.stringify(itemEvaluations)) : null
       });
 
       if (error) throw error;
@@ -268,13 +170,21 @@ export const useInteractiveSharedWorksheet = ({
     pendingSavesRef.current.add(exerciseIndex);
     setIsSaving(true);
 
-    // PROBLEM 1/2: Calculate mastery for closed exercises
+    // PROBLEM 1: Build per-item evaluations with nano_skill_ratings
     const exerciseData = exercises[exerciseIndex];
-    const mastery = calculateClosedExerciseMastery(exerciseType, exerciseData, exerciseAnswers);
+    const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
+    const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
+    
+    console.log('[useInteractiveSharedWorksheet] Saving with itemEvaluations:', {
+      exerciseIndex,
+      exerciseType,
+      mastery,
+      itemEvaluationsCount: itemEvaluations?.length || 0
+    });
     
     // Schedule new save (1.5 seconds for faster real-time updates)
     saveTimeoutRef.current = setTimeout(() => {
-      saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery);
+      saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);
     }, 1500);
   }, [saveAnswer, exercises]);
 
@@ -319,10 +229,11 @@ export const useInteractiveSharedWorksheet = ({
 
     const exerciseAnswers = answers[exerciseIndex];
     if (exerciseAnswers) {
-      // PROBLEM 1/2: Calculate mastery for closed exercises
+      // PROBLEM 1: Build per-item evaluations with nano_skill_ratings
       const exerciseData = exercises[exerciseIndex];
-      const mastery = calculateClosedExerciseMastery(exerciseType, exerciseData, exerciseAnswers);
-      saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery);
+      const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
+      const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
+      saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);
     }
   }, [answers, saveAnswer, exercises]);
 

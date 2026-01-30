@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import {
   Popover,
   PopoverContent,
@@ -36,8 +35,6 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
 }) => {
   const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
   const [editedSkill, setEditedSkill] = useState<NanoSkill | null>(null);
-  // PROBLEM 3 FIX: Controlled tooltip state for immediate show/hide
-  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
 
   if (!nanoSkill) return null;
 
@@ -77,42 +74,36 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
 
   return (
     <div className={`inline-flex items-center gap-1 ${className}`}>
-      {/* PROBLEM 3 FIX: Controlled tooltip with explicit open state for immediate show/hide */}
-      <TooltipProvider delayDuration={0}>
-        <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
-          <TooltipTrigger asChild>
-            <Badge
-              variant="outline"
-              className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
-              onMouseEnter={() => setIsTooltipOpen(true)}
-              onMouseLeave={() => setIsTooltipOpen(false)}
-            >
-              ns ({confidencePercent}%)
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent 
-            side="top" 
-            align="start"
-            sideOffset={8}
-            className="w-72 p-3 z-[9999] bg-white border shadow-lg"
-            onMouseEnter={() => setIsTooltipOpen(true)}
-            onMouseLeave={() => setIsTooltipOpen(false)}
+      {/* PROBLEM 2 FIX: Using HoverCard instead of Tooltip for more reliable display */}
+      <HoverCard openDelay={0} closeDelay={0}>
+        <HoverCardTrigger asChild>
+          <Badge
+            variant="outline"
+            className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
           >
-            <div className="space-y-2">
-              <p className="font-semibold text-sm text-gray-900">{displayName}</p>
-              <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
-              <div className="flex items-center gap-2 pt-1 border-t">
-                <span className="text-xs text-muted-foreground">Full ID:</span>
-                <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Confidence:</span>
-                <span className="text-xs font-medium">{confidencePercent}%</span>
-              </div>
+            ns ({confidencePercent}%)
+          </Badge>
+        </HoverCardTrigger>
+        <HoverCardContent 
+          side="top" 
+          align="start"
+          sideOffset={8}
+          className="w-72 p-3 z-[9999] bg-white border shadow-lg"
+        >
+          <div className="space-y-2">
+            <p className="font-semibold text-sm text-gray-900">{displayName}</p>
+            <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
+            <div className="flex items-center gap-2 pt-1 border-t">
+              <span className="text-xs text-muted-foreground">Full ID:</span>
+              <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
             </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Confidence:</span>
+              <span className="text-xs font-medium">{confidencePercent}%</span>
+            </div>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
 
       {onEdit && (
         <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
