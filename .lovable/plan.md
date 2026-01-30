@@ -1,329 +1,237 @@
 
-# Plan naprawy 5 problemów
+# Plan naprawy 4 problemów
 
-## Podsumowanie znalezionych przyczyn
+## Podsumowanie zidentyfikowanych przyczyn głównych
 
-### PROBLEM 1 i 2: Brak `nano_skill_ratings` per-item i `mastery: null` w eventach worksheet/homework
+### PROBLEM 1 i 2: Brak `nano_skill_ratings` per-item i `mastery: null` w eventach
 
-**Analiza:**
-Porównując format eventów:
-- **exercise_mastery_evaluation** (wzorcowy): zawiera `nano_skill_ratings` jako tablicę z osobnym `mastery` dla każdego przykładu
-- **worksheet_answer_saved** i **homework_answer_submitted**: zawierają tylko ogólne `mastery` dla całego ćwiczenia (i jest null)
-
-**Przyczyna:**
-1. Triggery SQL (`log_worksheet_answer_event` i `log_homework_answer_event`) nie mają dostępu do danych nano_skill z poziomu tabeli answers - te dane są w JSON worksheeta
-2. Frontend nie oblicza `mastery` per-item przed zapisem - wysyła tylko odpowiedzi
-
-**Wymagane zmiany:**
-To jest **fundamentalna zmiana architektury** - aby mieć `nano_skill_ratings` per-item w eventach studenta, system musi:
-1. Pobierać nano_skill z danych ćwiczenia dla każdego pytania
-2. Obliczać poprawność każdej odpowiedzi
-3. Zapisywać to jako tablicę podobną do teacher events
-
-**Rozwiązanie - podejście etapowe:**
-
-**Faza A - Natychmiastowa (obliczanie mastery):**
-- Dodać obliczanie ogólnego `mastery` dla zamkniętych ćwiczeń w hookach `useInteractiveSharedWorksheet.tsx` i `useInteractiveHomework.tsx`
-- Przekazać `mastery` do RPC przy zapisie
-
-**Faza B - Pełna integracja nano_skill (wymaga więcej pracy):**
-- Rozszerzyć triggery SQL o pole `item_evaluations` w payloadzie
-- Frontend musi przekazywać strukturę podobną do `nano_skill_ratings`
-
----
-
-### PROBLEM 3: NanoSkill tooltip się nie pokazuje
-
-**Analiza kodu NanoSkillBadge.tsx:**
-```tsx
-<TooltipPrimitive.Provider delayDuration={0} skipDelayDuration={0}>
-  <TooltipPrimitive.Root>
-    <TooltipPrimitive.Trigger asChild>
-      <Badge ... />
-    </TooltipPrimitive.Trigger>
-    <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Content 
-        side="top" 
-        align="start"
-        sideOffset={8}
-        avoidCollisions={true}
-        collisionPadding={16}
-        className="z-[9999] w-72 p-3 bg-white border rounded-lg shadow-lg animate-in ..."
-      >
-```
-
-**Przyczyna:**
-Brak propsa `open` lub kontroli stanu - Radix Tooltip wymaga interakcji użytkownika, ale może być blokowany przez:
-1. `pointer-events` problemy w parent elementach
-2. Brak odpowiedniego trigger behavior
-
-**Rozwiązanie:**
-Uprościć implementację - zamiast `TooltipPrimitive` użyć standardowego `Tooltip` z shadcn/ui który jest przetestowany i działa poprawnie:
+**Przyczyna znaleziona:**
+W `SharedWorksheet.tsx` (linia 107-112) hook `useInteractiveSharedWorksheet` jest wywoływany **BEZ** parametru `exercises`:
 
 ```tsx
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
-<TooltipProvider delayDuration={0}>
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <Badge ... />
-    </TooltipTrigger>
-    <TooltipContent side="top" align="start" className="w-72 p-3 z-[9999]">
-      ...
-    </TooltipContent>
-  </Tooltip>
-</TooltipProvider>
-```
-
----
-
-### PROBLEM 4: AI evaluation pokazuje się dla całego zadania zamiast per-question
-
-**Analiza:**
-Obecny system wysyła wszystkie odpowiedzi jako jeden string do AI i otrzymuje jedną ocenę dla całego ćwiczenia:
-```tsx
-student_answer: Object.values(exerciseAnswers).join(', ')
-```
-
-**Przyczyna:**
-`verify-open-answers` otrzymuje jeden zbiorczy tekst odpowiedzi zamiast osobnych pytań.
-
-**Rozwiązanie:**
-Zmienić strukturę w `useInteractiveHomework.tsx` aby wysyłać **każde pytanie osobno**:
-
-```tsx
-// PRZED: jedna odpowiedź na całe ćwiczenie
-answersToVerify.push({
-  question_index: exerciseIndex,
-  student_answer: allAnswers.join(', '),
-  ...
-});
-
-// PO: osobna odpowiedź per-question
-exercise.questions.forEach((question, qIndex) => {
-  answersToVerify.push({
-    question_index: exerciseIndex * 100 + qIndex, // unikalne ID per-question
-    question_text: question.text,
-    student_answer: answers[qIndex],
-    suggested_answer: question.suggested_answer,
-    ...
-  });
+const interactiveHook = useInteractiveSharedWorksheet({
+  worksheetId: worksheet?.id || '',
+  studentEmail: verifiedEmail || '',
+  totalExercises,
+  exerciseQuestionCounts
+  // ❌ BRAKUJE: exercises: worksheetData?.exercises || []
 });
 ```
 
-Następnie zapisać `aiEvaluations` jako `Record<number, Record<number, AiEvaluation>>` (exerciseIndex -> questionIndex -> evaluation).
+Bez parametru `exercises`, funkcja `calculateClosedExerciseMastery` nie ma dostępu do danych ćwiczeń i **zawsze zwraca null**.
+
+W `HomeworkPage.tsx` (linia 138) parametr `exercises` JEST przekazywany:
+```tsx
+exercises: Array.isArray(homework?.selected_exercises) ? homework.selected_exercises : []
+```
+
+ALE nadal `mastery` jest null ponieważ:
+1. Dla niektórych typów ćwiczeń (np. `antonyms`, `matching-halves`) logika w `calculateClosedExerciseMastery` nie obsługuje poprawnie ich struktury danych
+2. Typ `listening-comprehension` nie jest w liście `CLOSED_EXERCISE_TYPES` więc zwraca null
+
+**Rozwiązanie:**
+1. Dodać `exercises` do hooka w `SharedWorksheet.tsx`
+2. Rozszerzyć listę `CLOSED_EXERCISE_TYPES` o brakujące typy
+3. Dodać obsługę brakujących struktur danych w `calculateClosedExerciseMastery`
 
 ---
 
-### PROBLEM 5: Multiple Choice Audio - różna kolejność w Live Session vs Shared Worksheet
+### PROBLEM 3: NanoSkill tooltip nie pokazuje się wcale
+
+**Przyczyna znaleziona:**
+Kod w `NanoSkillBadge.tsx` używa poprawnie shadcn/ui `Tooltip`. Jednak tooltip w Radix wymaga:
+1. **Globalnego `TooltipProvider`** - bez tego tooltips nie działają
+2. Właściwej propagacji zdarzeń kursora
 
 **Analiza:**
-- **ExerciseSection.tsx** (linia 1544): przekazuje `worksheetId={worksheetId}` do `ExerciseMultipleChoiceAudio`
-- **SharedWorksheetContent.tsx** (linia 620-630): **NIE przekazuje** `worksheetId`!
+Komponent `NanoSkillBadge` jest używany wewnątrz innych komponentów (np. `ExerciseMatching`) które mogą mieć:
+- `pointer-events: none` w jakimś parent elemencie
+- Konflikt z innymi tooltipami/popoverami
 
-```tsx
-// SharedWorksheetContent.tsx linia 620-630 - BRAKUJE worksheetId!
-<ExerciseMultipleChoiceAudio
-  questions={exercise.questions}
-  audio_url={exercise.audio_url}
-  isEditing={false}
-  viewMode="student"
-  onQuestionChange={() => {}}
-  isInteractive={effectiveInteractive}
-  studentAnswers={studentAnswers[index] || {}}
-  onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
-  // ❌ BRAKUJE: worksheetId={worksheet.id}
-/>
-```
-
-**Przyczyna:**
-Bez `worksheetId` funkcja `shuffleArrayWithSeed` w `ExerciseMultipleChoiceAudio` używa pustego seeda lub nie wykonuje shuffle w ogóle, co powoduje inną kolejność niż w widoku nauczyciela.
+Najbardziej prawdopodobna przyczyna: **brak globalnego `TooltipProvider`** na wyższym poziomie aplikacji - każdy `NanoSkillBadge` ma swój własny `TooltipProvider` z `delayDuration={0}`, ale może być konflikty z innymi providerami.
 
 **Rozwiązanie:**
-Dodać `worksheetId={worksheet.id}` do komponentu `ExerciseMultipleChoiceAudio` w `SharedWorksheetContent.tsx`:
+1. Przenieść `TooltipProvider` na poziom całej aplikacji (np. w `App.tsx`)
+2. LUB upewnić się że `NanoSkillBadge` nie jest blokowany przez parent elementy
 
-```tsx
-{exercise.type === 'multiple-choice-audio' && exercise.questions && (
-  <ExerciseMultipleChoiceAudio
-    questions={exercise.questions}
-    audio_url={exercise.audio_url}
-    isEditing={false}
-    viewMode="student"
-    onQuestionChange={() => {}}
-    isInteractive={effectiveInteractive}
-    studentAnswers={studentAnswers[index] || {}}
-    onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
-    worksheetId={worksheet.id}  // ✅ DODAĆ
-  />
-)}
-```
+---
+
+### PROBLEM 4: AI evaluation nie pokazuje się dla wszystkich zadań otwartych
+
+**Przyczyna znaleziona:**
+W logach widzę że `aiEvaluations` jest pobierane z hook (`aiEvaluations` linia 122 w HomeworkPage.tsx), ALE:
+
+1. W `useInteractiveHomework.tsx` linia 393-423 - pytania są wysyłane pojedynczo do AI, ale `exercise_index` może być nadpisywany przez `question_index`:
+   ```tsx
+   answersToVerify.push({
+     exercise_index: ans.exercise_index,  // <-- poprawne
+     question_index: qIdx,  // <-- poprawne
+     ...
+   });
+   ```
+
+2. ALE w `verify-open-answers/index.ts` linia 167-172:
+   ```tsx
+   evaluations = evaluations.map((e, idx) => ({
+     question_index: e.question_index ?? answers[idx]?.question_index ?? idx,
+     // ❌ BRAKUJE: exercise_index - nie jest zwracane przez AI!
+   }));
+   ```
+
+3. Następnie w `useInteractiveHomework.tsx` linia 445:
+   ```tsx
+   const exIdx = evaluation.exercise_index ?? evaluation.question_index; // Fallback używa question_index!
+   ```
+
+**Problem:** AI nie zwraca `exercise_index`, więc fallback używa `question_index` jako `exercise_index`, co powoduje niepoprawne grupowanie evaluations.
+
+**Rozwiązanie:**
+1. Przekazać `exercise_index` w odpowiedzi z edge function `verify-open-answers`
+2. LUB zachować oryginalny `exercise_index` z requestu zamiast polegać na odpowiedzi AI
 
 ---
 
 ## Plan implementacji
 
-### Kolejność zmian:
-
-| # | Problem | Plik | Zmiana | Priorytet |
-|---|---------|------|--------|-----------|
-| 1 | P5 | `SharedWorksheetContent.tsx` | Dodać `worksheetId={worksheet.id}` do `ExerciseMultipleChoiceAudio` | WYSOKI |
-| 2 | P3 | `NanoSkillBadge.tsx` | Uprościć tooltip używając shadcn/ui `Tooltip` zamiast `TooltipPrimitive` | WYSOKI |
-| 3 | P4 | `useInteractiveHomework.tsx` | Wysyłać pytania osobno do AI zamiast zbiorczo | ŚREDNI |
-| 4 | P4 | `HomeworkExerciseRenderer.tsx` | Wyświetlać AI evaluation per-question | ŚREDNI |
-| 5 | P1/P2 | `useInteractiveSharedWorksheet.tsx` | Obliczać mastery dla zamkniętych ćwiczeń | ŚREDNI |
-| 6 | P1/P2 | `useInteractiveHomework.tsx` | Obliczać mastery dla zamkniętych ćwiczeń | ŚREDNI |
-
----
-
-## Szczegóły techniczne
-
-### Zmiana 1: SharedWorksheetContent.tsx (Problem 5)
+### Zmiana 1: SharedWorksheet.tsx - dodać exercises do hooka
 
 ```tsx
-// Linia 620-630 - dodać worksheetId
-{exercise.type === 'multiple-choice-audio' && exercise.questions && (
-  <ExerciseMultipleChoiceAudio
-    questions={exercise.questions}
-    audio_url={exercise.audio_url}
-    isEditing={false}
-    viewMode="student"
-    onQuestionChange={() => {}}
-    isInteractive={effectiveInteractive}
-    studentAnswers={studentAnswers[index] || {}}
-    onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
-    worksheetId={worksheet.id}  // DODAĆ
-  />
-)}
+// Linia 107-112 - dodać parametr exercises
+const interactiveHook = useInteractiveSharedWorksheet({
+  worksheetId: worksheet?.id || '',
+  studentEmail: verifiedEmail || '',
+  totalExercises,
+  exerciseQuestionCounts,
+  exercises: worksheetData?.exercises || [] // DODAĆ
+});
 ```
 
-### Zmiana 2: NanoSkillBadge.tsx (Problem 3)
+### Zmiana 2: useInteractiveSharedWorksheet.tsx i useInteractiveHomework.tsx - rozszerzyć calculateClosedExerciseMastery
 
-Zamienić `TooltipPrimitive` na standardowy `Tooltip` z shadcn/ui:
+Dodać obsługę brakujących typów:
+- `listening-comprehension` - jest otwarty, NIE zamknięty (poprawnie zwraca null)
+- `antonyms`, `synonyms` - poprawić warunek
+- `matching-halves` - sprawdzić strukturę danych
+
+Problem: `antonyms` ma `exercise_type: 'antonyms'` ale w kodzie jest warunek `exerciseType === 'synonyms-antonyms'`. Trzeba dodać:
+```tsx
+} else if ((exerciseType === 'synonyms-antonyms' || exerciseType === 'synonyms' || exerciseType === 'antonyms') && exerciseData.items) {
+```
+
+Ten warunek JEST już obecny (linia 87-92 w obu plikach), więc problem może być w strukturze danych.
+
+### Zmiana 3: NanoSkillBadge.tsx - upewnić się że tooltip działa
+
+Najprościej: dodać `open` prop kontrolowany przez hover state:
 
 ```tsx
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+const [isOpen, setIsOpen] = useState(false);
 
-// W komponencie:
 <TooltipProvider delayDuration={0}>
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <Badge
-        variant="outline"
-        className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
-      >
-        ns ({confidencePercent}%)
-      </Badge>
-    </TooltipTrigger>
-    <TooltipContent 
-      side="top" 
-      align="start" 
-      className="w-72 p-3 z-[9999] bg-white border shadow-lg"
+  <Tooltip open={isOpen} onOpenChange={setIsOpen}>
+    <TooltipTrigger 
+      asChild
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
     >
-      <div className="space-y-2">
-        <p className="font-semibold text-sm text-gray-900">{displayName}</p>
-        <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
-        <div className="flex items-center gap-2 pt-1 border-t">
-          <span className="text-xs text-muted-foreground">Full ID:</span>
-          <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Confidence:</span>
-          <span className="text-xs font-medium">{confidencePercent}%</span>
-        </div>
-      </div>
-    </TooltipContent>
+      <Badge ... />
+    </TooltipTrigger>
+    <TooltipContent ... />
   </Tooltip>
 </TooltipProvider>
 ```
 
-### Zmiana 3-4: useInteractiveHomework.tsx i HomeworkExerciseRenderer.tsx (Problem 4)
+To daje pełną kontrolę nad stanem tooltip i zapewnia natychmiastowe znikanie.
 
-**useInteractiveHomework.tsx** - zmienić wysyłanie do AI:
+### Zmiana 4: useInteractiveHomework.tsx - naprawić mapowanie exercise_index
 
+W liniach 444-446 zmienić:
 ```tsx
-// Zamiast wysyłać jedno pytanie na ćwiczenie, wysyłamy każde pytanie osobno
-const answersToVerify: any[] = [];
+// PRZED:
+const exIdx = evaluation.exercise_index ?? evaluation.question_index;
 
-for (const ans of savedAnswers.filter(a => openAnswerTypes.includes(a.exercise_type))) {
-  const exerciseData = exercises[ans.exercise_index];
-  const questions = exerciseData?.questions || exerciseData?.prompts || [];
-  
-  // Iteruj przez każde pytanie osobno
-  Object.entries(ans.answers || {}).forEach(([qIdxStr, studentAnswer]) => {
-    const qIdx = parseInt(qIdxStr);
-    const question = questions[qIdx];
-    
-    answersToVerify.push({
-      question_index: qIdx, // index pytania wewnątrz ćwiczenia
-      exercise_index: ans.exercise_index, // index ćwiczenia
-      question_text: typeof question === 'string' ? question : (question?.text || question?.prompt || ''),
-      student_answer: String(studentAnswer),
-      suggested_answer: question?.suggested_answer || question?.answer || '',
-      exercise_type: ans.exercise_type
-    });
-  });
-}
+// PO: Użyj oryginalnego exercise_index z answersToVerify
+// Trzeba zachować mapowanie answer index -> exercise_index
 ```
 
-**HomeworkExerciseRenderer.tsx** - wyświetlać per-question:
+Lepsze rozwiązanie: przekazać `exercise_index` do edge function i zwrócić go w odpowiedzi:
 
+**verify-open-answers/index.ts:**
 ```tsx
-// Zmienić typ aiEvaluation z AiEvaluation na Record<number, AiEvaluation>
-// I wyświetlać przy każdym pytaniu osobno
-{isOpenEnded && disabled && questionEvaluations && (
-  <AiEvaluationBadge 
-    evaluation={questionEvaluations[qIndex]} 
-    showFeedback={true}
-    compact={true}
-  />
-)}
+// Linia 167-172 - zachować exercise_index z inputu
+evaluations = evaluations.map((e, idx) => ({
+  question_index: e.question_index ?? answers[idx]?.question_index ?? idx,
+  exercise_index: answers[idx]?.exercise_index, // DODAĆ - z inputu
+  quality_score: Math.max(0, Math.min(1, e.quality_score || 0)),
+  is_acceptable: e.is_acceptable ?? (e.quality_score >= 0.7),
+  feedback: e.feedback || 'Thank you for your answer.'
+}));
 ```
 
-### Zmiana 5-6: Obliczanie mastery (Problem 1 i 2)
+---
 
-W hookach dodać funkcję obliczającą mastery dla zamkniętych ćwiczeń:
+## Lista plików do edycji
 
-```tsx
-const calculateClosedExerciseMastery = (
-  exerciseType: string,
-  exerciseData: any,
-  answers: Record<number, any>
-): number | null => {
-  // Tylko dla zamkniętych ćwiczeń
-  const closedTypes = ['multiple-choice', 'true-false', 'matching', 'fill-in-blanks', ...];
-  if (!closedTypes.includes(exerciseType)) return null;
-  
-  let correct = 0;
-  let total = 0;
-  
-  // Logika porównania zależy od typu ćwiczenia
-  if (exerciseType === 'multiple-choice' && exerciseData.questions) {
-    exerciseData.questions.forEach((q: any, idx: number) => {
-      const correctOption = q.options?.find((o: any) => o.correct)?.text;
-      if (answers[idx] === correctOption) correct++;
-      total++;
-    });
-  }
-  // ... analogicznie dla innych typów
-  
-  return total > 0 ? Math.round((correct / total) * 100) : null;
-};
-```
+| Problem | Plik | Zmiana |
+|---------|------|--------|
+| 1, 2 | `src/pages/SharedWorksheet.tsx` | Dodać `exercises` do hooka |
+| 1, 2 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Debug logów, sprawdzić dlaczego calculateClosedExerciseMastery zwraca null |
+| 1, 2 | `src/hooks/useInteractiveHomework.tsx` | Sprawdzić struktury danych dla antonyms/matching-halves |
+| 3 | `src/components/worksheet/NanoSkillBadge.tsx` | Dodać kontrolowany state dla tooltip |
+| 4 | `supabase/functions/verify-open-answers/index.ts` | Dodać `exercise_index` do zwracanej odpowiedzi |
+| 4 | `src/hooks/useInteractiveHomework.tsx` | Naprawić mapowanie evaluation -> exercise_index |
 
 ---
 
 ## Oczekiwane rezultaty
 
-1. **Problem 5 (MC Audio shuffle):** Odpowiedzi A, B, C, D będą w tej samej kolejności w SharedWorksheet i LiveSession
-2. **Problem 3 (Tooltip):** Tooltip pojawi się natychmiast po najechaniu na badge "ns (94%)" i zniknie po odsunięciu kursora
-3. **Problem 4 (AI per-question):** Każde pytanie otwarte będzie miało osobną ocenę AI z feedbackiem
-4. **Problem 1 i 2 (Mastery):** Pole `mastery` będzie wypełnione dla zamkniętych ćwiczeń (0-100%)
+1. **Problem 1 i 2:** Eventy `worksheet_answer_saved` i `homework_answer_submitted` będą mieć wypełnione pole `mastery` (0-100%) dla zamkniętych ćwiczeń
+
+2. **Problem 3:** Tooltip z pełną nazwą nano skill pojawi się natychmiast po najechaniu na badge "ns (94%)" i zniknie natychmiast po odsunięciu kursora
+
+3. **Problem 4:** Każde pytanie otwarte będzie miało osobną ocenę AI z feedbackiem wyświetlaną przy tym pytaniu
 
 ---
 
-## Uwaga o pełnej integracji nano_skill_ratings
+## Sekcja techniczna - szczegóły debugowania
 
-Aby eventy worksheet/homework miały pełną strukturę `nano_skill_ratings` jak eventy nauczyciela, potrzebna jest większa refaktoryzacja:
-- Frontend musi przekazywać dane nano_skill z worksheet JSON do RPC
-- Triggery SQL muszą obsługiwać nową strukturę
-- To może być zrealizowane w osobnym zadaniu po podstawowych naprawkach
+### Debug dla Problemu 1/2 (mastery null):
+
+1. W `calculateClosedExerciseMastery` dodać console.log:
+```tsx
+console.log('[calculateClosedExerciseMastery]', {
+  exerciseType,
+  hasExerciseData: !!exerciseData,
+  dataKeys: exerciseData ? Object.keys(exerciseData) : [],
+  answersCount: Object.keys(answers).length
+});
+```
+
+2. Sprawdzić czy `exerciseData.items` ma poprawną strukturę dla `antonyms`:
+   - Czy każdy item ma pole `answer`/`antonym`?
+   - Czy odpowiedź studenta (np. "G") to litera czy tekst?
+
+### Debug dla Problemu 4 (AI evaluation):
+
+1. W console.log sprawdzić strukturę `answersToVerify`:
+```tsx
+console.log('[submitHomework] answersToVerify:', JSON.stringify(answersToVerify, null, 2));
+```
+
+2. Sprawdzić czy `verifyResult.evaluations` zawiera `exercise_index`:
+```tsx
+console.log('[submitHomework] Raw evaluations:', JSON.stringify(verifyResult.evaluations, null, 2));
+```
+
+---
+
+## Uwaga o docelowej architekturze nano_skill_ratings
+
+Obecny system loguje tylko ogólne `mastery` (0-100%) per ćwiczenie. Aby osiągnąć pełną strukturę jak w `exercise_mastery_evaluation` (z `nano_skill_ratings` per-item), potrzebna jest większa refaktoryzacja:
+
+1. Frontend musi pobierać `nano_skill` z każdego pytania w ćwiczeniu
+2. Obliczać poprawność per-item
+3. Tworzyć strukturę `nano_skill_ratings: [{ name, reason, mastery }]`
+4. Przekazywać to do RPC jako JSON
+
+To może być zrealizowane w osobnym zadaniu - obecny plan skupia się na naprawie działających funkcji.
