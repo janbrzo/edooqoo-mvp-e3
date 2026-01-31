@@ -2,279 +2,223 @@
 
 # Plan naprawy 2 problemów
 
-## PODSUMOWANIE ZNALEZIONYCH PRZYCZYN
+## 📊 Podsumowanie analizy
 
-### PROBLEM 1 (brak nano_skill_ratings per-item w worksheet/homework eventach)
+### PROBLEM 1: `nano_skill_ratings` jest pustą tablicą `[]` w eventach
 
-**Analiza porównawcza:**
+**Znaleziona przyczyna główna:**
 
-| Event Type | Struktura payload | Problem |
-|------------|------------------|---------|
-| `exercise_mastery_evaluation` (wzorcowy) | `nano_skill_ratings: [{ name, reason, mastery }]` | ✅ Prawidłowa |
-| `worksheet_answer_saved` | `mastery: 10` (jedno pole) | ❌ Brak per-item |
-| `homework_answer_submitted` | `mastery: null` (jedno pole) | ❌ Brak per-item |
+W pliku `src/utils/masteryCalculator.ts` funkcja `safeGetNanoSkill` (linie 46-57) NIE obsługuje przypadku gdy `nano_skill` jest **tablicą**:
 
-**Przyczyna główna:**
-System obecnie zapisuje tylko **ogólne mastery** dla całego ćwiczenia w kolumnie `mastery` tabeli `worksheet_student_answers`. Brakuje:
-1. Kolumny do przechowywania `nano_skill_ratings` per-item
-2. Logiki frontendowej do budowania tej struktury
-3. Triggera SQL do przepisywania tej struktury do event_payload
-
-**Wymagane zmiany (architektura):**
-1. Dodać kolumnę `item_evaluations JSONB` do tabel `worksheet_student_answers` i `homework_student_answers`
-2. Frontend musi budować tablicę `item_evaluations` z:
-   - `name` - pobrane z `nano_skill.name` każdego pytania
-   - `reason` - pobrane z `nano_skill.reason` każdego pytania
-   - `mastery` - obliczone (closed: automatycznie, open: po AI verification)
-3. Zaktualizować RPC `save_worksheet_answer` i `save_homework_answer` o parametr `p_item_evaluations`
-4. Zaktualizować triggery SQL aby przepisywać `item_evaluations` do `nano_skill_ratings` w event_payload
-
----
-
-### PROBLEM 2 (Tooltip NanoSkillBadge nie pokazuje się)
-
-**Analiza kodu:**
-```tsx
-<TooltipProvider delayDuration={0}>
-  <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
-    <TooltipTrigger asChild>
-      <Badge
-        onMouseEnter={() => setIsTooltipOpen(true)}
-        onMouseLeave={() => setIsTooltipOpen(false)}
-      >
-```
-
-**Potencjalne przyczyny:**
-1. **Radix Portal problem** - TooltipContent jest renderowany przez Portal, ale może być poza widocznym obszarem lub ma `opacity: 0`
-2. **CSS visibility/overflow** - parent elementy mogą mieć `overflow: hidden` które blokuje Portal
-3. **Conflict z kontrolowanym stanem** - używanie `open` + `onOpenChange` + `onMouseEnter/Leave` może powodować konflikt stanów
-
-**Rozwiązanie:**
-Sprawdziłem że komponent używa poprawnie kontrolowanego stanu. Problem prawdopodobnie jest w tym, że:
-- `TooltipTrigger asChild` używa Badge który może nie przekazywać poprawnie ref do Radix
-- Portal może nie mieć poprawnego `z-index` w kontekście renderowania
-
-**Proponowane podejście - użyć HoverCard zamiast Tooltip:**
-HoverCard z Radix jest bardziej niezawodny dla interaktywnych tooltipów z treścią:
-```tsx
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-
-<HoverCard openDelay={0} closeDelay={0}>
-  <HoverCardTrigger asChild>
-    <Badge ...>ns (94%)</Badge>
-  </HoverCardTrigger>
-  <HoverCardContent side="top" align="start" className="w-72 p-3">
-    {/* treść tooltipa */}
-  </HoverCardContent>
-</HoverCard>
-```
-
----
-
-## PLAN IMPLEMENTACJI
-
-### Faza 1: Naprawa Tooltipa (PROBLEM 2) - Szybka naprawa
-
-| # | Plik | Zmiana |
-|---|------|--------|
-| 1 | `src/components/worksheet/NanoSkillBadge.tsx` | Zamienić `Tooltip` na `HoverCard` który jest bardziej niezawodny dla bogatej treści |
-
-**Kod po zmianie:**
-```tsx
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-
-// W komponencie:
-<HoverCard openDelay={0} closeDelay={0}>
-  <HoverCardTrigger asChild>
-    <Badge
-      variant="outline"
-      className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
-    >
-      ns ({confidencePercent}%)
-    </Badge>
-  </HoverCardTrigger>
-  <HoverCardContent 
-    side="top" 
-    align="start" 
-    className="w-72 p-3 z-[9999]"
-  >
-    <div className="space-y-2">
-      <p className="font-semibold text-sm text-gray-900">{displayName}</p>
-      <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
-      ...
-    </div>
-  </HoverCardContent>
-</HoverCard>
-```
-
----
-
-### Faza 2: Dodanie nano_skill_ratings per-item (PROBLEM 1)
-
-#### Krok 1: Migracja SQL - dodanie kolumny item_evaluations
-
-```sql
--- Dodaj kolumnę item_evaluations do worksheet_student_answers
-ALTER TABLE public.worksheet_student_answers 
-ADD COLUMN IF NOT EXISTS item_evaluations JSONB;
-
--- Dodaj kolumnę item_evaluations do homework_student_answers
-ALTER TABLE public.homework_student_answers 
-ADD COLUMN IF NOT EXISTS item_evaluations JSONB;
-
--- Zaktualizuj save_worksheet_answer o p_item_evaluations
-CREATE OR REPLACE FUNCTION public.save_worksheet_answer(
-    p_worksheet_id UUID,
-    p_student_email TEXT,
-    p_exercise_index INTEGER,
-    p_exercise_type TEXT,
-    p_answers JSONB,
-    p_time_spent_ms INTEGER DEFAULT 0,
-    p_mastery INTEGER DEFAULT NULL,
-    p_item_evaluations JSONB DEFAULT NULL
-)
-...
-```
-
-#### Krok 2: Zaktualizować trigger SQL
-
-```sql
--- Trigger przepisuje item_evaluations jako nano_skill_ratings
-INSERT INTO public.student_events (..., event_payload)
-VALUES (...,
-  jsonb_build_object(
-    'answer_id', NEW.id,
-    'exercise_index', NEW.exercise_index,
-    'exercise_type', NEW.exercise_type,
-    'answers', NEW.answers,
-    'mastery', NEW.mastery,
-    'nano_skill_ratings', COALESCE(NEW.item_evaluations, '[]'::jsonb),
-    'time_spent_seconds', ROUND(COALESCE(NEW.time_spent_ms, 0) / 1000.0, 1)
-  )
-);
-```
-
-#### Krok 3: Frontend - budowanie item_evaluations
-
-W `useInteractiveSharedWorksheet.tsx`:
-
-```tsx
-// Nowa funkcja do budowania item_evaluations
-const buildItemEvaluations = (
-  exerciseData: any,
-  answers: Record<string | number, any>,
-  exerciseType: string
-): { name: string; reason: string; mastery: number }[] | null => {
-  if (!exerciseData) return null;
-  
-  const itemEvaluations: { name: string; reason: string; mastery: number }[] = [];
-  
-  // Pobierz pytania/itemy z exercise data
-  const items = exerciseData.questions || exerciseData.items || 
-                exerciseData.sentences || exerciseData.statements || [];
-  
-  items.forEach((item: any, idx: number) => {
-    const nanoSkill = safeGetNanoSkill(item);
-    if (!nanoSkill) return;
-    
-    // Oblicz mastery dla tego itemu
-    const itemMastery = calculateItemMastery(exerciseType, exerciseData, idx, answers[idx]);
-    
-    itemEvaluations.push({
-      name: nanoSkill.name,
-      reason: nanoSkill.reason,
-      mastery: itemMastery ?? 0
-    });
-  });
-  
-  return itemEvaluations.length > 0 ? itemEvaluations : null;
+```typescript
+// OBECNY KOD (BŁĘDNY):
+export const safeGetNanoSkill = (item: any): NanoSkillData | null => {
+  if (!item) return null;
+  const ns = item?.nano_skill || item?.nanoSkill;
+  if (ns && ns.name) {  // ❌ Jeśli ns to tablica, ns.name = undefined!
+    return { name: ns.name, reason: ns.reason || '', confidence: ns.confidence };
+  }
+  return null;  // ❌ Zawsze zwraca null dla tablic
 };
-
-// W scheduleAutoSave:
-const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers, exerciseType);
-
-saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);
 ```
 
-#### Krok 4: Analogiczne zmiany w useInteractiveHomework.tsx
-
-Identyczna logika - budowanie `item_evaluations` dla każdego ćwiczenia.
-
----
-
-## OCZEKIWANE REZULTATY
-
-### Po implementacji PROBLEM 1:
-
-Event `worksheet_answer_saved` będzie miał strukturę:
+Natomiast w bazie danych `nano_skill` jest często zapisane jako **tablica** (co widać w zapytaniu SQL):
 ```json
-{
-  "exercise_index": 0,
-  "exercise_type": "multiple-choice-picture",
-  "answers": { "0": "A", "1": "B", ... },
-  "mastery": 60,
-  "nano_skill_ratings": [
-    {
-      "name": "ns.reading.main_activity_identification",
-      "reason": "Tests ability to identify the central action in a visual scene.",
-      "mastery": 100
-    },
-    {
-      "name": "ns.reading.detail_inference",
-      "reason": "Tests inference of specific action from visual context.",
-      "mastery": 0
-    },
-    ...
-  ],
-  "time_spent_seconds": 7.4
+"nano_skill": [
+  {
+    "name": "ns.grammar.reported_speech.tense_shift_past_perfect",
+    "confidence": 0.92,
+    "reason": "Tests correct backshifting..."
+  }
+]
+```
+
+Funkcja `safeGetNanoSkill` w pliku `src/utils/textObjectFixer.ts` (linie 116-138) **prawidłowo** obsługuje tablice:
+```typescript
+// PRAWIDŁOWA WERSJA w textObjectFixer.ts:
+if (Array.isArray(ns)) {
+  return ns[0] || null;  // ✅ Pobiera pierwszy element z tablicy
 }
 ```
 
-### Po implementacji PROBLEM 2:
-
-Tooltip (HoverCard) pojawi się natychmiast po najechaniu na badge "ns (94%)" pokazując:
-- Nazwę skill (np. "main activity identification")
-- Reason (opis)
-- Full ID (ns.reading.main_activity_identification)
-- Confidence (94%)
-
-I zniknie natychmiast po odsunięciu kursora.
+**Konsekwencja:**
+- `buildItemEvaluations()` nie może znaleźć `nano_skill` dla żadnego pytania
+- Zwraca pustą tablicę `[]`
+- RPC zapisuje `item_evaluations = null` do bazy
+- Trigger przepisuje to jako `nano_skill_ratings: []` do event_payload
 
 ---
 
-## LISTA PLIKÓW DO EDYCJI
+### PROBLEM 2: HoverCard/Tooltip nie pokazuje etykiety
 
-| # | Plik | Zmiana | Priorytet |
-|---|------|--------|-----------|
-| 1 | `src/components/worksheet/NanoSkillBadge.tsx` | Zamienić Tooltip na HoverCard | WYSOKI |
-| 2 | SQL Migration | Dodać kolumnę `item_evaluations` do tabel | ŚREDNI |
-| 3 | SQL Migration | Zaktualizować `save_worksheet_answer` i `save_homework_answer` | ŚREDNI |
-| 4 | SQL Migration | Zaktualizować triggery do przepisywania `nano_skill_ratings` | ŚREDNI |
-| 5 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Dodać `buildItemEvaluations` i przekazywać do RPC | ŚREDNI |
-| 6 | `src/hooks/useInteractiveHomework.tsx` | Dodać `buildItemEvaluations` i przekazywać do RPC | ŚREDNI |
+**Analiza kodu `NanoSkillBadge.tsx`:**
+
+Komponent używa `HoverCard` z Radix UI, ale może nie działać poprawnie z powodu:
+
+1. **Brak `HoverCardPrimitive.Portal`** - HoverCardContent jest renderowany w aktualnym kontekście DOM, nie do body. Jeśli parent element ma `overflow: hidden`, content jest obcięty.
+
+2. **Konflikt z `overflow-hidden`** - W `ExerciseMatching.tsx` linia 166:
+   ```tsx
+   <div className="... overflow-hidden">
+   ```
+   To blokuje widoczność HoverCardContent.
+
+3. **Dodatkowy problem z pozycjonowaniem** - HoverCard w Radix domyślnie używa `floating-ui` do pozycjonowania, ale może być "wypychany" poza ekran.
+
+**Dowód problemu:**
+Wcześniej gdy tooltip był `position: fixed` w lewym górnym rogu - działał (był widoczny). Po zmianie na pozycjonowanie względne - przestał być widoczny, co wskazuje na `overflow` lub `z-index` issues.
 
 ---
 
-## SEKCJA TECHNICZNA
+## 🔧 Plan implementacji
 
-### Obliczanie mastery per-item dla zamkniętych ćwiczeń
+### Zmiana 1: Naprawić `safeGetNanoSkill` w `masteryCalculator.ts`
 
-Logika jest już zaimplementowana w `NanoSkillMasteryModal.tsx` funkcja `calculateInitialMasteryForItem`. Musimy ją wyeksportować do nowego utility file i używać w hookach:
+Dodać obsługę tablic tak jak w `textObjectFixer.ts`:
 
-```tsx
-// src/utils/masteryCalculator.ts
-export const calculateItemMastery = (
-  exerciseType: string,
-  exerciseData: any,
-  itemIndex: number,
-  studentAnswer: any
-): number | null => {
-  // Logika z calculateInitialMasteryForItem
-  // Zwraca 0-100 lub null dla open-ended
+```typescript
+// src/utils/masteryCalculator.ts - linie 46-57
+export const safeGetNanoSkill = (item: any): NanoSkillData | null => {
+  if (!item) return null;
+  
+  let ns = item?.nano_skill || item?.nanoSkill;
+  
+  // NOWA LOGIKA: Obsługa tablic (Gemini czasem zwraca tablicę)
+  if (Array.isArray(ns)) {
+    ns = ns[0];  // Weź pierwszy element z tablicy
+  }
+  
+  if (ns && ns.name) {
+    return {
+      name: ns.name,
+      reason: ns.reason || '',
+      confidence: ns.confidence
+    };
+  }
+  return null;
 };
 ```
 
-### Weryfikacja AI dla otwartych ćwiczeń
+---
 
-Dla zadań otwartych (listening-comprehension, describe, etc.) mastery per-item musi być pobierane z `verify-open-answers` edge function. To już działa - trzeba tylko zmapować wyniki do struktury `item_evaluations`.
+### Zmiana 2: Naprawić HoverCard w `NanoSkillBadge.tsx`
+
+Użyć `forceMount` + `Portal` aby wymusić renderowanie do body i ominąć problemy z `overflow`:
+
+```tsx
+// src/components/worksheet/NanoSkillBadge.tsx
+import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
+
+// W komponencie zamiast HoverCardContent:
+<HoverCardPrimitive.Portal>
+  <HoverCardPrimitive.Content 
+    side="top" 
+    align="start"
+    sideOffset={8}
+    className="w-72 p-3 z-[9999] bg-white border rounded-lg shadow-lg"
+    style={{ pointerEvents: 'auto' }}
+  >
+    {/* treść */}
+  </HoverCardPrimitive.Content>
+</HoverCardPrimitive.Portal>
+```
+
+Alternatywnie, jeśli to nie pomoże, użyć prostego `Popover` który jest bardziej niezawodny, lub wrócić do `position: fixed` z prostym state-based tooltip:
+
+```tsx
+// Prostsze rozwiązanie - custom tooltip z position: fixed
+const [isHovered, setIsHovered] = useState(false);
+const [position, setPosition] = useState({ x: 0, y: 0 });
+
+<Badge
+  onMouseEnter={(e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPosition({ x: rect.left, y: rect.top - 8 });
+    setIsHovered(true);
+  }}
+  onMouseLeave={() => setIsHovered(false)}
+>
+  ns ({confidencePercent}%)
+</Badge>
+
+{isHovered && ReactDOM.createPortal(
+  <div 
+    style={{ 
+      position: 'fixed', 
+      left: position.x, 
+      top: position.y,
+      transform: 'translateY(-100%)',
+      zIndex: 9999 
+    }}
+    className="w-72 p-3 bg-white border rounded-lg shadow-lg"
+  >
+    {/* treść */}
+  </div>,
+  document.body
+)}
+```
+
+---
+
+## 📋 Lista plików do edycji
+
+| # | Plik | Zmiana | Priorytet |
+|---|------|--------|-----------|
+| 1 | `src/utils/masteryCalculator.ts` | Naprawić `safeGetNanoSkill` - dodać obsługę tablic | **KRYTYCZNY** |
+| 2 | `src/components/worksheet/NanoSkillBadge.tsx` | Naprawić HoverCard - użyć Portal lub custom tooltip | **WYSOKI** |
+| 3 | `docs/TECHNICAL_DOCUMENTATION.md` | Zaktualizować dokumentację | NISKI |
+
+---
+
+## ✅ Oczekiwane rezultaty
+
+### Po naprawie PROBLEM 1:
+
+Event `worksheet_answer_saved` będzie zawierał pełną strukturę `nano_skill_ratings`:
+```json
+{
+  "exercise_index": 0,
+  "exercise_type": "true-false",
+  "mastery": 56,
+  "nano_skill_ratings": [
+    {
+      "name": "ns.grammar.reported_speech.tense_shift_past_perfect",
+      "reason": "Tests correct backshifting from 'I spoke' to 'she had spoken'",
+      "mastery": 100,
+      "hasValue": true
+    },
+    {
+      "name": "ns.grammar.reported_speech.time_expression_change",
+      "reason": "Tests recognition of time expression changes",
+      "mastery": 0,
+      "hasValue": true
+    }
+    // ... dla każdego pytania osobno
+  ]
+}
+```
+
+### Po naprawie PROBLEM 2:
+
+Tooltip z pełną informacją o nano skill pojawi się:
+- Natychmiast po najechaniu kursorem na badge "ns (94%)"
+- Bezpośrednio nad/przy badge (nie w rogu ekranu)
+- Zniknie natychmiast po odsunięciu kursora
+- Będzie zawierać: nazwę skill, reason, full ID, confidence
+
+---
+
+## 🧪 Jak przetestować
+
+1. **Test PROBLEM 1:**
+   - Otwórz shared worksheet jako student
+   - Odpowiedz na kilka pytań w ćwiczeniu True/False
+   - Poczekaj na auto-save (1.5s)
+   - Sprawdź tabelę `student_events` - pole `nano_skill_ratings` powinno zawierać tablicę z danymi dla każdego pytania
+
+2. **Test PROBLEM 2:**
+   - Otwórz worksheet jako nauczyciel (Live Session)
+   - Znajdź badge "ns (%)" przy pytaniu
+   - Najedź kursorem na badge
+   - Tooltip powinien pojawić się natychmiast bezpośrednio przy badge
 
