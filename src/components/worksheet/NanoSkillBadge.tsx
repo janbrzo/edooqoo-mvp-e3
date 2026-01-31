@@ -1,10 +1,6 @@
 import React, { useState } from "react";
+import ReactDOM from "react-dom";
 import { Badge } from "@/components/ui/badge";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import {
   Popover,
   PopoverContent,
@@ -35,6 +31,8 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
 }) => {
   const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
   const [editedSkill, setEditedSkill] = useState<NanoSkill | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   if (!nanoSkill) return null;
 
@@ -52,7 +50,7 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
   const getBadgeColor = (confidence: number): string => {
     if (confidence >= 0.8) return "bg-green-50 text-green-700 border-green-200";
     if (confidence >= 0.5) return "bg-yellow-50 text-yellow-700 border-yellow-200";
-    return "bg-gray-50 text-gray-600 border-gray-200";
+    return "bg-muted text-muted-foreground border-border";
   };
 
   const handleEditStart = () => {
@@ -72,38 +70,59 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
     setIsEditPopoverOpen(false);
   };
 
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltipPosition({ 
+      x: rect.left + rect.width / 2, 
+      y: rect.top - 8 
+    });
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
+
   return (
     <div className={`inline-flex items-center gap-1 ${className}`}>
-      {/* PROBLEM 2 FIX: Using HoverCard instead of Tooltip for more reliable display */}
-      <HoverCard openDelay={0} closeDelay={0}>
-        <HoverCardTrigger asChild>
-          <Badge
-            variant="outline"
-            className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
-          >
-            ns ({confidencePercent}%)
-          </Badge>
-        </HoverCardTrigger>
-        <HoverCardContent 
-          side="top" 
-          align="start"
-          sideOffset={8}
-          className="w-72 p-3 z-[9999] bg-white border shadow-lg"
+      {/* Badge with custom Portal tooltip */}
+      <Badge
+        variant="outline"
+        className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        ns ({confidencePercent}%)
+      </Badge>
+
+      {/* Custom Portal Tooltip - renders to document.body to avoid overflow issues */}
+      {isHovered && ReactDOM.createPortal(
+        <div 
+          style={{ 
+            position: 'fixed', 
+            left: tooltipPosition.x, 
+            top: tooltipPosition.y,
+            transform: 'translate(-50%, -100%)',
+            zIndex: 99999,
+            pointerEvents: 'none'
+          }}
+          className="w-72 p-3 bg-popover border border-border rounded-lg shadow-lg animate-in fade-in-0 zoom-in-95"
         >
           <div className="space-y-2">
-            <p className="font-semibold text-sm text-gray-900">{displayName}</p>
-            <p className="text-xs text-gray-600">{nanoSkill.reason}</p>
-            <div className="flex items-center gap-2 pt-1 border-t">
+            <p className="font-semibold text-sm text-foreground">{displayName}</p>
+            <p className="text-xs text-muted-foreground">{nanoSkill.reason}</p>
+            <div className="flex items-center gap-2 pt-1 border-t border-border">
               <span className="text-xs text-muted-foreground">Full ID:</span>
-              <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
+              <code className="text-xs bg-muted px-1.5 py-0.5 rounded break-all">{nanoSkill.name}</code>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Confidence:</span>
               <span className="text-xs font-medium">{confidencePercent}%</span>
             </div>
           </div>
-        </HoverCardContent>
-      </HoverCard>
+        </div>,
+        document.body
+      )}
 
       {onEdit && (
         <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
