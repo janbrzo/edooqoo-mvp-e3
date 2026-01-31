@@ -45,7 +45,14 @@ export const OPEN_ENDED_EXERCISE_TYPES = [
  */
 export const safeGetNanoSkill = (item: any): NanoSkillData | null => {
   if (!item) return null;
-  const ns = item?.nano_skill || item?.nanoSkill;
+  
+  let ns = item?.nano_skill || item?.nanoSkill;
+  
+  // Handle arrays - Gemini sometimes returns nano_skill as array
+  if (Array.isArray(ns)) {
+    ns = ns[0];
+  }
+  
   if (ns && ns.name) {
     return {
       name: ns.name,
