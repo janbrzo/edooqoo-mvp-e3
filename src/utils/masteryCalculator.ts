@@ -11,6 +11,7 @@
  */
 
 export interface ItemEvaluation {
+  question_index: number;  // Index pytania w ćwiczeniu (0-based)
   name: string;
   reason: string;
   mastery: number;
@@ -316,6 +317,7 @@ export const buildItemEvaluations = (
     }
     
     itemEvaluations.push({
+      question_index: idx,  // Indeks pytania dla precyzyjnego mapowania
       name: nanoSkill.name,
       reason: nanoSkill.reason,
       mastery: itemMastery ?? 0,
