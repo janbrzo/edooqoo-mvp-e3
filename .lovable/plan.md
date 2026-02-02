@@ -1,224 +1,198 @@
 
 
-# Plan naprawy 2 problemów
+# Plan naprawy 2 problemów z logowaniem eventów
 
-## 📊 Podsumowanie analizy
+## PODSUMOWANIE ANALIZY
 
-### PROBLEM 1: `nano_skill_ratings` jest pustą tablicą `[]` w eventach
+### PROBLEM 1.1 i 1.2: Zduplikowane dane w event_payload + brak czasu per-item
 
-**Znaleziona przyczyna główna:**
-
-W pliku `src/utils/masteryCalculator.ts` funkcja `safeGetNanoSkill` (linie 46-57) NIE obsługuje przypadku gdy `nano_skill` jest **tablicą**:
-
-```typescript
-// OBECNY KOD (BŁĘDNY):
-export const safeGetNanoSkill = (item: any): NanoSkillData | null => {
-  if (!item) return null;
-  const ns = item?.nano_skill || item?.nanoSkill;
-  if (ns && ns.name) {  // ❌ Jeśli ns to tablica, ns.name = undefined!
-    return { name: ns.name, reason: ns.reason || '', confidence: ns.confidence };
-  }
-  return null;  // ❌ Zawsze zwraca null dla tablic
-};
-```
-
-Natomiast w bazie danych `nano_skill` jest często zapisane jako **tablica** (co widać w zapytaniu SQL):
+**Co widzę w event_payload teraz:**
 ```json
-"nano_skill": [
-  {
-    "name": "ns.grammar.reported_speech.tense_shift_past_perfect",
-    "confidence": 0.92,
-    "reason": "Tests correct backshifting..."
-  }
-]
-```
-
-Funkcja `safeGetNanoSkill` w pliku `src/utils/textObjectFixer.ts` (linie 116-138) **prawidłowo** obsługuje tablice:
-```typescript
-// PRAWIDŁOWA WERSJA w textObjectFixer.ts:
-if (Array.isArray(ns)) {
-  return ns[0] || null;  // ✅ Pobiera pierwszy element z tablicy
+{
+  "answers": { "0": "false", "1": "false", ... },  // ❌ ZBĘDNE - już jest w nano_skill_ratings
+  "mastery": 56,  // ❌ ZBĘDNE - suma jest w nano_skill_ratings
+  "exercise_type": "true-false-picture",
+  "exercise_index": 6,
+  "nano_skill_ratings": [
+    { "name": "ns.reading...", "reason": "...", "mastery": 0, "hasValue": true },
+    { "name": "ns.reading...", "reason": "...", "mastery": 100, "hasValue": true }
+  ],
+  "time_spent_seconds": 8  // ❌ Jest tylko dla całego ćwiczenia, nie per-item
 }
 ```
 
-**Konsekwencja:**
-- `buildItemEvaluations()` nie może znaleźć `nano_skill` dla żadnego pytania
-- Zwraca pustą tablicę `[]`
-- RPC zapisuje `item_evaluations = null` do bazy
-- Trigger przepisuje to jako `nano_skill_ratings: []` do event_payload
+**Czego brakuje:**
+- A. Indeks przykładu (`question_index`) w każdym elemencie `nano_skill_ratings`
+- B. Czas per-item nie jest możliwy do zmierzenia bez dodatkowego trackingu (uczeń nie klika "następne pytanie" - odpowiada na wszystkie naraz)
+
+**Decyzja architektoniczna:**
+- `time_spent_seconds` PER-ITEM jest technicznie niemożliwy bez fundamentalnej zmiany UI (wymusiłoby pokazywanie jednego pytania naraz)
+- Możemy dodać `question_index` do każdego elementu nano_skill_ratings
+- Możemy usunąć zduplikowane pola `answers` i ogólne `mastery` z event_payload
 
 ---
 
-### PROBLEM 2: HoverCard/Tooltip nie pokazuje etykiety
+### PROBLEM 2: Podwójne logowanie - dwa triggery aktywne jednocześnie
 
-**Analiza kodu `NanoSkillBadge.tsx`:**
+**Potwierdzenie w bazie danych:**
+```
+event_type: worksheet_answer_saved | event_source: worksheet      → 90 rekordów (STARY)
+event_type: learning_activity      | event_source: worksheet_answer_saved → 4 rekordy (NOWY)
+```
 
-Komponent używa `HoverCard` z Radix UI, ale może nie działać poprawnie z powodu:
+**Przyczyna:**
+W bazie istnieją DWA różne triggery na tabeli `worksheet_student_answers`:
+1. `trigger_log_worksheet_answer_event` → funkcja `log_worksheet_answer_event()` (stary)
+2. `trg_worksheet_answer_to_events` → funkcja `log_worksheet_answer_to_events()` (nowy)
 
-1. **Brak `HoverCardPrimitive.Portal`** - HoverCardContent jest renderowany w aktualnym kontekście DOM, nie do body. Jeśli parent element ma `overflow: hidden`, content jest obcięty.
+Ostatnia migracja (`20260130084312_43f38a26-...`) usunęła tylko trigger `trg_worksheet_answer_to_events` przed jego ponownym utworzeniem, ale NIE usunęła starego triggera `trigger_log_worksheet_answer_event`.
 
-2. **Konflikt z `overflow-hidden`** - W `ExerciseMatching.tsx` linia 166:
-   ```tsx
-   <div className="... overflow-hidden">
-   ```
-   To blokuje widoczność HoverCardContent.
-
-3. **Dodatkowy problem z pozycjonowaniem** - HoverCard w Radix domyślnie używa `floating-ui` do pozycjonowania, ale może być "wypychany" poza ekran.
-
-**Dowód problemu:**
-Wcześniej gdy tooltip był `position: fixed` w lewym górnym rogu - działał (był widoczny). Po zmianie na pozycjonowanie względne - przestał być widoczny, co wskazuje na `overflow` lub `z-index` issues.
+**Rozwiązanie:**
+Usunąć stary trigger `trigger_log_worksheet_answer_event` w nowej migracji SQL.
 
 ---
 
-## 🔧 Plan implementacji
+## PLAN IMPLEMENTACJI
 
-### Zmiana 1: Naprawić `safeGetNanoSkill` w `masteryCalculator.ts`
+### Zmiana 1: Nowa migracja SQL - usunięcie starych triggerów
 
-Dodać obsługę tablic tak jak w `textObjectFixer.ts`:
+```sql
+-- Usuń STARY trigger dla worksheet_student_answers
+DROP TRIGGER IF EXISTS trigger_log_worksheet_answer_event ON public.worksheet_student_answers;
+DROP FUNCTION IF EXISTS public.log_worksheet_answer_event();
+
+-- Usuń STARY trigger dla homework_student_answers (jeśli istnieje)
+DROP TRIGGER IF EXISTS trigger_log_homework_answer_event ON public.homework_student_answers;
+DROP FUNCTION IF EXISTS public.log_homework_answer_event();
+```
+
+### Zmiana 2: Zaktualizować trigger worksheet aby usunąć zbędne pola i dodać question_index
+
+Zaktualizować funkcję `log_worksheet_answer_to_events()`:
+
+```sql
+CREATE OR REPLACE FUNCTION public.log_worksheet_answer_to_events()
+RETURNS TRIGGER
+AS $$
+...
+    INSERT INTO public.student_events (
+        ...
+        event_payload
+    )
+    VALUES (
+        ...
+        jsonb_build_object(
+            'answer_id', NEW.id,
+            'exercise_index', NEW.exercise_index,
+            'exercise_type', NEW.exercise_type,
+            -- USUNIĘTE: 'answers', NEW.answers,
+            -- USUNIĘTE: 'mastery', NEW.mastery,
+            'nano_skill_ratings', COALESCE(NEW.item_evaluations, '[]'::jsonb),
+            'time_spent_seconds', ROUND(COALESCE(NEW.time_spent_ms, 0) / 1000.0, 1)
+        )
+    );
+...
+$$;
+```
+
+### Zmiana 3: Frontend - dodać question_index do item_evaluations
+
+W `src/utils/masteryCalculator.ts` funkcja `buildItemEvaluations()`:
 
 ```typescript
-// src/utils/masteryCalculator.ts - linie 46-57
-export const safeGetNanoSkill = (item: any): NanoSkillData | null => {
-  if (!item) return null;
-  
-  let ns = item?.nano_skill || item?.nanoSkill;
-  
-  // NOWA LOGIKA: Obsługa tablic (Gemini czasem zwraca tablicę)
-  if (Array.isArray(ns)) {
-    ns = ns[0];  // Weź pierwszy element z tablicy
-  }
-  
-  if (ns && ns.name) {
-    return {
-      name: ns.name,
-      reason: ns.reason || '',
-      confidence: ns.confidence
-    };
-  }
-  return null;
-};
+export interface ItemEvaluation {
+  question_index: number;  // DODAĆ
+  name: string;
+  reason: string;
+  mastery: number;
+  hasValue?: boolean;
+}
+
+// W buildItemEvaluations:
+itemEvaluations.push({
+  question_index: idx,  // DODAĆ
+  name: nanoSkill.name,
+  reason: nanoSkill.reason,
+  mastery: itemMastery ?? 0,
+  hasValue: itemMastery !== null
+});
 ```
 
 ---
 
-### Zmiana 2: Naprawić HoverCard w `NanoSkillBadge.tsx`
+## LISTA PLIKÓW DO EDYCJI
 
-Użyć `forceMount` + `Portal` aby wymusić renderowanie do body i ominąć problemy z `overflow`:
-
-```tsx
-// src/components/worksheet/NanoSkillBadge.tsx
-import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
-
-// W komponencie zamiast HoverCardContent:
-<HoverCardPrimitive.Portal>
-  <HoverCardPrimitive.Content 
-    side="top" 
-    align="start"
-    sideOffset={8}
-    className="w-72 p-3 z-[9999] bg-white border rounded-lg shadow-lg"
-    style={{ pointerEvents: 'auto' }}
-  >
-    {/* treść */}
-  </HoverCardPrimitive.Content>
-</HoverCardPrimitive.Portal>
-```
-
-Alternatywnie, jeśli to nie pomoże, użyć prostego `Popover` który jest bardziej niezawodny, lub wrócić do `position: fixed` z prostym state-based tooltip:
-
-```tsx
-// Prostsze rozwiązanie - custom tooltip z position: fixed
-const [isHovered, setIsHovered] = useState(false);
-const [position, setPosition] = useState({ x: 0, y: 0 });
-
-<Badge
-  onMouseEnter={(e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setPosition({ x: rect.left, y: rect.top - 8 });
-    setIsHovered(true);
-  }}
-  onMouseLeave={() => setIsHovered(false)}
->
-  ns ({confidencePercent}%)
-</Badge>
-
-{isHovered && ReactDOM.createPortal(
-  <div 
-    style={{ 
-      position: 'fixed', 
-      left: position.x, 
-      top: position.y,
-      transform: 'translateY(-100%)',
-      zIndex: 9999 
-    }}
-    className="w-72 p-3 bg-white border rounded-lg shadow-lg"
-  >
-    {/* treść */}
-  </div>,
-  document.body
-)}
-```
+| # | Plik/Akcja | Zmiana |
+|---|------------|--------|
+| 1 | **Nowa migracja SQL** | Usunąć stare triggery i funkcje |
+| 2 | **Nowa migracja SQL** | Zaktualizować funkcje triggerów - usunąć zbędne pola z event_payload |
+| 3 | `src/utils/masteryCalculator.ts` | Dodać `question_index` do interfejsu i funkcji `buildItemEvaluations()` |
+| 4 | `src/integrations/supabase/types.ts` | Zaktualizować typy jeśli potrzebne |
 
 ---
 
-## 📋 Lista plików do edycji
+## OCZEKIWANE REZULTATY
 
-| # | Plik | Zmiana | Priorytet |
-|---|------|--------|-----------|
-| 1 | `src/utils/masteryCalculator.ts` | Naprawić `safeGetNanoSkill` - dodać obsługę tablic | **KRYTYCZNY** |
-| 2 | `src/components/worksheet/NanoSkillBadge.tsx` | Naprawić HoverCard - użyć Portal lub custom tooltip | **WYSOKI** |
-| 3 | `docs/TECHNICAL_DOCUMENTATION.md` | Zaktualizować dokumentację | NISKI |
+### Po implementacji:
 
----
-
-## ✅ Oczekiwane rezultaty
-
-### Po naprawie PROBLEM 1:
-
-Event `worksheet_answer_saved` będzie zawierał pełną strukturę `nano_skill_ratings`:
+**Event `worksheet_answer_saved` będzie wyglądał tak (CZYSTA STRUKTURA):**
 ```json
 {
-  "exercise_index": 0,
-  "exercise_type": "true-false",
-  "mastery": 56,
+  "answer_id": "uuid-...",
+  "exercise_index": 6,
+  "exercise_type": "true-false-picture",
   "nano_skill_ratings": [
     {
-      "name": "ns.grammar.reported_speech.tense_shift_past_perfect",
-      "reason": "Tests correct backshifting from 'I spoke' to 'she had spoken'",
-      "mastery": 100,
+      "question_index": 0,
+      "name": "ns.reading.visual_inference_reported_action",
+      "reason": "Tests inference of ongoing action from visual cues.",
+      "mastery": 0,
       "hasValue": true
     },
     {
-      "name": "ns.grammar.reported_speech.time_expression_change",
-      "reason": "Tests recognition of time expression changes",
-      "mastery": 0,
+      "question_index": 1,
+      "name": "ns.reading.visual_contradiction_reported_setting",
+      "reason": "Requires identifying a contradiction.",
+      "mastery": 100,
       "hasValue": true
     }
-    // ... dla każdego pytania osobno
-  ]
+    // ... dla każdego pytania
+  ],
+  "time_spent_seconds": 8
 }
 ```
 
-### Po naprawie PROBLEM 2:
-
-Tooltip z pełną informacją o nano skill pojawi się:
-- Natychmiast po najechaniu kursorem na badge "ns (94%)"
-- Bezpośrednio nad/przy badge (nie w rogu ekranu)
-- Zniknie natychmiast po odsunięciu kursora
-- Będzie zawierać: nazwę skill, reason, full ID, confidence
+**BRAK zduplikowanych eventów:**
+- Tylko jeden event per zapis odpowiedzi (nie dwa jak teraz)
 
 ---
 
-## 🧪 Jak przetestować
+## UWAGA O CZASIE PER-ITEM
 
-1. **Test PROBLEM 1:**
-   - Otwórz shared worksheet jako student
-   - Odpowiedz na kilka pytań w ćwiczeniu True/False
-   - Poczekaj na auto-save (1.5s)
-   - Sprawdź tabelę `student_events` - pole `nano_skill_ratings` powinno zawierać tablicę z danymi dla każdego pytania
+Aby mieć prawdziwy `time_spent_seconds` dla każdego pytania osobno, musielibyśmy:
+1. Zmienić UI na pokazywanie jednego pytania naraz
+2. LUB dodać tracking focusu (gdy uczeń klika w pole odpowiedzi, zaczyna się timer dla tego pytania)
 
-2. **Test PROBLEM 2:**
-   - Otwórz worksheet jako nauczyciel (Live Session)
-   - Znajdź badge "ns (%)" przy pytaniu
-   - Najedź kursorem na badge
-   - Tooltip powinien pojawić się natychmiast bezpośrednio przy badge
+To wymaga znaczących zmian w architekturze i może być zrealizowane jako osobna funkcjonalność. Obecny system mierzy czas dla całego ćwiczenia, co jest akceptowalnym przybliżeniem dla analityki.
+
+---
+
+## SEKCJA TECHNICZNA
+
+### Weryfikacja triggerów przed zmianą
+
+Przed implementacją warto sprawdzić aktualne triggery:
+```sql
+SELECT trigger_name, event_manipulation, action_statement 
+FROM information_schema.triggers 
+WHERE event_object_table = 'worksheet_student_answers';
+```
+
+### Migracja danych historycznych
+
+Stare eventy z `event_type: worksheet_answer_saved` mogą zostać:
+- Usunięte (jeśli są zbędne) 
+- Pozostawione jako historia (bez wpływu na nowe logowanie)
+
+Rekomenduję zostawić dla historii i tylko naprawić logowanie przyszłych eventów.
 
