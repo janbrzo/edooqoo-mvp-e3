@@ -3,6 +3,7 @@ import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
 import { safeGetNanoSkill, safeGetText } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
+import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
 
 interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
   sentences: any[];
@@ -15,6 +16,8 @@ interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
   // NanoSkill editing
   onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill) => void;
   isSharedWorksheet?: boolean;
+  // AI Evaluations per sentence
+  aiEvaluations?: Record<number, AiEvaluation>;
 }
 
 // Helper to extract word_to_use from multiple possible data formats
@@ -63,7 +66,9 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
   disabled = false,
   // NanoSkill props
   onNanoSkillChange,
-  isSharedWorksheet = false
+  isSharedWorksheet = false,
+  // AI Evaluations
+  aiEvaluations
 }) => {
   return (
     <div>
@@ -119,13 +124,22 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                 </div>
 
                 {isInteractive && (
-                  <Input
-                    value={studentAnswer}
-                    onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
-                    placeholder="Write your paraphrased sentence..."
-                    className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-                    disabled={disabled}
-                  />
+                  <>
+                    <Input
+                      value={studentAnswer}
+                      onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
+                      placeholder="Write your paraphrased sentence..."
+                      className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      disabled={disabled}
+                    />
+                    {/* AI Evaluation badge per sentence */}
+                    {aiEvaluations?.[sIndex] && disabled && (
+                      <AiEvaluationBadge 
+                        evaluation={aiEvaluations[sIndex]} 
+                        showFeedback={true}
+                      />
+                    )}
+                  </>
                 )}
                 
                 {(viewMode === 'teacher' || showCorrectAnswers) && (

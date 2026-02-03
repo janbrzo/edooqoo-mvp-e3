@@ -13,6 +13,7 @@ import {
   OPEN_ENDED_EXERCISE_TYPES,
   ItemEvaluation 
 } from '@/utils/masteryCalculator';
+import { safeGetNanoSkill } from '@/utils/textObjectFixer';
 
 interface UseInteractiveHomeworkProps {
   homeworkId: string;
@@ -310,7 +311,7 @@ export const useInteractiveHomework = ({
             const studentAnswersForExercise = ans.answers || {};
             
             // Get questions/prompts/sentences array from exercise
-            const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || [];
+            const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || [];
             
             // PROBLEM 4: Send each question separately for individual evaluation
             Object.entries(studentAnswersForExercise).forEach(([qIdxStr, studentAnswer]) => {
@@ -389,11 +390,38 @@ export const useInteractiveHomework = ({
               }
               
               // Save to database - one update per exercise with all question evaluations
+              // PROBLEM 1 FIX: Also update item_evaluations and mastery from AI scores
               for (const [exIdxStr, evalData] of Object.entries(dbUpdates)) {
                 const exIdx = parseInt(exIdxStr);
+                
+                // Build item_evaluations with AI mastery scores
+                const exerciseData = exercises[exIdx];
+                const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || [];
+                
+                const itemEvals: ItemEvaluation[] = evalData.question_evaluations.map((qEval: any) => {
+                  const qItem = questionItems[qEval.question_index];
+                  const nanoSkill = qItem ? safeGetNanoSkill(qItem) : null;
+                  
+                  return {
+                    question_index: qEval.question_index,
+                    name: nanoSkill?.name || `question_${qEval.question_index}`,
+                    reason: nanoSkill?.reason || '',
+                    mastery: Math.round(qEval.quality_score * 100), // 0-1 → 0-100
+                    hasValue: true
+                  };
+                });
+                
+                const overallMastery = itemEvals.length > 0
+                  ? Math.round(itemEvals.reduce((sum, e) => sum + e.mastery, 0) / itemEvals.length)
+                  : null;
+                
                 await supabase
                   .from('homework_student_answers')
-                  .update({ ai_evaluation: evalData })
+                  .update({ 
+                    ai_evaluation: evalData,
+                    item_evaluations: JSON.parse(JSON.stringify(itemEvals)),
+                    mastery: overallMastery
+                  })
                   .eq('homework_id', homeworkId)
                   .eq('student_email', studentEmail)
                   .eq('exercise_index', exIdx);

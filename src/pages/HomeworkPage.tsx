@@ -731,14 +731,14 @@ export default function HomeworkPage() {
           {!isTeacher && !finalIsSubmitted && (
             <Button 
               onClick={handleSubmitClick}
-              disabled={isCompleting || isSaving}
+              disabled={isCompleting}
               className="w-full"
               size="lg"
             >
-              {isCompleting || isSaving ? (
+              {isCompleting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isSaving ? 'Saving...' : 'Submitting...'}
+                  Submitting...
                 </>
               ) : (
                 <>

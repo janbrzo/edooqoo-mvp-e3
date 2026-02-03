@@ -3,6 +3,7 @@ import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
 import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
+import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
 
 interface ExerciseListeningComprehensionProps extends Partial<InteractiveExerciseProps> {
   questions?: Array<{ text: string; answer: string }>;
@@ -15,6 +16,8 @@ interface ExerciseListeningComprehensionProps extends Partial<InteractiveExercis
   // NanoSkill editing
   onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
   isSharedWorksheet?: boolean;
+  // AI Evaluations per question
+  aiEvaluations?: Record<number, AiEvaluation>;
 }
 
 const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionProps> = ({
@@ -32,7 +35,9 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
   disabled = false,
   // NanoSkill props
   onNanoSkillChange,
-  isSharedWorksheet = false
+  isSharedWorksheet = false,
+  // AI Evaluations
+  aiEvaluations
 }) => {
   return (
     <div className="space-y-2">
@@ -77,16 +82,25 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                 </div>
               </div>
               {isInteractive && (
-                <Input
-                  value={studentAnswer}
-                  onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
-                  placeholder="Type your answer..."
-                  disabled={disabled}
-                  className={`h-10 
-                    ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
-                    ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
-                  `}
-                />
+                <>
+                  <Input
+                    value={studentAnswer}
+                    onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                    placeholder="Type your answer..."
+                    disabled={disabled}
+                    className={`h-10 
+                      ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                      ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
+                    `}
+                  />
+                  {/* AI Evaluation badge per question */}
+                  {aiEvaluations?.[qIndex] && disabled && (
+                    <AiEvaluationBadge 
+                      evaluation={aiEvaluations[qIndex]} 
+                      showFeedback={true}
+                    />
+                  )}
+                </>
               )}
               {(viewMode === 'teacher' || showCorrectAnswers) && (
                 <div className="flex items-center gap-2 flex-wrap">

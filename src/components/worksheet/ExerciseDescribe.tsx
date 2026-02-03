@@ -3,6 +3,7 @@ import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
 import { safeGetNanoSkill } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
+import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
 
 interface ExerciseDescribeProps extends Partial<InteractiveExerciseProps> {
   image_url?: string;
@@ -18,6 +19,8 @@ interface ExerciseDescribeProps extends Partial<InteractiveExerciseProps> {
   // NanoSkill editing
   onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
   isSharedWorksheet?: boolean;
+  // AI Evaluations per question
+  aiEvaluations?: Record<number, AiEvaluation>;
 }
 
 const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
@@ -38,7 +41,9 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
   disabled = false,
   // NanoSkill props
   onNanoSkillChange,
-  isSharedWorksheet = false
+  isSharedWorksheet = false,
+  // AI Evaluations
+  aiEvaluations
 }) => {
   return (
     <div className="space-y-4">
@@ -101,6 +106,13 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
                       className={`h-10 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
                       disabled={disabled}
                     />
+                    {/* AI Evaluation badge per question */}
+                    {aiEvaluations?.[qIndex] && disabled && (
+                      <AiEvaluationBadge 
+                        evaluation={aiEvaluations[qIndex]} 
+                        showFeedback={true}
+                      />
+                    )}
                   </div>
                 )}
               </div>

@@ -3,6 +3,7 @@ import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
 import { safeGetNanoSkill, safeGetText } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
+import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
 
 interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   dialogue: any[];
@@ -20,6 +21,8 @@ interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   // NanoSkill editing
   onNanoSkillChange?: (eIndex: number, nanoSkill: NanoSkill) => void;
   isSharedWorksheet?: boolean;
+  // AI Evaluations per question
+  aiEvaluations?: Record<number, AiEvaluation>;
 }
 
 const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
@@ -42,7 +45,9 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
   disabled = false,
   // NanoSkill props
   onNanoSkillChange,
-  isSharedWorksheet = false
+  isSharedWorksheet = false,
+  // AI Evaluations
+  aiEvaluations
 }) => {
   return (
     <div>
@@ -137,6 +142,13 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
                         className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
                         disabled={disabled}
                       />
+                      {/* AI Evaluation badge per expression */}
+                      {aiEvaluations?.[eIndex] && disabled && (
+                        <AiEvaluationBadge 
+                          evaluation={aiEvaluations[eIndex]} 
+                          showFeedback={true}
+                        />
+                      )}
                     </div>
                   )}
                   
