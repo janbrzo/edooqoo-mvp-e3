@@ -301,19 +301,26 @@ export const buildItemEvaluations = (
     const nanoSkill = safeGetNanoSkill(item);
     if (!nanoSkill) return;
     
+    // PROBLEM 1 FIX: Skip questions without student answers
+    const studentAnswer = answers[idx];
+    const hasStudentAnswer = studentAnswer !== undefined && 
+                             studentAnswer !== null && 
+                             String(studentAnswer).trim() !== '';
+    if (!hasStudentAnswer) return; // Don't log empty answers
+    
     let itemMastery: number | null = null;
     
     // For open-ended, use AI evaluation if available
     if (!isClosedExerciseType(exerciseType)) {
       if (aiEvaluations?.[idx]?.quality_score !== undefined) {
         itemMastery = Math.round(aiEvaluations[idx].quality_score! * 100);
-      } else if (answers[idx] !== undefined && answers[idx] !== null && answers[idx] !== '') {
+      } else {
         // Has answer but no AI eval yet - mark as pending (50%)
         itemMastery = 50;
       }
     } else {
       // Closed exercise - calculate automatically
-      itemMastery = calculateItemMastery(exerciseType, exerciseData, idx, answers[idx]);
+      itemMastery = calculateItemMastery(exerciseType, exerciseData, idx, studentAnswer);
     }
     
     itemEvaluations.push({

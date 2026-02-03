@@ -208,14 +208,23 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
                     {qIndex + 1}. {safeGetText(question)}
                   </p>
                   {isInteractive && (
-                    <input
-                      type="text"
-                      value={studentAnswer}
-                      onChange={(e) => onAnswerChange(qIndex, e.target.value)}
-                      placeholder="Share your thoughts..."
-                      className="w-full h-10 border rounded px-3"
-                      disabled={disabled}
-                    />
+                    <>
+                      <input
+                        type="text"
+                        value={studentAnswer}
+                        onChange={(e) => onAnswerChange(qIndex, e.target.value)}
+                        placeholder="Share your thoughts..."
+                        className="w-full h-10 border rounded px-3"
+                        disabled={disabled}
+                      />
+                      {/* PROBLEM 3.1 FIX: AI Evaluation badge for discussion */}
+                      {aiEvaluation?.[qIndex] && disabled && (
+                        <AiEvaluationBadge 
+                          evaluation={aiEvaluation[qIndex]} 
+                          showFeedback={true}
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               );
