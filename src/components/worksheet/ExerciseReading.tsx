@@ -3,6 +3,7 @@ import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
 import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
+import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
 
 interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   questions: any[];
@@ -15,6 +16,8 @@ interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   // NanoSkill editing
   onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
   isSharedWorksheet?: boolean;
+  // AI Evaluations per question
+  aiEvaluations?: Record<number, AiEvaluation>;
 }
 
 const ExerciseReading: React.FC<ExerciseReadingProps> = ({
@@ -32,7 +35,9 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
   disabled = false,
   // NanoSkill props
   onNanoSkillChange,
-  isSharedWorksheet = false
+  isSharedWorksheet = false,
+  // AI Evaluations
+  aiEvaluations
 }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
     {questions.map((question, qIndex) => {
@@ -72,16 +77,25 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
               </div>
             </div>
             {isInteractive && (
-              <Input
-                value={studentAnswer}
-                onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
-                placeholder="Type your answer..."
-                disabled={disabled}
-                className={`h-10 
-                  ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
-                  ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
-                `}
-              />
+              <>
+                <Input
+                  value={studentAnswer}
+                  onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                  placeholder="Type your answer..."
+                  disabled={disabled}
+                  className={`h-10 
+                    ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                    ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
+                  `}
+                />
+                {/* AI Evaluation badge per question */}
+                {aiEvaluations?.[qIndex] && disabled && (
+                  <AiEvaluationBadge 
+                    evaluation={aiEvaluations[qIndex]} 
+                    showFeedback={true}
+                  />
+                )}
+              </>
             )}
             {(viewMode === 'teacher' || showCorrectAnswers) && (
               <div className="flex items-center gap-3">

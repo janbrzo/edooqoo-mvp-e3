@@ -124,6 +124,8 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
+            aiEvaluations={aiEvaluation}
+            disabled={disabled}
           />
         )}
 
@@ -190,6 +192,7 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
+            aiEvaluations={aiEvaluation}
           />
         )}
 
@@ -276,6 +279,7 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
+            aiEvaluations={aiEvaluation}
           />
         )}
 
@@ -407,6 +411,7 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
+            aiEvaluations={aiEvaluation}
           />
         )}
 
@@ -422,6 +427,7 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
+            aiEvaluations={aiEvaluation}
           />
         )}
 
@@ -492,6 +498,7 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
+            aiEvaluations={aiEvaluation}
           />
         )}
 
@@ -507,6 +514,7 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
+            aiEvaluations={aiEvaluation}
           />
         )}
 
@@ -562,24 +570,7 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
           </div>
         )}
         
-        {/* PROBLEM 4: Show AI Evaluations for open-ended exercises after submission - per question */}
-        {isOpenEnded && aiEvaluation && disabled && Object.keys(aiEvaluation).length > 0 && (
-          <div className="mt-4 pt-4 border-t space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">AI Evaluation:</h4>
-            {Object.entries(aiEvaluation).map(([qIdxStr, evaluation]) => {
-              const qIdx = parseInt(qIdxStr);
-              return (
-                <div key={qIdx} className="pl-3 border-l-2 border-muted">
-                  <p className="text-xs text-muted-foreground mb-1">Question {qIdx + 1}:</p>
-                  <AiEvaluationBadge 
-                    evaluation={evaluation} 
-                    showFeedback={true} 
-                  />
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {/* AI Evaluations are now rendered inline in each exercise component */}
       </div>
     </div>
   );

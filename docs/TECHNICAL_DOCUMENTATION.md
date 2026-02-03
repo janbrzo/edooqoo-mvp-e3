@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (January 2026) - Per-Item Nano Skill Ratings in Events:**
+**Latest Update (February 2026) - AI Evaluation Display & Mastery Sync Fixes:**
+- **#1 AI Evaluation Per-Item Display**: AI evaluation badges now render directly under each answer input (not at bottom of exercise). Updated 8 exercise components: `ExerciseAnswerQuestions`, `ExerciseDialogue`, `ExerciseReading`, `ExerciseListeningComprehension`, `ExerciseDescribe`, `ExerciseParaphrasing`, `ExerciseAnswerQuestionsAudio`
+- **#2 Mastery Sync After AI Evaluation**: `submitHomework()` now updates `item_evaluations` and `mastery` columns alongside `ai_evaluation` after receiving AI scores. Uses `quality_score * 100` for per-item mastery calculation
+- **#3 Dialogue Exercise Support**: Added `expressions` to question item lookup in AI verification: `exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions`
+- **#4 Submit Button Fix**: Removed `isSaving` from button disabled condition - now only blocked during actual submission (`isCompleting`)
+- **#5 Updated `InteractiveExerciseProps`**: Added `aiEvaluations?: Record<number, AiEvaluation>` prop for passing per-question AI feedback to exercise components
+
+**Previous Update (January 2026) - Per-Item Nano Skill Ratings in Events:**
 - **#1 New `item_evaluations` Column**: Added `item_evaluations JSONB` column to `worksheet_student_answers` and `homework_student_answers` tables. Stores per-item `nano_skill_ratings` array matching `exercise_mastery_evaluation` format
 - **#2 RPC Functions Updated**: `save_worksheet_answer` and `save_homework_answer` now accept `p_item_evaluations JSONB` parameter
 - **#3 SQL Triggers Updated**: `log_worksheet_answer_to_events` and `log_homework_answer_to_events` now include `nano_skill_ratings` from `item_evaluations` column in event payload

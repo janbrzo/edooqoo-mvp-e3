@@ -195,6 +195,16 @@ export interface HomeworkProgress {
 // ============================================
 
 /**
+ * AI evaluation result for a single question
+ */
+export interface AiEvaluation {
+  is_acceptable: boolean;
+  quality_score: number;
+  feedback: string;
+  question_index?: number;
+}
+
+/**
  * Props for making exercise components interactive
  * These props should be added to existing Exercise components
  */
@@ -227,6 +237,12 @@ export interface InteractiveExerciseProps {
    * Teacher's comment for this exercise (if any)
    */
   teacherComment?: string;
+
+  /**
+   * AI evaluations per question index (for open-ended exercises)
+   * Key is question index, value is the AI evaluation result
+   */
+  aiEvaluations?: Record<number, AiEvaluation>;
 }
 
 // ============================================

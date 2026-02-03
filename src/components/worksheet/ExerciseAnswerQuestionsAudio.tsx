@@ -3,6 +3,7 @@ import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
 import { safeGetNanoSkill, safeGetText } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
+import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
 
 interface Question {
   question: string;
@@ -19,6 +20,8 @@ interface ExerciseAnswerQuestionsAudioProps extends Partial<InteractiveExerciseP
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
   onNanoSkillChange?: (qIndex: number, newSkill: NanoSkill) => void;
+  // AI Evaluations per question
+  aiEvaluations?: Record<number, AiEvaluation>;
 }
 
 const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> = ({
@@ -33,7 +36,9 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
   studentAnswers = {},
   onAnswerChange,
   disabled = false,
-  onNanoSkillChange
+  onNanoSkillChange,
+  // AI Evaluations
+  aiEvaluations
 }) => {
   return (
     <div className="space-y-0.5">
@@ -97,13 +102,22 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
               )}
             </div>
             {isInteractive && (
-              <Input
-                value={studentAnswers[qIndex] || ''}
-                onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
-                placeholder="Your answer..."
-                disabled={disabled}
-                className={`h-10 mt-1 ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}`}
-              />
+              <>
+                <Input
+                  value={studentAnswers[qIndex] || ''}
+                  onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                  placeholder="Your answer..."
+                  disabled={disabled}
+                  className={`h-10 mt-1 ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}`}
+                />
+                {/* AI Evaluation badge per question */}
+                {aiEvaluations?.[qIndex] && disabled && (
+                  <AiEvaluationBadge 
+                    evaluation={aiEvaluations[qIndex]} 
+                    showFeedback={true}
+                  />
+                )}
+              </>
             )}
           </div>
         );
