@@ -351,22 +351,9 @@ export const useInteractiveSharedWorksheet = ({
         }
       }
       
-      // Trigger AI verification for open-ended exercises
-      if (answersToVerify.length > 0) {
-        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-open-answers`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-          },
-          body: JSON.stringify({
-            answers: answersToVerify,
-            english_level: 'Intermediate',
-            context: `Worksheet ${worksheetId} - student completing exercises`
-          }),
-          keepalive: true
-        }).catch(() => {});
-      }
+      // NOTE: AI verification removed from beforeunload - it doesn't work reliably
+      // (browser may terminate before response, and results weren't being saved)
+      // AI Evaluation for worksheets is triggered by teacher via "Mark Done" button
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);

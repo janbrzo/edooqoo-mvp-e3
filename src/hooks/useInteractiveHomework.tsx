@@ -394,18 +394,29 @@ export const useInteractiveHomework = ({
               for (const [exIdxStr, evalData] of Object.entries(dbUpdates)) {
                 const exIdx = parseInt(exIdxStr);
                 
-                // Build item_evaluations with AI mastery scores
+              // Build item_evaluations with AI mastery scores
                 const exerciseData = exercises[exIdx];
                 const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || [];
                 
-                const itemEvals: ItemEvaluation[] = evalData.question_evaluations.map((qEval: any) => {
-                  const qItem = questionItems[qEval.question_index];
-                  const nanoSkill = qItem ? safeGetNanoSkill(qItem) : null;
+                // PROBLEM 2B FIX: Build lookup of items with nano_skill for proper mapping
+                const itemsWithNanoSkill = questionItems
+                  .map((item: any, idx: number) => ({ item, idx, nanoSkill: safeGetNanoSkill(item) }))
+                  .filter((x: any) => x.nanoSkill !== null);
+                
+                // Map AI results back to original nano_skills using position matching
+                const itemEvals: ItemEvaluation[] = evalData.question_evaluations.map((qEval: any, aiIdx: number) => {
+                  // Try to find by question_index first
+                  let matchedItem = itemsWithNanoSkill.find((x: any) => x.idx === qEval.question_index);
+                  
+                  // Fallback: if not found, use position in AI results array
+                  if (!matchedItem && aiIdx < itemsWithNanoSkill.length) {
+                    matchedItem = itemsWithNanoSkill[aiIdx];
+                  }
                   
                   return {
-                    question_index: qEval.question_index,
-                    name: nanoSkill?.name || `question_${qEval.question_index}`,
-                    reason: nanoSkill?.reason || '',
+                    question_index: matchedItem?.idx ?? qEval.question_index,
+                    name: matchedItem?.nanoSkill?.name || `question_${qEval.question_index}`,
+                    reason: matchedItem?.nanoSkill?.reason || '',
                     mastery: Math.round(qEval.quality_score * 100), // 0-1 → 0-100
                     hasValue: true
                   };

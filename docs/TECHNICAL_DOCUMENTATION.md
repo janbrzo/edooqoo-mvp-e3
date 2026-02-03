@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - AI Evaluation Display & Mastery Sync Fixes:**
+**Latest Update (February 2026) - AI Evaluation Logging & Display Fixes:**
+- **#1 Empty Answers Filtering**: `buildItemEvaluations()` in `masteryCalculator.ts` now skips items where student didn't provide an answer. Logs contain only answered questions
+- **#2 Nano_Skill Mapping Fix After AI**: `useInteractiveHomework.tsx` now correctly maps AI evaluation results back to original nano_skill metadata using position matching with fallback
+- **#3 Discussion AI Badge**: Added `AiEvaluationBadge` rendering to inline discussion exercise in `HomeworkExerciseRenderer.tsx` - now all 9 open-ended types show AI feedback per question
+- **#4 AI Evaluation Persistence**: RPC functions `get_student_homework_answers` and `get_worksheet_student_answers` now return `ai_evaluation`, `item_evaluations`, and `mastery` columns - data persists after page refresh
+- **#5 Removed Broken beforeunload AI**: Removed non-functional `verify-open-answers` fetch from `useInteractiveSharedWorksheet.tsx` beforeunload handler - AI eval for worksheets triggered via teacher "Mark Done" only
+
+**Previous Update (February 2026) - AI Evaluation Display & Mastery Sync Fixes:**
 - **#1 AI Evaluation Per-Item Display**: AI evaluation badges now render directly under each answer input (not at bottom of exercise). Updated 8 exercise components: `ExerciseAnswerQuestions`, `ExerciseDialogue`, `ExerciseReading`, `ExerciseListeningComprehension`, `ExerciseDescribe`, `ExerciseParaphrasing`, `ExerciseAnswerQuestionsAudio`
 - **#2 Mastery Sync After AI Evaluation**: `submitHomework()` now updates `item_evaluations` and `mastery` columns alongside `ai_evaluation` after receiving AI scores. Uses `quality_score * 100` for per-item mastery calculation
 - **#3 Dialogue Exercise Support**: Added `expressions` to question item lookup in AI verification: `exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions`

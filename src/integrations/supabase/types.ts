@@ -1894,12 +1894,15 @@ export type Database = {
       get_student_homework_answers: {
         Args: { p_homework_id: string; p_student_email: string }
         Returns: {
+          ai_evaluation: Json
           answers: Json
           exercise_index: number
           exercise_type: string
           id: string
           is_submitted: boolean
+          item_evaluations: Json
           last_saved_at: string
+          mastery: number
           started_at: string
           submitted_at: string
         }[]
@@ -1959,7 +1962,9 @@ export type Database = {
           exercise_type: string
           id: string
           is_completed: boolean
+          item_evaluations: Json
           last_saved_at: string
+          mastery: number
           started_at: string
         }[]
       }
