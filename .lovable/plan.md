@@ -1,491 +1,571 @@
 
 
-# Plan naprawy 6 problemów z logowaniem i wyświetlaniem AI Evaluation
+# Zaktualizowany Plan naprawy 4 problemów z Homework i Worksheet
 
-## PODSUMOWANIE ANALIZY
+## ZMIANA W PROBLEMIE 1: AI Evaluation przy zamykaniu karty worksheet
 
-### PROBLEM 1: Logi worksheet zawierają puste odpowiedzi (hasValue: false, mastery: 0)
+### Architektura rozwiązania
 
-**Przyczyna główna w `buildItemEvaluations()` (src/utils/masteryCalculator.ts linie 300-326):**
+Ponieważ `beforeunload` nie pozwala na oczekiwanie na odpowiedź AI (przeglądarka może zamknąć kartę zanim AI odpowie), implementujemy **asynchroniczne przetwarzanie**:
 
-```typescript
-items.forEach((item: any, idx: number) => {
-  const nanoSkill = safeGetNanoSkill(item);
-  if (!nanoSkill) return;  // ✅ OK - pomija pytania bez nano_skill
-  
-  // ❌ PROBLEM: Nie sprawdza czy student udzielił odpowiedzi!
-  // Dodaje WSZYSTKIE pytania z nano_skill, nawet bez odpowiedzi
-  
-  itemEvaluations.push({
-    question_index: idx,
-    name: nanoSkill.name,
-    reason: nanoSkill.reason,
-    mastery: itemMastery ?? 0,  // Puste = 0, ale element i tak jest dodany
-    hasValue: itemMastery !== null
-  });
-});
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         FLOW: Zamknięcie karty worksheet                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+STUDENT zamyka kartę
+         │
+         ▼
+┌─────────────────────────────────────────────┐
+│  sendBeacon → zapisz pending_ai_eval        │
+│  do tabeli pending_worksheet_ai_evaluations │
+└─────────────────────────────────────────────┘
+         │
+         ▼  (asynchronicznie)
+┌─────────────────────────────────────────────┐
+│  Cron job / Trigger wywołuje Edge Function  │
+│  process-pending-ai-evaluations             │
+└─────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────┐
+│  AI ocenia odpowiedzi                       │
+│  → aktualizuje worksheet_student_answers    │
+│  → trigger zapisuje do student_events       │
+└─────────────────────────────────────────────┘
 ```
 
-**Rozwiązanie:** Dodać warunek - jeśli student nie udzielił odpowiedzi, pomijamy ten element:
+### Nowe elementy do stworzenia
 
-```typescript
-items.forEach((item: any, idx: number) => {
-  const nanoSkill = safeGetNanoSkill(item);
-  if (!nanoSkill) return;
-  
-  const studentAnswer = answers[idx];
-  
-  // NOWY WARUNEK: Pomijaj pytania bez odpowiedzi studenta
-  const hasStudentAnswer = studentAnswer !== undefined && 
-                           studentAnswer !== null && 
-                           studentAnswer !== '';
-  if (!hasStudentAnswer) return;
-  
-  // ... reszta kodu
-});
-```
-
----
-
-### PROBLEM 1.1: AI Evaluation nie jest wykonywana przy zamykaniu karty worksheet
-
-**Przyczyna w `useInteractiveSharedWorksheet.tsx` linie 354-368:**
-
-```typescript
-// Trigger AI verification for open-ended exercises
-if (answersToVerify.length > 0) {
-  fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-open-answers`, {
-    // ...
-    keepalive: true
-  }).catch(() => {});  // ❌ Wyniki AI są IGNOROWANE - nigdy nie trafiają do bazy!
-}
-```
-
-**Problem:**
-1. `beforeunload` używa asynchronicznego `fetch` z `keepalive`, ale przeglądarka może zakończyć proces przed odpowiedzią
-2. Nawet jeśli odpowiedź przyjdzie, nie ma kodu do jej przetworzenia i zapisania do bazy
-3. W przeciwieństwie do Homework (`submitHomework()`), Worksheet NIE aktualizuje `item_evaluations` po AI
-
-**Rozwiązanie:** 
-Worksheet przy zamykaniu karty nie powinien próbować robić pełnej AI evaluation (jest zbyt wolna). Zamiast tego:
-- Usunąć kod `verify-open-answers` z `beforeunload` (nie działa i daje fałszywe nadzieje)
-- AI Evaluation dla worksheet powinno być wyzwalane przez nauczyciela (przycisk "Mark Done") - tak jak jest teraz w `useInteractiveSharedWorksheet`
-
----
-
-### PROBLEM 2B: Błędne name/reason po Submit Homework dla answer-questions
-
-**Przyczyna w `useInteractiveHomework.tsx` linie 401-412:**
-
-```typescript
-const itemEvals: ItemEvaluation[] = evalData.question_evaluations.map((qEval: any) => {
-  const qItem = questionItems[qEval.question_index];  // ❌ Używa GLOBALNEGO question_index z AI!
-  const nanoSkill = qItem ? safeGetNanoSkill(qItem) : null;
-  
-  return {
-    question_index: qEval.question_index,
-    name: nanoSkill?.name || `question_${qEval.question_index}`,  // ❌ Fallback gdy nie znajdzie
-    reason: nanoSkill?.reason || '',
-    // ...
-  };
-});
-```
-
-**Problem:**
-AI zwraca `question_index: 10, 11, 12...` dla zadania `exercise_index: 3`, ale kod szuka `questionItems[10]` zamiast `questionItems[0, 1, 2...]`.
-
-**Dowód z bazy danych:**
-```json
-"nano_skill_ratings": [
-  { "name": "question_10", "question_index": 10 },  // ❌ Błędny index!
-  { "name": "question_11", "question_index": 11 }
-]
-```
-
-Ale dla Dialogue (które działa poprawnie), index zaczyna się od 0.
-
-**Przyczyna główna:**
-W `submitHomework()` budujemy `answersToVerify` z GLOBALNYM indeksem z pętli `Object.entries()`:
-
-```typescript
-Object.entries(studentAnswersForExercise).forEach(([qIdxStr, studentAnswer]) => {
-  const qIdx = parseInt(qIdxStr);  // To jest string key z Record, np. "10", "11"...
-  
-  answersToVerify.push({
-    question_index: qIdx,  // ❌ Wysyłamy do AI globalny index!
-    // ...
-  });
-});
-```
-
-**Rozwiązanie:**
-1. W funkcji budującej `itemEvals` po AI, użyć ORYGINALNYCH nano_skill z ćwiczenia, a nie szukać po indeksie z AI
-2. Zmienić logikę mapowania - zapamiętać powiązanie między pytaniami ćwiczenia a wynikami AI
-
----
-
-### PROBLEM 3.1: AI Evaluation nie wyświetla się dla Dialogue i innych zadań
-
-**Analiza przekazywania aiEvaluation w HomeworkExerciseRenderer.tsx:**
-
-| Typ ćwiczenia | Czy przekazuje `aiEvaluations`? |
-|---------------|--------------------------------|
-| reading | ✅ Tak (linia 127) |
-| dialogue | ✅ Tak (linia 195) |
-| discussion | ❌ NIE (linie 200-224) |
-| paraphrasing | ✅ Tak (linia 282) |
-| listening-comprehension | ✅ Tak (linia 414) |
-| answer-questions-audio | ✅ Tak (linia 430) |
-| describe-picture | ✅ Tak (linia 501) |
-| answer-questions | ✅ Tak (linia 517) |
-
-**Przyczyna dla Dialogue:**
-Mimo że `aiEvaluations` jest przekazywane, komponent `ExerciseDialogue` wyświetla badge tylko gdy `disabled === true`:
-
-```tsx
-{aiEvaluations?.[eIndex] && disabled && (  // ❌ Wymaga disabled!
-  <AiEvaluationBadge evaluation={aiEvaluations[eIndex]} showFeedback={true} />
-)}
-```
-
-Sprawdźmy czy `disabled` jest poprawnie przekazywane w HomeworkPage...
-
-**Dodatkowy problem - discussion:**
-Ćwiczenie `discussion` jest renderowane inline w `HomeworkExerciseRenderer` (linie 200-224) bez przekazania `aiEvaluations` - brakuje badge'a!
-
----
-
-### PROBLEM 3.2: AI Evaluation znika po odświeżeniu homework
-
-**Przyczyna - funkcja RPC nie zwraca ai_evaluation:**
+#### 1. Nowa tabela: `pending_worksheet_ai_evaluations`
 
 ```sql
--- OBECNA definicja (BŁĘDNA):
-RETURNS TABLE(
-  id uuid, 
-  exercise_index integer, 
-  exercise_type text, 
-  answers jsonb, 
-  is_submitted boolean,
-  started_at timestamp,
-  last_saved_at timestamp, 
-  submitted_at timestamp
-)  -- ❌ BRAK: ai_evaluation, item_evaluations, mastery, time_spent_ms
+CREATE TABLE public.pending_worksheet_ai_evaluations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  worksheet_id UUID NOT NULL REFERENCES worksheets(id) ON DELETE CASCADE,
+  student_email TEXT NOT NULL,
+  exercise_index INTEGER NOT NULL,
+  exercise_type TEXT NOT NULL,
+  answers JSONB NOT NULL,
+  english_level TEXT,
+  context JSONB, -- Dodatkowy kontekst dla AI (tytuł, transkrypcja, itp.)
+  status TEXT NOT NULL DEFAULT 'pending', -- pending, processing, completed, failed
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  processed_at TIMESTAMPTZ,
+  error_message TEXT,
+  
+  UNIQUE(worksheet_id, student_email, exercise_index)
+);
+
+-- Index dla szybkiego pobierania pending
+CREATE INDEX idx_pending_ai_eval_status ON pending_worksheet_ai_evaluations(status) WHERE status = 'pending';
 ```
 
-Tabela `homework_student_answers` MA te kolumny, ale funkcja RPC ich nie zwraca!
+#### 2. Nowa Edge Function: `process-pending-ai-evaluations`
 
-**Rozwiązanie:**
-Zaktualizować funkcje RPC:
-- `get_student_homework_answers` - dodać `ai_evaluation`, `item_evaluations`, `mastery`
-- `get_worksheet_student_answers` - dodać `item_evaluations`, `mastery`
+Ta funkcja będzie:
+1. Pobierać pending evaluations z tabeli
+2. Wywoływać AI dla każdej
+3. Aktualizować `worksheet_student_answers` z wynikami
+4. Oznaczać jako completed
+
+#### 3. Cron Job (pg_cron) lub Supabase Webhook
+
+Można użyć:
+- **Opcja A**: pg_cron co 30 sekund sprawdza pending
+- **Opcja B**: Supabase realtime webhook przy INSERT
+- **Opcja C**: Frontend teacher przy wejściu na worksheet sprawdza pending
+
+**Rekomendacja**: Opcja C jest najprostsza - gdy nauczyciel wchodzi na worksheet, automatycznie sprawdzamy czy są pending AI evals dla tego studenta i je przetwarzamy.
 
 ---
 
 ## PLAN IMPLEMENTACJI
 
-### Zmiana 1: Naprawić buildItemEvaluations - filtrować puste odpowiedzi
+### Zmiana 1: Nowa tabela pending_worksheet_ai_evaluations
 
-**Plik: `src/utils/masteryCalculator.ts`**
+**Nowa migracja SQL:**
 
-```typescript
-export const buildItemEvaluations = (
-  exerciseData: any,
-  answers: Record<string | number, any>,
-  exerciseType: string,
-  aiEvaluations?: Record<number, { quality_score?: number }> | null
-): ItemEvaluation[] | null => {
-  if (!exerciseData) return null;
+```sql
+-- Create table for pending AI evaluations (async processing on tab close)
+CREATE TABLE IF NOT EXISTS public.pending_worksheet_ai_evaluations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  worksheet_id UUID NOT NULL REFERENCES worksheets(id) ON DELETE CASCADE,
+  student_email TEXT NOT NULL,
+  exercise_index INTEGER NOT NULL,
+  exercise_type TEXT NOT NULL,
+  answers JSONB NOT NULL,
+  english_level TEXT DEFAULT 'Intermediate',
+  context JSONB, -- Additional context for AI (title, transcript, etc.)
+  status TEXT NOT NULL DEFAULT 'pending', -- pending, processing, completed, failed
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  processed_at TIMESTAMPTZ,
+  error_message TEXT,
   
-  const itemEvaluations: ItemEvaluation[] = [];
-  const items = getExerciseItems(exerciseData);
-  
-  items.forEach((item: any, idx: number) => {
-    const nanoSkill = safeGetNanoSkill(item);
-    if (!nanoSkill) return;
-    
-    const studentAnswer = answers[idx];
-    
-    // NOWY WARUNEK: Pomijaj pytania bez odpowiedzi studenta
-    const hasStudentAnswer = studentAnswer !== undefined && 
-                             studentAnswer !== null && 
-                             String(studentAnswer).trim() !== '';
-    if (!hasStudentAnswer) return;  // ✅ Nie loguj pustych odpowiedzi
-    
-    let itemMastery: number | null = null;
-    
-    // ... reszta bez zmian
-    
-    itemEvaluations.push({
-      question_index: idx,
-      name: nanoSkill.name,
-      reason: nanoSkill.reason,
-      mastery: itemMastery ?? 0,
-      hasValue: itemMastery !== null
-    });
-  });
-  
-  return itemEvaluations.length > 0 ? itemEvaluations : null;
-};
+  UNIQUE(worksheet_id, student_email, exercise_index)
+);
+
+-- Index for fast pending lookup
+CREATE INDEX idx_pending_ai_eval_status ON pending_worksheet_ai_evaluations(status) WHERE status = 'pending';
+
+-- RLS Policies
+ALTER TABLE pending_worksheet_ai_evaluations ENABLE ROW LEVEL SECURITY;
+
+-- Allow anonymous insert (for sendBeacon)
+CREATE POLICY "Allow insert for pending evaluations"
+ON pending_worksheet_ai_evaluations FOR INSERT
+TO anon, authenticated
+WITH CHECK (true);
+
+-- Teachers can read pending for their worksheets
+CREATE POLICY "Teachers can read pending for their worksheets"
+ON pending_worksheet_ai_evaluations FOR SELECT
+TO authenticated
+USING (
+  worksheet_id IN (
+    SELECT id FROM worksheets WHERE teacher_id = auth.uid()
+  )
+);
+
+-- Service role can update
+CREATE POLICY "Service role can update pending"
+ON pending_worksheet_ai_evaluations FOR UPDATE
+TO service_role
+USING (true);
 ```
 
 ---
 
-### Zmiana 2: Naprawić mapowanie nano_skill po AI Evaluation w homework
+### Zmiana 2: Nowa RPC funkcja do zapisywania pending AI eval
 
-**Plik: `src/hooks/useInteractiveHomework.tsx`**
+**Plik: Nowa migracja SQL**
 
-Problem: `question_index` z AI nie odpowiada indeksom w `questionItems`.
+```sql
+CREATE OR REPLACE FUNCTION public.queue_worksheet_ai_evaluation(
+  p_worksheet_id UUID,
+  p_student_email TEXT,
+  p_exercise_index INTEGER,
+  p_exercise_type TEXT,
+  p_answers JSONB,
+  p_english_level TEXT DEFAULT 'Intermediate',
+  p_context JSONB DEFAULT NULL
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_id UUID;
+BEGIN
+  INSERT INTO pending_worksheet_ai_evaluations (
+    worksheet_id,
+    student_email,
+    exercise_index,
+    exercise_type,
+    answers,
+    english_level,
+    context,
+    status
+  )
+  VALUES (
+    p_worksheet_id,
+    lower(p_student_email),
+    p_exercise_index,
+    p_exercise_type,
+    p_answers,
+    p_english_level,
+    p_context,
+    'pending'
+  )
+  ON CONFLICT (worksheet_id, student_email, exercise_index)
+  DO UPDATE SET
+    answers = EXCLUDED.answers,
+    english_level = EXCLUDED.english_level,
+    context = EXCLUDED.context,
+    status = 'pending',
+    created_at = NOW(),
+    processed_at = NULL,
+    error_message = NULL
+  RETURNING id INTO v_id;
+  
+  RETURN v_id;
+END;
+$$;
+```
 
-Rozwiązanie: Przed wysłaniem do AI, zapisać mapowanie, a po otrzymaniu wyników użyć ORYGINALNYCH nano_skill:
+---
+
+### Zmiana 3: Zaktualizować beforeunload w useInteractiveSharedWorksheet
+
+**Plik: `src/hooks/useInteractiveSharedWorksheet.tsx`**
+
+Zamiast usuwać AI verification, zaimplementować `sendBeacon` do zapisywania pending:
 
 ```typescript
-// W submitHomework(), linie ~394-428:
-
-// Build item_evaluations with AI mastery scores
-const exerciseData = exercises[exIdx];
-const questionItems = exerciseData?.questions || exerciseData?.prompts || 
-                     exerciseData?.sentences || exerciseData?.expressions || [];
-
-// Znajdź WSZYSTKIE pytania które mają nano_skill
-const itemsWithNanoSkill = questionItems
-  .map((item: any, idx: number) => ({ item, idx, nanoSkill: safeGetNanoSkill(item) }))
-  .filter((x: any) => x.nanoSkill !== null);
-
-// Mapuj wyniki AI do oryginalnych nano_skill
-// AI zwraca question_index który MOŻE być różny od idx w questionItems
-const itemEvals: ItemEvaluation[] = evalData.question_evaluations.map((qEval: any, aiIdx: number) => {
-  // Szukaj dopasowania - najpierw po question_index, potem po pozycji
-  let matchedItem = itemsWithNanoSkill.find((x: any) => x.idx === qEval.question_index);
-  
-  // Fallback: jeśli nie znaleziono, użyj pozycji w tablicy AI
-  if (!matchedItem && aiIdx < itemsWithNanoSkill.length) {
-    matchedItem = itemsWithNanoSkill[aiIdx];
-  }
-  
-  return {
-    question_index: qEval.question_index,
-    name: matchedItem?.nanoSkill?.name || `question_${qEval.question_index}`,
-    reason: matchedItem?.nanoSkill?.reason || '',
-    mastery: Math.round(qEval.quality_score * 100),
-    hasValue: true
+// PROBLEM 1 FIX: AI verification on tab/window close using sendBeacon
+useEffect(() => {
+  const handleBeforeUnload = () => {
+    // Iterate through all open-ended exercises with answers
+    for (const exerciseIndexStr of Object.keys(answers)) {
+      const exerciseIndex = parseInt(exerciseIndexStr);
+      const exerciseType = exerciseTypesRef.current[exerciseIndex];
+      const exerciseAnswers = answers[exerciseIndex];
+      
+      // Skip if no answers or not open-ended
+      if (!exerciseAnswers || Object.keys(exerciseAnswers).length === 0) continue;
+      if (!OPEN_ENDED_EXERCISE_TYPES.includes(exerciseType)) continue;
+      
+      // Get active time for this exercise
+      const activeTimeMs = getActiveTimeMs(exerciseIndex);
+      
+      // 1. First save the answer itself (keepalive fetch)
+      const saveData = {
+        p_worksheet_id: worksheetId,
+        p_student_email: studentEmail.trim().toLowerCase(),
+        p_exercise_index: exerciseIndex,
+        p_exercise_type: exerciseType,
+        p_answers: exerciseAnswers,
+        p_time_spent_ms: activeTimeMs
+      };
+      
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/save_worksheet_answer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+        },
+        body: JSON.stringify(saveData),
+        keepalive: true
+      }).catch(() => {});
+      
+      // 2. Queue for AI evaluation using sendBeacon (more reliable for unload)
+      const exercise = exercises[exerciseIndex];
+      const queueData = {
+        p_worksheet_id: worksheetId,
+        p_student_email: studentEmail.trim().toLowerCase(),
+        p_exercise_index: exerciseIndex,
+        p_exercise_type: exerciseType,
+        p_answers: exerciseAnswers,
+        p_english_level: 'Intermediate', // TODO: get from worksheet data
+        p_context: {
+          title: exercise?.title || `Exercise ${exerciseIndex + 1}`,
+          questions: exercise?.questions || exercise?.prompts || exercise?.sentences || exercise?.expressions || []
+        }
+      };
+      
+      // sendBeacon is more reliable than fetch for beforeunload
+      const beaconUrl = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/queue_worksheet_ai_evaluation`;
+      const beaconHeaders = {
+        type: 'application/json'
+      };
+      const blob = new Blob([JSON.stringify(queueData)], beaconHeaders);
+      
+      // Add API key as query param since sendBeacon doesn't support headers
+      navigator.sendBeacon(
+        `${beaconUrl}?apikey=${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        blob
+      );
+    }
   };
+
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+}, [answers, worksheetId, studentEmail, exercises, getActiveTimeMs]);
+```
+
+---
+
+### Zmiana 4: Nowa Edge Function process-pending-ai-evaluations
+
+**Plik: `supabase/functions/process-pending-ai-evaluations/index.ts`**
+
+```typescript
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get pending evaluations (limit to avoid timeout)
+    const { data: pendingEvals, error: fetchError } = await supabase
+      .from('pending_worksheet_ai_evaluations')
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(10);
+
+    if (fetchError) throw fetchError;
+    if (!pendingEvals || pendingEvals.length === 0) {
+      return new Response(
+        JSON.stringify({ processed: 0, message: 'No pending evaluations' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[process-pending] Found ${pendingEvals.length} pending evaluations`);
+
+    let processed = 0;
+    for (const pending of pendingEvals) {
+      try {
+        // Mark as processing
+        await supabase
+          .from('pending_worksheet_ai_evaluations')
+          .update({ status: 'processing' })
+          .eq('id', pending.id);
+
+        // Build answers for AI verification
+        const answers = pending.answers;
+        const context = pending.context || {};
+        const questionItems = context.questions || [];
+        
+        const answersToVerify = Object.entries(answers).map(([qIdxStr, answer]) => {
+          const qIdx = parseInt(qIdxStr);
+          const questionItem = questionItems[qIdx];
+          return {
+            exercise_index: pending.exercise_index,
+            question_index: qIdx,
+            question_text: questionItem?.question || questionItem?.text || questionItem?.prompt || `Question ${qIdx + 1}`,
+            student_answer: String(answer),
+            suggested_answer: questionItem?.answer || questionItem?.suggested_answer || '',
+            exercise_type: pending.exercise_type
+          };
+        });
+
+        // Call verify-open-answers
+        const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/verify-open-answers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`
+          },
+          body: JSON.stringify({
+            answers: answersToVerify,
+            english_level: pending.english_level,
+            context: context.title
+          })
+        });
+
+        if (!verifyResponse.ok) {
+          throw new Error(`AI verification failed: ${await verifyResponse.text()}`);
+        }
+
+        const aiResult = await verifyResponse.json();
+        
+        // Build item_evaluations from AI result
+        const itemEvaluations = aiResult.evaluations.map((e: any) => ({
+          question_index: e.question_index,
+          name: questionItems[e.question_index]?.nano_skill?.name || `question_${e.question_index}`,
+          reason: questionItems[e.question_index]?.nano_skill?.reason || '',
+          mastery: Math.round(e.quality_score * 100),
+          hasValue: true
+        }));
+
+        const overallMastery = itemEvaluations.length > 0
+          ? Math.round(itemEvaluations.reduce((sum: number, e: any) => sum + e.mastery, 0) / itemEvaluations.length)
+          : null;
+
+        // Update worksheet_student_answers with AI results
+        await supabase
+          .from('worksheet_student_answers')
+          .update({
+            item_evaluations: itemEvaluations,
+            mastery: overallMastery
+          })
+          .eq('worksheet_id', pending.worksheet_id)
+          .eq('student_email', pending.student_email)
+          .eq('exercise_index', pending.exercise_index);
+
+        // Mark as completed
+        await supabase
+          .from('pending_worksheet_ai_evaluations')
+          .update({ 
+            status: 'completed',
+            processed_at: new Date().toISOString()
+          })
+          .eq('id', pending.id);
+
+        processed++;
+        console.log(`[process-pending] Completed evaluation ${pending.id}`);
+
+      } catch (evalError: any) {
+        console.error(`[process-pending] Error processing ${pending.id}:`, evalError);
+        await supabase
+          .from('pending_worksheet_ai_evaluations')
+          .update({ 
+            status: 'failed',
+            error_message: evalError.message,
+            processed_at: new Date().toISOString()
+          })
+          .eq('id', pending.id);
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ processed, total: pendingEvals.length }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error: any) {
+    console.error('[process-pending] Error:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 });
 ```
 
 ---
 
-### Zmiana 3: Dodać AI Evaluation do discussion w HomeworkExerciseRenderer
+### Zmiana 5: Wyzwalanie przetwarzania pending przy wejściu nauczyciela
 
-**Plik: `src/components/homework/HomeworkExerciseRenderer.tsx`**
+**Plik: `src/hooks/useLiveSessionAnswers.tsx`** (lub gdzie nauczyciel ładuje dane worksheet)
 
-W sekcji discussion (linie 200-224) dodać badge pod każdym inputem:
-
-```tsx
-{/* Discussion questions */}
-{exercise.type === 'discussion' && exercise.questions && (
-  <div className="space-y-2">
-    <h3 className="font-medium text-gray-700 mb-2">Discussion Questions:</h3>
-    {exercise.questions.map((question: string, qIndex: number) => {
-      const studentAnswer = studentAnswers[qIndex] || '';
-      return (
-        <div key={qIndex} className="p-2 border rounded-lg bg-white">
-          <p className="leading-snug mb-2">
-            {qIndex + 1}. {safeGetText(question)}
-          </p>
-          {isInteractive && (
-            <>
-              <input
-                type="text"
-                value={studentAnswer}
-                onChange={(e) => onAnswerChange(qIndex, e.target.value)}
-                placeholder="Share your thoughts..."
-                className="w-full h-10 border rounded px-3"
-                disabled={disabled}
-              />
-              {/* DODANE: AI Evaluation badge */}
-              {aiEvaluation?.[qIndex] && disabled && (
-                <AiEvaluationBadge 
-                  evaluation={aiEvaluation[qIndex]} 
-                  showFeedback={true}
-                />
-              )}
-            </>
-          )}
-        </div>
-      );
-    })}
-  </div>
-)}
-```
-
----
-
-### Zmiana 4: Zaktualizować funkcje RPC aby zwracały ai_evaluation
-
-**Nowa migracja SQL:**
-
-```sql
--- Update get_student_homework_answers to return ai_evaluation
-CREATE OR REPLACE FUNCTION public.get_student_homework_answers(
-  p_homework_id UUID,
-  p_student_email TEXT
-)
-RETURNS TABLE(
-  id UUID,
-  exercise_index INTEGER,
-  exercise_type TEXT,
-  answers JSONB,
-  is_submitted BOOLEAN,
-  started_at TIMESTAMPTZ,
-  last_saved_at TIMESTAMPTZ,
-  submitted_at TIMESTAMPTZ,
-  ai_evaluation JSONB,      -- DODANE
-  item_evaluations JSONB,   -- DODANE
-  mastery INTEGER           -- DODANE
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT 
-    hsa.id,
-    hsa.exercise_index,
-    hsa.exercise_type,
-    hsa.answers,
-    hsa.is_submitted,
-    hsa.started_at,
-    hsa.last_saved_at,
-    hsa.submitted_at,
-    hsa.ai_evaluation,
-    hsa.item_evaluations,
-    hsa.mastery
-  FROM homework_student_answers hsa
-  JOIN homework_assignments ha ON hsa.homework_id = ha.id
-  JOIN students s ON ha.student_id = s.id
-  WHERE hsa.homework_id = p_homework_id
-    AND lower(hsa.student_email) = lower(p_student_email)
-  ORDER BY hsa.exercise_index;
-END;
-$$;
-
--- Similarly for get_worksheet_student_answers
-CREATE OR REPLACE FUNCTION public.get_worksheet_student_answers(
-  p_worksheet_id UUID,
-  p_student_email TEXT
-)
-RETURNS TABLE(
-  id UUID,
-  exercise_index INTEGER,
-  exercise_type TEXT,
-  answers JSONB,
-  is_completed BOOLEAN,
-  started_at TIMESTAMPTZ,
-  last_saved_at TIMESTAMPTZ,
-  completed_at TIMESTAMPTZ,
-  item_evaluations JSONB,   -- DODANE
-  mastery INTEGER           -- DODANE
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT 
-    wsa.id,
-    wsa.exercise_index,
-    wsa.exercise_type,
-    wsa.answers,
-    wsa.is_completed,
-    wsa.started_at,
-    wsa.last_saved_at,
-    wsa.completed_at,
-    wsa.item_evaluations,
-    wsa.mastery
-  FROM worksheet_student_answers wsa
-  WHERE wsa.worksheet_id = p_worksheet_id
-    AND lower(wsa.student_email) = lower(p_student_email)
-  ORDER BY wsa.exercise_index;
-END;
-$$;
-```
-
----
-
-### Zmiana 5: Usunąć niedziałający kod AI verification z beforeunload
-
-**Plik: `src/hooks/useInteractiveSharedWorksheet.tsx`**
-
-Usunąć linie 354-368 (wywołanie verify-open-answers w beforeunload) - nie działa i wprowadza w błąd:
+Dodać wywołanie po załadowaniu:
 
 ```typescript
-// USUNĄĆ:
-// Trigger AI verification for open-ended exercises
-if (answersToVerify.length > 0) {
-  fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-open-answers`, {
-    // ...
-  }).catch(() => {});
-}
+// Process any pending AI evaluations when teacher views worksheet
+useEffect(() => {
+  const processPendingAiEvals = async () => {
+    try {
+      await supabase.functions.invoke('process-pending-ai-evaluations');
+      console.log('[LiveSession] Processed pending AI evaluations');
+    } catch (error) {
+      console.warn('[LiveSession] Failed to process pending AI evals:', error);
+    }
+  };
+  
+  // Call once when component mounts (teacher opens worksheet)
+  processPendingAiEvals();
+}, []);
 ```
 
 ---
 
-## LISTA PLIKÓW DO EDYCJI
+## RESZTA PLANU (BEZ ZMIAN)
 
-| # | Plik | Zmiana | Priorytet |
-|---|------|--------|-----------|
-| 1 | `src/utils/masteryCalculator.ts` | Filtrować puste odpowiedzi w `buildItemEvaluations()` | **KRYTYCZNY** |
-| 2 | `src/hooks/useInteractiveHomework.tsx` | Naprawić mapowanie nano_skill po AI | **KRYTYCZNY** |
-| 3 | `src/components/homework/HomeworkExerciseRenderer.tsx` | Dodać AI badge do discussion | WYSOKI |
-| 4 | **Nowa migracja SQL** | Zaktualizować RPC o ai_evaluation | **KRYTYCZNY** |
-| 5 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Usunąć niedziałający kod AI w beforeunload | ŚREDNI |
-| 6 | `docs/TECHNICAL_DOCUMENTATION.md` | Zaktualizować dokumentację | NISKI |
+### PROBLEM 2.1 & 2.2: Naprawić mapowanie question_index w verify-open-answers
+
+**Plik: `supabase/functions/verify-open-answers/index.ts`**
+
+Linie 167-173 - użyć oryginalnych indeksów z requestu:
+
+```typescript
+evaluations = evaluations.map((e, idx) => ({
+  exercise_index: answers[idx]?.exercise_index,
+  question_index: answers[idx]?.question_index,  // ← ZMIANA: nie używaj e.question_index
+  quality_score: Math.max(0, Math.min(1, e.quality_score || 0)),
+  is_acceptable: e.is_acceptable ?? (e.quality_score >= 0.7),
+  feedback: e.feedback || 'Thank you for your answer.'
+}));
+```
+
+---
+
+### PROBLEM 3: Dodać auto-resize do pól tekstowych
+
+**Pliki:**
+- `src/components/worksheet/ExerciseAnswerQuestions.tsx`
+- `src/components/worksheet/ExerciseDialogue.tsx`
+- `src/components/worksheet/ExerciseParaphrasing.tsx`
+- `src/components/worksheet/ExerciseReading.tsx`
+- `src/components/worksheet/ExerciseDescribe.tsx`
+- `src/components/homework/HomeworkExerciseRenderer.tsx` (dla discussion)
+
+Zamienić `<Input>` na auto-resizing `<textarea>`:
+
+```tsx
+<textarea
+  value={studentAnswer || ''}
+  onChange={(e) => {
+    onAnswerChange?.(qIndex, e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = `${e.target.scrollHeight}px`;
+  }}
+  placeholder="Your answer..."
+  className={`min-h-[40px] w-full border rounded px-3 py-2 resize-none overflow-hidden ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+  rows={1}
+  disabled={disabled}
+/>
+```
+
+---
+
+### PROBLEM 4: Stworzyć mapę oficjalnych nazw typów ćwiczeń
+
+**Plik: `supabase/functions/generateWorksheet/helpers.ts`**
+
+```typescript
+export const EXERCISE_TYPE_NAMES: Record<string, string> = {
+  'reading': 'Reading Comprehension',
+  'true-false': 'True/False Questions',
+  'matching': 'Vocabulary Matching',
+  'fill-in-blanks': 'Fill in the Blanks',
+  'multiple-choice': 'Multiple Choice',
+  'dialogue': 'Dialogue Practice',
+  'answer-questions': 'Answer Questions',
+  // ... wszystkie typy
+};
+
+export const getOfficialExerciseName = (type: string): string => {
+  return EXERCISE_TYPE_NAMES[type] || type.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+};
+```
+
+**Plik: `supabase/functions/generateWorksheet/index.ts`** i **`src/utils/exerciseProcessor.ts`**
+
+Użyć `getOfficialExerciseName()` przy budowaniu tytułu.
+
+---
+
+## PODSUMOWANIE LISTY PLIKÓW DO EDYCJI
+
+| # | Plik/Akcja | Zmiana | Priorytet |
+|---|------------|--------|-----------|
+| 1 | **Nowa migracja SQL** | Tabela `pending_worksheet_ai_evaluations` + RPC | **KRYTYCZNY** |
+| 2 | **Nowa Edge Function** | `process-pending-ai-evaluations` | **KRYTYCZNY** |
+| 3 | `src/hooks/useInteractiveSharedWorksheet.tsx` | sendBeacon dla pending AI eval | **KRYTYCZNY** |
+| 4 | `src/hooks/useLiveSessionAnswers.tsx` | Wyzwolenie przetwarzania pending | WYSOKI |
+| 5 | `supabase/functions/verify-open-answers/index.ts` | Naprawić mapowanie question_index | **KRYTYCZNY** |
+| 6 | Komponenty ćwiczeń (6 plików) | Auto-resize textarea | WYSOKI |
+| 7 | `supabase/functions/generateWorksheet/helpers.ts` | EXERCISE_TYPE_NAMES | WYSOKI |
+| 8 | `supabase/functions/generateWorksheet/index.ts` | Oficjalne nazwy | WYSOKI |
+| 9 | `src/utils/exerciseProcessor.ts` | Oficjalne nazwy | WYSOKI |
+| 10 | `docs/TECHNICAL_DOCUMENTATION.md` | Dokumentacja | NISKI |
 
 ---
 
 ## OCZEKIWANE REZULTATY
 
-### Po implementacji:
+### PROBLEM 1 - AI Evaluation przy zamykaniu karty:
+- Gdy student zamyka kartę, `sendBeacon` zapisuje "pending" do bazy
+- Gdy nauczyciel wchodzi na worksheet (lub przy "Mark Done"), pending są przetwarzane
+- Wyniki AI trafiają do `worksheet_student_answers.item_evaluations`
+- Trigger automatycznie aktualizuje `student_events`
 
-**PROBLEM 1 - Logi worksheet:**
-- Tylko pytania z odpowiedziami studenta będą w `nano_skill_ratings`
-- Puste pytania nie będą logowane
+### PROBLEM 2.1 & 2.2 - Poprawne mapowanie AI:
+- AI Evaluation wyświetla się pod poprawnym pytaniem
+- Każde zadanie otwarte ma feedback
 
-**PROBLEM 2B - Homework name/reason:**
-- Po Submit Homework, `nano_skill_ratings` będzie zawierał poprawne nazwy i opisy z oryginalnych nano_skill
+### PROBLEM 3 - Auto-resize:
+- Pola tekstowe automatycznie rosną z treścią
+- Brak scrollowania wewnątrz pola
 
-**PROBLEM 3.1 - AI Evaluation wyświetlanie:**
-- Discussion (i wszystkie inne typy otwarte) będą wyświetlać badge pod każdym pytaniem
-
-**PROBLEM 3.2 - AI Evaluation po odświeżeniu:**
-- Dane AI evaluation będą persystowane i ładowane z bazy po odświeżeniu
-
----
-
-## SEKCJA TECHNICZNA
-
-### Weryfikacja po wdrożeniu:
-
-```sql
--- Test 1: Sprawdź czy RPC zwraca ai_evaluation
-SELECT id, ai_evaluation FROM get_student_homework_answers(
-  'homework-uuid'::uuid, 
-  'student@email.com'
-);
-
--- Test 2: Sprawdź czy logi nie zawierają pustych odpowiedzi
-SELECT event_payload->'nano_skill_ratings'
-FROM student_events
-WHERE event_source = 'worksheet_answer_saved'
-ORDER BY created_at DESC
-LIMIT 5;
-```
-
-### Kompatybilność wsteczna
-
-- Zmiana w `buildItemEvaluations` nie psuje istniejących logów - po prostu przyszłe logi będą bardziej dokładne
-- Nowe kolumny w RPC są addytywne - stary kod frontendowy będzie je ignorował
+### PROBLEM 4 - Nazwy ćwiczeń:
+- `Exercise 1: Multiple Choice (Picture)` zamiast `Multiple choice picture`
 
