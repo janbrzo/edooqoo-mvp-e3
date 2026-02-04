@@ -1,6 +1,6 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { safeGetNanoSkill } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
@@ -96,14 +96,19 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
                   )}
                 </div>
                 
-                {/* Interactive answer input under each question */}
+                {/* Interactive answer input - PROBLEM 3 FIX: Auto-resize textarea */}
                 {isInteractive && (
                   <div className="ml-4 mt-1">
-                    <Input
+                    <Textarea
                       value={studentAnswer || ''}
-                      onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                      onChange={(e) => {
+                        onAnswerChange?.(qIndex, e.target.value);
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${e.target.scrollHeight}px`;
+                      }}
                       placeholder="Your answer..."
-                      className={`h-10 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`min-h-[40px] resize-none overflow-hidden ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      rows={1}
                       disabled={disabled}
                     />
                     {/* AI Evaluation badge per question */}
@@ -125,11 +130,16 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
       {isInteractive && (!questions || questions.length === 0) && (
         <div className="mt-4">
           <h4 className="font-medium mb-2">Describe the image:</h4>
-          <Input
+          <Textarea
             value={studentAnswers[0] || ''}
-            onChange={(e) => onAnswerChange?.(0, e.target.value)}
+            onChange={(e) => {
+              onAnswerChange?.(0, e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = `${e.target.scrollHeight}px`;
+            }}
             placeholder="Write your description here..."
-            className={`h-10 ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+            className={`min-h-[40px] resize-none overflow-hidden ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+            rows={1}
             disabled={disabled}
           />
         </div>

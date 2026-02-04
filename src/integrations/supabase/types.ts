@@ -710,6 +710,59 @@ export type Database = {
           },
         ]
       }
+      pending_worksheet_ai_evaluations: {
+        Row: {
+          answers: Json
+          context: Json | null
+          created_at: string
+          english_level: string | null
+          error_message: string | null
+          exercise_index: number
+          exercise_type: string
+          id: string
+          processed_at: string | null
+          status: string
+          student_email: string
+          worksheet_id: string
+        }
+        Insert: {
+          answers: Json
+          context?: Json | null
+          created_at?: string
+          english_level?: string | null
+          error_message?: string | null
+          exercise_index: number
+          exercise_type: string
+          id?: string
+          processed_at?: string | null
+          status?: string
+          student_email: string
+          worksheet_id: string
+        }
+        Update: {
+          answers?: Json
+          context?: Json | null
+          created_at?: string
+          english_level?: string | null
+          error_message?: string | null
+          exercise_index?: number
+          exercise_type?: string
+          id?: string
+          processed_at?: string | null
+          status?: string
+          student_email?: string
+          worksheet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_worksheet_ai_evaluations_worksheet_id_fkey"
+            columns: ["worksheet_id"]
+            isOneToOne: false
+            referencedRelation: "worksheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processed_upgrade_sessions: {
         Row: {
           email: string | null
@@ -2043,6 +2096,18 @@ export type Database = {
         Returns: boolean
       }
       normalize_tag: { Args: { tag: string }; Returns: string }
+      queue_worksheet_ai_evaluation: {
+        Args: {
+          p_answers: Json
+          p_context?: Json
+          p_english_level?: string
+          p_exercise_index: number
+          p_exercise_type: string
+          p_student_email: string
+          p_worksheet_id: string
+        }
+        Returns: string
+      }
       reactivate_user_account: {
         Args: { user_email: string }
         Returns: boolean

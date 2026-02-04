@@ -53,6 +53,31 @@ export const useLiveSessionAnswers = ({
     }
   }, [worksheetId]);
 
+  // PROBLEM 1 FIX: Process any pending AI evaluations when teacher views worksheet
+  const processPendingAiEvals = useCallback(async () => {
+    if (!worksheetId) return;
+    
+    try {
+      console.log('[useLiveSessionAnswers] Processing pending AI evaluations for worksheet:', worksheetId);
+      
+      const { data, error } = await supabase.functions.invoke('process-pending-ai-evaluations', {
+        body: { worksheet_id: worksheetId }
+      });
+      
+      if (error) {
+        console.warn('[useLiveSessionAnswers] Failed to process pending AI evals:', error);
+      } else {
+        console.log('[useLiveSessionAnswers] Pending AI evals result:', data);
+        // Reload answers if any were processed
+        if (data?.processed > 0) {
+          loadInitialAnswers();
+        }
+      }
+    } catch (error) {
+      console.warn('[useLiveSessionAnswers] Error processing pending AI evals:', error);
+    }
+  }, [worksheetId, loadInitialAnswers]);
+
   // Subscribe to Realtime changes
   useEffect(() => {
     if (!enabled || !worksheetId) {
@@ -64,6 +89,9 @@ export const useLiveSessionAnswers = ({
     
     // Load initial data first
     loadInitialAnswers();
+    
+    // PROBLEM 1 FIX: Process any pending AI evaluations from student tab closes
+    processPendingAiEvals();
 
     // Set up Realtime subscription
     const channel = supabase
@@ -112,7 +140,7 @@ export const useLiveSessionAnswers = ({
       supabase.removeChannel(channel);
       setIsConnected(false);
     };
-  }, [worksheetId, enabled, loadInitialAnswers]);
+  }, [worksheetId, enabled, loadInitialAnswers, processPendingAiEvals]);
 
   // Clear answers when disabled
   useEffect(() => {

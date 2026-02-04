@@ -163,10 +163,11 @@ Return a JSON array with objects for each answer:
       
       evaluations = JSON.parse(cleanContent.trim());
       
-      // PROBLEM 4 FIX: Map evaluations back with original exercise_index from input
+      // PROBLEM 2.1 & 2.2 FIX: Use ORIGINAL indices from request, not AI response
+      // AI may reorder or renumber, so we use positional mapping to preserve original indices
       evaluations = evaluations.map((e, idx) => ({
-        exercise_index: answers[idx]?.exercise_index, // Preserve original exercise_index from request
-        question_index: e.question_index ?? answers[idx]?.question_index ?? idx,
+        exercise_index: answers[idx]?.exercise_index,  // From original request
+        question_index: answers[idx]?.question_index,  // From original request - NOT e.question_index!
         quality_score: Math.max(0, Math.min(1, e.quality_score || 0)),
         is_acceptable: e.is_acceptable ?? (e.quality_score >= 0.7),
         feedback: e.feedback || 'Thank you for your answer.'

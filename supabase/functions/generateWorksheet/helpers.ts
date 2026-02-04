@@ -131,6 +131,57 @@ export function getIconForType(type: string): string {
 }
 
 /**
+ * PROBLEM 4 FIX: Official exercise type names for consistent titles
+ * Maps exercise type IDs to their official display names
+ */
+export const EXERCISE_TYPE_NAMES: Record<string, string> = {
+  'reading': 'Reading Comprehension',
+  'true-false': 'True/False Questions',
+  'true-false-picture': 'True/False (Picture)',
+  'true-false-audio': 'True/False (Audio)',
+  'matching': 'Vocabulary Matching',
+  'matching-halves': 'Matching Halves',
+  'fill-in-blanks': 'Fill in the Blanks',
+  'fill-in-blanks-audio': 'Fill in the Blanks (Audio)',
+  'multiple-choice': 'Multiple Choice',
+  'multiple-choice-picture': 'Multiple Choice (Picture)',
+  'multiple-choice-audio': 'Multiple Choice (Audio)',
+  'dialogue': 'Dialogue Practice',
+  'discussion': 'Discussion Questions',
+  'answer-questions': 'Answer Questions',
+  'answer-questions-picture': 'Answer Questions (Picture)',
+  'answer-questions-audio': 'Answer Questions (Audio)',
+  'describe-picture': 'Describe Picture',
+  'listening-comprehension': 'Listening Comprehension',
+  'paraphrasing': 'Paraphrasing',
+  'sentence-transformation': 'Sentence Transformation',
+  'word-order': 'Word Order',
+  'gap-text': 'Gap Text (Cloze)',
+  'error-correction': 'Error Correction',
+  'odd-one-out': 'Odd One Out',
+  'negative-prefixes': 'Negative Prefixes',
+  'categorize': 'Categorization',
+  'complete-word': 'Complete Word',
+  'synonyms': 'Synonyms',
+  'antonyms': 'Antonyms',
+  'synonyms-antonyms': 'Synonyms/Antonyms',
+  'writing-task': 'Writing Task',
+  'essay': 'Essay',
+  'speaking': 'Speaking Practice',
+};
+
+/**
+ * Get the official display name for an exercise type
+ */
+export function getOfficialExerciseName(type: string): string {
+  if (EXERCISE_TYPE_NAMES[type]) {
+    return EXERCISE_TYPE_NAMES[type];
+  }
+  // Fallback: capitalize and replace dashes with spaces
+  return type.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+/**
  * Parses and cleans JSON content from AI response
  * Enhanced with JSON repair capabilities for common AI output issues
  */

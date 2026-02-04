@@ -209,12 +209,17 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
                   </p>
                   {isInteractive && (
                     <>
-                      <input
-                        type="text"
+                      {/* PROBLEM 3 FIX: Auto-resize textarea */}
+                      <textarea
                         value={studentAnswer}
-                        onChange={(e) => onAnswerChange(qIndex, e.target.value)}
+                        onChange={(e) => {
+                          onAnswerChange(qIndex, e.target.value);
+                          e.target.style.height = 'auto';
+                          e.target.style.height = `${e.target.scrollHeight}px`;
+                        }}
                         placeholder="Share your thoughts..."
-                        className="w-full h-10 border rounded px-3"
+                        className="w-full min-h-[40px] border rounded px-3 py-2 resize-none overflow-hidden"
+                        rows={1}
                         disabled={disabled}
                       />
                       {/* PROBLEM 3.1 FIX: AI Evaluation badge for discussion */}

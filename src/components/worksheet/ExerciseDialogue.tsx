@@ -1,6 +1,6 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { safeGetNanoSkill, safeGetText } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
@@ -132,14 +132,19 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
                     )}
                   </div>
                   
-                  {/* Interactive answer input under each expression */}
+                  {/* Interactive answer input - PROBLEM 3 FIX: Auto-resize textarea */}
                   {isInteractive && (
                     <div className="mt-2">
-                      <Input
+                      <Textarea
                         value={studentAnswer}
-                        onChange={(e) => onAnswerChange?.(eIndex, e.target.value)}
+                        onChange={(e) => {
+                          onAnswerChange?.(eIndex, e.target.value);
+                          e.target.style.height = 'auto';
+                          e.target.style.height = `${e.target.scrollHeight}px`;
+                        }}
                         placeholder="Use this expression in a sentence..."
-                        className={`h-10 ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        className={`min-h-[40px] resize-none overflow-hidden ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        rows={1}
                         disabled={disabled}
                       />
                       {/* AI Evaluation badge per expression */}

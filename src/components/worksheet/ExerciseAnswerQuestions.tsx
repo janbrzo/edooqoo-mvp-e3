@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
@@ -179,14 +179,20 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
                 )}
               </div>
 
-              {/* Interactive answer input - single line */}
+              {/* Interactive answer input - PROBLEM 3 FIX: Auto-resize textarea */}
               {isInteractive && (
                 <div className="ml-4 mt-1">
-                  <Input
+                  <Textarea
                     value={studentAnswer || ''}
-                    onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                    onChange={(e) => {
+                      onAnswerChange?.(qIndex, e.target.value);
+                      // Auto-resize
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
                     placeholder="Your answer..."
-                    className={`h-10 ${showAsCorrect ? 'border-green-500' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    className={`min-h-[40px] resize-none overflow-hidden ${showAsCorrect ? 'border-green-500' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    rows={1}
                     disabled={disabled}
                   />
                   {/* AI Evaluation badge per question */}
