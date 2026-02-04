@@ -301,59 +301,65 @@ export const useInteractiveSharedWorksheet = ({
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  // PROBLEM 1 FIX (Opcja B): AI verification on tab/window close
+  // PROBLEM 1 FIX: AI verification on tab/window close using sendBeacon + async queue
   useEffect(() => {
-    const handleBeforeUnload = async () => {
-      // Save all pending answers first
-      const answersToVerify: any[] = [];
-      
+    const handleBeforeUnload = () => {
+      // Iterate through all exercises with answers
       for (const exerciseIndexStr of Object.keys(answers)) {
         const exerciseIndex = parseInt(exerciseIndexStr);
         const exerciseType = exerciseTypesRef.current[exerciseIndex];
         const exerciseAnswers = answers[exerciseIndex];
         
-        // Save final answer with time
-        if (exerciseAnswers && Object.keys(exerciseAnswers).length > 0) {
-          const activeTimeMs = getActiveTimeMs(exerciseIndex);
-          
-          // Use sendBeacon for reliable unload saving
-          const saveData = {
+        // Skip if no answers
+        if (!exerciseAnswers || Object.keys(exerciseAnswers).length === 0) continue;
+        
+        const activeTimeMs = getActiveTimeMs(exerciseIndex);
+        
+        // 1. Save the answer itself using fetch with keepalive
+        const saveData = {
+          p_worksheet_id: worksheetId,
+          p_student_email: studentEmail.trim().toLowerCase(),
+          p_exercise_index: exerciseIndex,
+          p_exercise_type: exerciseType,
+          p_answers: exerciseAnswers,
+          p_time_spent_ms: activeTimeMs
+        };
+        
+        fetch(`https://bvfrkzdlklyvnhlpleck.supabase.co/rest/v1/rpc/save_worksheet_answer`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2ZnJremRsa2x5dm5obHBsZWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDYyMzQsImV4cCI6MjA2MDgyMjIzNH0.RXlVKVPO4WTD6c4sA9fZIYAQe6zKPqoMoVE6Ilit9ls',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2ZnJremRsa2x5dm5obHBsZWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDYyMzQsImV4cCI6MjA2MDgyMjIzNH0.RXlVKVPO4WTD6c4sA9fZIYAQe6zKPqoMoVE6Ilit9ls'
+          },
+          body: JSON.stringify(saveData),
+          keepalive: true
+        }).catch(() => {});
+        
+        // 2. Queue for AI evaluation ONLY for open-ended exercises
+        if (OPEN_ENDED_EXERCISE_TYPES.includes(exerciseType)) {
+          const exercise = exercises[exerciseIndex];
+          const queueData = {
             p_worksheet_id: worksheetId,
             p_student_email: studentEmail.trim().toLowerCase(),
             p_exercise_index: exerciseIndex,
             p_exercise_type: exerciseType,
             p_answers: exerciseAnswers,
-            p_time_spent_ms: activeTimeMs
+            p_english_level: 'Intermediate',
+            p_context: {
+              title: exercise?.title || `Exercise ${exerciseIndex + 1}`,
+              questions: exercise?.questions || exercise?.prompts || exercise?.sentences || exercise?.expressions || []
+            }
           };
           
-          // Non-blocking save attempt using fetch with keepalive
-          fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/save_worksheet_answer`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-            },
-            body: JSON.stringify(saveData),
-            keepalive: true
-          }).catch(() => {});
-          
-          // Collect open-ended for AI verification
-          if (OPEN_ENDED_EXERCISE_TYPES.includes(exerciseType)) {
-            const exercise = exercises[exerciseIndex];
-            answersToVerify.push({
-              question_index: exerciseIndex,
-              question_text: exercise?.title || `Exercise ${exerciseIndex + 1}`,
-              student_answer: Object.values(exerciseAnswers).join(', '),
-              exercise_type: exerciseType
-            });
-          }
+          // Use sendBeacon for reliable unload (more reliable than fetch for beforeunload)
+          const blob = new Blob([JSON.stringify(queueData)], { type: 'application/json' });
+          navigator.sendBeacon(
+            `https://bvfrkzdlklyvnhlpleck.supabase.co/rest/v1/rpc/queue_worksheet_ai_evaluation?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2ZnJremRsa2x5dm5obHBsZWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDYyMzQsImV4cCI6MjA2MDgyMjIzNH0.RXlVKVPO4WTD6c4sA9fZIYAQe6zKPqoMoVE6Ilit9ls`,
+            blob
+          );
         }
       }
-      
-      // NOTE: AI verification removed from beforeunload - it doesn't work reliably
-      // (browser may terminate before response, and results weren't being saved)
-      // AI Evaluation for worksheets is triggered by teacher via "Mark Done" button
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);

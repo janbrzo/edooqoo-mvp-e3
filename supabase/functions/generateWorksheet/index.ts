@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import OpenAI from "https://esm.sh/openai@4.28.0";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0";
-import { getExerciseTypesForCount, parseAIResponse } from "./helpers.ts";
+import { getExerciseTypesForCount, parseAIResponse, getOfficialExerciseName } from "./helpers.ts";
 import { validateExercise } from "./validators.ts";
 import { isValidUUID, sanitizeInput, validatePrompt } from "./security.ts";
 import { RateLimiter } from "./rateLimiter.ts";
@@ -487,11 +487,11 @@ serve(async (req) => {
             throw new Error("Invalid worksheet structure returned from AI");
           }
 
-          // Make sure exercise titles have correct sequential numbering
+          // PROBLEM 4 FIX: Use official exercise type names
           worksheetData.exercises.forEach((exercise: any, index: number) => {
             const exerciseNumber = index + 1;
-            const exerciseType = exercise.type.charAt(0).toUpperCase() + exercise.type.slice(1).replace(/-/g, " ");
-            exercise.title = `Exercise ${exerciseNumber}: ${exerciseType}`;
+            const officialName = getOfficialExerciseName(exercise.type);
+            exercise.title = `Exercise ${exerciseNumber}: ${officialName}`;
           });
 
           const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);
@@ -672,11 +672,11 @@ serve(async (req) => {
         }
       }
 
-      // Make sure exercise titles have correct sequential numbering
+      // PROBLEM 4 FIX: Use official exercise type names
       worksheetData.exercises.forEach((exercise: any, index: number) => {
         const exerciseNumber = index + 1;
-        const exerciseType = exercise.type.charAt(0).toUpperCase() + exercise.type.slice(1).replace(/-/g, " ");
-        exercise.title = `Exercise ${exerciseNumber}: ${exerciseType}`;
+        const officialName = getOfficialExerciseName(exercise.type);
+        exercise.title = `Exercise ${exerciseNumber}: ${officialName}`;
       });
 
       const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);

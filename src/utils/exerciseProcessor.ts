@@ -2,6 +2,52 @@
 import { shuffleArray, createSampleVocabulary } from "./worksheetUtils";
 import { getExerciseTimeByType, validateWorksheetTimes } from "./timeCalculator";
 
+/**
+ * PROBLEM 4 FIX: Official exercise type names for consistent titles
+ */
+const EXERCISE_TYPE_NAMES: Record<string, string> = {
+  'reading': 'Reading Comprehension',
+  'true-false': 'True/False Questions',
+  'true-false-picture': 'True/False (Picture)',
+  'true-false-audio': 'True/False (Audio)',
+  'matching': 'Vocabulary Matching',
+  'matching-halves': 'Matching Halves',
+  'fill-in-blanks': 'Fill in the Blanks',
+  'fill-in-blanks-audio': 'Fill in the Blanks (Audio)',
+  'multiple-choice': 'Multiple Choice',
+  'multiple-choice-picture': 'Multiple Choice (Picture)',
+  'multiple-choice-audio': 'Multiple Choice (Audio)',
+  'dialogue': 'Dialogue Practice',
+  'discussion': 'Discussion Questions',
+  'answer-questions': 'Answer Questions',
+  'answer-questions-picture': 'Answer Questions (Picture)',
+  'answer-questions-audio': 'Answer Questions (Audio)',
+  'describe-picture': 'Describe Picture',
+  'listening-comprehension': 'Listening Comprehension',
+  'paraphrasing': 'Paraphrasing',
+  'sentence-transformation': 'Sentence Transformation',
+  'word-order': 'Word Order',
+  'gap-text': 'Gap Text (Cloze)',
+  'error-correction': 'Error Correction',
+  'odd-one-out': 'Odd One Out',
+  'negative-prefixes': 'Negative Prefixes',
+  'categorize': 'Categorization',
+  'complete-word': 'Complete Word',
+  'synonyms': 'Synonyms',
+  'antonyms': 'Antonyms',
+  'synonyms-antonyms': 'Synonyms/Antonyms',
+  'writing-task': 'Writing Task',
+  'essay': 'Essay',
+  'speaking': 'Speaking Practice',
+};
+
+const getOfficialExerciseName = (type: string): string => {
+  if (EXERCISE_TYPE_NAMES[type]) {
+    return EXERCISE_TYPE_NAMES[type];
+  }
+  return type.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+};
+
 export const processExercises = (exercises: any[], lessonTime: string = '45min', hasGrammar: boolean = true): any[] => {
   console.log('🔧 Processing exercises - Starting with:', exercises.length, 'exercises');
   console.log('🔧 Lesson config:', { lessonTime, hasGrammar });
@@ -13,8 +59,9 @@ export const processExercises = (exercises: any[], lessonTime: string = '45min',
   const processedExercises = exercises.map((exercise: any, index: number) => {
     console.log(`🔧 Processing exercise ${index + 1}: ${exercise.type}`);
     
-    const exerciseType = exercise.type.charAt(0).toUpperCase() + exercise.type.slice(1).replace(/-/g, ' ');
-    exercise.title = `Exercise ${index + 1}: ${exerciseType}`;
+    // PROBLEM 4 FIX: Use official exercise type names
+    const officialName = getOfficialExerciseName(exercise.type);
+    exercise.title = `Exercise ${index + 1}: ${officialName}`;
     
     // Assign fixed time based on exercise type, lesson duration, and grammar presence
     exercise.time = getExerciseTimeByType(exercise.type, normalizedLessonTime, hasGrammar);
