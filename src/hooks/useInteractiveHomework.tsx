@@ -279,7 +279,8 @@ export const useInteractiveHomework = ({
         'reading', 'discussion', 'describe', 'answer-questions', 
         'dialogue', 'answer-questions-audio', 'describe-picture',
         'answer-questions-picture', 'paraphrasing', 'speaking',
-        'sentence-transformation', 'essay', 'gap-text', 'word-order'
+        'sentence-transformation', 'essay', 'gap-text', 'word-order',
+        'listening-comprehension'
       ];
       
       console.log('[submitHomework] Starting AI verification process...');
@@ -397,7 +398,7 @@ export const useInteractiveHomework = ({
                 
               // Build item_evaluations with AI mastery scores
                 const exerciseData = exercises[exIdx];
-                const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || [];
+                const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || exerciseData?.items || [];
                 
                 // PROBLEM 2B FIX: Build lookup of items with nano_skill for proper mapping
                 const itemsWithNanoSkill = questionItems

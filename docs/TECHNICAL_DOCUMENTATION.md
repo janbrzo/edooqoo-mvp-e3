@@ -5,15 +5,17 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - AI Evaluation Conditional Triggers & Improved Feedback:**
-- **#1 Conditional AI Evaluation**: AI Evaluation for shared worksheets now uses `last_saved_at > last_ai_eval_at` logic. Evaluation triggers only when student has made NEW changes since last evaluation. Prevents duplicate evaluations across different trigger points
-- **#2 Three AI Evaluation Triggers**:
-  - **Close Tab**: Uses `fetch` with `keepalive` (replaced unreliable `sendBeacon`) to queue pending AI evaluations via `queue_worksheet_ai_evaluation` RPC
-  - **Create Homework**: `CreateHomeworkModal` now calls `process-pending-ai-evaluations` Edge Function before creating homework
-  - **10-Minute Inactivity Timer**: Auto-triggers AI evaluation if student leaves worksheet open 10+ minutes without changes
+**Latest Update (February 2026) - AI Evaluation Fixes v2:**
+- **#1 Create Homework triggers AI Eval FIRST**: `CreateHomeworkModal` now calls `process-pending-ai-evaluations` BEFORE creating the homework record, ensuring worksheet AI scores are available immediately
+- **#2 Listening Comprehension AI Eval**: Added `'listening-comprehension'` to `openAnswerTypes` list in `useInteractiveHomework.tsx` for homework AI verification
+- **#3 Items field lookup**: Added `exerciseData?.items` to question items lookup in homework AI mastery sync (line 400)
+- **#4 Robust JSON parsing**: `verify-open-answers` Edge Function now handles truncated JSON responses: truncates after last `]`, repairs unclosed braces, retries with last incomplete object removed. `max_tokens` increased from 2000 to 4000
+- **#5 Specific AI feedback**: System prompt updated to require SPECIFIC feedback (not generic). Dynamic fallback improved with score-based messages
+
+**Previous Update (February 2026) - AI Evaluation Conditional Triggers & Improved Feedback:**
+- **#1 Conditional AI Evaluation**: AI Evaluation for shared worksheets now uses `last_saved_at > last_ai_eval_at` logic. Evaluation triggers only when student has made NEW changes since last evaluation
+- **#2 Three AI Evaluation Triggers**: Close Tab (fetch+keepalive), Create Homework, 10-Minute Inactivity Timer
 - **#3 Database Changes**: Added `last_ai_eval_at TIMESTAMPTZ` column to `worksheet_student_answers`. New RPC functions: `needs_ai_evaluation()`, `mark_ai_evaluation_done()`
-- **#4 Improved AI Feedback**: `verify-open-answers` Edge Function now generates dynamic feedback based on quality score (0.9+: "Excellent!", 0.8+: "Very good!", etc.) instead of generic "Answer recorded" message
-- **#5 Listening Comprehension Fix**: Added `exerciseData?.items` to question items lookup in `useInteractiveHomework.tsx` for proper AI evaluation display
 
 **Previous Update (February 2026) - AI Evaluation Logging & Display Fixes:**
 - **#1 AI Evaluation Per-Item Display**: AI evaluation badges now render directly under each answer input (not at bottom of exercise). Updated 8 exercise components: `ExerciseAnswerQuestions`, `ExerciseDialogue`, `ExerciseReading`, `ExerciseListeningComprehension`, `ExerciseDescribe`, `ExerciseParaphrasing`, `ExerciseAnswerQuestionsAudio`
