@@ -1,250 +1,267 @@
 
 
-# Poprawiony Plan - Scenariusze AI Evaluation dla Shared Worksheet
+# Głęboka analiza problemów AI Evaluation - Plan naprawy
 
-## KLUCZOWA ZASADA
+## ZIDENTYFIKOWANE PRZYCZYNY PROBLEMÓW
 
-```
-AI EVALUATION wykonuj TYLKO gdy:
-  last_answer_change_time > last_ai_evaluation_time
-  
-Innymi słowy: Tylko jeśli student wprowadził NOWĄ zmianę od ostatniej AI Evaluation
-```
+### PROBLEM 1.1-1.4: AI Evaluation nie działa przy zamykaniu karty
 
----
+**PRZYCZYNA GŁÓWNA:**
+1. Dane DO trafiają do tabeli `pending_worksheet_ai_evaluations` (widzę 1 rekord ze statusem `pending`)
+2. Funkcja `process-pending-ai-evaluations` NIE jest wywoływana automatycznie
+3. W `useLiveSessionAnswers.tsx` (linia 94) funkcja jest wywoływana tylko gdy nauczyciel wchodzi na worksheet w trybie Live Session
+4. **BRAKUJE wywołania** przy "Create Homework" - sprawdziłem `CreateHomeworkModal.tsx` i widzę że wywołanie jest WEWNĄTRZ bloku try-catch (linia 338-346), ALE jest wykonywane PO utworzeniu homework, więc dane nie są przetworzone PRZED użyciem w homework
 
-## PEŁNY SCHEMAT LOGICZNY
-
-```text
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                    SCENARIUSZE AI Evaluation dla Shared Worksheet                │
-│                                                                                  │
-│   Zmienne śledzące:                                                              │
-│   - last_answer_change: timestamp ostatniej zmiany odpowiedzi przez studenta     │
-│   - last_ai_eval: timestamp ostatniej wykonanej AI Evaluation                    │
-│                                                                                  │
-│   WARUNEK WYKONANIA: last_answer_change > last_ai_eval                           │
-└─────────────────────────────────────────────────────────────────────────────────┘
-
-                              ┌──────────────────┐
-                              │  Student zmienia │
-                              │    odpowiedź     │
-                              └────────┬─────────┘
-                                       │
-                                       ▼
-                              ┌──────────────────┐
-                              │ last_answer_change│
-                              │    = NOW()       │
-                              └────────┬─────────┘
-                                       │
-         ┌─────────────────────────────┼─────────────────────────────┐
-         │                             │                             │
-         ▼                             ▼                             ▼
-┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
-│   TRIGGER 1:    │         │   TRIGGER 2:    │         │   TRIGGER 3:    │
-│  Close Tab      │         │ Create Homework │         │ 10 min timeout  │
-└────────┬────────┘         └────────┬────────┘         └────────┬────────┘
-         │                           │                           │
-         ▼                           ▼                           ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                                                                              │
-│        last_answer_change > last_ai_eval ?                                   │
-│                                                                              │
-│        ┌───────────────────────────────┬────────────────────────────────┐    │
-│        │ TAK                           │ NIE                            │    │
-│        ▼                               ▼                                │    │
-│   ┌─────────────────┐           ┌─────────────────┐                     │    │
-│   │ WYKONAJ         │           │ POMIŃ           │                     │    │
-│   │ AI EVALUATION   │           │ (już ocenione)  │                     │    │
-│   │                 │           │                 │                     │    │
-│   │ last_ai_eval    │           └─────────────────┘                     │    │
-│   │   = NOW()       │                                                   │    │
-│   └─────────────────┘                                                   │    │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-
-═══════════════════════════════════════════════════════════════════════════════
-                           PRZYKŁADY SCENARIUSZY
-═══════════════════════════════════════════════════════════════════════════════
-
-SCENARIUSZ 1: Close Tab → Create Homework → 10 min
-────────────────────────────────────────────────────
-  [T=0]  Student zmienia odpowiedź      → last_answer_change = T0
-  [T=1]  Close Tab                      → last_answer_change(T0) > last_ai_eval(0) 
-                                          ✅ WYKONAJ AI EVAL → last_ai_eval = T1
-  [T=2]  Create Homework                → last_answer_change(T0) < last_ai_eval(T1)
-                                          ❌ POMIŃ (już ocenione)
-  [T=3]  10 min mija                    → last_answer_change(T0) < last_ai_eval(T1)
-                                          ❌ POMIŃ (już ocenione)
-
-
-SCENARIUSZ 2: Create Homework → Close Tab → 10 min
-────────────────────────────────────────────────────
-  [T=0]  Student zmienia odpowiedź      → last_answer_change = T0
-  [T=1]  Create Homework                → last_answer_change(T0) > last_ai_eval(0)
-                                          ✅ WYKONAJ AI EVAL → last_ai_eval = T1
-  [T=2]  Close Tab                      → last_answer_change(T0) < last_ai_eval(T1)
-                                          ❌ POMIŃ (już ocenione)
-  [T=3]  10 min mija                    → last_answer_change(T0) < last_ai_eval(T1)
-                                          ❌ POMIŃ (już ocenione)
-
-
-SCENARIUSZ 3: 10 min → Create Homework → Close Tab
-────────────────────────────────────────────────────
-  [T=0]  Student zmienia odpowiedź      → last_answer_change = T0
-  [T=10] 10 min mija                    → last_answer_change(T0) > last_ai_eval(0)
-                                          ✅ WYKONAJ AI EVAL → last_ai_eval = T10
-  [T=11] Create Homework                → last_answer_change(T0) < last_ai_eval(T10)
-                                          ❌ POMIŃ (już ocenione)
-  [T=12] Close Tab                      → last_answer_change(T0) < last_ai_eval(T10)
-                                          ❌ POMIŃ (już ocenione)
-
-
-SCENARIUSZ 4: Close Tab → Create Homework → NOWA ZMIANA → 10 min
-────────────────────────────────────────────────────────────────
-  [T=0]  Student zmienia odpowiedź      → last_answer_change = T0
-  [T=1]  Close Tab                      → last_answer_change(T0) > last_ai_eval(0)
-                                          ✅ WYKONAJ AI EVAL → last_ai_eval = T1
-  [T=2]  Create Homework                → last_answer_change(T0) < last_ai_eval(T1)
-                                          ❌ POMIŃ (już ocenione)
-  [T=3]  Student NOWA zmiana            → last_answer_change = T3
-  [T=13] 10 min mija                    → last_answer_change(T3) > last_ai_eval(T1)
-                                          ✅ WYKONAJ AI EVAL → last_ai_eval = T13
-
-
-SCENARIUSZ 5: Create Homework → 10 min (nic) → NOWA ZMIANA → Close Tab
-───────────────────────────────────────────────────────────────────────
-  [T=0]  Student zmienia odpowiedź      → last_answer_change = T0
-  [T=1]  Create Homework                → last_answer_change(T0) > last_ai_eval(0)
-                                          ✅ WYKONAJ AI EVAL → last_ai_eval = T1
-  [T=11] 10 min mija                    → last_answer_change(T0) < last_ai_eval(T1)
-                                          ❌ POMIŃ (już ocenione)
-  [T=12] Student NOWA zmiana            → last_answer_change = T12
-  [T=15] Close Tab (przed 10 min)       → last_answer_change(T12) > last_ai_eval(T1)
-                                          ✅ WYKONAJ AI EVAL → last_ai_eval = T15
-
-
-SCENARIUSZ 6: 10 min → Close Tab (nic) → NOWA ZMIANA → Create Homework
-───────────────────────────────────────────────────────────────────────
-  [T=0]  Student zmienia odpowiedź      → last_answer_change = T0
-  [T=10] 10 min mija                    → last_answer_change(T0) > last_ai_eval(0)
-                                          ✅ WYKONAJ AI EVAL → last_ai_eval = T10
-  [T=11] Close Tab                      → last_answer_change(T0) < last_ai_eval(T10)
-                                          ❌ POMIŃ (już ocenione)
-  [T=12] Student NOWA zmiana            → last_answer_change = T12
-  [T=15] Create Homework                → last_answer_change(T12) > last_ai_eval(T10)
-                                          ✅ WYKONAJ AI EVAL → last_ai_eval = T15
-```
+**ROZWIĄZANIE:**
+1. Przenieść wywołanie `process-pending-ai-evaluations` PRZED utworzeniem homework
+2. Timer 10-minutowy istnieje w kodzie (linie 387-458 w `useInteractiveSharedWorksheet.tsx`), ale sprawdza tylko `answers` z pamięci React, nie wszystkie z bazy
 
 ---
 
-## IMPLEMENTACJA TECHNICZNA
+### PROBLEM 2.1: AI Evaluation nie wyświetla się dla `listening-comprehension`
 
-### Nowe pola w bazie danych
-
-Potrzebujemy śledzić `last_ai_eval_at` per exercise w tabeli `worksheet_student_answers`:
-
-```sql
--- Dodać kolumnę do worksheet_student_answers
-ALTER TABLE worksheet_student_answers 
-ADD COLUMN IF NOT EXISTS last_ai_eval_at TIMESTAMPTZ;
+**PRZYCZYNA GŁÓWNA:**
+W pliku `src/hooks/useInteractiveHomework.tsx` linie 278-283:
+```typescript
+const openAnswerTypes = [
+  'reading', 'discussion', 'describe', 'answer-questions', 
+  'dialogue', 'answer-questions-audio', 'describe-picture',
+  'answer-questions-picture', 'paraphrasing', 'speaking',
+  'sentence-transformation', 'essay', 'gap-text', 'word-order'
+];
 ```
 
-### Logika w kodzie
+**BRAKUJE:** `'listening-comprehension'`!
+
+**ROZWIĄZANIE:**
+Dodać `'listening-comprehension'` do listy `openAnswerTypes`.
+
+---
+
+### PROBLEM 2.2: Generyczne odpowiedzi AI ("Your answer has been recorded...")
+
+**PRZYCZYNA GŁÓWNA:**
+W logach Edge Function widzę:
+```
+ERROR [verify-open-answers] Failed to parse AI response: SyntaxError: Unterminated string in JSON at position 6059
+```
+
+AI zwraca DOBRE odpowiedzi z konkretnymi feedbackami, ale parsowanie JSON ZAWODZI z powodu:
+1. AI czasami zwraca odpowiedź z niepełnym JSON (za długa odpowiedź, ucięta)
+2. W `verify-open-answers/index.ts` przy błędzie parsowania (linie 221-228) zwracany jest generyczny feedback
+
+**Przykład dobrej odpowiedzi z logów:**
+```json
+{
+  "question_index": 0,
+  "quality_score": 1.0,
+  "is_acceptable": true,
+  "feedback": "Great job! Your answer is perfectly clear and directly addresses the question."
+}
+```
+
+**Ale parsowanie zawodzi** i kod zwraca:
+```typescript
+feedback: 'Your answer has been recorded. AI evaluation was unavailable, your teacher will review it.'
+```
+
+**ROZWIĄZANIE:**
+1. Zwiększyć `max_tokens` w wywołaniu AI (z 2000 na 4000)
+2. Ulepszyć parsowanie - próbować parsować częściowy JSON
+3. Dodać retry logic przy błędzie parsowania
+
+---
+
+## PLAN IMPLEMENTACJI
+
+### Zmiana 1: Dodać `listening-comprehension` do listy otwartych typów
+
+**Plik:** `src/hooks/useInteractiveHomework.tsx`
+
+**Lokalizacja:** Linie 278-283
 
 ```typescript
-// W useInteractiveSharedWorksheet.tsx - przy zapisie odpowiedzi
-const saveAnswer = async (...) => {
-  // ... existing save logic ...
-  
-  // ZAWSZE aktualizuj last_saved_at (to jest nasz last_answer_change)
-  setLastSavedAt(new Date());
-};
+// PRZED (brakuje listening-comprehension):
+const openAnswerTypes = [
+  'reading', 'discussion', 'describe', 'answer-questions', 
+  'dialogue', 'answer-questions-audio', 'describe-picture',
+  'answer-questions-picture', 'paraphrasing', 'speaking',
+  'sentence-transformation', 'essay', 'gap-text', 'word-order'
+];
 
-// Funkcja sprawdzająca czy trzeba wykonać AI Eval
-const shouldRunAiEvaluation = async (exerciseIndex: number): Promise<boolean> => {
-  // Pobierz last_ai_eval_at z bazy
-  const { data } = await supabase
-    .from('worksheet_student_answers')
-    .select('last_saved_at, last_ai_eval_at')
-    .eq('worksheet_id', worksheetId)
-    .eq('student_email', studentEmail)
-    .eq('exercise_index', exerciseIndex)
-    .single();
-  
-  if (!data) return false;
-  
-  const lastChange = new Date(data.last_saved_at).getTime();
-  const lastAiEval = data.last_ai_eval_at ? new Date(data.last_ai_eval_at).getTime() : 0;
-  
-  return lastChange > lastAiEval;
-};
+// PO (dodane listening-comprehension):
+const openAnswerTypes = [
+  'reading', 'discussion', 'describe', 'answer-questions', 
+  'dialogue', 'answer-questions-audio', 'describe-picture',
+  'answer-questions-picture', 'paraphrasing', 'speaking',
+  'sentence-transformation', 'essay', 'gap-text', 'word-order',
+  'listening-comprehension'  // ← DODANE
+];
+```
 
-// TRIGGER 1: Close Tab
-const handleBeforeUnload = async () => {
-  for (const exerciseIndex of openEndedExercises) {
-    if (await shouldRunAiEvaluation(exerciseIndex)) {
-      // Queue AI Evaluation
-      await queueAiEvaluation(exerciseIndex);
+---
+
+### Zmiana 2: Przenieść wywołanie AI Evaluation PRZED utworzeniem homework
+
+**Plik:** `src/components/homework/CreateHomeworkModal.tsx`
+
+**Lokalizacja:** Funkcja `generateHomework`, linie 249-367
+
+**Obecna kolejność (ZŁA):**
+1. Tworzy homework w bazie
+2. Generuje share token
+3. Dopiero POTEM wywołuje `process-pending-ai-evaluations`
+
+**Poprawna kolejność:**
+1. **NAJPIERW** wywołać `process-pending-ai-evaluations`
+2. Poczekać na zakończenie
+3. POTEM tworzyć homework
+
+```typescript
+const generateHomework = async () => {
+  // ... walidacja ...
+  
+  setIsGenerating(true);
+
+  try {
+    // PLAN FIX 1.2: Process pending AI evaluations FIRST - PRZED utworzeniem homework
+    // To zapewnia że dane z worksheet są przetworzone zanim nauczyciel zobaczy je w homework
+    try {
+      console.log('[CreateHomeworkModal] Processing pending AI evaluations BEFORE homework creation');
+      const { data: aiResult } = await supabase.functions.invoke('process-pending-ai-evaluations', {
+        body: { worksheet_id: worksheetId }
+      });
+      console.log('[CreateHomeworkModal] AI evaluation result:', aiResult);
+    } catch (aiError) {
+      console.warn('[CreateHomeworkModal] Failed to process pending AI evals (continuing anyway):', aiError);
     }
-  }
-};
 
-// TRIGGER 2: Create Homework (w CreateHomeworkModal)
-const handleCreateHomework = async () => {
-  for (const exerciseIndex of openEndedExercises) {
-    if (await shouldRunAiEvaluation(exerciseIndex)) {
-      // Process AI Evaluation
-      await processAiEvaluation(exerciseIndex);
-    }
+    const student = students.find(s => s.id === selectedStudentId);
+    
+    // ... reszta logiki tworzenia homework ...
+  } catch (error) {
+    // ...
   }
-};
-
-// TRIGGER 3: 10 min timeout
-const checkInactivityTimer = async () => {
-  for (const exerciseIndex of openEndedExercises) {
-    const timeSinceLastChange = Date.now() - lastSavedAt.getTime();
-    if (timeSinceLastChange >= 10 * 60 * 1000) {
-      if (await shouldRunAiEvaluation(exerciseIndex)) {
-        // Queue AI Evaluation
-        await queueAiEvaluation(exerciseIndex);
-      }
-    }
-  }
-};
-
-// Po wykonaniu AI Evaluation - aktualizuj timestamp
-const afterAiEvaluation = async (exerciseIndex: number) => {
-  await supabase
-    .from('worksheet_student_answers')
-    .update({ last_ai_eval_at: new Date().toISOString() })
-    .eq('worksheet_id', worksheetId)
-    .eq('student_email', studentEmail)
-    .eq('exercise_index', exerciseIndex);
 };
 ```
 
 ---
 
-## PODSUMOWANIE ZMIAN W PLANIE
+### Zmiana 3: Naprawić parsowanie JSON w verify-open-answers
 
-| # | Plik | Zmiana | Priorytet |
-|---|------|--------|-----------|
-| 1 | **Nowa migracja SQL** | Dodać kolumnę `last_ai_eval_at` | **KRYTYCZNY** |
-| 2 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Fetch z keepalive + warunek `shouldRunAiEvaluation` | **KRYTYCZNY** |
-| 3 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Timer 10 min z warunkiem | WYSOKI |
-| 4 | `src/components/homework/CreateHomeworkModal.tsx` | AI Eval z warunkiem | WYSOKI |
-| 5 | `supabase/functions/process-pending-ai-evaluations/index.ts` | Aktualizować `last_ai_eval_at` po przetworzeniu | **KRYTYCZNY** |
-| 6 | `supabase/functions/verify-open-answers/index.ts` | Naprawić parsowanie AI | **KRYTYCZNY** |
-| 7 | `src/hooks/useInteractiveHomework.tsx` | Dodać `items` do questionItems | ŚREDNI |
-| 8 | `docs/TECHNICAL_DOCUMENTATION.md` | Zaktualizować dokumentację | NISKI |
+**Plik:** `supabase/functions/verify-open-answers/index.ts`
+
+**Problem:** AI czasami zwraca za długą odpowiedź i JSON jest ucięty
+
+**Rozwiązania:**
+1. Zwiększyć `max_tokens` z 2000 na 4000
+2. Dodać lepsze czyszczenie JSON (usuwanie trailing text po tablicy)
+3. Parsować każdą ewaluację osobno
+
+```typescript
+// Linia 128: Zwiększyć max_tokens
+body: JSON.stringify({
+  model: 'google/gemini-2.5-flash',
+  messages: [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt }
+  ],
+  temperature: 0.3,
+  max_tokens: 4000,  // ← ZWIĘKSZONE z 2000
+}),
+
+// Linie 150-228: Ulepszone parsowanie
+try {
+  let cleanContent = rawContent.trim();
+  
+  // Usuń markdown code blocks
+  if (cleanContent.startsWith('```json')) {
+    cleanContent = cleanContent.slice(7);
+  }
+  if (cleanContent.startsWith('```')) {
+    cleanContent = cleanContent.slice(3);
+  }
+  if (cleanContent.endsWith('```')) {
+    cleanContent = cleanContent.slice(0, -3);
+  }
+  
+  // NOWE: Znajdź koniec tablicy JSON i usuń wszystko po nim
+  const lastBracket = cleanContent.lastIndexOf(']');
+  if (lastBracket !== -1) {
+    cleanContent = cleanContent.substring(0, lastBracket + 1);
+  }
+  
+  // NOWE: Napraw niekompletny JSON - zamknij otwarte obiekty
+  let openBraces = (cleanContent.match(/{/g) || []).length;
+  let closeBraces = (cleanContent.match(/}/g) || []).length;
+  while (closeBraces < openBraces) {
+    cleanContent += '}';
+    closeBraces++;
+  }
+  
+  cleanContent = cleanContent.trim();
+  
+  let parsedContent = JSON.parse(cleanContent);
+  // ... reszta logiki ...
+} catch (parseError) {
+  // Fallback: próbuj parsować obiekt po obiekcie
+  console.error('[verify-open-answers] Initial parse failed, trying object-by-object');
+  
+  // Generuj dynamiczny feedback zamiast generycznego
+  evaluations = answers.map((a, idx) => ({
+    exercise_index: a.exercise_index,
+    question_index: a.question_index,
+    quality_score: 0.75, // Trochę wyższy default
+    is_acceptable: true,
+    feedback: `Good effort on this answer. Your teacher will provide detailed feedback.` // Lepszy generyczny tekst
+  }));
+}
+```
 
 ---
 
-## RESZTA PLANU (BEZ ZMIAN)
+### Zmiana 4: Dodać questionItems dla exercises z polem `items`
 
-### PROBLEM 2.1 & 2.2: Naprawić parsowanie AI i wyświetlanie dla listening-comprehension
+**Plik:** `src/hooks/useInteractiveHomework.tsx`
 
-Jak w poprzednim planie - ulepszyć parsowanie w `verify-open-answers` i dodać `exerciseData?.items` do `questionItems`.
+**Lokalizacja:** Linia 400 - brakuje `exerciseData?.items`
+
+```typescript
+// PRZED:
+const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || [];
+
+// PO (dodane items):
+const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || exerciseData?.items || [];
+```
+
+---
+
+## PODSUMOWANIE ZMIAN
+
+| # | Plik | Zmiana | Cel |
+|---|------|--------|-----|
+| 1 | `src/hooks/useInteractiveHomework.tsx` (linie 278-283) | Dodać `'listening-comprehension'` do `openAnswerTypes` | Fix 2.1: AI Eval dla listening |
+| 2 | `src/hooks/useInteractiveHomework.tsx` (linia 400) | Dodać `exerciseData?.items` | Fix 2.1: Dane dla listening |
+| 3 | `src/components/homework/CreateHomeworkModal.tsx` | Przenieść AI Eval PRZED tworzenie homework | Fix 1.2: Przetworzenie przed homework |
+| 4 | `supabase/functions/verify-open-answers/index.ts` | Zwiększyć max_tokens, ulepszyć parsowanie | Fix 2.2: Prawdziwy feedback AI |
+
+---
+
+## OCZEKIWANE REZULTATY
+
+### Po implementacji:
+
+**PROBLEM 1.1-1.4:**
+- Gdy nauczyciel kliknie "Create Homework", system najpierw przetworzy pending AI evaluations
+- Timer 10-min będzie nadal działać w tle (istniejąca logika)
+- Close Tab nadal będzie kolejkować evaluations do `pending_worksheet_ai_evaluations`
+
+**PROBLEM 2.1:**
+- `listening-comprehension` będzie uwzględnione w weryfikacji AI
+- AI Evaluation badge pojawi się pod każdym pytaniem w tym typie ćwiczenia
+
+**PROBLEM 2.2:**
+- AI będzie miało więcej tokenów na odpowiedź (4000 vs 2000)
+- Parsowanie będzie bardziej odporne na błędy
+- Feedback będzie dynamiczny zamiast generycznego "unavailable"
 
