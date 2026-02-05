@@ -311,7 +311,8 @@ export const useInteractiveHomework = ({
             const studentAnswersForExercise = ans.answers || {};
             
             // Get questions/prompts/sentences array from exercise
-            const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || [];
+            // PROBLEM 2.1 FIX: Add 'items' for listening-comprehension support
+            const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || exerciseData?.items || [];
             
             // PROBLEM 4: Send each question separately for individual evaluation
             Object.entries(studentAnswersForExercise).forEach(([qIdxStr, studentAnswer]) => {

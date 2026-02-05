@@ -5,14 +5,17 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - AI Evaluation Logging & Display Fixes:**
-- **#1 Empty Answers Filtering**: `buildItemEvaluations()` in `masteryCalculator.ts` now skips items where student didn't provide an answer. Logs contain only answered questions
-- **#2 Nano_Skill Mapping Fix After AI**: `useInteractiveHomework.tsx` now correctly maps AI evaluation results back to original nano_skill metadata using position matching with fallback
-- **#3 Discussion AI Badge**: Added `AiEvaluationBadge` rendering to inline discussion exercise in `HomeworkExerciseRenderer.tsx` - now all 9 open-ended types show AI feedback per question
-- **#4 AI Evaluation Persistence**: RPC functions `get_student_homework_answers` and `get_worksheet_student_answers` now return `ai_evaluation`, `item_evaluations`, and `mastery` columns - data persists after page refresh
-- **#5 Removed Broken beforeunload AI**: Removed non-functional `verify-open-answers` fetch from `useInteractiveSharedWorksheet.tsx` beforeunload handler - AI eval for worksheets triggered via teacher "Mark Done" only
+**Latest Update (February 2026) - AI Evaluation Conditional Triggers & Improved Feedback:**
+- **#1 Conditional AI Evaluation**: AI Evaluation for shared worksheets now uses `last_saved_at > last_ai_eval_at` logic. Evaluation triggers only when student has made NEW changes since last evaluation. Prevents duplicate evaluations across different trigger points
+- **#2 Three AI Evaluation Triggers**:
+  - **Close Tab**: Uses `fetch` with `keepalive` (replaced unreliable `sendBeacon`) to queue pending AI evaluations via `queue_worksheet_ai_evaluation` RPC
+  - **Create Homework**: `CreateHomeworkModal` now calls `process-pending-ai-evaluations` Edge Function before creating homework
+  - **10-Minute Inactivity Timer**: Auto-triggers AI evaluation if student leaves worksheet open 10+ minutes without changes
+- **#3 Database Changes**: Added `last_ai_eval_at TIMESTAMPTZ` column to `worksheet_student_answers`. New RPC functions: `needs_ai_evaluation()`, `mark_ai_evaluation_done()`
+- **#4 Improved AI Feedback**: `verify-open-answers` Edge Function now generates dynamic feedback based on quality score (0.9+: "Excellent!", 0.8+: "Very good!", etc.) instead of generic "Answer recorded" message
+- **#5 Listening Comprehension Fix**: Added `exerciseData?.items` to question items lookup in `useInteractiveHomework.tsx` for proper AI evaluation display
 
-**Previous Update (February 2026) - AI Evaluation Display & Mastery Sync Fixes:**
+**Previous Update (February 2026) - AI Evaluation Logging & Display Fixes:**
 - **#1 AI Evaluation Per-Item Display**: AI evaluation badges now render directly under each answer input (not at bottom of exercise). Updated 8 exercise components: `ExerciseAnswerQuestions`, `ExerciseDialogue`, `ExerciseReading`, `ExerciseListeningComprehension`, `ExerciseDescribe`, `ExerciseParaphrasing`, `ExerciseAnswerQuestionsAudio`
 - **#2 Mastery Sync After AI Evaluation**: `submitHomework()` now updates `item_evaluations` and `mastery` columns alongside `ai_evaluation` after receiving AI scores. Uses `quality_score * 100` for per-item mastery calculation
 - **#3 Dialogue Exercise Support**: Added `expressions` to question item lookup in AI verification: `exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions`
