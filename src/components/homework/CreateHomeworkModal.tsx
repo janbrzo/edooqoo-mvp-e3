@@ -333,6 +333,19 @@ export function CreateHomeworkModal({
       setStudentEmailInput(studentEmail); // Pre-fill email input
       setShowSuccessView(true); // Always show success view instead of auto-sending
 
+      // PLAN FIX 1.2: Process pending AI evaluations for worksheet before homework is used
+      // This ensures student's worksheet answers are evaluated before teacher sees them
+      try {
+        console.log('[CreateHomeworkModal] Processing pending AI evaluations for worksheet:', worksheetId);
+        await supabase.functions.invoke('process-pending-ai-evaluations', {
+          body: { worksheet_id: worksheetId }
+        });
+        console.log('[CreateHomeworkModal] Processed pending AI evaluations successfully');
+      } catch (aiError) {
+        console.warn('[CreateHomeworkModal] Failed to process pending AI evals (non-critical):', aiError);
+        // Don't fail homework creation if AI eval fails
+      }
+
       // Emit event for other components to refresh
       window.dispatchEvent(
         new CustomEvent("homeworkCreated", {

@@ -160,31 +160,70 @@ Return a JSON array with objects for each answer:
       if (cleanContent.endsWith('```')) {
         cleanContent = cleanContent.slice(0, -3);
       }
+      cleanContent = cleanContent.trim();
       
-      evaluations = JSON.parse(cleanContent.trim());
+      // PROBLEM 2.2 FIX: Handle case where AI returns object instead of array
+      let parsedContent = JSON.parse(cleanContent);
+      
+      // If AI returned an object with evaluations array inside
+      if (!Array.isArray(parsedContent) && parsedContent.evaluations) {
+        parsedContent = parsedContent.evaluations;
+      }
+      
+      // If still not an array, wrap single evaluation
+      if (!Array.isArray(parsedContent)) {
+        parsedContent = [parsedContent];
+      }
       
       // PROBLEM 2.1 & 2.2 FIX: Use ORIGINAL indices from request, not AI response
       // AI may reorder or renumber, so we use positional mapping to preserve original indices
-      evaluations = evaluations.map((e, idx) => ({
-        exercise_index: answers[idx]?.exercise_index,  // From original request
-        question_index: answers[idx]?.question_index,  // From original request - NOT e.question_index!
-        quality_score: Math.max(0, Math.min(1, e.quality_score || 0)),
-        is_acceptable: e.is_acceptable ?? (e.quality_score >= 0.7),
-        feedback: e.feedback || 'Thank you for your answer.'
-      }));
+      evaluations = parsedContent.map((e: any, idx: number) => {
+        // Ensure quality_score is a valid number
+        let qualityScore = parseFloat(e.quality_score);
+        if (isNaN(qualityScore)) {
+          qualityScore = 0.7; // Default if missing
+        }
+        qualityScore = Math.max(0, Math.min(1, qualityScore));
+        
+        // PROBLEM 2.2 FIX: Ensure feedback exists and is meaningful
+        let feedback = e.feedback;
+        if (!feedback || feedback.length < 10 || feedback === 'Thank you for your answer.') {
+          // Generate dynamic feedback based on score
+          if (qualityScore >= 0.9) {
+            feedback = 'Excellent answer! Well structured and comprehensive.';
+          } else if (qualityScore >= 0.8) {
+            feedback = 'Very good answer! Minor improvements possible.';
+          } else if (qualityScore >= 0.7) {
+            feedback = 'Good answer with some room for improvement.';
+          } else if (qualityScore >= 0.5) {
+            feedback = 'Partially correct. Review the suggested answer for guidance.';
+          } else {
+            feedback = 'This answer needs improvement. Check the suggested answer for reference.';
+          }
+        }
+        
+        return {
+          exercise_index: answers[idx]?.exercise_index,  // From original request
+          question_index: answers[idx]?.question_index,  // From original request - NOT e.question_index!
+          quality_score: qualityScore,
+          is_acceptable: e.is_acceptable ?? (qualityScore >= 0.7),
+          feedback: feedback
+        };
+      });
       
-      // PROBLEM 4.2 FIX: Log parsed evaluations
-      console.log('[verify-open-answers] ========== PARSED EVALUATIONS ==========');
+      console.log('[verify-open-answers] Successfully parsed', evaluations.length, 'evaluations');
       console.log('[verify-open-answers] Evaluations:', JSON.stringify(evaluations, null, 2));
     } catch (parseError) {
       console.error('[verify-open-answers] Failed to parse AI response:', parseError);
-      // Return neutral evaluation on parse failure - include exercise_index
+      console.error('[verify-open-answers] Raw content was:', rawContent);
+      
+      // PROBLEM 2.2 FIX: Return more informative feedback on parse failure
       evaluations = answers.map((a, idx) => ({
         exercise_index: a.exercise_index,
         question_index: a.question_index,
         quality_score: 0.7,
         is_acceptable: true,
-        feedback: 'Answer recorded. Your teacher will review it.'
+        feedback: 'Your answer has been recorded. AI evaluation was unavailable, your teacher will review it.'
       }));
     }
 

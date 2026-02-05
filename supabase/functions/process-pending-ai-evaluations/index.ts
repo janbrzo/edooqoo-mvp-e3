@@ -59,9 +59,32 @@ serve(async (req) => {
 
     let processed = 0;
     let failed = 0;
+    let skipped = 0;
     
     for (const pending of pendingEvals) {
       try {
+        // PLAN FIX: Check if AI eval is actually needed using conditional logic
+        // Only run if last_saved_at > last_ai_eval_at
+        const { data: needsEval } = await supabase.rpc('needs_ai_evaluation', {
+          p_worksheet_id: pending.worksheet_id,
+          p_student_email: pending.student_email,
+          p_exercise_index: pending.exercise_index
+        });
+        
+        if (!needsEval) {
+          console.log(`[process-pending] Skipping ${pending.id} - already evaluated (no new changes)`);
+          // Mark as completed since no new evaluation needed
+          await supabase
+            .from('pending_worksheet_ai_evaluations')
+            .update({ 
+              status: 'completed',
+              processed_at: new Date().toISOString()
+            })
+            .eq('id', pending.id);
+          skipped++;
+          continue;
+        }
+        
         // Mark as processing
         await supabase
           .from('pending_worksheet_ai_evaluations')
@@ -110,6 +133,7 @@ serve(async (req) => {
               processed_at: new Date().toISOString()
             })
             .eq('id', pending.id);
+          skipped++;
           continue;
         }
 
@@ -159,12 +183,13 @@ serve(async (req) => {
 
         console.log(`[process-pending] Calculated mastery: ${overallMastery}% for ${itemEvaluations.length} items`);
 
-        // Update worksheet_student_answers with AI results
+        // Update worksheet_student_answers with AI results AND mark last_ai_eval_at
         const { error: updateError } = await supabase
           .from('worksheet_student_answers')
           .update({
             item_evaluations: itemEvaluations,
-            mastery: overallMastery
+            mastery: overallMastery,
+            last_ai_eval_at: new Date().toISOString() // PLAN FIX: Mark evaluation done
           })
           .eq('worksheet_id', pending.worksheet_id)
           .eq('student_email', pending.student_email)
@@ -185,7 +210,7 @@ serve(async (req) => {
           .eq('id', pending.id);
 
         processed++;
-        console.log(`[process-pending] Completed evaluation ${pending.id}`);
+        console.log(`[process-pending] Completed evaluation ${pending.id}, mastery=${overallMastery}%`);
 
       } catch (evalError: any) {
         console.error(`[process-pending] Error processing ${pending.id}:`, evalError);
@@ -202,14 +227,15 @@ serve(async (req) => {
       }
     }
 
-    console.log(`[process-pending] Finished: ${processed} processed, ${failed} failed`);
+    console.log(`[process-pending] Finished: ${processed} processed, ${skipped} skipped, ${failed} failed`);
 
     return new Response(
       JSON.stringify({ 
         processed, 
+        skipped,
         failed,
         total: pendingEvals.length,
-        message: `Processed ${processed} evaluations, ${failed} failed`
+        message: `Processed ${processed} evaluations, ${skipped} skipped (already evaluated), ${failed} failed`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

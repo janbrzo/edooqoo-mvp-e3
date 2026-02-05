@@ -1627,6 +1627,7 @@ export type Database = {
           id: string
           is_completed: boolean
           item_evaluations: Json | null
+          last_ai_eval_at: string | null
           last_saved_at: string
           mastery: number | null
           started_at: string
@@ -1642,6 +1643,7 @@ export type Database = {
           id?: string
           is_completed?: boolean
           item_evaluations?: Json | null
+          last_ai_eval_at?: string | null
           last_saved_at?: string
           mastery?: number | null
           started_at?: string
@@ -1657,6 +1659,7 @@ export type Database = {
           id?: string
           is_completed?: boolean
           item_evaluations?: Json | null
+          last_ai_eval_at?: string | null
           last_saved_at?: string
           mastery?: number | null
           started_at?: string
@@ -2079,6 +2082,14 @@ export type Database = {
             }[]
           }
       is_user_anonymous: { Args: { user_id: string }; Returns: boolean }
+      mark_ai_evaluation_done: {
+        Args: {
+          p_exercise_index: number
+          p_student_email: string
+          p_worksheet_id: string
+        }
+        Returns: undefined
+      }
       mark_homework_completed: {
         Args: {
           p_homework_id: string
@@ -2093,6 +2104,14 @@ export type Database = {
       }
       mark_knowledge_outdated: {
         Args: { p_entry_id: string; p_reason?: string; p_teacher_id: string }
+        Returns: boolean
+      }
+      needs_ai_evaluation: {
+        Args: {
+          p_exercise_index: number
+          p_student_email: string
+          p_worksheet_id: string
+        }
         Returns: boolean
       }
       normalize_tag: { Args: { tag: string }; Returns: string }
