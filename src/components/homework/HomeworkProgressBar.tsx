@@ -10,12 +10,10 @@ interface HomeworkProgressBarProps {
   isSaving: boolean;
   lastSavedAt: Date | null;
   isSubmitted: boolean;
-  // Teacher presentation mode props (renamed from edit mode)
   isTeacher?: boolean;
   presentationMode?: boolean;
   onStartPresentation?: () => void;
   onEndPresentation?: () => void;
-  // Navigation props
   studentName?: string;
   studentId?: string;
 }
@@ -25,12 +23,10 @@ export const HomeworkProgressBar = ({
   isSaving,
   lastSavedAt,
   isSubmitted,
-  // Teacher presentation mode
   isTeacher = false,
   presentationMode = false,
   onStartPresentation,
   onEndPresentation,
-  // Navigation props
   studentName,
   studentId
 }: HomeworkProgressBarProps) => {
@@ -47,9 +43,16 @@ export const HomeworkProgressBar = ({
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-[200px]">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium">
-                  Progress: {progress.answeredExercises}/{progress.totalExercises} exercises
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium">
+                    Progress: {progress.answeredExercises}/{progress.totalExercises} exercises
+                  </span>
+                  {progress.totalTasks > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {progress.answeredTasks}/{progress.totalTasks} tasks
+                    </span>
+                  )}
+                </div>
                 <span className="text-sm text-muted-foreground">
                   {progress.percentageComplete}%
                 </span>
@@ -61,30 +64,18 @@ export const HomeworkProgressBar = ({
           {/* Teacher Navigation Buttons */}
           {isTeacher && (
             <div className="flex items-center gap-2 mr-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(-1)}
-              >
+              <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 Back
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                asChild
-              >
+              <Button variant="ghost" size="sm" asChild>
                 <Link to="/dashboard">
                   <Home className="h-4 w-4 mr-1" />
                   Dashboard
                 </Link>
               </Button>
               {studentId && studentName && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                >
+                <Button variant="ghost" size="sm" asChild>
                   <Link to={`/student/${studentId}`}>
                     <User className="h-4 w-4 mr-1" />
                     {studentName}

@@ -479,10 +479,23 @@ export async function exportAsHTML(elementId: string, filename: string, exportVi
       // PROBLEM 3 FIX: Uncheck ALL radio buttons to hide True/False answers in student export
       const radioButtons = clonedElement.querySelectorAll('input[type="radio"]');
       radioButtons.forEach(radio => {
-        (radio as HTMLInputElement).checked = false;
-        radio.removeAttribute('checked');
+        const inputRadio = radio as HTMLInputElement;
+        inputRadio.checked = false;
+        inputRadio.removeAttribute('checked');
+        // Force unchecked state in serialized HTML
+        inputRadio.setAttribute('data-checked', 'false');
+        inputRadio.defaultChecked = false;
       });
       console.log(`[HTML EXPORT] Student view: Unchecked ${radioButtons.length} radio buttons for clean export.`);
+      
+      // Additional True/False cleanup: remove any green/correct indicators in T/F sections
+      const tfCorrectLabels = clonedElement.querySelectorAll('.text-green-600.italic, .text-green-700.italic');
+      tfCorrectLabels.forEach(el => {
+        const text = el.textContent?.trim() || '';
+        if (text.includes('True') || text.includes('False') || text.includes('Correct') || text.includes('Answer')) {
+          el.remove();
+        }
+      });
       
       console.log(`[HTML EXPORT] Student view: Removed answer indicators for clean student worksheet.`);
     }

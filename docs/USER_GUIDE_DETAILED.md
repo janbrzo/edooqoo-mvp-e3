@@ -50,6 +50,11 @@
 
 ## Student Management
 
+### Dashboard Features
+- **Search bar**: Filter students by name in real-time (instant results as you type)
+- **Sort options**: Toggle A-Z / Z-A alphabetical sorting, or keep default "Recent" order
+- **Default sorting**: Students are ordered by most recent activity (worksheet creation, duplication, or student addition)
+
 ### Adding Students
 - **Unlimited students**: No restrictions on number of students
 - **Required fields**: Student name, English level (A1-C2), learning goal

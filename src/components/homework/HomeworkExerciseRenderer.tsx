@@ -3,7 +3,7 @@
  * Used by HomeworkPage to ensure visual consistency between Homework and SharedWorksheet
  */
 import React from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 import { getIconComponent } from '@/utils/iconUtils';
 import { safeGetText } from '@/utils/textObjectFixer';
 import { AiEvaluationBadge, AiEvaluation } from './AiEvaluationBadge';
@@ -42,7 +42,8 @@ interface HomeworkExerciseRendererProps {
   showCorrectAnswers: boolean;
   disabled: boolean;
   viewMode: 'student' | 'teacher';
-  aiEvaluation?: Record<number, AiEvaluation>; // PROBLEM 4: AI evaluations per question index
+  aiEvaluation?: Record<number, AiEvaluation>;
+  isWaitingForAiEval?: boolean; // Problem 5: show loading indicator while AI evaluates
 }
 
 // Helper function to normalize exercise type (removes -picture and -audio suffixes for component matching)
@@ -56,7 +57,7 @@ const OPEN_ENDED_TYPES = [
   'dialogue', 'answer-questions-audio', 'describe-picture',
   'answer-questions-picture', 'paraphrasing', 'speaking',
   'sentence-transformation', 'essay', 'gap-text', 'word-order',
-  'error-correction'
+  'error-correction', 'listening-comprehension'
 ];
 
 const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
@@ -69,7 +70,8 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
   showCorrectAnswers,
   disabled,
   viewMode,
-  aiEvaluation
+  aiEvaluation,
+  isWaitingForAiEval = false
 }) => {
   const normalizedType = normalizeExerciseType(exercise.type);
   const isOpenEnded = OPEN_ENDED_TYPES.includes(exercise.type) || OPEN_ENDED_TYPES.includes(normalizedType);
@@ -537,19 +539,24 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
           <div className="space-y-2">
             {exercise.statements.map((statement: any, sIndex: number) => {
               const studentAnswer = studentAnswers[sIndex];
-              const isCorrect = studentAnswer !== undefined && 
-                ((statement.isTrue && studentAnswer === 'true') || 
-                 (!statement.isTrue && studentAnswer === 'false'));
+              const correctAnswer = statement.isTrue ? 'true' : 'false';
+              const isCorrect = studentAnswer !== undefined && studentAnswer === correctAnswer;
+              const isIncorrect = studentAnswer !== undefined && studentAnswer !== correctAnswer;
+              const isEmpty = showCorrectAnswers && studentAnswer === undefined;
               
               return (
-                <div key={sIndex} className="border rounded-lg p-3 bg-white">
+                <div key={sIndex} className={`border rounded-lg p-3 bg-white
+                  ${showCorrectAnswers && isCorrect ? 'bg-green-100 border-2 border-green-500' : ''}
+                  ${showCorrectAnswers && isIncorrect ? 'bg-red-100 border-2 border-red-500' : ''}
+                  ${showCorrectAnswers && isEmpty ? 'bg-red-50 border-2 border-red-300' : ''}
+                `}>
                   <div className="flex flex-row items-start">
                     <div className="flex-grow">
                       <p className="leading-snug">
                         {sIndex + 1}. {safeGetText(statement.text)}
                       </p>
                     </div>
-                    <div className="ml-4 flex space-x-4">
+                    <div className="ml-4 flex items-center space-x-4">
                       <label className={`inline-flex items-center cursor-pointer ${
                         isInteractive && studentAnswer === 'true' ? 'bg-blue-100 px-2 py-1 rounded' : ''
                       }`}>
@@ -576,6 +583,12 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
                         />
                         <span className="ml-2">False</span>
                       </label>
+                      {/* Show correct answer after submit */}
+                      {showCorrectAnswers && (
+                        <span className={`text-sm font-semibold ml-2 ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+                          {isCorrect ? '✓' : `✗ Correct: ${statement.isTrue ? 'True' : 'False'}`}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -584,6 +597,16 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
           </div>
         )}
         
+        {/* AI Evaluation waiting indicator for open-ended exercises */}
+        {isOpenEnded && disabled && isWaitingForAiEval && !aiEvaluation && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3 animate-pulse">
+            <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+            <div>
+              <p className="text-sm font-medium text-blue-700">AI is evaluating your answers...</p>
+              <p className="text-xs text-blue-500">This usually takes a few seconds</p>
+            </div>
+          </div>
+        )}
         {/* AI Evaluations are now rendered inline in each exercise component */}
       </div>
     </div>

@@ -40,6 +40,8 @@ export interface SharedWorksheetProgress {
   totalExercises: number;
   answeredExercises: number;
   percentageComplete: number;
+  totalTasks: number;
+  answeredTasks: number;
 }
 
 /**

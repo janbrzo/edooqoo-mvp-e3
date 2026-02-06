@@ -5,7 +5,16 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - AI Evaluation Fixes v2:**
+**Latest Update (February 2026) - UX & Progress Improvements:**
+- **#1 HTML Export True/False Fix**: Strengthened radio button unchecking in student HTML export with `defaultChecked = false` and removal of answer labels
+- **#2 Dashboard Student Search & Sort**: Added real-time search bar and A-Z/Z-A sorting toggle for student list. Default sort remains by most recent activity
+- **#3 Task-Level Progress Bar**: Progress percentage now counts individual tasks (questions) instead of exercises. Display: "Progress: 1/8 exercises | 5/80 tasks (6%)"
+- **#4 True/False Post-Submit Display**: After homework submit, True/False exercises show correct answers with green/red color coding and ✓/✗ indicators
+- **#5 Matching Post-Submit Clarity**: Matching exercise now shows full definition text alongside correct letter after submit
+- **#6 AI Evaluation Waiting Indicator**: After submit, open-ended exercises show "AI is evaluating your answers..." animated skeleton until feedback arrives
+- **#7 Listening Comprehension in OPEN_ENDED_TYPES**: Added to renderer's open-ended list for AI evaluation loading indicator
+
+**Previous Update (February 2026) - AI Evaluation Fixes v2:**
 - **#1 Create Homework triggers AI Eval FIRST**: `CreateHomeworkModal` now calls `process-pending-ai-evaluations` BEFORE creating the homework record, ensuring worksheet AI scores are available immediately
 - **#2 Listening Comprehension AI Eval**: Added `'listening-comprehension'` to `openAnswerTypes` list in `useInteractiveHomework.tsx` for homework AI verification
 - **#3 Items field lookup**: Added `exerciseData?.items` to question items lookup in homework AI mastery sync (line 400)

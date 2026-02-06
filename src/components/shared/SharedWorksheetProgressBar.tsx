@@ -25,10 +25,15 @@ export const SharedWorksheetProgressBar = ({
     <div className="sticky top-0 z-20 bg-white border-b shadow-sm">
       <div className="max-w-4xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-700">
               Progress: {progress.answeredExercises} / {progress.totalExercises} exercises
             </span>
+            {progress.totalTasks > 0 && (
+              <span className="text-xs text-gray-500">
+                {progress.answeredTasks}/{progress.totalTasks} tasks
+              </span>
+            )}
             <span className="text-sm text-worksheet-purple font-semibold">
               ({progress.percentageComplete}%)
             </span>
