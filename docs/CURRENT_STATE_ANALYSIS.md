@@ -6,7 +6,13 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2025-01):** 
+**Ostatnia naprawa (2026-02):** 
+- ✅ **NAPRAWIONO Mastery w student_events**: Trigger SQL `log_worksheet_answer_to_events` zawiera teraz `mastery` w payload, co naprawia NULL mastery we wszystkich scenariuszach AI eval
+- ✅ **NAPRAWIONO 10-min timer AI eval**: Po zakolejkowaniu ewaluacji, timer teraz wywołuje `process-pending-ai-evaluations` do przetworzenia
+- ✅ **NAPRAWIONO AI skeleton**: Warunek wyświetlania "AI is evaluating..." obsługuje teraz pusty obiekt `{}`
+- ✅ **NAPRAWIONO kolejność homework**: Ćwiczenia z worksheet sortowane po indeksie przed tworzeniem homework
+
+**Poprzednia naprawa (2026-02):**
 - ✅ **NAPRAWIONO P5 MC Audio Shuffle**: Dodano `worksheetId` do ExerciseMultipleChoiceAudio w SharedWorksheetContent - ta sama kolejność A,B,C,D w obu widokach
 - ✅ **NAPRAWIONO P3 NanoSkill Tooltip**: Zamieniono TooltipPrimitive na standardowy shadcn/ui Tooltip - pokazuje się natychmiast przy badge i znika od razu
 - ✅ **NAPRAWIONO P4 AI Evaluation Per-Question**: Każde pytanie otwarte wysyłane osobno do AI, evaluation wyświetlane per-question z etykietami "Question X:"

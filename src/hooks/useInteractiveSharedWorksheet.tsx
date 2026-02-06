@@ -456,6 +456,17 @@ export const useInteractiveSharedWorksheet = ({
         
         // Mark that we've triggered
         lastAiEvalTriggerRef.current = Date.now();
+        
+        // PLAN FIX 1C: Actually process the queued evaluations
+        try {
+          console.log('[useInteractiveSharedWorksheet] Calling process-pending-ai-evaluations after 10-min timer');
+          await supabase.functions.invoke('process-pending-ai-evaluations', {
+            body: { worksheet_id: worksheetId }
+          });
+          console.log('[useInteractiveSharedWorksheet] AI evaluations processed successfully');
+        } catch (processErr) {
+          console.warn('[useInteractiveSharedWorksheet] Failed to process AI evals (non-critical):', processErr);
+        }
       }
     };
     

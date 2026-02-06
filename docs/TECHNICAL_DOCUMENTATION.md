@@ -5,7 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - UX & Progress Improvements:**
+**Latest Update (February 2026) - Mastery Logging, AI Eval Triggers & Homework Order Fixes:**
+- **#1 SQL Trigger mastery field**: `log_worksheet_answer_to_events` now includes `NEW.mastery` in `event_payload`. This ensures `student_events` reflects accurate AI-evaluated mastery scores for all scenarios (close tab, Create Homework, 10-min timer, Live Session Mark Done)
+- **#2 10-min timer AI processing**: After queuing AI evaluations in the inactivity timer, the system now calls `process-pending-ai-evaluations` Edge Function to actually process them (previously only queued without processing)
+- **#3 AI waiting skeleton fix**: Changed condition from `!aiEvaluation` to `(!aiEvaluation || Object.keys(aiEvaluation).length === 0)` so skeleton shows even when aiEvaluation is an empty object `{}`
+- **#4 Homework exercise ordering**: Added `.sort((a, b) => a - b)` before mapping selected exercises, preserving worksheet order (media exercises first) instead of Set insertion order
+
+**Previous Update (February 2026) - UX & Progress Improvements:**
 - **#1 HTML Export True/False Fix**: Strengthened radio button unchecking in student HTML export with `defaultChecked = false` and removal of answer labels
 - **#2 Dashboard Student Search & Sort**: Added real-time search bar and A-Z/Z-A sorting toggle for student list. Default sort remains by most recent activity
 - **#3 Task-Level Progress Bar**: Progress percentage now counts individual tasks (questions) instead of exercises. Display: "Progress: 1/8 exercises | 5/80 tasks (6%)"
