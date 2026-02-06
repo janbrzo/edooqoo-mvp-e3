@@ -1,104 +1,129 @@
 
 
-# Plan naprawy 5 problemow
+# Plan naprawy 3 problemow
 
-## PROBLEM 1: True/False odpowiedzi w student HTML export
+## PROBLEM 1: Mastery nie zapisuje sie w student_events po AI Evaluation
 
-**Analiza:** W pliku `ExerciseTrueFalseAudio.tsx` (linia 122), radio button w trybie non-interactive ma:
+### Przyczyna glowna (POTWIERDZONA danymi z bazy)
+
+Sprawdzilem dane w bazie i potwierdzam:
+- Tabela `worksheet_student_answers` MA poprawne wartosci `mastery` (np. 78, 72, 73, 90...)
+- Tabela `student_events` MA `mastery = NULL` we WSZYSTKICH rekordach `worksheet_answer_saved`
+
+Przyczyna: trigger SQL `log_worksheet_answer_to_events` buduje `event_payload` BEZ pola `mastery`:
+
+```sql
+-- OBECNY KOD (brakuje mastery):
+jsonb_build_object(
+    'answer_id', NEW.id,
+    'exercise_index', NEW.exercise_index,
+    'exercise_type', NEW.exercise_type,
+    'nano_skill_ratings', COALESCE(NEW.item_evaluations, '[]'::jsonb),
+    'time_spent_seconds', ROUND(COALESCE(NEW.time_spent_ms, 0) / 1000.0, 1)
+)
 ```
-checked={viewMode === 'teacher' && statement.isTrue === true}
+
+### Rozwiazanie
+
+Dodac `mastery` do payloadu w triggerze SQL:
+
+```sql
+jsonb_build_object(
+    'answer_id', NEW.id,
+    'exercise_index', NEW.exercise_index,
+    'exercise_type', NEW.exercise_type,
+    'mastery', NEW.mastery,  -- DODANE
+    'nano_skill_ratings', COALESCE(NEW.item_evaluations, '[]'::jsonb),
+    'time_spent_seconds', ROUND(COALESCE(NEW.time_spent_ms, 0) / 1000.0, 1)
+)
 ```
 
-Czyli w widoku teacher poprawna odpowiedz jest zaznaczona na radio button. Gdy eksportujemy HTML, klonujemy DOM - wtedy te radio buttons SA zaznaczone. W `htmlExport.ts` (linie 480-484) jest fix ktory odznacza radio buttons, ALE ten fix dotyczy TYLKO elementow wewnatrz `clonedElement`. Problem polega na tym ze:
+To automatycznie naprawi scenariusze A, B, C i D poniewaz:
+- Gdy `process-pending-ai-evaluations` aktualizuje `mastery` w `worksheet_student_answers` -> trigger odpala UPDATE -> `student_events` dostaje nowa wartosc `mastery`
+- Dotyczy KAZDEGO scenariusza: close tab, Create Homework, 10-min timer, Live Session Mark Done
 
-1. Export klonuje caly DOM z widoku `teacher` (bo nauczyciel jest zalogowany)
-2. Kod czyszczacy (linia 480) odznacza `input[type="radio"]` - to POWINNO dzialac
+### Dodatkowe naprawy dla scenariuszy B i C
 
-**Wniosek:** Kod wyglada poprawnie - radio buttons SA odznaczane. Dodamy dodatkowe zabezpieczenie - usuwanie atrybutu `checked` z DOM i nadpisanie wlasciwosci `checked` w JavaScript, bo `removeAttribute('checked')` usuwa atrybut HTML, ale nie zmienia stanu wewnetrznego DOM.
+**Scenariusz B (Create Homework)**: Juz zaimplementowany - `process-pending-ai-evaluations` jest wywolywany PRZED tworzeniem homework (linia 268-276 w CreateHomeworkModal.tsx). Ale sa 2 rekordy `pending` ze statusem `pending` (nigdy nie przetworzone). Sprawdze czy wywolanie dziala poprawnie i dodam `await` z odpowiednim timeout.
 
-**Zmiana:** W `htmlExport.ts` dodac bardziej agresywne czyszczenie: ustawic `(radio as HTMLInputElement).checked = false` ORAZ dodac inline style `display:none` na green answer spans specyficznie dla True/False.
-
----
-
-## PROBLEM 2.1: Searchbar dla studentow na Dashboard
-
-**Zmiana:** W `Dashboard.tsx` dodac:
-- Input do wyszukiwania studentow (filter w czasie rzeczywistym po nazwie)
-- Filtrowanie `students` przez `filter(s => s.name.toLowerCase().includes(searchTerm))`
-
-## PROBLEM 2.2: Sortowanie A-Z / Z-A
-
-**Zmiana:** W `Dashboard.tsx` dodac:
-- Przycisk toggle sortowania A-Z / Z-A (maly, delikatny)
-- Stan `sortMode`: 'recent' (domyslny) | 'az' | 'za'
-- Logika sortowania stosowana przed renderowaniem
-
-## PROBLEM 2.3: Sprawdzenie domyslnego sortowania
-
-**Analiza:** W `useStudents.tsx` linia 27: `.order('updated_at', { ascending: false })` - sortuje po `updated_at` malejaco, czyli ostatnio aktywny student jest na gorze. Funkcja `updateStudentActivity` (linia 121) aktualizuje `updated_at` przy tworzeniu worksheet. To jest POPRAWNE.
+**Scenariusz C (10-min timer)**: Kod istnieje (linie 399-466 w useInteractiveSharedWorksheet.tsx), ale po kolejkowaniu do `pending_worksheet_ai_evaluations` BRAKUJE wywolania `process-pending-ai-evaluations`. Timer jedynie kolejkuje evaluations ale ich nie przetwarza. Trzeba dodac wywolanie Edge Function po zakolejkowaniu.
 
 ---
 
-## PROBLEM 3: Progress procentowy liczony od przykladow, nie od zadan
+## PROBLEM 2: Brak elementu oczekiwania na AI Evaluation po submit homework
 
-**Aktualny stan:** Procent = (ukonczone_zadania / wszystkie_zadania) * 100. Jedno zadanie jest "ukonczone" gdy ALL sub-questions maja odpowiedzi.
+### Przyczyna
 
-**Zmiana:**
-1. W `HomeworkProgress` i `SharedWorksheetProgress` dodac nowe pola:
-   - `totalTasks` (suma wszystkich przykladow/pytan)
-   - `answeredTasks` (suma uzupelnionych przykladow/pytan)
-2. Procent na pasku = `answeredTasks / totalTasks * 100`
-3. Wyswietlanie: "Progress: 1/8 exercises | 5/80 tasks (6%)"
-4. Tekst exercises zostaje bez zmian - liczy sie po pelnych zadaniach
-5. Zmiany w: `useInteractiveHomework.tsx`, `useInteractiveSharedWorksheet.tsx`, `HomeworkProgressBar.tsx`, `SharedWorksheetProgressBar.tsx`
+Sprawdzilem kod - element oczekiwania JUZ ISTNIEJE (linie 600-609 w HomeworkExerciseRenderer.tsx):
+```tsx
+{isOpenEnded && disabled && isWaitingForAiEval && !aiEvaluation && (
+  <div className="animate-pulse">AI is evaluating your answers...</div>
+)}
+```
 
----
+Warunek `!aiEvaluation` sprawdza caly obiekt `aiEvaluation` (Record). Problem: jezeli `aiEvaluations[index]` jest pustym obiektem `{}` zamiast `undefined`, warunek `!aiEvaluation` jest `false` i skeleton sie nie wyswietla.
 
-## PROBLEM 4.1: True/False nie pokazuje poprawnych odpowiedzi po submit
+Dodatkowo, po uzyskaniu wynikow AI, `isWaitingForAiEval` jest ustawiane na `false` (linia 453), ale to ustawia go globalnie - nie per exercise. Wiec jak AI zwroci wyniki dla exercise 0, to skeleton znika DLA WSZYSTKICH exercises naraz.
 
-**Analiza:** W `HomeworkExerciseRenderer.tsx` linia 536-585, True/False rendering nie pokazuje poprawnej odpowiedzi (`statement.isTrue`) gdy `showCorrectAnswers === true`. Brakuje wizualnego oznaczenia poprawnej odpowiedzi - jest tylko podswietlanie inputu studenta.
+### Rozwiazanie
 
-**Zmiana:** Dodac wyswietlanie poprawnej odpowiedzi (zielony tekst "Correct: True/False") obok odpowiedzi studenta po submit. Dodac takze kolorowanie tla (zielone/czerwone) jak w innych cwiczeniach.
+Zmienic warunek wyswietlania skeleton z:
+```tsx
+!aiEvaluation
+```
+na:
+```tsx
+(!aiEvaluation || Object.keys(aiEvaluation).length === 0)
+```
 
-## PROBLEM 4.2: Matching nie jest jednoznaczny po submit
-
-**Analiza:** W `ExerciseMatching.tsx` po submit (`showCorrectAnswers=true`) student widzi:
-- Swoja odpowiedz (litera np. "B") 
-- Poprawna litera w nawiasie np. "(A)"
-- Ale NIE widzi jaka definicja odpowiada jakiej literze
-
-**Zmiana:** Po submit dodac wyswietlanie pelnej definicji obok poprawnej odpowiedzi, np.:
-- Student wybral: B
-- Poprawna: A (definicja tekst)
-Lub wyswietlic definicje bezposrednio przy poprawnej odpowiedzi, tak jak w Live Session.
+To zapewni ze skeleton wyswietla sie gdy aiEvaluation jest `undefined` LUB pustym obiektem.
 
 ---
 
-## PROBLEM 5: Oczekiwanie na AI Evaluation po submit
+## PROBLEM 3: Kolejnosc zadan na homework nie zgadza sie z worksheet
 
-**Analiza:** Po kliknieciu "Submit Homework" AI Evaluation trwa 5-10 sekund. Student widzi puste miejsce.
+### Przyczyna (POTWIERDZONA)
 
-**Zmiana:** 
-- Dodac stan `isWaitingForAiEval` w `useInteractiveHomework.tsx`
-- Ustawiac na `true` po submit, na `false` gdy `aiEvaluations` sie zaktualizuja
-- W `HomeworkExerciseRenderer.tsx` lub `HomeworkPage.tsx` wyswietlic animowany element (skeleton/spinner) z tekstem "AI is evaluating your answers..." przy zadaniach otwartych
-- Element znika gdy AI feedback sie pojawi
+W `CreateHomeworkModal.tsx` linia 281:
+```typescript
+const originalExercisesData = Array.from(selectedExercises)
+  .map(index => exercises[index])
+  .filter(Boolean);
+```
+
+`Array.from(Set)` zwraca elementy w kolejnosci DODANIA do Set (insertion order). Gdy nauczyciel klika checkboxy w kolejnosci 3, 4, 1, 2 - homework dostaje zadania w tej kolejnosci.
+
+### Rozwiazanie
+
+Posortowac indeksy przed mapowaniem:
+```typescript
+const originalExercisesData = Array.from(selectedExercises)
+  .sort((a, b) => a - b)  // SORTOWANIE po indeksie z worksheet
+  .map(index => exercises[index])
+  .filter(Boolean);
+```
+
+To zachowa:
+- Kolejnosc z worksheet (gdzie media exercises sa juz na poczatku)
+- Wygenerowane exercises na koncu (bo sa doklejane po `originalExercisesData`)
+- Numery Exercise na homework zaczynaja sie od 1 (juz tak jest w HomeworkExerciseRenderer linia 84)
 
 ---
 
-## PODSUMOWANIE ZMIAN W PLIKACH
+## PODSUMOWANIE ZMIAN
 
 | # | Plik | Zmiana | Problem |
 |---|------|--------|---------|
-| 1 | `src/utils/htmlExport.ts` | Agresywniejsze czyszczenie radio i odpowiedzi T/F | 1 |
-| 2 | `src/pages/Dashboard.tsx` | Searchbar + sortowanie A-Z | 2.1, 2.2 |
-| 3 | `src/hooks/useInteractiveHomework.tsx` | Nowe pola progress (totalTasks, answeredTasks) + isWaitingForAiEval | 3, 5 |
-| 4 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Nowe pola progress (totalTasks, answeredTasks) | 3 |
-| 5 | `src/types/interactiveHomework.ts` | Rozszerzenie HomeworkProgress o totalTasks, answeredTasks | 3 |
-| 6 | `src/types/interactiveSharedWorksheet.ts` | Rozszerzenie SharedWorksheetProgress o totalTasks, answeredTasks | 3 |
-| 7 | `src/components/homework/HomeworkProgressBar.tsx` | Wyswietlanie tasks + procent z tasks | 3 |
-| 8 | `src/components/shared/SharedWorksheetProgressBar.tsx` | Wyswietlanie tasks + procent z tasks | 3 |
-| 9 | `src/components/homework/HomeworkExerciseRenderer.tsx` | T/F poprawne odpowiedzi + Matching czytelnosc + AI waiting skeleton | 4.1, 4.2, 5 |
-| 10 | `src/components/worksheet/ExerciseMatching.tsx` | Dodanie definicji przy showCorrectAnswers | 4.2 |
-| 11 | Dokumentacja (6 plikow) | Aktualizacja | wszystkie |
+| 1 | Migracja SQL | Dodac `mastery` do payloadu triggera `log_worksheet_answer_to_events` | 1 (A,B,C,D) |
+| 2 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Po zakolejkowaniu AI eval w 10-min timerze, wywolac `process-pending-ai-evaluations` | 1C |
+| 3 | `src/components/homework/HomeworkExerciseRenderer.tsx` | Poprawic warunek skeleton AI (`Object.keys` check) | 2 |
+| 4 | `src/components/homework/CreateHomeworkModal.tsx` | Dodac `.sort((a,b) => a - b)` przy budowaniu listy exercises | 3 |
+| 5 | Dokumentacja (6 plikow) | Aktualizacja | wszystkie |
+
+### Kluczowe: dlaczego to nie zepsuje aplikacji
+
+- Zmiana 1 (SQL trigger): dodaje JEDNO pole do payload - nie zmienia istniejacych pol, nie zmienia logiki DELETE+INSERT
+- Zmiana 2 (10-min timer): dodaje wywolanie Edge Function PO zakolejkowaniu - worst case: duplikat wywolania ktory zostanie pominity (bo `needs_ai_evaluation` sprawdza timestampy)
+- Zmiana 3 (skeleton): zmienia tylko warunek wyswietlania UI - zero wplywu na logike biznesowa
+- Zmiana 4 (sort): dodaje sort na tablicy numerow - nie zmienia danych, tylko ich kolejnosc
 
