@@ -279,6 +279,7 @@ export function CreateHomeworkModal({
       
       // Get selected exercises data from both original and generated
       const originalExercisesData = Array.from(selectedExercises)
+        .sort((a, b) => a - b)
         .map(index => exercises[index])
         .filter(Boolean);
       

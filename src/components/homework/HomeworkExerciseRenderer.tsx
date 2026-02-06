@@ -598,7 +598,7 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
         )}
         
         {/* AI Evaluation waiting indicator for open-ended exercises */}
-        {isOpenEnded && disabled && isWaitingForAiEval && !aiEvaluation && (
+        {isOpenEnded && disabled && isWaitingForAiEval && (!aiEvaluation || Object.keys(aiEvaluation).length === 0) && (
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3 animate-pulse">
             <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
             <div>
