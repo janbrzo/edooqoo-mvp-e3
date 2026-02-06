@@ -1,267 +1,104 @@
 
 
-# Głęboka analiza problemów AI Evaluation - Plan naprawy
+# Plan naprawy 5 problemow
 
-## ZIDENTYFIKOWANE PRZYCZYNY PROBLEMÓW
+## PROBLEM 1: True/False odpowiedzi w student HTML export
 
-### PROBLEM 1.1-1.4: AI Evaluation nie działa przy zamykaniu karty
+**Analiza:** W pliku `ExerciseTrueFalseAudio.tsx` (linia 122), radio button w trybie non-interactive ma:
+```
+checked={viewMode === 'teacher' && statement.isTrue === true}
+```
 
-**PRZYCZYNA GŁÓWNA:**
-1. Dane DO trafiają do tabeli `pending_worksheet_ai_evaluations` (widzę 1 rekord ze statusem `pending`)
-2. Funkcja `process-pending-ai-evaluations` NIE jest wywoływana automatycznie
-3. W `useLiveSessionAnswers.tsx` (linia 94) funkcja jest wywoływana tylko gdy nauczyciel wchodzi na worksheet w trybie Live Session
-4. **BRAKUJE wywołania** przy "Create Homework" - sprawdziłem `CreateHomeworkModal.tsx` i widzę że wywołanie jest WEWNĄTRZ bloku try-catch (linia 338-346), ALE jest wykonywane PO utworzeniu homework, więc dane nie są przetworzone PRZED użyciem w homework
+Czyli w widoku teacher poprawna odpowiedz jest zaznaczona na radio button. Gdy eksportujemy HTML, klonujemy DOM - wtedy te radio buttons SA zaznaczone. W `htmlExport.ts` (linie 480-484) jest fix ktory odznacza radio buttons, ALE ten fix dotyczy TYLKO elementow wewnatrz `clonedElement`. Problem polega na tym ze:
 
-**ROZWIĄZANIE:**
-1. Przenieść wywołanie `process-pending-ai-evaluations` PRZED utworzeniem homework
-2. Timer 10-minutowy istnieje w kodzie (linie 387-458 w `useInteractiveSharedWorksheet.tsx`), ale sprawdza tylko `answers` z pamięci React, nie wszystkie z bazy
+1. Export klonuje caly DOM z widoku `teacher` (bo nauczyciel jest zalogowany)
+2. Kod czyszczacy (linia 480) odznacza `input[type="radio"]` - to POWINNO dzialac
+
+**Wniosek:** Kod wyglada poprawnie - radio buttons SA odznaczane. Dodamy dodatkowe zabezpieczenie - usuwanie atrybutu `checked` z DOM i nadpisanie wlasciwosci `checked` w JavaScript, bo `removeAttribute('checked')` usuwa atrybut HTML, ale nie zmienia stanu wewnetrznego DOM.
+
+**Zmiana:** W `htmlExport.ts` dodac bardziej agresywne czyszczenie: ustawic `(radio as HTMLInputElement).checked = false` ORAZ dodac inline style `display:none` na green answer spans specyficznie dla True/False.
 
 ---
 
-### PROBLEM 2.1: AI Evaluation nie wyświetla się dla `listening-comprehension`
+## PROBLEM 2.1: Searchbar dla studentow na Dashboard
 
-**PRZYCZYNA GŁÓWNA:**
-W pliku `src/hooks/useInteractiveHomework.tsx` linie 278-283:
-```typescript
-const openAnswerTypes = [
-  'reading', 'discussion', 'describe', 'answer-questions', 
-  'dialogue', 'answer-questions-audio', 'describe-picture',
-  'answer-questions-picture', 'paraphrasing', 'speaking',
-  'sentence-transformation', 'essay', 'gap-text', 'word-order'
-];
-```
+**Zmiana:** W `Dashboard.tsx` dodac:
+- Input do wyszukiwania studentow (filter w czasie rzeczywistym po nazwie)
+- Filtrowanie `students` przez `filter(s => s.name.toLowerCase().includes(searchTerm))`
 
-**BRAKUJE:** `'listening-comprehension'`!
+## PROBLEM 2.2: Sortowanie A-Z / Z-A
 
-**ROZWIĄZANIE:**
-Dodać `'listening-comprehension'` do listy `openAnswerTypes`.
+**Zmiana:** W `Dashboard.tsx` dodac:
+- Przycisk toggle sortowania A-Z / Z-A (maly, delikatny)
+- Stan `sortMode`: 'recent' (domyslny) | 'az' | 'za'
+- Logika sortowania stosowana przed renderowaniem
 
----
+## PROBLEM 2.3: Sprawdzenie domyslnego sortowania
 
-### PROBLEM 2.2: Generyczne odpowiedzi AI ("Your answer has been recorded...")
-
-**PRZYCZYNA GŁÓWNA:**
-W logach Edge Function widzę:
-```
-ERROR [verify-open-answers] Failed to parse AI response: SyntaxError: Unterminated string in JSON at position 6059
-```
-
-AI zwraca DOBRE odpowiedzi z konkretnymi feedbackami, ale parsowanie JSON ZAWODZI z powodu:
-1. AI czasami zwraca odpowiedź z niepełnym JSON (za długa odpowiedź, ucięta)
-2. W `verify-open-answers/index.ts` przy błędzie parsowania (linie 221-228) zwracany jest generyczny feedback
-
-**Przykład dobrej odpowiedzi z logów:**
-```json
-{
-  "question_index": 0,
-  "quality_score": 1.0,
-  "is_acceptable": true,
-  "feedback": "Great job! Your answer is perfectly clear and directly addresses the question."
-}
-```
-
-**Ale parsowanie zawodzi** i kod zwraca:
-```typescript
-feedback: 'Your answer has been recorded. AI evaluation was unavailable, your teacher will review it.'
-```
-
-**ROZWIĄZANIE:**
-1. Zwiększyć `max_tokens` w wywołaniu AI (z 2000 na 4000)
-2. Ulepszyć parsowanie - próbować parsować częściowy JSON
-3. Dodać retry logic przy błędzie parsowania
+**Analiza:** W `useStudents.tsx` linia 27: `.order('updated_at', { ascending: false })` - sortuje po `updated_at` malejaco, czyli ostatnio aktywny student jest na gorze. Funkcja `updateStudentActivity` (linia 121) aktualizuje `updated_at` przy tworzeniu worksheet. To jest POPRAWNE.
 
 ---
 
-## PLAN IMPLEMENTACJI
+## PROBLEM 3: Progress procentowy liczony od przykladow, nie od zadan
 
-### Zmiana 1: Dodać `listening-comprehension` do listy otwartych typów
+**Aktualny stan:** Procent = (ukonczone_zadania / wszystkie_zadania) * 100. Jedno zadanie jest "ukonczone" gdy ALL sub-questions maja odpowiedzi.
 
-**Plik:** `src/hooks/useInteractiveHomework.tsx`
-
-**Lokalizacja:** Linie 278-283
-
-```typescript
-// PRZED (brakuje listening-comprehension):
-const openAnswerTypes = [
-  'reading', 'discussion', 'describe', 'answer-questions', 
-  'dialogue', 'answer-questions-audio', 'describe-picture',
-  'answer-questions-picture', 'paraphrasing', 'speaking',
-  'sentence-transformation', 'essay', 'gap-text', 'word-order'
-];
-
-// PO (dodane listening-comprehension):
-const openAnswerTypes = [
-  'reading', 'discussion', 'describe', 'answer-questions', 
-  'dialogue', 'answer-questions-audio', 'describe-picture',
-  'answer-questions-picture', 'paraphrasing', 'speaking',
-  'sentence-transformation', 'essay', 'gap-text', 'word-order',
-  'listening-comprehension'  // ← DODANE
-];
-```
+**Zmiana:**
+1. W `HomeworkProgress` i `SharedWorksheetProgress` dodac nowe pola:
+   - `totalTasks` (suma wszystkich przykladow/pytan)
+   - `answeredTasks` (suma uzupelnionych przykladow/pytan)
+2. Procent na pasku = `answeredTasks / totalTasks * 100`
+3. Wyswietlanie: "Progress: 1/8 exercises | 5/80 tasks (6%)"
+4. Tekst exercises zostaje bez zmian - liczy sie po pelnych zadaniach
+5. Zmiany w: `useInteractiveHomework.tsx`, `useInteractiveSharedWorksheet.tsx`, `HomeworkProgressBar.tsx`, `SharedWorksheetProgressBar.tsx`
 
 ---
 
-### Zmiana 2: Przenieść wywołanie AI Evaluation PRZED utworzeniem homework
+## PROBLEM 4.1: True/False nie pokazuje poprawnych odpowiedzi po submit
 
-**Plik:** `src/components/homework/CreateHomeworkModal.tsx`
+**Analiza:** W `HomeworkExerciseRenderer.tsx` linia 536-585, True/False rendering nie pokazuje poprawnej odpowiedzi (`statement.isTrue`) gdy `showCorrectAnswers === true`. Brakuje wizualnego oznaczenia poprawnej odpowiedzi - jest tylko podswietlanie inputu studenta.
 
-**Lokalizacja:** Funkcja `generateHomework`, linie 249-367
+**Zmiana:** Dodac wyswietlanie poprawnej odpowiedzi (zielony tekst "Correct: True/False") obok odpowiedzi studenta po submit. Dodac takze kolorowanie tla (zielone/czerwone) jak w innych cwiczeniach.
 
-**Obecna kolejność (ZŁA):**
-1. Tworzy homework w bazie
-2. Generuje share token
-3. Dopiero POTEM wywołuje `process-pending-ai-evaluations`
+## PROBLEM 4.2: Matching nie jest jednoznaczny po submit
 
-**Poprawna kolejność:**
-1. **NAJPIERW** wywołać `process-pending-ai-evaluations`
-2. Poczekać na zakończenie
-3. POTEM tworzyć homework
+**Analiza:** W `ExerciseMatching.tsx` po submit (`showCorrectAnswers=true`) student widzi:
+- Swoja odpowiedz (litera np. "B") 
+- Poprawna litera w nawiasie np. "(A)"
+- Ale NIE widzi jaka definicja odpowiada jakiej literze
 
-```typescript
-const generateHomework = async () => {
-  // ... walidacja ...
-  
-  setIsGenerating(true);
-
-  try {
-    // PLAN FIX 1.2: Process pending AI evaluations FIRST - PRZED utworzeniem homework
-    // To zapewnia że dane z worksheet są przetworzone zanim nauczyciel zobaczy je w homework
-    try {
-      console.log('[CreateHomeworkModal] Processing pending AI evaluations BEFORE homework creation');
-      const { data: aiResult } = await supabase.functions.invoke('process-pending-ai-evaluations', {
-        body: { worksheet_id: worksheetId }
-      });
-      console.log('[CreateHomeworkModal] AI evaluation result:', aiResult);
-    } catch (aiError) {
-      console.warn('[CreateHomeworkModal] Failed to process pending AI evals (continuing anyway):', aiError);
-    }
-
-    const student = students.find(s => s.id === selectedStudentId);
-    
-    // ... reszta logiki tworzenia homework ...
-  } catch (error) {
-    // ...
-  }
-};
-```
+**Zmiana:** Po submit dodac wyswietlanie pelnej definicji obok poprawnej odpowiedzi, np.:
+- Student wybral: B
+- Poprawna: A (definicja tekst)
+Lub wyswietlic definicje bezposrednio przy poprawnej odpowiedzi, tak jak w Live Session.
 
 ---
 
-### Zmiana 3: Naprawić parsowanie JSON w verify-open-answers
+## PROBLEM 5: Oczekiwanie na AI Evaluation po submit
 
-**Plik:** `supabase/functions/verify-open-answers/index.ts`
+**Analiza:** Po kliknieciu "Submit Homework" AI Evaluation trwa 5-10 sekund. Student widzi puste miejsce.
 
-**Problem:** AI czasami zwraca za długą odpowiedź i JSON jest ucięty
-
-**Rozwiązania:**
-1. Zwiększyć `max_tokens` z 2000 na 4000
-2. Dodać lepsze czyszczenie JSON (usuwanie trailing text po tablicy)
-3. Parsować każdą ewaluację osobno
-
-```typescript
-// Linia 128: Zwiększyć max_tokens
-body: JSON.stringify({
-  model: 'google/gemini-2.5-flash',
-  messages: [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userPrompt }
-  ],
-  temperature: 0.3,
-  max_tokens: 4000,  // ← ZWIĘKSZONE z 2000
-}),
-
-// Linie 150-228: Ulepszone parsowanie
-try {
-  let cleanContent = rawContent.trim();
-  
-  // Usuń markdown code blocks
-  if (cleanContent.startsWith('```json')) {
-    cleanContent = cleanContent.slice(7);
-  }
-  if (cleanContent.startsWith('```')) {
-    cleanContent = cleanContent.slice(3);
-  }
-  if (cleanContent.endsWith('```')) {
-    cleanContent = cleanContent.slice(0, -3);
-  }
-  
-  // NOWE: Znajdź koniec tablicy JSON i usuń wszystko po nim
-  const lastBracket = cleanContent.lastIndexOf(']');
-  if (lastBracket !== -1) {
-    cleanContent = cleanContent.substring(0, lastBracket + 1);
-  }
-  
-  // NOWE: Napraw niekompletny JSON - zamknij otwarte obiekty
-  let openBraces = (cleanContent.match(/{/g) || []).length;
-  let closeBraces = (cleanContent.match(/}/g) || []).length;
-  while (closeBraces < openBraces) {
-    cleanContent += '}';
-    closeBraces++;
-  }
-  
-  cleanContent = cleanContent.trim();
-  
-  let parsedContent = JSON.parse(cleanContent);
-  // ... reszta logiki ...
-} catch (parseError) {
-  // Fallback: próbuj parsować obiekt po obiekcie
-  console.error('[verify-open-answers] Initial parse failed, trying object-by-object');
-  
-  // Generuj dynamiczny feedback zamiast generycznego
-  evaluations = answers.map((a, idx) => ({
-    exercise_index: a.exercise_index,
-    question_index: a.question_index,
-    quality_score: 0.75, // Trochę wyższy default
-    is_acceptable: true,
-    feedback: `Good effort on this answer. Your teacher will provide detailed feedback.` // Lepszy generyczny tekst
-  }));
-}
-```
+**Zmiana:** 
+- Dodac stan `isWaitingForAiEval` w `useInteractiveHomework.tsx`
+- Ustawiac na `true` po submit, na `false` gdy `aiEvaluations` sie zaktualizuja
+- W `HomeworkExerciseRenderer.tsx` lub `HomeworkPage.tsx` wyswietlic animowany element (skeleton/spinner) z tekstem "AI is evaluating your answers..." przy zadaniach otwartych
+- Element znika gdy AI feedback sie pojawi
 
 ---
 
-### Zmiana 4: Dodać questionItems dla exercises z polem `items`
+## PODSUMOWANIE ZMIAN W PLIKACH
 
-**Plik:** `src/hooks/useInteractiveHomework.tsx`
-
-**Lokalizacja:** Linia 400 - brakuje `exerciseData?.items`
-
-```typescript
-// PRZED:
-const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || [];
-
-// PO (dodane items):
-const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || exerciseData?.items || [];
-```
-
----
-
-## PODSUMOWANIE ZMIAN
-
-| # | Plik | Zmiana | Cel |
-|---|------|--------|-----|
-| 1 | `src/hooks/useInteractiveHomework.tsx` (linie 278-283) | Dodać `'listening-comprehension'` do `openAnswerTypes` | Fix 2.1: AI Eval dla listening |
-| 2 | `src/hooks/useInteractiveHomework.tsx` (linia 400) | Dodać `exerciseData?.items` | Fix 2.1: Dane dla listening |
-| 3 | `src/components/homework/CreateHomeworkModal.tsx` | Przenieść AI Eval PRZED tworzenie homework | Fix 1.2: Przetworzenie przed homework |
-| 4 | `supabase/functions/verify-open-answers/index.ts` | Zwiększyć max_tokens, ulepszyć parsowanie | Fix 2.2: Prawdziwy feedback AI |
-
----
-
-## OCZEKIWANE REZULTATY
-
-### Po implementacji:
-
-**PROBLEM 1.1-1.4:**
-- Gdy nauczyciel kliknie "Create Homework", system najpierw przetworzy pending AI evaluations
-- Timer 10-min będzie nadal działać w tle (istniejąca logika)
-- Close Tab nadal będzie kolejkować evaluations do `pending_worksheet_ai_evaluations`
-
-**PROBLEM 2.1:**
-- `listening-comprehension` będzie uwzględnione w weryfikacji AI
-- AI Evaluation badge pojawi się pod każdym pytaniem w tym typie ćwiczenia
-
-**PROBLEM 2.2:**
-- AI będzie miało więcej tokenów na odpowiedź (4000 vs 2000)
-- Parsowanie będzie bardziej odporne na błędy
-- Feedback będzie dynamiczny zamiast generycznego "unavailable"
+| # | Plik | Zmiana | Problem |
+|---|------|--------|---------|
+| 1 | `src/utils/htmlExport.ts` | Agresywniejsze czyszczenie radio i odpowiedzi T/F | 1 |
+| 2 | `src/pages/Dashboard.tsx` | Searchbar + sortowanie A-Z | 2.1, 2.2 |
+| 3 | `src/hooks/useInteractiveHomework.tsx` | Nowe pola progress (totalTasks, answeredTasks) + isWaitingForAiEval | 3, 5 |
+| 4 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Nowe pola progress (totalTasks, answeredTasks) | 3 |
+| 5 | `src/types/interactiveHomework.ts` | Rozszerzenie HomeworkProgress o totalTasks, answeredTasks | 3 |
+| 6 | `src/types/interactiveSharedWorksheet.ts` | Rozszerzenie SharedWorksheetProgress o totalTasks, answeredTasks | 3 |
+| 7 | `src/components/homework/HomeworkProgressBar.tsx` | Wyswietlanie tasks + procent z tasks | 3 |
+| 8 | `src/components/shared/SharedWorksheetProgressBar.tsx` | Wyswietlanie tasks + procent z tasks | 3 |
+| 9 | `src/components/homework/HomeworkExerciseRenderer.tsx` | T/F poprawne odpowiedzi + Matching czytelnosc + AI waiting skeleton | 4.1, 4.2, 5 |
+| 10 | `src/components/worksheet/ExerciseMatching.tsx` | Dodanie definicji przy showCorrectAnswers | 4.2 |
+| 11 | Dokumentacja (6 plikow) | Aktualizacja | wszystkie |
 
