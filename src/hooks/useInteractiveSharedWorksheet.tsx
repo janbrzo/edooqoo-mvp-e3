@@ -237,9 +237,17 @@ export const useInteractiveSharedWorksheet = ({
     }
   }, [answers, saveAnswer, exercises]);
 
-  // Calculate progress
+  // Calculate progress - percentage based on individual tasks, exercises based on full completion
   const getProgress = useCallback((): SharedWorksheetProgress => {
     let answeredExercises = 0;
+    let totalTasks = 0;
+    let answeredTasks = 0;
+    
+    // Count total tasks across ALL exercises
+    for (let i = 0; i < totalExercises; i++) {
+      const questionCount = exerciseQuestionCounts[i] || 1;
+      totalTasks += questionCount;
+    }
     
     Object.keys(answers).forEach(exerciseIndexStr => {
       const exerciseIndex = parseInt(exerciseIndexStr);
@@ -250,19 +258,23 @@ export const useInteractiveSharedWorksheet = ({
         .filter(answer => answer !== null && answer !== undefined && answer !== '')
         .length;
       
+      answeredTasks += answeredQuestionsCount;
+      
       if (answeredQuestionsCount >= questionCount) {
         answeredExercises++;
       }
     });
 
-    const percentageComplete = totalExercises > 0 
-      ? Math.round((answeredExercises / totalExercises) * 100) 
+    const percentageComplete = totalTasks > 0 
+      ? Math.round((answeredTasks / totalTasks) * 100) 
       : 0;
 
     return {
       totalExercises,
       answeredExercises,
-      percentageComplete
+      percentageComplete,
+      totalTasks,
+      answeredTasks
     };
   }, [answers, totalExercises, exerciseQuestionCounts]);
 

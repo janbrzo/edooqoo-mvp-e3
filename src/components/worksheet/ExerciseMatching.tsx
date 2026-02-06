@@ -136,7 +136,9 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
                 </span>
 
                 {showCorrectAnswers && (
-                  <span className="text-sm text-green-600">({correctLetter})</span>
+                  <span className="text-sm text-green-600 font-medium">
+                    (Correct: {correctLetter} — {shuffledDefinitions[shuffledDefinitions.findIndex(i => i.term === item.term)]?.definition})
+                  </span>
                 )}
                 
                 {/* PROBLEM 1: Display live session answer in blue */}

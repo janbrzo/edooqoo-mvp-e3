@@ -31,12 +31,13 @@ export const useInteractiveHomework = ({
   exercises = []
 }: UseInteractiveHomeworkProps) => {
   const [answers, setAnswers] = useState<Record<number, ExerciseAnswers>>({});
-  const [aiEvaluations, setAiEvaluations] = useState<Record<number, Record<number, AiEvaluation>>>({}); // PROBLEM 4: Store AI evaluations per exercise -> per question
+  const [aiEvaluations, setAiEvaluations] = useState<Record<number, Record<number, AiEvaluation>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedAt, setSubmittedAt] = useState<Date | null>(null);
+  const [isWaitingForAiEval, setIsWaitingForAiEval] = useState(false);
   
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingSavesRef = useRef<Set<number>>(new Set());
@@ -285,6 +286,7 @@ export const useInteractiveHomework = ({
       
       console.log('[submitHomework] Starting AI verification process...');
       console.log('[submitHomework] Recognized open answer types:', openAnswerTypes);
+      setIsWaitingForAiEval(true);
       
       try {
         // Get exercise types from answers (we need to load them from saved data)
@@ -448,14 +450,17 @@ export const useInteractiveHomework = ({
                 }
                 return updated;
               });
+              setIsWaitingForAiEval(false);
             } else if (verifyError) {
               console.error('[submitHomework] AI verification error:', verifyError);
+              setIsWaitingForAiEval(false);
             }
           }
         }
       } catch (aiError) {
         // Don't block submission if AI verification fails
         console.error('[submitHomework] AI verification failed (non-blocking):', aiError);
+        setIsWaitingForAiEval(false);
       }
 
       // Create notification for teacher using SECURITY DEFINER function
@@ -493,9 +498,17 @@ export const useInteractiveHomework = ({
     }
   }, [homeworkId, studentEmail]);
 
-  // Calculate progress - exercise is "answered" only when ALL questions have answers
+  // Calculate progress - percentage based on individual tasks, exercises based on full completion
   const getProgress = useCallback((): HomeworkProgress => {
     let answeredExercises = 0;
+    let totalTasks = 0;
+    let answeredTasks = 0;
+    
+    // Count total tasks across ALL exercises (not just answered ones)
+    for (let i = 0; i < totalExercises; i++) {
+      const questionCount = exerciseQuestionCounts[i] || 1;
+      totalTasks += questionCount;
+    }
     
     Object.keys(answers).forEach(exerciseIndexStr => {
       const exerciseIndex = parseInt(exerciseIndexStr);
@@ -506,19 +519,23 @@ export const useInteractiveHomework = ({
         .filter(answer => answer !== null && answer !== undefined && answer !== '')
         .length;
       
+      answeredTasks += answeredQuestionsCount;
+      
       if (answeredQuestionsCount >= questionCount) {
         answeredExercises++;
       }
     });
 
-    const percentageComplete = totalExercises > 0 
-      ? Math.round((answeredExercises / totalExercises) * 100) 
+    const percentageComplete = totalTasks > 0 
+      ? Math.round((answeredTasks / totalTasks) * 100) 
       : 0;
 
     return {
       totalExercises,
       answeredExercises,
-      percentageComplete
+      percentageComplete,
+      totalTasks,
+      answeredTasks
     };
   }, [answers, totalExercises, exerciseQuestionCounts]);
 
@@ -568,12 +585,13 @@ export const useInteractiveHomework = ({
 
   return {
     answers,
-    aiEvaluations, // PROBLEM 4.1: Expose AI evaluations
+    aiEvaluations,
     isLoading,
     isSaving,
     lastSavedAt,
     isSubmitted,
     submittedAt,
+    isWaitingForAiEval,
     updateAnswer,
     saveOnBlur,
     submitHomework,

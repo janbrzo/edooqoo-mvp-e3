@@ -27,7 +27,10 @@ import {
   Target,
   Coins,
   Bell,
-  Pencil
+  Pencil,
+  Search,
+  ArrowUpAZ,
+  ArrowDownAZ
 } from "lucide-react";
 import { useWorksheetStats } from "@/hooks/useWorksheetStats";
 import { DeleteWorksheetButton } from "@/components/DeleteWorksheetButton";
@@ -55,6 +58,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("month");
   const [renameWorksheetData, setRenameWorksheetData] = useState<{id: string; title: string} | null>(null);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [sortMode, setSortMode] = useState<'recent' | 'az' | 'za'>('recent');
   
   // ✅ FIX: Track if initial data has ever been loaded
   const [hasEverLoaded, setHasEverLoaded] = useState(false);
@@ -263,17 +268,55 @@ const Dashboard = () => {
                   <Users className="h-5 w-5" />
                   Students ({students.length})
                 </CardTitle>
-                <Button
-                  size="sm"
-                  onClick={() => setAddStudentModalOpen(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Student
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSortMode(prev => prev === 'az' ? 'za' : 'az')}
+                    className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    title={sortMode === 'az' ? 'Sort Z-A' : 'Sort A-Z'}
+                  >
+                    {sortMode === 'za' ? (
+                      <><ArrowDownAZ className="h-3.5 w-3.5 mr-1" />Z-A</>
+                    ) : (
+                      <><ArrowUpAZ className="h-3.5 w-3.5 mr-1" />A-Z</>
+                    )}
+                  </Button>
+                  {sortMode !== 'recent' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSortMode('recent')}
+                      className="h-8 px-2 text-xs text-muted-foreground"
+                    >
+                      Recent
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => setAddStudentModalOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Student
+                  </Button>
+                </div>
               </div>
               <CardDescription>
                 Manage your students and generate worksheets for them
               </CardDescription>
+              {/* Search bar */}
+              {students.length > 0 && (
+                <div className="relative mt-2">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search students..."
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               {students.length === 0 ? (
@@ -289,14 +332,34 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {students.map((student) => (
-                    <StudentCard 
-                      key={student.id} 
-                      student={student}
-                      onOpenWorksheet={handleWorksheetOpen}
-                      onDeleteStudent={deleteStudent}
-                    />
-                  ))}
+                  {(() => {
+                    let filtered = students.filter(s => 
+                      s.name.toLowerCase().includes(studentSearch.toLowerCase())
+                    );
+                    if (sortMode === 'az') {
+                      filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+                    } else if (sortMode === 'za') {
+                      filtered = [...filtered].sort((a, b) => b.name.localeCompare(a.name));
+                    }
+                    // 'recent' keeps the original order from useStudents (sorted by updated_at desc)
+                    
+                    if (filtered.length === 0 && studentSearch) {
+                      return (
+                        <p className="text-center text-sm text-muted-foreground py-4">
+                          No students matching "{studentSearch}"
+                        </p>
+                      );
+                    }
+                    
+                    return filtered.map((student) => (
+                      <StudentCard 
+                        key={student.id} 
+                        student={student}
+                        onOpenWorksheet={handleWorksheetOpen}
+                        onDeleteStudent={deleteStudent}
+                      />
+                    ));
+                  })()}
                 </div>
               )}
             </CardContent>

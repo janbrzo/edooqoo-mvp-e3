@@ -188,6 +188,8 @@ export interface HomeworkProgress {
   totalExercises: number;
   answeredExercises: number;
   percentageComplete: number;
+  totalTasks: number;
+  answeredTasks: number;
 }
 
 // ============================================
