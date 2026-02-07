@@ -76,12 +76,15 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
   const normalizedType = normalizeExerciseType(exercise.type);
   const isOpenEnded = OPEN_ENDED_TYPES.includes(exercise.type) || OPEN_ENDED_TYPES.includes(normalizedType);
   
-  // Render the exercise title - matching SharedWorksheetContent style exactly
+  // Render the exercise title - always use sequential numbering (index+1)
   const renderTitle = () => {
-    if (exercise.title?.toLowerCase().startsWith('exercise')) {
-      return exercise.title;
+    let titleText = exercise.title || 'Untitled Exercise';
+    // Strip existing "Exercise N:" prefix to renumber sequentially
+    const exerciseMatch = titleText.match(/^Exercise\s+\d+\s*:\s*(.*)/i);
+    if (exerciseMatch) {
+      titleText = exerciseMatch[1];
     }
-    return `Exercise ${index + 1}: ${exercise.title || 'Untitled Exercise'}`;
+    return `Exercise ${index + 1}: ${titleText}`;
   };
 
   return (
@@ -597,17 +600,8 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
           </div>
         )}
         
-        {/* AI Evaluation waiting indicator for open-ended exercises */}
-        {isOpenEnded && disabled && isWaitingForAiEval && (!aiEvaluation || Object.keys(aiEvaluation).length === 0) && (
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3 animate-pulse">
-            <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-            <div>
-              <p className="text-sm font-medium text-blue-700">AI is evaluating your answers...</p>
-              <p className="text-xs text-blue-500">This usually takes a few seconds</p>
-            </div>
-          </div>
-        )}
         {/* AI Evaluations are now rendered inline in each exercise component */}
+        {/* AI waiting indicator moved to HomeworkPage.tsx as fixed sidebar */}
       </div>
     </div>
   );

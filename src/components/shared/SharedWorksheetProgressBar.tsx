@@ -30,12 +30,16 @@ export const SharedWorksheetProgressBar = ({
               Progress: {progress.answeredExercises} / {progress.totalExercises} exercises
             </span>
             {progress.totalTasks > 0 && (
-              <span className="text-xs text-gray-500">
-                {progress.answeredTasks}/{progress.totalTasks} tasks
-              </span>
+              <>
+                <span className="text-xs text-gray-400">|</span>
+                <span className="text-xs text-gray-500">
+                  {progress.answeredTasks}/{progress.totalTasks} tasks
+                </span>
+              </>
             )}
+            <span className="text-xs text-gray-400">|</span>
             <span className="text-sm text-worksheet-purple font-semibold">
-              ({progress.percentageComplete}%)
+              {progress.percentageComplete}%
             </span>
           </div>
           

@@ -43,19 +43,23 @@ export const HomeworkProgressBar = ({
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-[200px]">
               <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">
                     Progress: {progress.answeredExercises}/{progress.totalExercises} exercises
                   </span>
                   {progress.totalTasks > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {progress.answeredTasks}/{progress.totalTasks} tasks
-                    </span>
+                    <>
+                      <span className="text-xs text-muted-foreground">|</span>
+                      <span className="text-xs text-muted-foreground">
+                        {progress.answeredTasks}/{progress.totalTasks} tasks
+                      </span>
+                    </>
                   )}
+                  <span className="text-xs text-muted-foreground">|</span>
+                  <span className="text-sm font-semibold text-primary">
+                    {progress.percentageComplete}%
+                  </span>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {progress.percentageComplete}%
-                </span>
               </div>
               <Progress value={progress.percentageComplete} className="h-2" />
             </div>
