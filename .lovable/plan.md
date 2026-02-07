@@ -1,112 +1,111 @@
 
+# Plan naprawy 4 problemow
 
-# Plan naprawy 3 problemow
+## PROBLEM 1: "operator does not exist: uuid = text" - logi nie zapisuja sie
 
-## PROBLEM 1: Mastery nie zapisuje sie w student_events po AI Evaluation
+**Przyczyna (POTWIERDZONA w kodzie SQL):**
 
-### Przyczyna glowna (POTWIERDZONA danymi z bazy)
-
-Sprawdzilem dane w bazie i potwierdzam:
-- Tabela `worksheet_student_answers` MA poprawne wartosci `mastery` (np. 78, 72, 73, 90...)
-- Tabela `student_events` MA `mastery = NULL` we WSZYSTKICH rekordach `worksheet_answer_saved`
-
-Przyczyna: trigger SQL `log_worksheet_answer_to_events` buduje `event_payload` BEZ pola `mastery`:
-
+W triggerze `log_worksheet_answer_to_events` zmienna `v_source_id` jest zadeklarowana jako `text`:
 ```sql
--- OBECNY KOD (brakuje mastery):
-jsonb_build_object(
-    'answer_id', NEW.id,
-    'exercise_index', NEW.exercise_index,
-    'exercise_type', NEW.exercise_type,
-    'nano_skill_ratings', COALESCE(NEW.item_evaluations, '[]'::jsonb),
-    'time_spent_seconds', ROUND(COALESCE(NEW.time_spent_ms, 0) / 1000.0, 1)
-)
+v_source_id text;
 ```
 
-### Rozwiazanie
-
-Dodac `mastery` do payloadu w triggerze SQL:
-
+A potem uzywana w porownaniu z kolumna `source_id` w tabeli `student_events`, ktora ma typ `uuid`:
 ```sql
-jsonb_build_object(
-    'answer_id', NEW.id,
-    'exercise_index', NEW.exercise_index,
-    'exercise_type', NEW.exercise_type,
-    'mastery', NEW.mastery,  -- DODANE
-    'nano_skill_ratings', COALESCE(NEW.item_evaluations, '[]'::jsonb),
-    'time_spent_seconds', ROUND(COALESCE(NEW.time_spent_ms, 0) / 1000.0, 1)
-)
+DELETE FROM student_events
+WHERE source_id = v_source_id  -- uuid = text -> BLAD!
 ```
 
-To automatycznie naprawi scenariusze A, B, C i D poniewaz:
-- Gdy `process-pending-ai-evaluations` aktualizuje `mastery` w `worksheet_student_answers` -> trigger odpala UPDATE -> `student_events` dostaje nowa wartosc `mastery`
-- Dotyczy KAZDEGO scenariusza: close tab, Create Homework, 10-min timer, Live Session Mark Done
+To powoduje blad PostgreSQL "operator does not exist: uuid = text" przy kazdym INSERT/UPDATE do `worksheet_student_answers`.
 
-### Dodatkowe naprawy dla scenariuszy B i C
+**Rozwiazanie:**
 
-**Scenariusz B (Create Homework)**: Juz zaimplementowany - `process-pending-ai-evaluations` jest wywolywany PRZED tworzeniem homework (linia 268-276 w CreateHomeworkModal.tsx). Ale sa 2 rekordy `pending` ze statusem `pending` (nigdy nie przetworzone). Sprawdze czy wywolanie dziala poprawnie i dodam `await` z odpowiednim timeout.
+Migracja SQL zmieniajaca deklaracje zmiennej z `text` na `uuid`:
+```sql
+v_source_id uuid;  -- bylo: text
+```
 
-**Scenariusz C (10-min timer)**: Kod istnieje (linie 399-466 w useInteractiveSharedWorksheet.tsx), ale po kolejkowaniu do `pending_worksheet_ai_evaluations` BRAKUJE wywolania `process-pending-ai-evaluations`. Timer jedynie kolejkuje evaluations ale ich nie przetwarza. Trzeba dodac wywolanie Edge Function po zakolejkowaniu.
+Albo alternatywnie dodanie rzutowania:
+```sql
+v_source_id := NEW.worksheet_id::uuid;
+```
+
+Wybieramy zmiane typu zmiennej na `uuid` - to czystsze rozwiazanie. Cala reszta logiki triggera jest poprawna (mastery juz jest dodane).
 
 ---
 
-## PROBLEM 2: Brak elementu oczekiwania na AI Evaluation po submit homework
+## PROBLEM 2: Element oczekiwania AI Evaluation - zmiana pozycji
 
-### Przyczyna
+**Obecny stan:** Element oczekiwania wyswietla sie POD kazdym zadaniem otwartym (linie 600-609 w HomeworkExerciseRenderer). To jest pozycja wewnatrz scrollowalnej strony - znika gdy przewiniesz.
 
-Sprawdzilem kod - element oczekiwania JUZ ISTNIEJE (linie 600-609 w HomeworkExerciseRenderer.tsx):
+**Rozwiazanie:** Przeniesc element oczekiwania z wnetrza `HomeworkExerciseRenderer` do `HomeworkPage.tsx` jako **fixed sidebar** po prawej stronie ekranu, wycentrowany w pionie. Bedzie widoczny niezaleznie od scrollowania. Zniknie gdy AI Evaluation sie pojawi.
+
+Implementacja:
+- W `HomeworkPage.tsx` dodac fixed div z `className="fixed right-4 top-1/2 -translate-y-1/2 z-50"`
+- Warunek wyswietlania: `isSubmitted && isWaitingForAiEval`
+- Usunac stary element z `HomeworkExerciseRenderer.tsx`
+- Styl: maly panel z animacja pulsowania, ikona spinner, tekst "AI is evaluating..."
+- Panel znika automatycznie gdy `isWaitingForAiEval` staje sie `false`
+
+---
+
+## PROBLEM 3: Progress bez spacji
+
+**Przyczyna:**
+
+W `HomeworkProgressBar.tsx` linie 47-54, elementy sa w oddzielnych spanach z `gap-3`, ale wyglada na to ze na mniejszych ekranach gap moze nie dzialac lub tekst jest zbyt zwarty. Dodatkowy problem: brak separatora wizualnego miedzy elementami.
+
+**Rozwiazanie:**
+
+Dodac separator `|` (pionowa kreska) miedzy elementami:
 ```tsx
-{isOpenEnded && disabled && isWaitingForAiEval && !aiEvaluation && (
-  <div className="animate-pulse">AI is evaluating your answers...</div>
+<span className="text-sm font-medium">
+  Progress: {progress.answeredExercises}/{progress.totalExercises} exercises
+</span>
+<span className="text-xs text-muted-foreground mx-1">|</span>
+{progress.totalTasks > 0 && (
+  <span className="text-xs text-muted-foreground">
+    {progress.answeredTasks}/{progress.totalTasks} tasks
+  </span>
 )}
 ```
 
-Warunek `!aiEvaluation` sprawdza caly obiekt `aiEvaluation` (Record). Problem: jezeli `aiEvaluations[index]` jest pustym obiektem `{}` zamiast `undefined`, warunek `!aiEvaluation` jest `false` i skeleton sie nie wyswietla.
-
-Dodatkowo, po uzyskaniu wynikow AI, `isWaitingForAiEval` jest ustawiane na `false` (linia 453), ale to ustawia go globalnie - nie per exercise. Wiec jak AI zwroci wyniki dla exercise 0, to skeleton znika DLA WSZYSTKICH exercises naraz.
-
-### Rozwiazanie
-
-Zmienic warunek wyswietlania skeleton z:
-```tsx
-!aiEvaluation
-```
-na:
-```tsx
-(!aiEvaluation || Object.keys(aiEvaluation).length === 0)
-```
-
-To zapewni ze skeleton wyswietla sie gdy aiEvaluation jest `undefined` LUB pustym obiektem.
+To samo dla `SharedWorksheetProgressBar.tsx`.
 
 ---
 
-## PROBLEM 3: Kolejnosc zadan na homework nie zgadza sie z worksheet
+## PROBLEM 4: Kolejnosc zadan na homework
 
-### Przyczyna (POTWIERDZONA)
+**Przyczyna (POTWIERDZONA):**
 
-W `CreateHomeworkModal.tsx` linia 281:
-```typescript
-const originalExercisesData = Array.from(selectedExercises)
-  .map(index => exercises[index])
-  .filter(Boolean);
+Sort `.sort((a, b) => a - b)` w `CreateHomeworkModal.tsx` linia 282 JEST poprawny dla indeksow. ALE problem lezy w `exercise.title` - kazde zadanie z worksheet ma juz w tytule numer np. "Exercise 6: True or False". Gdy `HomeworkExerciseRenderer` sprawdza:
+```tsx
+if (exercise.title?.toLowerCase().startsWith('exercise')) {
+  return exercise.title;  // Zwraca "Exercise 6: True or False" zamiast "Exercise 1: True or False"
+}
 ```
 
-`Array.from(Set)` zwraca elementy w kolejnosci DODANIA do Set (insertion order). Gdy nauczyciel klika checkboxy w kolejnosci 3, 4, 1, 2 - homework dostaje zadania w tej kolejnosci.
+Uzywany jest ORYGINALNY numer z worksheet zamiast nowego numeru z homework. Dlatego widac "Exercise: 3, 4, 1, 2, 5, 6, 7, 8" - bo tyutly zostaly skopiowane z worksheet.
 
-### Rozwiazanie
+**Rozwiazanie:**
 
-Posortowac indeksy przed mapowaniem:
-```typescript
-const originalExercisesData = Array.from(selectedExercises)
-  .sort((a, b) => a - b)  // SORTOWANIE po indeksie z worksheet
-  .map(index => exercises[index])
-  .filter(Boolean);
+W `HomeworkExerciseRenderer.tsx` ZAWSZE nadpisywac numer exercise na `index + 1`:
+```tsx
+const renderTitle = () => {
+  // Strip existing "Exercise N:" prefix if present
+  let titleText = exercise.title || 'Untitled Exercise';
+  const exerciseMatch = titleText.match(/^Exercise\s+\d+\s*:\s*(.*)/i);
+  if (exerciseMatch) {
+    titleText = exerciseMatch[1]; // Extract just the name part
+  }
+  return `Exercise ${index + 1}: ${titleText}`;
+};
 ```
 
-To zachowa:
-- Kolejnosc z worksheet (gdzie media exercises sa juz na poczatku)
-- Wygenerowane exercises na koncu (bo sa doklejane po `originalExercisesData`)
-- Numery Exercise na homework zaczynaja sie od 1 (juz tak jest w HomeworkExerciseRenderer linia 84)
+To zapewni ze:
+- Zadania z worksheet dostana nowe numery 1,2,3,...
+- Wygenerowane zadania kontynuuja numeracje (9, 10, ...)
+- Kolejnosc z worksheet jest zachowana (bo sort juz dziala)
 
 ---
 
@@ -114,16 +113,17 @@ To zachowa:
 
 | # | Plik | Zmiana | Problem |
 |---|------|--------|---------|
-| 1 | Migracja SQL | Dodac `mastery` do payloadu triggera `log_worksheet_answer_to_events` | 1 (A,B,C,D) |
-| 2 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Po zakolejkowaniu AI eval w 10-min timerze, wywolac `process-pending-ai-evaluations` | 1C |
-| 3 | `src/components/homework/HomeworkExerciseRenderer.tsx` | Poprawic warunek skeleton AI (`Object.keys` check) | 2 |
-| 4 | `src/components/homework/CreateHomeworkModal.tsx` | Dodac `.sort((a,b) => a - b)` przy budowaniu listy exercises | 3 |
-| 5 | Dokumentacja (6 plikow) | Aktualizacja | wszystkie |
+| 1 | Migracja SQL | Zmienic `v_source_id text` na `v_source_id uuid` w triggerze | 1 |
+| 2 | `src/pages/HomeworkPage.tsx` | Dodac fixed sidebar z AI waiting indicator | 2 |
+| 3 | `src/components/homework/HomeworkExerciseRenderer.tsx` | Usunac stary AI waiting element | 2 |
+| 4 | `src/components/homework/HomeworkProgressBar.tsx` | Dodac separatory `\|` miedzy elementami | 3 |
+| 5 | `src/components/shared/SharedWorksheetProgressBar.tsx` | Dodac separatory `\|` miedzy elementami | 3 |
+| 6 | `src/components/homework/HomeworkExerciseRenderer.tsx` | Nadpisywac numer Exercise na `index + 1` | 4 |
+| 7 | Dokumentacja | Aktualizacja | wszystkie |
 
-### Kluczowe: dlaczego to nie zepsuje aplikacji
+### Bezpieczenstwo zmian
 
-- Zmiana 1 (SQL trigger): dodaje JEDNO pole do payload - nie zmienia istniejacych pol, nie zmienia logiki DELETE+INSERT
-- Zmiana 2 (10-min timer): dodaje wywolanie Edge Function PO zakolejkowaniu - worst case: duplikat wywolania ktory zostanie pominity (bo `needs_ai_evaluation` sprawdza timestampy)
-- Zmiana 3 (skeleton): zmienia tylko warunek wyswietlania UI - zero wplywu na logike biznesowa
-- Zmiana 4 (sort): dodaje sort na tablicy numerow - nie zmienia danych, tylko ich kolejnosc
-
+- Zmiana 1 (SQL): naprawia BUG - zmienia typ zmiennej lokalnej, zero wplywu na inne funkcje
+- Zmiana 2-3 (sidebar): przenosi element UI, zero wplywu na logike
+- Zmiana 4-5 (spacje): kosmetyka CSS/tekstu
+- Zmiana 6 (numeracja): zmienia TYLKO wyswietlany tytul, nie zmienia danych w bazie
