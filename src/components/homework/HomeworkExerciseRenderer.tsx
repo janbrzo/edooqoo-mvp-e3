@@ -7,6 +7,7 @@ import { Clock, Loader2 } from 'lucide-react';
 import { getIconComponent } from '@/utils/iconUtils';
 import { safeGetText } from '@/utils/textObjectFixer';
 import { AiEvaluationBadge, AiEvaluation } from './AiEvaluationBadge';
+import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 
 // Exercise components
 import ExerciseMatching from '@/components/worksheet/ExerciseMatching';
@@ -215,15 +216,11 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
                   {isInteractive && (
                     <>
                       {/* PROBLEM 3 FIX: Auto-resize textarea */}
-                      <textarea
+                      <AutoResizeTextarea
                         value={studentAnswer}
-                        onChange={(e) => {
-                          onAnswerChange(qIndex, e.target.value);
-                          e.target.style.height = 'auto';
-                          e.target.style.height = `${e.target.scrollHeight}px`;
-                        }}
+                        onChange={(e) => onAnswerChange(qIndex, e.target.value)}
                         placeholder="Share your thoughts..."
-                        className="w-full min-h-[40px] border rounded px-3 py-2 resize-none overflow-hidden"
+                        className="w-full min-h-[40px]"
                         rows={1}
                         disabled={disabled}
                       />

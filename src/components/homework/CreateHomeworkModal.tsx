@@ -268,7 +268,7 @@ export function CreateHomeworkModal({
       try {
         console.log('[CreateHomeworkModal] Processing pending AI evaluations BEFORE homework creation for worksheet:', worksheetId);
         await supabase.functions.invoke('process-pending-ai-evaluations', {
-          body: { worksheet_id: worksheetId }
+          body: { worksheet_id: worksheetId, trigger_source: 'create_homework' }
         });
         console.log('[CreateHomeworkModal] Processed pending AI evaluations successfully');
       } catch (aiError) {

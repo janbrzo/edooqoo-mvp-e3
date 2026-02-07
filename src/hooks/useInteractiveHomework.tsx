@@ -435,7 +435,8 @@ export const useInteractiveHomework = ({
                   .update({ 
                     ai_evaluation: evalData,
                     item_evaluations: JSON.parse(JSON.stringify(itemEvals)),
-                    mastery: overallMastery
+                    mastery: overallMastery,
+                    eval_trigger: 'submit_homework'
                   })
                   .eq('homework_id', homeworkId)
                   .eq('student_email', studentEmail)

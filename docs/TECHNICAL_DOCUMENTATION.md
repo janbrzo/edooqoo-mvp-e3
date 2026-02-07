@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Mastery Logging, AI Eval Triggers & Homework Order Fixes:**
+**Latest Update (February 2026) - Event Type Differentiation, Mark Done Metadata & AutoResize Textarea:**
+- **#1 eval_trigger column**: Added `eval_trigger text` column to `worksheet_student_answers` and `homework_student_answers`. SQL triggers map this to specific `event_type` values in `student_events`: `student_learning_activity` (default), `10min_AI_evaluation`, `close_tab_AI_evaluation`, `create_hw_AI_evaluation`, `submit_hw_AI_evaluation`
+- **#2 process-pending-ai-evaluations**: Now accepts `trigger_source` parameter and reads `context.trigger_source` from queued evals, setting `eval_trigger` on the answer record before SQL trigger fires
+- **#3 Mark Done metadata**: Changed `event_type` from `exercise_mastery_evaluation` to `mark_done_evaluation` and `event_source` from `teacher` to `worksheet` in ExerciseSection.tsx
+- **#4 AutoResizeTextarea component**: New `src/components/ui/AutoResizeTextarea.tsx` wraps Textarea with `useEffect` that auto-sets height on initial render and value changes. Replaces manual `e.target.style.height` pattern in 6 exercise components
+- **#5 Frontend trigger_source passing**: `useInteractiveSharedWorksheet` passes `trigger_source: '10min_inactivity'` and `'close_tab'`; `CreateHomeworkModal` passes `'create_homework'`; `useInteractiveHomework` sets `eval_trigger: 'submit_homework'` on homework answer update
+
+**Previous Update (February 2026) - Mastery Logging, AI Eval Triggers & Homework Order Fixes:**
 - **#1 SQL Trigger mastery field**: `log_worksheet_answer_to_events` now includes `NEW.mastery` in `event_payload`. This ensures `student_events` reflects accurate AI-evaluated mastery scores for all scenarios (close tab, Create Homework, 10-min timer, Live Session Mark Done)
 - **#2 10-min timer AI processing**: After queuing AI evaluations in the inactivity timer, the system now calls `process-pending-ai-evaluations` Edge Function to actually process them (previously only queued without processing)
 - **#3 AI waiting skeleton fix**: Changed condition from `!aiEvaluation` to `(!aiEvaluation || Object.keys(aiEvaluation).length === 0)` so skeleton shows even when aiEvaluation is an empty object `{}`

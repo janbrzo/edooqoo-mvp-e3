@@ -7,10 +7,10 @@
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
 **Ostatnia naprawa (2026-02):** 
-- ✅ **NAPRAWIONO Mastery w student_events**: Trigger SQL `log_worksheet_answer_to_events` zawiera teraz `mastery` w payload, co naprawia NULL mastery we wszystkich scenariuszach AI eval
-- ✅ **NAPRAWIONO 10-min timer AI eval**: Po zakolejkowaniu ewaluacji, timer teraz wywołuje `process-pending-ai-evaluations` do przetworzenia
-- ✅ **NAPRAWIONO AI skeleton**: Warunek wyświetlania "AI is evaluating..." obsługuje teraz pusty obiekt `{}`
-- ✅ **NAPRAWIONO kolejność homework**: Ćwiczenia z worksheet sortowane po indeksie przed tworzeniem homework
+- ✅ **DODANO eval_trigger w student_events**: Rozróżnienie źródeł zdarzeń: `student_learning_activity`, `10min_AI_evaluation`, `close_tab_AI_evaluation`, `create_hw_AI_evaluation`, `submit_hw_AI_evaluation`
+- ✅ **ZMIENIONO Mark Done metadata**: `event_type` zmieniony na `mark_done_evaluation`, `event_source` na `worksheet`
+- ✅ **DODANO AutoResizeTextarea**: Nowy komponent UI z auto-dopasowaniem wysokości po odświeżeniu strony (6 komponentów ćwiczeń zaktualizowanych)
+- ✅ **NAPRAWIONO Mastery w student_events**: Kolumna `mastery` dodana do tabeli `student_events`
 
 **Poprzednia naprawa (2026-02):**
 - ✅ **NAPRAWIONO P5 MC Audio Shuffle**: Dodano `worksheetId` do ExerciseMultipleChoiceAudio w SharedWorksheetContent - ta sama kolejność A,B,C,D w obu widokach

@@ -363,7 +363,8 @@ export const useInteractiveSharedWorksheet = ({
             p_english_level: 'Intermediate',
             p_context: {
               title: exercise?.title || `Exercise ${exerciseIndex + 1}`,
-              questions: exercise?.questions || exercise?.prompts || exercise?.sentences || exercise?.expressions || exercise?.items || []
+              questions: exercise?.questions || exercise?.prompts || exercise?.sentences || exercise?.expressions || exercise?.items || [],
+              trigger_source: 'close_tab'
             }
           };
           
@@ -461,7 +462,7 @@ export const useInteractiveSharedWorksheet = ({
         try {
           console.log('[useInteractiveSharedWorksheet] Calling process-pending-ai-evaluations after 10-min timer');
           await supabase.functions.invoke('process-pending-ai-evaluations', {
-            body: { worksheet_id: worksheetId }
+            body: { worksheet_id: worksheetId, trigger_source: '10min_inactivity' }
           });
           console.log('[useInteractiveSharedWorksheet] AI evaluations processed successfully');
         } catch (processErr) {

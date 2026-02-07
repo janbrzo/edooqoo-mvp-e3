@@ -456,7 +456,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           .select('id, event_payload')
           .eq('student_id', studentIdProp)
           .eq('source_id', worksheetIdForStorage || '')
-          .eq('event_type', 'exercise_mastery_evaluation')
+          .eq('event_type', 'mark_done_evaluation')
           .eq('element_type', exercise.type);
         
         if (fetchError) {
@@ -498,8 +498,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           const { data: eventResult, error: rpcError } = await supabase.rpc('add_student_event', {
             p_student_id: studentIdProp,
             p_teacher_id: teacherIdProp,
-            p_event_type: 'exercise_mastery_evaluation',
-            p_event_source: 'teacher',
+            p_event_type: 'mark_done_evaluation',
+            p_event_source: 'worksheet',
             p_source_id: worksheetIdForStorage || null,
             p_event_payload: {
               exercise_index: exerciseIdx,
@@ -567,7 +567,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           .delete()
           .eq('student_id', studentIdProp)
           .eq('source_id', worksheetIdForStorage)
-          .eq('event_type', 'exercise_mastery_evaluation')
+          .eq('event_type', 'mark_done_evaluation')
           .contains('event_payload', { exercise_index: originalIndex !== undefined ? originalIndex : index - 1 });
         
         if (error) {

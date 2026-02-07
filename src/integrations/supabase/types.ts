@@ -566,6 +566,7 @@ export type Database = {
         Row: {
           ai_evaluation: Json | null
           answers: Json
+          eval_trigger: string | null
           exercise_index: number
           exercise_type: string
           homework_id: string
@@ -582,6 +583,7 @@ export type Database = {
         Insert: {
           ai_evaluation?: Json | null
           answers?: Json
+          eval_trigger?: string | null
           exercise_index: number
           exercise_type: string
           homework_id: string
@@ -598,6 +600,7 @@ export type Database = {
         Update: {
           ai_evaluation?: Json | null
           answers?: Json
+          eval_trigger?: string | null
           exercise_index?: number
           exercise_type?: string
           homework_id?: string
@@ -1625,6 +1628,7 @@ export type Database = {
         Row: {
           answers: Json
           completed_at: string | null
+          eval_trigger: string | null
           exercise_index: number
           exercise_type: string
           id: string
@@ -1641,6 +1645,7 @@ export type Database = {
         Insert: {
           answers?: Json
           completed_at?: string | null
+          eval_trigger?: string | null
           exercise_index: number
           exercise_type: string
           id?: string
@@ -1657,6 +1662,7 @@ export type Database = {
         Update: {
           answers?: Json
           completed_at?: string | null
+          eval_trigger?: string | null
           exercise_index?: number
           exercise_type?: string
           id?: string

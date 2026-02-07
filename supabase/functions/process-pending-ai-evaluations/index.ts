@@ -24,12 +24,16 @@ serve(async (req) => {
 
     // Optional: filter by worksheet_id if provided
     let worksheetIdFilter: string | null = null;
+    let triggerSource: string | null = null;
     try {
       const body = await req.json();
       worksheetIdFilter = body?.worksheet_id || null;
+      triggerSource = body?.trigger_source || null;
     } catch {
       // No body provided - process all pending
     }
+    
+    console.log(`[process-pending] trigger_source: ${triggerSource}`);
 
     // Get pending evaluations (limit to avoid timeout)
     let query = supabase
@@ -94,6 +98,9 @@ serve(async (req) => {
         const answers = pending.answers || {};
         const context = pending.context || {};
         const questionItems = context.questions || [];
+        
+        // Determine trigger source: from request body OR from queued context
+        const effectiveTriggerSource = triggerSource || context.trigger_source || null;
         
         // Build answersToVerify with proper structure
         const answersToVerify = Object.entries(answers).map(([qIdxStr, answer]) => {
@@ -183,13 +190,21 @@ serve(async (req) => {
         console.log(`[process-pending] Calculated mastery: ${overallMastery}% for ${itemEvaluations.length} items`);
 
         // Update worksheet_student_answers with AI results AND mark last_ai_eval_at
+        // Also set eval_trigger so the SQL trigger maps to the correct event_type
+        const updateData: Record<string, unknown> = {
+          item_evaluations: itemEvaluations,
+          mastery: overallMastery,
+          last_ai_eval_at: new Date().toISOString()
+        };
+        
+        // Set eval_trigger if provided (maps to event_type in student_events via SQL trigger)
+        if (effectiveTriggerSource) {
+          updateData.eval_trigger = effectiveTriggerSource;
+        }
+        
         const { error: updateError } = await supabase
           .from('worksheet_student_answers')
-          .update({
-            item_evaluations: itemEvaluations,
-            mastery: overallMastery,
-            last_ai_eval_at: new Date().toISOString() // PLAN FIX: Mark evaluation done
-          })
+          .update(updateData)
           .eq('worksheet_id', pending.worksheet_id)
           .eq('student_email', pending.student_email)
           .eq('exercise_index', pending.exercise_index);
