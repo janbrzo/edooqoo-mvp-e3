@@ -350,37 +350,7 @@ export const useInteractiveSharedWorksheet = ({
           keepalive: true
         }).catch(() => {});
         
-        // 2. Queue for AI evaluation ONLY for open-ended exercises
-        // CONDITIONAL: Check if evaluation is needed (last_saved_at > last_ai_eval_at)
-        if (OPEN_ENDED_EXERCISE_TYPES.includes(exerciseType)) {
-          const exercise = exercises[exerciseIndex];
-          const queueData = {
-            p_worksheet_id: worksheetId,
-            p_student_email: studentEmail.trim().toLowerCase(),
-            p_exercise_index: exerciseIndex,
-            p_exercise_type: exerciseType,
-            p_answers: exerciseAnswers,
-            p_english_level: 'Intermediate',
-            p_context: {
-              title: exercise?.title || `Exercise ${exerciseIndex + 1}`,
-              questions: exercise?.questions || exercise?.prompts || exercise?.sentences || exercise?.expressions || exercise?.items || [],
-              trigger_source: 'close_tab'
-            }
-          };
-          
-          // Use fetch with keepalive (more reliable than sendBeacon for RPC with headers)
-          fetch(`https://bvfrkzdlklyvnhlpleck.supabase.co/rest/v1/rpc/queue_worksheet_ai_evaluation`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2ZnJremRsa2x5dm5obHBsZWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDYyMzQsImV4cCI6MjA2MDgyMjIzNH0.RXlVKVPO4WTD6c4sA9fZIYAQe6zKPqoMoVE6Ilit9ls',
-              'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2ZnJremRsa2x5dm5obHBsZWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDYyMzQsImV4cCI6MjA2MDgyMjIzNH0.RXlVKVPO4WTD6c4sA9fZIYAQe6zKPqoMoVE6Ilit9ls',
-              'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify(queueData),
-            keepalive: true
-          }).catch(() => {});
-        }
+        // close_tab AI evaluation REMOVED - only save answers on tab close
       }
     };
 

@@ -5,12 +5,17 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Event Type Differentiation, Mark Done Metadata & AutoResize Textarea:**
-- **#1 eval_trigger column**: Added `eval_trigger text` column to `worksheet_student_answers` and `homework_student_answers`. SQL triggers map this to specific `event_type` values in `student_events`: `student_learning_activity` (default), `10min_AI_evaluation`, `close_tab_AI_evaluation`, `create_hw_AI_evaluation`, `submit_hw_AI_evaluation`
-- **#2 process-pending-ai-evaluations**: Now accepts `trigger_source` parameter and reads `context.trigger_source` from queued evals, setting `eval_trigger` on the answer record before SQL trigger fires
-- **#3 Mark Done metadata**: Changed `event_type` from `exercise_mastery_evaluation` to `mark_done_evaluation` and `event_source` from `teacher` to `worksheet` in ExerciseSection.tsx
-- **#4 AutoResizeTextarea component**: New `src/components/ui/AutoResizeTextarea.tsx` wraps Textarea with `useEffect` that auto-sets height on initial render and value changes. Replaces manual `e.target.style.height` pattern in 6 exercise components
-- **#5 Frontend trigger_source passing**: `useInteractiveSharedWorksheet` passes `trigger_source: '10min_inactivity'` and `'close_tab'`; `CreateHomeworkModal` passes `'create_homework'`; `useInteractiveHomework` sets `eval_trigger: 'submit_homework'` on homework answer update
+**Latest Update (February 2026) - Fix Duplicate Events, Create Homework AI Eval & Remove close_tab:**
+- **#1 SQL DELETE fix**: Removed `AND event_type = v_event_type` from DELETE in both triggers (`log_worksheet_answer_to_events`, `log_homework_answer_to_events`). Now DELETE removes ANY existing event for the same exercise, preventing duplicates when event_type changes (e.g. student types after AI eval)
+- **#2 close_tab REMOVED**: Removed `close_tab` from CASE WHEN in both SQL triggers and removed AI evaluation queueing block from `useInteractiveSharedWorksheet.tsx` beforeunload handler. Answer saving on tab close remains intact
+- **#3 Create Homework auto-queue**: `process-pending-ai-evaluations` now auto-queues evaluations for all open-ended exercises when `trigger_source = 'create_homework'`, fetching answers directly from `worksheet_student_answers` instead of relying on pre-queued items
+- **#4 Updated scenarios**: `student_learning_activity` (student types), `10min_AI_evaluation` (timer), `create_hw_AI_evaluation` (Create Homework), `submit_hw_AI_evaluation` (Submit Homework), `mark_done_evaluation` (Mark Done)
+
+**Previous Update (February 2026) - Event Type Differentiation, Mark Done Metadata & AutoResize Textarea:**
+- **#1 eval_trigger column**: Added `eval_trigger text` column to `worksheet_student_answers` and `homework_student_answers`. SQL triggers map this to specific `event_type` values in `student_events`
+- **#2 process-pending-ai-evaluations**: Accepts `trigger_source` parameter and sets `eval_trigger` on the answer record before SQL trigger fires
+- **#3 Mark Done metadata**: Changed `event_type` to `mark_done_evaluation` and `event_source` to `worksheet`
+- **#4 AutoResizeTextarea component**: Auto-sets textarea height on initial render and value changes
 
 **Previous Update (February 2026) - Mastery Logging, AI Eval Triggers & Homework Order Fixes:**
 - **#1 SQL Trigger mastery field**: `log_worksheet_answer_to_events` now includes `NEW.mastery` in `event_payload`. This ensures `student_events` reflects accurate AI-evaluated mastery scores for all scenarios (close tab, Create Homework, 10-min timer, Live Session Mark Done)
