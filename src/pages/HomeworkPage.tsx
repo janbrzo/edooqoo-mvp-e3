@@ -816,6 +816,19 @@ export default function HomeworkPage() {
         </div>
       </div>
 
+      {/* Fixed AI Evaluation waiting sidebar */}
+      {!isTeacher && finalIsSubmitted && isWaitingForAiEval && (
+        <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 bg-card border-2 border-blue-300 rounded-xl shadow-2xl p-5 w-56 animate-pulse">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            <div>
+              <p className="text-sm font-semibold text-blue-700">AI is evaluating...</p>
+              <p className="text-xs text-blue-500 mt-1">Your open-ended answers are being reviewed</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating UI Elements */}
       {/* Scroll to top button */}
       {showScrollTop && (
