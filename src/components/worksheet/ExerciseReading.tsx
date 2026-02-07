@@ -1,6 +1,6 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { Textarea } from "@/components/ui/textarea";
+import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
@@ -79,16 +79,12 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
             {/* PROBLEM 3 FIX: Auto-resize textarea */}
             {isInteractive && (
               <>
-                <Textarea
+                <AutoResizeTextarea
                   value={studentAnswer}
-                  onChange={(e) => {
-                    onAnswerChange?.(qIndex, e.target.value);
-                    e.target.style.height = 'auto';
-                    e.target.style.height = `${e.target.scrollHeight}px`;
-                  }}
+                  onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
                   placeholder="Type your answer..."
                   disabled={disabled}
-                  className={`min-h-[40px] resize-none overflow-hidden
+                  className={`min-h-[40px]
                     ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
                     ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
                   `}

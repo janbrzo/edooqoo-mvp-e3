@@ -1,6 +1,6 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { Textarea } from "@/components/ui/textarea";
+import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import { safeGetNanoSkill, safeGetText } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
@@ -126,15 +126,11 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                 {/* PROBLEM 3 FIX: Auto-resize textarea */}
                 {isInteractive && (
                   <>
-                    <Textarea
+                    <AutoResizeTextarea
                       value={studentAnswer}
-                      onChange={(e) => {
-                        onAnswerChange?.(sIndex, e.target.value);
-                        e.target.style.height = 'auto';
-                        e.target.style.height = `${e.target.scrollHeight}px`;
-                      }}
+                      onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
                       placeholder="Write your paraphrased sentence..."
-                      className={`min-h-[40px] resize-none overflow-hidden ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      className={`min-h-[40px] ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
                       rows={1}
                       disabled={disabled}
                     />

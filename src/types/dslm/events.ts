@@ -43,7 +43,15 @@ export type StudentEventType =
   | 'teacher_rating_update'
   | 'lesson_started'
   | 'lesson_completed'
-  | 'exercise_mastery_evaluation'  // NEW: Teacher evaluates student mastery per nano_skill
+  | 'exercise_mastery_evaluation'  // Legacy: kept for backward compatibility
+  | 'mark_done_evaluation'  // Teacher evaluates student mastery per nano_skill via Mark Done button
+  
+  // AI evaluation trigger events
+  | 'student_learning_activity'  // Student typed/changed an answer
+  | '10min_AI_evaluation'        // AI eval triggered by 10-min inactivity
+  | 'close_tab_AI_evaluation'    // AI eval triggered by closing tab
+  | 'create_hw_AI_evaluation'    // AI eval triggered by Create Homework button
+  | 'submit_hw_AI_evaluation'    // AI eval triggered by Submit Homework button
   
   // System events
   | 'knowledge_entry_added'
