@@ -7,10 +7,12 @@
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
 **Ostatnia naprawa (2026-02):** 
-- ✅ **DODANO eval_trigger w student_events**: Rozróżnienie źródeł zdarzeń: `student_learning_activity`, `10min_AI_evaluation`, `close_tab_AI_evaluation`, `create_hw_AI_evaluation`, `submit_hw_AI_evaluation`
-- ✅ **ZMIENIONO Mark Done metadata**: `event_type` zmieniony na `mark_done_evaluation`, `event_source` na `worksheet`
-- ✅ **DODANO AutoResizeTextarea**: Nowy komponent UI z auto-dopasowaniem wysokości po odświeżeniu strony (6 komponentów ćwiczeń zaktualizowanych)
-- ✅ **NAPRAWIONO Mastery w student_events**: Kolumna `mastery` dodana do tabeli `student_events`
+- ✅ **NAPRAWIONO duplikaty event_type**: Usunięto `AND event_type = v_event_type` z DELETE w triggerach SQL - teraz jedno exercise ma zawsze JEDEN rekord w student_events
+- ✅ **USUNIĘTO close_tab AI eval**: Usunięto kolejkowanie AI evaluation przy zamykaniu karty. Zapisywanie odpowiedzi (keepalive) działa dalej
+- ✅ **NAPRAWIONO Create Homework AI eval**: Edge function `process-pending-ai-evaluations` automatycznie kolejkuje evaluacje dla open-ended exercises gdy `trigger_source = 'create_homework'`
+- ✅ **DODANO eval_trigger w student_events**: Rozróżnienie źródeł: `student_learning_activity`, `10min_AI_evaluation`, `create_hw_AI_evaluation`, `submit_hw_AI_evaluation`, `mark_done_evaluation`
+- ✅ **ZMIENIONO Mark Done metadata**: `event_type` → `mark_done_evaluation`, `event_source` → `worksheet`
+- ✅ **DODANO AutoResizeTextarea**: Auto-dopasowanie wysokości textarea po odświeżeniu strony
 
 **Poprzednia naprawa (2026-02):**
 - ✅ **NAPRAWIONO P5 MC Audio Shuffle**: Dodano `worksheetId` do ExerciseMultipleChoiceAudio w SharedWorksheetContent - ta sama kolejność A,B,C,D w obu widokach

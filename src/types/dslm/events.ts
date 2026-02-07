@@ -49,7 +49,7 @@ export type StudentEventType =
   // AI evaluation trigger events
   | 'student_learning_activity'  // Student typed/changed an answer
   | '10min_AI_evaluation'        // AI eval triggered by 10-min inactivity
-  | 'close_tab_AI_evaluation'    // AI eval triggered by closing tab
+  // close_tab_AI_evaluation REMOVED - no longer used
   | 'create_hw_AI_evaluation'    // AI eval triggered by Create Homework button
   | 'submit_hw_AI_evaluation'    // AI eval triggered by Submit Homework button
   

@@ -6,9 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Open-ended exercise types that need AI evaluation
+const OPEN_ENDED_EXERCISE_TYPES = [
+  'reading', 'dialogue', 'discussion', 'answer-questions',
+  'answer-questions-audio', 'answer-questions-picture',
+  'listening-comprehension', 'describe-picture',
+  'paraphrasing', 'sentence-transformation'
+];
+
 /**
- * Process pending AI evaluations for worksheet answers
- * Called when teacher opens worksheet or clicks "Mark Done"
+ * Process pending AI evaluations for worksheet answers.
+ * 
+ * Two modes:
+ * 1. Normal: process items already in pending_worksheet_ai_evaluations queue
+ * 2. create_homework: auto-queue evaluations for ALL open-ended exercises first, then process
  */
 serve(async (req) => {
   console.log('[process-pending-ai-evaluations] Function invoked');
@@ -22,7 +33,6 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Optional: filter by worksheet_id if provided
     let worksheetIdFilter: string | null = null;
     let triggerSource: string | null = null;
     try {
@@ -33,7 +43,12 @@ serve(async (req) => {
       // No body provided - process all pending
     }
     
-    console.log(`[process-pending] trigger_source: ${triggerSource}`);
+    console.log(`[process-pending] trigger_source: ${triggerSource}, worksheet_id: ${worksheetIdFilter}`);
+
+    // === PROBLEM 1A FIX: Auto-queue for create_homework ===
+    if (triggerSource === 'create_homework' && worksheetIdFilter) {
+      await autoQueueForCreateHomework(supabase, worksheetIdFilter);
+    }
 
     // Get pending evaluations (limit to avoid timeout)
     let query = supabase
@@ -66,8 +81,7 @@ serve(async (req) => {
     
     for (const pending of pendingEvals) {
       try {
-        // PLAN FIX: Check if AI eval is actually needed using conditional logic
-        // Only run if last_saved_at > last_ai_eval_at
+        // Check if AI eval is actually needed
         const { data: needsEval } = await supabase.rpc('needs_ai_evaluation', {
           p_worksheet_id: pending.worksheet_id,
           p_student_email: pending.student_email,
@@ -75,14 +89,10 @@ serve(async (req) => {
         });
         
         if (!needsEval) {
-          console.log(`[process-pending] Skipping ${pending.id} - already evaluated (no new changes)`);
-          // Mark as completed since no new evaluation needed
+          console.log(`[process-pending] Skipping ${pending.id} - already evaluated`);
           await supabase
             .from('pending_worksheet_ai_evaluations')
-            .update({ 
-              status: 'completed',
-              processed_at: new Date().toISOString()
-            })
+            .update({ status: 'completed', processed_at: new Date().toISOString() })
             .eq('id', pending.id);
           skipped++;
           continue;
@@ -94,31 +104,17 @@ serve(async (req) => {
           .update({ status: 'processing' })
           .eq('id', pending.id);
 
-        // Build answers for AI verification
         const answers = pending.answers || {};
         const context = pending.context || {};
         const questionItems = context.questions || [];
-        
-        // Determine trigger source: from request body OR from queued context
         const effectiveTriggerSource = triggerSource || context.trigger_source || null;
         
-        // Build answersToVerify with proper structure
+        // Build answersToVerify
         const answersToVerify = Object.entries(answers).map(([qIdxStr, answer]) => {
           const qIdx = parseInt(qIdxStr);
           const questionItem = questionItems[qIdx] || {};
-          
-          // Get question text from various possible fields
-          const questionText = questionItem?.question || 
-                              questionItem?.text || 
-                              questionItem?.prompt || 
-                              questionItem?.expression ||
-                              `Question ${qIdx + 1}`;
-          
-          // Get suggested answer if available
-          const suggestedAnswer = questionItem?.answer || 
-                                  questionItem?.suggested_answer || 
-                                  questionItem?.paraphrase ||
-                                  '';
+          const questionText = questionItem?.question || questionItem?.text || questionItem?.prompt || questionItem?.expression || `Question ${qIdx + 1}`;
+          const suggestedAnswer = questionItem?.answer || questionItem?.suggested_answer || questionItem?.paraphrase || '';
           
           return {
             exercise_index: pending.exercise_index,
@@ -131,19 +127,16 @@ serve(async (req) => {
         }).filter(a => a.student_answer && a.student_answer.trim() !== '');
 
         if (answersToVerify.length === 0) {
-          console.log(`[process-pending] No valid answers to verify for ${pending.id}`);
+          console.log(`[process-pending] No valid answers for ${pending.id}`);
           await supabase
             .from('pending_worksheet_ai_evaluations')
-            .update({ 
-              status: 'completed',
-              processed_at: new Date().toISOString()
-            })
+            .update({ status: 'completed', processed_at: new Date().toISOString() })
             .eq('id', pending.id);
           skipped++;
           continue;
         }
 
-        console.log(`[process-pending] Verifying ${answersToVerify.length} answers for pending ${pending.id}`);
+        console.log(`[process-pending] Verifying ${answersToVerify.length} answers for ${pending.id}`);
 
         // Call verify-open-answers
         const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/verify-open-answers`, {
@@ -160,19 +153,17 @@ serve(async (req) => {
         });
 
         if (!verifyResponse.ok) {
-          const errorText = await verifyResponse.text();
-          throw new Error(`AI verification failed: ${errorText}`);
+          throw new Error(`AI verification failed: ${await verifyResponse.text()}`);
         }
 
         const aiResult = await verifyResponse.json();
         console.log(`[process-pending] AI returned ${aiResult.evaluations?.length || 0} evaluations`);
         
-        // Build item_evaluations from AI result
+        // Build item_evaluations
         const itemEvaluations = (aiResult.evaluations || []).map((e: any) => {
           const qIdx = e.question_index;
           const questionItem = questionItems[qIdx] || {};
           const nanoSkill = questionItem?.nano_skill;
-          
           return {
             question_index: qIdx,
             name: nanoSkill?.name || `question_${qIdx}`,
@@ -187,17 +178,15 @@ serve(async (req) => {
           ? Math.round(itemEvaluations.reduce((sum: number, e: any) => sum + e.mastery, 0) / itemEvaluations.length)
           : null;
 
-        console.log(`[process-pending] Calculated mastery: ${overallMastery}% for ${itemEvaluations.length} items`);
+        console.log(`[process-pending] Mastery: ${overallMastery}% for ${itemEvaluations.length} items`);
 
-        // Update worksheet_student_answers with AI results AND mark last_ai_eval_at
-        // Also set eval_trigger so the SQL trigger maps to the correct event_type
+        // Update worksheet_student_answers with AI results
         const updateData: Record<string, unknown> = {
           item_evaluations: itemEvaluations,
           mastery: overallMastery,
           last_ai_eval_at: new Date().toISOString()
         };
         
-        // Set eval_trigger if provided (maps to event_type in student_events via SQL trigger)
         if (effectiveTriggerSource) {
           updateData.eval_trigger = effectiveTriggerSource;
         }
@@ -209,27 +198,20 @@ serve(async (req) => {
           .eq('student_email', pending.student_email)
           .eq('exercise_index', pending.exercise_index);
 
-        if (updateError) {
-          console.error(`[process-pending] Failed to update worksheet_student_answers:`, updateError);
-          throw updateError;
-        }
+        if (updateError) throw updateError;
 
         // Mark as completed
         await supabase
           .from('pending_worksheet_ai_evaluations')
-          .update({ 
-            status: 'completed',
-            processed_at: new Date().toISOString()
-          })
+          .update({ status: 'completed', processed_at: new Date().toISOString() })
           .eq('id', pending.id);
 
         processed++;
-        console.log(`[process-pending] Completed evaluation ${pending.id}, mastery=${overallMastery}%`);
+        console.log(`[process-pending] Completed ${pending.id}, mastery=${overallMastery}%`);
 
       } catch (evalError: any) {
         console.error(`[process-pending] Error processing ${pending.id}:`, evalError);
         failed++;
-        
         await supabase
           .from('pending_worksheet_ai_evaluations')
           .update({ 
@@ -244,13 +226,7 @@ serve(async (req) => {
     console.log(`[process-pending] Finished: ${processed} processed, ${skipped} skipped, ${failed} failed`);
 
     return new Response(
-      JSON.stringify({ 
-        processed, 
-        skipped,
-        failed,
-        total: pendingEvals.length,
-        message: `Processed ${processed} evaluations, ${skipped} skipped (already evaluated), ${failed} failed`
-      }),
+      JSON.stringify({ processed, skipped, failed, total: pendingEvals.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
@@ -262,3 +238,111 @@ serve(async (req) => {
     );
   }
 });
+
+/**
+ * PROBLEM 1A FIX: Auto-queue evaluations for all open-ended exercises
+ * when teacher clicks Create Homework.
+ * 
+ * Fetches all student answers for the worksheet, checks which open-ended
+ * exercises need AI evaluation, and queues them.
+ */
+async function autoQueueForCreateHomework(supabase: any, worksheetId: string) {
+  console.log(`[auto-queue] Fetching answers for worksheet ${worksheetId}`);
+  
+  // Get all student answers for this worksheet
+  const { data: studentAnswers, error } = await supabase
+    .from('worksheet_student_answers')
+    .select('*')
+    .eq('worksheet_id', worksheetId);
+  
+  if (error) {
+    console.error('[auto-queue] Error fetching answers:', error);
+    return;
+  }
+  
+  if (!studentAnswers || studentAnswers.length === 0) {
+    console.log('[auto-queue] No student answers found');
+    return;
+  }
+  
+  let queued = 0;
+  
+  for (const answer of studentAnswers) {
+    // Only queue open-ended exercises
+    if (!OPEN_ENDED_EXERCISE_TYPES.includes(answer.exercise_type)) continue;
+    
+    // Check if AI evaluation is needed
+    const { data: needsEval } = await supabase.rpc('needs_ai_evaluation', {
+      p_worksheet_id: worksheetId,
+      p_student_email: answer.student_email,
+      p_exercise_index: answer.exercise_index
+    });
+    
+    if (!needsEval) {
+      console.log(`[auto-queue] Skipping exercise ${answer.exercise_index} - already evaluated`);
+      continue;
+    }
+    
+    // Check if already queued (pending or processing)
+    const { data: existing } = await supabase
+      .from('pending_worksheet_ai_evaluations')
+      .select('id')
+      .eq('worksheet_id', worksheetId)
+      .eq('student_email', answer.student_email)
+      .eq('exercise_index', answer.exercise_index)
+      .in('status', ['pending', 'processing'])
+      .limit(1);
+    
+    if (existing && existing.length > 0) {
+      console.log(`[auto-queue] Exercise ${answer.exercise_index} already in queue`);
+      continue;
+    }
+    
+    // Get worksheet data for context (title, questions)
+    let context: Record<string, unknown> = { trigger_source: 'create_homework' };
+    try {
+      const { data: worksheet } = await supabase
+        .from('worksheets')
+        .select('ai_response')
+        .eq('id', worksheetId)
+        .single();
+      
+      if (worksheet?.ai_response) {
+        const parsed = typeof worksheet.ai_response === 'string' 
+          ? JSON.parse(worksheet.ai_response) 
+          : worksheet.ai_response;
+        const exercises = parsed?.exercises || [];
+        const exercise = exercises[answer.exercise_index];
+        if (exercise) {
+          context.title = exercise.title || `Exercise ${answer.exercise_index + 1}`;
+          context.questions = exercise.questions || exercise.prompts || exercise.sentences || exercise.expressions || exercise.items || [];
+        }
+      }
+    } catch (e) {
+      console.error(`[auto-queue] Error parsing worksheet context:`, e);
+    }
+    
+    // Queue the evaluation
+    const { error: insertError } = await supabase
+      .from('pending_worksheet_ai_evaluations')
+      .insert({
+        worksheet_id: worksheetId,
+        student_email: answer.student_email,
+        exercise_index: answer.exercise_index,
+        exercise_type: answer.exercise_type,
+        answers: answer.answers,
+        english_level: 'Intermediate',
+        context,
+        status: 'pending'
+      });
+    
+    if (insertError) {
+      console.error(`[auto-queue] Error queuing exercise ${answer.exercise_index}:`, insertError);
+    } else {
+      queued++;
+      console.log(`[auto-queue] Queued exercise ${answer.exercise_index} (${answer.exercise_type})`);
+    }
+  }
+  
+  console.log(`[auto-queue] Queued ${queued} evaluations for create_homework`);
+}
