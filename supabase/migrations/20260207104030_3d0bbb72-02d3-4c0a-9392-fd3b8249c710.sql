@@ -1,0 +1,1 @@
+ALTER TABLE public.student_events ADD COLUMN IF NOT EXISTS mastery numeric;

@@ -167,7 +167,7 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
                       {showAsIncorrect && <span className="text-white text-xs">✗</span>}
                       {isLiveSelected && !isInteractive && !isSelected && <span className="text-white text-xs">●</span>}
                     </div>
-                    <span>
+                    <span className="flex items-center gap-1">
                       {isEditing ? (
                         <input
                           type="text"
@@ -178,7 +178,17 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
                       ) : (
                         <>{option.label}. {option.text}</>
                       )}
-                      {/* PROBLEM 1: Show blue indicator for live session answer */}
+                      {/* Labels after submit for clarity */}
+                      {showCorrectAnswers && isSelected && isCorrect && (
+                        <span className="ml-2 text-green-600 font-medium text-xs">(Your answer - Correct!)</span>
+                      )}
+                      {showCorrectAnswers && isSelected && !isCorrect && (
+                        <span className="ml-2 text-red-600 font-medium text-xs">(Your answer)</span>
+                      )}
+                      {showCorrectAnswers && !isSelected && isCorrect && (
+                        <span className="ml-2 text-green-600 font-medium text-xs">(Correct)</span>
+                      )}
+                      {/* Live session indicator */}
                       {isLiveSelected && !isInteractive && (
                         <span className="ml-2 text-blue-600 font-medium text-xs">(Student)</span>
                       )}

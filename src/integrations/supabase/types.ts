@@ -877,6 +877,7 @@ export type Database = {
           event_type: string
           id: string
           is_processed: boolean
+          mastery: number | null
           session_id: string | null
           skill_ids: string[] | null
           source_id: string | null
@@ -891,6 +892,7 @@ export type Database = {
           event_type: string
           id?: string
           is_processed?: boolean
+          mastery?: number | null
           session_id?: string | null
           skill_ids?: string[] | null
           source_id?: string | null
@@ -905,6 +907,7 @@ export type Database = {
           event_type?: string
           id?: string
           is_processed?: boolean
+          mastery?: number | null
           session_id?: string | null
           skill_ids?: string[] | null
           source_id?: string | null
