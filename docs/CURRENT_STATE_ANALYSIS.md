@@ -6,18 +6,19 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02):**
-- ✅ **NAPRAWIONO prompt AI**: `verify-open-answers` karze za non-answers ("I don't know", "nie wiem") → quality_score 0.0-0.1. Krótkie odpowiedzi 1-2 słowa → 0.1-0.3. Odpowiedzi nie po angielsku → 0.1-0.2
-- ✅ **DODANO feedback AI na Shared Worksheet**: `item_evaluations` ładowane z bazy, przekazywane do komponentów ćwiczeń → badge AI wyświetlany pod pytaniami open-ended
-- ✅ **NAPRAWIONO RPC**: `get_worksheet_live_answers` zwraca teraz `item_evaluations` i `mastery`
+**Ostatnia naprawa (2026-02-09):**
+- ✅ **NAPRAWIONO event_payload spójność**: SQL triggery `log_worksheet_answer_to_events` i `log_homework_answer_to_events` teraz stripują `feedback` z `nano_skill_ratings` (`elem - 'feedback'`) → identyczna struktura w homework i worksheet
+- ✅ **NAPRAWIONO re-render loop**: `useLiveSessionAnswers` nie wywołuje `processPendingAiEvals` w pętli - tylko RAZ na mount z `hasProcessedRef`
+- ✅ **DODANO liveItemEvaluations w Live Session**: Nauczyciel widzi AI feedback badges w trybie Live Session (pipeline: WorksheetDisplay → WorksheetContent → ExerciseSection → exercise components)
+- ✅ **DODANO aiEvaluations do ExerciseSentenceTransformation**: Ostatni open-ended komponent bez tego propa
+- ✅ **DODANO polling 30s**: `useInteractiveSharedWorksheet` odpytuje bazę co 30s o nowe `item_evaluations` → student widzi feedback bez odświeżania
+- ✅ **DODANO Realtime refetch**: `useLiveSessionAnswers` po UPDATE Realtime pobiera pełne dane z `item_evaluations`
+
+**Poprzednia naprawa (2026-02):**
+- ✅ **NAPRAWIONO prompt AI**: `verify-open-answers` karze za non-answers ("I don't know") → quality_score 0.0-0.1
+- ✅ **DODANO feedback AI na Shared Worksheet**: `item_evaluations` ładowane z bazy, badge AI wyświetlany pod pytaniami
 - ✅ **NAPRAWIONO config.toml**: `process-pending-ai-evaluations` → `verify_jwt = false`
-- ✅ **NAPRAWIONO logowanie błędów**: `handleCreateHomework` loguje odpowiedź edge function (data + error)
-- ✅ **NAPRAWIONO eval_trigger reset**: `save_worksheet_answer` i `save_homework_answer` teraz resetują `eval_trigger = NULL` przy zapisie studenta → trigger poprawnie mapuje na `student_learning_activity`
-- ✅ **NAPRAWIONO event_payload**: Przywrócono strukturę: `answer_id` (UUID), `time_spent_seconds` (zamiast ms), usunięto surowe `answers` z payloadu
-- ✅ **NAPRAWIONO Create Homework timing**: AI eval triggerowane na przycisku "Create Homework" (toolbar worksheet), PRZED otwarciem modalu
-- ✅ **NAPRAWIONO 10-min timer**: `lastAiEvalTriggerRef` używa `lastSavedAt.getTime()` zamiast `Date.now()` - eliminuje edge case z timestampami
-- ✅ **Scenariusze AI Evaluation**: `student_learning_activity` (eval_trigger=NULL), `10min_AI_evaluation`, `create_hw_AI_evaluation` (przycisk na toolbar), `submit_hw_AI_evaluation`, `mark_done_evaluation`
-- ✅ **DODANO AutoResizeTextarea**: Auto-dopasowanie wysokości textarea po odświeżeniu strony
+- ✅ **Scenariusze AI Evaluation**: `student_learning_activity`, `10min_AI_evaluation`, `create_hw_AI_evaluation`, `submit_hw_AI_evaluation`, `mark_done_evaluation`
 
 **Poprzednia naprawa (2026-02):**
 - ✅ **NAPRAWIONO P5 MC Audio Shuffle**: Dodano `worksheetId` do ExerciseMultipleChoiceAudio w SharedWorksheetContent - ta sama kolejność A,B,C,D w obu widokach

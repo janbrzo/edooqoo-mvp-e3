@@ -3,6 +3,7 @@ import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
 import { safeGetNanoSkill } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
+import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
 
 interface ExerciseSentenceTransformationProps extends Partial<InteractiveExerciseProps> {
   sentences: any[];
@@ -10,26 +11,23 @@ interface ExerciseSentenceTransformationProps extends Partial<InteractiveExercis
   viewMode: "student" | "teacher";
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
-  // A3: Disable inputs after homework submission
   disabled?: boolean;
-  // NanoSkill editing
   onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill) => void;
   isSharedWorksheet?: boolean;
+  aiEvaluations?: Record<number, AiEvaluation>;
 }
 
 const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationProps> = ({
   sentences = [], isEditing, viewMode, onSentenceChange,
   liveSessionAnswer,
-  // Interactive props
   isInteractive = false,
   studentAnswers = {},
   onAnswerChange,
   showCorrectAnswers = false,
-  // A3: Disable inputs
   disabled = false,
-  // NanoSkill props
   onNanoSkillChange,
-  isSharedWorksheet = false
+  isSharedWorksheet = false,
+  aiEvaluations
 }) => {
   return (
     <div>
@@ -70,7 +68,6 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                       <span className="text-sm text-gray-600">({sentence?.instruction || 'Missing instruction'})</span>
                     </>
                   )}
-                  {/* NanoSkill Badge */}
                   {showNanoSkill && (
                     <NanoSkillBadge
                       nanoSkill={nanoSkill}
@@ -98,6 +95,13 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                   <span className="ml-6">→ ___________________________</span>
                 )}
                 
+                {/* AI Evaluation feedback */}
+                {aiEvaluations?.[sIndex] && (disabled || isSharedWorksheet) && (
+                  <div className="ml-6">
+                    <AiEvaluationBadge evaluation={aiEvaluations[sIndex]} />
+                  </div>
+                )}
+                
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
                   <div className="flex items-center gap-2 flex-wrap ml-6">
                     <div className="text-green-600 italic text-sm">
@@ -112,7 +116,6 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                         <span>({correctAnswer || 'Missing answer'})</span>
                       )}
                     </div>
-                    {/* Live Session: show student answer in blue */}
                     {liveSessionAnswer?.[sIndex] !== undefined && (
                       <span className="text-blue-600 font-medium text-sm">
                         [Student: {liveSessionAnswer[sIndex]}]

@@ -51,6 +51,22 @@ import { safeGetNanoSkill } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudentEvents } from "@/hooks/dslm/useStudentEvents";
+import type { AiEvaluation } from "@/components/homework/AiEvaluationBadge";
+
+// Helper: convert liveItemEvaluations array to Record<number, AiEvaluation> for exercise components
+const convertLiveEvalsToAiEvals = (items: any[] | undefined): Record<number, AiEvaluation> | undefined => {
+  if (!items?.length) return undefined;
+  const result: Record<number, AiEvaluation> = {};
+  items.forEach((item: any) => {
+    result[item.question_index] = {
+      is_acceptable: (item.mastery || 0) >= 70,
+      quality_score: (item.mastery || 0) / 100,
+      feedback: item.feedback || '',
+      question_index: item.question_index
+    };
+  });
+  return result;
+};
 
 // PROBLEM 3: Complete classification of all 29 exercise types
 export const EXERCISE_TYPE_CLASSIFICATION = {
@@ -140,6 +156,8 @@ interface ExerciseSectionProps {
   showCorrectAnswers?: boolean;
   // PROBLEM 1: Live Session answer prop - passed inline to exercises for blue highlighting
   liveSessionAnswer?: Record<number, any>;
+  // Live Session AI evaluation feedback for this exercise
+  liveItemEvaluations?: any[];
   // PROBLEM 5: Mark exercise as done in Live Session
   isMarkedDone?: boolean;
   onMarkDone?: () => void;
@@ -192,6 +210,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   showCorrectAnswers = false,
   // PROBLEM 1: Live Session answer prop
   liveSessionAnswer,
+  // Live Session AI evaluation feedback
+  liveItemEvaluations: liveItemEvalsProp,
   // PROBLEM 5: Mark Done props from parent
   isMarkedDone: isMarkedDoneProp,
   onMarkDone: onMarkDoneProp,
@@ -634,6 +654,9 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
   // Normalize exercise type for conditional rendering (handle both standard and -picture types)
   const normalizedType = normalizeExerciseType(exercise.type);
   
+  // Convert live item evaluations to AI evaluation format for exercise components
+  const liveAiEvaluations = convertLiveEvalsToAiEvals(liveItemEvalsProp);
+  
   // DEBUG: Log structure for answer-questions-picture to diagnose editing issues
   if (exercise.type === 'answer-questions-picture') {
     console.log('[DEBUG] Answer Questions Picture exercise structure:', {
@@ -774,6 +797,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            aiEvaluations={liveAiEvaluations}
+            isSharedWorksheet={viewMode === 'live-session'}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
@@ -901,6 +926,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            aiEvaluations={liveAiEvaluations}
+            isSharedWorksheet={viewMode === 'live-session'}
             onNanoSkillChange={(eIndex, newSkill) => {
               // Update nano_skill on expressions, not dialogue lines
               const updatedExercises = [...editableWorksheet.exercises];
@@ -1129,6 +1156,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            aiEvaluations={liveAiEvaluations}
+            isSharedWorksheet={viewMode === 'live-session'}
           />
         )}
 
@@ -1294,6 +1323,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            aiEvaluations={liveAiEvaluations}
+            isSharedWorksheet={viewMode === 'live-session'}
             onNanoSkillChange={(sIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newSentences = [...exercise.sentences];
@@ -1462,6 +1493,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
               showCorrectAnswers={showCorrectAnswers}
               liveSessionAnswer={liveSessionAnswer}
               disabled={disabled}
+              aiEvaluations={liveAiEvaluations}
+              isSharedWorksheet={viewMode === 'live-session'}
               onNanoSkillChange={(qIndex, newSkill) => {
                 const updatedExercises = [...editableWorksheet.exercises];
                 const newPrompts = [...(exercise.prompts || exercise.questions || [])];
@@ -1493,6 +1526,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            aiEvaluations={liveAiEvaluations}
+            isSharedWorksheet={viewMode === 'live-session'}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
@@ -1519,6 +1554,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            aiEvaluations={liveAiEvaluations}
+            isSharedWorksheet={viewMode === 'live-session'}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
@@ -1646,6 +1683,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
+            aiEvaluations={liveAiEvaluations}
+            isSharedWorksheet={viewMode === 'live-session'}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];

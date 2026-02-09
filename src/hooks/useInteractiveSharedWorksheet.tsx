@@ -453,6 +453,48 @@ export const useInteractiveSharedWorksheet = ({
     return () => clearInterval(interval);
   }, [lastSavedAt, answers, worksheetId, studentEmail, exercises]);
 
+  // Polling: refresh itemEvaluations every 30s so student sees AI feedback without refresh
+  useEffect(() => {
+    if (!worksheetId || !studentEmail) return;
+    
+    const POLL_INTERVAL = 30_000; // 30 seconds
+    
+    const pollEvaluations = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_worksheet_student_answers', {
+          p_worksheet_id: worksheetId,
+          p_student_email: studentEmail.trim().toLowerCase()
+        });
+        
+        if (error || !data) return;
+        
+        const loadedEvals: Record<number, any[]> = {};
+        let hasNewEvals = false;
+        
+        data.forEach((answer: any) => {
+          if (answer.item_evaluations && Array.isArray(answer.item_evaluations)) {
+            loadedEvals[answer.exercise_index] = answer.item_evaluations;
+            // Check if this is new data
+            if (!itemEvaluations[answer.exercise_index] || 
+                JSON.stringify(itemEvaluations[answer.exercise_index]) !== JSON.stringify(answer.item_evaluations)) {
+              hasNewEvals = true;
+            }
+          }
+        });
+        
+        if (hasNewEvals) {
+          console.log('[useInteractiveSharedWorksheet] Polling found new evaluations:', loadedEvals);
+          setItemEvaluations(loadedEvals);
+        }
+      } catch (err) {
+        // Silent fail - polling is non-critical
+      }
+    };
+    
+    const interval = setInterval(pollEvaluations, POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [worksheetId, studentEmail, itemEvaluations]);
+
   return {
     answers,
     itemEvaluations,
