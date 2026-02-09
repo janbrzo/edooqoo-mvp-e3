@@ -5,11 +5,17 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Fix Duplicate Events, Create Homework AI Eval & Remove close_tab:**
+**Latest Update (February 2026) - eval_trigger reset, event_payload fix, Create Homework timing:**
+- **#1 eval_trigger=NULL on student save**: Both `save_worksheet_answer` and `save_homework_answer` now reset `eval_trigger = NULL` on UPSERT. This ensures the SQL trigger correctly maps student saves to `student_learning_activity` instead of keeping stale AI eval trigger types
+- **#2 event_payload structure restored**: Triggers now produce `answer_id` (UUID), `time_spent_seconds` (rounded), no raw `answers` blob. Matches original DSLM contract
+- **#3 Create Homework AI eval moved to worksheet button**: `process-pending-ai-evaluations` is now called in `WorksheetDisplay.handleCreateHomework` (BEFORE modal opens), not inside `CreateHomeworkModal` (which was too late)
+- **#4 10-min timer ref fix**: Changed `lastAiEvalTriggerRef.current = Date.now()` to `lastSavedAt.getTime()`, preventing edge case where saves made just before AI eval trigger had timestamps earlier than the trigger ref
+
+**Previous Update (February 2026) - Fix Duplicate Events, Create Homework AI Eval & Remove close_tab:**
 - **#1 SQL DELETE fix**: Removed `AND event_type = v_event_type` from DELETE in both triggers (`log_worksheet_answer_to_events`, `log_homework_answer_to_events`). Now DELETE removes ANY existing event for the same exercise, preventing duplicates when event_type changes (e.g. student types after AI eval)
 - **#2 close_tab REMOVED**: Removed `close_tab` from CASE WHEN in both SQL triggers and removed AI evaluation queueing block from `useInteractiveSharedWorksheet.tsx` beforeunload handler. Answer saving on tab close remains intact
 - **#3 Create Homework auto-queue**: `process-pending-ai-evaluations` now auto-queues evaluations for all open-ended exercises when `trigger_source = 'create_homework'`, fetching answers directly from `worksheet_student_answers` instead of relying on pre-queued items
-- **#4 Updated scenarios**: `student_learning_activity` (student types), `10min_AI_evaluation` (timer), `create_hw_AI_evaluation` (Create Homework), `submit_hw_AI_evaluation` (Submit Homework), `mark_done_evaluation` (Mark Done)
+- **#4 Updated AI eval scenarios**: `student_learning_activity` (student types, eval_trigger=NULL), `10min_AI_evaluation` (timer, eval_trigger='10min_inactivity'), `create_hw_AI_evaluation` (Create Homework button on worksheet toolbar), `submit_hw_AI_evaluation` (Submit Homework), `mark_done_evaluation` (Mark Done via RPC)
 
 **Previous Update (February 2026) - Event Type Differentiation, Mark Done Metadata & AutoResize Textarea:**
 - **#1 eval_trigger column**: Added `eval_trigger text` column to `worksheet_student_answers` and `homework_student_answers`. SQL triggers map this to specific `event_type` values in `student_events`

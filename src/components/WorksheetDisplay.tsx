@@ -683,7 +683,7 @@ export default function WorksheetDisplay({
     handleClosePanelWithReset();
   };
 
-  const handleCreateHomework = () => {
+  const handleCreateHomework = async () => {
     if (!userId) {
       toast({
         title: "Login required",
@@ -700,6 +700,16 @@ export default function WorksheetDisplay({
         variant: "destructive"
       });
       return;
+    }
+    
+    // Trigger AI evaluation BEFORE opening modal (Problem 1A fix)
+    try {
+      console.log('[WorksheetDisplay] Triggering AI eval before Create Homework modal');
+      await supabase.functions.invoke('process-pending-ai-evaluations', {
+        body: { worksheet_id: worksheetId, trigger_source: 'create_homework' }
+      });
+    } catch (err) {
+      console.warn('[WorksheetDisplay] AI eval failed (non-critical):', err);
     }
     
     setShowHomeworkModal(true);
