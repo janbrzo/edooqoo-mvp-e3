@@ -163,7 +163,10 @@ serve(async (req) => {
         const itemEvaluations = (aiResult.evaluations || []).map((e: any) => {
           const qIdx = e.question_index;
           const questionItem = questionItems[qIdx] || {};
-          const nanoSkill = questionItem?.nano_skill;
+          // FIX: nano_skill is stored as array [{name, reason, confidence}] in JSONB
+          // Must handle both array and object formats (same as safeGetNanoSkill in frontend)
+          let nanoSkill = questionItem?.nano_skill;
+          if (Array.isArray(nanoSkill)) nanoSkill = nanoSkill[0];
           return {
             question_index: qIdx,
             name: nanoSkill?.name || `question_${qIdx}`,
@@ -282,6 +285,15 @@ async function autoQueueForCreateHomework(supabase: any, worksheetId: string) {
       console.log(`[auto-queue] Skipping exercise ${answer.exercise_index} - already evaluated`);
       continue;
     }
+    
+    // Delete any existing completed/failed queue entries to avoid unique constraint violation
+    await supabase
+      .from('pending_worksheet_ai_evaluations')
+      .delete()
+      .eq('worksheet_id', worksheetId)
+      .eq('student_email', answer.student_email)
+      .eq('exercise_index', answer.exercise_index)
+      .in('status', ['completed', 'failed']);
     
     // Check if already queued (pending or processing)
     const { data: existing } = await supabase
