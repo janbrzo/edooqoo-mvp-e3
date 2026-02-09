@@ -1,147 +1,176 @@
 
 
-# Plan naprawy: 3 problemy
+# Plan naprawy: 4 problemy
 
-## PROBLEM 1A: Create Homework na toolbarze nie triggeruje AI eval
+## PROBLEM 1: Rozna struktura event_payload miedzy homework i worksheet
 
-### Analiza
+### Analiza przyczyny
 
-Przeanalizowalem kod dokladnie. `WorksheetDisplay.tsx` linia 686-716 zawiera poprawny kod:
-```typescript
-const handleCreateHomework = async () => {
-  // ... walidacja ...
-  await supabase.functions.invoke('process-pending-ai-evaluations', {
-    body: { worksheet_id: worksheetId, trigger_source: 'create_homework' }
-  });
-  setShowHomeworkModal(true);
+Porownanie danych:
+- **Homework (DOBRZE)**: `name: "ns.speaking.past_preference_expression"`, `reason: "Tests the ability to..."`, brak `feedback`
+- **Worksheet (ZLE)**: `name: "question_0"`, `reason: ""`, ma `feedback`
+
+Przyczyna lezy w edge function `process-pending-ai-evaluations/index.ts` (linie 162-175). Buduje `item_evaluations` tak:
+
+```javascript
+const nanoSkill = questionItem?.nano_skill;
+return {
+  name: nanoSkill?.name || `question_${qIdx}`,  // <-- TU JEST PROBLEM
+  reason: nanoSkill?.reason || '',
+  feedback: e.feedback || ''  // <-- TO JEST EKSTRA (homework nie ma)
 };
 ```
 
-Ten handler jest poprawnie podlaczony do `WorksheetToolbar` (linia 1003: `onCreateHomework={handleCreateHomework}`), a toolbar renderuje przycisk "Create Homework" z `onClick={onCreateHomework}` (linia 377).
+`questionItem` pochodzi z `context.questions` zapisanego w kolejce `pending_worksheet_ai_evaluations`. Ale `context.questions` NIE zawiera obiektu `nano_skill`! Bo w `autoQueueForCreateHomework` (linia 318):
 
-Edge function `process-pending-ai-evaluations` jest wdrozona i dzialajaca (potwierdzilem testem curl - odpowiada poprawnie). Zawiera logike `autoQueueForCreateHomework`.
+```javascript
+context.questions = exercise.questions || exercise.prompts || ... || [];
+```
 
-**Prawdopodobna przyczyna**: Funkcja `process-pending-ai-evaluations` NIE jest zarejestrowana w `supabase/config.toml`. Domyslnie Supabase ustawia `verify_jwt = true`. Nauczyciel JEST zalogowany wiec JWT jest dolaczony automatycznie przez `supabase.functions.invoke`. To POWINNO dzialac.
+To kopiuje pytania Z worksheeta, wiec `nano_skill` POWINIEN byc. Problem jest raczej w 10-min timer w `useInteractiveSharedWorksheet.tsx` (linia 424):
 
-Ale jest subtelny problem: blad z edge function jest "polykany" cicho. `supabase.functions.invoke` NIE rzuca wyjatku przy bledzie - zwraca `{ data, error }`. Nasz `try/catch` lapie tylko bledy sieci, nie bledy logiczne. Jesli np. `autoQueueForCreateHomework` failuje (np. `needs_ai_evaluation` RPC zwraca blad), to nie widzimy tego w konsoli przegladarki.
+```javascript
+p_context: {
+  title: exercise?.title || `Exercise ${exerciseIndex + 1}`,
+  questions: exercise?.questions || exercise?.prompts || ...
+}
+```
+
+Tutaj `exercise` pochodzi z `exercises[exerciseIndex]` - tablicy propsow hooka. Wiec `nano_skill` JEST w danych. Pytanie - czy `nano_skill` przezywa serializacje do JSONB w `pending_worksheet_ai_evaluations`?
+
+Kluczowy insight: nawet jesli `nano_skill` jest w danych, problem `feedback` i brak `is_submitted` wynika z tego ze homework i worksheet buduja `item_evaluations` w DWOCH ROZNYCH miejscach:
+1. **Homework**: frontend (`useInteractiveHomework.tsx` linie 411-427) - nie dodaje `feedback`
+2. **Worksheet**: edge function (`process-pending-ai-evaluations` linie 162-175) - dodaje `feedback`
 
 ### Rozwiazanie
 
-1. Dodac `verify_jwt = false` w `config.toml` dla bezpieczenstwa (funkcja i tak uzywa service_role_key wewnetrznie)
-2. Dodac logowanie `error` response z `supabase.functions.invoke` w `WorksheetDisplay.tsx`
-3. Dodac `console.log` z wynikiem odpowiedzi edge function zeby widziec co sie dzieje
+Ujednolicic format w edge function `process-pending-ai-evaluations` aby pasowat do formatu homework:
+- Usunac `feedback` z `item_evaluations` (feedback jest w `ai_evaluation` kolumnie, nie w event_payload)
+- Upewnic sie ze `nano_skill` jest prawidlowo wyciagany
+
+```javascript
+// BYLO (zle):
+return {
+  question_index: qIdx,
+  name: nanoSkill?.name || `question_${qIdx}`,
+  reason: nanoSkill?.reason || '',
+  mastery: Math.round((e.quality_score || 0.7) * 100),
+  hasValue: true,
+  feedback: e.feedback || ''  // <-- TO USUNAC Z ITEM_EVALUATIONS
+};
+
+// BEDZIE (dobrze - identycznie jak homework):
+return {
+  question_index: qIdx,
+  name: nanoSkill?.name || `question_${qIdx}`,
+  reason: nanoSkill?.reason || '',
+  mastery: Math.round((e.quality_score || 0.7) * 100),
+  hasValue: true
+};
+```
+
+ALE - `feedback` jest potrzebny w `item_evaluations` w tabeli `worksheet_student_answers` bo `SharedWorksheetContent` go uzywa do wyswietlania! Wiec:
+- W `worksheet_student_answers.item_evaluations` - zachowac `feedback` (do wyswietlania UI)  
+- W `student_events.event_payload.nano_skill_ratings` - usunac `feedback` (do logu DSLM)
+
+Trigger SQL `log_worksheet_answer_to_events` juz filtruje `item_evaluations` do `nano_skill_ratings` (linia 133-138). Wystarczy dodac filtrowanie pola `feedback` z elementow w triggerze:
+
+```sql
+-- Usunac 'feedback' z kazgego elementu nano_skill_ratings
+SELECT jsonb_agg(
+  elem - 'feedback'  -- Usun klucz 'feedback' z kazdego obiektu
+)
+INTO v_nano_skill_ratings
+FROM jsonb_array_elements(NEW.item_evaluations::jsonb) AS elem
+WHERE (elem->>'hasValue')::boolean IS NOT FALSE;
+```
+
+To zapewnia identyczna strukture event_payload jak homework.
+
+---
+
+## PROBLEM 2A: Create Homework nie triggeruje AI eval
+
+### Analiza przyczyny (POTWIERDZONA logami)
+
+Logi edge function:
+```
+trigger_source: null, worksheet_id: 76afe634-...
+No pending evaluations found
+```
+
+`trigger_source: null` oznacza ze **to NIE jest wywolanie z handleCreateHomework** (ktore ustawia `trigger_source: 'create_homework'`). Te wywolania pochodza z `useLiveSessionAnswers.tsx` linia 69 (ktore NIE przekazuje trigger_source).
+
+Problem: `handleCreateHomework` w `WorksheetDisplay.tsx` WYGLADA poprawnie, ale moze nie byc w ogole wywolywany. Moge wylaczac scenariusz z innego powodu - moze `worksheetId` jest undefined lub funkcja nie jest async poprawnie?
+
+Ale bardziej prawdopodobne: nauczyciel w trybie Live Session widzi `process-pending-ai-evaluations` wywolywane co kilka sekund (z `useLiveSessionAnswers` w processPendingAiEvals + Realtime re-renders), co zasypuje logi, a Create Homework call jest pomiedzy nimi i trudno znalezc.
+
+Prawdziwy problem moze byc tez taki: `handleCreateHomework` jest `async` ale `WorksheetToolbar` moze nie czekac na wynik. Sprawdzam - `WorksheetToolbar` linia 377 robi `onClick={onCreateHomework}`. `onCreateHomework` to `handleCreateHomework` ktore jest async. `onClick` na przycisku NIE czeka na async - ale to nie problem, bo `await` wewnatrz handerlera i tak zadziala.
+
+Zidentyfikowalem prawdziwy problem: `useLiveSessionAnswers` wywoluje `processPendingAiEvals` przy KAZDYM renderze/reconnect (linia 100), a ten jest w useEffect dependencies (linia 149: `[worksheetId, enabled, loadInitialAnswers, processPendingAiEvals]`). `processPendingAiEvals` zalezy od `loadInitialAnswers` ktore zalezy od `worksheetId`. Wiec zamienia sie w petle re-renderow ktora ciagle wywoluje edge function - ALE z `trigger_source: null`, co CZYSC kolejke pending evaluations zanim Create Homework zdazy je dodac!
+
+Scenariusz:
+1. Student wpisuje odpowiedz -> trigger SQL tworzy event `student_learning_activity`
+2. Teacher klika Create Homework -> `handleCreateHomework` wywoluje edge function z `trigger_source: 'create_homework'`
+3. Edge function `autoQueueForCreateHomework` sprawdza `needs_ai_evaluation` -> TRUE -> kolejkuje
+4. Edge function przetwarza kolejke -> SUKCES
+5. ALE JEDNOCZESNIE `useLiveSessionAnswers` tez wywoluje edge function z `trigger_source: null` -> ta TEZE przetwarza ta sama kolejke -> conflict
+
+To nie jest glowny problem. Glowny problem: logi pokazuja ze `trigger_source` to `null` - co oznacza ze Create Homework call NIGDY nie dotarl do edge function, albo dotarl ale wczesniej/pozniej niz oczekiwano.
+
+### Rozwiazanie
+
+1. Dodac await i lepszy error handling w `handleCreateHomework`
+2. Wazniejsze: zatrzymac `processPendingAiEvals` w `useLiveSessionAnswers` od ciaglego wywolywania - wywolac je TYLKO RAZ przy mount, nie w kazdym rerender
+3. Sprawdzic czy `handleCreateHomework` jest w ogole wywolywany - dodac alert/toast tymczasowy
 
 ```typescript
-const handleCreateHomework = async () => {
-  // ... walidacja ...
-  try {
-    console.log('[WorksheetDisplay] Triggering AI eval before Create Homework modal, worksheetId:', worksheetId);
-    const { data, error } = await supabase.functions.invoke('process-pending-ai-evaluations', {
-      body: { worksheet_id: worksheetId, trigger_source: 'create_homework' }
-    });
-    if (error) {
-      console.error('[WorksheetDisplay] AI eval error:', error);
-    } else {
-      console.log('[WorksheetDisplay] AI eval result:', data);
-    }
-  } catch (err) {
-    console.warn('[WorksheetDisplay] AI eval network error:', err);
-  }
-  setShowHomeworkModal(true);
-};
+// useLiveSessionAnswers.tsx - wywolac processPendingAiEvals tylko raz, nie w dependencies useEffect
+useEffect(() => {
+  if (!enabled || !worksheetId) return;
+  
+  loadInitialAnswers();
+  processPendingAiEvals(); // Wywolaj raz
+  
+  // Realtime subscription...
+  
+  return () => { ... };
+}, [worksheetId, enabled]); // USUNAC loadInitialAnswers i processPendingAiEvals z dependencies
 ```
 
 ---
 
-## PROBLEM 2: AI Evaluation daje mastery 70 za "I don't know"
-
-### Przyczyna (POTWIERDZONA w kodzie)
-
-Prompt w `verify-open-answers/index.ts` (linia 54-70) mowi:
-
-> "Be encouraging but honest. **Focus on communication rather than perfection**. If the answer shows understanding but has minor errors, still give a passing score."
-
-To jest zbyt poblazywy prompt. AI interpretuje "I don't know" jako "komunikacje" i daje 0.7 (70%). Nie ma zadnej instrukcji karacej za brak odpowiedzi.
-
-### Roznica miedzy homework i worksheet
-
-Worksheet AI eval uzywa TEGO SAMEGO prompta (`verify-open-answers`). Obie sciezki (homework `useInteractiveHomework.tsx` linia 357 i worksheet `process-pending-ai-evaluations` linia 142) wywoluja ta sama edge function `verify-open-answers`. Wiec nie ma roznicy w promptach - problem jest W SAMYM prompcie.
-
-### Rozwiazanie
-
-Dodac do prompta jasna instrukcje dotyczaca brakow odpowiedzi. Zmiany w `verify-open-answers/index.ts`:
-
-```
-IMPORTANT RULES:
-- If the student writes "I don't know", "nie wiem", "no idea", or any equivalent non-answer in ANY language, give quality_score 0.0 to 0.1. This is NOT an acceptable answer.
-- If the student writes only 1-2 words that don't form a meaningful response to the question, give quality_score 0.1 to 0.3.
-- Answers must demonstrate understanding of the topic and use English. Answers in other languages should score 0.1 to 0.2.
-- A passing score (0.7+) requires a genuine attempt to answer the question with at least a partial English sentence.
-```
-
-To jest zmiana w JEDNYM pliku (edge function), obowiazujaca zarowno dla homework jak i worksheet. Wiec spojnosc jest zachowana.
-
----
-
-## PROBLEM 3: Wyswietlanie AI Evaluation na Shared Worksheet i Live Session
+## PROBLEM 3: AI Evaluation feedback w Live Session u nauczyciela
 
 ### Obecny stan
 
-Komponenty cwiczen (ExerciseReading, ExerciseDialogue, ExerciseDescribe itd.) JUZ maja prop `aiEvaluations` i JUZ wyswietlaja `AiEvaluationBadge` gdy ten prop jest przekazany. To dziala w homework.
+`WorksheetContent.tsx` przekazuje `liveSessionAnswers` do `ExerciseSection` (linia 515), ale NIE przekazuje `liveItemEvaluations`. `useLiveSessionAnswers` juz eksponuje `liveItemEvaluations` (dodane w poprzedniej iteracji).
 
-ALE:
-1. **SharedWorksheetContent.tsx** - NIE przekazuje `aiEvaluations` do komponentow cwiczen
-2. **useInteractiveSharedWorksheet.tsx** - NIE laduje `item_evaluations` z bazy i NIE eksponuje ich jako state
-3. **get_worksheet_live_answers** RPC - NIE zwraca kolumny `item_evaluations` ani `mastery`
-4. **useLiveSessionAnswers.tsx** - NIE laduje `item_evaluations` i NIE przekazuje ich do komponentow
+### Rozwiazanie
 
-### Rozwiazanie krok po kroku
+1. Dodac prop `liveItemEvaluations` do `WorksheetContent` interface
+2. Przekazac go z `WorksheetDisplay` (ktory ma dostep do `useLiveSessionAnswers`)
+3. W `ExerciseSection` - dodac prop `liveItemEvaluations` 
+4. Przekazac `aiEvaluations` do open-ended exercise components z `liveItemEvaluations` (konwersja format)
 
-**Krok 1: Zaktualizowac RPC `get_worksheet_live_answers`** - dodac `item_evaluations` i `mastery` do zwracanych kolumn
-
-**Krok 2: `useInteractiveSharedWorksheet.tsx`** - ladowac `item_evaluations` z `get_worksheet_student_answers` (ktore JUZ zwraca `item_evaluations`) i eksponowac je jako nowy state:
+Zmiana w `WorksheetContentProps`:
 ```typescript
-const [itemEvaluations, setItemEvaluations] = useState<Record<number, any[]>>({});
-
-// W loadAnswers:
-data.forEach((answer: any) => {
-  loadedAnswers[answer.exercise_index] = answer.answers;
-  if (answer.item_evaluations) {
-    loadedEvals[answer.exercise_index] = answer.item_evaluations;
-  }
-});
-setItemEvaluations(loadedEvals);
-
-// W return:
-return { ..., itemEvaluations };
+liveItemEvaluations?: Record<number, any[]>;
 ```
 
-**Krok 3: `useLiveSessionAnswers.tsx`** - ladowac `item_evaluations` z zaktualizowanego RPC i eksponowac je:
+Zmiana w renderowaniu ExerciseSection:
 ```typescript
-const [liveItemEvaluations, setLiveItemEvaluations] = useState<Record<number, any[]>>({});
-// ... analogicznie jak wyzej
-return { ..., liveItemEvaluations };
-```
-
-**Krok 4: `SharedWorksheetContent.tsx`** - dodac prop `itemEvaluations` i przekazac go do komponentow cwiczen open-ended:
-
-```typescript
-interface SharedWorksheetContentProps {
-  // ... istniejace props ...
-  itemEvaluations?: Record<number, any[]>;  // NOWE
-}
-
-// W renderowaniu kazdego open-ended exercise:
-<ExerciseReading
-  // ... istniejace props ...
-  aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
+<ExerciseSection
+  ...
+  liveItemEvaluations={viewMode === 'live-session' ? liveItemEvaluations?.[originalIndex] : undefined}
 />
 ```
 
-Funkcja konwertujaca `item_evaluations` (format bazy) na `AiEvaluation` (format komponentu):
+W `ExerciseSection` - przekazac `aiEvaluations` do komponentow open-ended (ExerciseReading, ExerciseDialogue itd.) konwertujac `liveItemEvaluations` na format `Record<number, AiEvaluation>`:
+
 ```typescript
-const convertItemEvalsToAiEvals = (items: any[]): Record<number, AiEvaluation> | undefined => {
-  if (!items || items.length === 0) return undefined;
+const convertLiveEvalsToAiEvals = (items: any[]): Record<number, AiEvaluation> | undefined => {
+  if (!items?.length) return undefined;
   const result: Record<number, AiEvaluation> = {};
   items.forEach(item => {
     result[item.question_index] = {
@@ -155,15 +184,21 @@ const convertItemEvalsToAiEvals = (items: any[]): Record<number, AiEvaluation> |
 };
 ```
 
-**Krok 5: `SharedWorksheet.tsx`** - przekazac `itemEvaluations` z hooka do `SharedWorksheetContent`
+---
 
-**Krok 6: Analogicznie dla Live Session** - w `WorksheetContent.tsx` gdzie renderowane sa cwiczenia w trybie Live Session, przekazac `liveItemEvaluations` z `useLiveSessionAnswers`
+## PROBLEM 4: Rozszerzenie sugestii
 
-### Uwaga dotyczaca wyswietlania
+### 4a. ExerciseSentenceTransformation bez aiEvaluations
 
-W homework, `aiEvaluations` wyswietla sie TYLKO gdy `disabled` jest `true` (po submisji). W shared worksheet chcemy pokazywac feedback po AI evaluation (10-min timer lub Create Homework) nawet gdy student nadal moze edytowac. Komponenty cwiczen sprawdzaja `aiEvaluations?.[qIndex] && disabled` - wiec trzeba tez przekazac `disabled={true}` LUB zmodyfikowac warunek w komponentach.
+Ten komponent jest open-ended (w liscie `EXERCISE_TYPE_CLASSIFICATION.open`) ale NIE przyjmuje propa `aiEvaluations`. Trzeba go dodac analogicznie do ExerciseReading, ExerciseDialogue itd.
 
-Najlepsza opcja: wyswietlac feedback BEZ blokowania edycji. Zmienic warunek w komponentach z `aiEvaluations?.[qIndex] && disabled` na `aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet)`. W ten sposob student widzi feedback ale nadal moze pisac.
+### 4b. Timer odswiezania itemEvaluations
+
+Student na shared worksheet NIE widzi AI feedback bez odswiezenia strony po tym jak AI eval sie wykonala (bo dane sa w bazie, a frontend nie wie ze sie zmienily). Rozwiazanie: dodac polling co 30 sekund w `useInteractiveSharedWorksheet` ktory sprawdza `item_evaluations` z bazy i aktualizuje state.
+
+### 4c. Realtime na `useLiveSessionAnswers`
+
+Realtime subscription na `worksheet_student_answers` juz istnieje (linia 103-141), ALE `payload.new` w UPDATE nie zawiera `item_evaluations` w danych Realtime (Supabase Realtime nie zawsze zwraca wszystkie kolumny). Fix: po kazdym UPDATE Realtime, wywolac `loadInitialAnswers()` ktore pobierze pelne dane wlacznie z `item_evaluations`.
 
 ---
 
@@ -171,33 +206,21 @@ Najlepsza opcja: wyswietlac feedback BEZ blokowania edycji. Zmienic warunek w ko
 
 | # | Plik | Zmiana | Problem |
 |---|------|--------|---------|
-| 1 | `supabase/config.toml` | Dodac `[functions.process-pending-ai-evaluations] verify_jwt = false` | 1A |
-| 2 | `src/components/WorksheetDisplay.tsx` | Poprawic logowanie bledow w handleCreateHomework | 1A |
-| 3 | `supabase/functions/verify-open-answers/index.ts` | Dodac reguly karzace za non-answers ("I don't know", inne jezyki, 1-2 slowa) | 2 |
-| 4 | Migracja SQL: `get_worksheet_live_answers` | Dodac `item_evaluations` i `mastery` do zwracanych kolumn | 3 |
-| 5 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Ladowac i eksponowac `itemEvaluations` | 3 |
-| 6 | `src/hooks/useLiveSessionAnswers.tsx` | Ladowac i eksponowac `liveItemEvaluations` | 3 |
-| 7 | `src/components/shared/SharedWorksheetContent.tsx` | Przyjmowac i przekazywac `aiEvaluations` do open-ended exercises | 3 |
-| 8 | `src/pages/SharedWorksheet.tsx` | Przekazac `itemEvaluations` do SharedWorksheetContent | 3 |
-| 9 | 7 komponentow cwiczen | Zmienic warunek wyswietlania z `disabled` na `disabled \|\| isSharedWorksheet` | 3 |
-| 10 | Dokumentacja | Aktualizacja scenariuszy | E |
-
-### Zaktualizowane scenariusze AI Evaluation (Problem E)
-
-| Scenariusz | Trigger | event_type | Wyswietlanie feedback |
-|---|---|---|---|
-| Student wpisuje odpowiedz | Auto-save 1.5s | `student_learning_activity` | Brak |
-| 10 min bez aktywnosci | Timer -> edge function | `10min_AI_evaluation` | TAK - badge pod pytaniem na shared worksheet |
-| Nauczyciel klika Create Homework | Przycisk na toolbarze -> edge function | `create_hw_AI_evaluation` | TAK - badge pod pytaniem na shared worksheet i Live Session |
-| Student klika Submit Homework | Submit handler | `submit_hw_AI_evaluation` | TAK - badge pod pytaniem na homework (jak dotychczas) |
-| Nauczyciel klika Mark Done | RPC add_student_event | `mark_done_evaluation` | TAK - badge w Live Session (jak dotychczas) |
+| 1 | Migracja SQL: `log_worksheet_answer_to_events` | Usunac `feedback` z `nano_skill_ratings` w payloadzie (`elem - 'feedback'`) | 1 |
+| 2 | Migracja SQL: `log_homework_answer_to_events` | Analogiczna zmiana (dla spojnosci) | 1 |
+| 3 | `src/hooks/useLiveSessionAnswers.tsx` | Usunac `loadInitialAnswers` i `processPendingAiEvals` z useEffect dependencies, dodac refetch po Realtime UPDATE z item_evaluations | 2A, 4c |
+| 4 | `src/components/WorksheetDisplay.tsx` | Przekazac `liveItemEvaluations` do `WorksheetContent` | 3 |
+| 5 | `src/components/worksheet/WorksheetContent.tsx` | Dodac prop `liveItemEvaluations`, przekazac do ExerciseSection | 3 |
+| 6 | `src/components/worksheet/ExerciseSection.tsx` | Dodac prop `liveItemEvaluations`, konwertowac i przekazac do open-ended exercises jako `aiEvaluations` | 3 |
+| 7 | `src/components/worksheet/ExerciseSentenceTransformation.tsx` | Dodac prop `aiEvaluations` i `isSharedWorksheet` | 4a |
+| 8 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Dodac polling co 30s dla `item_evaluations` aby student widzial feedback bez odswiezania | 4b |
+| 9 | Dokumentacja | Aktualizacja scenariuszy | Wszystkie |
 
 ### Bezpieczenstwo zmian
 
-- Zmiana 1 (config.toml): tylko wylacza JWT verification - funkcja i tak uzywa service_role_key wewnetrznie
-- Zmiana 2 (logowanie): dodaje console.log - zero wplywu na logike
-- Zmiana 3 (prompt): zmiana tekstu prompta - nie zmienia struktury odpowiedzi AI, tylko jej jakosc
-- Zmiana 4 (RPC): dodanie kolumn do SELECT - nie zmienia istniejacych danych, backward compatible
-- Zmiany 5-8 (hooks + komponenty): dodanie nowego stanu i propow - istniejace propsy nie sa zmieniane
-- Zmiana 9 (warunek wyswietlania): dodanie `|| isSharedWorksheet` - nie zmienia zachowania dla homework (tam `disabled=true` i tak jest spelniony)
+- Zmiana 1-2 (SQL trigger): usuwamy jedno pole z JSONB obiektu - nie zmienia to zapisu do `worksheet_student_answers`, tylko do `student_events`
+- Zmiana 3 (useEffect deps): naprawia re-render loop - obecny kod i tak dziala, tylko wywoluje edge function za czesto
+- Zmiany 4-6 (Live Session): dodanie nowych opcjonalnych propow - istniejace renderowanie nie jest zmieniane
+- Zmiana 7 (SentenceTransformation): dodanie opcjonalnego propa - bez wplywu na istniejace uzycia
+- Zmiana 8 (polling): nowy efekt ktory NIE zmienia istniejacych - tylko odswierza dane
 
