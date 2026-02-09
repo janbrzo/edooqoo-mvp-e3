@@ -266,7 +266,7 @@ export default function WorksheetDisplay({
   const flashcardSetsCount = flashcardSets?.length || 0;
   
   // PROBLEM 1 FIX: Integrate Live Session for real-time student answers
-  const { liveAnswers, studentEmail: liveStudentEmail, isConnected: isLiveConnected } = useLiveSessionAnswers({
+  const { liveAnswers, liveItemEvaluations, studentEmail: liveStudentEmail, isConnected: isLiveConnected } = useLiveSessionAnswers({
     worksheetId: worksheetId || '',
     enabled: viewMode === 'live-session'
   });
@@ -1073,6 +1073,7 @@ export default function WorksheetDisplay({
               liveSessionAnswers={viewMode === 'live-session' ? liveAnswers : undefined}
               liveStudentEmail={viewMode === 'live-session' ? liveStudentEmail : undefined}
               isLiveConnected={viewMode === 'live-session' ? isLiveConnected : undefined}
+              liveItemEvaluations={viewMode === 'live-session' ? liveItemEvaluations : undefined}
             />
             
             {/* DRAWING OVERLAY: Canvas overlay for drawing (Live Session only) */}

@@ -2,7 +2,7 @@
 // FAZA 2: Interactive Shared Worksheets - Teacher Live Session Hook
 // ============================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { ExerciseAnswers } from '@/types/interactiveHomework';
 import { LiveSessionAnswer } from '@/types/interactiveSharedWorksheet';
@@ -21,6 +21,9 @@ export const useLiveSessionAnswers = ({
   const [studentEmail, setStudentEmail] = useState<string | null>(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  
+  // Guard against multiple processPendingAiEvals calls
+  const hasProcessedRef = useRef(false);
 
   // Load initial answers from database
   const loadInitialAnswers = useCallback(async () => {
@@ -59,7 +62,7 @@ export const useLiveSessionAnswers = ({
     }
   }, [worksheetId]);
 
-  // PROBLEM 1 FIX: Process any pending AI evaluations when teacher views worksheet
+  // Process any pending AI evaluations - called ONCE on mount
   const processPendingAiEvals = useCallback(async () => {
     if (!worksheetId) return;
     
@@ -85,6 +88,7 @@ export const useLiveSessionAnswers = ({
   }, [worksheetId, loadInitialAnswers]);
 
   // Subscribe to Realtime changes
+  // FIX: Remove loadInitialAnswers and processPendingAiEvals from deps to prevent re-render loop
   useEffect(() => {
     if (!enabled || !worksheetId) {
       setIsConnected(false);
@@ -96,8 +100,11 @@ export const useLiveSessionAnswers = ({
     // Load initial data first
     loadInitialAnswers();
     
-    // PROBLEM 1 FIX: Process any pending AI evaluations from student tab closes
-    processPendingAiEvals();
+    // Process pending AI evaluations ONCE on mount
+    if (!hasProcessedRef.current) {
+      hasProcessedRef.current = true;
+      processPendingAiEvals();
+    }
 
     // Set up Realtime subscription
     const channel = supabase
@@ -111,7 +118,7 @@ export const useLiveSessionAnswers = ({
           filter: `worksheet_id=eq.${worksheetId}`
         },
         (payload) => {
-          console.log('[useLiveSessionAnswers] Realtime update received:', payload);
+          console.log('[useLiveSessionAnswers] Realtime update received:', payload.eventType);
           
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const newData = payload.new as any;
@@ -123,6 +130,18 @@ export const useLiveSessionAnswers = ({
             
             setStudentEmail(newData.student_email);
             setLastUpdatedAt(new Date());
+            
+            // FIX: Realtime payload may not include item_evaluations
+            // If this is an UPDATE with item_evaluations, refetch full data
+            if (payload.eventType === 'UPDATE' && newData.item_evaluations) {
+              setLiveItemEvaluations(prev => ({
+                ...prev,
+                [newData.exercise_index]: newData.item_evaluations
+              }));
+            } else if (payload.eventType === 'UPDATE') {
+              // Refetch to get item_evaluations that may not be in Realtime payload
+              loadInitialAnswers();
+            }
           } else if (payload.eventType === 'DELETE') {
             // @ts-ignore - payload.old may not have type
             const oldData = payload.old as LiveSessionAnswer;
@@ -145,8 +164,10 @@ export const useLiveSessionAnswers = ({
       console.log('[useLiveSessionAnswers] Removing Realtime subscription');
       supabase.removeChannel(channel);
       setIsConnected(false);
+      hasProcessedRef.current = false;
     };
-  }, [worksheetId, enabled, loadInitialAnswers, processPendingAiEvals]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [worksheetId, enabled]);
 
   // Clear answers when disabled
   useEffect(() => {

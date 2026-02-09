@@ -40,6 +40,8 @@ interface WorksheetContentProps {
   liveSessionAnswers?: Record<number, any>;
   liveStudentEmail?: string | null;
   isLiveConnected?: boolean;
+  // Live Session AI evaluation feedback
+  liveItemEvaluations?: Record<number, any[]>;
 }
 
 export default function WorksheetContent({
@@ -63,7 +65,9 @@ export default function WorksheetContent({
   // PROBLEM 1: Live Session props
   liveSessionAnswers,
   liveStudentEmail,
-  isLiveConnected
+  isLiveConnected,
+  // Live Session AI evaluation feedback
+  liveItemEvaluations
 }: WorksheetContentProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
@@ -513,6 +517,7 @@ export default function WorksheetContent({
                   isCollapsed={navigation.collapsedExercises.get(sortedIndex)}
                   onToggleCollapse={() => navigation.toggleExercise(sortedIndex)}
                   liveSessionAnswer={viewMode === 'live-session' ? liveSessionAnswers?.[originalIndex] : undefined}
+                  liveItemEvaluations={viewMode === 'live-session' ? liveItemEvaluations?.[originalIndex] : undefined}
                   studentId={studentId}
                   teacherId={userId}
                 />
