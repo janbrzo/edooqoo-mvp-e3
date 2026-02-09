@@ -103,7 +103,7 @@ serve(async (req) => {
 
     // STEP 2: Generate detailed description using Gemini Pro WITH VISION
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const descriptionModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const descriptionModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     // Pass the actual image to Gemini for VISUAL analysis
     const imagePart = {
@@ -153,7 +153,7 @@ FORMAT:
     const finalImageUrl = imageUrl; // Base64 initially
     const imageSource = "r2-cloudflare"; // Will be R2 after upload
     const timestamp = Date.now();
-    
+
     console.log(`[GENERATE-IMAGE] 🚀 Starting R2 upload...`);
 
     // Upload to R2 synchronously (we need R2 URL in database, not base64!)
@@ -184,7 +184,7 @@ FORMAT:
         console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload failed (${uploadResponse.status}), using base64 fallback`);
       }
     } catch (uploadError) {
-      console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload error:`, uploadError.message, ', using base64 fallback');
+      console.warn(`[GENERATE-IMAGE] ⚠️ R2 upload error:`, uploadError.message, ", using base64 fallback");
     }
 
     return new Response(
