@@ -17,6 +17,7 @@ export const useLiveSessionAnswers = ({
   enabled
 }: UseLiveSessionAnswersProps) => {
   const [liveAnswers, setLiveAnswers] = useState<Record<number, ExerciseAnswers>>({});
+  const [liveItemEvaluations, setLiveItemEvaluations] = useState<Record<number, any[]>>({});
   const [studentEmail, setStudentEmail] = useState<string | null>(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -36,17 +37,22 @@ export const useLiveSessionAnswers = ({
 
       if (data && data.length > 0) {
         const loadedAnswers: Record<number, ExerciseAnswers> = {};
+        const loadedEvals: Record<number, any[]> = {};
         let latestEmail: string | null = null;
 
         data.forEach((answer: any) => {
           loadedAnswers[answer.exercise_index] = answer.answers as ExerciseAnswers;
           if (!latestEmail) latestEmail = answer.student_email;
+          if (answer.item_evaluations && Array.isArray(answer.item_evaluations)) {
+            loadedEvals[answer.exercise_index] = answer.item_evaluations;
+          }
         });
 
         setLiveAnswers(loadedAnswers);
+        setLiveItemEvaluations(loadedEvals);
         setStudentEmail(latestEmail);
         setLastUpdatedAt(new Date());
-        console.log('[useLiveSessionAnswers] Loaded initial answers:', loadedAnswers);
+        console.log('[useLiveSessionAnswers] Loaded initial answers:', loadedAnswers, 'evals:', loadedEvals);
       }
     } catch (error) {
       console.error('[useLiveSessionAnswers] Error loading initial answers:', error);
@@ -153,6 +159,7 @@ export const useLiveSessionAnswers = ({
 
   return {
     liveAnswers,
+    liveItemEvaluations,
     studentEmail,
     lastUpdatedAt,
     isConnected,

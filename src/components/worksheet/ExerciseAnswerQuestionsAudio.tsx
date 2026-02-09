@@ -20,6 +20,7 @@ interface ExerciseAnswerQuestionsAudioProps extends Partial<InteractiveExerciseP
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
   onNanoSkillChange?: (qIndex: number, newSkill: NanoSkill) => void;
+  isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
 }
@@ -37,6 +38,7 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
   onAnswerChange,
   disabled = false,
   onNanoSkillChange,
+  isSharedWorksheet = false,
   // AI Evaluations
   aiEvaluations
 }) => {
@@ -111,7 +113,7 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
                   className={`h-10 mt-1 ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}`}
                 />
                 {/* AI Evaluation badge per question */}
-                {aiEvaluations?.[qIndex] && disabled && (
+                {aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet) && (
                   <AiEvaluationBadge 
                     evaluation={aiEvaluations[qIndex]} 
                     showFeedback={true}

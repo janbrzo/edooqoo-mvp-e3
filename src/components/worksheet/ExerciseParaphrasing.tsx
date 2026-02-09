@@ -135,7 +135,7 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                       disabled={disabled}
                     />
                     {/* AI Evaluation badge per sentence */}
-                    {aiEvaluations?.[sIndex] && disabled && (
+                    {aiEvaluations?.[sIndex] && (disabled || isSharedWorksheet) && (
                       <AiEvaluationBadge 
                         evaluation={aiEvaluations[sIndex]} 
                         showFeedback={true}

@@ -191,7 +191,7 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
                     disabled={disabled}
                   />
                   {/* AI Evaluation badge per question */}
-                  {aiEvaluations?.[qIndex] && disabled && (
+                  {aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet) && (
                     <AiEvaluationBadge 
                       evaluation={aiEvaluations[qIndex]} 
                       showFeedback={true}

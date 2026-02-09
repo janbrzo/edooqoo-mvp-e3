@@ -30,6 +30,7 @@ export const useInteractiveSharedWorksheet = ({
   exercises = []
 }: UseInteractiveSharedWorksheetProps) => {
   const [answers, setAnswers] = useState<Record<number, ExerciseAnswers>>({});
+  const [itemEvaluations, setItemEvaluations] = useState<Record<number, any[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -83,13 +84,18 @@ export const useInteractiveSharedWorksheet = ({
 
       if (data && data.length > 0) {
         const loadedAnswers: Record<number, ExerciseAnswers> = {};
+        const loadedEvals: Record<number, any[]> = {};
 
         data.forEach((answer: any) => {
           loadedAnswers[answer.exercise_index] = answer.answers;
+          if (answer.item_evaluations && Array.isArray(answer.item_evaluations)) {
+            loadedEvals[answer.exercise_index] = answer.item_evaluations;
+          }
         });
 
         setAnswers(loadedAnswers);
-        console.log('[useInteractiveSharedWorksheet] Loaded answers:', loadedAnswers);
+        setItemEvaluations(loadedEvals);
+        console.log('[useInteractiveSharedWorksheet] Loaded answers:', loadedAnswers, 'evals:', loadedEvals);
       }
     } catch (error: any) {
       console.error('Error loading answers:', error);
@@ -449,6 +455,7 @@ export const useInteractiveSharedWorksheet = ({
 
   return {
     answers,
+    itemEvaluations,
     isLoading,
     isSaving,
     lastSavedAt,

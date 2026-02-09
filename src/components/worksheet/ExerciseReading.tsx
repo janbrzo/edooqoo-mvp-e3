@@ -91,7 +91,7 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
                   rows={1}
                 />
                 {/* AI Evaluation badge per question */}
-                {aiEvaluations?.[qIndex] && disabled && (
+                {aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet) && (
                   <AiEvaluationBadge 
                     evaluation={aiEvaluations[qIndex]} 
                     showFeedback={true}

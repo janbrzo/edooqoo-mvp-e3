@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - eval_trigger reset, event_payload fix, Create Homework timing:**
+**Latest Update (February 2026) - AI Eval prompt strictness, feedback visibility, Create Homework debug:**
+- **#1 AI prompt strictness**: `verify-open-answers` now penalizes non-answers ("I don't know", "nie wiem", etc.) with quality_score 0.0-0.1. Short non-meaningful answers (1-2 words) get 0.1-0.3. Non-English answers get 0.1-0.2. Passing (0.7+) requires genuine English sentence attempt
+- **#2 AI Eval feedback on Shared Worksheet**: `item_evaluations` from DB now loaded by `useInteractiveSharedWorksheet` and `useLiveSessionAnswers`, passed through `SharedWorksheetContent` to exercise components via `aiEvaluations` prop. Display condition changed from `disabled` to `disabled || isSharedWorksheet`
+- **#3 RPC update**: `get_worksheet_live_answers` now returns `item_evaluations` and `mastery` columns
+- **#4 config.toml**: Added `verify_jwt = false` for `process-pending-ai-evaluations` Edge Function
+- **#5 Create Homework error logging**: `WorksheetDisplay.handleCreateHomework` now logs `{ data, error }` response from edge function instead of silently catching
+
+**Previous Update (February 2026) - eval_trigger reset, event_payload fix, Create Homework timing:**
 - **#1 eval_trigger=NULL on student save**: Both `save_worksheet_answer` and `save_homework_answer` now reset `eval_trigger = NULL` on UPSERT. This ensures the SQL trigger correctly maps student saves to `student_learning_activity` instead of keeping stale AI eval trigger types
 - **#2 event_payload structure restored**: Triggers now produce `answer_id` (UUID), `time_spent_seconds` (rounded), no raw `answers` blob. Matches original DSLM contract
 - **#3 Create Homework AI eval moved to worksheet button**: `process-pending-ai-evaluations` is now called in `WorksheetDisplay.handleCreateHomework` (BEFORE modal opens), not inside `CreateHomeworkModal` (which was too late)
