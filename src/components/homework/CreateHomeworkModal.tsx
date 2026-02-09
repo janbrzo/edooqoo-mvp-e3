@@ -264,16 +264,7 @@ export function CreateHomeworkModal({
     setIsGenerating(true);
 
     try {
-      // FIX 1.2: Process pending AI evaluations BEFORE homework creation
-      try {
-        console.log('[CreateHomeworkModal] Processing pending AI evaluations BEFORE homework creation for worksheet:', worksheetId);
-        await supabase.functions.invoke('process-pending-ai-evaluations', {
-          body: { worksheet_id: worksheetId, trigger_source: 'create_homework' }
-        });
-        console.log('[CreateHomeworkModal] Processed pending AI evaluations successfully');
-      } catch (aiError) {
-        console.warn('[CreateHomeworkModal] Failed to process pending AI evals (continuing anyway):', aiError);
-      }
+      // AI evaluation already triggered by WorksheetDisplay.handleCreateHomework (before modal opened)
 
       const student = students.find(s => s.id === selectedStudentId);
       

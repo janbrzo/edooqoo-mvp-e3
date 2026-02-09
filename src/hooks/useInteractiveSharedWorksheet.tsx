@@ -426,7 +426,7 @@ export const useInteractiveSharedWorksheet = ({
         }
         
         // Mark that we've triggered
-        lastAiEvalTriggerRef.current = Date.now();
+        lastAiEvalTriggerRef.current = lastSavedAt.getTime();
         
         // PLAN FIX 1C: Actually process the queued evaluations
         try {
