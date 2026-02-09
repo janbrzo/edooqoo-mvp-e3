@@ -2014,7 +2014,9 @@ export type Database = {
           exercise_index: number
           exercise_type: string
           id: string
+          item_evaluations: Json
           last_saved_at: string
+          mastery: number
           student_email: string
         }[]
       }

@@ -144,7 +144,7 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
                         disabled={disabled}
                       />
                       {/* AI Evaluation badge per expression */}
-                      {aiEvaluations?.[eIndex] && disabled && (
+                      {aiEvaluations?.[eIndex] && (disabled || isSharedWorksheet) && (
                         <AiEvaluationBadge 
                           evaluation={aiEvaluations[eIndex]} 
                           showFeedback={true}

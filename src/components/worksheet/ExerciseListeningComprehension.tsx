@@ -94,7 +94,7 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                     `}
                   />
                   {/* AI Evaluation badge per question */}
-                  {aiEvaluations?.[qIndex] && disabled && (
+                  {aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet) && (
                     <AiEvaluationBadge 
                       evaluation={aiEvaluations[qIndex]} 
                       showFeedback={true}

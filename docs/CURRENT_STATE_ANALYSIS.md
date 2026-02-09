@@ -6,16 +6,17 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02):** 
+**Ostatnia naprawa (2026-02):**
+- ✅ **NAPRAWIONO prompt AI**: `verify-open-answers` karze za non-answers ("I don't know", "nie wiem") → quality_score 0.0-0.1. Krótkie odpowiedzi 1-2 słowa → 0.1-0.3. Odpowiedzi nie po angielsku → 0.1-0.2
+- ✅ **DODANO feedback AI na Shared Worksheet**: `item_evaluations` ładowane z bazy, przekazywane do komponentów ćwiczeń → badge AI wyświetlany pod pytaniami open-ended
+- ✅ **NAPRAWIONO RPC**: `get_worksheet_live_answers` zwraca teraz `item_evaluations` i `mastery`
+- ✅ **NAPRAWIONO config.toml**: `process-pending-ai-evaluations` → `verify_jwt = false`
+- ✅ **NAPRAWIONO logowanie błędów**: `handleCreateHomework` loguje odpowiedź edge function (data + error)
 - ✅ **NAPRAWIONO eval_trigger reset**: `save_worksheet_answer` i `save_homework_answer` teraz resetują `eval_trigger = NULL` przy zapisie studenta → trigger poprawnie mapuje na `student_learning_activity`
 - ✅ **NAPRAWIONO event_payload**: Przywrócono strukturę: `answer_id` (UUID), `time_spent_seconds` (zamiast ms), usunięto surowe `answers` z payloadu
 - ✅ **NAPRAWIONO Create Homework timing**: AI eval triggerowane na przycisku "Create Homework" (toolbar worksheet), PRZED otwarciem modalu
 - ✅ **NAPRAWIONO 10-min timer**: `lastAiEvalTriggerRef` używa `lastSavedAt.getTime()` zamiast `Date.now()` - eliminuje edge case z timestampami
-- ✅ **NAPRAWIONO duplikaty event_type**: Usunięto `AND event_type = v_event_type` z DELETE w triggerach SQL
-- ✅ **USUNIĘTO close_tab AI eval**: Usunięto kolejkowanie AI evaluation przy zamykaniu karty
-- ✅ **NAPRAWIONO Create Homework auto-queue**: Edge function automatycznie kolejkuje evaluacje dla open-ended exercises
 - ✅ **Scenariusze AI Evaluation**: `student_learning_activity` (eval_trigger=NULL), `10min_AI_evaluation`, `create_hw_AI_evaluation` (przycisk na toolbar), `submit_hw_AI_evaluation`, `mark_done_evaluation`
-- ✅ **ZMIENIONO Mark Done metadata**: `event_type` → `mark_done_evaluation`, `event_source` → `worksheet`
 - ✅ **DODANO AutoResizeTextarea**: Auto-dopasowanie wysokości textarea po odświeżeniu strony
 
 **Poprzednia naprawa (2026-02):**

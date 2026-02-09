@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { AlertCircle, MessageCircle, BookOpen, Clock, FileText } from 'lucide-react';
+import { AiEvaluation } from '@/components/homework/AiEvaluationBadge';
 import ExerciseMatching from '../worksheet/ExerciseMatching';
 import ExerciseFillInBlanks from '../worksheet/ExerciseFillInBlanks';
 import ExerciseMultipleChoice from '../worksheet/ExerciseMultipleChoice';
@@ -45,7 +46,24 @@ interface SharedWorksheetContentProps {
   onBlur?: (exerciseIndex: number, exerciseType: string) => void;
   // PROBLEM 2: Navigation refs for sidebar scroll-to-exercise
   exerciseRefs?: React.MutableRefObject<(HTMLElement | null)[]>;
+  // AI Evaluation feedback
+  itemEvaluations?: Record<number, any[]>;
 }
+
+// Helper to convert item_evaluations (DB format) to AiEvaluation (component format)
+const convertItemEvalsToAiEvals = (items: any[] | undefined): Record<number, AiEvaluation> | undefined => {
+  if (!items || items.length === 0) return undefined;
+  const result: Record<number, AiEvaluation> = {};
+  items.forEach(item => {
+    result[item.question_index] = {
+      is_acceptable: (item.mastery || 0) >= 70,
+      quality_score: (item.mastery || 0) / 100,
+      feedback: item.feedback || '',
+      question_index: item.question_index
+    };
+  });
+  return result;
+};
 
 // Helper function to normalize exercise type (removes -picture and -audio suffixes)
 const normalizeExerciseType = (type: string): string => {
@@ -59,7 +77,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
   studentAnswers = {},
   onAnswerChange,
   onBlur,
-  exerciseRefs // PROBLEM 2: Navigation refs
+  exerciseRefs, // PROBLEM 2: Navigation refs
+  itemEvaluations // AI Evaluation feedback
 }) => {
   // PROBLEM 3: Effective interactive mode (disabled if read-only)
   const effectiveInteractive = isInteractive && !isReadOnly;
@@ -331,6 +350,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+                  isSharedWorksheet={true}
+                  aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
                 />
               )}
 
@@ -389,6 +410,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+                  isSharedWorksheet={true}
+                  aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
                 />
               )}
 
@@ -466,6 +489,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+                  isSharedWorksheet={true}
+                  aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
                 />
               )}
 
@@ -585,6 +610,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+                  isSharedWorksheet={true}
+                  aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
                 />
               )}
 
@@ -599,6 +626,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+                  isSharedWorksheet={true}
+                  aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
                 />
               )}
 
@@ -664,6 +693,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+                  isSharedWorksheet={true}
+                  aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
                 />
               )}
 
@@ -678,6 +709,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
+                  isSharedWorksheet={true}
+                  aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
                 />
               )}
 

@@ -704,12 +704,17 @@ export default function WorksheetDisplay({
     
     // Trigger AI evaluation BEFORE opening modal (Problem 1A fix)
     try {
-      console.log('[WorksheetDisplay] Triggering AI eval before Create Homework modal');
-      await supabase.functions.invoke('process-pending-ai-evaluations', {
+      console.log('[WorksheetDisplay] Triggering AI eval before Create Homework modal, worksheetId:', worksheetId);
+      const { data, error } = await supabase.functions.invoke('process-pending-ai-evaluations', {
         body: { worksheet_id: worksheetId, trigger_source: 'create_homework' }
       });
+      if (error) {
+        console.error('[WorksheetDisplay] AI eval error:', error);
+      } else {
+        console.log('[WorksheetDisplay] AI eval result:', data);
+      }
     } catch (err) {
-      console.warn('[WorksheetDisplay] AI eval failed (non-critical):', err);
+      console.warn('[WorksheetDisplay] AI eval network error:', err);
     }
     
     setShowHomeworkModal(true);

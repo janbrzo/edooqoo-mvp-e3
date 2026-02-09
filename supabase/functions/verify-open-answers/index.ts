@@ -64,6 +64,13 @@ For each answer, provide:
 - is_acceptable: true if quality_score >= 0.7
 - feedback: A brief, encouraging feedback in English (max 30 words). Be SPECIFIC about what the student did well or needs to improve. Do NOT use generic phrases like "Good answer" without specifics.
 
+IMPORTANT STRICT RULES (must override all other considerations):
+- If the student writes "I don't know", "I dont know", "nie wiem", "no idea", "idk", "no se", "не знаю", or ANY equivalent non-answer in ANY language, give quality_score 0.0 to 0.1. This is NOT an acceptable answer. Feedback should encourage them to try.
+- If the student writes only 1-2 words that don't form a meaningful response to the question (e.g., "yes", "no", "ok", "good"), give quality_score 0.1 to 0.3.
+- Answers NOT in English (written in Polish, Spanish, etc.) should score 0.1 to 0.2, unless the question specifically asks for a translation.
+- A passing score (0.7+) requires a genuine attempt to answer the question with at least a partial English sentence that addresses the topic.
+- Short but relevant answers (3-5 words) that directly address the question can score 0.5 to 0.7.
+
 Be encouraging but honest. Focus on communication rather than perfection.
 If the answer shows understanding but has minor errors, still give a passing score.
 
