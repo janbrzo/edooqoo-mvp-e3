@@ -315,8 +315,8 @@ export const buildItemEvaluations = (
       if (aiEvaluations?.[idx]?.quality_score !== undefined) {
         itemMastery = Math.round(aiEvaluations[idx].quality_score! * 100);
       } else {
-        // Has answer but no AI eval yet - mark as pending (50%)
-        itemMastery = 50;
+        // Has answer but no AI eval yet - unknown mastery (pending)
+        itemMastery = null;
       }
     } else {
       // Closed exercise - calculate automatically
@@ -327,7 +327,7 @@ export const buildItemEvaluations = (
       question_index: idx,  // Indeks pytania dla precyzyjnego mapowania
       name: nanoSkill.name,
       reason: nanoSkill.reason,
-      mastery: itemMastery ?? 0,
+      mastery: itemMastery !== null ? itemMastery : -1, // -1 = pending AI evaluation
       hasValue: itemMastery !== null
     });
   });

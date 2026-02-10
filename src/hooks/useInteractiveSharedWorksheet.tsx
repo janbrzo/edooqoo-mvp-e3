@@ -181,16 +181,23 @@ export const useInteractiveSharedWorksheet = ({
     const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
     const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
     
+    // PROBLEM 1 FIX: Don't send item_evaluations if they contain no real AI eval data
+    // This prevents overwriting genuine AI evaluations in the DB via COALESCE
+    const hasRealAiEval = itemEvaluations?.some(e => e.hasValue !== false && e.mastery > 0);
+    const evalToSend = hasRealAiEval ? itemEvaluations : null;
+    
     console.log('[useInteractiveSharedWorksheet] Saving with itemEvaluations:', {
       exerciseIndex,
       exerciseType,
       mastery,
-      itemEvaluationsCount: itemEvaluations?.length || 0
+      itemEvaluationsCount: itemEvaluations?.length || 0,
+      hasRealAiEval,
+      sendingEvals: !!evalToSend
     });
     
     // Schedule new save (1.5 seconds for faster real-time updates)
     saveTimeoutRef.current = setTimeout(() => {
-      saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);
+      saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, evalToSend);
     }, 1500);
   }, [saveAnswer, exercises]);
 
@@ -239,7 +246,10 @@ export const useInteractiveSharedWorksheet = ({
       const exerciseData = exercises[exerciseIndex];
       const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
       const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
-      saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);
+      // PROBLEM 1 FIX: Don't send item_evaluations if they contain no real AI eval data
+      const hasRealAiEval = itemEvaluations?.some(e => e.hasValue !== false && e.mastery > 0);
+      const evalToSend = hasRealAiEval ? itemEvaluations : null;
+      saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, evalToSend);
     }
   }, [answers, saveAnswer, exercises]);
 
