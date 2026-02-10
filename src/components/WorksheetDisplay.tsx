@@ -28,7 +28,7 @@ import { SelectWordMode } from "@/components/worksheet/SelectWordMode";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TextSelect, Layers, Radio, StickyNote } from "lucide-react";
+import { Plus, TextSelect, Layers, Radio, StickyNote, Loader2 } from "lucide-react";
 import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry, KnowledgeCategory } from "@/types/studentKnowledge";
 import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 import { KNOWLEDGE_CATEGORIES } from "@/types/studentKnowledge";
@@ -233,6 +233,7 @@ export default function WorksheetDisplay({
   const [miniListCategoryFilter, setMiniListCategoryFilter] = useState<KnowledgeCategory | null>(null);
   const MINI_LIST_PAGE_SIZE = 8;
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
+  const [isAiEvalLoading, setIsAiEvalLoading] = useState(false);
   
   // Flashcard FAB buttons state (Problem 4)
   const [showQuickAddWordModal, setShowQuickAddWordModal] = useState(false);
@@ -702,6 +703,9 @@ export default function WorksheetDisplay({
       return;
     }
     
+    // Show loading modal while AI eval runs
+    setIsAiEvalLoading(true);
+    
     // Trigger AI evaluation BEFORE opening modal (Problem 1A fix)
     try {
       console.log('[WorksheetDisplay] Triggering AI eval before Create Homework modal, worksheetId:', worksheetId);
@@ -717,6 +721,7 @@ export default function WorksheetDisplay({
       console.warn('[WorksheetDisplay] AI eval network error:', err);
     }
     
+    setIsAiEvalLoading(false);
     setShowHomeworkModal(true);
   };
 
@@ -1118,6 +1123,23 @@ export default function WorksheetDisplay({
             isVisible={true}
           />
         </>
+      )}
+      
+      {/* AI Evaluation Loading Modal */}
+      {isAiEvalLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 shadow-xl">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-worksheet-purple" />
+              <p className="text-center font-medium text-gray-700">
+                Analyzing student progress...
+              </p>
+              <p className="text-center text-sm text-gray-500">
+                AI is evaluating open-ended answers for more accurate homework setup.
+              </p>
+            </div>
+          </div>
+        </div>
       )}
       
       {/* Homework Modal */}

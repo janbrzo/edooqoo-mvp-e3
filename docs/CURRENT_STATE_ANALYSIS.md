@@ -6,12 +6,14 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-09 v2):**
-- ✅ **NAPRAWIONO nano_skill array handling**: Edge function `process-pending-ai-evaluations` teraz poprawnie obsługuje `nano_skill` jako tablicę `[{name, reason}]` (identycznie jak frontend `safeGetNanoSkill`) → prawidłowe nazwy `ns.speaking.*` zamiast `question_0`
-- ✅ **NAPRAWIONO autoQueueForCreateHomework**: Usuwanie starych `completed`/`failed` rekordów z kolejki przed INSERT → eliminuje duplikaty unique constraint
-- ✅ **event_payload spójność**: SQL triggery stripują `feedback`, edge function poprawnie wyciąga nano_skill → identyczna struktura homework/worksheet
+**Ostatnia naprawa (2026-02-10):**
+- ✅ **NAPRAWIONO mastery=50 overwrite**: `masteryCalculator.ts` - open-ended bez AI eval teraz `mastery: -1, hasValue: false` zamiast `mastery: 50, hasValue: true` → nie nadpisuje prawdziwych AI evaluations w bazie
+- ✅ **NAPRAWIONO auto-save overwrite**: `useInteractiveSharedWorksheet` wysyła `null` dla `p_item_evaluations` gdy brak prawdziwych AI eval → SQL COALESCE zachowuje istniejące dane
+- ✅ **NAPRAWIONO AI badge w Live Session**: `convertLiveEvalsToAiEvals` filtruje `hasValue: false` → badge nie pojawia się z fałszywym 50%
+- ✅ **DODANO AiEvaluationBadge do Discussion**: Zarówno w ExerciseSection (Live Session) jak i SharedWorksheetContent (Shared Worksheet)
+- ✅ **DODANO loading modal Create Homework**: Spinner "Analyzing student progress..." podczas AI eval przed otwarciem modalu homework
 
-**Naprawa (2026-02-09 v1):**
+**Naprawa (2026-02-09 v2):**
 - ✅ **NAPRAWIONO event_payload spójność**: SQL triggery `log_worksheet_answer_to_events` i `log_homework_answer_to_events` teraz stripują `feedback` z `nano_skill_ratings` (`elem - 'feedback'`) → identyczna struktura w homework i worksheet
 - ✅ **NAPRAWIONO re-render loop**: `useLiveSessionAnswers` nie wywołuje `processPendingAiEvals` w pętli - tylko RAZ na mount z `hasProcessedRef`
 - ✅ **DODANO liveItemEvaluations w Live Session**: Nauczyciel widzi AI feedback badges w trybie Live Session (pipeline: WorksheetDisplay → WorksheetContent → ExerciseSection → exercise components)

@@ -51,13 +51,15 @@ import { safeGetNanoSkill } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudentEvents } from "@/hooks/dslm/useStudentEvents";
-import type { AiEvaluation } from "@/components/homework/AiEvaluationBadge";
+import { AiEvaluationBadge, type AiEvaluation } from "@/components/homework/AiEvaluationBadge";
 
 // Helper: convert liveItemEvaluations array to Record<number, AiEvaluation> for exercise components
 const convertLiveEvalsToAiEvals = (items: any[] | undefined): Record<number, AiEvaluation> | undefined => {
   if (!items?.length) return undefined;
   const result: Record<number, AiEvaluation> = {};
   items.forEach((item: any) => {
+    // Skip items without actual AI evaluation (hasValue=false means pending)
+    if (item.hasValue === false) return;
     result[item.question_index] = {
       is_acceptable: (item.mastery || 0) >= 70,
       quality_score: (item.mastery || 0) / 100,
@@ -65,7 +67,7 @@ const convertLiveEvalsToAiEvals = (items: any[] | undefined): Record<number, AiE
       question_index: item.question_index
     };
   });
-  return result;
+  return Object.keys(result).length > 0 ? result : undefined;
 };
 
 // PROBLEM 3: Complete classification of all 29 exercise types
@@ -1029,6 +1031,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                         ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
                       `}
                     />
+                  )}
+                  {/* AI Evaluation Badge for discussion questions in Live Session */}
+                  {liveAiEvaluations?.[qIndex] && (
+                    <AiEvaluationBadge evaluation={liveAiEvaluations[qIndex]} />
                   )}
                 </div>
               );

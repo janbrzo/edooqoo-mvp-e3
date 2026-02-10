@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { AlertCircle, MessageCircle, BookOpen, Clock, FileText } from 'lucide-react';
-import { AiEvaluation } from '@/components/homework/AiEvaluationBadge';
+import { AiEvaluation, AiEvaluationBadge } from '@/components/homework/AiEvaluationBadge';
 import ExerciseMatching from '../worksheet/ExerciseMatching';
 import ExerciseFillInBlanks from '../worksheet/ExerciseFillInBlanks';
 import ExerciseMultipleChoice from '../worksheet/ExerciseMultipleChoice';
@@ -55,6 +55,8 @@ const convertItemEvalsToAiEvals = (items: any[] | undefined): Record<number, AiE
   if (!items || items.length === 0) return undefined;
   const result: Record<number, AiEvaluation> = {};
   items.forEach(item => {
+    // Skip items without actual AI evaluation (hasValue=false means pending)
+    if (item.hasValue === false) return;
     result[item.question_index] = {
       is_acceptable: (item.mastery || 0) >= 70,
       quality_score: (item.mastery || 0) / 100,
@@ -62,7 +64,7 @@ const convertItemEvalsToAiEvals = (items: any[] | undefined): Record<number, AiE
       question_index: item.question_index
     };
   });
-  return result;
+  return Object.keys(result).length > 0 ? result : undefined;
 };
 
 // Helper function to normalize exercise type (removes -picture and -audio suffixes)
@@ -421,6 +423,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   <h3 className="font-medium text-gray-700 mb-2">Discussion Questions:</h3>
                   {exercise.questions.map((question: string, qIndex: number) => {
                     const studentAnswer = (studentAnswers[index] || {})[qIndex] || '';
+                    const aiEvals = convertItemEvalsToAiEvals(itemEvaluations?.[index]);
                     return (
                       <div key={qIndex} className="p-2 border rounded-lg bg-white">
                         <p className="leading-snug mb-2">
@@ -434,6 +437,10 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                             placeholder="Share your thoughts..."
                             className="w-full h-10 border rounded px-3"
                           />
+                        )}
+                        {/* AI Evaluation Badge for discussion questions */}
+                        {aiEvals?.[qIndex] && (
+                          <AiEvaluationBadge evaluation={aiEvals[qIndex]} />
                         )}
                       </div>
                     );
