@@ -21,6 +21,8 @@ interface ExerciseDescribeProps extends Partial<InteractiveExerciseProps> {
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
+  // Exercise variant for media hints
+  exerciseVariant?: 'audio' | 'picture' | 'plain';
 }
 
 const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
@@ -43,12 +45,20 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
   onNanoSkillChange,
   isSharedWorksheet = false,
   // AI Evaluations
-  aiEvaluations
+  aiEvaluations,
+  // Exercise variant
+  exerciseVariant = 'plain'
 }) => {
   return (
     <div className="space-y-4">
+      {/* Picture hint for picture variant */}
+      {exerciseVariant === 'picture' && (
+        <div className="text-center text-sm text-muted-foreground py-2 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+          🖼️ Look at the picture in the Lesson Media section above before answering
+        </div>
+      )}
       {/* Image is displayed in MediaSection above - no duplicate needed */}
-      {showImage && !image_url && (
+      {showImage && !image_url && exerciseVariant !== 'picture' && (
         <div className="text-center text-sm text-muted-foreground py-2">
           ℹ️ Refer to the image in the Lesson Media section above
         </div>
@@ -115,6 +125,10 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
                       />
                     )}
                   </div>
+                )}
+                {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
+                {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
+                  <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true} />
                 )}
               </div>
             );

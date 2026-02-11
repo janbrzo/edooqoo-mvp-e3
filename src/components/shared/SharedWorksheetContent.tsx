@@ -56,8 +56,16 @@ const convertItemEvalsToAiEvals = (items: any[] | undefined): Record<number, AiE
   if (!items || items.length === 0) return undefined;
   const result: Record<number, AiEvaluation> = {};
   items.forEach(item => {
-    // Skip items without actual AI evaluation (hasValue=false means pending)
-    if (item.hasValue === false) return;
+    if (item.hasValue === false) {
+      // Pending: show "Waiting for AI evaluation..." badge
+      result[item.question_index] = {
+        is_acceptable: false,
+        quality_score: -1,
+        feedback: '',
+        question_index: item.question_index
+      };
+      return;
+    }
     result[item.question_index] = {
       is_acceptable: (item.mastery || 0) >= 70,
       quality_score: (item.mastery || 0) / 100,
@@ -400,6 +408,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   viewMode="student"
                   onQuestionTextChange={() => {}}
                   onOptionTextChange={() => {}}
+                  exerciseVariant={exercise.type.includes('-picture') ? 'picture' : 'plain'}
                   isInteractive={effectiveInteractive}
                   studentAnswers={studentAnswers[index] || {}}
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
@@ -710,6 +719,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                   isSharedWorksheet={true}
                   aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
+                  exerciseVariant="picture"
                 />
               )}
 
@@ -726,6 +736,7 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                   isSharedWorksheet={true}
                   aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
+                  exerciseVariant={exercise.type.includes('-picture') ? 'picture' : 'plain'}
                 />
               )}
 

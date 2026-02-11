@@ -4,7 +4,7 @@
  */
 
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle2, XCircle, AlertCircle, Clock } from "lucide-react";
 
 export interface AiEvaluation {
   is_acceptable: boolean;
@@ -25,6 +25,18 @@ export function AiEvaluationBadge({
   compact = false 
 }: AiEvaluationBadgeProps) {
   const { is_acceptable, quality_score, feedback } = evaluation;
+  
+  // Pending state: quality_score < 0 means waiting for AI evaluation
+  if (quality_score < 0) {
+    return (
+      <div className="mt-3">
+        <Badge className="bg-gray-400 hover:bg-gray-500 text-white">
+          <Clock className="h-3 w-3 mr-1 animate-pulse" />
+          Waiting for AI evaluation...
+        </Badge>
+      </div>
+    );
+  }
   
   const scorePercent = Math.round(quality_score * 100);
   

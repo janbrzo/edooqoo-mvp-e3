@@ -121,6 +121,10 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
                 )}
               </>
             )}
+            {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
+            {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
+              <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true} />
+            )}
           </div>
         );
       })}

@@ -121,6 +121,10 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
                 )}
               </div>
             )}
+            {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
+            {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
+              <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true} />
+            )}
           </div>
         </div>
       );

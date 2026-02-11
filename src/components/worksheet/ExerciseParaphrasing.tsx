@@ -143,6 +143,10 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                     )}
                   </>
                 )}
+                {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
+                {!isInteractive && aiEvaluations?.[sIndex] && isSharedWorksheet && (
+                  <AiEvaluationBadge evaluation={aiEvaluations[sIndex]} showFeedback={true} />
+                )}
                 
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
                   <div className="flex items-center gap-2 flex-wrap">

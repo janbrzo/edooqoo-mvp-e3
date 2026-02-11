@@ -31,6 +31,8 @@ interface ExerciseAnswerQuestionsProps extends Partial<InteractiveExerciseProps>
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
+  // Exercise variant for media hints
+  exerciseVariant?: 'audio' | 'picture' | 'plain';
 }
 
 const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
@@ -203,6 +205,10 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
                     </p>
                   )}
                 </div>
+              )}
+              {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
+              {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
+                <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true} />
               )}
             </div>
           );

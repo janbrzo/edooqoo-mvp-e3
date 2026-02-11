@@ -159,6 +159,10 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
                       [Student: {liveAnswer}]
                     </div>
                   )}
+                  {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
+                  {!isInteractive && aiEvaluations?.[eIndex] && isSharedWorksheet && (
+                    <AiEvaluationBadge evaluation={aiEvaluations[eIndex]} showFeedback={true} />
+                  )}
                 </div>
               );
             })}
