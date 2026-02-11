@@ -58,8 +58,16 @@ const convertLiveEvalsToAiEvals = (items: any[] | undefined): Record<number, AiE
   if (!items?.length) return undefined;
   const result: Record<number, AiEvaluation> = {};
   items.forEach((item: any) => {
-    // Skip items without actual AI evaluation (hasValue=false means pending)
-    if (item.hasValue === false) return;
+    if (item.hasValue === false) {
+      // Pending: show "Waiting for AI evaluation..." badge
+      result[item.question_index] = {
+        is_acceptable: false,
+        quality_score: -1,
+        feedback: '',
+        question_index: item.question_index
+      };
+      return;
+    }
     result[item.question_index] = {
       is_acceptable: (item.mastery || 0) >= 70,
       quality_score: (item.mastery || 0) / 100,
@@ -902,6 +910,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
             worksheetId={worksheetId}
+            exerciseVariant={exercise.type.includes('-picture') ? 'picture' : exercise.type.includes('-audio') ? 'audio' : 'plain'}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
@@ -1502,6 +1511,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
               disabled={disabled}
               aiEvaluations={liveAiEvaluations}
               isSharedWorksheet={viewMode === 'live-session'}
+              exerciseVariant={exercise.type.includes('-picture') ? 'picture' : 'plain'}
               onNanoSkillChange={(qIndex, newSkill) => {
                 const updatedExercises = [...editableWorksheet.exercises];
                 const newPrompts = [...(exercise.prompts || exercise.questions || [])];
@@ -1535,6 +1545,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             disabled={disabled}
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
+            exerciseVariant={exercise.type.includes('-picture') ? 'picture' : exercise.type.includes('-audio') ? 'audio' : 'plain'}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];

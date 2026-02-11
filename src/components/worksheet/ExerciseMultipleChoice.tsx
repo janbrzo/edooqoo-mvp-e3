@@ -20,6 +20,8 @@ interface ExerciseMultipleChoiceProps extends Partial<InteractiveExerciseProps> 
   isSharedWorksheet?: boolean;
   // PROBLEM 4: Worksheet ID for deterministic shuffle
   worksheetId?: string;
+  // Exercise variant for media hints
+  exerciseVariant?: 'audio' | 'picture' | 'plain';
 }
 
 // PROBLEM 4: Seeded random for deterministic shuffle
@@ -66,7 +68,9 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
   onNanoSkillChange,
   isSharedWorksheet = false,
   // PROBLEM 4: Worksheet ID for shuffle
-  worksheetId
+  worksheetId,
+  // Exercise variant
+  exerciseVariant = 'plain'
 }) => {
   // PROBLEM 4: Shuffle options deterministically (only when not editing)
   const questionsWithShuffledOptions = useMemo(() => {
@@ -97,6 +101,12 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
 
   return (
     <div className="space-y-2">
+      {/* Picture hint for picture variant */}
+      {exerciseVariant === 'picture' && (
+        <div className="text-center text-sm text-muted-foreground py-2 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+          🖼️ Look at the picture in the Lesson Media section above before answering
+        </div>
+      )}
       {questionsWithShuffledOptions.map((question, qIndex) => {
         // Safely extract text and nano_skill
         const questionText = safeGetText(question.text || question);

@@ -183,7 +183,7 @@ export const useInteractiveSharedWorksheet = ({
     
     // PROBLEM 1 FIX: Don't send item_evaluations if they contain no real AI eval data
     // This prevents overwriting genuine AI evaluations in the DB via COALESCE
-    const hasRealAiEval = itemEvaluations?.some(e => e.hasValue !== false && e.mastery > 0);
+    const hasRealAiEval = itemEvaluations?.some(e => e.hasValue !== false);
     const evalToSend = hasRealAiEval ? itemEvaluations : null;
     
     console.log('[useInteractiveSharedWorksheet] Saving with itemEvaluations:', {
@@ -247,7 +247,7 @@ export const useInteractiveSharedWorksheet = ({
       const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
       const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
       // PROBLEM 1 FIX: Don't send item_evaluations if they contain no real AI eval data
-      const hasRealAiEval = itemEvaluations?.some(e => e.hasValue !== false && e.mastery > 0);
+      const hasRealAiEval = itemEvaluations?.some(e => e.hasValue !== false);
       const evalToSend = hasRealAiEval ? itemEvaluations : null;
       saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, evalToSend);
     }

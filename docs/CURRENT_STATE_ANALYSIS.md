@@ -6,7 +6,13 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-11):**
+**Ostatnia naprawa (2026-02-11 v2):**
+- ✅ **P1 - NAPRAWIONO AI Eval badge w Live Session**: Badge AiEvaluationBadge dodany POZA blokiem `{isInteractive}` we WSZYSTKICH 7 komponentach open-ended (Reading, Dialogue, Describe, AnswerQuestions, AnswerQuestionsAudio, ListeningComprehension, Paraphrasing). Warunek: `!isInteractive && isSharedWorksheet` → widoczne TYLKO w Live Session
+- ✅ **P2 - NAPRAWIONO puste nano_skill_ratings**: Zmieniono warunek `hasRealAiEval` z `e.mastery > 0` na `e.hasValue !== false` w `useInteractiveSharedWorksheet` (2 miejsca). Teraz evaluations trafiają do bazy nawet gdy student odpowiedział źle (mastery=0)
+- ✅ **P3 - DODANO picture hints**: Nowy prop `exerciseVariant` w ExerciseDescribe, ExerciseAnswerQuestions, ExerciseMultipleChoice. Hint "🖼️ Look at the picture..." wyświetlany dla wariantu `-picture`
+- ✅ **P4 - DODANO pending AI badge**: `AiEvaluationBadge` obsługuje `quality_score < 0` → wyświetla "⏳ Waiting for AI evaluation..." zamiast ukrywania. Konwertery `convertItemEvalsToAiEvals` i `convertLiveEvalsToAiEvals` tworzą obiekt pending zamiast pomijać `hasValue: false`
+
+**Naprawa (2026-02-11 v1):**
 - ✅ **P1 - NAPRAWIONO Live Session AI Eval visibility**: Dodano polling co 15s w `useLiveSessionAnswers` → nauczyciel widzi AI feedback dla WSZYSTKICH typów open-ended (describe-picture, answer-questions, listening-comprehension, dialogue, paraphrasing)
 - ✅ **P2 - NAPRAWIONO puste nano_skill_ratings**: Przeniesiono `gap-text`, `word-order`, `error-correction` do CLOSED_EXERCISE_TYPES w `masteryCalculator.ts`. Dodano handlery calculateItemMastery. Naprawiono matching (porównanie z `definition`)
 - ✅ **P3 - WZMOCNIONO AI eval prompt**: Server-side non-answer detection w `verify-open-answers` wymusza score 0.0 dla "nie wiem" niezależnie od AI. Bardziej wymagający scoring

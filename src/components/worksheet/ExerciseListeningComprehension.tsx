@@ -102,6 +102,10 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                   )}
                 </>
               )}
+              {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
+              {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
+                <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true} />
+              )}
               {(viewMode === 'teacher' || showCorrectAnswers) && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="text-green-600 italic text-sm">
