@@ -1,132 +1,83 @@
 
 
-# Plan naprawy: 4 problemy (skorygowany Problem 1)
+# Plan naprawy: 6 problemow (SKORYGOWANY Problem 6)
 
-## PROBLEM 1: Brak AI Evaluation w Live Session - PRZYCZYNA GŁÓWNA
+## PROBLEM 6 (SKORYGOWANY): Nazwy typow cwiczen - blad jest juz na zwyklym worksheet
 
-### Analiza (głęboka)
+### Analiza glowna
 
-Pipeline jest POPRAWNIE podłączony:
-- `WorksheetDisplay` → `liveItemEvaluations` → `WorksheetContent` → `ExerciseSection` → `liveAiEvaluations` → exercise components
+Blad NIE jest w shared worksheet. Blad jest wczesniej - w generowaniu. Tytuly cwiczen sa nadpisywane w TRZECH miejscach, a KAZDE z nich GUBI opis od AI:
 
-Konwersja `convertLiveEvalsToAiEvals` działa.
+1. **Edge function `generateWorksheet/index.ts` linia 494** - streaming path
+2. **Edge function `generateWorksheet/index.ts` linia 679** - non-streaming path
+3. **Frontend `exerciseProcessor.ts` linia 64** - po otrzymaniu danych
 
-**PRAWDZIWA PRZYCZYNA** jest w bazie danych. Znalazłem 4 przeciążone wersje funkcji `save_worksheet_answer` (5, 6, 7 i 8 parametrów). Frontend wywołuje wersję z 8 parametrami (z `p_item_evaluations`). Ta wersja robi:
-
-```sql
-item_evaluations = COALESCE(EXCLUDED.item_evaluations, worksheet_student_answers.item_evaluations)
+Wszystkie trzy robia dokladnie to samo:
+```
+exercise.title = `Exercise ${N}: ${officialName}`;
 ```
 
-`COALESCE` oznacza: "użyj nowej wartości, a jeśli jest NULL - zachowaj starą". Problem: frontend NIGDY nie wysyła `null` dla `item_evaluations` przy open-ended. `buildItemEvaluations` w `masteryCalculator.ts` ZAWSZE generuje tablicę z `mastery: 50, hasValue: true` dla open-ended bez AI eval.
+AI generuje tytul np. `"Booking a Tour - Role Play"` ale ten kod go calkowicie nadpisuje na `"Exercise 3: Dialogue Practice"`. Opis AI jest TRACONY bezpowrotnie.
 
-Scenariusz:
-1. AI eval wykonuje się → edge function zapisuje `item_evaluations` z prawdziwym feedbackiem (mastery: 70, feedback: "Good job!")
-2. Student zmienia odpowiedź → auto-save po 1.5s → frontend wysyła `item_evaluations` z `mastery: 50, hasValue: true, brak feedback`
-3. `COALESCE` widzi że nowa wartość NIE jest null → nadpisuje prawdziwe AI eval
-4. Realtime UPDATE → nauczyciel otrzymuje dane z mastery=50 bez feedbacku
-5. `convertLiveEvalsToAiEvals` tworzy badge "AI Score: 50%" bez feedbacku - co wygląda jak brak feedbacku
+Potem shared worksheet po prostu kopiuje te dane 1:1 z `ai_response` - nie zmienia tytulow. Wiec blad jest u zrodla.
 
-### Rozwiązanie
+### Rozwiazanie
 
-Zmiana w `useInteractiveSharedWorksheet.tsx` - NIE wysyłać `item_evaluations` z masteryCalculator przy auto-save. Frontend powinien wysyłać `null` dla `p_item_evaluations` aby zachować istniejące AI eval w bazie:
+Zachowac opis AI jako dopisek po oficjalnej nazwie typu. We WSZYSTKICH trzech miejscach zmienic logike:
 
 ```typescript
-// BYŁO (linia 145):
-p_item_evaluations: itemEvaluations ? JSON.parse(JSON.stringify(itemEvaluations)) : null
+// BYLO (gubi opis AI):
+exercise.title = `Exercise ${N}: ${officialName}`;
 
-// BĘDZIE:
-p_item_evaluations: null  // Never overwrite AI evaluations from auto-save
+// BEDZIE (zachowuje opis AI):
+const aiTitle = exercise.title || '';
+// Wyczysc poprzedni prefix "Exercise N:" jesli istnieje
+const cleanAiTitle = aiTitle.replace(/^Exercise\s+\d+:\s*/i, '').trim();
+// Usun oficjalna nazwe typu jesli AI ja juz umiescil
+const aiDesc = cleanAiTitle
+  .replace(new RegExp(`^${officialName}\\s*[-:]?\\s*`, 'i'), '')
+  .trim();
+exercise.title = aiDesc 
+  ? `Exercise ${N}: ${officialName}: ${aiDesc}` 
+  : `Exercise ${N}: ${officialName}`;
 ```
 
-W ten sposób `COALESCE(NULL, worksheet_student_answers.item_evaluations)` zachowa prawdziwe AI eval dane.
+Przyklad: AI generuje `"Booking a Tour - Role Play"` -> wynik: `"Exercise 3: Dialogue Practice: Booking a Tour - Role Play"`
 
-ALE - to zepsuje logowanie do `student_events` bo trigger `log_worksheet_answer_to_events` korzysta z `NEW.item_evaluations` do budowania `nano_skill_ratings`. Jeśli `item_evaluations` nie jest aktualizowane przy save, trigger nie będzie miał danych.
+### Pliki do zmiany
 
-**Lepsze rozwiązanie**: Wysyłać `item_evaluations` ALE z `hasValue: false` (po fix z masteryCalculator: `mastery: -1, hasValue: false`). Zmienić SQL RPC aby NIE nadpisywać `item_evaluations` gdy nowe dane mają `hasValue: false`:
+| # | Plik | Lokalizacja |
+|---|------|------------|
+| 1 | `supabase/functions/generateWorksheet/index.ts` | Linia 491-495 (streaming) |
+| 2 | `supabase/functions/generateWorksheet/index.ts` | Linia 676-680 (non-streaming) |
+| 3 | `src/utils/exerciseProcessor.ts` | Linia 62-64 |
 
-```sql
--- Zmiana w save_worksheet_answer (8-param):
-item_evaluations = CASE
-  WHEN EXCLUDED.item_evaluations IS NULL THEN worksheet_student_answers.item_evaluations
-  WHEN (EXCLUDED.item_evaluations::jsonb->0->>'hasValue')::boolean = false 
-       AND worksheet_student_answers.item_evaluations IS NOT NULL
-       AND (worksheet_student_answers.item_evaluations::jsonb->0->>'hasValue')::boolean = true
-    THEN worksheet_student_answers.item_evaluations  -- Preserve real AI eval
-  ELSE EXCLUDED.item_evaluations
-END
-```
+Nie trzeba zmieniac `SharedWorksheetContent.tsx` bo shared worksheet kopiuje tytuly 1:1 z `ai_response` - po naprawie zrodla bedzie automatycznie poprawne.
 
-To jest za skomplikowane. Najprostsze i najbezpieczniejsze rozwiązanie:
+### Bezpieczenstwo
 
-**FINALNE ROZWIĄZANIE**: W `useInteractiveSharedWorksheet.tsx` przy auto-save, NIE wysyłać `item_evaluations` gdy nie ma AI eval (gdy `hasValue: false` na wszystkich elementach). Wysyłać je TYLKO gdy zawierają faktyczne dane AI eval.
-
-```typescript
-// Sprawdź czy item_evaluations zawierają prawdziwe oceny AI
-const hasRealAiEval = itemEvaluations?.some(e => e.hasValue !== false && e.mastery > 0);
-const evalToSend = hasRealAiEval ? JSON.parse(JSON.stringify(itemEvaluations)) : null;
-
-p_item_evaluations: evalToSend
-```
+- Logika jest addytywna - jesli AI nie generuje opisu, tytul bedzie identyczny jak teraz
+- Prompt do generowania worksheeta NIE jest zmieniany (swiety prompt)
+- Shared worksheet nie wymaga osobnych zmian
 
 ---
 
-## PROBLEM 2.1: Po zmianie odpowiedzi AI Score zmienia się na "50% Needs improvement"
+## PROBLEMY 1-5: Bez zmian od poprzedniego planu
 
-### Rozwiązanie (bez zmian od planu)
-
-Zmiana w `masteryCalculator.ts`:
-- `itemMastery = 50` → `itemMastery = null`  
-- `mastery: itemMastery ?? 0` → `mastery: itemMastery !== null ? itemMastery : -1`
-- `hasValue: true` → `hasValue: itemMastery !== null`
-
-Zmiana w `convertItemEvalsToAiEvals` (SharedWorksheetContent) i `convertLiveEvalsToAiEvals` (ExerciseSection):
-- Filtrować elementy z `hasValue: false` - nie tworzyć badge
-
----
-
-## PROBLEM 2.2: student_events z mastery=50 dla student_learning_activity
-
-### Rozwiązanie (bez zmian od planu)
-
-Fix z 2.1 automatycznie naprawi - `mastery: -1, hasValue: false` zamiast `mastery: 50, hasValue: true`.
-
----
-
-## PROBLEM 3: Loading modal na Create Homework (bez zmian od planu)
-
-### Rozwiązanie
-
-W `WorksheetDisplay.tsx`:
-- Stan `isAiEvalLoading` 
-- Dialog z Loader2 + tekst "Analyzing student progress..."
-
----
-
-## PROBLEM 4: Brak AI Eval feedback dla Discussion Questions na shared worksheet i Live Session
-
-### Rozwiązanie (bez zmian od planu)
-
-Dodać `AiEvaluationBadge` do inline renderowania discussion questions w:
-- `ExerciseSection.tsx` (Live Session)
-- `SharedWorksheetContent.tsx` (Shared Worksheet)
-
----
-
-## PODSUMOWANIE ZMIAN
+Podtrzymuje wszystkie rozwiazania z poprzedniego planu:
 
 | # | Plik | Zmiana | Problem |
 |---|------|--------|---------|
-| 1 | `src/utils/masteryCalculator.ts` | `itemMastery = null` zamiast 50, `mastery: -1, hasValue: false` | 1, 2.1, 2.2 |
-| 2 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Nie wysyłać `item_evaluations` przy auto-save gdy brak AI eval (hasValue=false) | 1 |
-| 3 | `src/components/shared/SharedWorksheetContent.tsx` | Filtrować hasValue=false w converterze, dodać AiEvaluationBadge do discussion | 2.1, 4 |
-| 4 | `src/components/worksheet/ExerciseSection.tsx` | Filtrować hasValue=false w converterze, dodać AiEvaluationBadge do discussion | 1, 4 |
-| 5 | `src/components/WorksheetDisplay.tsx` | Loading modal przy Create Homework | 3 |
-| 6 | Dokumentacja | Aktualizacja | Wszystkie |
-
-### Bezpieczeństwo zmian
-
-- Zmiana 1 (masteryCalculator): dotyczy TYLKO open-ended exercises bez AI eval. Closed exercises mają osobną ścieżkę (`calculateItemMastery`) i NIE są dotykane
-- Zmiana 2 (auto-save null): `COALESCE(NULL, existing)` w SQL zachowuje istniejące dane - zero utraty danych. Trigger SQL nadal dostaje `NEW.item_evaluations` z bazy (nie z EXCLUDED)
-- Zmiana 3-4 (filtry + badge): dodanie UI i filtrowanie - zero wpływu na istniejącą logikę
-- Zmiana 5 (loading modal): nowy stan i dialog - zero wpływu na flow
+| 1 | `src/utils/masteryCalculator.ts` | Poprawic klasyfikacje typow (gap-text, word-order do CLOSED, dodac error-correction). Normalizacja typow audio/picture | 2 |
+| 2 | `src/hooks/useLiveSessionAnswers.tsx` | Polling co 15s dla item_evaluations | 1 |
+| 3 | `supabase/functions/verify-open-answers/index.ts` | Wzmocnic prompt + server-side non-answer detection (quality_score <= 0.1 dla "nie wiem") | 3 |
+| 4 | `src/components/worksheet/ExerciseTrueFalseAudio.tsx` | Prop exerciseVariant, zroznicowac komunikat audio/picture/brak | 4 |
+| 5 | `src/components/worksheet/ExerciseSection.tsx` | Przekazac exerciseVariant do TrueFalseAudio | 4 |
+| 6 | `src/components/shared/SharedWorksheetContent.tsx` | Komunikat picture dla true-false-picture | 4 |
+| 7 | `src/pages/SharedWorksheet.tsx` | Dodac sentence_halves, expressions, prompts do exerciseQuestionCounts | 5.1 |
+| 8 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Cap answeredTasks i percentageComplete na 100% | 5.2 |
+| 9 | `src/hooks/useInteractiveHomework.tsx` | Ten sam cap na 100% | 5.2 |
+| 10 | `supabase/functions/generateWorksheet/index.ts` | Zachowac opis AI w tytulach (2 miejsca) | 6 |
+| 11 | `src/utils/exerciseProcessor.ts` | Zachowac opis AI w tytulach (1 miejsce) + eksport getOfficialExerciseName | 6 |
+| 12 | Dokumentacja | Aktualizacja | Wszystkie |
 
