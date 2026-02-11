@@ -27,6 +27,7 @@ import ExerciseAnswerQuestions from '../worksheet/ExerciseAnswerQuestions';
 import MediaSection from '../worksheet/MediaSection';
 import { deepFixTextObjects, safeGetText } from '../../utils/textObjectFixer';
 import { getIconComponent } from '../../utils/iconUtils';
+import { getOfficialExerciseName } from '../../utils/exerciseProcessor';
 
 interface SharedWorksheetContentProps {
   worksheet: {
@@ -317,10 +318,17 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   {getIconComponent(exercise.icon || 'fa-book-open')}
                 </div>
                 <h3 className="text-lg font-semibold">
-                  {/* PROBLEM 2 FIX: Avoid duplicate "Exercise X:" if already in title */}
-                  {exercise.title?.toLowerCase().startsWith('exercise') 
-                    ? exercise.title 
-                    : `Exercise ${index + 1}: ${exercise.title || 'Untitled Exercise'}`}
+                  {/* PROBLEM 6 FIX: Use official exercise type names, preserve AI description */}
+                  {(() => {
+                    const officialName = getOfficialExerciseName(exercise.type);
+                    const aiTitle = exercise.title || '';
+                    const cleanAiTitle = aiTitle.replace(/^Exercise\s+\d+:\s*/i, '').trim();
+                    const escapedName = officialName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const aiDesc = cleanAiTitle.replace(new RegExp(`^${escapedName}\\s*[-:]?\\s*`, 'i'), '').trim();
+                    return aiDesc 
+                      ? `Exercise ${index + 1}: ${officialName}: ${aiDesc}` 
+                      : `Exercise ${index + 1}: ${officialName}`;
+                  })()}
                 </h3>
               </div>
               <div className="flex items-center bg-white/20 px-3 py-1 rounded-md">
@@ -719,6 +727,13 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isSharedWorksheet={true}
                   aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
                 />
+              )}
+
+              {/* PROBLEM 4 FIX: Picture hint for true-false-picture */}
+              {exercise.type === 'true-false-picture' && (
+                <div className="text-center text-sm text-muted-foreground py-2 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+                  🖼️ Look at the picture in the Lesson Media section above before answering
+                </div>
               )}
 
               {/* True/False exercise type - with interactive mode */}

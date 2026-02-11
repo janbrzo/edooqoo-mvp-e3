@@ -527,8 +527,10 @@ export const useInteractiveHomework = ({
       }
     });
 
+    // PROBLEM 5.2 FIX: Cap answeredTasks to totalTasks to prevent >100%
+    const cappedAnsweredTasks = Math.min(answeredTasks, totalTasks);
     const percentageComplete = totalTasks > 0 
-      ? Math.round((answeredTasks / totalTasks) * 100) 
+      ? Math.min(100, Math.round((cappedAnsweredTasks / totalTasks) * 100))
       : 0;
 
     return {
@@ -536,7 +538,7 @@ export const useInteractiveHomework = ({
       answeredExercises,
       percentageComplete,
       totalTasks,
-      answeredTasks
+      answeredTasks: cappedAnsweredTasks
     };
   }, [answers, totalExercises, exerciseQuestionCounts]);
 

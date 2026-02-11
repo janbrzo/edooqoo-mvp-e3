@@ -169,6 +169,17 @@ export const useLiveSessionAnswers = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [worksheetId, enabled]);
 
+  // PROBLEM 1 FIX: Polling every 15s to catch AI evaluations that Realtime may miss
+  useEffect(() => {
+    if (!enabled || !worksheetId) return;
+    const interval = setInterval(() => {
+      console.log('[useLiveSessionAnswers] Polling for AI evaluations...');
+      loadInitialAnswers();
+    }, 15000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [worksheetId, enabled]);
+
   // Clear answers when disabled
   useEffect(() => {
     if (!enabled) {

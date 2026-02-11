@@ -21,6 +21,7 @@ interface ExerciseTrueFalseAudioProps extends Partial<InteractiveExerciseProps> 
   disabled?: boolean;
   isSharedWorksheet?: boolean;
   onNanoSkillChange?: (sIndex: number, nanoSkill: any) => void;
+  exerciseVariant?: 'audio' | 'picture' | 'plain'; // PROBLEM 4 FIX: distinguish media type
 }
 
 const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
@@ -37,13 +38,20 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
   showCorrectAnswers = false,
   disabled = false,
   isSharedWorksheet = false,
-  onNanoSkillChange
+  onNanoSkillChange,
+  exerciseVariant = 'audio' // PROBLEM 4 FIX: default to audio for backward compat
 }) => {
   return (
     <div className="space-y-4">
-      {!audio_url && (
+      {/* PROBLEM 4 FIX: Show appropriate media hint based on variant */}
+      {exerciseVariant === 'audio' && !audio_url && (
         <div className="text-center text-sm text-muted-foreground py-2 bg-blue-50 border border-blue-200 rounded-lg mb-4">
           🎧 Listen to the audio in the Lesson Media section above before answering
+        </div>
+      )}
+      {exerciseVariant === 'picture' && (
+        <div className="text-center text-sm text-muted-foreground py-2 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+          🖼️ Look at the picture in the Lesson Media section above before answering
         </div>
       )}
       

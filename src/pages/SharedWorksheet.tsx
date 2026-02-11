@@ -98,7 +98,11 @@ const SharedWorksheet = () => {
                       exercise.items?.length || 
                       exercise.sentences?.length ||
                       exercise.statements?.length ||
-                      exercise.words?.length || 1;
+                      exercise.words?.length ||
+                      exercise.sentence_halves?.length ||   // PROBLEM 5.1 FIX
+                      exercise.expressions?.length ||       // PROBLEM 5.1 FIX
+                      exercise.prompts?.length ||            // PROBLEM 5.1 FIX
+                      1;
     });
     return counts;
   }, [worksheetData]);

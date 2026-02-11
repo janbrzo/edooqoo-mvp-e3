@@ -41,7 +41,7 @@ const EXERCISE_TYPE_NAMES: Record<string, string> = {
   'speaking': 'Speaking Practice',
 };
 
-const getOfficialExerciseName = (type: string): string => {
+export const getOfficialExerciseName = (type: string): string => {
   if (EXERCISE_TYPE_NAMES[type]) {
     return EXERCISE_TYPE_NAMES[type];
   }
@@ -59,9 +59,16 @@ export const processExercises = (exercises: any[], lessonTime: string = '45min',
   const processedExercises = exercises.map((exercise: any, index: number) => {
     console.log(`🔧 Processing exercise ${index + 1}: ${exercise.type}`);
     
-    // PROBLEM 4 FIX: Use official exercise type names
+    // PROBLEM 6 FIX: Preserve AI-generated description in exercise titles
     const officialName = getOfficialExerciseName(exercise.type);
-    exercise.title = `Exercise ${index + 1}: ${officialName}`;
+    const aiTitle = exercise.title || '';
+    const cleanAiTitle = aiTitle.replace(/^Exercise\s+\d+:\s*/i, '').trim();
+    const aiDesc = cleanAiTitle
+      .replace(new RegExp(`^${officialName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[-:]?\\s*`, 'i'), '')
+      .trim();
+    exercise.title = aiDesc 
+      ? `Exercise ${index + 1}: ${officialName}: ${aiDesc}` 
+      : `Exercise ${index + 1}: ${officialName}`;
     
     // Assign fixed time based on exercise type, lesson duration, and grammar presence
     exercise.time = getExerciseTimeByType(exercise.type, normalizedLessonTime, hasGrammar);
