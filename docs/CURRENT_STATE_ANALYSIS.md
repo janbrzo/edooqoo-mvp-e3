@@ -6,7 +6,15 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-10):**
+**Ostatnia naprawa (2026-02-11):**
+- ✅ **P1 - NAPRAWIONO Live Session AI Eval visibility**: Dodano polling co 15s w `useLiveSessionAnswers` → nauczyciel widzi AI feedback dla WSZYSTKICH typów open-ended (describe-picture, answer-questions, listening-comprehension, dialogue, paraphrasing)
+- ✅ **P2 - NAPRAWIONO puste nano_skill_ratings**: Przeniesiono `gap-text`, `word-order`, `error-correction` do CLOSED_EXERCISE_TYPES w `masteryCalculator.ts`. Dodano handlery calculateItemMastery. Naprawiono matching (porównanie z `definition`)
+- ✅ **P3 - WZMOCNIONO AI eval prompt**: Server-side non-answer detection w `verify-open-answers` wymusza score 0.0 dla "nie wiem" niezależnie od AI. Bardziej wymagający scoring
+- ✅ **P4 - NAPRAWIONO media hints True/False**: Nowy prop `exerciseVariant` w ExerciseTrueFalseAudio - audio/picture/plain. Poprawne komunikaty dla każdego wariantu
+- ✅ **P5 - NAPRAWIONO progress counting**: Dodano `sentence_halves`, `expressions`, `prompts` do exerciseQuestionCounts. Cap na 100% w obu hookach
+- ✅ **P6 - ZACHOWANO opisy AI w tytułach**: Format `Exercise N: Official Type: AI Description` w 3 miejscach (edge function streaming/non-streaming + exerciseProcessor). SharedWorksheet też przetwarza tytuły
+
+**Naprawa (2026-02-10):**
 - ✅ **NAPRAWIONO mastery=50 overwrite**: `masteryCalculator.ts` - open-ended bez AI eval teraz `mastery: -1, hasValue: false` zamiast `mastery: 50, hasValue: true` → nie nadpisuje prawdziwych AI evaluations w bazie
 - ✅ **NAPRAWIONO auto-save overwrite**: `useInteractiveSharedWorksheet` wysyła `null` dla `p_item_evaluations` gdy brak prawdziwych AI eval → SQL COALESCE zachowuje istniejące dane
 - ✅ **NAPRAWIONO AI badge w Live Session**: `convertLiveEvalsToAiEvals` filtruje `hasValue: false` → badge nie pojawia się z fałszywym 50%

@@ -487,11 +487,17 @@ serve(async (req) => {
             throw new Error("Invalid worksheet structure returned from AI");
           }
 
-          // PROBLEM 4 FIX: Use official exercise type names
+          // PROBLEM 6 FIX: Preserve AI description in exercise titles
           worksheetData.exercises.forEach((exercise: any, index: number) => {
             const exerciseNumber = index + 1;
             const officialName = getOfficialExerciseName(exercise.type);
-            exercise.title = `Exercise ${exerciseNumber}: ${officialName}`;
+            const aiTitle = exercise.title || '';
+            const cleanAiTitle = aiTitle.replace(/^Exercise\s+\d+:\s*/i, '').trim();
+            const escapedName = officialName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const aiDesc = cleanAiTitle.replace(new RegExp(`^${escapedName}\\s*[-:]?\\s*`, 'i'), '').trim();
+            exercise.title = aiDesc 
+              ? `Exercise ${exerciseNumber}: ${officialName}: ${aiDesc}` 
+              : `Exercise ${exerciseNumber}: ${officialName}`;
           });
 
           const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);
@@ -672,11 +678,17 @@ serve(async (req) => {
         }
       }
 
-      // PROBLEM 4 FIX: Use official exercise type names
+      // PROBLEM 6 FIX: Preserve AI description in exercise titles
       worksheetData.exercises.forEach((exercise: any, index: number) => {
         const exerciseNumber = index + 1;
         const officialName = getOfficialExerciseName(exercise.type);
-        exercise.title = `Exercise ${exerciseNumber}: ${officialName}`;
+        const aiTitle = exercise.title || '';
+        const cleanAiTitle = aiTitle.replace(/^Exercise\s+\d+:\s*/i, '').trim();
+        const escapedName = officialName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const aiDesc = cleanAiTitle.replace(new RegExp(`^${escapedName}\\s*[-:]?\\s*`, 'i'), '').trim();
+        exercise.title = aiDesc 
+          ? `Exercise ${exerciseNumber}: ${officialName}: ${aiDesc}` 
+          : `Exercise ${exerciseNumber}: ${officialName}`;
       });
 
       const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);

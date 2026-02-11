@@ -51,7 +51,7 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are an English language teacher evaluating student answers.
+    const systemPrompt = `You are a STRICT English language teacher evaluating student answers.
 The student's English level is: ${english_level || 'Intermediate'}
 
 Your task is to evaluate each answer based on:
@@ -62,17 +62,17 @@ Your task is to evaluate each answer based on:
 For each answer, provide:
 - quality_score: A number from 0.0 to 1.0 (0.7+ is acceptable)
 - is_acceptable: true if quality_score >= 0.7
-- feedback: A brief, encouraging feedback in English (max 30 words). Be SPECIFIC about what the student did well or needs to improve. Do NOT use generic phrases like "Good answer" without specifics.
+- feedback: Specific, constructive feedback in English (max 40 words). Focus on WHAT the student did well or WHAT specifically needs improvement. Mention grammar errors by name, suggest better vocabulary, or point out missing content.
 
-IMPORTANT STRICT RULES (must override all other considerations):
-- If the student writes "I don't know", "I dont know", "nie wiem", "no idea", "idk", "no se", "не знаю", or ANY equivalent non-answer in ANY language, give quality_score 0.0 to 0.1. This is NOT an acceptable answer. Feedback should encourage them to try.
-- If the student writes only 1-2 words that don't form a meaningful response to the question (e.g., "yes", "no", "ok", "good"), give quality_score 0.1 to 0.3.
-- Answers NOT in English (written in Polish, Spanish, etc.) should score 0.1 to 0.2, unless the question specifically asks for a translation.
-- A passing score (0.7+) requires a genuine attempt to answer the question with at least a partial English sentence that addresses the topic.
-- Short but relevant answers (3-5 words) that directly address the question can score 0.5 to 0.7.
+STRICT SCORING RULES (these override everything else):
+1. NON-ANSWERS (ALWAYS score 0.0-0.05): "I don't know", "idk", "nie wiem", "no idea", "no se", "не знаю", "dunno", "I have no idea", "I'm not sure", any equivalent in ANY language, or any response that does not attempt to answer the question. Score: 0.0. Feedback should be: "No answer provided. Try to form at least one sentence about the topic."
+2. WRONG LANGUAGE (score 0.05-0.15): Answer written entirely in a non-English language (Polish, Spanish, etc.) unless translation was explicitly requested. Feedback: "Please answer in English."
+3. MINIMAL EFFORT (score 0.1-0.3): Only 1-2 generic words like "yes", "no", "ok", "good", "bad" that don't demonstrate understanding. Feedback should suggest what to add.
+4. PARTIAL ANSWER (score 0.4-0.6): Shows some understanding but is incomplete, has significant errors, or doesn't fully address the question.
+5. ACCEPTABLE ANSWER (score 0.7-0.85): Genuine attempt with mostly correct English that addresses the topic. Minor errors are OK at the student's level.
+6. STRONG ANSWER (score 0.85-1.0): Well-structured, accurate, comprehensive response.
 
-Be encouraging but honest. Focus on communication rather than perfection.
-If the answer shows understanding but has minor errors, still give a passing score.
+IMPORTANT: Be demanding but fair. A score of 0.7+ means the student genuinely tried and produced meaningful English. Do NOT give 0.7+ to lazy or empty responses under any circumstances.
 
 CRITICAL: Return ONLY a valid JSON array. No markdown code blocks. No extra text. Just the array.`;
 
@@ -203,9 +203,33 @@ Return exactly ${answers.length} evaluation objects in a JSON array:
         if (isNaN(qualityScore)) qualityScore = 0.7;
         qualityScore = Math.max(0, Math.min(1, qualityScore));
         
+        // PROBLEM 3 FIX: Server-side non-answer detection - override AI score
+        const studentAnswer = answers[idx]?.student_answer?.toLowerCase().trim() || '';
+        const nonAnswerPatterns = [
+          /^i\s*don'?t\s*know/i, /^idk$/i, /^nie\s*wiem/i, /^no\s*idea/i,
+          /^no\s*se$/i, /^не\s*знаю/i, /^dunno$/i, /^i\s*have\s*no\s*idea/i,
+          /^i'?m?\s*not\s*sure$/i, /^no\s*lo\s*se$/i, /^je\s*ne\s*sais\s*pas$/i,
+          /^ich\s*wei(ss|ß)\s*nicht$/i, /^não\s*sei$/i, /^nwm$/i,
+          /^i\s*dont\s*know/i, /^no\s*answer/i, /^n\/a$/i, /^-$/i, /^\.+$/i,
+          /^x+$/i, /^asdf/i, /^test$/i, /^nothing$/i, /^none$/i
+        ];
+        const isNonAnswer = nonAnswerPatterns.some(p => p.test(studentAnswer)) || studentAnswer.length === 0;
+        
+        if (isNonAnswer && qualityScore > 0.05) {
+          console.log(`[verify-open-answers] SERVER-SIDE OVERRIDE: Non-answer detected for idx ${idx}: "${studentAnswer}" → forcing score 0.0`);
+          qualityScore = 0.0;
+        }
+        
+        // Also catch very short non-English answers
+        if (studentAnswer.length <= 2 && qualityScore > 0.3) {
+          qualityScore = Math.min(qualityScore, 0.2);
+        }
+        
         let feedback = e.feedback;
         if (!feedback || feedback.length < 10 || feedback === 'Thank you for your answer.') {
-          if (qualityScore >= 0.9) {
+          if (isNonAnswer) {
+            feedback = 'No answer provided. Try to form at least one sentence about the topic.';
+          } else if (qualityScore >= 0.9) {
             feedback = 'Excellent answer! Well structured and comprehensive.';
           } else if (qualityScore >= 0.8) {
             feedback = 'Very good answer with strong understanding shown.';
@@ -218,11 +242,16 @@ Return exactly ${answers.length} evaluation objects in a JSON array:
           }
         }
         
+        // Override feedback for non-answers regardless
+        if (isNonAnswer) {
+          feedback = 'No answer provided. Try to form at least one sentence about the topic.';
+        }
+        
         return {
           exercise_index: answers[idx]?.exercise_index,
           question_index: answers[idx]?.question_index,
           quality_score: qualityScore,
-          is_acceptable: e.is_acceptable ?? (qualityScore >= 0.7),
+          is_acceptable: !isNonAnswer && (e.is_acceptable ?? (qualityScore >= 0.7)),
           feedback: feedback
         };
       });

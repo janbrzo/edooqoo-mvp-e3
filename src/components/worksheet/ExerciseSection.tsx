@@ -1081,6 +1081,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             isEditing={isEditing}
             viewMode={exerciseViewMode}
             onStatementChange={handleStatementChangeLocal}
+            exerciseVariant={exercise.type.includes('-picture') ? 'picture' : exercise.type.includes('-audio') ? 'audio' : 'plain'}
             isInteractive={isInteractive}
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
