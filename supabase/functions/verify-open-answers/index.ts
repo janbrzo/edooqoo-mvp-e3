@@ -67,8 +67,8 @@ For each answer, provide:
 STRICT SCORING RULES (these override everything else):
 1. NON-ANSWERS (ALWAYS score 0.0-0.05): "I don't know", "idk", "nie wiem", "no idea", "no se", "не знаю", "dunno", "I have no idea", "I'm not sure", any equivalent in ANY language, or any response that does not attempt to answer the question. Score: 0.0. Feedback should be: "No answer provided. Try to form at least one sentence about the topic."
 2. WRONG LANGUAGE (score 0.05-0.10): Answer written entirely in a non-English language (Polish, Spanish, etc.) unless translation was explicitly requested. Feedback: "Please answer in English."
-3. MINIMAL EFFORT (score 0.1-0.3): Only 1-2 generic words like "yes", "no", "ok", "good", "bad" that don't demonstrate understanding. Feedback should suggest what to add.
-4. PARTIAL ANSWER (score 0.4-0.6): Shows some understanding but is incomplete, has significant errors, or doesn't fully address the question.
+3. MINIMAL EFFORT (score 0.1-0.4): Only 1-2 generic words like "yes", "no", "ok", "good", "bad" that don't demonstrate understanding. Feedback should suggest what to add.
+4. PARTIAL ANSWER (score 0.4-0.7): Shows some understanding but is incomplete, has significant errors, or doesn't fully address the question.
 5. ACCEPTABLE ANSWER (score 0.7-0.85): Genuine attempt with mostly correct English that addresses the topic. Minor errors are OK at the student's level.
 6. STRONG ANSWER (score 0.85-1.0): Well-structured, accurate, comprehensive response.
 
