@@ -1,86 +1,142 @@
 
-# Plan naprawy: 4 problemy
 
-## PROBLEM 1: Brak AI Evaluation w Live Session dla wiekszosci typow open-ended
+# Plan naprawy: 6 problemow
 
-### Przyczyna (POTWIERDZONA w kodzie)
+## PROBLEM 1: Teacher AI Evaluation Feedback (Kciuki + Modal)
 
-We WSZYSTKICH komponentach open-ended (ExerciseReading, ExerciseDialogue, ExerciseDescribe, ExerciseAnswerQuestions, ExerciseAnswerQuestionsAudio, ExerciseListeningComprehension, ExerciseParaphrasing) badge `AiEvaluationBadge` jest umieszczony WEWNATRZ bloku `{isInteractive && (...)}`.
+### Opis
+Nauczyciel widzi badge AI Evaluation w Live Session. Chcemy dodac dwa male przyciski kciukow (thumbs up/down) obok badge'a. Po kliknieciu:
+1. Natychmiast zapisac do nowej tabeli `teacher_ai_eval_feedback` (kciuk up/down + kontekst)
+2. Pokazac modal z opcjonalnym polem tekstowym + przyciskami "Send" i "Skip"
+3. Jesli nauczyciel wpisze tekst i kliknie Send - UPDATE tego samego logu (nie nowy wiersz)
+4. Jesli kliknie Skip - modal sie zamyka, log z samym kciukiem zostaje
 
-W trybie Live Session nauczyciel widzi worksheet przez `WorksheetContent`, ktory NIE przekazuje `isInteractive` do `ExerciseSection` (defaults to `false`). Skutek: caly blok z inputem studenta i badge'em AI jest ukryty.
+### Zmiany techniczne
 
-Wyjatki:
-- **Discussion** - badge jest na liniach 1035-1038 w `ExerciseSection.tsx`, POZA blokiem `{isInteractive}` - dlatego DZIALA
-- **Reading** - badge jest WEWNATRZ `{isInteractive}` w `ExerciseReading.tsx` - user twierdzi ze dziala, ale wg kodu nie powinno (mozliwe ze user widzi starsze dane lub myli z Discussion)
-
-### Rozwiazanie
-
-W KAZDYM z 7 komponentow open-ended dodac OSOBNY rendering badge'a AI POZA blokiem `{isInteractive}`, widoczny w trybie teacher/live-session:
-
-```typescript
-{/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
-{!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
-  <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true} />
-)}
+**Nowa tabela SQL** (`teacher_ai_eval_feedback`):
+```sql
+CREATE TABLE teacher_ai_eval_feedback (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  teacher_id UUID NOT NULL REFERENCES auth.users(id),
+  worksheet_id UUID NOT NULL,
+  exercise_index INTEGER NOT NULL,
+  question_index INTEGER NOT NULL,
+  exercise_type TEXT NOT NULL,
+  quality_score NUMERIC, -- AI score (0-1)
+  thumbs_up BOOLEAN NOT NULL, -- true = thumbs up, false = thumbs down
+  feedback_text TEXT, -- opcjonalny komentarz nauczyciela
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE teacher_ai_eval_feedback ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Teachers can manage own feedback" ON teacher_ai_eval_feedback
+  FOR ALL USING (auth.uid() = teacher_id);
 ```
 
-Ten dodatkowy badge pojawi sie:
-- W Live Session (isSharedWorksheet=true z ExerciseSection, isInteractive=false)
-- NIE pojawi sie na zwyklym worksheecie nauczyciela (isSharedWorksheet=false)
-- NIE zduplikuje sie na shared worksheet studenta (isInteractive=true, wiec ten warunek jest false, a istniejacy badge w bloku isInteractive dalej dziala)
+**Nowy komponent** `src/components/homework/AiEvalFeedbackButtons.tsx`:
+- Dwa male przyciski kciukow (ThumbsUp, ThumbsDown z lucide-react)
+- Renderowany TYLKO w Live Session (prop `isLiveSession`)
+- Po kliknieciu: INSERT do tabeli, otworz modal
 
-Pliki do zmiany (7):
-1. `ExerciseReading.tsx` - po bloku `{(viewMode === 'teacher' || showCorrectAnswers)...}` (~linia 123)
-2. `ExerciseDialogue.tsx` - po bloku `{liveAnswer && !isInteractive...}` (~linia 161)
-3. `ExerciseDescribe.tsx` - po bloku interaktywnym (~linia 118)
-4. `ExerciseAnswerQuestions.tsx` - po bloku `{isInteractive}` (~linia 206)
-5. `ExerciseAnswerQuestionsAudio.tsx` - analogicznie
-6. `ExerciseListeningComprehension.tsx` - analogicznie
-7. `ExerciseParaphrasing.tsx` - analogicznie
+**Nowy komponent** `src/components/homework/AiEvalFeedbackModal.tsx`:
+- Dialog z textarea + "Send" + "Skip"
+- Send = UPDATE wiersza w tabeli (dodaje feedback_text)
+- Skip = zamknij modal
+
+**Zmiany w `AiEvaluationBadge.tsx`**:
+- Dodac opcjonalne propsy: `worksheetId`, `exerciseIndex`, `questionIndex`, `exerciseType`, `isLiveSession`, `teacherId`
+- Renderowac `AiEvalFeedbackButtons` obok badge'a gdy `isLiveSession === true`
+
+**Zmiany w `ExerciseSection.tsx`**:
+- Przekazac dodatkowe propsy do `AiEvaluationBadge` w Live Session (worksheetId, exerciseIndex, exerciseType, teacherId)
+
+**Pliki do zmiany/utworzenia**:
+- NOWY: `src/components/homework/AiEvalFeedbackButtons.tsx`
+- NOWY: `src/components/homework/AiEvalFeedbackModal.tsx`
+- ZMIANA: `src/components/homework/AiEvaluationBadge.tsx`
+- ZMIANA: `src/components/worksheet/ExerciseSection.tsx` (przekazanie propsow)
+- ZMIANA: Wszystkie 7 komponentow open-ended (przekazanie propsow do AiEvaluationBadge)
+- SQL: Nowa tabela + RLS
 
 ---
 
-## PROBLEM 2: Puste nano_skill_ratings dla zamknietych cwiczen
+## PROBLEM 2: Puste nano_skill_ratings dla error-correction
 
-### Przyczyna (POTWIERDZONA w kodzie)
-
-W `useInteractiveSharedWorksheet.tsx` linia 186:
+### Przyczyna
+W `masteryCalculator.ts` linia 266:
 ```typescript
-const hasRealAiEval = itemEvaluations?.some(e => e.hasValue !== false && e.mastery > 0);
+const correctAnswer = sentence.correct || sentence.corrected || sentence.correct_sentence;
+```
+Ale w rzeczywistych danych z AI, pole nazywa sie `sentence.correction` (widoczne w `ExerciseSectionUtils.tsx` linia 241: `sentence.answer || sentence.correction`).
+
+Brak pola `correction` w sprawdzeniu powoduje ze `correctAnswer` jest undefined, `isCorrect` pozostaje `null`, i `calculateItemMastery` zwraca `null` (hasValue: false). W efekcie `buildItemEvaluations` pomija te elementy.
+
+### Rozwiazanie
+W `masteryCalculator.ts` linia 266, dodac `sentence.correction`:
+```typescript
+const correctAnswer = sentence.correct || sentence.corrected || sentence.correct_sentence || sentence.correction;
 ```
 
-Warunek `e.mastery > 0` ODFILTROWUJE poprawnie obliczone BLEDNE odpowiedzi (mastery=0, hasValue=true). Jesli student odpowiedzial ZLE na wszystkie pytania w cwiczeniu, kazdy element ma mastery=0 i `e.mastery > 0` jest false dla wszystkich. W efekcie `hasRealAiEval = false` i wysylane jest `null` zamiast ocen.
+**Plik**: `src/utils/masteryCalculator.ts`
 
-Dodatkowo, `calculateItemMastery` moze zwracac `null` (zamiast 0 lub 100) dla niektorych typow cwiczen gdy struktura danych z AI nie pasuje do oczekiwanych pol (np. matching items bez pola `correct_match`/`match`/`definition` w oczekiwanym formacie, albo antonyms items bez odpowiednich pol).
+---
+
+## PROBLEM 3: Mastery zawsze 0 dla antonyms i matching
+
+### Przyczyna - Antonyms/Synonyms
+Student wybiera litere (A, B, C) z dropdownu. `masteryCalculator.ts` linia 247-253 probuje porownac litere z pozycja `item.definition` w tablicy:
+```typescript
+const allDefinitions = exerciseData.items.map((i: any) => i.definition);
+const correctIndex = allDefinitions.indexOf(item.definition);
+const correctLetter = String.fromCharCode(65 + correctIndex);
+```
+
+Problem: `correctIndex = allDefinitions.indexOf(item.definition)` daje pozycje w ORYGINALNEJ (nieprzetasowanej) tablicy. Ale UI tasuje definicje z seedem `syn-${itemsKey}`. Wiec "poprawna litera" obliczona przez calculator NIE odpowiada literze w UI.
+
+### Przyczyna - Matching
+Identyczny problem. Student wybiera litere oparta o przetasowana kolejnosc definicji (seed: `${worksheetId}-${itemsKey}`), ale `masteryCalculator.ts` linia 133-138 porownuje tekst odpowiedzi studenta (litere "A") z tekstem `item.definition` - co nigdy nie bedzie rowne.
+
+### Przyczyna - Matching Halves
+Algorytm shuffle w `masteryCalculator.ts` uzywa seeda `${worksheetId}-halves-${halvesKey}`, ale `exerciseData.worksheetId` moze byc undefined. W tym przypadku seed = `default-halves-...` co rozni sie od seeda uzytego w UI.
 
 ### Rozwiazanie
 
-**Etap A**: Zmienic warunek w `useInteractiveSharedWorksheet.tsx`:
-```typescript
-// BYLO (odfiltrowuje mastery=0 blednie):
-const hasRealAiEval = itemEvaluations?.some(e => e.hasValue !== false && e.mastery > 0);
+Dla **antonyms/synonyms** i **matching**: Musimy uzyc IDENTYCZNEGO algorytmu shuffle z identycznym seedem co UI.
 
-// BEDZIE (sprawdza TYLKO hasValue):
-const hasRealAiEval = itemEvaluations?.some(e => e.hasValue !== false);
+W `masteryCalculator.ts`:
+
+**Antonyms/Synonyms** - dodac shuffle z seedem `syn-${itemsKey}`:
+```typescript
+if ((exerciseType === 'synonyms-antonyms' || exerciseType === 'synonyms' || exerciseType === 'antonyms') && exerciseData?.items?.[itemIndex]) {
+  const item = exerciseData.items[itemIndex];
+  if (typeof studentAnswer === 'string' && studentAnswer.length === 1 && studentAnswer.match(/[A-Z]/i)) {
+    // Reproduce same shuffle as ExerciseSynonymsAntonyms.tsx
+    const itemsKey = exerciseData.items.map((i: any) => i.term).join('|');
+    const seed = `syn-${itemsKey}`;
+    const shuffled = shuffleArrayWithSeed(exerciseData.items, seed);
+    const correctShuffledIdx = shuffled.findIndex((i: any) => i.term === item.term);
+    if (correctShuffledIdx !== -1) {
+      const correctLetter = String.fromCharCode(65 + correctShuffledIdx);
+      isCorrect = studentAnswer.toUpperCase() === correctLetter;
+    }
+  }
+}
 ```
 
-To zachowa evaluations dla zamknietych cwiczen nawet gdy wszystkie odpowiedzi sa bledne.
-
-**Etap B**: Poprawic `calculateItemMastery` w `masteryCalculator.ts` dla matching - dodac obsluge letter-based answers:
+**Matching** - dodac shuffle z seedem `${worksheetId}-${itemsKey}` lub fallback `${itemsKey}`:
 ```typescript
-// Matching - letter-based (A, B, C...) with shuffled definitions
 if (exerciseType === 'matching' && exerciseData?.items?.[itemIndex]) {
   const item = exerciseData.items[itemIndex];
-  // For letter-based answers, can't verify without shuffle seed
-  // Return null (can't determine) - will still log with hasValue=false
   if (typeof studentAnswer === 'string' && studentAnswer.length === 1 && studentAnswer.match(/[A-Z]/i)) {
-    // Letter answer - need shuffle context we don't have here
-    // Try direct text comparison as fallback
-    const correctMatch = item.correct_match || item.match || item.definition;
-    if (correctMatch) {
-      isCorrect = String(studentAnswer).toLowerCase().trim() === String(correctMatch).toLowerCase().trim();
+    const itemsKey = exerciseData.items.map((i: any) => i.term).join('|');
+    const seed = exerciseData.worksheetId ? `${exerciseData.worksheetId}-${itemsKey}` : itemsKey;
+    const shuffled = shuffleArrayWithSeed(exerciseData.items, seed);
+    const correctShuffledIdx = shuffled.findIndex((i: any) => i.term === item.term);
+    if (correctShuffledIdx !== -1) {
+      const correctLetter = String.fromCharCode(65 + correctShuffledIdx);
+      isCorrect = studentAnswer.toUpperCase() === correctLetter;
     }
   } else {
+    // Fallback: direct text comparison
     const correctMatch = item.correct_match || item.match || item.definition;
     if (correctMatch) {
       isCorrect = String(studentAnswer).toLowerCase().trim() === String(correctMatch).toLowerCase().trim();
@@ -89,87 +145,109 @@ if (exerciseType === 'matching' && exerciseData?.items?.[itemIndex]) {
 }
 ```
 
-Uwaga: Matching z literami (A, B, C) wymaga kontekstu shuffle seed ktorego nie ma w `calculateItemMastery`. Dlatego `isCorrect` pozostanie `null` → `hasValue: false`. ALE po poprawce etapu A, caly `itemEvaluations` array BEDZIE wysylany do bazy (bo inne elementy w nim moga miec `hasValue: true`). Trigger SQL i tak loguje caly payload.
+Trzeba tez dodac `shuffleArrayWithSeed` jako helper do `masteryCalculator.ts` (identyczny algorytm jak w UI).
 
-Faktycznie glowna naprawa to Etap A - zmiana warunku. To sprawi ze evaluations trafia do bazy i do student_events.
+**Matching Halves** - upewnic sie ze `worksheetId` jest przekazywany do `exerciseData`. Sprawdzic czy `useInteractiveSharedWorksheet` dodaje `worksheetId` do danych cwiczenia.
+
+**Plik**: `src/utils/masteryCalculator.ts`
 
 ---
 
-## PROBLEM 3: Picture hint dla ExerciseDescribe, ExerciseAnswerQuestions, ExerciseMultipleChoice
+## PROBLEM 4: Fill in the Blanks - brak odpowiedzi studenta w Live Session
 
-### Rozwiazanie
-
-Dodac hint "Look at the picture" w trzech komponentach, warunkowany na typ cwiczenia:
-
-1. **ExerciseDescribe.tsx** - juz ma hint na liniach 51-54 (ale tylko gdy `!image_url`). Trzeba dodac prop `exerciseVariant` i wyswietlic hint odpowiednio.
-2. **ExerciseAnswerQuestions.tsx** - nie ma hinta. Dodac na poczatku komponentu, przed pytaniami.
-3. **ExerciseMultipleChoice.tsx** - nie ma hinta. Dodac analogicznie.
-
-Kazdy komponent potrzebuje nowego opcjonalnego propa `exerciseVariant?: 'audio' | 'picture' | 'plain'` (domyslnie `'plain'`).
-
-W `ExerciseSection.tsx` przekazac `exerciseVariant` do tych komponentow:
-```typescript
-exerciseVariant={exercise.type.includes('-picture') ? 'picture' : exercise.type.includes('-audio') ? 'audio' : 'plain'}
+### Przyczyna
+W `ExerciseFillInBlanks.tsx` layout jest:
+```
+flex flex-row items-start gap-2
+  ├── flex-grow: sentence text + input
+  └── correct answer + live answer
 ```
 
-Hint dla picture:
+Sekcja z odpowiedzia nauczyciela (linia 155) jest w osobnej kolumnie po prawej. Odpowiedz studenta (linia 170-173) wyswietla sie jako `[{liveAnswer}]` BEZ prefiksu "Student:".
+
+Mozliwe przyczyny:
+1. `liveAnswer` jest pusty/undefined (dane nie docieraja)
+2. Layout ukrywa odpowiedz (za malo miejsca w waskej kolumnie)
+
+Po analizie kodu: dane powinny docierac (ten sam mechanizm co dla matching, word-order, itp.). Problem jest prawdopodobnie w LAYOUCIE - fill-in-blanks uzywa `flex-row` zamiast `flex-col`, wiec odpowiedz studenta jest wtloczna w waski prawy panel.
+
+### Rozwiazanie
+Zmienic layout w `ExerciseFillInBlanks.tsx` aby odpowiedz studenta byla wyswietlana PONIZEJ zdania (jak w innych komponentach), nie obok:
+
 ```tsx
-{exerciseVariant === 'picture' && (
-  <div className="text-center text-sm text-muted-foreground py-2 bg-amber-50 border border-amber-200 rounded-lg mb-4">
-    🖼️ Look at the picture in the Lesson Media section above before answering
+{/* Live Session: show student answer in blue - BELOW sentence */}
+{liveAnswer && !isInteractive && (
+  <span className="text-blue-600 font-medium text-sm">
+    [Student: {liveAnswer}]
+  </span>
+)}
+```
+
+Przeniesc live answer display z wewnetrznego `flex items-center gap-2` do poziomu wyzsszego, po sekcji z poprawna odpowiedzia.
+
+**Plik**: `src/components/worksheet/ExerciseFillInBlanks.tsx`
+
+---
+
+## PROBLEM 5: AI Evaluation feedback box za wysoki
+
+### Opis
+Okienko z feedbackiem AI (np. "Great job completing the sentence!...") zabiera za duzo miejsca. Trzeba zmniejszyc wysokosc o 50%.
+
+### Rozwiazanie
+W `AiEvaluationBadge.tsx` linia 86-89, zmienic padding i font:
+```tsx
+{showFeedback && feedback && (
+  <div className="flex items-start gap-1.5 p-1.5 bg-muted/50 rounded-lg text-xs">
+    <AlertCircle className="h-3 w-3 text-primary mt-0.5 flex-shrink-0" />
+    <p className="text-muted-foreground leading-tight">{feedback}</p>
   </div>
 )}
 ```
 
-Pliki do zmiany:
-- `ExerciseDescribe.tsx` - dodac prop i hint
-- `ExerciseAnswerQuestions.tsx` - dodac prop i hint
-- `ExerciseMultipleChoice.tsx` - dodac prop i hint
-- `ExerciseSection.tsx` - przekazac exerciseVariant do tych 3 komponentow
+Zmiany:
+- `gap-2` → `gap-1.5`
+- `p-3` → `p-1.5` (polowa paddingu)
+- `text-sm` → `text-xs`
+- Dodano `leading-tight` dla mniejszego line-height
+- `h-4 w-4` → `h-3 w-3` (mniejsza ikona)
+
+**Plik**: `src/components/homework/AiEvaluationBadge.tsx`
 
 ---
 
-## PROBLEM 4: Wyswietlanie "Waiting for AI evaluation..." badge zamiast ukrywania
+## PROBLEM 6: Kolejnosc elementow w Listening Comprehension i Paraphrasing w Live Session
+
+### Przyczyna
+W `ExerciseListeningComprehension.tsx` (linie 105-108) badge AI jest renderowany PRZED sekcja z suggested answer i student answer (linie 109-130).
+
+Kolejnosc w kodzie:
+1. Pytanie
+2. AI Evaluation badge (linia 106) -- ZLE, za wczesnie
+3. Suggested answer + Student answer
 
 ### Rozwiazanie
+Przeniesc badge AI PONIZEJ sekcji z suggested answer i student answer.
 
-Zmienic `AiEvaluationBadge.tsx` aby obslugiwac stan "pending":
-- Dodac nowy eksport `AiEvaluationPendingBadge` LUB dodac prop `isPending` do istniejacego komponentu
-
-Prostsze rozwiazanie: zmienic logike filtrowania w `convertItemEvalsToAiEvals` i `convertLiveEvalsToAiEvals`. Zamiast pomijac elementy z `hasValue === false`, tworzyc specjalny obiekt "pending":
-
-```typescript
-// W konwerterach - ZAMIAST return (pomijanie):
-if (item.hasValue === false) {
-  result[item.question_index] = {
-    is_acceptable: false,
-    quality_score: -1, // Special sentinel value for "pending"
-    feedback: '',
-    question_index: item.question_index
-  };
-  return;
-}
+**ExerciseListeningComprehension.tsx**:
+```
+JEST:
+  pytanie → AI badge → suggested + student
+POWINNO BYC:
+  pytanie → suggested + student → AI badge
 ```
 
-W `AiEvaluationBadge.tsx` dodac obsluge `quality_score === -1`:
-```tsx
-// Na poczatku renderowania:
-if (quality_score < 0) {
-  return (
-    <div className="mt-3">
-      <Badge className="bg-gray-400 hover:bg-gray-500 text-white">
-        <Clock className="h-3 w-3 mr-1 animate-pulse" />
-        Waiting for AI evaluation...
-      </Badge>
-    </div>
-  );
-}
+**ExerciseParaphrasing.tsx** (linie 146-148):
+```
+JEST:
+  pytanie → AI badge → suggested + student  
+POWINNO BYC:
+  pytanie → suggested + student → AI badge
 ```
 
-Pliki do zmiany:
-- `AiEvaluationBadge.tsx` - dodac pending state
-- `SharedWorksheetContent.tsx` - zmienic `convertItemEvalsToAiEvals` aby nie pomijac pending
-- `ExerciseSection.tsx` - zmienic `convertLiveEvalsToAiEvals` aby nie pomijac pending
+**Pliki**: 
+- `src/components/worksheet/ExerciseListeningComprehension.tsx`
+- `src/components/worksheet/ExerciseParaphrasing.tsx`
 
 ---
 
@@ -177,24 +255,26 @@ Pliki do zmiany:
 
 | # | Plik | Zmiana | Problem |
 |---|------|--------|---------|
-| 1 | `src/hooks/useInteractiveSharedWorksheet.tsx` | Zmienic `e.mastery > 0` na sprawdzanie `e.hasValue !== false` | 2 |
-| 2 | `src/components/worksheet/ExerciseReading.tsx` | Dodac badge AI POZA blokiem isInteractive | 1 |
-| 3 | `src/components/worksheet/ExerciseDialogue.tsx` | Dodac badge AI POZA blokiem isInteractive | 1 |
-| 4 | `src/components/worksheet/ExerciseDescribe.tsx` | Dodac badge AI POZA blokiem isInteractive + picture hint | 1, 3 |
-| 5 | `src/components/worksheet/ExerciseAnswerQuestions.tsx` | Dodac badge AI POZA blokiem isInteractive + picture hint | 1, 3 |
-| 6 | `src/components/worksheet/ExerciseAnswerQuestionsAudio.tsx` | Dodac badge AI POZA blokiem isInteractive | 1 |
-| 7 | `src/components/worksheet/ExerciseListeningComprehension.tsx` | Dodac badge AI POZA blokiem isInteractive | 1 |
-| 8 | `src/components/worksheet/ExerciseParaphrasing.tsx` | Dodac badge AI POZA blokiem isInteractive | 1 |
-| 9 | `src/components/worksheet/ExerciseMultipleChoice.tsx` | Dodac picture hint | 3 |
-| 10 | `src/components/worksheet/ExerciseSection.tsx` | Przekazac exerciseVariant do 3 komponentow | 3 |
-| 11 | `src/components/homework/AiEvaluationBadge.tsx` | Dodac pending state (quality_score < 0) | 4 |
-| 12 | `src/components/shared/SharedWorksheetContent.tsx` | Zmienic konwerter - nie pomijac pending | 4 |
-| 13 | `src/components/worksheet/ExerciseSection.tsx` | Zmienic konwerter - nie pomijac pending | 4 |
-| 14 | Dokumentacja | Aktualizacja | Wszystkie |
+| 1 | SQL migration | Nowa tabela `teacher_ai_eval_feedback` | 1 |
+| 2 | `AiEvalFeedbackButtons.tsx` (NOWY) | Kciuki up/down | 1 |
+| 3 | `AiEvalFeedbackModal.tsx` (NOWY) | Modal z feedback tekstowym | 1 |
+| 4 | `AiEvaluationBadge.tsx` | Dodac kciuki + zmniejszyc feedback box | 1, 5 |
+| 5 | `ExerciseSection.tsx` | Przekazac propsy do AiEvaluationBadge | 1 |
+| 6 | 7 komponentow open-ended | Przekazac propsy do AiEvaluationBadge | 1 |
+| 7 | `masteryCalculator.ts` | Fix error-correction (dodac `correction`) | 2 |
+| 8 | `masteryCalculator.ts` | Fix antonyms/synonyms shuffle | 3 |
+| 9 | `masteryCalculator.ts` | Fix matching shuffle | 3 |
+| 10 | `ExerciseFillInBlanks.tsx` | Fix live answer display layout | 4 |
+| 11 | `ExerciseListeningComprehension.tsx` | Przeniesc AI badge po suggested answer | 6 |
+| 12 | `ExerciseParaphrasing.tsx` | Przeniesc AI badge po suggested answer | 6 |
+| 13 | Dokumentacja | Aktualizacja | Wszystkie |
 
 ### Bezpieczenstwo zmian
 
-- Zmiana 1 (hasRealAiEval): zmiana `e.mastery > 0` na `e.hasValue !== false` - nadal chroni przed nadpisaniem AI eval (open-ended z `hasValue: false` nie przechodzi). Zamkniete cwiczenia z mastery=0 i `hasValue: true` teraz poprawnie przechodza.
-- Zmiana 2-8 (badge poza isInteractive): nowy warunek `!isInteractive && isSharedWorksheet` - aktywuje sie TYLKO w Live Session. Zero wplywu na inne tryby.
-- Zmiana 9-10 (picture hint): nowy opcjonalny prop z domyslna wartoscia `'plain'` - backward compatible.
-- Zmiana 11-13 (pending badge): sentinel `quality_score: -1` nie koliduje z normalnymi wartosciami (0.0-1.0). Pending badge pojawia sie TYLKO gdy student ma odpowiedz ale brak AI eval.
+- Problem 1: Nowa tabela z RLS - zero wplywu na istniejacy kod. Kciuki renderowane TYLKO w Live Session.
+- Problem 2: Dodanie jednego pola do sprawdzenia (`correction`) - czysto addytywne.
+- Problem 3: Identyczny algorytm shuffle co UI - jesli UI dziala poprawnie, mastery tez bedzie poprawne. Fallback na direct text comparison zachowany.
+- Problem 4: Zmiana layoutu tylko w ExerciseFillInBlanks - nie wplywa na inne komponenty.
+- Problem 5: Zmiana CSS tylko - zmniejszenie padding/font.
+- Problem 6: Zmiana kolejnosci renderowania w 2 komponentach - nie zmienia logiki, tylko display order.
+
