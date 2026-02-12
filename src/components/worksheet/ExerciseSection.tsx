@@ -1694,6 +1694,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             studentAnswers={studentAnswers}
             onAnswerChange={onAnswerChange}
             showCorrectAnswers={showCorrectAnswers}
+            liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
           />
         )}
@@ -1726,13 +1727,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           />
         )}
 
-        {/* Poprawione wywołanie komponentu TeacherTipSection z dodanym parametrem viewMode */}
-        <TeacherTipSection
-          tip={exercise.teacher_tip}
-          isEditing={isEditing}
-          onChange={handleTeacherTipChangeLocal}
-          viewMode={exerciseViewMode}
-        />
+        {/* TeacherTipSection moved to after ExerciseContent (line ~797) */}
             </div>
           </CollapsibleContent>
         </Collapsible>

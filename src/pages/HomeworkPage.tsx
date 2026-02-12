@@ -11,6 +11,7 @@ import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { useInteractiveHomework } from "@/hooks/useInteractiveHomework";
 import { StudentEmailVerification } from "@/components/homework/StudentEmailVerification";
 import { HomeworkProgressBar } from "@/components/homework/HomeworkProgressBar";
+import { StudyModeButton } from "@/components/shared/StudyModeButton";
 import { ExerciseNavSidebar } from "@/components/worksheet/ExerciseNavSidebar";
 import {
   AlertDialog,
@@ -40,6 +41,7 @@ interface HomeworkData {
   selected_image?: { url: string; photographer?: string; photographerUrl?: string } | null;
   selected_audio?: { url: string; transcript?: string } | null;
   audio_url?: string | null;
+  source_worksheet_id?: string | null;
 }
 
 export default function HomeworkPage() {
@@ -55,6 +57,7 @@ export default function HomeworkPage() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [submitCountdown, setSubmitCountdown] = useState(15);
   const [studentEmailForTeacher, setStudentEmailForTeacher] = useState<string | null>(null);
+  const [isStudyMode, setIsStudyMode] = useState(false);
   const [studentIdForTeacher, setStudentIdForTeacher] = useState<string | null>(null);
   
   // PROBLEM 2 FIX: Check localStorage for remembered email on mount
@@ -302,10 +305,10 @@ export default function HomeworkPage() {
 
       setHomework(fixedData as HomeworkData);
       
-      // Fetch reviewed_at status separately (not in RPC)
+      // Fetch reviewed_at status and source_worksheet_id separately (not in RPC)
       const { data: homeworkStatus } = await supabase
         .from('homework_assignments')
-        .select('reviewed_at, completed_at')
+        .select('reviewed_at, completed_at, source_worksheet_id')
         .eq('id', fixedData.id)
         .single();
       
@@ -313,7 +316,8 @@ export default function HomeworkPage() {
         setHomework(prev => prev ? {
           ...prev,
           reviewed_at: homeworkStatus.reviewed_at,
-          completed_at: homeworkStatus.completed_at
+          completed_at: homeworkStatus.completed_at,
+          source_worksheet_id: homeworkStatus.source_worksheet_id
         } : null);
       }
     } catch (error) {
@@ -526,6 +530,9 @@ export default function HomeworkPage() {
   
   // Check if email verification is needed
   const needsEmailVerification = !verifiedEmail && !isTeacher;
+  
+  // Show Start button after email verification (like Study button on shared worksheet)
+  const showStartButton = verifiedEmail && !isStudyMode && !isTeacher && verifiedEmail !== 'teacher';
 
   return (
     <div className="min-h-screen bg-background">
@@ -549,6 +556,14 @@ export default function HomeworkPage() {
           }}
         />
       )}
+
+      {/* Big Start Button (after email verified, before study mode) */}
+      {showStartButton && (
+        <StudyModeButton
+          onStartStudy={() => setIsStudyMode(true)}
+          worksheetTitle={homework.title}
+        />
+      )}
       
       {/* Main homework content - blocked when verification needed */}
       <div className={needsEmailVerification ? 'pointer-events-none' : ''}>
@@ -567,11 +582,18 @@ export default function HomeworkPage() {
       />
 
       {/* Header */}
-      <div className="bg-card border-b border-border">
-        <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="bg-white border-b shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="space-y-4">
+            {/* Type label */}
+            <div className="flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5 text-orange-500" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-orange-500">
+                Homework
+              </span>
+            </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
+              <h1 className="text-2xl font-bold text-foreground mb-2">
                 {homework.title}
               </h1>
               {homework.source_worksheet_title && (
@@ -630,7 +652,7 @@ export default function HomeworkPage() {
       )}
 
       {/* Lesson Media Section */}
-      <div className="max-w-5xl mx-auto px-4 py-8 lesson-media-section">
+      <div className="max-w-6xl mx-auto px-4 py-8 lesson-media-section">
         {media && (media.images.length > 0 || media.audios.length > 0) ? (
           <Card className="p-6">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
@@ -689,7 +711,7 @@ export default function HomeworkPage() {
       </div>
 
       {/* Exercises */}
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="space-y-8">
           {Array.isArray(homework.selected_exercises) && homework.selected_exercises.map((exercise, index) => (
             <div 
@@ -701,7 +723,7 @@ export default function HomeworkPage() {
               <HomeworkExerciseRenderer
                 exercise={exercise}
                 index={index}
-                homeworkId={homework.id}
+                homeworkId={homework.source_worksheet_id || homework.id}
                 isInteractive={true}
                 studentAnswers={
                   isTeacher && presentationMode 

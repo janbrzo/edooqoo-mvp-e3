@@ -95,13 +95,7 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                       ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
                     `}
                   />
-                  {/* AI Evaluation badge per question */}
-                  {aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet) && (
-                    <AiEvaluationBadge 
-                      evaluation={aiEvaluations[qIndex]} 
-                      showFeedback={true}
-                    />
-                  )}
+                  {/* AI Evaluation badge moved below suggested answer section */}
                 </>
               )}
               {(viewMode === 'teacher' || showCorrectAnswers) && (
@@ -126,7 +120,13 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                   )}
                 </div>
               )}
-              {/* AI Evaluation badge - AFTER suggested answer and student answer */}
+              {/* AI Evaluation badge - AFTER suggested answer and student answer (for both interactive and non-interactive) */}
+              {aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet) && isInteractive && (
+                <AiEvaluationBadge 
+                  evaluation={aiEvaluations[qIndex]} 
+                  showFeedback={true}
+                />
+              )}
               {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
                 <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true}
                   isLiveSession={!!liveSessionContext} worksheetId={liveSessionContext?.worksheetId}

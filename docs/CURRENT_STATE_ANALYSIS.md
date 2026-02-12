@@ -6,11 +6,16 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-11 v2):**
-- ✅ **P1 - NAPRAWIONO AI Eval badge w Live Session**: Badge AiEvaluationBadge dodany POZA blokiem `{isInteractive}` we WSZYSTKICH 7 komponentach open-ended (Reading, Dialogue, Describe, AnswerQuestions, AnswerQuestionsAudio, ListeningComprehension, Paraphrasing). Warunek: `!isInteractive && isSharedWorksheet` → widoczne TYLKO w Live Session
-- ✅ **P2 - NAPRAWIONO puste nano_skill_ratings**: Zmieniono warunek `hasRealAiEval` z `e.mastery > 0` na `e.hasValue !== false` w `useInteractiveSharedWorksheet` (2 miejsca). Teraz evaluations trafiają do bazy nawet gdy student odpowiedział źle (mastery=0)
-- ✅ **P3 - DODANO picture hints**: Nowy prop `exerciseVariant` w ExerciseDescribe, ExerciseAnswerQuestions, ExerciseMultipleChoice. Hint "🖼️ Look at the picture..." wyświetlany dla wariantu `-picture`
-- ✅ **P4 - DODANO pending AI badge**: `AiEvaluationBadge` obsługuje `quality_score < 0` → wyświetla "⏳ Waiting for AI evaluation..." zamiast ukrywania. Konwertery `convertItemEvalsToAiEvals` i `convertLiveEvalsToAiEvals` tworzą obiekt pending zamiast pomijać `hasValue: false`
+**Ostatnia naprawa (2026-02-12):**
+- ✅ **P1 - Ujednolicenie UI Homework/Shared Worksheet**: Białe tło na obu, max-w-6xl na homework, label "SHARED WORKSHEET" (fioletowy) i "HOMEWORK" (pomarańczowy), przycisk Start na homework (jak Study na shared), oficjalne nazwy ćwiczeń w homework (getOfficialExerciseName)
+- ✅ **P2 - Teacher's Tip pod poleceniem**: Przeniesiony z dołu ćwiczenia tuż pod instrukcjami (ExerciseContent) w ExerciseSection.tsx
+- ✅ **P3 - MC-picture shuffle fix**: Homework przekazuje `source_worksheet_id` zamiast `homework.id` do komponentów → identyczny seed shuffle co worksheet
+- ✅ **P4 - Fill in Blanks Audio Live Session**: Dodano prop `liveSessionAnswer` i wyświetlanie `[Student: ...]` w niebieskim kolorze
+- ✅ **P5 - AI Eval badge margin**: Zmniejszono `space-y-2` → `space-y-1`, dodano `m-0` na paragrafie feedbacku
+- ✅ **P6 - Error Correction homework feedback**: Dodano `showCorrectAnswers` z kolorystyką zielona/czerwona po submit
+- ✅ **P6b - Listening/Paraphrasing element order**: AI badge przeniesiony POD suggested answer + student answer
+
+**Naprawa (2026-02-11 v2):**
 
 **Naprawa (2026-02-11 v1):**
 - ✅ **P1 - NAPRAWIONO Live Session AI Eval visibility**: Dodano polling co 15s w `useLiveSessionAnswers` → nauczyciel widzi AI feedback dla WSZYSTKICH typów open-ended (describe-picture, answer-questions, listening-comprehension, dialogue, paraphrasing)
