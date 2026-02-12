@@ -46,7 +46,7 @@ export const downloadSessionService = {
         .from('download_sessions')
         .select('*')
         .eq('session_token', sessionToken)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching download session:', error);
@@ -116,12 +116,14 @@ export const downloadSessionService = {
         .from('download_sessions')
         .select('expires_at')
         .eq('session_token', sessionToken)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error checking session validity:', error);
         return false;
       }
+
+      if (!data) return false;
 
       const expiresAt = new Date(data.expires_at);
       const now = new Date();
@@ -140,7 +142,7 @@ export const downloadSessionService = {
         .from('download_sessions')
         .select('downloads_count, expires_at')
         .eq('session_token', sessionToken)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching session stats:', error);
