@@ -23,6 +23,7 @@ interface ExerciseAnswerQuestionsAudioProps extends Partial<InteractiveExerciseP
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
+  liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
 }
 
 const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> = ({
@@ -40,7 +41,8 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
   onNanoSkillChange,
   isSharedWorksheet = false,
   // AI Evaluations
-  aiEvaluations
+  aiEvaluations,
+  liveSessionContext
 }) => {
   return (
     <div className="space-y-0.5">
@@ -123,7 +125,10 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
             )}
             {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
             {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
-              <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true} />
+              <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true}
+                isLiveSession={!!liveSessionContext} worksheetId={liveSessionContext?.worksheetId}
+                exerciseIndex={liveSessionContext?.exerciseIndex} exerciseType={liveSessionContext?.exerciseType}
+                teacherId={liveSessionContext?.teacherId} />
             )}
           </div>
         );

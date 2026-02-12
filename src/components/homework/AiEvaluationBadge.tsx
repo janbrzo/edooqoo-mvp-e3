@@ -1,10 +1,12 @@
 /**
  * AiEvaluationBadge - Displays AI evaluation result for open-ended answers
  * Shows quality score badge and feedback text
+ * In Live Session: also shows thumbs up/down feedback buttons for teachers
  */
 
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, AlertCircle, Clock } from "lucide-react";
+import { AiEvalFeedbackButtons } from "./AiEvalFeedbackButtons";
 
 export interface AiEvaluation {
   is_acceptable: boolean;
@@ -17,14 +19,26 @@ interface AiEvaluationBadgeProps {
   evaluation: AiEvaluation;
   showFeedback?: boolean;
   compact?: boolean;
+  // Live Session feedback props (optional)
+  isLiveSession?: boolean;
+  worksheetId?: string;
+  exerciseIndex?: number;
+  exerciseType?: string;
+  teacherId?: string;
 }
 
 export function AiEvaluationBadge({ 
   evaluation, 
   showFeedback = true,
-  compact = false 
+  compact = false,
+  isLiveSession = false,
+  worksheetId,
+  exerciseIndex,
+  exerciseType,
+  teacherId
 }: AiEvaluationBadgeProps) {
   const { is_acceptable, quality_score, feedback } = evaluation;
+  const questionIndex = evaluation.question_index ?? 0;
   
   // Pending state: quality_score < 0 means waiting for AI evaluation
   if (quality_score < 0) {
@@ -40,11 +54,6 @@ export function AiEvaluationBadge({
   
   const scorePercent = Math.round(quality_score * 100);
   
-  const getBadgeVariant = () => {
-    if (is_acceptable) return "default";
-    return "destructive";
-  };
-  
   const getBadgeColor = () => {
     if (quality_score >= 0.8) return "bg-green-500 hover:bg-green-600";
     if (quality_score >= 0.7) return "bg-emerald-500 hover:bg-emerald-600";
@@ -58,6 +67,8 @@ export function AiEvaluationBadge({
     }
     return <XCircle className="h-3 w-3 mr-1" />;
   };
+
+  const showThumbButtons = isLiveSession && worksheetId && exerciseIndex !== undefined && exerciseType && teacherId;
 
   if (compact) {
     return (
@@ -80,12 +91,23 @@ export function AiEvaluationBadge({
         ) : (
           <span className="text-xs text-red-600 dark:text-red-400">Needs improvement</span>
         )}
+        {/* Live Session: teacher feedback thumbs */}
+        {showThumbButtons && (
+          <AiEvalFeedbackButtons
+            worksheetId={worksheetId}
+            exerciseIndex={exerciseIndex}
+            questionIndex={questionIndex}
+            exerciseType={exerciseType}
+            qualityScore={quality_score}
+            teacherId={teacherId}
+          />
+        )}
       </div>
       
       {showFeedback && feedback && (
-        <div className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg text-sm">
-          <AlertCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-          <p className="text-muted-foreground">{feedback}</p>
+        <div className="flex items-start gap-1.5 p-1.5 bg-muted/50 rounded-lg text-xs">
+          <AlertCircle className="h-3 w-3 text-primary mt-0.5 flex-shrink-0" />
+          <p className="text-muted-foreground leading-tight">{feedback}</p>
         </div>
       )}
     </div>

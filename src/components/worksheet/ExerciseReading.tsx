@@ -18,6 +18,8 @@ interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
+  // Live Session feedback context
+  liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
 }
 
 const ExerciseReading: React.FC<ExerciseReadingProps> = ({
@@ -37,7 +39,8 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
   onNanoSkillChange,
   isSharedWorksheet = false,
   // AI Evaluations
-  aiEvaluations
+  aiEvaluations,
+  liveSessionContext
 }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
     {questions.map((question, qIndex) => {
@@ -123,7 +126,10 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
             )}
             {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
             {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
-              <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true} />
+              <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true}
+                isLiveSession={!!liveSessionContext} worksheetId={liveSessionContext?.worksheetId}
+                exerciseIndex={liveSessionContext?.exerciseIndex} exerciseType={liveSessionContext?.exerciseType}
+                teacherId={liveSessionContext?.teacherId} />
             )}
           </div>
         </div>

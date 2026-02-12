@@ -15,6 +15,7 @@ interface ExerciseSentenceTransformationProps extends Partial<InteractiveExercis
   onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill) => void;
   isSharedWorksheet?: boolean;
   aiEvaluations?: Record<number, AiEvaluation>;
+  liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
 }
 
 const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationProps> = ({
@@ -27,7 +28,8 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
   disabled = false,
   onNanoSkillChange,
   isSharedWorksheet = false,
-  aiEvaluations
+  aiEvaluations,
+  liveSessionContext
 }) => {
   return (
     <div>
@@ -98,7 +100,10 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                 {/* AI Evaluation feedback */}
                 {aiEvaluations?.[sIndex] && (disabled || isSharedWorksheet) && (
                   <div className="ml-6">
-                    <AiEvaluationBadge evaluation={aiEvaluations[sIndex]} />
+                    <AiEvaluationBadge evaluation={aiEvaluations[sIndex]}
+                      isLiveSession={!!liveSessionContext} worksheetId={liveSessionContext?.worksheetId}
+                      exerciseIndex={liveSessionContext?.exerciseIndex} exerciseType={liveSessionContext?.exerciseType}
+                      teacherId={liveSessionContext?.teacherId} />
                   </div>
                 )}
                 

@@ -18,6 +18,7 @@ interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
   isSharedWorksheet?: boolean;
   // AI Evaluations per sentence
   aiEvaluations?: Record<number, AiEvaluation>;
+  liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
 }
 
 // Helper to extract word_to_use from multiple possible data formats
@@ -68,7 +69,8 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
   onNanoSkillChange,
   isSharedWorksheet = false,
   // AI Evaluations
-  aiEvaluations
+  aiEvaluations,
+  liveSessionContext
 }) => {
   return (
     <div>
@@ -143,11 +145,6 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                     )}
                   </>
                 )}
-                {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
-                {!isInteractive && aiEvaluations?.[sIndex] && isSharedWorksheet && (
-                  <AiEvaluationBadge evaluation={aiEvaluations[sIndex]} showFeedback={true} />
-                )}
-                
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="text-green-600 italic text-sm">
@@ -170,6 +167,13 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                       </span>
                     )}
                   </div>
+                )}
+                {/* AI Evaluation badge - AFTER suggested answer and student answer */}
+                {!isInteractive && aiEvaluations?.[sIndex] && isSharedWorksheet && (
+                  <AiEvaluationBadge evaluation={aiEvaluations[sIndex]} showFeedback={true}
+                    isLiveSession={!!liveSessionContext} worksheetId={liveSessionContext?.worksheetId}
+                    exerciseIndex={liveSessionContext?.exerciseIndex} exerciseType={liveSessionContext?.exerciseType}
+                    teacherId={liveSessionContext?.teacherId} />
                 )}
               </div>
             </div>
