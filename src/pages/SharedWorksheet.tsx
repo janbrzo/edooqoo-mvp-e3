@@ -390,7 +390,7 @@ const SharedWorksheet = () => {
   const effectiveStudyMode = isStudyMode || isTeacher;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Email Verification Modal */}
       {showEmailVerification && (
         <SharedWorksheetEmailVerification
@@ -534,8 +534,14 @@ const SharedWorksheet = () => {
       {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-6">
+          {/* Type label */}
+          <div className="flex items-center gap-1.5 mb-2">
+            <FileText className="h-3.5 w-3.5 text-worksheet-purple" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-worksheet-purple">
+              Shared Worksheet
+            </span>
+          </div>
           <div className="flex items-center gap-3">
-            <FileText className="h-6 w-6 text-worksheet-purple" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
                 {worksheetTitle}

@@ -5,6 +5,7 @@
 import React from 'react';
 import { Clock, Loader2 } from 'lucide-react';
 import { getIconComponent } from '@/utils/iconUtils';
+import { getOfficialExerciseName } from '@/utils/exerciseProcessor';
 import { safeGetText } from '@/utils/textObjectFixer';
 import { AiEvaluationBadge, AiEvaluation } from './AiEvaluationBadge';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
@@ -77,15 +78,16 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
   const normalizedType = normalizeExerciseType(exercise.type);
   const isOpenEnded = OPEN_ENDED_TYPES.includes(exercise.type) || OPEN_ENDED_TYPES.includes(normalizedType);
   
-  // Render the exercise title - always use sequential numbering (index+1)
+  // Render the exercise title using official exercise names (same as SharedWorksheetContent)
   const renderTitle = () => {
-    let titleText = exercise.title || 'Untitled Exercise';
-    // Strip existing "Exercise N:" prefix to renumber sequentially
-    const exerciseMatch = titleText.match(/^Exercise\s+\d+\s*:\s*(.*)/i);
-    if (exerciseMatch) {
-      titleText = exerciseMatch[1];
-    }
-    return `Exercise ${index + 1}: ${titleText}`;
+    const officialName = getOfficialExerciseName(exercise.type);
+    const aiTitle = exercise.title || '';
+    const cleanAiTitle = aiTitle.replace(/^Exercise\s+\d+\s*:\s*/i, '').trim();
+    const escapedName = officialName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const aiDesc = cleanAiTitle.replace(new RegExp(`^${escapedName}\\s*[-:]?\\s*`, 'i'), '').trim();
+    return aiDesc 
+      ? `Exercise ${index + 1}: ${officialName}: ${aiDesc}` 
+      : `Exercise ${index + 1}: ${officialName}`;
   };
 
   return (
@@ -152,6 +154,7 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
         )}
 
         {exercise.type === 'fill-in-blanks' && exercise.sentences && (
+
           <ExerciseFillInBlanks
             word_bank={exercise.word_bank}
             sentences={exercise.sentences}
@@ -318,6 +321,11 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
           <div className="space-y-3">
             {exercise.sentences.map((sentence: any, sIndex: number) => {
               const studentAnswer = studentAnswers[sIndex] || '';
+              const correctAnswer = sentence.answer || sentence.correction || sentence.correct || sentence.corrected || sentence.correct_sentence;
+              const isCorrect = showCorrectAnswers && studentAnswer && correctAnswer && 
+                studentAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+              const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
+              const isEmpty = showCorrectAnswers && !studentAnswer;
               return (
                 <div key={sIndex} className="border rounded-lg p-3 bg-white">
                   <p className="leading-snug mb-2">
@@ -329,9 +337,19 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
                       value={studentAnswer}
                       onChange={(e) => onAnswerChange(sIndex, e.target.value)}
                       placeholder="Write the correct sentence..."
-                      className="w-full h-10 border rounded px-3"
+                      className={`w-full h-10 border rounded px-3
+                        ${isCorrect ? 'bg-green-200 border-2 border-green-600' : ''}
+                        ${isIncorrect ? 'bg-red-200 border-2 border-red-600' : ''}
+                        ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                        ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
+                      `}
                       disabled={disabled}
                     />
+                  )}
+                  {showCorrectAnswers && correctAnswer && (
+                    <div className={`text-sm mt-1 ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
+                      {isCorrect ? '✓ Correct!' : `✗ Correct answer: ${correctAnswer}`}
+                    </div>
                   )}
                 </div>
               );

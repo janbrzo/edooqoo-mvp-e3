@@ -136,13 +136,7 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                       rows={1}
                       disabled={disabled}
                     />
-                    {/* AI Evaluation badge per sentence */}
-                    {aiEvaluations?.[sIndex] && (disabled || isSharedWorksheet) && (
-                      <AiEvaluationBadge 
-                        evaluation={aiEvaluations[sIndex]} 
-                        showFeedback={true}
-                      />
-                    )}
+                    {/* AI Evaluation badge moved below suggested answer section */}
                   </>
                 )}
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
@@ -168,7 +162,13 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                     )}
                   </div>
                 )}
-                {/* AI Evaluation badge - AFTER suggested answer and student answer */}
+                {/* AI Evaluation badge - AFTER suggested answer and student answer (for both interactive and non-interactive) */}
+                {aiEvaluations?.[sIndex] && (disabled || isSharedWorksheet) && isInteractive && (
+                  <AiEvaluationBadge 
+                    evaluation={aiEvaluations[sIndex]} 
+                    showFeedback={true}
+                  />
+                )}
                 {!isInteractive && aiEvaluations?.[sIndex] && isSharedWorksheet && (
                   <AiEvaluationBadge evaluation={aiEvaluations[sIndex]} showFeedback={true}
                     isLiveSession={!!liveSessionContext} worksheetId={liveSessionContext?.worksheetId}

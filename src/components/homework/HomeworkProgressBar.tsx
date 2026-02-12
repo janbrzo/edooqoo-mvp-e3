@@ -37,7 +37,7 @@ export const HomeworkProgressBar = ({
 
   return (
     <div className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           {/* Progress info */}
           <div className="flex items-center gap-3">

@@ -17,6 +17,7 @@ interface ExerciseFillInBlanksAudioProps extends Partial<InteractiveExerciseProp
   onWordBankChange?: (wIndex: number, value: string) => void;
   onSentenceChange?: (sIndex: number, field: string, value: string) => void;
   onNanoSkillChange?: (sIndex: number, nanoSkill: any) => void;
+  liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
 }
 
@@ -33,6 +34,7 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
   onWordBankChange,
   onSentenceChange,
   onNanoSkillChange,
+  liveSessionAnswer,
   // Interactive props
   isInteractive = false,
   studentAnswers = {},
@@ -158,6 +160,12 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
                     <div className={`text-sm ${isCorrect ? 'text-green-600' : 'text-red-600'}`}>
                       {isCorrect ? '✓' : `(${correctAnswer})`}
                     </div>
+                  )}
+                  {/* Live Session: show student answer in blue */}
+                  {liveSessionAnswer?.[sIndex] && !isInteractive && (
+                    <span className="text-blue-600 font-medium text-sm">
+                      [Student: {liveSessionAnswer[sIndex]}]
+                    </span>
                   )}
                 </div>
               </div>
