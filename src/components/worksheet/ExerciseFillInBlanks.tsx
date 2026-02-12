@@ -152,8 +152,8 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
                     />
                   )}
                 </div>
-                {(viewMode === 'teacher' || showCorrectAnswers) && (
-                  <div className="flex items-center gap-2">
+              {(viewMode === 'teacher' || showCorrectAnswers) && (
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-green-600 italic text-sm min-w-[120px]">
                       {isEditing ? (
                         <input
@@ -166,10 +166,10 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
                         <>({correctAnswer})</>
                       )}
                     </span>
-                    {/* PROBLEM 1: Display live session answer in blue */}
-                    {liveAnswer && (
+                    {/* Live Session: show student answer in blue */}
+                    {liveAnswer && !isInteractive && (
                       <span className="text-blue-600 font-medium text-sm">
-                        [{liveAnswer}]
+                        [Student: {liveAnswer}]
                       </span>
                     )}
                   </div>

@@ -33,6 +33,7 @@ interface ExerciseAnswerQuestionsProps extends Partial<InteractiveExerciseProps>
   aiEvaluations?: Record<number, AiEvaluation>;
   // Exercise variant for media hints
   exerciseVariant?: 'audio' | 'picture' | 'plain';
+  liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
 }
 
 const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
@@ -58,7 +59,8 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
   onNanoSkillChange,
   isSharedWorksheet = false,
   // AI Evaluations
-  aiEvaluations
+  aiEvaluations,
+  liveSessionContext
 }) => {
   return (
     <div className="space-y-4">
@@ -208,7 +210,10 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
               )}
               {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
               {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
-                <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true} />
+                <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true}
+                  isLiveSession={!!liveSessionContext} worksheetId={liveSessionContext?.worksheetId}
+                  exerciseIndex={liveSessionContext?.exerciseIndex} exerciseType={liveSessionContext?.exerciseType}
+                  teacherId={liveSessionContext?.teacherId} />
               )}
             </div>
           );

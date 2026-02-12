@@ -18,6 +18,7 @@ interface ExerciseListeningComprehensionProps extends Partial<InteractiveExercis
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
+  liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
 }
 
 const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionProps> = ({
@@ -37,7 +38,8 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
   onNanoSkillChange,
   isSharedWorksheet = false,
   // AI Evaluations
-  aiEvaluations
+  aiEvaluations,
+  liveSessionContext
 }) => {
   return (
     <div className="space-y-2">
@@ -102,10 +104,6 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                   )}
                 </>
               )}
-              {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
-              {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
-                <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true} />
-              )}
               {(viewMode === 'teacher' || showCorrectAnswers) && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="text-green-600 italic text-sm">
@@ -127,6 +125,13 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                     </span>
                   )}
                 </div>
+              )}
+              {/* AI Evaluation badge - AFTER suggested answer and student answer */}
+              {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (
+                <AiEvaluationBadge evaluation={aiEvaluations[qIndex]} showFeedback={true}
+                  isLiveSession={!!liveSessionContext} worksheetId={liveSessionContext?.worksheetId}
+                  exerciseIndex={liveSessionContext?.exerciseIndex} exerciseType={liveSessionContext?.exerciseType}
+                  teacherId={liveSessionContext?.teacherId} />
               )}
             </div>
           </div>

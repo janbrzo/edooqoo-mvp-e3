@@ -23,6 +23,7 @@ interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
+  liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
 }
 
 const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
@@ -47,7 +48,8 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
   onNanoSkillChange,
   isSharedWorksheet = false,
   // AI Evaluations
-  aiEvaluations
+  aiEvaluations,
+  liveSessionContext
 }) => {
   return (
     <div>
@@ -161,7 +163,10 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
                   )}
                   {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
                   {!isInteractive && aiEvaluations?.[eIndex] && isSharedWorksheet && (
-                    <AiEvaluationBadge evaluation={aiEvaluations[eIndex]} showFeedback={true} />
+                    <AiEvaluationBadge evaluation={aiEvaluations[eIndex]} showFeedback={true}
+                      isLiveSession={!!liveSessionContext} worksheetId={liveSessionContext?.worksheetId}
+                      exerciseIndex={liveSessionContext?.exerciseIndex} exerciseType={liveSessionContext?.exerciseType}
+                      teacherId={liveSessionContext?.teacherId} />
                   )}
                 </div>
               );

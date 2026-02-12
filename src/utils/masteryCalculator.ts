@@ -10,6 +10,30 @@
  * - NanoSkillMasteryModal
  */
 
+// Seeded random for deterministic shuffle (same algorithm as UI components)
+function seededRandom(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return function() {
+    hash = (hash * 1103515245 + 12345) & 0x7fffffff;
+    return (hash % 1000) / 1000;
+  };
+}
+
+function shuffleArrayWithSeed(array: any[], seed: string) {
+  const newArray = [...array];
+  const random = seededRandom(seed);
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
 export interface ItemEvaluation {
   question_index: number;  // Index pytania w ćwiczeniu (0-based)
   name: string;
@@ -129,12 +153,25 @@ export const calculateItemMastery = (
       }
     }
 
-    // Matching
+    // Matching - uses shuffled definitions with seed
     if (exerciseType === 'matching' && exerciseData?.items?.[itemIndex]) {
       const item = exerciseData.items[itemIndex];
-      const correctMatch = item.correct_match || item.match || item.definition;
-      if (correctMatch !== undefined) {
-        isCorrect = String(studentAnswer).toLowerCase().trim() === String(correctMatch).toLowerCase().trim();
+      if (typeof studentAnswer === 'string' && studentAnswer.length === 1 && studentAnswer.match(/[A-Z]/i)) {
+        // Letter-based answer: reproduce same shuffle as ExerciseMatching.tsx
+        const itemsKey = exerciseData.items.map((i: any) => i.term).join('|');
+        const seed = exerciseData.worksheetId ? `${exerciseData.worksheetId}-${itemsKey}` : itemsKey;
+        const shuffled = shuffleArrayWithSeed(exerciseData.items, seed);
+        const correctShuffledIdx = shuffled.findIndex((i: any) => i.term === item.term);
+        if (correctShuffledIdx !== -1) {
+          const correctLetter = String.fromCharCode(65 + correctShuffledIdx);
+          isCorrect = studentAnswer.toUpperCase() === correctLetter;
+        }
+      } else {
+        // Fallback: direct text comparison
+        const correctMatch = item.correct_match || item.match || item.definition;
+        if (correctMatch !== undefined) {
+          isCorrect = String(studentAnswer).toLowerCase().trim() === String(correctMatch).toLowerCase().trim();
+        }
       }
     }
 
@@ -240,16 +277,18 @@ export const calculateItemMastery = (
       }
     }
 
-    // Synonyms/Antonyms
+    // Synonyms/Antonyms - uses shuffled definitions with seed
     if ((exerciseType === 'synonyms-antonyms' || exerciseType === 'synonyms' || exerciseType === 'antonyms') && exerciseData?.items?.[itemIndex]) {
       const item = exerciseData.items[itemIndex];
-      // For letter-based answers (A, B, C...), check definition match
-      if (item.definition && typeof studentAnswer === 'string' && studentAnswer.length === 1) {
-        const allDefinitions = exerciseData.items.map((i: any) => i.definition);
-        const correctIndex = allDefinitions.indexOf(item.definition);
-        if (correctIndex !== -1) {
-          const correctLetter = String.fromCharCode(65 + correctIndex);
-          isCorrect = studentAnswer.toUpperCase().trim() === correctLetter;
+      // For letter-based answers (A, B, C...), reproduce same shuffle as ExerciseSynonymsAntonyms.tsx
+      if (item.definition && typeof studentAnswer === 'string' && studentAnswer.length === 1 && studentAnswer.match(/[A-Z]/i)) {
+        const itemsKey = exerciseData.items.map((i: any) => i.term).join('|');
+        const seed = `syn-${itemsKey}`;
+        const shuffled = shuffleArrayWithSeed(exerciseData.items, seed);
+        const correctShuffledIdx = shuffled.findIndex((i: any) => i.term === item.term);
+        if (correctShuffledIdx !== -1) {
+          const correctLetter = String.fromCharCode(65 + correctShuffledIdx);
+          isCorrect = studentAnswer.toUpperCase() === correctLetter;
         }
       } else {
         // Direct text answer
@@ -263,7 +302,7 @@ export const calculateItemMastery = (
     // Error correction
     if (exerciseType === 'error-correction' && exerciseData?.sentences?.[itemIndex]) {
       const sentence = exerciseData.sentences[itemIndex];
-      const correctAnswer = sentence.correct || sentence.corrected || sentence.correct_sentence;
+      const correctAnswer = sentence.correct || sentence.corrected || sentence.correct_sentence || sentence.correction;
       if (correctAnswer && typeof studentAnswer === 'string') {
         isCorrect = studentAnswer.toLowerCase().trim() === String(correctAnswer).toLowerCase().trim();
       }

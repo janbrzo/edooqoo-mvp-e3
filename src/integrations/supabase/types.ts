@@ -1432,6 +1432,45 @@ export type Database = {
         }
         Relationships: []
       }
+      teacher_ai_eval_feedback: {
+        Row: {
+          created_at: string | null
+          exercise_index: number
+          exercise_type: string
+          feedback_text: string | null
+          id: string
+          quality_score: number | null
+          question_index: number
+          teacher_id: string
+          thumbs_up: boolean
+          worksheet_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          exercise_index: number
+          exercise_type: string
+          feedback_text?: string | null
+          id?: string
+          quality_score?: number | null
+          question_index: number
+          teacher_id: string
+          thumbs_up: boolean
+          worksheet_id: string
+        }
+        Update: {
+          created_at?: string | null
+          exercise_index?: number
+          exercise_type?: string
+          feedback_text?: string | null
+          id?: string
+          quality_score?: number | null
+          question_index?: number
+          teacher_id?: string
+          thumbs_up?: boolean
+          worksheet_id?: string
+        }
+        Relationships: []
+      }
       test_skill_results: {
         Row: {
           applied_at: string | null

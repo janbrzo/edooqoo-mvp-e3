@@ -809,6 +809,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             disabled={disabled}
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
+            liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
@@ -939,6 +940,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             disabled={disabled}
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
+            liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
             onNanoSkillChange={(eIndex, newSkill) => {
               // Update nano_skill on expressions, not dialogue lines
               const updatedExercises = [...editableWorksheet.exercises];
@@ -1043,7 +1045,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                   )}
                   {/* AI Evaluation Badge for discussion questions in Live Session */}
                   {liveAiEvaluations?.[qIndex] && (
-                    <AiEvaluationBadge evaluation={liveAiEvaluations[qIndex]} />
+                    <AiEvaluationBadge evaluation={liveAiEvaluations[qIndex]}
+                      isLiveSession={viewMode === 'live-session' && !!worksheetIdForStorage && !!validTeacherId}
+                      worksheetId={worksheetIdForStorage} exerciseIndex={exerciseIdx}
+                      exerciseType={exercise.type} teacherId={validTeacherId} />
                   )}
                 </div>
               );
@@ -1174,6 +1179,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             disabled={disabled}
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
+            liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
           />
         )}
 
@@ -1341,6 +1347,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             disabled={disabled}
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
+            liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
             onNanoSkillChange={(sIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newSentences = [...exercise.sentences];
@@ -1511,6 +1518,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
               disabled={disabled}
               aiEvaluations={liveAiEvaluations}
               isSharedWorksheet={viewMode === 'live-session'}
+              liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
               exerciseVariant={exercise.type.includes('-picture') ? 'picture' : 'plain'}
               onNanoSkillChange={(qIndex, newSkill) => {
                 const updatedExercises = [...editableWorksheet.exercises];
@@ -1545,6 +1553,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             disabled={disabled}
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
+            liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
             exerciseVariant={exercise.type.includes('-picture') ? 'picture' : exercise.type.includes('-audio') ? 'audio' : 'plain'}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
@@ -1574,6 +1583,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             disabled={disabled}
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
+            liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
@@ -1703,6 +1713,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             disabled={disabled}
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
+            liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
             onNanoSkillChange={(qIndex, newSkill) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
