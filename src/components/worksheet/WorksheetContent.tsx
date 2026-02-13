@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { updateWorksheet } from "@/services/worksheetService";
 import { useWorksheetTimes } from "@/hooks/useWorksheetTimes";
@@ -87,6 +87,38 @@ export default function WorksheetContent({
   // Filter active and deleted exercises
   const activeExercises = editableWorksheet?.exercises?.filter((ex: any) => !ex.deleted) || [];
   const deletedExercises = editableWorksheet?.exercises?.filter((ex: any) => ex.deleted) || [];
+
+  // Calculate live session progress from liveSessionAnswers
+  const liveProgress = useMemo(() => {
+    if (!liveSessionAnswers || !activeExercises.length) return null;
+    let totalTasks = 0;
+    let answeredTasks = 0;
+    let answeredExercises = 0;
+
+    activeExercises.forEach((exercise: any, index: number) => {
+      const questionCount = exercise.questions?.length || 
+                            exercise.items?.length || 
+                            exercise.sentences?.length ||
+                            exercise.statements?.length ||
+                            exercise.words?.length ||
+                            exercise.sentence_halves?.length ||
+                            exercise.expressions?.length ||
+                            exercise.prompts?.length ||
+                            1;
+      totalTasks += questionCount;
+
+      const exerciseAnswers = liveSessionAnswers[index];
+      if (exerciseAnswers && typeof exerciseAnswers === 'object') {
+        const answered = Object.values(exerciseAnswers).filter((v: any) => v !== undefined && v !== null && v !== '').length;
+        answeredTasks += Math.min(answered, questionCount);
+        if (answered >= questionCount) answeredExercises++;
+      }
+    });
+
+    const cappedAnswered = Math.min(answeredTasks, totalTasks);
+    const percent = totalTasks > 0 ? Math.min(100, Math.round((cappedAnswered / totalTasks) * 100)) : 0;
+    return { answeredExercises, totalExercises: activeExercises.length, answeredTasks: cappedAnswered, totalTasks, percent };
+  }, [liveSessionAnswers, activeExercises]);
 
   // Initialize navigation hook
   const navigation = useWorksheetNavigation({
@@ -257,9 +289,12 @@ export default function WorksheetContent({
               : 'Connecting to Live Session...'
             }
           </span>
-          {Object.keys(liveSessionAnswers || {}).length > 0 && (
+          {liveProgress && liveProgress.answeredTasks > 0 && (
             <span className="ml-auto text-xs text-gray-500">
-              {Object.keys(liveSessionAnswers || {}).length} exercises answered
+              Progress: {liveProgress.answeredExercises}/{liveProgress.totalExercises} exercises
+              {liveProgress.totalTasks > 0 && (
+                <> | {liveProgress.answeredTasks}/{liveProgress.totalTasks} tasks | {liveProgress.percent}%</>
+              )}
             </span>
           )}
         </div>
