@@ -7,7 +7,7 @@
 // ENUMS AND UNION TYPES
 // =====================================================
 
-export type TestType = 'placement' | 'progress_check' | 'skill_verification' | 'goal_check';
+export type TestType = 'placement' | 'progress_check' | 'skill_verification' | 'goal_check' | 'welcome';
 
 export type TestStatus = 'draft' | 'assigned' | 'in_progress' | 'completed' | 'reviewed';
 
@@ -17,7 +17,12 @@ export type QuestionType =
   | 'true_false' 
   | 'matching' 
   | 'open_ended' 
-  | 'sentence_order';
+  | 'sentence_order'
+  | 'self_assessment'
+  | 'preference_choice'
+  | 'scenario_reaction'
+  | 'open_reflection'
+  | 'self_assessment_matrix';
 
 export type ElementType = 
   | 'grammar' 
@@ -244,6 +249,12 @@ export interface NewQuestionData {
 // =====================================================
 
 export const TEST_TYPES: { value: TestType; label: string; description: string; icon: string }[] = [
+  {
+    value: 'welcome',
+    label: 'Welcome Test',
+    description: 'Comprehensive placement & profiling test for new students',
+    icon: 'Sparkles'
+  },
   { 
     value: 'placement', 
     label: 'Placement Test', 

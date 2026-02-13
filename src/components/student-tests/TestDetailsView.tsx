@@ -14,7 +14,8 @@ import {
   TrendingUp,
   Loader2,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +25,7 @@ import { useStudentTests } from '@/hooks/useStudentTests';
 import { toast } from 'sonner';
 import { ShareTestModal } from './ShareTestModal';
 import { supabase } from '@/integrations/supabase/client';
+import { WelcomeTestResults } from './WelcomeTestResults';
 import { 
   TEST_STATUS_CONFIG, 
   TEST_TYPES, 
@@ -146,6 +148,7 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
   const questions = test.questions || [];
   const answeredQuestions = questions.filter(q => q.student_answer !== null);
   const correctQuestions = questions.filter(q => q.is_correct === true);
+  const isWelcomeTest = test.test_type === 'welcome';
 
   return (
     <div className="space-y-6">
@@ -239,6 +242,11 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
           )}
         </CardContent>
       </Card>
+
+      {/* Welcome Test Learning Profile */}
+      {isWelcomeTest && (test.status === 'completed' || test.status === 'reviewed') && (
+        <WelcomeTestResults testId={testId} studentId={studentId} teacherId={teacherId} />
+      )}
 
       {/* Actions for completed tests */}
       {test.status === 'completed' && (
