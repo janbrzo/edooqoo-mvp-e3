@@ -12,6 +12,7 @@ import { useInteractiveHomework } from "@/hooks/useInteractiveHomework";
 import { StudentEmailVerification } from "@/components/homework/StudentEmailVerification";
 import { HomeworkProgressBar } from "@/components/homework/HomeworkProgressBar";
 import { StudyModeButton } from "@/components/shared/StudyModeButton";
+import MediaSection from "@/components/worksheet/MediaSection";
 import { ExerciseNavSidebar } from "@/components/worksheet/ExerciseNavSidebar";
 import {
   AlertDialog,
@@ -136,6 +137,7 @@ export default function HomeworkPage() {
     getProgress
   } = useInteractiveHomework({
     homeworkId: homework?.id || '',
+    sourceWorksheetId: homework?.source_worksheet_id || undefined,
     studentEmail: emailForAnswers,
     totalExercises,
     exerciseQuestionCounts,
@@ -585,13 +587,6 @@ export default function HomeworkPage() {
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="space-y-4">
-            {/* Type label */}
-            <div className="flex items-center gap-1.5">
-              <FileText className="h-3.5 w-3.5 text-orange-500" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-orange-500">
-                Homework
-              </span>
-            </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-2">
                 {homework.title}
@@ -651,64 +646,28 @@ export default function HomeworkPage() {
         />
       )}
 
-      {/* Lesson Media Section */}
-      <div className="max-w-6xl mx-auto px-4 py-8 lesson-media-section">
-        {media && (media.images.length > 0 || media.audios.length > 0) ? (
-          <Card className="p-6">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <FileText className="h-6 w-6" />
-              Lesson Media
-            </h2>
-            
-            {/* Images */}
-            {media.images.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Images</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {media.images.map((imageUrl, idx) => (
-                    <img 
-                      key={idx}
-                      src={imageUrl} 
-                      alt={`Lesson image ${idx + 1}`}
-                      className="rounded-lg mx-auto object-contain max-h-96 w-full md:w-auto"
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Audio */}
-            {media.audios.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Audio</h3>
-                <div className="space-y-4">
-                  {media.audios.map((audio, idx) => (
-                    <div key={idx} className="border rounded-lg p-4 bg-muted/30">
-                      <audio controls className="w-full mb-2">
-                        <source src={audio.url} type="audio/mpeg" />
-                        Your browser does not support audio.
-                      </audio>
-                      {audio.transcript && (
-                        <div className="text-sm text-muted-foreground mt-2 p-3 bg-background rounded">
-                          <strong>Transcript:</strong>
-                          <p className="mt-1">{audio.transcript}</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </Card>
-        ) : (
-          <Card className="p-6 bg-muted/30 border-dashed">
-            <p className="text-sm text-muted-foreground text-center">
-              <FileText className="h-4 w-4 inline mr-2" />
-              No images or audio files in this homework. Check browser console for details.
-            </p>
-          </Card>
-        )}
-      </div>
+      {/* Lesson Media Section - use MediaSection component */}
+      {media && (media.images.length > 0 || media.audios.length > 0) && (
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <MediaSection
+            selectedImage={homework.selected_image ? { 
+              ...homework.selected_image, 
+              id: 'homework-image', // Dummy ID for display
+              description: '',
+              thumbnail: ''
+            } : null}
+            selectedAudio={homework.selected_audio ? {
+              ...homework.selected_audio,
+              id: 'homework-audio' // Dummy ID for display
+            } : (homework.audio_url ? { url: homework.audio_url, id: 'homework-audio-url' } : null)}
+            isDownloadUnlocked={true}
+            isPinned={false}
+            onTogglePin={undefined}
+            isFullScreen={false}
+            onToggleFullScreen={undefined}
+          />
+        </div>
+      )}
 
       {/* Exercises */}
       <div className="max-w-6xl mx-auto px-4 py-8">

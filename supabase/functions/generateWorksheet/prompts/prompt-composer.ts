@@ -14,14 +14,13 @@ export const composeSystemMessage = (
   exerciseCount: number = 8, 
   selectedExercises?: string[],
   selectedImage?: any,
-  selectedAudio?: any
+  selectedAudio?: any,
+  exerciseFocusMap?: Record<string, string>
 ): string => {
   // ✅ Pass ORIGINAL selectedExercises (with -picture or -audio suffix) to ALL functions
-  // Each function will handle normalization internally if needed for template lookup
-  const coreInstructions = getCoreInstructions(hasGrammarFocus, grammarFocus, formData, exerciseCount, selectedExercises, selectedImage, selectedAudio);
+  const coreInstructions = getCoreInstructions(hasGrammarFocus, grammarFocus, formData, exerciseCount, selectedExercises, selectedImage, selectedAudio, exerciseFocusMap);
   
   // ✅ Pass ORIGINAL exercises - exerciseTemplates will normalize internally for lookup
-  // but preserve original type in output JSON
   const exerciseTemplates = getExerciseTemplates(hasGrammarFocus, grammarFocus, exerciseCount, selectedExercises, !!selectedImage, !!selectedAudio);
   
   // ✅ Pass ORIGINAL selectedExercises (with -picture or -audio) to finalRequirements

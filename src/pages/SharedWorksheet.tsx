@@ -533,28 +533,38 @@ const SharedWorksheet = () => {
 
       {/* Header */}
       <div className="bg-white border-b shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          {/* Type label */}
-          <div className="flex items-center gap-1.5 mb-2">
-            <FileText className="h-3.5 w-3.5 text-worksheet-purple" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-worksheet-purple">
-              Shared Worksheet
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <div className="space-y-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
                 {worksheetTitle}
               </h1>
-              <p className="text-sm text-gray-500">
-                Shared by: {worksheet.teacher_email} • 
-                Created: {new Date(worksheet.created_at).toLocaleDateString()}
-                {isStudyMode && verifiedEmail && (
-                  <span className="ml-2 text-worksheet-purple font-medium">
-                    • Studying as: {verifiedEmail}
+              {worksheet.share_recipient_email && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  From worksheet: {worksheetTitle}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+              {studentName && (
+                <div className="flex items-center gap-2">
+                  <span>For: <strong>{studentName}</strong></span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span>Shared by: <strong>{worksheet.teacher_email}</strong></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>Created: <strong>{new Date(worksheet.created_at).toLocaleDateString()}</strong></span>
+              </div>
+              {isStudyMode && verifiedEmail && (
+                <div className="flex items-center gap-2">
+                  <span className="text-worksheet-purple font-medium">
+                    Studying as: {verifiedEmail}
                   </span>
-                )}
-              </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -585,11 +595,10 @@ const SharedWorksheet = () => {
           />
         )}
 
-        <div className="bg-white rounded-lg shadow-sm border overflow-hidden relative" ref={contentWrapperRef}>
-          {/* Content wrapper with proper styling */}
-          <div className="worksheet-content p-6">
+        <div className="relative" ref={contentWrapperRef}>
+          {/* Content wrapper */}
+          <div className="worksheet-content">
             {/* PROBLEM 2: Pass exerciseRefs for navigation sidebar */}
-            {/* PROBLEM 3: When teacherEditMode is true, allow teacher to fill exercises like student */}
             <SharedWorksheetContent 
               worksheet={worksheet}
               isInteractive={effectiveStudyMode}

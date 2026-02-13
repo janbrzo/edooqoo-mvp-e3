@@ -12,6 +12,7 @@ const generateExerciseListInstruction = (
   exerciseCount: number = 8,
   hasSelectedImage?: boolean,
   hasSelectedAudio?: boolean,
+  exerciseFocusMap?: Record<string, string>,
 ) => {
   if (selectedExercises && selectedExercises.length > 0) {
     let orderedExercises = [...selectedExercises].slice(0, exerciseCount);
@@ -28,7 +29,15 @@ const generateExerciseListInstruction = (
       orderedExercises = [...pictureExercises, ...audioExercises, ...otherExercises];
     }
 
-    const exerciseList = orderedExercises.join(", ");
+    // Append focus tags if exerciseFocusMap has entries
+    const exerciseListWithTags = orderedExercises.map(ex => {
+      if (exerciseFocusMap && exerciseFocusMap[ex]) {
+        return `${ex} [${exerciseFocusMap[ex].toUpperCase()} FOCUS]`;
+      }
+      return ex;
+    });
+
+    const exerciseList = exerciseListWithTags.join(", ");
     return `Use EXACTLY these exercise types in this EXACT ORDER: ${exerciseList}`;
   }
 
@@ -55,6 +64,7 @@ export const getCoreInstructions = (
   selectedExercises?: string[],
   selectedImage?: any,
   selectedAudio?: any,
+  exerciseFocusMap?: Record<string, string>,
 ) => {
   const hasSelectedImage = !!selectedImage;
   const hasSelectedAudio = !!selectedAudio;
@@ -70,7 +80,7 @@ export const getCoreInstructions = (
 
 CRITICAL RULES AND REQUIREMENTS:
 1. Create EXACTLY ${exerciseCount} exercises. No fewer, no more. Number them Exercise 1 through Exercise ${exerciseCount}.
-2. ${generateExerciseListInstruction(selectedExercises, exerciseCount, hasSelectedImage, hasSelectedAudio)}
+2. ${generateExerciseListInstruction(selectedExercises, exerciseCount, hasSelectedImage, hasSelectedAudio, exerciseFocusMap)}
 3. All exercises should be closely related to the specified lessonTopic, lessonGoal, grammarFocus and additionalInformation
 4. Include specific vocabulary, expressions, and language structures related to the specified lessonTopic, lessonGoal, grammarFocus and additionalInformation. The 'englishLevel' must dictate the complexity of vocabulary and grammar according to CEFR scale
 5. Keep exercise instructions clear and concise. Students should understand tasks without additional explanation.
@@ -148,8 +158,15 @@ Confidence values MUST be in range 0.00–1.00 and express certainty that the it
 Reason MUST explain why this specific item tests the skill, not how it should be taught.
 nano_skill tagging MUST be logically consistent with lesson topic, lesson focus and exercise type.
 
-23. ENSURE ALL INSTRUCTIONS ARE STRICTLY ADHERED TO AND THAT THE JSON IS COMPLETE AND VALID.
-24. Check your work again before finalizing. Every part of the JSON must be intentional and correct.
+${exerciseFocusMap && Object.keys(exerciseFocusMap).length > 0 ? `
+25. EXERCISE FOCUS TAGS:
+    Some exercises above are tagged with [VOCABULARY FOCUS] or [GRAMMAR FOCUS]:
+    - [VOCABULARY FOCUS]: This exercise MUST focus on topic-related vocabulary, word meanings, collocations, and lexical practice. Do NOT emphasize grammar structures in this exercise.
+    - [GRAMMAR FOCUS]: This exercise MUST focus on practicing the specified grammar point (from grammarFocus field). Design items that require students to apply the grammar rule. If no grammarFocus is specified, focus on grammar structures naturally relevant to the topic.
+    - Exercises WITHOUT a tag: Use your best judgment to balance vocabulary and grammar based on the lesson context.
+` : ''}
+26. ENSURE ALL INSTRUCTIONS ARE STRICTLY ADHERED TO AND THAT THE JSON IS COMPLETE AND VALID.
+27. Check your work again before finalizing. Every part of the JSON must be intentional and correct.
 
   `;
 };

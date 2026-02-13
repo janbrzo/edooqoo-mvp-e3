@@ -33,6 +33,12 @@ export const formatPromptForAI = (data: FormData): string => {
     console.log('📝 [FORMAT-PROMPT] No selectedExercises provided, AI will use defaults');
   }
 
+  // Add exercise focus map (V/G tags) if provided
+  if (data.exerciseFocusMap && Object.keys(data.exerciseFocusMap).length > 0) {
+    promptLines.push(`exerciseFocusMap: ${JSON.stringify(data.exerciseFocusMap)}`);
+    console.log('📝 [FORMAT-PROMPT] Adding exerciseFocusMap:', data.exerciseFocusMap);
+  }
+
   // Add detailed language style instructions
   promptLines.push(`\nLANGUAGE STYLE GUIDELINES (${languageStyle}/5):`);
   if (languageStyle === 1) {
@@ -115,9 +121,10 @@ export const createFormDataForStorage = (prompt: FormData) => {
     englishLevel: prompt.englishLevel || null,
     languageStyle: prompt.languageStyle || 3,
     lessonTime: prompt.lessonTime,
-    selectedExercises: prompt.selectedExercises || [], // Dodane pole selectedExercises
-    selectedImage: prompt.selectedImage || null, // ETAP 1: Dodanie selectedImage do formDataForStorage
-    selectedAudio: prompt.selectedAudio || null  // ✅ Dodanie selectedAudio do formDataForStorage
+    selectedExercises: prompt.selectedExercises || [],
+    exerciseFocusMap: prompt.exerciseFocusMap || null,
+    selectedImage: prompt.selectedImage || null,
+    selectedAudio: prompt.selectedAudio || null
   };
   
   console.log('🔧 [PROMPT-FORMATTER] createFormDataForStorage - output selectedExercises:', formDataForStorage.selectedExercises);
