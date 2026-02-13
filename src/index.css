@@ -181,7 +181,7 @@
 
 /* Teacher's tips */
 .teacher-tip {
-  @apply bg-white border border-gray-200 rounded-lg p-3 shadow-sm my-2 text-sm;
+  @apply bg-white border border-gray-200 rounded-lg shadow-sm my-2 text-sm;
   max-height: 100px;
   overflow-y: auto;
 }
