@@ -23,19 +23,19 @@ const TeacherTipSection: React.FC<TeacherTipSectionProps> = ({
       }} 
       data-no-pdf="true" 
       data-teacher-tip="true"
-      className={`mt-4 p-3 rounded-md teacher-tip items-start py-[6px] bg-amber-50 ${viewMode === 'student' ? 'hidden' : 'flex'}`}
+      className={`mt-4 px-3 pt-2 pb-1 rounded-md teacher-tip items-start bg-amber-50 ${viewMode === 'student' ? 'hidden' : 'flex'}`}
     >
       <Info className="text-amber-400 mr-2 mt-1" size={19} />
       <div className="flex-1 min-w-0">
-        <p 
-          className="font-medium mb-1 text-amber-800 flex items-center leading-tight text-sm" 
+        <span 
+          className="font-medium text-amber-800 flex items-center leading-tight text-sm block" 
           style={{
             marginBottom: 2
           }}
         >
           Teacher&#39;s Tip:
-        </p>
-        <p className="text-amber-800 text-[13.5px] leading-tight">
+        </span>
+        <span className="text-amber-800 text-[13.5px] leading-tight block">
           {isEditing ? (
             <textarea 
               value={tip} 
@@ -43,7 +43,7 @@ const TeacherTipSection: React.FC<TeacherTipSectionProps> = ({
               className="w-full border p-2 editable-content h-16" 
             />
           ) : tip}
-        </p>
+        </span>
       </div>
     </div>
   );
