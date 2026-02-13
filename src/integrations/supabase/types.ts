@@ -1069,6 +1069,126 @@ export type Database = {
           },
         ]
       }
+      student_learning_profiles: {
+        Row: {
+          ambiguity_tolerance: string | null
+          anxiety_level: string | null
+          communication_score: number | null
+          confidence_listening: number | null
+          confidence_presenting: number | null
+          confidence_reading: number | null
+          confidence_small_talk: number | null
+          confidence_speaking: number | null
+          confidence_writing: number | null
+          created_at: string
+          error_attitude: string | null
+          estimated_level: string | null
+          feedback_preference: string | null
+          grammar_score: number | null
+          id: string
+          interest_topics: string[] | null
+          level_confidence: string | null
+          motivation_type: string | null
+          preferred_activities: string[] | null
+          preferred_input_channel: string | null
+          raw_answers: Json | null
+          reading_score: number | null
+          self_assessed_level: string | null
+          strongest_skill: string | null
+          student_id: string
+          teacher_id: string
+          updated_at: string
+          vocabulary_score: number | null
+          weakest_skill: string | null
+          weekly_study_time: string | null
+          welcome_test_id: string | null
+          writing_score: number | null
+        }
+        Insert: {
+          ambiguity_tolerance?: string | null
+          anxiety_level?: string | null
+          communication_score?: number | null
+          confidence_listening?: number | null
+          confidence_presenting?: number | null
+          confidence_reading?: number | null
+          confidence_small_talk?: number | null
+          confidence_speaking?: number | null
+          confidence_writing?: number | null
+          created_at?: string
+          error_attitude?: string | null
+          estimated_level?: string | null
+          feedback_preference?: string | null
+          grammar_score?: number | null
+          id?: string
+          interest_topics?: string[] | null
+          level_confidence?: string | null
+          motivation_type?: string | null
+          preferred_activities?: string[] | null
+          preferred_input_channel?: string | null
+          raw_answers?: Json | null
+          reading_score?: number | null
+          self_assessed_level?: string | null
+          strongest_skill?: string | null
+          student_id: string
+          teacher_id: string
+          updated_at?: string
+          vocabulary_score?: number | null
+          weakest_skill?: string | null
+          weekly_study_time?: string | null
+          welcome_test_id?: string | null
+          writing_score?: number | null
+        }
+        Update: {
+          ambiguity_tolerance?: string | null
+          anxiety_level?: string | null
+          communication_score?: number | null
+          confidence_listening?: number | null
+          confidence_presenting?: number | null
+          confidence_reading?: number | null
+          confidence_small_talk?: number | null
+          confidence_speaking?: number | null
+          confidence_writing?: number | null
+          created_at?: string
+          error_attitude?: string | null
+          estimated_level?: string | null
+          feedback_preference?: string | null
+          grammar_score?: number | null
+          id?: string
+          interest_topics?: string[] | null
+          level_confidence?: string | null
+          motivation_type?: string | null
+          preferred_activities?: string[] | null
+          preferred_input_channel?: string | null
+          raw_answers?: Json | null
+          reading_score?: number | null
+          self_assessed_level?: string | null
+          strongest_skill?: string | null
+          student_id?: string
+          teacher_id?: string
+          updated_at?: string
+          vocabulary_score?: number | null
+          weakest_skill?: string | null
+          weekly_study_time?: string | null
+          welcome_test_id?: string | null
+          writing_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_learning_profiles_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_learning_profiles_welcome_test_id_fkey"
+            columns: ["welcome_test_id"]
+            isOneToOne: false
+            referencedRelation: "student_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_progress_goals: {
         Row: {
           achieved_at: string | null

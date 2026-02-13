@@ -22,6 +22,7 @@ import { FlashcardSetsSection } from '@/components/flashcards/FlashcardSetsSecti
 import { StudentProgressTab } from '@/components/student-progress/StudentProgressTab';
 import { StudentTestsTab } from '@/components/student-tests/StudentTestsTab';
 import { EventLogPanel } from '@/components/dslm/EventLogPanel';
+import { WelcomeTestSuggestion } from '@/components/dashboard/WelcomeTestSuggestion';
 import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2, TrendingUp, ClipboardCheck, Activity, Pencil } from 'lucide-react';
 import { formatGoalLabel } from '@/constants/studentGoals';
 import { Input } from '@/components/ui/input';
@@ -226,6 +227,13 @@ const StudentPage = () => {
 
           {/* Overview Tab */}
           <TabsContent value="overview">
+            {/* Welcome Test Suggestion Banner */}
+            <WelcomeTestSuggestion
+              studentId={student.id}
+              teacherId={student.teacher_id}
+              studentName={student.name}
+              studentEmail={student.student_email}
+            />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Student Details */}
               <Card>

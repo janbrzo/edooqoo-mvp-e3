@@ -53,6 +53,9 @@ export type StudentEventType =
   | 'create_hw_AI_evaluation'    // AI eval triggered by Create Homework button
   | 'submit_hw_AI_evaluation'    // AI eval triggered by Submit Homework button
   
+  // Welcome test events
+  | 'welcome_test_completed'
+  
   // System events
   | 'knowledge_entry_added'
   | 'goal_created'
