@@ -652,9 +652,8 @@ export default function HomeworkPage() {
           <MediaSection
             selectedImage={homework.selected_image ? { 
               ...homework.selected_image, 
-              id: 'homework-image', // Dummy ID for display
-              description: '',
-              thumbnail: ''
+              id: 'homework-image',
+              description: ''
             } : null}
             selectedAudio={homework.selected_audio ? {
               ...homework.selected_audio,
