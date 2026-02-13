@@ -3,7 +3,8 @@
 // ============================================
 
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, Loader2, FileText, Clock } from 'lucide-react';
 import { SharedWorksheetProgress } from '@/types/interactiveSharedWorksheet';
 
 interface SharedWorksheetProgressBarProps {
@@ -22,46 +23,58 @@ export const SharedWorksheetProgressBar = ({
   };
 
   return (
-    <div className="sticky top-0 z-20 bg-white border-b shadow-sm">
-      <div className="max-w-4xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
+    <div className="sticky top-0 z-20 bg-card border-b border-border px-4 py-3">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          {/* Label + Progress info */}
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700">
-              Progress: {progress.answeredExercises} / {progress.totalExercises} exercises
-            </span>
-            {progress.totalTasks > 0 && (
-              <>
-                <span className="text-xs text-gray-400">|</span>
-                <span className="text-xs text-gray-500">
-                  {progress.answeredTasks}/{progress.totalTasks} tasks
-                </span>
-              </>
-            )}
-            <span className="text-xs text-gray-400">|</span>
-            <span className="text-sm text-worksheet-purple font-semibold">
-              {progress.percentageComplete}%
-            </span>
+            {/* Sticky label */}
+            <div className="flex items-center gap-1.5 mr-2">
+              <FileText className="h-3.5 w-3.5 text-worksheet-purple" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-worksheet-purple">
+                Shared Worksheet
+              </span>
+            </div>
+            
+            <div className="flex-1 min-w-[200px]">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    Progress: {progress.answeredExercises}/{progress.totalExercises} exercises
+                  </span>
+                  {progress.totalTasks > 0 && (
+                    <>
+                      <span className="text-xs text-muted-foreground">|</span>
+                      <span className="text-xs text-muted-foreground">
+                        {progress.answeredTasks}/{progress.totalTasks} tasks
+                      </span>
+                    </>
+                  )}
+                  <span className="text-xs text-muted-foreground">|</span>
+                  <span className="text-sm font-semibold text-primary">
+                    {progress.percentageComplete}%
+                  </span>
+                </div>
+              </div>
+              <Progress value={progress.percentageComplete} className="h-2" />
+            </div>
           </div>
-          
-          <div className="flex items-center gap-2 text-sm">
+
+          {/* Status indicators */}
+          <div className="flex items-center gap-2">
             {isSaving ? (
-              <span className="flex items-center gap-1 text-amber-600">
-                <Loader2 className="h-4 w-4 animate-spin" />
+              <Badge variant="secondary" className="animate-pulse">
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 Saving...
-              </span>
+              </Badge>
             ) : lastSavedAt ? (
-              <span className="flex items-center gap-1 text-green-600">
-                <CheckCircle className="h-4 w-4" />
+              <Badge variant="outline">
+                <Clock className="h-3 w-3 mr-1" />
                 Saved at {formatTime(lastSavedAt)}
-              </span>
+              </Badge>
             ) : null}
           </div>
         </div>
-        
-        <Progress 
-          value={progress.percentageComplete} 
-          className="h-2"
-        />
       </div>
     </div>
   );

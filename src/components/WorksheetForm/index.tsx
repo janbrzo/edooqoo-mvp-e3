@@ -57,6 +57,7 @@ export default function WorksheetForm({
   const [selectedExercises, setSelectedExercises] = useState<string[]>(getInitialExercises());
   const [selectionMode, setSelectionMode] = useState<ExerciseSelectionMode>('manual');
   const [selectedMediaTypes, setSelectedMediaTypes] = useState<MediaType[]>([]);
+  const [exerciseFocusMap, setExerciseFocusMap] = useState<Record<string, 'vocabulary' | 'grammar'>>({});
   const [selectedImage, setSelectedImage] = useState<any>(null);
   const [currentPlaceholders, setCurrentPlaceholders] = useState<PlaceholderSet>(getRandomPlaceholderSet());
   const [currentSuggestions, setCurrentSuggestions] = useState<SuggestionSet[]>([]);
@@ -231,7 +232,8 @@ export default function WorksheetForm({
       studentId: selectedStudentId === "no-student" ? undefined : selectedStudentId || undefined,
       selectedExercises: finalExercises,
       selectedMediaTypes,
-      selectedImage: selectedImage // Image will be auto-generated in backend if needed
+      exerciseFocusMap: Object.keys(exerciseFocusMap).length > 0 ? exerciseFocusMap : undefined,
+      selectedImage: selectedImage
     };
 
     // Refresh onboarding progress after successful worksheet generation
@@ -592,7 +594,17 @@ export default function WorksheetForm({
                 {/* Card Content - Full Width Below Headers */}
                 {activeTab === 'exercises' && <Card className="border-2 border-worksheet-purple">
                     <div className="p-4">
-                      <ExerciseSelector lessonTime={lessonTime} selectedExercises={selectedExercises} onChange={setSelectedExercises} selectionMode={selectionMode} selectedMediaTypes={selectedMediaTypes} onMediaTypesChange={setSelectedMediaTypes} />
+                      <ExerciseSelector lessonTime={lessonTime} selectedExercises={selectedExercises} onChange={setSelectedExercises} selectionMode={selectionMode} selectedMediaTypes={selectedMediaTypes} onMediaTypesChange={setSelectedMediaTypes} exerciseFocusMap={exerciseFocusMap} onFocusChange={(exerciseId, focus) => {
+                        setExerciseFocusMap(prev => {
+                          const next = { ...prev };
+                          if (focus === undefined) {
+                            delete next[exerciseId];
+                          } else {
+                            next[exerciseId] = focus;
+                          }
+                          return next;
+                        });
+                      }} />
                     </div>
                   </Card>}
 

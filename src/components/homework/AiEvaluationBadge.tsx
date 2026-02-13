@@ -80,7 +80,7 @@ export function AiEvaluationBadge({
   }
 
   return (
-    <div className="mt-3 space-y-1">
+    <div className="mt-2 space-y-0.5">
       <div className="flex items-center gap-2">
         <Badge className={`${getBadgeColor()} text-white`}>
           {getIcon()}
@@ -105,9 +105,9 @@ export function AiEvaluationBadge({
       </div>
       
       {showFeedback && feedback && (
-        <div className="flex items-start gap-1.5 p-1.5 bg-muted/50 rounded-lg text-xs">
+        <div className="flex items-start gap-1.5 px-1.5 pt-1 pb-0.5 bg-muted/50 rounded-lg text-xs">
           <AlertCircle className="h-3 w-3 text-primary mt-0.5 flex-shrink-0" />
-          <p className="text-muted-foreground leading-tight m-0">{feedback}</p>
+          <span className="text-muted-foreground leading-tight block">{feedback}</span>
         </div>
       )}
     </div>

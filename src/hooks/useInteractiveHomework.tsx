@@ -17,14 +17,16 @@ import { safeGetNanoSkill } from '@/utils/textObjectFixer';
 
 interface UseInteractiveHomeworkProps {
   homeworkId: string;
+  sourceWorksheetId?: string;
   studentEmail: string;
   totalExercises: number;
   exerciseQuestionCounts?: Record<number, number>;
-  exercises?: any[]; // PROBLEM 4.2: Accept exercises array to get question texts and suggested answers
+  exercises?: any[];
 }
 
 export const useInteractiveHomework = ({
   homeworkId,
+  sourceWorksheetId,
   studentEmail,
   totalExercises,
   exerciseQuestionCounts = {},
@@ -197,7 +199,8 @@ export const useInteractiveHomework = ({
     setIsSaving(true);
 
     // PROBLEM 1: Build per-item evaluations with nano_skill_ratings
-    const exerciseData = exercises[exerciseIndex];
+    const effectiveWorksheetId = sourceWorksheetId || homeworkId;
+    const exerciseData = { ...exercises[exerciseIndex], worksheetId: effectiveWorksheetId };
     const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
     const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
 
@@ -253,7 +256,8 @@ export const useInteractiveHomework = ({
     const exerciseAnswers = answers[exerciseIndex];
     if (exerciseAnswers) {
       // PROBLEM 1: Build per-item evaluations with nano_skill_ratings
-      const exerciseData = exercises[exerciseIndex];
+      const effectiveWorksheetId = sourceWorksheetId || homeworkId;
+      const exerciseData = { ...exercises[exerciseIndex], worksheetId: effectiveWorksheetId };
       const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
       const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
       saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);

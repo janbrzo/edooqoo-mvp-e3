@@ -795,6 +795,16 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           onContentChange={val => handleExerciseChangeLocal('content', val)}
         />
 
+        {/* Teacher's Tip - directly after instructions, before exercise items */}
+        {exercise.teacher_tip && (exerciseViewMode === 'teacher' || viewMode === 'live-session') && (
+          <TeacherTipSection
+            tip={exercise.teacher_tip}
+            isEditing={isEditing}
+            onChange={handleTeacherTipChangeLocal}
+            viewMode={exerciseViewMode}
+          />
+        )}
+
         {normalizedType === 'reading' && exercise.questions && (
           <ExerciseReading
             questions={exercise.questions}

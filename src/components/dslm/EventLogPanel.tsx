@@ -7,15 +7,12 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { useStudentEvents } from '@/hooks/dslm/useStudentEvents';
 import { 
   Activity, 
   RefreshCw, 
   Filter, 
-  Plus, 
   BookOpen, 
   GraduationCap, 
   ClipboardCheck, 
@@ -55,16 +52,11 @@ export const EventLogPanel: React.FC<EventLogPanelProps> = ({ studentId, teacher
     loading, 
     stats,
     fetchEvents, 
-    addTeacherObservation,
     getEventStats,
     refetch 
   } = useStudentEvents({ studentId, teacherId });
 
   const [sourceFilter, setSourceFilter] = useState<EventSource | 'all'>('all');
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newObservation, setNewObservation] = useState('');
-  const [observationType, setObservationType] = useState<'strength' | 'weakness' | 'behavior' | 'progress' | 'note'>('note');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchEvents({ limit: 50 });
@@ -73,20 +65,6 @@ export const EventLogPanel: React.FC<EventLogPanelProps> = ({ studentId, teacher
 
   const handleRefresh = async () => {
     await refetch();
-  };
-
-  const handleAddObservation = async () => {
-    if (!newObservation.trim()) return;
-    
-    setIsSubmitting(true);
-    try {
-      await addTeacherObservation(newObservation, observationType);
-      setNewObservation('');
-      setShowAddForm(false);
-      await refetch();
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const filteredEvents = sourceFilter === 'all' 
@@ -139,14 +117,6 @@ export const EventLogPanel: React.FC<EventLogPanelProps> = ({ studentId, teacher
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddForm(!showAddForm)}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add Observation
-              </Button>
-              <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleRefresh}
@@ -159,44 +129,6 @@ export const EventLogPanel: React.FC<EventLogPanelProps> = ({ studentId, teacher
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Add Observation Form */}
-          {showAddForm && (
-            <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
-              <div className="flex gap-2">
-                <Select value={observationType} onValueChange={(v) => setObservationType(v as typeof observationType)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="strength">Strength</SelectItem>
-                    <SelectItem value="weakness">Weakness</SelectItem>
-                    <SelectItem value="behavior">Behavior</SelectItem>
-                    <SelectItem value="progress">Progress</SelectItem>
-                    <SelectItem value="note">Note</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Textarea
-                placeholder="Enter your observation about this student..."
-                value={newObservation}
-                onChange={(e) => setNewObservation(e.target.value)}
-                rows={2}
-              />
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>
-                  Cancel
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={handleAddObservation}
-                  disabled={!newObservation.trim() || isSubmitting}
-                >
-                  {isSubmitting ? 'Adding...' : 'Add Event'}
-                </Button>
-              </div>
-            </div>
-          )}
-
           {/* Filters */}
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />

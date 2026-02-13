@@ -370,7 +370,8 @@ serve(async (req) => {
       audioVoice: selectedAudio?.voice,
     });
 
-    // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage and selectedAudio
+    // CREATE SYSTEM MESSAGE using modular prompt structure with selectedImage, selectedAudio and exerciseFocusMap
+    const exerciseFocusMap = formData?.exerciseFocusMap || null;
     const systemMessage = composeSystemMessage(
       hasGrammarFocus,
       grammarFocus,
@@ -379,6 +380,7 @@ serve(async (req) => {
       effectiveExercises,
       selectedImage,
       selectedAudio,
+      exerciseFocusMap,
     );
 
     // HEARTBEAT LOG: Before AI API call

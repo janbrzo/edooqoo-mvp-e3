@@ -41,6 +41,7 @@ export interface FormData {
     topic?: string;
     englishLevel?: string;
   };
+  exerciseFocusMap?: Record<string, 'vocabulary' | 'grammar'>;
   selectedAudio?: {
     id: string;
     url: string;

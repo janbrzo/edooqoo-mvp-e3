@@ -447,6 +447,8 @@ interface ExerciseSelectorProps {
   selectionMode: ExerciseSelectionMode;
   selectedMediaTypes: MediaType[];
   onMediaTypesChange: (mediaTypes: MediaType[]) => void;
+  exerciseFocusMap?: Record<string, 'vocabulary' | 'grammar'>;
+  onFocusChange?: (exerciseId: string, focus: 'vocabulary' | 'grammar' | undefined) => void;
 }
 
 export default function ExerciseSelector({
@@ -455,7 +457,9 @@ export default function ExerciseSelector({
   onChange,
   selectionMode,
   selectedMediaTypes,
-  onMediaTypesChange
+  onMediaTypesChange,
+  exerciseFocusMap = {},
+  onFocusChange
 }: ExerciseSelectorProps) {
   const maxExercises = lessonTime === '45min' ? 6 : 8;
   const [showAllExercises, setShowAllExercises] = useState(false);
@@ -773,6 +777,46 @@ export default function ExerciseSelector({
                       <span className="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded ml-auto">Soon</span>
                     )}
                   </label>
+                  
+                  {/* V/G Focus toggles - visible only for selected exercises in manual mode */}
+                  {isSelected && selectionMode === 'manual' && (
+                    <div className="flex gap-1 ml-auto">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onFocusChange?.(exercise.id, 
+                            exerciseFocusMap?.[exercise.id] === 'vocabulary' ? undefined : 'vocabulary'
+                          );
+                        }}
+                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold transition-colors ${
+                          exerciseFocusMap?.[exercise.id] === 'vocabulary'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-200 text-gray-500 hover:bg-blue-100'
+                        }`}
+                        title="Vocabulary Focus"
+                      >
+                        V
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onFocusChange?.(exercise.id, 
+                            exerciseFocusMap?.[exercise.id] === 'grammar' ? undefined : 'grammar'
+                          );
+                        }}
+                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold transition-colors ${
+                          exerciseFocusMap?.[exercise.id] === 'grammar'
+                            ? 'bg-purple-500 text-white'
+                            : 'bg-gray-200 text-gray-500 hover:bg-purple-100'
+                        }`}
+                        title="Grammar Focus"
+                      >
+                        G
+                      </button>
+                    </div>
+                  )}
                   
                   {/* Tooltip */}
                   <div 

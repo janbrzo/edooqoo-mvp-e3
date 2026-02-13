@@ -177,7 +177,7 @@ export const useInteractiveSharedWorksheet = ({
     setIsSaving(true);
 
     // PROBLEM 1: Build per-item evaluations with nano_skill_ratings
-    const exerciseData = exercises[exerciseIndex];
+    const exerciseData = { ...exercises[exerciseIndex], worksheetId };
     const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
     const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
     
@@ -243,7 +243,7 @@ export const useInteractiveSharedWorksheet = ({
     const exerciseAnswers = answers[exerciseIndex];
     if (exerciseAnswers) {
       // PROBLEM 1: Build per-item evaluations with nano_skill_ratings
-      const exerciseData = exercises[exerciseIndex];
+      const exerciseData = { ...exercises[exerciseIndex], worksheetId };
       const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
       const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
       // PROBLEM 1 FIX: Don't send item_evaluations if they contain no real AI eval data

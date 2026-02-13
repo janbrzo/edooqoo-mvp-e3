@@ -1,7 +1,7 @@
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Clock, Loader2, Presentation, X, ArrowLeft, Home, User } from 'lucide-react';
+import { CheckCircle2, Clock, Loader2, Presentation, X, ArrowLeft, Home, User, FileText } from 'lucide-react';
 import { HomeworkProgress } from '@/types/interactiveHomework';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -39,8 +39,15 @@ export const HomeworkProgressBar = ({
     <div className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          {/* Progress info */}
+          {/* Label + Progress info */}
           <div className="flex items-center gap-3">
+            {/* Sticky label */}
+            <div className="flex items-center gap-1.5 mr-2">
+              <FileText className="h-3.5 w-3.5 text-orange-500" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-orange-500">
+                Homework
+              </span>
+            </div>
             <div className="flex-1 min-w-[200px]">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
