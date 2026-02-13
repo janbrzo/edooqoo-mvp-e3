@@ -1,0 +1,2 @@
+ALTER TABLE public.student_tests DROP CONSTRAINT IF EXISTS student_tests_test_type_check;
+ALTER TABLE public.student_tests ADD CONSTRAINT student_tests_test_type_check CHECK (test_type IN ('placement', 'progress_check', 'skill_verification', 'goal_check', 'welcome'));
