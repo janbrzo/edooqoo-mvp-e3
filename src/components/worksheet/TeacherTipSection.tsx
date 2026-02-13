@@ -27,15 +27,8 @@ const TeacherTipSection: React.FC<TeacherTipSectionProps> = ({
     >
       <Info className="text-amber-400 mr-2 mt-1" size={19} />
       <div className="flex-1 min-w-0">
-        <span 
-          className="font-medium text-amber-800 flex items-center leading-tight text-sm block" 
-          style={{
-            marginBottom: 2
-          }}
-        >
-          Teacher&#39;s Tip:
-        </span>
-        <span className="text-amber-800 text-[13.5px] leading-tight block">
+        <span className="text-amber-800 text-[13.5px] leading-tight">
+          <span className="font-medium text-sm">Teacher&#39;s Tip: </span>
           {isEditing ? (
             <textarea 
               value={tip} 
