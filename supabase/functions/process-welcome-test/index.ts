@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -12,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { test_id, student_id, teacher_id, answers, detected_traits } = await req.json();
+    const { test_id, student_id, teacher_id, answers, detected_traits, answered_count } = await req.json();
 
     if (!test_id || !student_id || !teacher_id) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -93,14 +95,6 @@ serve(async (req) => {
 
     // Extract confidence matrix (Q44)
     const matrix = answers?.wt_q44 || {};
-    const confMap: Record<string, string> = {
-      'Speaking with strangers': 'confidence_speaking',
-      'Writing formal emails': 'confidence_writing',
-      'Understanding movies without subtitles': 'confidence_listening',
-      'Reading news articles': 'confidence_reading',
-      'Giving presentations': 'confidence_presenting',
-      'Small talk at parties': 'confidence_small_talk',
-    };
 
     // Upsert learning profile
     const profileData = {
@@ -145,6 +139,14 @@ serve(async (req) => {
       throw upsertError;
     }
 
+    // Update student_tests with answered_count
+    if (answered_count !== undefined) {
+      await supabase
+        .from('student_tests')
+        .update({ answered_count })
+        .eq('id', test_id);
+    }
+
     // Log welcome_test_completed event
     await supabase.rpc('add_student_event', {
       p_student_id: student_id,
@@ -172,6 +174,105 @@ serve(async (req) => {
         },
       },
     });
+
+    // --- Point 6: Create notification for teacher ---
+    try {
+      // Get student name
+      const { data: studentData } = await supabase
+        .from('students')
+        .select('name')
+        .eq('id', student_id)
+        .single();
+
+      const studentName = studentData?.name || 'Student';
+
+      await supabase.from('homework_notifications').insert({
+        homework_id: test_id,
+        student_id,
+        teacher_id,
+        notification_type: 'welcome_test_completed',
+        message: `${studentName} completed the Welcome Test (Level: ${estimatedLevel})`,
+        is_read: false,
+      });
+    } catch (notifError) {
+      console.error('Error creating notification:', notifError);
+      // Non-critical, don't fail
+    }
+
+    // --- Point 8: Email teacher on completion ---
+    if (RESEND_API_KEY) {
+      try {
+        const { data: teacherData } = await supabase
+          .from('profiles')
+          .select('email, first_name')
+          .eq('id', teacher_id)
+          .single();
+
+        const { data: studentData } = await supabase
+          .from('students')
+          .select('name')
+          .eq('id', student_id)
+          .single();
+
+        if (teacherData?.email) {
+          const studentName = studentData?.name || 'Student';
+          const teacherFirstName = teacherData.first_name || 'Teacher';
+
+          const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #7c3aed;">✅ Welcome Test Completed!</h2>
+              <p>Hi ${teacherFirstName},</p>
+              <p><strong>${studentName}</strong> has completed the Welcome Test. Here's a quick summary:</p>
+              <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                  <div style="text-align: center; flex: 1; min-width: 100px;">
+                    <div style="font-size: 24px; font-weight: bold; color: #7c3aed;">${estimatedLevel}</div>
+                    <div style="font-size: 12px; color: #6b7280;">Estimated Level</div>
+                  </div>
+                  ${grammarScore !== null ? `<div style="text-align: center; flex: 1; min-width: 100px;">
+                    <div style="font-size: 24px; font-weight: bold;">${grammarScore}%</div>
+                    <div style="font-size: 12px; color: #6b7280;">Grammar</div>
+                  </div>` : ''}
+                  ${vocabularyScore !== null ? `<div style="text-align: center; flex: 1; min-width: 100px;">
+                    <div style="font-size: 24px; font-weight: bold;">${vocabularyScore}%</div>
+                    <div style="font-size: 12px; color: #6b7280;">Vocabulary</div>
+                  </div>` : ''}
+                </div>
+                ${strongest ? `<p style="margin-top: 12px; font-size: 14px; color: #374151;">
+                  <strong>Strongest:</strong> ${strongest} | <strong>Weakest:</strong> ${weakest || '—'}
+                </p>` : ''}
+                ${selfAssessedLevel ? `<p style="font-size: 14px; color: #374151;">
+                  <strong>Self-assessed:</strong> ${selfAssessedLevel} (${levelConfidence})
+                </p>` : ''}
+              </div>
+              <p>View the full learning profile in the student's profile page.</p>
+              <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+                — edooqoo
+              </p>
+            </div>
+          `;
+
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${RESEND_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: 'edooqoo <noreply@edooqoo.com>',
+              to: [teacherData.email],
+              subject: `${studentName} completed the Welcome Test (${estimatedLevel})`,
+              html: emailHtml,
+            }),
+          });
+
+          console.log('[process-welcome-test] Teacher notification email sent to:', teacherData.email);
+        }
+      } catch (emailError) {
+        console.error('Error sending teacher email:', emailError);
+        // Non-critical
+      }
+    }
 
     return new Response(JSON.stringify({ success: true, estimated_level: estimatedLevel }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,9 +1,10 @@
 /**
  * Student Tests Tab - Main component for viewing and managing tests
+ * Point 17: Welcome test always visible in list
  */
 
-import { useState } from 'react';
-import { Plus, FileText, TrendingUp, Target, CheckCircle, Loader2, Eye } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, FileText, TrendingUp, Target, CheckCircle, Loader2, Eye, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,13 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const stats = getTestStats();
+
+  // Sort tests: welcome test first, then by date
+  const sortedTests = [...tests].sort((a, b) => {
+    if (a.test_type === 'welcome' && b.test_type !== 'welcome') return -1;
+    if (a.test_type !== 'welcome' && b.test_type === 'welcome') return 1;
+    return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime();
+  });
 
   if (loading) {
     return (
@@ -66,7 +74,7 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
       </div>
 
       {/* Tests list */}
-      {tests.length === 0 ? (
+      {sortedTests.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
             <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
@@ -82,7 +90,7 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
         </Card>
       ) : (
         <div className="grid gap-4">
-          {tests.map((test) => (
+          {sortedTests.map((test) => (
             <TestCard 
               key={test.id} 
               test={test} 
@@ -104,7 +112,7 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
           <p>• <strong>AI-Generated Questions</strong> based on student's Progress, Knowledge Base, and Flashcards</p>
           <p>• <strong>Automatic Progress Updates</strong> - test results update Learning Element ratings</p>
           <p>• <strong>Skill Verification</strong> - confirm mastery before marking goals as achieved</p>
-          <p>• <strong>Placement Tests</strong> - initial assessment for new students</p>
+          <p>• <strong>Welcome Test</strong> - comprehensive placement & profiling assessment</p>
         </CardContent>
       </Card>
 
@@ -132,8 +140,10 @@ interface TestCardProps {
 function TestCard({ test, onClick }: TestCardProps) {
   const statusConfig = TEST_STATUS_CONFIG[test.status];
   const testTypeInfo = TEST_TYPES.find(t => t.value === test.test_type);
+  const isWelcome = test.test_type === 'welcome';
 
   const getIcon = () => {
+    if (isWelcome) return <Sparkles className="h-5 w-5" />;
     switch (test.test_type) {
       case 'placement': return <FileText className="h-5 w-5" />;
       case 'progress_check': return <TrendingUp className="h-5 w-5" />;
@@ -145,7 +155,7 @@ function TestCard({ test, onClick }: TestCardProps) {
 
   return (
     <Card 
-      className="hover:shadow-md transition-shadow cursor-pointer"
+      className={`hover:shadow-md transition-shadow cursor-pointer ${isWelcome ? 'border-primary/30' : ''}`}
       onClick={onClick}
     >
       <CardContent className="py-4">
@@ -157,7 +167,7 @@ function TestCard({ test, onClick }: TestCardProps) {
             <div>
               <h3 className="font-semibold">{test.title}</h3>
               <p className="text-sm text-muted-foreground">
-                {testTypeInfo?.label} • {test.total_questions || 0} questions
+                {isWelcome ? 'Welcome Test' : testTypeInfo?.label} • {test.total_questions || 0} questions
               </p>
             </div>
           </div>
