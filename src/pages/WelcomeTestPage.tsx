@@ -1,16 +1,17 @@
 /**
  * WelcomeTestPage - Student-facing page for taking the Welcome Test
  * Supports: version selection, instructions, pause/resume, skip, I-don't-know,
- * blurred email modal, confetti on completion, reduced heights
+ * blurred email modal, confetti on completion, reduced heights,
+ * speaking recording, listening comprehension, translation toggle, section celebration
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import Confetti from 'react-confetti';
 import { 
   ChevronLeft, ChevronRight, CheckCircle, Loader2, Sparkles,
   User, BookOpen, MessageSquare, PenTool, MessageCircle, Target,
-  SkipForward, HelpCircle, Pause, Clock
+  SkipForward, HelpCircle, Pause, Clock, Globe, PartyPopper
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,11 +22,15 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useWelcomeTest } from '@/hooks/useWelcomeTest';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { VersionSelector } from '@/components/welcome-test/VersionSelector';
 import { InstructionScreen } from '@/components/welcome-test/InstructionScreen';
+import { SpeakingRecorder } from '@/components/welcome-test/SpeakingRecorder';
+import { ListeningPlayer } from '@/components/welcome-test/ListeningPlayer';
+import { TRANSLATION_LANGUAGES, getTranslation, hasTranslation } from '@/data/welcomeTestTranslations';
 import type { WelcomeTestQuestionDef } from '@/types/welcomeTest';
 
 const SECTION_ICONS: Record<string, React.ReactNode> = {
@@ -37,7 +42,7 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
   'Target': <Target className="h-4 w-4" />,
 };
 
-type Stage = 'loading' | 'error' | 'email' | 'version' | 'instructions' | 'test' | 'paused' | 'completed';
+type Stage = 'loading' | 'error' | 'email' | 'version' | 'instructions' | 'test' | 'paused' | 'completed' | 'section_celebration';
 
 export default function WelcomeTestPage() {
   const { token } = useParams<{ token: string }>();
@@ -59,6 +64,11 @@ export default function WelcomeTestPage() {
   const [showInstructions, setShowInstructions] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const [translationLang, setTranslationLang] = useState<string | null>(null);
+  const [sectionCelebration, setSectionCelebration] = useState<{ fromSection: string; nextSection: string } | null>(null);
+
+  // Track previous section for celebration
+  const prevSectionRef = useState<number>(0);
 
   // Window size for confetti
   useEffect(() => {
@@ -105,6 +115,22 @@ export default function WelcomeTestPage() {
     }
   }, [completed]);
 
+  // Section celebration detection
+  useEffect(() => {
+    if (currentSectionIndex > prevSectionRef[0] && currentSectionIndex > 0 && !completed && testVersion) {
+      const prevSection = sections[prevSectionRef[0]];
+      const nextSection = sections[currentSectionIndex];
+      if (prevSection && nextSection) {
+        setSectionCelebration({
+          fromSection: prevSection.title,
+          nextSection: nextSection.title,
+        });
+        setTimeout(() => setSectionCelebration(null), 3000);
+      }
+    }
+    prevSectionRef[0] = currentSectionIndex;
+  }, [currentSectionIndex, sections, completed, testVersion]);
+
   const handleVerifyEmail = () => {
     if (!emailInput.trim()) { toast.error('Please enter your email'); return; }
     const email = emailInput.trim().toLowerCase();
@@ -125,6 +151,7 @@ export default function WelcomeTestPage() {
     if (paused) return 'paused';
     if (!testVersion) return 'version';
     if (showInstructions) return 'instructions';
+    if (sectionCelebration) return 'section_celebration';
     return 'test';
   };
 
@@ -135,7 +162,6 @@ export default function WelcomeTestPage() {
       if (instructionsSeen) {
         setShowInstructions(false);
       } else if (Object.keys(answers).length === 0) {
-        // First time: show instructions
         setShowInstructions(true);
       }
     }
@@ -147,6 +173,12 @@ export default function WelcomeTestPage() {
     }
     setShowInstructions(false);
   };
+
+  // Translation data for current question
+  const currentTranslation = useMemo(() => {
+    if (!translationLang || !currentQuestion) return null;
+    return getTranslation(currentQuestion.id, translationLang);
+  }, [translationLang, currentQuestion]);
 
   const stage = getStage();
 
@@ -181,7 +213,6 @@ export default function WelcomeTestPage() {
   if (stage === 'email') {
     return (
       <div className="min-h-screen relative">
-        {/* Blurred test preview background */}
         <div className="absolute inset-0 bg-gradient-to-br from-background to-secondary/20 filter blur-sm opacity-60 pointer-events-none">
           <div className="max-w-2xl mx-auto p-4 mt-16 space-y-4">
             <div className="h-8 bg-muted/50 rounded w-1/3" />
@@ -190,7 +221,6 @@ export default function WelcomeTestPage() {
             <div className="h-32 bg-muted/20 rounded" />
           </div>
         </div>
-        {/* Modal overlay */}
         <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center p-4">
           <Card className="max-w-md w-full shadow-xl">
             <CardHeader className="text-center pb-3">
@@ -288,6 +318,28 @@ export default function WelcomeTestPage() {
     );
   }
 
+  // ===== SECTION CELEBRATION =====
+  if (stage === 'section_celebration' && sectionCelebration) {
+    const remainingSections = sections.length - currentSectionIndex;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
+        <div className="text-center space-y-4 animate-in fade-in zoom-in duration-500">
+          <PartyPopper className="h-16 w-16 text-primary mx-auto animate-bounce" />
+          <h2 className="text-xl font-bold">Great job! 🎉</h2>
+          <p className="text-sm text-muted-foreground">
+            You completed <strong>{sectionCelebration.fromSection}</strong>!
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {remainingSections} more {remainingSections === 1 ? 'section' : 'sections'} to go → <strong>{sectionCelebration.nextSection}</strong>
+          </p>
+          <Button onClick={() => setSectionCelebration(null)} size="sm" className="mt-2">
+            Continue
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // ===== MAIN TEST =====
   if (!currentSection || !currentQuestion) return null;
 
@@ -308,6 +360,18 @@ export default function WelcomeTestPage() {
                 <Clock className="h-3 w-3" />
                 ~{estimatedMinutesRemaining} min left
               </span>
+              {/* Translation toggle */}
+              <Select value={translationLang || 'none'} onValueChange={(v) => setTranslationLang(v === 'none' ? null : v)}>
+                <SelectTrigger className="h-7 w-7 p-0 border-0 [&>svg]:hidden">
+                  <Globe className={`h-3.5 w-3.5 ${translationLang ? 'text-primary' : 'text-muted-foreground'}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">English only</SelectItem>
+                  {TRANSLATION_LANGUAGES.map(lang => (
+                    <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button variant="ghost" size="sm" onClick={pauseTest} className="h-7 text-xs">
                 <Pause className="h-3 w-3 mr-1" />
                 Pause
@@ -368,12 +432,22 @@ export default function WelcomeTestPage() {
               {currentQuestion.description && (
                 <p className="text-xs text-muted-foreground mt-1">{currentQuestion.description}</p>
               )}
+              {/* Translation */}
+              {currentTranslation && (
+                <div className="mt-2 p-2 bg-muted/30 rounded border-l-2 border-primary/30">
+                  <p className="text-xs text-muted-foreground italic whitespace-pre-line">{currentTranslation.question}</p>
+                  {currentTranslation.description && (
+                    <p className="text-[11px] text-muted-foreground/70 mt-0.5 italic">{currentTranslation.description}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <QuestionInput
               question={currentQuestion}
               answer={answers[currentQuestion.id]}
               onAnswer={(val) => saveAnswer(currentQuestion.id, val)}
+              translatedOptions={currentTranslation?.options}
             />
 
             {/* Answer status + I don't know */}
@@ -466,22 +540,68 @@ export default function WelcomeTestPage() {
 }
 
 // =====================================================
-// Question Input Renderer
+// Question Input Renderer (with speaking, listening, translation support)
 // =====================================================
 
 function QuestionInput({
   question,
   answer,
   onAnswer,
+  translatedOptions,
 }: {
   question: WelcomeTestQuestionDef;
   answer: unknown;
   onAnswer: (val: unknown) => void;
+  translatedOptions?: string[];
 }) {
-  // Don't show __IDK__ as text in inputs
   const displayAnswer = answer === '__IDK__' ? '' : answer;
 
   switch (question.question_type) {
+    // Speaking record
+    case 'speaking_record':
+      return (
+        <SpeakingRecorder
+          maxSeconds={question.max_recording_seconds || 60}
+          answer={typeof displayAnswer === 'string' ? displayAnswer : undefined}
+          onAnswer={(url) => onAnswer(url)}
+        />
+      );
+
+    // Listening comprehension
+    case 'listening_comprehension':
+      return (
+        <div className="space-y-4">
+          {(question.audio_url || question.audio_transcript) && (
+            <ListeningPlayer
+              audioUrl={question.audio_url || ''}
+              transcript={question.audio_transcript}
+            />
+          )}
+          {/* If no audio_url, show transcript directly */}
+          {!question.audio_url && question.audio_transcript && (
+            <div className="p-3 bg-muted/30 rounded-lg border text-sm italic text-muted-foreground whitespace-pre-line">
+              {question.audio_transcript}
+            </div>
+          )}
+          {/* Answer options */}
+          {question.options && (
+            <RadioGroup
+              value={(displayAnswer as string) || ''}
+              onValueChange={onAnswer}
+            >
+              {question.options.map((option, idx) => (
+                <div key={idx} className="flex items-center space-x-2.5 p-2.5 rounded-lg border hover:bg-muted/50 transition-colors">
+                  <RadioGroupItem value={option} id={`opt-${question.id}-${idx}`} />
+                  <Label htmlFor={`opt-${question.id}-${idx}`} className="flex-1 cursor-pointer text-sm leading-relaxed">
+                    {option}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          )}
+        </div>
+      );
+
     case 'self_assessment':
     case 'scenario_reaction':
     case 'multiple_choice':
@@ -495,6 +615,9 @@ function QuestionInput({
               <RadioGroupItem value={option} id={`opt-${question.id}-${idx}`} />
               <Label htmlFor={`opt-${question.id}-${idx}`} className="flex-1 cursor-pointer text-sm leading-relaxed">
                 {option}
+                {translatedOptions?.[idx] && (
+                  <span className="block text-xs text-muted-foreground italic mt-0.5">{translatedOptions[idx]}</span>
+                )}
               </Label>
             </div>
           ))}
@@ -525,6 +648,9 @@ function QuestionInput({
                   />
                   <Label htmlFor={`pref-${question.id}-${idx}`} className="flex-1 cursor-pointer text-sm">
                     {option}
+                    {translatedOptions?.[idx] && (
+                      <span className="block text-xs text-muted-foreground italic mt-0.5">{translatedOptions[idx]}</span>
+                    )}
                   </Label>
                 </div>
               );
@@ -542,6 +668,9 @@ function QuestionInput({
               <RadioGroupItem value={option} id={`pref-${question.id}-${idx}`} />
               <Label htmlFor={`pref-${question.id}-${idx}`} className="flex-1 cursor-pointer text-sm">
                 {option}
+                {translatedOptions?.[idx] && (
+                  <span className="block text-xs text-muted-foreground italic mt-0.5">{translatedOptions[idx]}</span>
+                )}
               </Label>
             </div>
           ))}

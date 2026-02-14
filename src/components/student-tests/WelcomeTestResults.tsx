@@ -1,12 +1,13 @@
 /**
  * WelcomeTestResults - Teacher dashboard view of Welcome Test results
- * Shows learning profile, traits, scores, and recommendations
+ * Shows learning profile, AI summary, traits, scores, and recommendations
  */
 
 import { useState, useEffect } from 'react';
 import { 
   Sparkles, Brain, Target, BookOpen, MessageCircle, 
-  TrendingUp, Star, AlertCircle, Clock, Smile, Frown, Meh
+  TrendingUp, Star, AlertCircle, Clock, Smile, Frown, Meh,
+  Bot, Lightbulb
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,9 +21,17 @@ interface WelcomeTestResultsProps {
   teacherId: string;
 }
 
+interface AiSummaryData {
+  summary: string;
+  recommendations: string[];
+  writing_quality: string;
+  key_observations: string[];
+}
+
 export function WelcomeTestResults({ testId, studentId, teacherId }: WelcomeTestResultsProps) {
   const [profile, setProfile] = useState<LearningProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [aiSummary, setAiSummary] = useState<AiSummaryData | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -36,6 +45,15 @@ export function WelcomeTestResults({ testId, studentId, teacherId }: WelcomeTest
 
         if (data) {
           setProfile(data as unknown as LearningProfile);
+          // Parse AI summary
+          if ((data as any).ai_summary) {
+            try {
+              const parsed = JSON.parse((data as any).ai_summary);
+              setAiSummary(parsed);
+            } catch {
+              setAiSummary({ summary: (data as any).ai_summary, recommendations: [], writing_quality: 'unknown', key_observations: [] });
+            }
+          }
         }
       } catch (err) {
         console.error('Error fetching learning profile:', err);
@@ -71,6 +89,60 @@ export function WelcomeTestResults({ testId, studentId, teacherId }: WelcomeTest
 
   return (
     <div className="space-y-6">
+      {/* AI Summary */}
+      {aiSummary && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Bot className="h-5 w-5 text-primary" />
+              AI Analysis
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm leading-relaxed">{aiSummary.summary}</p>
+            
+            {aiSummary.key_observations && aiSummary.key_observations.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1.5">Key Observations</p>
+                <ul className="space-y-1">
+                  {aiSummary.key_observations.map((obs, i) => (
+                    <li key={i} className="text-sm flex items-start gap-1.5">
+                      <span className="text-primary mt-0.5">•</span>
+                      {obs}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {aiSummary.recommendations && aiSummary.recommendations.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                  <Lightbulb className="h-3 w-3" /> Recommendations
+                </p>
+                <ul className="space-y-1">
+                  {aiSummary.recommendations.map((rec, i) => (
+                    <li key={i} className="text-sm flex items-start gap-1.5">
+                      <span className="text-amber-500 mt-0.5">💡</span>
+                      {rec}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {aiSummary.writing_quality && aiSummary.writing_quality !== 'unknown' && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Writing Quality:</span>
+                <Badge variant={aiSummary.writing_quality === 'advanced' ? 'default' : 'secondary'}>
+                  {aiSummary.writing_quality}
+                </Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Level Assessment */}
       <Card>
         <CardHeader>
