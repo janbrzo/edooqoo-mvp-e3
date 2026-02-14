@@ -306,6 +306,7 @@ const scenarioQuestions: WelcomeTestQuestionDef[] = [
       'I reply asking them to clarify the confusing parts',
       'I understand most of it and guess the rest from context',
       'I struggle to understand and need to translate most of it',
+      'I don\'t try to understand, I use ChatGPT',
     ],
     element_type: 'reading',
     scoring_logic: 'Reading comprehension strategy + self-reported reading level',
@@ -469,8 +470,8 @@ const grammarQuestions: WelcomeTestQuestionDef[] = [
     id: 'wt_q26',
     section: 'grammar',
     question_type: 'fill_blank',
-    question_text: '"It started raining two hours ago." → "It ___ for two hours."',
-    description: 'Rewrite using the correct tense.',
+    question_text: '"It started raining two hours ago."\n\nComplete the sentence: It ___ for two hours.',
+    description: 'Fill in the blank to rewrite the sentence using the correct tense. Write only the missing words (e.g. "has been raining").',
     correct_answer: 'has been raining',
     element_type: 'grammar',
     difficulty_level: 3,
@@ -481,8 +482,8 @@ const grammarQuestions: WelcomeTestQuestionDef[] = [
     id: 'wt_q27',
     section: 'grammar',
     question_type: 'fill_blank',
-    question_text: '"People say he is very smart." → "He ___ very smart."',
-    description: 'Rewrite using a passive construction.',
+    question_text: '"People say he is very smart."\n\nComplete the sentence: He ___ very smart.',
+    description: 'Fill in the blank to rewrite using a passive construction. Write only the missing words (e.g. "is said to be").',
     correct_answer: 'is said to be',
     element_type: 'grammar',
     difficulty_level: 4,
@@ -525,7 +526,7 @@ const vocabularyQuestions: WelcomeTestQuestionDef[] = [
     section: 'vocabulary',
     question_type: 'fill_blank',
     question_text: 'The ___ (decide) was made yesterday.',
-    description: 'Write the correct form of the word in brackets.',
+    description: 'Write the correct NOUN form of the word in brackets. Example: "arrive" → "arrival".',
     correct_answer: 'decision',
     element_type: 'vocabulary',
     difficulty_level: 2,
@@ -823,3 +824,23 @@ export const ALL_WELCOME_TEST_QUESTIONS: WelcomeTestQuestionDef[] =
   WELCOME_TEST_SECTIONS_WITH_QUESTIONS.flatMap(s => s.questions);
 
 export const WELCOME_TEST_TOTAL_QUESTIONS = ALL_WELCOME_TEST_QUESTIONS.length;
+
+// Short version: ~20 key questions covering all sections + trait detectors
+export const WELCOME_TEST_SHORT_QUESTION_IDS = [
+  // About You (4): self-assessment, motivation, anxiety, input channel
+  'wt_q1', 'wt_q3', 'wt_q7', 'wt_q8',
+  // Experience (2): duration, open challenge
+  'wt_q9', 'wt_q12',
+  // Scenarios (3): error attitude, writing task, reading comprehension
+  'wt_q14', 'wt_q16', 'wt_q18',
+  // Grammar (3): A2 simple, B2 conditional, B1-B2 transformation
+  'wt_q20', 'wt_q22', 'wt_q26',
+  // Vocabulary (3): collocation, word formation, idiom
+  'wt_q28', 'wt_q30', 'wt_q34',
+  // Communication (2): open declining, natural sounding
+  'wt_q36', 'wt_q38',
+  // Goals (3): feedback pref, interests, confidence matrix
+  'wt_q42', 'wt_q43', 'wt_q44',
+];
+
+export const WELCOME_TEST_SHORT_QUESTIONS_COUNT = WELCOME_TEST_SHORT_QUESTION_IDS.length;
