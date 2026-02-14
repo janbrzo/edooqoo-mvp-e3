@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell } from "lucide-react";
+import { Bell, Sparkles, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
-interface HomeworkNotification {
+interface AppNotification {
   id: string;
   homework_id: string;
   student_id: string;
@@ -19,16 +19,16 @@ interface HomeworkNotification {
   share_token?: string;
 }
 
+/** Unified Notification Badge - handles homework + welcome test notifications */
 export function HomeworkNotificationBadge() {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState<HomeworkNotification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     fetchNotifications();
     
-    // Set up real-time subscription
     const channel = supabase
       .channel('homework_notifications')
       .on(
@@ -39,10 +39,15 @@ export function HomeworkNotificationBadge() {
           table: 'homework_notifications'
         },
         (payload) => {
-          const newNotification = payload.new as HomeworkNotification;
+          const newNotification = payload.new as AppNotification;
           setNotifications(prev => [newNotification, ...prev]);
           setUnreadCount(prev => prev + 1);
-          toast.success(`New homework notification: ${newNotification.message}`);
+          
+          const isWelcome = newNotification.notification_type === 'welcome_test_completed';
+          toast.success(isWelcome 
+            ? `Welcome Test completed! ${newNotification.message}`
+            : `New notification: ${newNotification.message}`
+          );
         }
       )
       .subscribe();
@@ -57,7 +62,6 @@ export function HomeworkNotificationBadge() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch notifications with homework share_token for navigation
       const { data, error } = await supabase
         .from('homework_notifications')
         .select(`
@@ -66,11 +70,10 @@ export function HomeworkNotificationBadge() {
         `)
         .eq('teacher_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(15);
 
       if (error) throw error;
 
-      // Map share_token from joined data
       const notificationsWithToken = (data || []).map(n => ({
         ...n,
         share_token: (n as any).homework_assignments?.share_token || null
@@ -122,6 +125,29 @@ export function HomeworkNotificationBadge() {
     }
   };
 
+  const handleNotificationClick = (notification: AppNotification) => {
+    if (!notification.is_read) {
+      markAsRead(notification.id);
+    }
+
+    if (notification.notification_type === 'welcome_test_completed') {
+      // Navigate to student's Tests tab
+      navigate(`/student/${notification.student_id}?tab=tests`);
+    } else if (notification.share_token) {
+      navigate(`/homework/${notification.share_token}`);
+    } else {
+      navigate(`/student/${notification.student_id}`);
+    }
+    setIsOpen(false);
+  };
+
+  const getNotificationIcon = (type: string) => {
+    if (type === 'welcome_test_completed') {
+      return <Sparkles className="h-4 w-4 mt-0.5 text-primary" />;
+    }
+    return <BookOpen className="h-4 w-4 mt-0.5 text-muted-foreground" />;
+  };
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -139,7 +165,7 @@ export function HomeworkNotificationBadge() {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="p-4 border-b border-border flex items-center justify-between">
-          <h3 className="font-semibold">Homework Notifications</h3>
+          <h3 className="font-semibold">Notifications</h3>
           {unreadCount > 0 && (
             <Button variant="ghost" size="sm" onClick={markAllAsRead}>
               Mark all read
@@ -158,21 +184,10 @@ export function HomeworkNotificationBadge() {
                 className={`p-4 border-b border-border hover:bg-muted/50 cursor-pointer transition-colors ${
                   !notification.is_read ? 'bg-muted/30' : ''
                 }`}
-                onClick={() => {
-                  if (!notification.is_read) {
-                    markAsRead(notification.id);
-                  }
-                  // Navigate to homework page if share_token exists, otherwise fallback to student page
-                  if (notification.share_token) {
-                    navigate(`/homework/${notification.share_token}`);
-                  } else {
-                    navigate(`/student/${notification.student_id}`);
-                  }
-                  setIsOpen(false);
-                }}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex items-start gap-2">
-                  <Bell className={`h-4 w-4 mt-0.5 ${!notification.is_read ? 'text-primary' : 'text-muted-foreground'}`} />
+                  {getNotificationIcon(notification.notification_type)}
                   <div className="flex-1 space-y-1">
                     <p className="text-sm">{notification.message}</p>
                     <p className="text-xs text-muted-foreground">

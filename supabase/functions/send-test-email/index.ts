@@ -1,6 +1,6 @@
 /**
  * send-test-email - Edge function to send test link via email
- * Similar to send-flashcard-email but for student tests
+ * Supports both regular tests and welcome tests
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -18,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { shareToken, recipientEmail, testTitle, teacherName } = await req.json();
+    const { shareToken, recipientEmail, testTitle, teacherName, testType } = await req.json();
 
     if (!shareToken || !recipientEmail) {
       return new Response(
@@ -27,12 +27,40 @@ serve(async (req) => {
       );
     }
 
-    const shareUrl = `${req.headers.get('origin') || 'https://worksheetgenerator.lovable.app'}/test/${shareToken}`;
+    const origin = req.headers.get('origin') || 'https://edooqoo-mvp-e3.lovable.app';
+    const isWelcomeTest = testType === 'welcome';
+    const shareUrl = isWelcomeTest 
+      ? `${origin}/welcome-test/${shareToken}`
+      : `${origin}/test/${shareToken}`;
 
-    console.log('[send-test-email] Sending to:', recipientEmail);
-    console.log('[send-test-email] Share URL:', shareUrl);
+    console.log('[send-test-email] Sending to:', recipientEmail, 'type:', testType || 'regular');
 
-    const emailBody = `
+    const emailBody = isWelcomeTest ? `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #7c3aed;">🎯 Welcome Test</h2>
+        <p>Hello,</p>
+        <p><strong>${teacherName || 'Your teacher'}</strong> has invited you to take a Welcome Test to help personalize your English learning experience.</p>
+        <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin: 0 0 10px 0; color: #1f2937;">What to expect:</h3>
+          <ul style="margin: 0; padding-left: 20px; color: #4b5563;">
+            <li>Questions about your learning style and preferences</li>
+            <li>Grammar and vocabulary assessment</li>
+            <li>Takes 15-30 minutes depending on version chosen</li>
+            <li>No grades — this helps your teacher understand you better</li>
+          </ul>
+        </div>
+        <a href="${shareUrl}" 
+           style="display: inline-block; background: #7c3aed; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; font-size: 16px;">
+          Start Welcome Test
+        </a>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+          <strong>Tip:</strong> Answer honestly — there are no wrong answers for the profile questions. If you don't know a grammar answer, just click "I don't know".
+        </p>
+        <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
+          Or copy and paste this URL: ${shareUrl}
+        </p>
+      </div>
+    ` : `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #7c3aed;">📝 Test Assignment</h2>
         <p>Hello,</p>
@@ -54,7 +82,10 @@ serve(async (req) => {
       </div>
     `;
 
-    // Send email via Resend
+    const subject = isWelcomeTest
+      ? `${teacherName || 'Your teacher'} invited you to take a Welcome Test`
+      : `${teacherName || 'Your teacher'} assigned you a test: ${testTitle}`;
+
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -64,7 +95,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: 'Worksheet Generator <noreply@edooqoo.com>',
         to: [recipientEmail],
-        subject: `${teacherName || 'Your teacher'} assigned you a test: ${testTitle}`,
+        subject,
         html: emailBody,
       }),
     });

@@ -99,10 +99,13 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
     setSharingLoading(true);
     const token = await generateShareToken(testId);
     if (token) {
-      const url = `${window.location.origin}/test/${token}`;
+      const isWelcome = test?.test_type === 'welcome';
+      const url = isWelcome 
+        ? `${window.location.origin}/welcome-test/${token}`
+        : `${window.location.origin}/test/${token}`;
       await navigator.clipboard.writeText(url);
       toast.success('Share link copied to clipboard!');
-      loadTest(); // Refresh to get updated status
+      loadTest();
     }
     setSharingLoading(false);
   };

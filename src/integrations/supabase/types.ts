@@ -1071,6 +1071,7 @@ export type Database = {
       }
       student_learning_profiles: {
         Row: {
+          ai_summary: string | null
           ambiguity_tolerance: string | null
           anxiety_level: string | null
           communication_score: number | null
@@ -1105,6 +1106,7 @@ export type Database = {
           writing_score: number | null
         }
         Insert: {
+          ai_summary?: string | null
           ambiguity_tolerance?: string | null
           anxiety_level?: string | null
           communication_score?: number | null
@@ -1139,6 +1141,7 @@ export type Database = {
           writing_score?: number | null
         }
         Update: {
+          ai_summary?: string | null
           ambiguity_tolerance?: string | null
           anxiety_level?: string | null
           communication_score?: number | null
@@ -1323,6 +1326,7 @@ export type Database = {
       student_tests: {
         Row: {
           ai_generated: boolean | null
+          answered_count: number | null
           assigned_at: string | null
           completed_at: string | null
           correct_answers: number | null
@@ -1349,6 +1353,7 @@ export type Database = {
         }
         Insert: {
           ai_generated?: boolean | null
+          answered_count?: number | null
           assigned_at?: string | null
           completed_at?: string | null
           correct_answers?: number | null
@@ -1375,6 +1380,7 @@ export type Database = {
         }
         Update: {
           ai_generated?: boolean | null
+          answered_count?: number | null
           assigned_at?: string | null
           completed_at?: string | null
           correct_answers?: number | null
