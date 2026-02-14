@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -274,7 +275,81 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true, estimated_level: estimatedLevel }), {
+    // --- Point 15: AI Analysis of open answers ---
+    let aiSummary: string | null = null;
+    if (LOVABLE_API_KEY) {
+      try {
+        const openQuestionIds = ['wt_q12', 'wt_q13', 'wt_q16', 'wt_q17', 'wt_q36', 'wt_q37', 'wt_q40', 'wt_q41', 'wt_q45'];
+        const openAnswers = openQuestionIds
+          .filter(id => answers?.[id] && answers[id] !== '__IDK__')
+          .map(id => `${id}: "${answers[id]}"`)
+          .join('\n');
+
+        if (openAnswers) {
+          const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'google/gemini-2.5-flash',
+              messages: [
+                {
+                  role: 'system',
+                  content: `You are an expert ESL teacher analyzing a student's Welcome Test answers. Based on their open-ended responses, provide:
+1. A concise 3-4 sentence profile summary covering their English level, strengths, weaknesses, and personality as a learner.
+2. 2-3 specific teaching recommendations.
+Format as JSON: {"summary": "...", "recommendations": ["...", "..."], "writing_quality": "basic|intermediate|advanced", "key_observations": ["...", "..."]}`
+                },
+                {
+                  role: 'user',
+                  content: `Student profile data:
+- Estimated level: ${estimatedLevel}
+- Grammar score: ${grammarScore}%
+- Vocabulary score: ${vocabularyScore}%
+- Motivation: ${traits.motivation_type || 'unknown'}
+- Anxiety: ${traits.anxiety_level || 'unknown'}
+
+Open-ended answers:
+${openAnswers}`
+                }
+              ],
+            }),
+          });
+
+          if (aiResponse.ok) {
+            const aiData = await aiResponse.json();
+            const content = aiData.choices?.[0]?.message?.content || '';
+            try {
+              const jsonMatch = content.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]);
+                aiSummary = JSON.stringify(parsed);
+              } else {
+                aiSummary = JSON.stringify({ summary: content, recommendations: [], writing_quality: 'unknown', key_observations: [] });
+              }
+            } catch {
+              aiSummary = JSON.stringify({ summary: content, recommendations: [], writing_quality: 'unknown', key_observations: [] });
+            }
+          }
+        }
+
+        // Save AI summary to profile
+        if (aiSummary) {
+          await supabase
+            .from('student_learning_profiles')
+            .update({ ai_summary: aiSummary })
+            .eq('student_id', student_id)
+            .eq('teacher_id', teacher_id);
+          console.log('[process-welcome-test] AI summary generated and saved');
+        }
+      } catch (aiError) {
+        console.error('Error generating AI summary:', aiError);
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, estimated_level: estimatedLevel, ai_summary: aiSummary }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

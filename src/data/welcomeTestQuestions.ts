@@ -365,10 +365,39 @@ const scenarioQuestions: WelcomeTestQuestionDef[] = [
     scoring_logic: 'Reading comprehension - inference, not just surface-level understanding. B2 level.',
     nano_skill: 'ns.reading.inference_from_text',
   },
+  // NEW: Speaking question - describe hotel problem out loud
+  {
+    id: 'wt_q16s',
+    section: 'scenarios',
+    question_type: 'speaking_record',
+    question_text: 'Now try to describe the hotel problem out loud.\n\nImagine you\'re at the reception. Record yourself explaining that your air conditioning isn\'t working.',
+    description: 'Record up to 60 seconds. Don\'t worry about perfection - speak naturally!',
+    element_type: 'speaking',
+    max_recording_seconds: 60,
+    scoring_logic: 'Speaking fluency, pronunciation, pragmatic appropriateness. Compare with written version (Q16).',
+    nano_skill: 'ns.speaking.complaint_oral',
+  },
+  // NEW: Listening comprehension
+  {
+    id: 'wt_q18l',
+    section: 'scenarios',
+    question_type: 'listening_comprehension',
+    question_text: 'Listen to this short conversation and answer: What does the customer want?',
+    audio_url: '', // Will be pre-generated
+    audio_transcript: 'A: "Excuse me, I ordered a medium latte about twenty minutes ago and I\'m still waiting."\nB: "I\'m sorry about that. Let me check with the barista. Would you like me to make you a fresh one right away?"\nA: "Yes please, and could I get it with oat milk this time instead?"',
+    options: [
+      'A refund for the late order',
+      'A fresh latte with oat milk',
+      'To speak to the manager',
+      'To cancel the order',
+    ],
+    correct_answer: 'A fresh latte with oat milk',
+    element_type: 'listening',
+    difficulty_level: 2,
+    scoring_logic: 'Listening comprehension - detail extraction from dialogue. B1 level.',
+    nano_skill: 'ns.listening.detail_extraction',
+  },
 ];
-
-// =====================================================
-// SECTION 4: Grammar Check (Q20-Q27)
 // =====================================================
 
 const grammarQuestions: WelcomeTestQuestionDef[] = [
@@ -620,6 +649,18 @@ const communicationQuestions: WelcomeTestQuestionDef[] = [
     scoring_logic: 'Pragmatic competence - ability to use language in social context. Register, politeness strategies.',
     nano_skill: 'ns.writing.pragmatic_declining',
   },
+  // NEW: Speaking question - decline invitation out loud
+  {
+    id: 'wt_q36s',
+    section: 'communication',
+    question_type: 'speaking_record',
+    question_text: 'Now record yourself declining the invitation verbally.\n\nImagine your colleague just invited you. Speak naturally as if you\'re talking to them.',
+    description: 'Record up to 45 seconds. Be polite but clear.',
+    element_type: 'speaking',
+    max_recording_seconds: 45,
+    scoring_logic: 'Speaking pragmatics - politeness strategies in real-time speech.',
+    nano_skill: 'ns.speaking.pragmatic_declining_oral',
+  },
   {
     id: 'wt_q37',
     section: 'communication',
@@ -688,6 +729,18 @@ const goalsQuestions: WelcomeTestQuestionDef[] = [
     question_text: 'If you could achieve ONE thing in English in the next 3 months, what would it be?',
     description: 'Write freely - there are no wrong answers.',
     scoring_logic: 'Goal Setting Theory (Locke & Latham). Concrete, ambitious goals increase outcomes 20-25%.',
+  },
+  // NEW: Speaking question - self-introduction
+  {
+    id: 'wt_q41s',
+    section: 'goals',
+    question_type: 'speaking_record',
+    question_text: 'Record a 30-second introduction of yourself in English.\n\nSay your name, what you do, and why you\'re learning English.',
+    description: 'Speak freely for up to 30 seconds. There\'s no right or wrong way!',
+    element_type: 'speaking',
+    max_recording_seconds: 30,
+    scoring_logic: 'Spontaneous speech production - fluency, complexity, accuracy baseline.',
+    nano_skill: 'ns.speaking.self_introduction',
   },
   {
     id: 'wt_q42',
@@ -825,22 +878,22 @@ export const ALL_WELCOME_TEST_QUESTIONS: WelcomeTestQuestionDef[] =
 
 export const WELCOME_TEST_TOTAL_QUESTIONS = ALL_WELCOME_TEST_QUESTIONS.length;
 
-// Short version: ~20 key questions covering all sections + trait detectors
+// Short version: ~25 key questions covering all sections + trait detectors + 1 speaking + 1 listening
 export const WELCOME_TEST_SHORT_QUESTION_IDS = [
   // About You (4): self-assessment, motivation, anxiety, input channel
   'wt_q1', 'wt_q3', 'wt_q7', 'wt_q8',
   // Experience (2): duration, open challenge
   'wt_q9', 'wt_q12',
-  // Scenarios (3): error attitude, writing task, reading comprehension
-  'wt_q14', 'wt_q16', 'wt_q18',
+  // Scenarios (4): error attitude, writing task, speaking, listening
+  'wt_q14', 'wt_q16', 'wt_q16s', 'wt_q18l',
   // Grammar (3): A2 simple, B2 conditional, B1-B2 transformation
   'wt_q20', 'wt_q22', 'wt_q26',
   // Vocabulary (3): collocation, word formation, idiom
   'wt_q28', 'wt_q30', 'wt_q34',
   // Communication (2): open declining, natural sounding
   'wt_q36', 'wt_q38',
-  // Goals (3): feedback pref, interests, confidence matrix
-  'wt_q42', 'wt_q43', 'wt_q44',
+  // Goals (4): feedback pref, interests, confidence matrix, self-intro speaking
+  'wt_q42', 'wt_q43', 'wt_q44', 'wt_q41s',
 ];
 
 export const WELCOME_TEST_SHORT_QUESTIONS_COUNT = WELCOME_TEST_SHORT_QUESTION_IDS.length;

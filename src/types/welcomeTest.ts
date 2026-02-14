@@ -16,7 +16,9 @@ export type WelcomeQuestionType =
   | 'fill_blank'           // Fill in the blank
   | 'open_ended'           // Open writing task
   | 'matching'             // Match pairs
-  | 'self_assessment_matrix'; // Rate multiple items on a scale
+  | 'self_assessment_matrix' // Rate multiple items on a scale
+  | 'speaking_record'      // Student records audio via microphone
+  | 'listening_comprehension'; // Audio playback + answer
 
 export type WelcomeTestSection =
   | 'about_you'
@@ -43,6 +45,9 @@ export interface WelcomeTestQuestionDef {
   correct_answer?: string | string[];// For grammar/vocab questions
   matrix_items?: string[];           // For self_assessment_matrix (Q44)
   matrix_scale?: { min: number; max: number; labels?: Record<number, string> };
+  audio_url?: string;                // Pre-generated audio for listening questions
+  audio_transcript?: string;         // Fallback transcript for listening questions
+  max_recording_seconds?: number;    // Max recording time for speaking questions
   
   // Metadata for scoring/logging
   element_type?: 'grammar' | 'vocabulary' | 'reading' | 'writing' | 'speaking' | 'listening' | 'pronunciation' | null;
