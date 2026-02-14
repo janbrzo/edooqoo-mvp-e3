@@ -3,8 +3,8 @@
  * Point 17: Welcome test always visible in list
  */
 
-import { useState, useEffect } from 'react';
-import { Plus, FileText, TrendingUp, Target, CheckCircle, Loader2, Eye, Sparkles } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, FileText, TrendingUp, Target, CheckCircle, Loader2, Eye, Sparkles, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,7 @@ import { TEST_STATUS_CONFIG, TEST_TYPES } from '@/types/studentTests';
 import type { StudentTest } from '@/types/studentTests';
 import { CreateTestModal } from './CreateTestModal';
 import { TestDetailsView } from './TestDetailsView';
+import { ALL_WELCOME_TEST_QUESTIONS, WELCOME_TEST_SECTIONS_WITH_QUESTIONS } from '@/data/welcomeTestQuestions';
 
 interface StudentTestsTabProps {
   studentId: string;
@@ -24,7 +25,11 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
   const { tests, loading, getTestStats, refetch } = useStudentTests({ studentId, teacherId });
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
+  const [showWelcomePreview, setShowWelcomePreview] = useState(false);
   const stats = getTestStats();
+
+  // Check if welcome test exists
+  const hasWelcomeTest = useMemo(() => tests.some(t => t.test_type === 'welcome'), [tests]);
 
   // Sort tests: welcome test first, then by date
   const sortedTests = [...tests].sort((a, b) => {
@@ -73,8 +78,63 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
         </Button>
       </div>
 
+      {/* Welcome Test Placeholder - always visible if no welcome test exists */}
+      {!hasWelcomeTest && (
+        <Card 
+          className="border-primary/30 border-dashed cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setShowWelcomePreview(!showWelcomePreview)}
+        >
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Welcome Test</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Comprehensive placement & learning profile • {ALL_WELCOME_TEST_QUESTIONS.length} questions
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">Not sent yet</Badge>
+                <Button variant="ghost" size="sm">
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            {showWelcomePreview && (
+              <div className="mt-4 border-t pt-4 space-y-3">
+                <p className="text-xs font-medium text-muted-foreground">Preview: {WELCOME_TEST_SECTIONS_WITH_QUESTIONS.length} sections</p>
+                {WELCOME_TEST_SECTIONS_WITH_QUESTIONS.map((section) => (
+                  <div key={section.id} className="space-y-1">
+                    <p className="text-sm font-medium flex items-center gap-1.5">
+                      <BookOpen className="h-3.5 w-3.5 text-primary" />
+                      {section.title} ({section.questions.length} questions)
+                    </p>
+                    <div className="pl-5 space-y-0.5">
+                      {section.questions.slice(0, 3).map((q, i) => (
+                        <p key={q.id} className="text-xs text-muted-foreground truncate">
+                          {i + 1}. {q.question_text.split('\n')[0]}
+                        </p>
+                      ))}
+                      {section.questions.length > 3 && (
+                        <p className="text-xs text-muted-foreground italic">
+                          +{section.questions.length - 3} more questions
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Tests list */}
-      {sortedTests.length === 0 ? (
+      {sortedTests.length === 0 && hasWelcomeTest ? null : sortedTests.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
             <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />

@@ -1,6 +1,8 @@
 
 # Business Analysis - English Worksheet Generator
 
+**Latest Feature (Feb 2026):** Welcome Test v2 — comprehensive student profiling system that combines self-assessment, grammar/vocabulary testing, speaking recording, and listening comprehension. AI generates learning profiles with recommendations, enabling personalized lesson planning. This feature increases teacher engagement and student retention by providing data-driven insights from day one.
+
 ## Current Business Model
 
 ### Revenue Model: Freemium + Pay-per-Download

@@ -3,6 +3,17 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
+### Recently Completed (Feb 2026) - Welcome Test v2 ✅
+- Welcome Test with 49 questions across 7 sections
+- Speaking recording (SpeakingRecorder) + Listening comprehension (ListeningPlayer)
+- AI-powered profiling via Gemini 2.5 Flash (process-welcome-test edge function)
+- Multi-language translation toggle (10 languages)
+- Real-time progress tracking with 10s polling
+- Pause/resume with state persistence
+- Auto-email to student (send-test-email) and teacher on completion
+- Notification system for welcome_test_completed events
+- Welcome Test preview card in Tests tab (before test is sent)
+
 ### Achieved Features ✅
 - AI-powered worksheet generation
 - 8 different exercise types

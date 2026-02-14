@@ -111,6 +111,9 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
         // Restore version from localStorage
         const storedVersion = localStorage.getItem(`wt_version_${shareToken}`);
 
+        const isCompleted = testInfo.status === 'completed' || testInfo.status === 'reviewed';
+        const hasExistingAnswers = Object.keys(existingAnswers).length > 0;
+
         // Update status to in_progress if assigned
         if (testInfo.status === 'assigned') {
           await supabase
@@ -131,6 +134,12 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           } catch {}
         }
 
+        // If has existing answers but not completed, show paused state
+        const shouldPause = !isCompleted && hasExistingAnswers && !!storedVersion;
+
+        // Use the answered_count from DB for completed tests
+        const persistedCount = (testInfo as any).answered_count || dbAnsweredCount || null;
+
         setState(prev => ({
           ...prev,
           testId: testInfo.id,
@@ -139,11 +148,12 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           title: testInfo.title || 'Welcome Test',
           answers: existingAnswers,
           loading: false,
-          completed: testInfo.status === 'completed' || testInfo.status === 'reviewed',
+          completed: isCompleted,
           testVersion: (storedVersion as TestVersion) || null,
           currentSectionIndex: restoredSectionIndex,
           currentQuestionIndex: restoredQuestionIndex,
-          persistedAnsweredCount: dbAnsweredCount > 0 ? dbAnsweredCount : null,
+          persistedAnsweredCount: persistedCount,
+          paused: shouldPause || false,
         }));
       } catch (err) {
         console.error('Error loading welcome test:', err);
@@ -252,23 +262,30 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           ? [{ name: questionDef.nano_skill, reason: isCorrect ? 'correct' : 'incorrect', mastery: isCorrect ? 100 : 0 }]
           : undefined;
 
+        // Aggregate events by section instead of per-question
+        // Only log one event per section (upsert pattern)
+        const sectionId = `wt_section_${questionDef.section}`;
+        const sectionAnswers = Object.entries(state.answers)
+          .filter(([id]) => {
+            const qDef = ALL_WELCOME_TEST_QUESTIONS.find(q => q.id === id);
+            return qDef?.section === questionDef.section;
+          })
+          .map(([id, ans]) => ({ question_id: id, answer: ans }));
+
         await supabase.rpc('add_student_event', {
           p_student_id: state.studentId,
           p_teacher_id: state.teacherId,
-          p_event_type: 'test_answer_submitted',
-          p_event_source: 'test',
+          p_event_type: 'welcome_test_section_progress',
+          p_event_source: 'welcome_test',
           p_source_id: state.testId,
-          p_element_type: questionDef.element_type || null,
+          p_element_type: questionDef.element_type || questionDef.section,
           p_event_payload: {
             test_type: 'welcome',
-            question_index: questionIndex,
-            question_id: questionId,
-            question_type: questionDef.question_type,
             section: questionDef.section,
-            student_answer: answer,
+            section_answers_count: sectionAnswers.length,
+            latest_question: questionId,
+            latest_answer: answer,
             is_correct: isCorrect,
-            time_spent_seconds: timeSpent,
-            nano_skill_ratings: nanoSkillRatings,
             detected_traits: { ...detectedTraits.current },
           } as unknown as Json,
           p_skill_ids: questionDef.nano_skill ? [questionDef.nano_skill] : [],
@@ -342,6 +359,14 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     try {
       await supabase.rpc('calculate_test_results', { p_test_id: state.testId });
 
+      // Save answered_count before completing
+      const finalAnsweredCount = allVisibleQuestions.filter(q => state.answers[q.id] !== undefined).length;
+      
+      await supabase
+        .from('student_tests')
+        .update({ answered_count: finalAnsweredCount })
+        .eq('id', state.testId);
+
       await supabase.functions.invoke('process-welcome-test', {
         body: {
           test_id: state.testId,
@@ -349,6 +374,7 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           teacher_id: state.teacherId,
           answers: state.answers,
           detected_traits: detectedTraits.current,
+          answered_count: finalAnsweredCount,
         },
       });
 
@@ -373,9 +399,13 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
   const answeredCount = allVisibleQuestions.filter(q => state.answers[q.id] !== undefined).length;
   const progress = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
-  // For completed tests, use persisted count if available
-  const displayAnsweredCount = state.completed && state.persistedAnsweredCount !== null
-    ? state.persistedAnsweredCount
+  // For completed tests: use persisted count or answers count, whichever is higher
+  const displayAnsweredCount = state.completed
+    ? Math.max(
+        answeredCount,
+        state.persistedAnsweredCount || 0,
+        totalQuestions > 0 ? answeredCount : 0
+      )
     : answeredCount;
 
   // Global question index within visible questions

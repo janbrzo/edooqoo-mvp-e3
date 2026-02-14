@@ -14,14 +14,16 @@ interface ListeningPlayerProps {
 }
 
 export function ListeningPlayer({ audioUrl, transcript }: ListeningPlayerProps) {
+  const hasAudio = audioUrl && audioUrl.trim() !== '';
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [showTranscript, setShowTranscript] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(!hasAudio); // auto-show if no audio
   const [playCount, setPlayCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const togglePlay = () => {
+    if (!hasAudio) return;
     if (!audioRef.current) {
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
@@ -69,23 +71,29 @@ export function ListeningPlayer({ audioUrl, transcript }: ListeningPlayerProps) 
         {playCount > 0 && <span className="ml-auto">Played {playCount}×</span>}
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button onClick={togglePlay} variant="outline" size="sm" className="gap-1.5 h-8">
-          {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-          {isPlaying ? 'Pause' : 'Play'}
-        </Button>
-
-        <div className="flex-1">
-          <Progress value={progress} className="h-1.5" />
-        </div>
-
-        {playCount > 0 && (
-          <Button onClick={replay} variant="ghost" size="sm" className="h-8 gap-1 text-xs">
-            <RotateCcw className="h-3 w-3" />
-            Replay
+      {hasAudio ? (
+        <div className="flex items-center gap-2">
+          <Button onClick={togglePlay} variant="outline" size="sm" className="gap-1.5 h-8">
+            {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+            {isPlaying ? 'Pause' : 'Play'}
           </Button>
-        )}
-      </div>
+
+          <div className="flex-1">
+            <Progress value={progress} className="h-1.5" />
+          </div>
+
+          {playCount > 0 && (
+            <Button onClick={replay} variant="ghost" size="sm" className="h-8 gap-1 text-xs">
+              <RotateCcw className="h-3 w-3" />
+              Replay
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="text-xs text-amber-600 dark:text-amber-400 italic">
+          ⚠️ Audio not available — transcript shown below
+        </div>
+      )}
 
       {/* Transcript toggle */}
       {transcript && (
@@ -97,7 +105,7 @@ export function ListeningPlayer({ audioUrl, transcript }: ListeningPlayerProps) 
             className="text-xs h-7 gap-1.5 text-muted-foreground"
           >
             {showTranscript ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-            {showTranscript ? 'Hide text' : 'Show text (if you need it)'}
+            {showTranscript ? 'Hide text' : 'Show text (if listening doesn\'t work)'}
           </Button>
           {showTranscript && (
             <div className="mt-2 p-2.5 bg-background rounded border text-sm text-muted-foreground italic">

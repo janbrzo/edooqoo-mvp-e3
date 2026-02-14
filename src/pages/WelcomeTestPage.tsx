@@ -213,15 +213,34 @@ export default function WelcomeTestPage() {
   if (stage === 'email') {
     return (
       <div className="min-h-screen relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-background to-secondary/20 filter blur-sm opacity-60 pointer-events-none">
-          <div className="max-w-2xl mx-auto p-4 mt-16 space-y-4">
-            <div className="h-8 bg-muted/50 rounded w-1/3" />
-            <div className="h-2 bg-muted/30 rounded w-full" />
-            <div className="h-40 bg-muted/20 rounded" />
-            <div className="h-32 bg-muted/20 rounded" />
+        {/* Blurred real test content behind modal */}
+        <div className="absolute inset-0 filter blur-md opacity-40 pointer-events-none overflow-hidden">
+          <div className="max-w-2xl mx-auto p-4 mt-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <span className="text-lg font-semibold">Welcome Test</span>
+            </div>
+            <div className="space-y-4">
+              <Card className="p-4">
+                <p className="text-sm font-medium mb-3">How would you describe your English right now?</p>
+                <div className="space-y-2">
+                  {['I can handle basic everyday situations', 'I can have simple conversations', 'I can discuss most topics but make mistakes', 'I speak fluently in most situations'].map((opt, i) => (
+                    <div key={i} className="p-2.5 rounded-lg border text-sm text-muted-foreground">{opt}</div>
+                  ))}
+                </div>
+              </Card>
+              <Card className="p-4">
+                <p className="text-sm font-medium mb-3">When you speak English, what frustrates you the most?</p>
+                <div className="space-y-2">
+                  {['I know what I want to say but can\'t find the right words', 'I make grammar mistakes', 'I can\'t understand native speakers'].map((opt, i) => (
+                    <div key={i} className="p-2.5 rounded-lg border text-sm text-muted-foreground">{opt}</div>
+                  ))}
+                </div>
+              </Card>
+            </div>
           </div>
         </div>
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-background/40 backdrop-blur-sm flex items-center justify-center p-4">
           <Card className="max-w-md w-full shadow-xl">
             <CardHeader className="text-center pb-3">
               <Sparkles className="h-8 w-8 text-primary mx-auto mb-2" />
@@ -362,8 +381,9 @@ export default function WelcomeTestPage() {
               </span>
               {/* Translation toggle */}
               <Select value={translationLang || 'none'} onValueChange={(v) => setTranslationLang(v === 'none' ? null : v)}>
-                <SelectTrigger className="h-7 w-7 p-0 border-0 [&>svg]:hidden">
+                <SelectTrigger className="h-7 gap-1 px-2 text-xs border rounded-md w-auto">
                   <Globe className={`h-3.5 w-3.5 ${translationLang ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <span className="hidden sm:inline">{translationLang || 'Translate'}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">English only</SelectItem>
@@ -577,12 +597,7 @@ function QuestionInput({
               transcript={question.audio_transcript}
             />
           )}
-          {/* If no audio_url, show transcript directly */}
-          {!question.audio_url && question.audio_transcript && (
-            <div className="p-3 bg-muted/30 rounded-lg border text-sm italic text-muted-foreground whitespace-pre-line">
-              {question.audio_transcript}
-            </div>
-          )}
+          {/* Transcript is handled inside ListeningPlayer - no duplicate here */}
           {/* Answer options */}
           {question.options && (
             <RadioGroup

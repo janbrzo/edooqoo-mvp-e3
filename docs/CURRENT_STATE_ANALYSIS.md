@@ -6,6 +6,20 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
+**Ostatnia naprawa (2026-02-14) - Welcome Test v2 Bug Fixes:**
+- ✅ **DB Migration**: Rozszerzono CHECK constraint na `question_type` (7 nowych typów), `homework_id` nullable, `welcome_test_completed` notification type
+- ✅ **Email sender**: "Worksheet Generator" → "EDOOQOO"
+- ✅ **ListeningPlayer**: Usunięto duplikat transkrypcji, zmieniono tekst przycisku, auto-show gdy brak audio
+- ✅ **SpeakingRecorder**: Auto-zapis nagrania przy nawigacji (fire-and-forget upload)
+- ✅ **Q26/Q27**: Usunięto podpowiedzi odpowiedzi z opisów
+- ✅ **Email modal**: Prawdziwe rozmyte tło zamiast szarych prostokątów
+- ✅ **Globe/Translation**: Widoczny przycisk z etykietą "Translate"
+- ✅ **Notifications**: Osobne queries zamiast JOIN (nullable homework_id), tytuł "Notifications"
+- ✅ **Welcome Test placeholder**: Karta preview z sekcjami/pytaniami w zakładce Tests (przed utworzeniem testu)
+- ✅ **0/49 refresh fix**: Persisted `answered_count` w DB + Math.max()
+- ✅ **Pause on refresh**: Automatyczna pauza przy powrocie do testu z odpowiedziami
+- ✅ **Events dedup**: Per-section zamiast per-question, event_source='welcome_test'
+
 **Ostatnia naprawa (2026-02-12):**
 - ✅ **P1 - Ujednolicenie UI Homework/Shared Worksheet**: Białe tło na obu, max-w-6xl na homework, label "SHARED WORKSHEET" (fioletowy) i "HOMEWORK" (pomarańczowy), przycisk Start na homework (jak Study na shared), oficjalne nazwy ćwiczeń w homework (getOfficialExerciseName)
 - ✅ **P2 - Teacher's Tip pod poleceniem**: Przeniesiony z dołu ćwiczenia tuż pod instrukcjami (ExerciseContent) w ExerciseSection.tsx
