@@ -10,8 +10,12 @@ A professional tool that generates high-quality, customized English worksheets i
 ## ✨ Key Features
 
 - **AI-Powered Generation**: Creates unique worksheets based on lesson goals and student needs
-- **8 Exercise Types**: Multiple choice, fill-in-blanks, reading comprehension, dialogue, matching, and more
+- **20+ Exercise Types**: Multiple choice, fill-in-blanks, reading, dialogue, matching, listening, speaking, and more
+- **Welcome Test**: Comprehensive student profiling with 49 questions, speaking recording, listening comprehension, and AI-powered analysis
 - **Dual Versions**: Clean student worksheets + comprehensive teacher versions with answers
+- **Homework System**: Interactive homework with AI evaluation and progress tracking
+- **Flashcards**: Spaced repetition learning with shared sets
+- **Student Progress Tracking**: Goals, learning elements, skill ratings
 - **Instant Creation**: Professional materials ready in 30-60 seconds
 - **Offline Capable**: Download as HTML files that work without internet
 - **Mobile Responsive**: Works perfectly on all devices

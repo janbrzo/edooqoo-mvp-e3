@@ -4,7 +4,9 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** New **Progress** tab on student page! Track learning goals, rate student skills (1-5 stars), and get AI-generated worksheet suggestions. Unified Main Goals across all dialogs with 3 new options: Social Conversation, Personal Development, Fun & Entertainment.
+**Latest Update:** **Welcome Test v2** with speaking recording, listening comprehension, multi-language translations, AI-powered student profiling, and real-time progress tracking. Teachers can preview all questions before sending, receive email notifications on completion, and see AI-generated learning profiles.
+
+**Previous Update:** New **Progress** tab on student page! Track learning goals, rate student skills (1-5 stars), and get AI-generated worksheet suggestions. Unified Main Goals across all dialogs with 3 new options: Social Conversation, Personal Development, Fun & Entertainment.
 
 ## How it works?
 1. **Create account** - Sign up and get 2 free tokens

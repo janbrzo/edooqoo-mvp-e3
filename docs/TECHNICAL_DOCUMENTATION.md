@@ -5,7 +5,22 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - AI Eval prompt strictness, feedback visibility, Create Homework debug:**
+**Latest Update (February 2026) - Welcome Test v2 Bug Fixes & Features:**
+- **DB Migration**: Expanded `student_test_questions.question_type` CHECK to include `speaking_record`, `listening_comprehension`, `self_assessment`, `scenario_reaction`, `preference_choice`, `open_reflection`, `self_assessment_matrix`. Made `homework_notifications.homework_id` nullable. Added `welcome_test_completed` to `notification_type` CHECK
+- **Email sender**: Changed from "Worksheet Generator" to "EDOOQOO" in `send-test-email/index.ts`
+- **ListeningPlayer**: Fixed duplicate transcript display, renamed "Show text (if you need it)" → "Show text (if listening doesn't work)", auto-show transcript when audio_url is empty
+- **SpeakingRecorder**: Auto-saves recording on unmount (navigation away) via fire-and-forget upload
+- **Answer hints removed**: Q26/Q27 descriptions no longer show correct answers in parentheses
+- **Email modal**: Replaced gray placeholder rectangles with actual blurred test content behind modal
+- **Translation toggle**: Globe button now has visible label "Translate" and proper border styling
+- **Notifications**: `HomeworkNotificationBadge` uses separate queries instead of JOIN (handles nullable homework_id), title changed to "Notifications"
+- **Welcome Test placeholder**: `StudentTestsTab` shows preview card with all sections/questions even before test is created
+- **0/49 refresh fix**: `useWelcomeTest` now persists `answered_count` to DB and uses `Math.max()` of persisted vs computed count
+- **Pause on refresh**: Returning to test with existing answers shows "Paused" screen with "Resume Test" button
+- **Events dedup**: Changed from per-question to per-section event logging, `event_source` changed from `'test'` to `'welcome_test'`
+- **process-welcome-test**: Fixed notification insert (null homework_id), event_source to 'welcome_test'
+
+**Previous Update (February 2026) - AI Eval prompt strictness, feedback visibility, Create Homework debug:**
 - **#1 AI prompt strictness**: `verify-open-answers` now penalizes non-answers ("I don't know", "nie wiem", etc.) with quality_score 0.0-0.1. Short non-meaningful answers (1-2 words) get 0.1-0.3. Non-English answers get 0.1-0.2. Passing (0.7+) requires genuine English sentence attempt
 - **#2 AI Eval feedback on Shared Worksheet**: `item_evaluations` from DB now loaded by `useInteractiveSharedWorksheet` and `useLiveSessionAnswers`, passed through `SharedWorksheetContent` to exercise components via `aiEvaluations` prop. Display condition changed from `disabled` to `disabled || isSharedWorksheet`
 - **#3 RPC update**: `get_worksheet_live_answers` now returns `item_evaluations` and `mastery` columns

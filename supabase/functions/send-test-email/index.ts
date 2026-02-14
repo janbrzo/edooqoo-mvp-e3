@@ -93,7 +93,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Worksheet Generator <noreply@edooqoo.com>',
+        from: 'EDOOQOO <noreply@edooqoo.com>',
         to: [recipientEmail],
         subject,
         html: emailBody,

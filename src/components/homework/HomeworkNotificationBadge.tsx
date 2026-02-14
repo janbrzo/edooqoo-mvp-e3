@@ -62,21 +62,32 @@ export function HomeworkNotificationBadge() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Use separate query without join to handle nullable homework_id
       const { data, error } = await supabase
         .from('homework_notifications')
-        .select(`
-          *,
-          homework_assignments!homework_notifications_homework_id_fkey(share_token)
-        `)
+        .select('*')
         .eq('teacher_id', user.id)
         .order('created_at', { ascending: false })
         .limit(15);
 
       if (error) throw error;
 
+      // Fetch share_tokens for homework notifications that have homework_id
+      const homeworkIds = (data || []).filter(n => n.homework_id).map(n => n.homework_id);
+      let homeworkTokenMap: Record<string, string> = {};
+      if (homeworkIds.length > 0) {
+        const { data: hwData } = await supabase
+          .from('homework_assignments')
+          .select('id, share_token')
+          .in('id', homeworkIds);
+        if (hwData) {
+          homeworkTokenMap = Object.fromEntries(hwData.map(h => [h.id, h.share_token || '']));
+        }
+      }
+
       const notificationsWithToken = (data || []).map(n => ({
         ...n,
-        share_token: (n as any).homework_assignments?.share_token || null
+        share_token: n.homework_id ? homeworkTokenMap[n.homework_id] || null : null,
       }));
 
       setNotifications(notificationsWithToken);

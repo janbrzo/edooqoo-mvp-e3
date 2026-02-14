@@ -29,7 +29,7 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer }: Speaking
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const blobRef = useRef<Blob | null>(null);
 
-  // Cleanup
+  // Auto-save on unmount if recorded but not saved
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -37,9 +37,24 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer }: Speaking
         audioRef.current.pause();
         audioRef.current = null;
       }
+      // Auto-save unsaved recording on unmount (navigation away)
+      if (blobRef.current && status === 'recorded') {
+        // Fire-and-forget upload
+        const formData = new FormData();
+        const fileName = `welcome-test-speaking-${Date.now()}.webm`;
+        formData.append('file', blobRef.current, fileName);
+        supabase.functions.invoke('upload-to-r2', { body: formData })
+          .then(({ data }) => {
+            const url = data?.url || data?.publicUrl;
+            if (url) onAnswer(url);
+          })
+          .catch(() => {
+            onAnswer(`recording_autosaved_${Date.now()}`);
+          });
+      }
       if (audioUrl && audioUrl.startsWith('blob:')) URL.revokeObjectURL(audioUrl);
     };
-  }, []);
+  }, [status, audioUrl]);
 
   const startRecording = useCallback(async () => {
     try {

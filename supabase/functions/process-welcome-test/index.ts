@@ -153,7 +153,7 @@ serve(async (req) => {
       p_student_id: student_id,
       p_teacher_id: teacher_id,
       p_event_type: 'welcome_test_completed',
-      p_event_source: 'test',
+      p_event_source: 'welcome_test',
       p_source_id: test_id,
       p_event_payload: {
         test_type: 'welcome',
@@ -188,7 +188,7 @@ serve(async (req) => {
       const studentName = studentData?.name || 'Student';
 
       await supabase.from('homework_notifications').insert({
-        homework_id: test_id,
+        homework_id: null,
         student_id,
         teacher_id,
         notification_type: 'welcome_test_completed',

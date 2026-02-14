@@ -15,6 +15,13 @@
 ## Getting Started
 
 **Latest Improvements:**
+- **Welcome Test v2**: Comprehensive student profiling with speaking, listening, AI analysis, multi-language translations
+- **Welcome Test Preview**: Teachers can preview all test questions in Tests tab before sending to student
+- **Auto-notifications**: Teachers receive email + in-app notification when student completes Welcome Test
+- **Progress tracking**: Real-time progress bar showing student's test completion status
+- **Pause & Resume**: Students can close browser and resume test later with all answers preserved
+
+**Previous Improvements:**
 - **Live Session Done Button**: Teachers can mark exercises as completed in Live Session mode with elegant gray styling
 - **Share Button on Worksheets Tab**: Quick share access on worksheet cards in /student page with green border when active
 - **Share Links 10 Days**: Extended from 7 days for more flexibility
