@@ -5,7 +5,24 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Welcome Test v2 Bug Fixes & Features:**
+**Latest Update (February 2026) - Welcome Test v2 Round 2 Bug Fixes:**
+- **SpeakingRecorder**: Cross-browser mimeType detection (webm → mp4 → fallback), stale closure fix via `statusRef`, larger mobile button
+- **Event logging**: Debounced `commitAnswer` — events only on blur/navigation, not every keystroke. Split `saveAnswer` into local update + commit
+- **Score calculation**: Welcome tests now separate skill questions (grammar/vocab/reading/listening) from profiling questions in display
+- **Cross-device resume**: First unanswered question found from DB answers, not localStorage position
+- **Server-side traits**: `process-welcome-test` reconstructs `motivation_type`, `anxiety_level`, `ambiguity_tolerance`, `error_attitude`, `preferred_input_channel` from DB answers (not relying on frontend `detected_traits`)
+- **Teacher email**: Completion email now includes clickable "View Results" link to student test results
+- **Teacher access control**: Teachers opening student test link see blocking screen with link to results (can't accidentally answer)
+- **Teacher notes**: Per-question textarea in `TestDetailsView`, saved in `question_data.teacher_note`
+- **Re-take**: Button in test details creates new welcome test, archives old one
+- **Auto-translation**: `native_language` from student profile auto-selects translation language
+- **10 language translations**: Full translation sets for PL, ES, DE, FR, PT, IT, TR, RU, CS, UK
+- **Mobile progress**: 49 question dots replaced with compact progress bar on mobile
+- **Tab navigation fix**: `StudentPage` syncs `activeTab` with URL `searchParams` via `useEffect`
+- **New edge functions**: `generate-welcome-test-audio` (TTS → R2), `transcribe-audio` (STT via Lovable gateway)
+- **`answered_count`**: Added to `StudentTest` type definition
+
+**Previous Update (February 2026) - Welcome Test v2 Bug Fixes & Features:**
 - **DB Migration**: Expanded `student_test_questions.question_type` CHECK to include `speaking_record`, `listening_comprehension`, `self_assessment`, `scenario_reaction`, `preference_choice`, `open_reflection`, `self_assessment_matrix`. Made `homework_notifications.homework_id` nullable. Added `welcome_test_completed` to `notification_type` CHECK
 - **Email sender**: Changed from "Worksheet Generator" to "EDOOQOO" in `send-test-email/index.ts`
 - **ListeningPlayer**: Fixed duplicate transcript display, renamed "Show text (if you need it)" → "Show text (if listening doesn't work)", auto-show transcript when audio_url is empty

@@ -3,7 +3,21 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Feb 2026) - Welcome Test v2 ✅
+### Recently Completed (Feb 2026) - Welcome Test v2 Round 2 ✅
+- Cross-browser SpeakingRecorder (mimeType detection: webm/mp4/fallback)
+- Debounced event logging (commitAnswer on blur/navigation only)
+- Separate skill vs profiling score display
+- Cross-device resume (first unanswered question from DB)
+- Server-side trait reconstruction in process-welcome-test
+- Teacher access control (blocking screen on student test link)
+- Teacher notes per question + Re-take button
+- Auto-translation from student native_language profile
+- 10 full language translation sets
+- Mobile progress bar (replaces 49 dots)
+- Tab navigation fix (StudentPage URL sync)
+- Edge functions: generate-welcome-test-audio (TTS), transcribe-audio (STT)
+
+### Previously Completed (Feb 2026) - Welcome Test v2 ✅
 - Welcome Test with 49 questions across 7 sections
 - Speaking recording (SpeakingRecorder) + Listening comprehension (ListeningPlayer)
 - AI-powered profiling via Gemini 2.5 Flash (process-welcome-test edge function)

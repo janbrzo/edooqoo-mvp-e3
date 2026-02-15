@@ -6,7 +6,23 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-14) - Welcome Test v2 Bug Fixes:**
+**Ostatnia naprawa (2026-02-15) - Welcome Test v2 Round 2:**
+- ✅ **SpeakingRecorder**: Detekcja mimeType (webm/mp4/fallback), fix stale closure via statusRef, większy przycisk mobile
+- ✅ **Event logging**: Debounced commitAnswer — eventy tylko na blur/nawigację, nie na każdy keystroke
+- ✅ **Score calculation**: Osobne wyświetlanie skill questions vs profiling questions
+- ✅ **Cross-device resume**: Pozycja na podstawie pierwszego nieodpowiedzianego pytania z DB
+- ✅ **Server-side traits**: process-welcome-test rekonstruuje cechy z odpowiedzi DB (nie z frontendu)
+- ✅ **Teacher email**: Klikalne "View Results" w mailu po ukończeniu testu
+- ✅ **Teacher access**: Blokada odpowiadania przez nauczyciela na linku studenta
+- ✅ **Teacher notes**: Notatki per-question w TestDetailsView (question_data.teacher_note)
+- ✅ **Re-take**: Przycisk tworzący nowy test, archiwizujący stary
+- ✅ **Auto-translation**: native_language z profilu studenta auto-wybiera język tłumaczenia
+- ✅ **10 języków tłumaczeń**: PL, ES, DE, FR, PT, IT, TR, RU, CS, UK
+- ✅ **Mobile progress**: Compact progress bar zamiast 49 kropek na mobile
+- ✅ **Tab navigation**: StudentPage syncs activeTab z URL searchParams
+- ✅ **Edge functions**: generate-welcome-test-audio (TTS→R2), transcribe-audio (STT)
+
+**Poprzednia naprawa (2026-02-14) - Welcome Test v2 Bug Fixes:**
 - ✅ **DB Migration**: Rozszerzono CHECK constraint na `question_type` (7 nowych typów), `homework_id` nullable, `welcome_test_completed` notification type
 - ✅ **Email sender**: "Worksheet Generator" → "EDOOQOO"
 - ✅ **ListeningPlayer**: Usunięto duplikat transkrypcji, zmieniono tekst przycisku, auto-show gdy brak audio
