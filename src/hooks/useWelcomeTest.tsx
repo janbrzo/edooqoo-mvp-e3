@@ -1,6 +1,7 @@
 /**
  * useWelcomeTest - Hook for Welcome Test session management
  * Handles answer submission, timing, trait detection, version filtering, pause/resume
+ * Issues fixed: debounced events, cross-device resume, teacher mode, auto-translation
  */
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
@@ -34,8 +35,13 @@ interface WelcomeTestState {
   submitting: boolean;
   testVersion: TestVersion;
   paused: boolean;
-  persistedAnsweredCount: number | null; // for completed tests
+  persistedAnsweredCount: number | null;
+  isTeacherMode: boolean;
+  studentNativeLanguage: string | null;
 }
+
+// Questions that are text-input based and should only commit on blur/navigate
+const TEXT_INPUT_TYPES = new Set(['fill_blank', 'open_ended', 'open_reflection']);
 
 export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
   const [state, setState] = useState<WelcomeTestState>({
@@ -53,10 +59,14 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     testVersion: null,
     paused: false,
     persistedAnsweredCount: null,
+    isTeacherMode: false,
+    studentNativeLanguage: null,
   });
 
   const questionTimers = useRef<Record<string, number>>({});
   const detectedTraits = useRef<Record<string, string>>({});
+  const committedSections = useRef<Set<string>>(new Set());
+  const pendingCommit = useRef<string | null>(null);
 
   // Load test by share token
   useEffect(() => {
@@ -67,6 +77,10 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
 
     const fetchTest = async () => {
       try {
+        // Check if current user is a teacher
+        const { data: { user } } = await supabase.auth.getUser();
+        const isTeacher = !!user;
+
         const { data, error } = await supabase
           .rpc('get_test_by_share_token', { p_share_token: shareToken });
 
@@ -86,6 +100,17 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
 
         const studentId = fullTest?.student_id || null;
         const teacherId = fullTest?.teacher_id || null;
+
+        // Fetch student's native language for auto-translation
+        let nativeLang: string | null = null;
+        if (studentId) {
+          const { data: studentData } = await supabase
+            .from('students')
+            .select('native_language')
+            .eq('id', studentId)
+            .single();
+          nativeLang = studentData?.native_language || null;
+        }
 
         // Load existing answers
         const { data: questionsData } = await supabase
@@ -108,36 +133,57 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           }
         }
 
-        // Restore version from localStorage
+        // Restore version from localStorage OR generation_params
         const storedVersion = localStorage.getItem(`wt_version_${shareToken}`);
+        const dbVersion = (fullTest?.generation_params as any)?.test_version || null;
+        const resolvedVersion = (storedVersion || dbVersion) as TestVersion;
 
         const isCompleted = testInfo.status === 'completed' || testInfo.status === 'reviewed';
         const hasExistingAnswers = Object.keys(existingAnswers).length > 0;
 
-        // Update status to in_progress if assigned
-        if (testInfo.status === 'assigned') {
+        // Update status to in_progress if assigned (only if not teacher)
+        if (testInfo.status === 'assigned' && !isTeacher) {
           await supabase
             .from('student_tests')
             .update({ status: 'in_progress', started_at: new Date().toISOString() })
             .eq('id', testInfo.id);
         }
 
-        // Restore position from localStorage
+        // For cross-device resume: find first unanswered question
         let restoredSectionIndex = 0;
         let restoredQuestionIndex = 0;
-        const storedPos = localStorage.getItem(`wt_position_${shareToken}`);
-        if (storedPos) {
-          try {
-            const pos = JSON.parse(storedPos);
-            restoredSectionIndex = pos.sectionIndex || 0;
-            restoredQuestionIndex = pos.questionIndex || 0;
-          } catch {}
+        
+        if (hasExistingAnswers && resolvedVersion && !isCompleted) {
+          // Compute visible questions for this version
+          const visibleSections = resolvedVersion === 'short'
+            ? WELCOME_TEST_SECTIONS_WITH_QUESTIONS.map(s => ({
+                ...s,
+                questions: s.questions.filter(q => WELCOME_TEST_SHORT_QUESTION_IDS.includes(q.id)),
+              })).filter(s => s.questions.length > 0)
+            : WELCOME_TEST_SECTIONS_WITH_QUESTIONS;
+          
+          // Find first unanswered question
+          let found = false;
+          for (let si = 0; si < visibleSections.length && !found; si++) {
+            for (let qi = 0; qi < visibleSections[si].questions.length && !found; qi++) {
+              if (existingAnswers[visibleSections[si].questions[qi].id] === undefined) {
+                restoredSectionIndex = si;
+                restoredQuestionIndex = qi;
+                found = true;
+              }
+            }
+          }
+          if (!found) {
+            // All answered, go to last question
+            const lastSection = visibleSections.length - 1;
+            restoredSectionIndex = lastSection;
+            restoredQuestionIndex = visibleSections[lastSection].questions.length - 1;
+          }
         }
 
         // If has existing answers but not completed, show paused state
-        const shouldPause = !isCompleted && hasExistingAnswers && !!storedVersion;
+        const shouldPause = !isCompleted && hasExistingAnswers && !!resolvedVersion && !isTeacher;
 
-        // Use the answered_count from DB for completed tests
         const persistedCount = (testInfo as any).answered_count || dbAnsweredCount || null;
 
         setState(prev => ({
@@ -149,11 +195,13 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           answers: existingAnswers,
           loading: false,
           completed: isCompleted,
-          testVersion: (storedVersion as TestVersion) || null,
+          testVersion: resolvedVersion,
           currentSectionIndex: restoredSectionIndex,
           currentQuestionIndex: restoredQuestionIndex,
           persistedAnsweredCount: persistedCount,
           paused: shouldPause || false,
+          isTeacherMode: isTeacher,
+          studentNativeLanguage: nativeLang,
         }));
       } catch (err) {
         console.error('Error loading welcome test:', err);
@@ -186,7 +234,7 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     }
   }, [currentQuestion?.id]);
 
-  // Persist position on navigation
+  // Persist position on navigation (localStorage only - fast)
   useEffect(() => {
     if (shareToken && !state.completed && state.testVersion) {
       localStorage.setItem(`wt_position_${shareToken}`, JSON.stringify({
@@ -201,17 +249,20 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     if (shareToken) {
       localStorage.setItem(`wt_version_${shareToken}`, version);
     }
+    // Also persist to DB for cross-device
+    if (state.testId) {
+      supabase
+        .from('student_tests')
+        .update({ generation_params: { test_version: version } as unknown as Json })
+        .eq('id', state.testId)
+        .then(() => {});
+    }
     setState(prev => ({ ...prev, testVersion: version, currentSectionIndex: 0, currentQuestionIndex: 0 }));
-  }, [shareToken]);
+  }, [shareToken, state.testId]);
 
-  // Save answer
-  const saveAnswer = useCallback(async (questionId: string, answer: unknown) => {
-    setState(prev => ({
-      ...prev,
-      answers: { ...prev.answers, [questionId]: answer },
-    }));
-
-    if (!state.testId) return;
+  // Commit answer to DB + log event (called on blur/navigate for text, immediately for radio/checkbox)
+  const commitAnswer = useCallback(async (questionId: string, answer: unknown) => {
+    if (!state.testId || state.isTeacherMode) return;
 
     const questionDef = ALL_WELCOME_TEST_QUESTIONS.find(q => q.id === questionId);
     if (!questionDef) return;
@@ -257,57 +308,98 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
         .eq('test_id', state.testId)
         .eq('question_index', questionIndex);
 
+      // Log section-level event (one per section, upsert pattern via DELETE+INSERT)
       if (state.studentId && state.teacherId) {
-        const nanoSkillRatings = questionDef.nano_skill && isCorrect !== null
-          ? [{ name: questionDef.nano_skill, reason: isCorrect ? 'correct' : 'incorrect', mastery: isCorrect ? 100 : 0 }]
-          : undefined;
+        const sectionId = questionDef.section;
+        
+        // Collect all answers for this section
+        const currentAnswers = { ...state.answers, [questionId]: answer };
+        const sectionQuestions = ALL_WELCOME_TEST_QUESTIONS.filter(q => q.section === sectionId);
+        const sectionAnswerCount = sectionQuestions.filter(q => currentAnswers[q.id] !== undefined).length;
 
-        // Aggregate events by section instead of per-question
-        // Only log one event per section (upsert pattern)
-        const sectionId = `wt_section_${questionDef.section}`;
-        const sectionAnswers = Object.entries(state.answers)
-          .filter(([id]) => {
-            const qDef = ALL_WELCOME_TEST_QUESTIONS.find(q => q.id === id);
-            return qDef?.section === questionDef.section;
-          })
-          .map(([id, ans]) => ({ question_id: id, answer: ans }));
+        // Only log once per section change (debounce)
+        const sectionKey = `${sectionId}_${sectionAnswerCount}`;
+        if (!committedSections.current.has(sectionKey)) {
+          committedSections.current.add(sectionKey);
 
-        await supabase.rpc('add_student_event', {
-          p_student_id: state.studentId,
-          p_teacher_id: state.teacherId,
-          p_event_type: 'welcome_test_section_progress',
-          p_event_source: 'welcome_test',
-          p_source_id: state.testId,
-          p_element_type: questionDef.element_type || questionDef.section,
-          p_event_payload: {
-            test_type: 'welcome',
-            section: questionDef.section,
-            section_answers_count: sectionAnswers.length,
-            latest_question: questionId,
-            latest_answer: answer,
-            is_correct: isCorrect,
-            detected_traits: { ...detectedTraits.current },
-          } as unknown as Json,
-          p_skill_ids: questionDef.nano_skill ? [questionDef.nano_skill] : [],
-        });
+          // DELETE previous events for this section, then INSERT new one
+          await supabase
+            .from('student_events')
+            .delete()
+            .eq('student_id', state.studentId)
+            .eq('source_id', state.testId)
+            .eq('event_type', 'welcome_test_section_progress')
+            .eq('element_type', sectionId);
+
+          await supabase.rpc('add_student_event', {
+            p_student_id: state.studentId,
+            p_teacher_id: state.teacherId,
+            p_event_type: 'welcome_test_section_progress',
+            p_event_source: 'welcome_test',
+            p_source_id: state.testId,
+            p_element_type: sectionId,
+            p_event_payload: {
+              test_type: 'welcome',
+              section: sectionId,
+              section_answers_count: sectionAnswerCount,
+              section_total: sectionQuestions.length,
+              detected_traits: { ...detectedTraits.current },
+            } as unknown as Json,
+            p_skill_ids: [],
+          });
+        }
       }
     } catch (err) {
-      console.error('Error saving answer:', err);
+      console.error('Error committing answer:', err);
     }
-  }, [state.testId, state.studentId, state.teacherId]);
+  }, [state.testId, state.studentId, state.teacherId, state.answers, state.isTeacherMode]);
+
+  // Save answer - updates local state, commits immediately for non-text questions
+  const saveAnswer = useCallback(async (questionId: string, answer: unknown) => {
+    setState(prev => ({
+      ...prev,
+      answers: { ...prev.answers, [questionId]: answer },
+    }));
+
+    const questionDef = ALL_WELCOME_TEST_QUESTIONS.find(q => q.id === questionId);
+    if (!questionDef) return;
+
+    // For text inputs, defer commit to blur/navigation
+    if (TEXT_INPUT_TYPES.has(questionDef.question_type)) {
+      pendingCommit.current = questionId;
+      return;
+    }
+
+    // For radio/checkbox/matrix, commit immediately
+    await commitAnswer(questionId, answer);
+  }, [commitAnswer]);
+
+  // Flush pending text answer (called on navigation)
+  const flushPendingAnswer = useCallback(async () => {
+    if (pendingCommit.current && state.answers[pendingCommit.current] !== undefined) {
+      await commitAnswer(pendingCommit.current, state.answers[pendingCommit.current]);
+      pendingCommit.current = null;
+    }
+  }, [commitAnswer, state.answers]);
 
   // Save "I don't know" answer
   const saveIdontKnow = useCallback((questionId: string) => {
-    saveAnswer(questionId, '__IDK__');
-  }, [saveAnswer]);
+    setState(prev => ({
+      ...prev,
+      answers: { ...prev.answers, [questionId]: '__IDK__' },
+    }));
+    commitAnswer(questionId, '__IDK__');
+  }, [commitAnswer]);
 
   // Skip question (just move forward without saving)
   const skipQuestion = useCallback(() => {
+    flushPendingAnswer();
     goToNext();
   }, []);
 
   // Navigation
   const goToNext = useCallback(() => {
+    flushPendingAnswer();
     setState(prev => {
       const section = sections[prev.currentSectionIndex];
       if (!section) return prev;
@@ -318,9 +410,10 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
       }
       return prev;
     });
-  }, [sections]);
+  }, [sections, flushPendingAnswer]);
 
   const goToPrevious = useCallback(() => {
+    flushPendingAnswer();
     setState(prev => {
       if (prev.currentQuestionIndex > 0) {
         return { ...prev, currentQuestionIndex: prev.currentQuestionIndex - 1 };
@@ -330,21 +423,24 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
       }
       return prev;
     });
-  }, [sections]);
+  }, [sections, flushPendingAnswer]);
 
   const goToSection = useCallback((sectionIndex: number) => {
+    flushPendingAnswer();
     setState(prev => ({ ...prev, currentSectionIndex: sectionIndex, currentQuestionIndex: 0 }));
-  }, []);
+  }, [flushPendingAnswer]);
 
   const goToQuestionInSection = useCallback((sectionIndex: number, questionIndex: number) => {
+    flushPendingAnswer();
     setState(prev => ({ ...prev, currentSectionIndex: sectionIndex, currentQuestionIndex: questionIndex }));
-  }, []);
+  }, [flushPendingAnswer]);
 
   // Pause test
   const pauseTest = useCallback(() => {
+    flushPendingAnswer();
     setState(prev => ({ ...prev, paused: true }));
     toast.success('Test paused. Your progress is saved. Come back anytime!');
-  }, []);
+  }, [flushPendingAnswer]);
 
   const resumeTest = useCallback(() => {
     setState(prev => ({ ...prev, paused: false }));
@@ -354,12 +450,12 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
   const completeTest = useCallback(async () => {
     if (!state.testId) return false;
 
+    await flushPendingAnswer();
     setState(prev => ({ ...prev, submitting: true }));
 
     try {
       await supabase.rpc('calculate_test_results', { p_test_id: state.testId });
 
-      // Save answered_count before completing
       const finalAnsweredCount = allVisibleQuestions.filter(q => state.answers[q.id] !== undefined).length;
       
       await supabase
@@ -378,12 +474,11 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
         },
       });
 
-      // Clean up localStorage
       if (shareToken) {
         localStorage.removeItem(`wt_position_${shareToken}`);
       }
 
-      setState(prev => ({ ...prev, completed: true, submitting: false }));
+      setState(prev => ({ ...prev, completed: true, submitting: false, persistedAnsweredCount: finalAnsweredCount }));
       toast.success('Welcome Test completed! Your teacher will review the results.');
       return true;
     } catch (err) {
@@ -392,23 +487,17 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
       setState(prev => ({ ...prev, submitting: false }));
       return false;
     }
-  }, [state.testId, state.studentId, state.teacherId, state.answers, shareToken]);
+  }, [state.testId, state.studentId, state.teacherId, state.answers, shareToken, flushPendingAnswer, allVisibleQuestions]);
 
   // Progress calculation
   const totalQuestions = allVisibleQuestions.length;
   const answeredCount = allVisibleQuestions.filter(q => state.answers[q.id] !== undefined).length;
   const progress = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
-  // For completed tests: use persisted count or answers count, whichever is higher
   const displayAnsweredCount = state.completed
-    ? Math.max(
-        answeredCount,
-        state.persistedAnsweredCount || 0,
-        totalQuestions > 0 ? answeredCount : 0
-      )
+    ? Math.max(answeredCount, state.persistedAnsweredCount || 0)
     : answeredCount;
 
-  // Global question index within visible questions
   const globalQuestionIndex = useMemo(() => {
     let idx = 0;
     for (let i = 0; i < state.currentSectionIndex; i++) {
@@ -422,7 +511,6 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
 
   const canComplete = answeredCount >= totalQuestions * 0.5;
 
-  // Estimated time remaining (avg 40s per question)
   const estimatedMinutesRemaining = Math.max(1, Math.ceil((totalQuestions - answeredCount) * 40 / 60));
 
   return {
@@ -448,5 +536,6 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     setTestVersion,
     pauseTest,
     resumeTest,
+    flushPendingAnswer,
   };
 }

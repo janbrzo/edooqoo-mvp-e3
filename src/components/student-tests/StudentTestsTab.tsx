@@ -234,10 +234,19 @@ function TestCard({ test, onClick }: TestCardProps) {
           <div className="flex items-center gap-3">
             {test.score_percentage !== null && (
               <div className="text-right">
-                <div className="text-2xl font-bold">{test.score_percentage.toFixed(0)}%</div>
-                <div className="text-xs text-muted-foreground">
-                  {test.correct_answers}/{test.total_questions} correct
-                </div>
+                {isWelcome ? (
+                  <>
+                    <div className="text-lg font-bold">{test.answered_count || test.correct_answers || 0}/{test.total_questions}</div>
+                    <div className="text-xs text-muted-foreground">answered</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">{test.score_percentage.toFixed(0)}%</div>
+                    <div className="text-xs text-muted-foreground">
+                      {test.correct_answers}/{test.total_questions} correct
+                    </div>
+                  </>
+                )}
               </div>
             )}
             <Badge className={`${statusConfig.bgColor} ${statusConfig.color}`}>
