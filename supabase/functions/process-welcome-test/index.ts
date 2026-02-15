@@ -80,8 +80,130 @@ serve(async (req) => {
     else if (avgScore >= 35) estimatedLevel = 'A2';
     else estimatedLevel = 'A1';
 
-    // Extract traits from detected_traits
-    const traits = detected_traits || {};
+    // ===== SERVER-SIDE TRAIT RECONSTRUCTION (Issue 6B) =====
+    // Reconstruct traits from answers instead of relying on frontend detected_traits
+    // This ensures traits are correct even after page refresh/cross-device resume
+    
+    const TRAIT_QUESTIONS: Record<string, { questionId: string; options: string[]; mapping: Record<string, string> }> = {
+      self_assessed_level: {
+        questionId: 'wt_q1',
+        options: [
+          'I can handle basic everyday situations like ordering food or asking for directions',
+          'I can have simple conversations about familiar topics but struggle with complex ideas',
+          'I can discuss most topics but make grammatical mistakes and sometimes lack vocabulary',
+          'I speak fluently in most situations but want to sound more natural and precise',
+          "I'm comfortable in English but want to master advanced/professional language",
+        ],
+        mapping: { '0': 'A1-A2', '1': 'A2-B1', '2': 'B1-B2', '3': 'B2-C1', '4': 'C1-C2' },
+      },
+      motivation_type: {
+        questionId: 'wt_q3',
+        options: [
+          'I need it for my job - meetings, emails, presentations',
+          "I'm preparing for an exam (IELTS, Cambridge, etc.)",
+          'I want to travel and communicate freely',
+          'I want to watch movies/read books without subtitles',
+          'I want to feel confident talking to English speakers',
+          'Career advancement - I need English for promotion',
+          "I'm moving to an English-speaking country",
+        ],
+        mapping: { '0': 'instrumental', '1': 'instrumental', '2': 'integrative', '3': 'integrative', '4': 'integrative', '5': 'instrumental', '6': 'instrumental' },
+      },
+      ambiguity_tolerance: {
+        questionId: 'wt_q4',
+        options: [
+          'I ask the person to repeat or explain',
+          'I pretend I understood and hope for the best',
+          'I try to guess from context',
+          'I get stressed and switch to my language',
+          'I look it up immediately on my phone',
+        ],
+        mapping: { '0': 'high', '1': 'low', '2': 'high', '3': 'low', '4': 'medium' },
+      },
+      weekly_study_time: {
+        questionId: 'wt_q5',
+        options: [
+          'Almost none - I only have lesson time',
+          '15-30 minutes a few times a week',
+          'About 1 hour spread across the week',
+          "2-3 hours - I'm committed",
+          'More than 3 hours - English is my priority',
+        ],
+        mapping: { '0': 'none', '1': '15_30_min', '2': '1_hour', '3': '2_3_hours', '4': '3_plus_hours' },
+      },
+      anxiety_level: {
+        questionId: 'wt_q7',
+        options: [
+          "I don't mind at all - that's how you learn",
+          'I prefer not to, but I can handle it',
+          'I feel embarrassed but try to push through',
+          "I avoid speaking because I'm afraid of mistakes",
+          'I get really frustrated with myself',
+        ],
+        mapping: { '0': 'low', '1': 'low', '2': 'medium', '3': 'high', '4': 'high' },
+      },
+      preferred_input_channel: {
+        questionId: 'wt_q8',
+        options: [
+          'Seeing it written down with a definition',
+          'Hearing it in a sentence',
+          'Using it in my own sentence right away',
+          'Connecting it to a picture or image',
+          'Repeating it many times',
+          'Understanding the word parts (prefix, root, suffix)',
+        ],
+        mapping: { '0': 'visual', '1': 'auditory', '2': 'kinesthetic', '3': 'visual', '4': 'auditory', '5': 'visual' },
+      },
+      error_attitude: {
+        questionId: 'wt_q14',
+        options: [
+          'I say "Sorry, could you repeat that please?" and try again',
+          'I just point at the menu and smile',
+          'I use Google Translate on my phone',
+          'I answer with what I think they asked',
+        ],
+        mapping: { '0': 'comfortable', '1': 'avoidant', '2': 'cautious', '3': 'comfortable' },
+      },
+      feedback_preference: {
+        questionId: 'wt_q42',
+        options: [
+          'Correct me immediately, every time',
+          'Note them down and discuss at the end',
+          'Only correct major mistakes, ignore small ones',
+          'Write corrections for me to review later',
+          'I prefer to self-correct with hints',
+        ],
+        mapping: { '0': 'immediate', '1': 'delayed_discussion', '2': 'major_only', '3': 'written_review', '4': 'self_correct' },
+      },
+    };
+
+    // Reconstruct traits from DB answers (not frontend state)
+    const traits: Record<string, string> = {};
+    for (const [traitName, config] of Object.entries(TRAIT_QUESTIONS)) {
+      // Try from DB questions first, then from answers payload
+      const dbQ = questions.find((q: any) => {
+        const qIdx = q.question_index;
+        // Map question_index to question_id - check all questions
+        return q.student_answer !== null;
+      });
+      
+      // Use answers payload as source (it has question IDs as keys)
+      const answerVal = answers?.[config.questionId];
+      if (answerVal && typeof answerVal === 'string') {
+        const optIdx = config.options.indexOf(answerVal);
+        if (optIdx >= 0) {
+          const mapped = config.mapping[String(optIdx)];
+          if (mapped) traits[traitName] = mapped;
+        }
+      }
+    }
+
+    // Also use frontend detected_traits as fallback
+    const frontendTraits = detected_traits || {};
+    for (const [key, val] of Object.entries(frontendTraits)) {
+      if (!traits[key] && val) traits[key] = val as string;
+    }
+
     const selfAssessedLevel = traits.self_assessed_level || null;
 
     // Level confidence
@@ -246,7 +368,8 @@ serve(async (req) => {
                   <strong>Self-assessed:</strong> ${selfAssessedLevel} (${levelConfidence})
                 </p>` : ''}
               </div>
-              <p>View the full learning profile in the student's profile page.</p>
+              <p>View the full learning profile in the student's profile page:</p>
+              <a href="https://edooqoo-mvp-e3.lovable.app/student/${student_id}?tab=tests" style="display: inline-block; background: #7c3aed; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin: 10px 0; font-weight: bold;">View Results →</a>
               <p style="color: #6b7280; font-size: 12px; margin-top: 20px;">
                 — edooqoo
               </p>
