@@ -66,6 +66,7 @@ export interface StudentTest {
   total_questions: number;
   correct_answers: number;
   score_percentage: number | null;
+  answered_count: number | null;
   time_spent_seconds: number;
   
   // Sharing
