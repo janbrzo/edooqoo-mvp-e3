@@ -2,16 +2,18 @@
  * WelcomeTestPage - Student-facing page for taking the Welcome Test
  * Supports: version selection, instructions, pause/resume, skip, I-don't-know,
  * blurred email modal, confetti on completion, reduced heights,
- * speaking recording, listening comprehension, translation toggle, section celebration
+ * speaking recording, listening comprehension, translation toggle, section celebration,
+ * teacher blocking (Issue 9), mobile-first (Issue 11), blur fix (Issue 12)
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Confetti from 'react-confetti';
 import { 
   ChevronLeft, ChevronRight, CheckCircle, Loader2, Sparkles,
   User, BookOpen, MessageSquare, PenTool, MessageCircle, Target,
-  SkipForward, HelpCircle, Pause, Clock, Globe, PartyPopper
+  SkipForward, HelpCircle, Pause, Clock, Globe, PartyPopper,
+  ShieldAlert, ExternalLink, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +33,7 @@ import { InstructionScreen } from '@/components/welcome-test/InstructionScreen';
 import { SpeakingRecorder } from '@/components/welcome-test/SpeakingRecorder';
 import { ListeningPlayer } from '@/components/welcome-test/ListeningPlayer';
 import { TRANSLATION_LANGUAGES, getTranslation, hasTranslation } from '@/data/welcomeTestTranslations';
+import { WELCOME_TEST_SECTIONS_WITH_QUESTIONS } from '@/data/welcomeTestQuestions';
 import type { WelcomeTestQuestionDef } from '@/types/welcomeTest';
 
 const SECTION_ICONS: Record<string, React.ReactNode> = {
@@ -42,30 +45,31 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
   'Target': <Target className="h-4 w-4" />,
 };
 
-type Stage = 'loading' | 'error' | 'email' | 'version' | 'instructions' | 'test' | 'paused' | 'completed' | 'section_celebration';
+type Stage = 'loading' | 'error' | 'email' | 'teacher_block' | 'version' | 'instructions' | 'test' | 'paused' | 'completed' | 'section_celebration';
 
 export default function WelcomeTestPage() {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const {
     loading, error, title, answers, sections, currentSection,
     currentQuestion, globalQuestionIndex, totalQuestions, answeredCount,
     progress, isLastQuestion, canComplete, completed, submitting,
     currentSectionIndex, currentQuestionIndex, testVersion, paused,
-    estimatedMinutesRemaining,
+    estimatedMinutesRemaining, isTeacherMode, studentNativeLanguage,
     saveAnswer, saveIdontKnow, skipQuestion, goToNext, goToPrevious,
     goToSection, goToQuestionInSection, completeTest, setTestVersion,
-    pauseTest, resumeTest,
-    testId,
+    pauseTest, resumeTest, flushPendingAnswer,
+    testId, studentId,
   } = useWelcomeTest({ shareToken: token || null });
 
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   const [emailInput, setEmailInput] = useState('');
-  const [isTeacher, setIsTeacher] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [translationLang, setTranslationLang] = useState<string | null>(null);
   const [sectionCelebration, setSectionCelebration] = useState<{ fromSection: string; nextSection: string } | null>(null);
+  const [teacherPreviewMode, setTeacherPreviewMode] = useState(false);
 
   // Track previous section for celebration
   const prevSectionRef = useState<number>(0);
@@ -76,6 +80,30 @@ export default function WelcomeTestPage() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Auto-set translation language from student profile
+  useEffect(() => {
+    if (studentNativeLanguage && !translationLang) {
+      // Map native language name to translation language
+      const langMap: Record<string, string> = {
+        'Polish': 'Polish', 'polski': 'Polish', 'pl': 'Polish',
+        'Spanish': 'Spanish', 'español': 'Spanish', 'es': 'Spanish',
+        'German': 'German', 'Deutsch': 'German', 'de': 'German',
+        'French': 'French', 'français': 'French', 'fr': 'French',
+        'Portuguese': 'Portuguese', 'português': 'Portuguese', 'pt': 'Portuguese',
+        'Italian': 'Italian', 'italiano': 'Italian', 'it': 'Italian',
+        'Turkish': 'Turkish', 'Türkçe': 'Turkish', 'tr': 'Turkish',
+        'Russian': 'Russian', 'русский': 'Russian', 'ru': 'Russian',
+        'Czech': 'Czech', 'čeština': 'Czech', 'cs': 'Czech',
+        'Ukrainian': 'Ukrainian', 'українська': 'Ukrainian', 'uk': 'Ukrainian',
+      };
+      const matched = langMap[studentNativeLanguage] || 
+        TRANSLATION_LANGUAGES.find(l => l.toLowerCase() === studentNativeLanguage.toLowerCase());
+      if (matched) {
+        setTranslationLang(matched);
+      }
+    }
+  }, [studentNativeLanguage]);
 
   // Check localStorage for email
   useEffect(() => {
@@ -93,18 +121,12 @@ export default function WelcomeTestPage() {
     }
   }, [token]);
 
-  // Check if teacher
+  // Auto-verify teacher
   useEffect(() => {
-    if (!testId) return;
-    const check = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setIsTeacher(true);
-        setVerifiedEmail('teacher');
-      }
-    };
-    check();
-  }, [testId]);
+    if (isTeacherMode && !verifiedEmail) {
+      setVerifiedEmail('teacher');
+    }
+  }, [isTeacherMode]);
 
   // Trigger confetti on completion
   useEffect(() => {
@@ -146,7 +168,8 @@ export default function WelcomeTestPage() {
   const getStage = (): Stage => {
     if (loading) return 'loading';
     if (error) return 'error';
-    if (!verifiedEmail && !isTeacher) return 'email';
+    if (isTeacherMode && !teacherPreviewMode) return 'teacher_block';
+    if (!verifiedEmail && !isTeacherMode) return 'email';
     if (completed) return 'completed';
     if (paused) return 'paused';
     if (!testVersion) return 'version';
@@ -209,38 +232,74 @@ export default function WelcomeTestPage() {
     );
   }
 
-  // ===== EMAIL (blurred background) =====
-  if (stage === 'email') {
+  // ===== TEACHER BLOCK (Issue 9) =====
+  if (stage === 'teacher_block') {
     return (
-      <div className="min-h-screen relative">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
+        <Card className="max-w-lg w-full">
+          <CardHeader className="text-center pb-3">
+            <ShieldAlert className="h-10 w-10 text-primary mx-auto mb-2" />
+            <CardTitle className="text-lg">Teacher Access</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              This is the student's test link. As a teacher, you cannot answer the test to avoid polluting the student's data.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              To view the student's answers, go to <strong>Student Profile → Tests tab</strong>.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              {studentId && (
+                <Button onClick={() => navigate(`/student/${studentId}?tab=tests`)}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Go to Student Results
+                </Button>
+              )}
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setTeacherPreviewMode(true);
+                  setVerifiedEmail('teacher_preview');
+                }}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Preview Test (Read-only)
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ===== EMAIL (blurred background with real test content) =====
+  if (stage === 'email') {
+    const previewQuestions = WELCOME_TEST_SECTIONS_WITH_QUESTIONS[0]?.questions.slice(0, 2) || [];
+    return (
+      <div className="min-h-screen relative overflow-hidden">
         {/* Blurred real test content behind modal */}
-        <div className="absolute inset-0 filter blur-md opacity-40 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 filter blur-lg opacity-30 pointer-events-none overflow-hidden scale-105">
           <div className="max-w-2xl mx-auto p-4 mt-8">
             <div className="flex items-center gap-2 mb-4">
               <Sparkles className="h-5 w-5 text-primary" />
               <span className="text-lg font-semibold">Welcome Test</span>
             </div>
             <div className="space-y-4">
-              <Card className="p-4">
-                <p className="text-sm font-medium mb-3">How would you describe your English right now?</p>
-                <div className="space-y-2">
-                  {['I can handle basic everyday situations', 'I can have simple conversations', 'I can discuss most topics but make mistakes', 'I speak fluently in most situations'].map((opt, i) => (
-                    <div key={i} className="p-2.5 rounded-lg border text-sm text-muted-foreground">{opt}</div>
-                  ))}
-                </div>
-              </Card>
-              <Card className="p-4">
-                <p className="text-sm font-medium mb-3">When you speak English, what frustrates you the most?</p>
-                <div className="space-y-2">
-                  {['I know what I want to say but can\'t find the right words', 'I make grammar mistakes', 'I can\'t understand native speakers'].map((opt, i) => (
-                    <div key={i} className="p-2.5 rounded-lg border text-sm text-muted-foreground">{opt}</div>
-                  ))}
-                </div>
-              </Card>
+              {previewQuestions.map((q, qi) => (
+                <Card key={qi} className="p-4">
+                  <p className="text-sm font-medium mb-3">{q.question_text.split('\n')[0]}</p>
+                  <div className="space-y-2">
+                    {(q.options || []).slice(0, 4).map((opt, i) => (
+                      <div key={i} className="p-2.5 rounded-lg border text-sm text-muted-foreground">{opt}</div>
+                    ))}
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
         </div>
-        <div className="absolute inset-0 bg-background/40 backdrop-blur-sm flex items-center justify-center p-4">
+        {/* Modal overlay */}
+        <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center p-4">
           <Card className="max-w-md w-full shadow-xl">
             <CardHeader className="text-center pb-3">
               <Sparkles className="h-8 w-8 text-primary mx-auto mb-2" />
@@ -256,6 +315,7 @@ export default function WelcomeTestPage() {
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleVerifyEmail()}
+                className="text-base"
               />
               <Button onClick={handleVerifyEmail} className="w-full" disabled={!emailInput.trim()}>
                 Continue
@@ -312,7 +372,7 @@ export default function WelcomeTestPage() {
               Your progress is saved ({answeredCount}/{totalQuestions} answered). 
               You can close this page and come back anytime.
             </p>
-            <Button onClick={resumeTest} size="lg">
+            <Button onClick={resumeTest} size="lg" className="min-h-[48px]">
               Resume Test
             </Button>
           </CardContent>
@@ -365,25 +425,32 @@ export default function WelcomeTestPage() {
   const isSkillQuestion = !!currentQuestion.correct_answer;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 px-4 py-3">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 px-3 sm:px-4 py-3">
       <div className="max-w-2xl mx-auto">
-        {/* Header - compact */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">{title}</span>
+        {/* Teacher preview banner */}
+        {teacherPreviewMode && (
+          <div className="mb-3 p-2 bg-primary/10 rounded-lg text-center text-xs text-primary font-medium">
+            👁 Teacher Preview Mode — answers are not saved
+          </div>
+        )}
+
+        {/* Header - compact, mobile-friendly */}
+        <div className="mb-3 sm:mb-4">
+          <div className="flex items-center justify-between mb-1 gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="text-sm font-medium truncate">{title}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="text-xs text-muted-foreground items-center gap-1 hidden sm:flex">
                 <Clock className="h-3 w-3" />
-                ~{estimatedMinutesRemaining} min left
+                ~{estimatedMinutesRemaining} min
               </span>
               {/* Translation toggle */}
               <Select value={translationLang || 'none'} onValueChange={(v) => setTranslationLang(v === 'none' ? null : v)}>
-                <SelectTrigger className="h-7 gap-1 px-2 text-xs border rounded-md w-auto">
-                  <Globe className={`h-3.5 w-3.5 ${translationLang ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="hidden sm:inline">{translationLang || 'Translate'}</span>
+                <SelectTrigger className="h-7 gap-1 px-2 text-xs border rounded-md w-auto min-w-0">
+                  <Globe className={`h-3.5 w-3.5 flex-shrink-0 ${translationLang ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <span className="hidden sm:inline truncate max-w-[60px]">{translationLang || 'Translate'}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">English only</SelectItem>
@@ -392,9 +459,9 @@ export default function WelcomeTestPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="ghost" size="sm" onClick={pauseTest} className="h-7 text-xs">
-                <Pause className="h-3 w-3 mr-1" />
-                Pause
+              <Button variant="ghost" size="sm" onClick={pauseTest} className="h-7 text-xs px-2">
+                <Pause className="h-3 w-3 sm:mr-1" />
+                <span className="hidden sm:inline">Pause</span>
               </Button>
             </div>
           </div>
@@ -407,8 +474,8 @@ export default function WelcomeTestPage() {
           <Progress value={progress} className="h-1.5" />
         </div>
 
-        {/* Section tabs - compact */}
-        <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
+        {/* Section tabs - compact, touch-friendly */}
+        <div className="flex gap-1 mb-3 sm:mb-4 overflow-x-auto pb-1 -mx-1 px-1">
           {sections.map((section, idx) => {
             const sectionAnswered = section.questions.filter(q => answers[q.id] !== undefined).length;
             const sectionTotal = section.questions.length;
@@ -419,7 +486,7 @@ export default function WelcomeTestPage() {
               <button
                 key={section.id}
                 onClick={() => goToSection(idx)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors min-h-[32px] ${
                   isActive
                     ? 'bg-primary text-primary-foreground'
                     : isDone
@@ -428,7 +495,8 @@ export default function WelcomeTestPage() {
                 }`}
               >
                 {isDone && <CheckCircle className="h-2.5 w-2.5" />}
-                {section.title}
+                <span className="hidden sm:inline">{section.title}</span>
+                <span className="sm:hidden">{idx + 1}</span>
                 <span className="opacity-60">{sectionAnswered}/{sectionTotal}</span>
               </button>
             );
@@ -453,7 +521,7 @@ export default function WelcomeTestPage() {
                 <p className="text-xs text-muted-foreground mt-1">{currentQuestion.description}</p>
               )}
               {/* Translation */}
-              {currentTranslation && (
+              {currentTranslation && !isSkillQuestion && (
                 <div className="mt-2 p-2 bg-muted/30 rounded border-l-2 border-primary/30">
                   <p className="text-xs text-muted-foreground italic whitespace-pre-line">{currentTranslation.question}</p>
                   {currentTranslation.description && (
@@ -467,7 +535,8 @@ export default function WelcomeTestPage() {
               question={currentQuestion}
               answer={answers[currentQuestion.id]}
               onAnswer={(val) => saveAnswer(currentQuestion.id, val)}
-              translatedOptions={currentTranslation?.options}
+              translatedOptions={!isSkillQuestion ? currentTranslation?.options : undefined}
+              disabled={teacherPreviewMode}
             />
 
             {/* Answer status + I don't know */}
@@ -486,7 +555,7 @@ export default function WelcomeTestPage() {
                   </div>
                 )}
               </div>
-              {isSkillQuestion && answers[currentQuestion.id] === undefined && (
+              {isSkillQuestion && answers[currentQuestion.id] === undefined && !teacherPreviewMode && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -501,58 +570,72 @@ export default function WelcomeTestPage() {
           </CardContent>
         </Card>
 
-        {/* Navigation - compact */}
-        <div className="flex items-center justify-between">
-          <Button variant="outline" size="sm" onClick={goToPrevious} disabled={globalQuestionIndex === 0}>
-            <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
+        {/* Navigation - compact, mobile-friendly */}
+        <div className="flex items-center justify-between gap-2">
+          <Button variant="outline" size="sm" onClick={goToPrevious} disabled={globalQuestionIndex === 0} className="min-h-[40px]">
+            <ChevronLeft className="h-3.5 w-3.5 mr-1" /> <span className="hidden sm:inline">Previous</span><span className="sm:hidden">Prev</span>
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
             onClick={skipQuestion}
-            className="text-xs text-muted-foreground"
+            className="text-xs text-muted-foreground min-h-[40px]"
             disabled={isLastQuestion}
           >
-            <SkipForward className="h-3.5 w-3.5 mr-1" /> Skip
+            <SkipForward className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">Skip</span>
           </Button>
 
           {isLastQuestion ? (
             <Button
               size="sm"
               onClick={completeTest}
-              disabled={!canComplete || submitting}
-              className="bg-green-600 hover:bg-green-700"
+              disabled={!canComplete || submitting || teacherPreviewMode}
+              className="bg-green-600 hover:bg-green-700 min-h-[40px]"
             >
               {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <CheckCircle className="h-3.5 w-3.5 mr-1" />}
               Complete
             </Button>
           ) : (
-            <Button size="sm" onClick={goToNext}>
+            <Button size="sm" onClick={goToNext} className="min-h-[40px]">
               Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           )}
         </div>
 
-        {/* Question dots - compact */}
-        <div className="mt-4 flex flex-wrap gap-1.5 justify-center">
-          {currentSection.questions.map((q, idx) => (
-            <button
-              key={q.id}
-              onClick={() => goToQuestionInSection(currentSectionIndex, idx)}
-              className={`w-6 h-6 rounded-full text-[10px] font-medium transition-colors ${
-                idx === currentQuestionIndex
-                  ? 'bg-primary text-primary-foreground'
-                  : answers[q.id] === '__IDK__'
-                  ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30'
-                  : answers[q.id] !== undefined
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30'
-                  : 'bg-muted text-muted-foreground'
-              }`}
-            >
-              {idx + 1}
-            </button>
-          ))}
+        {/* Question progress - mobile: progress bar, desktop: dots */}
+        <div className="mt-4">
+          {/* Mobile: simple progress bar */}
+          <div className="sm:hidden">
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+              <span>Section progress</span>
+              <span>{currentSection.questions.filter(q => answers[q.id] !== undefined).length}/{currentSection.questions.length}</span>
+            </div>
+            <Progress 
+              value={(currentSection.questions.filter(q => answers[q.id] !== undefined).length / currentSection.questions.length) * 100} 
+              className="h-1.5" 
+            />
+          </div>
+          {/* Desktop: dots */}
+          <div className="hidden sm:flex flex-wrap gap-1.5 justify-center">
+            {currentSection.questions.map((q, idx) => (
+              <button
+                key={q.id}
+                onClick={() => goToQuestionInSection(currentSectionIndex, idx)}
+                className={`w-6 h-6 rounded-full text-[10px] font-medium transition-colors ${
+                  idx === currentQuestionIndex
+                    ? 'bg-primary text-primary-foreground'
+                    : answers[q.id] === '__IDK__'
+                    ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30'
+                    : answers[q.id] !== undefined
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                {idx + 1}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -568,40 +651,61 @@ function QuestionInput({
   answer,
   onAnswer,
   translatedOptions,
+  disabled = false,
+}: {
+  question: WelcomeTestQuestionDef;
+  answer: unknown;
+  onAnswer: (val: unknown) => void;
+  translatedOptions?: string[];
+  disabled?: boolean;
+}) {
+  const displayAnswer = answer === '__IDK__' ? '' : answer;
+
+  if (disabled) {
+    // Read-only mode for teacher preview
+    return (
+      <div className="opacity-60 pointer-events-none">
+        <QuestionInputInner question={question} answer={displayAnswer} onAnswer={() => {}} translatedOptions={translatedOptions} />
+      </div>
+    );
+  }
+
+  return <QuestionInputInner question={question} answer={displayAnswer} onAnswer={onAnswer} translatedOptions={translatedOptions} />;
+}
+
+function QuestionInputInner({
+  question,
+  answer,
+  onAnswer,
+  translatedOptions,
 }: {
   question: WelcomeTestQuestionDef;
   answer: unknown;
   onAnswer: (val: unknown) => void;
   translatedOptions?: string[];
 }) {
-  const displayAnswer = answer === '__IDK__' ? '' : answer;
-
   switch (question.question_type) {
-    // Speaking record
     case 'speaking_record':
       return (
         <SpeakingRecorder
           maxSeconds={question.max_recording_seconds || 60}
-          answer={typeof displayAnswer === 'string' ? displayAnswer : undefined}
+          answer={typeof answer === 'string' ? answer : undefined}
           onAnswer={(url) => onAnswer(url)}
         />
       );
 
-    // Listening comprehension
     case 'listening_comprehension':
       return (
         <div className="space-y-4">
-          {(question.audio_url || question.audio_transcript) && (
+          {(question.audio_url !== undefined || question.audio_transcript) && (
             <ListeningPlayer
               audioUrl={question.audio_url || ''}
               transcript={question.audio_transcript}
             />
           )}
-          {/* Transcript is handled inside ListeningPlayer - no duplicate here */}
-          {/* Answer options */}
           {question.options && (
             <RadioGroup
-              value={(displayAnswer as string) || ''}
+              value={(answer as string) || ''}
               onValueChange={onAnswer}
             >
               {question.options.map((option, idx) => (
@@ -622,7 +726,7 @@ function QuestionInput({
     case 'multiple_choice':
       return (
         <RadioGroup
-          value={(displayAnswer as string) || ''}
+          value={(answer as string) || ''}
           onValueChange={onAnswer}
         >
           {question.options?.map((option, idx) => (
@@ -641,7 +745,7 @@ function QuestionInput({
 
     case 'preference_choice':
       if (question.multi_select) {
-        const selected = (displayAnswer as string[]) || [];
+        const selected = (answer as string[]) || [];
         return (
           <div className="space-y-1.5">
             {question.options?.map((option, idx) => {
@@ -677,7 +781,7 @@ function QuestionInput({
         );
       }
       return (
-        <RadioGroup value={(displayAnswer as string) || ''} onValueChange={onAnswer}>
+        <RadioGroup value={(answer as string) || ''} onValueChange={onAnswer}>
           {question.options?.map((option, idx) => (
             <div key={idx} className="flex items-center space-x-2.5 p-2.5 rounded-lg border hover:bg-muted/50 transition-colors">
               <RadioGroupItem value={option} id={`pref-${question.id}-${idx}`} />
@@ -695,9 +799,8 @@ function QuestionInput({
     case 'fill_blank':
       return (
         <Input
-          value={(displayAnswer as string) || ''}
+          value={(answer as string) || ''}
           onChange={(e) => onAnswer(e.target.value)}
-          onBlur={() => { if (displayAnswer) onAnswer(displayAnswer); }}
           placeholder="Type your answer..."
           className="text-sm"
         />
@@ -707,7 +810,7 @@ function QuestionInput({
     case 'open_reflection':
       return (
         <Textarea
-          value={(displayAnswer as string) || ''}
+          value={(answer as string) || ''}
           onChange={(e) => onAnswer(e.target.value)}
           placeholder={question.question_type === 'open_reflection' ? 'Share your thoughts...' : 'Write your answer...'}
           className="min-h-[90px] text-sm"
@@ -715,7 +818,7 @@ function QuestionInput({
       );
 
     case 'self_assessment_matrix':
-      const matrixAnswers = (displayAnswer as Record<string, number>) || {};
+      const matrixAnswers = (answer as Record<string, number>) || {};
       return (
         <div className="space-y-3">
           {question.matrix_items?.map((item, idx) => (
@@ -734,7 +837,7 @@ function QuestionInput({
                     <button
                       key={val}
                       onClick={() => onAnswer({ ...matrixAnswers, [item]: val })}
-                      className={`flex-1 py-1.5 rounded text-xs font-medium transition-colors ${
+                      className={`flex-1 py-1.5 rounded text-xs font-medium transition-colors min-h-[36px] ${
                         isSelected
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted hover:bg-muted/80 text-muted-foreground'
@@ -759,7 +862,7 @@ function QuestionInput({
     default:
       return (
         <Input
-          value={(displayAnswer as string) || ''}
+          value={(answer as string) || ''}
           onChange={(e) => onAnswer(e.target.value)}
           placeholder="Type your answer..."
         />

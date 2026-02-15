@@ -1,10 +1,11 @@
 /**
  * SpeakingRecorder - Microphone recording component for Welcome Test speaking questions
  * Records up to 60s of audio, uploads to R2, saves URL as answer
+ * Cross-browser: tries audio/webm, audio/mp4, then no mimeType
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Mic, Square, Play, Pause, RotateCcw, Upload, CheckCircle, Loader2 } from 'lucide-react';
+import { Mic, Square, Play, Pause, RotateCcw, Upload, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -15,19 +16,35 @@ interface SpeakingRecorderProps {
   onAnswer: (audioUrl: string) => void;
 }
 
+function getSupportedMimeType(): string | undefined {
+  if (typeof MediaRecorder === 'undefined') return undefined;
+  const types = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/wav'];
+  for (const type of types) {
+    if (MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return undefined; // Let browser decide
+}
+
 export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer }: SpeakingRecorderProps) {
-  const [status, setStatus] = useState<'idle' | 'recording' | 'recorded' | 'uploading' | 'done'>(
+  const [status, setStatus] = useState<'idle' | 'recording' | 'recorded' | 'uploading' | 'done' | 'error'>(
     answer ? 'done' : 'idle'
   );
   const [seconds, setSeconds] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(answer || null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const blobRef = useRef<Blob | null>(null);
+  const statusRef = useRef(status);
+  const onAnswerRef = useRef(onAnswer);
+
+  // Keep refs in sync
+  useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => { onAnswerRef.current = onAnswer; }, [onAnswer]);
 
   // Auto-save on unmount if recorded but not saved
   useEffect(() => {
@@ -37,29 +54,50 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer }: Speaking
         audioRef.current.pause();
         audioRef.current = null;
       }
-      // Auto-save unsaved recording on unmount (navigation away)
-      if (blobRef.current && status === 'recorded') {
-        // Fire-and-forget upload
+      // Use ref to avoid stale closure
+      if (blobRef.current && statusRef.current === 'recorded') {
         const formData = new FormData();
-        const fileName = `welcome-test-speaking-${Date.now()}.webm`;
+        const mimeType = getSupportedMimeType();
+        const ext = mimeType?.includes('mp4') ? 'mp4' : mimeType?.includes('ogg') ? 'ogg' : 'webm';
+        const fileName = `welcome-test-speaking-${Date.now()}.${ext}`;
         formData.append('file', blobRef.current, fileName);
         supabase.functions.invoke('upload-to-r2', { body: formData })
           .then(({ data }) => {
             const url = data?.url || data?.publicUrl;
-            if (url) onAnswer(url);
+            if (url) onAnswerRef.current(url);
           })
           .catch(() => {
-            onAnswer(`recording_autosaved_${Date.now()}`);
+            onAnswerRef.current(`recording_autosaved_${Date.now()}`);
           });
       }
       if (audioUrl && audioUrl.startsWith('blob:')) URL.revokeObjectURL(audioUrl);
     };
-  }, [status, audioUrl]);
+  }, []); // Empty deps - runs only on unmount
 
   const startRecording = useCallback(async () => {
+    setErrorMsg(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      
+      const mimeType = getSupportedMimeType();
+      let mediaRecorder: MediaRecorder;
+      try {
+        mediaRecorder = mimeType 
+          ? new MediaRecorder(stream, { mimeType })
+          : new MediaRecorder(stream);
+      } catch (err) {
+        console.error('MediaRecorder creation failed:', err);
+        // Last resort: no options at all
+        try {
+          mediaRecorder = new MediaRecorder(stream);
+        } catch (err2) {
+          stream.getTracks().forEach(t => t.stop());
+          setErrorMsg('Your browser does not support audio recording. Please try Chrome or Firefox.');
+          setStatus('error');
+          return;
+        }
+      }
+
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -68,11 +106,18 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer }: Speaking
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const actualMime = mediaRecorder.mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: actualMime });
         blobRef.current = blob;
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         setStatus('recorded');
+        stream.getTracks().forEach(t => t.stop());
+      };
+
+      mediaRecorder.onerror = () => {
+        setErrorMsg('Recording failed. Please try again.');
+        setStatus('error');
         stream.getTracks().forEach(t => t.stop());
       };
 
@@ -90,9 +135,14 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer }: Speaking
           return prev + 1;
         });
       }, 1000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Microphone error:', err);
-      toast.error('Could not access microphone. Please allow microphone permission.');
+      if (err.name === 'NotAllowedError') {
+        setErrorMsg('Microphone access denied. Please allow microphone permission in your browser settings.');
+      } else {
+        setErrorMsg('Could not access microphone. Please check your device settings.');
+      }
+      setStatus('error');
     }
   }, [maxSeconds]);
 
@@ -105,9 +155,7 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer }: Speaking
 
   const playAudio = useCallback(() => {
     if (!audioUrl) return;
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    if (audioRef.current) audioRef.current.pause();
     const audio = new Audio(audioUrl);
     audioRef.current = audio;
     audio.onended = () => setIsPlaying(false);
@@ -127,6 +175,7 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer }: Speaking
     setSeconds(0);
     setStatus('idle');
     setIsPlaying(false);
+    setErrorMsg(null);
   }, [audioUrl]);
 
   const uploadAndSave = useCallback(async () => {
@@ -135,7 +184,9 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer }: Speaking
 
     try {
       const formData = new FormData();
-      const fileName = `welcome-test-speaking-${Date.now()}.webm`;
+      const mimeType = blobRef.current.type || 'audio/webm';
+      const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+      const fileName = `welcome-test-speaking-${Date.now()}.${ext}`;
       formData.append('file', blobRef.current, fileName);
 
       const { data, error } = await supabase.functions.invoke('upload-to-r2', {
@@ -153,7 +204,6 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer }: Speaking
       toast.success('Recording saved!');
     } catch (err) {
       console.error('Upload error:', err);
-      // Fallback: save as blob URL marker
       setStatus('done');
       onAnswer(`recording_${Date.now()}_${seconds}s`);
       toast.info('Recording saved locally');
@@ -188,53 +238,61 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer }: Speaking
         </div>
       )}
 
+      {/* Error state */}
+      {status === 'error' && (
+        <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg text-sm text-destructive">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span>{errorMsg || 'Recording failed. Please try again.'}</span>
+        </div>
+      )}
+
       {/* Controls */}
-      <div className="flex items-center justify-center gap-2">
-        {status === 'idle' && (
-          <Button onClick={startRecording} variant="outline" size="sm" className="gap-2">
-            <Mic className="h-4 w-4 text-red-500" />
+      <div className="flex items-center justify-center gap-2 flex-wrap">
+        {(status === 'idle' || status === 'error') && (
+          <Button onClick={startRecording} variant="outline" size="sm" className="gap-2 min-h-[44px] px-4">
+            <Mic className="h-5 w-5 text-red-500" />
             Start Recording
           </Button>
         )}
 
         {status === 'recording' && (
-          <Button onClick={stopRecording} variant="destructive" size="sm" className="gap-2">
-            <Square className="h-3.5 w-3.5" />
+          <Button onClick={stopRecording} variant="destructive" size="sm" className="gap-2 min-h-[44px] px-4">
+            <Square className="h-4 w-4" />
             Stop ({formatTime(maxSeconds - seconds)} left)
           </Button>
         )}
 
         {status === 'recorded' && (
           <>
-            <Button onClick={isPlaying ? pauseAudio : playAudio} variant="outline" size="sm" className="gap-1.5">
-              {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+            <Button onClick={isPlaying ? pauseAudio : playAudio} variant="outline" size="sm" className="gap-1.5 min-h-[44px]">
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               {isPlaying ? 'Pause' : 'Play'}
             </Button>
-            <Button onClick={resetRecording} variant="ghost" size="sm" className="gap-1.5">
-              <RotateCcw className="h-3.5 w-3.5" />
+            <Button onClick={resetRecording} variant="ghost" size="sm" className="gap-1.5 min-h-[44px]">
+              <RotateCcw className="h-4 w-4" />
               Re-record
             </Button>
-            <Button onClick={uploadAndSave} size="sm" className="gap-1.5">
-              <Upload className="h-3.5 w-3.5" />
+            <Button onClick={uploadAndSave} size="sm" className="gap-1.5 min-h-[44px]">
+              <Upload className="h-4 w-4" />
               Save
             </Button>
           </>
         )}
 
         {status === 'uploading' && (
-          <Button disabled size="sm" className="gap-2">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <Button disabled size="sm" className="gap-2 min-h-[44px]">
+            <Loader2 className="h-4 w-4 animate-spin" />
             Saving...
           </Button>
         )}
 
         {status === 'done' && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1.5 text-sm text-green-600">
               <CheckCircle className="h-4 w-4" />
               Recording saved
             </div>
-            <Button onClick={resetRecording} variant="ghost" size="sm" className="gap-1.5 text-xs">
+            <Button onClick={resetRecording} variant="ghost" size="sm" className="gap-1.5 text-xs min-h-[44px]">
               <RotateCcw className="h-3 w-3" />
               Re-record
             </Button>

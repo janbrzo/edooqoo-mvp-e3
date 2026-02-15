@@ -188,12 +188,20 @@ export function WelcomeTestSuggestion({ studentId, teacherId, studentName, stude
   };
 
   const handlePreview = () => {
-    // Point 18: Navigate to Tests tab to preview
-    navigate(`/student/${studentId}?tab=tests`);
+    // Navigate to Tests tab with testId to auto-open specific test
+    if (testId) {
+      navigate(`/student/${studentId}?tab=tests&testId=${testId}`);
+    } else {
+      navigate(`/student/${studentId}?tab=tests`);
+    }
   };
 
   const handleViewResults = () => {
-    navigate(`/student/${studentId}?tab=tests`);
+    if (testId) {
+      navigate(`/student/${studentId}?tab=tests&testId=${testId}`);
+    } else {
+      navigate(`/student/${studentId}?tab=tests`);
+    }
   };
 
   if (status === 'loading' || status === 'hidden') return null;

@@ -54,6 +54,14 @@ const StudentPage = () => {
   const [deletedCurrentPage, setDeletedCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
+
+  // Sync activeTab when URL searchParams change (Issue 8: programmatic navigation)
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
   const pageSize = 10;
 
   // Get flashcard set ID from URL
