@@ -14,7 +14,17 @@
 
 ## Getting Started
 
-**Latest Improvements:**
+**Latest Improvements (Round 2):**
+- **Cross-browser recording**: Speaking recorder works on Safari/iOS with automatic mimeType detection
+- **Teacher notes**: Add notes per question in test results view
+- **Re-take option**: Create new test for student, archiving previous results
+- **Auto-translation**: Student's native language auto-selects translation language (10 languages)
+- **Smart resume**: Cross-device resume finds first unanswered question automatically
+- **Teacher access control**: Teachers can't accidentally answer student's test
+- **Mobile optimized**: Compact progress bar replaces question dots on mobile
+- **Accurate scoring**: Skill questions scored separately from profiling questions
+
+**Previous Improvements:**
 - **Welcome Test v2**: Comprehensive student profiling with speaking, listening, AI analysis, multi-language translations
 - **Welcome Test Preview**: Teachers can preview all test questions in Tests tab before sending to student
 - **Auto-notifications**: Teachers receive email + in-app notification when student completes Welcome Test

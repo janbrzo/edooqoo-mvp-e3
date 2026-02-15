@@ -1,11 +1,10 @@
 /**
- * generate-welcome-test-audio - One-time edge function to generate TTS audio
- * for Welcome Test listening comprehension questions.
- * Calls generate-audio internally for each transcript.
+ * generate-welcome-test-audio - Generate TTS audio for Welcome Test listening questions.
+ * Uses gpt-4o-audio-preview via OpenAI API, uploads to R2.
+ * Requires a valid OPENAI_API_KEY with quota (LOVABLE_API_KEY does not support audio models).
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,66 +25,83 @@ serve(async (req) => {
       });
     }
 
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') || Deno.env.get('LOVABLE_API_KEY');
+    // Audio models require direct OpenAI API key (LOVABLE_API_KEY gateway doesn't support audio)
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     
     if (!OPENAI_API_KEY) {
-      return new Response(JSON.stringify({ error: 'No API key configured' }), {
+      return new Response(JSON.stringify({ error: 'OPENAI_API_KEY not configured. Audio generation requires a direct OpenAI API key.' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Call OpenAI TTS
-    const ttsResponse = await fetch('https://api.openai.com/v1/audio/speech', {
+    const selectedVoice = voice || 'alloy';
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'tts-1',
-        input: transcript,
-        voice: voice || 'alloy',
-        response_format: 'mp3',
+        model: 'gpt-4o-audio-preview',
+        modalities: ['audio', 'text'],
+        audio: { voice: selectedVoice, format: 'mp3' },
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a voice actor. Read the following dialogue naturally, with appropriate pauses and intonation. Do NOT add any commentary - just read exactly what is given.' 
+          },
+          { role: 'user', content: transcript }
+        ]
       }),
     });
 
-    if (!ttsResponse.ok) {
-      const errText = await ttsResponse.text();
-      console.error('TTS error:', errText);
-      return new Response(JSON.stringify({ error: 'TTS generation failed', details: errText }), {
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Audio generation error:', errText);
+      return new Response(JSON.stringify({ error: 'Audio generation failed', details: errText }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Get audio as blob
-    const audioBlob = await ttsResponse.blob();
+    const data = await response.json();
+    const audioBase64 = data.choices?.[0]?.message?.audio?.data;
 
-    // Upload to R2 via upload-to-r2 function
+    if (!audioBase64) {
+      return new Response(JSON.stringify({ error: 'No audio data in response' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Upload to R2
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    const formData = new FormData();
-    const fileName = `welcome-test-listening-${Date.now()}.mp3`;
-    formData.append('file', audioBlob, fileName);
+    const timestamp = Date.now();
 
     const uploadResponse = await fetch(`${supabaseUrl}/functions/v1/upload-to-r2`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify({
+        base64Image: audioBase64,
+        filename: `audio/welcome-test-listening-${timestamp}.mp3`,
+        contentType: 'audio/mpeg',
+      }),
     });
 
-    if (!uploadResponse.ok) {
-      const errText = await uploadResponse.text();
-      console.error('Upload error:', errText);
-      return new Response(JSON.stringify({ error: 'Upload failed' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    let audioUrl = `data:audio/mpeg;base64,${audioBase64}`;
 
-    const uploadData = await uploadResponse.json();
-    const audioUrl = uploadData?.url || uploadData?.publicUrl;
+    if (uploadResponse.ok) {
+      const uploadData = await uploadResponse.json();
+      if (uploadData.success && uploadData.url) {
+        audioUrl = uploadData.url;
+        console.log('R2 upload success:', audioUrl);
+      }
+    } else {
+      console.warn('R2 upload failed, returning base64 fallback');
+    }
 
     return new Response(JSON.stringify({ success: true, audio_url: audioUrl }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

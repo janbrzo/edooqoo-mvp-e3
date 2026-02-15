@@ -1,7 +1,9 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Feature (Feb 2026):** Welcome Test v2 — comprehensive student profiling system that combines self-assessment, grammar/vocabulary testing, speaking recording, and listening comprehension. AI generates learning profiles with recommendations, enabling personalized lesson planning. This feature increases teacher engagement and student retention by providing data-driven insights from day one.
+**Latest Feature (Feb 2026):** Welcome Test v2 Round 2 — hardened cross-browser support (Safari/iOS recording), debounced event system reducing DB writes by ~90%, teacher tools (per-question notes, re-take, access control), 10-language auto-translation from student profile, and server-side trait detection ensuring reliable profiling even across device switches. These improvements reduce support overhead and increase teacher confidence in the profiling system.
+
+**Previous Feature (Feb 2026):** Welcome Test v2 — comprehensive student profiling system that combines self-assessment, grammar/vocabulary testing, speaking recording, and listening comprehension. AI generates learning profiles with recommendations, enabling personalized lesson planning.
 
 ## Current Business Model
 

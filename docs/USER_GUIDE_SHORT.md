@@ -4,7 +4,9 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **Welcome Test v2** with speaking recording, listening comprehension, multi-language translations, AI-powered student profiling, and real-time progress tracking. Teachers can preview all questions before sending, receive email notifications on completion, and see AI-generated learning profiles.
+**Latest Update:** **Welcome Test v2 Round 2** — cross-browser speaking recorder, debounced event logging, separate skill/profiling scores, cross-device resume, teacher notes per question, re-take option, auto-translation from student profile, 10 language translations, mobile progress bar, teacher access control on student test links, and server-side trait detection.
+
+**Previous Update:** **Welcome Test v2** with speaking recording, listening comprehension, multi-language translations, AI-powered student profiling, and real-time progress tracking. Teachers can preview all questions before sending, receive email notifications on completion, and see AI-generated learning profiles.
 
 **Previous Update:** New **Progress** tab on student page! Track learning goals, rate student skills (1-5 stars), and get AI-generated worksheet suggestions. Unified Main Goals across all dialogs with 3 new options: Social Conversation, Personal Development, Fun & Entertainment.
 
