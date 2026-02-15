@@ -1,144 +1,265 @@
 
-# Welcome Test v2 - Bug Fixes and Remaining Features
+
+# Welcome Test v2 - Bug Fixes Round 2
 
 ## ROOT CAUSE ANALYSIS
 
-I found **5 critical database constraints** blocking functionality, plus multiple frontend bugs. Here's what's broken and why:
+After deep analysis of the code, database, and logs, I identified **13 distinct issues** with clear root causes and safe fixes.
 
 ---
 
-## CRITICAL DATABASE ISSUES (Must Fix First)
+## ISSUE 1: SpeakingRecorder not recording (Q20, Q39, Q45)
 
-### Issue 1: Question insert fails with 400 error
-**Root cause:** `student_test_questions.question_type` has a CHECK constraint that only allows: `multiple_choice`, `fill_blank`, `true_false`, `matching`, `open_ended`, `sentence_order`. The new types `speaking_record`, `listening_comprehension`, `self_assessment`, `scenario_reaction`, `preference_choice`, `open_reflection`, `self_assessment_matrix` are rejected.
+**Root cause:** The `MediaRecorder` constructor uses `mimeType: 'audio/webm'` which may not be supported on all browsers (especially Safari/iOS). When `getUserMedia` succeeds but `MediaRecorder` fails, nothing happens visually -- the component stays at "idle" with 0:00.
 
-**Fix:** Migration to expand the constraint to include all question types.
+**Fix:**
+- Add mimeType detection: try `audio/webm`, fallback to `audio/mp4`, then no mimeType (let browser decide)
+- Add error boundary: if MediaRecorder fails, show clear error message
+- Auto-save on navigation: the current `useEffect` cleanup works but has a closure issue -- `status` captured in cleanup may be stale. Fix by using a ref for status.
 
-### Issue 2: Notifications can't be created for welcome test
-**Root cause:** TWO problems:
-1. `homework_notifications.homework_id` has a FOREIGN KEY to `homework_assignments(id)` -- a welcome test ID is NOT a homework assignment ID, so the insert fails
-2. `homework_notifications.notification_type` has a CHECK constraint allowing only: `completed`, `viewed`, `overdue` -- not `welcome_test_completed`
+**Speech-to-text for teacher review:**
+- When teacher views a speaking answer in TestDetailsView, add an audio player + "Transcribe" button
+- On click, call a new edge function or existing AI gateway to transcribe the audio URL
+- Store transcription alongside the answer
 
-**Fix:** Migration to make `homework_id` nullable and expand notification_type constraint.
-
-### Issue 3: Email sender name shows "Worksheet Generator"
-**Root cause:** `send-test-email/index.ts` line 96 has `from: 'Worksheet Generator <noreply@edooqoo.com>'` hardcoded.
-
-**Fix:** Change to `'EDOOQOO <noreply@edooqoo.com>'`.
+**Files:** `SpeakingRecorder.tsx`, `TestDetailsView.tsx`, new edge function `transcribe-audio/index.ts`
 
 ---
 
-## ALL FIXES ORGANIZED BY POINT
+## ISSUE 2: ListeningPlayer has no audio (Q21)
 
-### Point A1: Speaking & Listening
+**Root cause:** The `audio_url` field in `wt_q18l` is an empty string `''`. Audio was never pre-generated.
 
-**SpeakingRecorder auto-save on navigation:**
-- When student navigates away from a speaking question with status `recorded` (recorded but not saved), automatically trigger `uploadAndSave()` before navigating.
-- Add `useEffect` cleanup or expose a `flush` method; call from `WelcomeTestPage` when `goToNext`/`goToPrevious` fires.
+**Fix:**
+- Create a one-time script/edge function that calls `generate-audio` for each listening question and stores the R2 URL
+- But simpler: use OpenAI TTS directly in a new edge function `generate-welcome-test-audio` that takes the transcript text and returns an R2 URL
+- After generation, hardcode the R2 URL into `welcomeTestQuestions.ts` so it's permanent
+- For now as immediate fix: generate audio on first load of listening question if `audio_url` is empty, using client-side call to `generate-audio`
 
-**ListeningPlayer fixes:**
-- Change "Show text (if you need it)" to "Show text (if listening doesn't work)"
-- Remove the duplicate transcript text shown outside the ListeningPlayer. Currently line 580-584 in WelcomeTestPage shows transcript AGAIN when `!question.audio_url` -- but for Q18l the audio_url is empty string `''`, which is falsy, so both the ListeningPlayer AND the fallback text render. Fix: only show fallback if `audio_url` is strictly `undefined` or `null`, not empty string. Also when audio_url is empty, ListeningPlayer should show a message "Audio not available" and auto-show the transcript.
+**Practical approach:** Create a maintenance edge function `generate-welcome-test-audio` that:
+1. Takes the transcript text from the question
+2. Calls OpenAI TTS to generate audio
+3. Uploads to R2
+4. Returns the URL
 
-### Point A2: Items 6-9 (teacher notes, class comparison, PDF export, re-take)
-These require additional components. Will implement:
-- **Teacher notes per question** in TestDetailsView (add a text input per question card)
-- **PDF export** button in TestDetailsView header
-- **Re-take option** button to create a new welcome test
+Then hardcode the URLs into the questions. This is a one-time operation.
 
-### Point 3: Q28/Q29 answer hint removal
-- Q26 description: remove `(e.g. "has been raining")` -- this gives away the answer
-- Q27 description: remove `(e.g. "is said to be")` -- same issue
-- The user mentioned Q28 and Q29 but looking at the code, Q28 and Q29 are multiple choice (collocations) with no such hint. The actual offending questions are Q26 and Q27.
-
-### Point A4: Email modal blurred background
-Currently (lines 213-248) the email modal shows a fake blurred placeholder with gray rectangles. This needs to show actual test content blurred behind it. Fix: render the actual version selector or first question behind a blur overlay rather than placeholder rectangles.
-
-### Point 5: Email sender name
-Change `send-test-email/index.ts` line 96 from `'Worksheet Generator <noreply@edooqoo.com>'` to `'EDOOQOO <noreply@edooqoo.com>'`.
-
-Also fix the error-then-success flow: the addQuestions call fails due to the question_type constraint (Issue 1 above). Once the migration runs, this will work.
-
-### Point 6: Notifications
-Two DB fixes needed (see Issue 2 above). After migration:
-- `homework_id` becomes nullable
-- `notification_type` accepts `welcome_test_completed`
-- The code in `process-welcome-test/index.ts` will work
-
-The component `HomeworkNotificationBadge` already shows "Notifications" title and handles welcome_test_completed. The fetch query joins on `homework_assignments` which will fail for null homework_id -- fix the query to use LEFT JOIN.
-
-### Point 7: Mobile first
-Review all test screens for mobile:
-- Version selector cards: stack vertically on small screens
-- Question card: ensure proper padding, no horizontal overflow
-- Section tabs: already has `overflow-x-auto`, good
-- Navigation buttons: check spacing on small screens
-- SpeakingRecorder: ensure microphone UI works on mobile
-- Instruction screen: check button sizing
-
-### Point 8: Email teacher on completion
-The code exists in `process-welcome-test/index.ts` but it can't run because the whole function fails at the notification insert (Issue 2). Once the DB constraint is fixed, this will work. The email already uses `'edooqoo <noreply@edooqoo.com>'` -- correct.
-
-### Point A11: 0/49 after refresh on completion screen
-**Root cause:** When `completed=true` and page refreshes, `useWelcomeTest` loads existing answers from DB. But it counts answers from `ALL_WELCOME_TEST_QUESTIONS` which is the full 49 questions. The hook maps `questionsData` from DB to `existingAnswers` using `ALL_WELCOME_TEST_QUESTIONS[q.question_index]`. If the question_index in DB doesn't match the array index (because addQuestions failed for new types), some answers are lost.
-
-**Real fix:** The `completeTest` function should send `answered_count` to the edge function. It already does for `process-welcome-test` but the value comes from the state which gets reset on refresh. The fix is: when loading a completed test, read `answered_count` from `student_tests` table (already fetched but used only as `persistedAnsweredCount`). The actual bug is that `allVisibleQuestions` is empty when `testVersion` is null (after refresh, version is loaded from localStorage but might be null if cleared). Need to ensure version is restored before counting.
-
-### Point A12: Progress tracking - "Waiting for student" stuck
-**Root cause:** The `fetchProgress` function counts questions with non-null `student_answer`. But since `addQuestions` failed (constraint issue 1), there are NO questions in `student_test_questions` table. The student answers are saved by `useWelcomeTest` hook using `question_index` to match, but if no rows exist, updates succeed on 0 rows. 
-
-**Fix:** Once DB constraint is fixed, questions will be inserted correctly, and the progress polling will work.
-
-### Point A13: Previous answers not visible after refresh
-**Root cause:** When navigating back to previously answered questions, the answers ARE loaded into state (`existingAnswers`) but the QuestionInput components don't receive the correct `answer` prop because the mapping from DB question_index to question ID might be off.
-
-**Fix:** In `useWelcomeTest.fetchTest`, ensure answer mapping correctly uses the question ID, not just index. Currently line 102-107 maps using `ALL_WELCOME_TEST_QUESTIONS[q.question_index]` which works if questions were inserted in order. Add a `resumeTest` flow that also pauses on refresh (show "Resume" screen instead of jumping to test).
-
-### Point A16: Translation button missing
-The Globe icon is present in the header (line 364-374) but may not be visible because it's styled as a 7x7px button with no border. Make it more visible with a label "Show Translation" and ensure it appears prominently.
-
-### Point A17: Test not visible in Tests tab before sending
-**Root cause:** Tests tab only shows tests from `student_tests` table. Before the teacher clicks "Send Welcome Test", no record exists. 
-
-**Fix:** Add a "Welcome Test" placeholder card in StudentTestsTab that appears when no welcome test exists yet. Clicking it opens a preview of the questions (read-only). After test is created, the real test card replaces it.
-
-### Point A18: Preview button not working
-The button navigates to `/student/${studentId}?tab=tests` but since there's no welcome test in the DB yet (before sending), there's nothing to see in the Tests tab.
-
-**Fix:** Same as A17 -- add placeholder. Also, Preview should work even before test is created.
-
-### Point 19: View Results button not working
-The "View Results" button navigates to `/student/${studentId}?tab=tests`. This should work if the test exists. Need to verify the tab switching logic in StudentPage handles `?tab=tests` URL parameter correctly.
-
-### Point 20: Student events duplication
-619 events for a single test is excessive. Each question answer creates a separate event. 
-
-**Fix:** Instead of logging per-question events, aggregate by section. When a student answers a question, update (upsert) a single event per section with all question results in the payload. Change `event_source` from `'test'` to `'welcome_test'`. Set `element_type` properly.
+**Files:** New `supabase/functions/generate-welcome-test-audio/index.ts`, update `welcomeTestQuestions.ts` with real URLs after generation
 
 ---
 
-## IMPLEMENTATION FILES
+## ISSUE 3: Event log duplication (14 logs per answer)
 
-| File | Action | Fixes |
-|------|--------|-------|
-| SQL Migration | NEW | Fix question_type check, notification constraints |
-| `supabase/functions/send-test-email/index.ts` | EDIT | Fix sender name to "EDOOQOO" |
-| `src/components/welcome-test/ListeningPlayer.tsx` | EDIT | Fix transcript text, handle empty audio_url |
-| `src/components/welcome-test/SpeakingRecorder.tsx` | EDIT | Add auto-save on unmount |
-| `src/pages/WelcomeTestPage.tsx` | EDIT | Fix blur background, translation visibility, listening fallback, mobile, auto-save speaking, resume on refresh |
-| `src/hooks/useWelcomeTest.tsx` | EDIT | Fix answered count persistence, section-level events, resume flow |
-| `src/data/welcomeTestQuestions.ts` | EDIT | Remove answer hints from Q26/Q27 |
-| `src/components/homework/HomeworkNotificationBadge.tsx` | EDIT | Fix LEFT JOIN for nullable homework_id |
-| `src/components/student-tests/StudentTestsTab.tsx` | EDIT | Add welcome test placeholder |
-| `src/components/student-tests/TestDetailsView.tsx` | EDIT | Add teacher notes, PDF export button |
-| `src/components/dashboard/WelcomeTestSuggestion.tsx` | EDIT | Fix progress polling |
-| `supabase/functions/process-welcome-test/index.ts` | EDIT | Fix notification insert |
-| Documentation (6 files) | EDIT | Update all |
+**Root cause:** `saveAnswer` in `useWelcomeTest.tsx` fires `add_student_event` on EVERY keystroke for `fill_blank`, `open_ended`, `open_reflection` questions. Each character typed triggers the full save flow including the event log.
+
+**Fix:**
+- Debounce event logging: only log events when answer is "committed" (on blur, on navigate, on explicit save)
+- Split `saveAnswer` into two parts:
+  1. `updateLocalAnswer` -- updates state only (no DB call) -- called on every keystroke
+  2. `commitAnswer` -- saves to DB + logs event -- called on blur/navigate/save
+- For radio/checkbox questions (single click = final answer), call `commitAnswer` immediately
+- For text inputs, call `commitAnswer` on blur or navigation
+
+Also fix: events should use DELETE+INSERT pattern (upsert) per section, not insert every time. The current `add_student_event` RPC doesn't upsert -- it inserts. Need to add a unique constraint or use custom logic.
+
+**Files:** `useWelcomeTest.tsx`, `WelcomeTestPage.tsx`
+
+---
+
+## ISSUE 4: Wrong score calculation (16% showing 8/49 correct)
+
+**Root cause:** `calculate_test_results` RPC treats ALL 49 questions as gradeable, counting `is_correct` for each. But ~25 questions are profiling (self_assessment, preference_choice, open_reflection, speaking_record, self_assessment_matrix) -- they have no correct answer and `is_correct` is NULL, which gets counted as "wrong" in the percentage.
+
+**Fix:**
+- In `TestDetailsView` and `TestCard`: for welcome tests, only count questions that HAVE a `correct_answer` defined (skill questions)
+- Show two separate stats:
+  - "8/22 skill questions correct" (grammar, vocab, reading, listening)
+  - "43/49 questions answered" (total engagement)
+- Update `calculate_test_results` or override display for welcome tests
+
+**Files:** `StudentTestsTab.tsx` (TestCard), `TestDetailsView.tsx`, possibly `process-welcome-test/index.ts`
+
+---
+
+## ISSUE 5: Resume position after cross-device refresh
+
+**Root cause:** Position is stored in `localStorage` which is device-specific. When opening on a new device, `localStorage` is empty, so position defaults to question 1.
+
+**Fix:**
+- Store resume position in database (e.g., `student_tests.generation_params` JSON field or new column)
+- On load, read position from DB first, then fallback to localStorage
+- When saving answers, also persist the current position to DB
+- On resume: navigate directly to the first unanswered question (not the stored position)
+
+Better approach: On resume, find the first question WITHOUT an answer in the DB and go there. This is device-independent and always correct.
+
+**Files:** `useWelcomeTest.tsx`
+
+---
+
+## ISSUE 6: AI Analysis missing speaking answers + empty Motivation section
+
+**6A. Speaking answers not in AI analysis:**
+The AI prompt only sends open question IDs: `['wt_q12', 'wt_q13', 'wt_q16', 'wt_q17', 'wt_q36', 'wt_q37', 'wt_q40', 'wt_q41', 'wt_q45']`. Speaking answers (wt_q16s, wt_q36s, wt_q41s) are audio URLs, not text. To include them, we need to transcribe the audio first, then include transcription in the AI prompt.
+
+**Fix:** Before AI analysis, check if any speaking answers are URLs. If so, call speech-to-text (using Lovable AI or OpenAI Whisper) to get text, then include in the prompt.
+
+**6B. Empty Motivation & Personality section:**
+The `detected_traits` object is being passed from the frontend but the trait detection logic has a bug. The trait mapping uses option INDEX but the frontend saves the option TEXT, not the index. Looking at `saveAnswer` line 239: `questionDef.options?.indexOf(answer)` -- this works correctly for single-select. BUT the `detectedTraits` ref is component-level and gets wiped on page refresh. So if the student answered trait questions in a previous session, the traits are lost.
+
+**Fix:** Reconstruct traits from saved answers in `process-welcome-test` edge function instead of relying on frontend `detected_traits`. The edge function already has all answers and all question definitions -- compute traits server-side.
+
+**Files:** `supabase/functions/process-welcome-test/index.ts`, new `transcribe-audio` functionality
+
+---
+
+## ISSUE 7: Translation auto-select from student profile
+
+**Root cause:** The translation dropdown defaults to "none" and requires manual selection. The student's native language from their profile is not used.
+
+**Fix:**
+- In `useWelcomeTest`, fetch the student's `native_language` from the `students` table
+- Pass it to `WelcomeTestPage`
+- Auto-set `translationLang` to matching language if available
+- Keep manual override dropdown
+
+Also: only Polish has full translations. Need to add complete translations for the other 9 languages.
+
+**Files:** `useWelcomeTest.tsx`, `WelcomeTestPage.tsx`, `welcomeTestTranslations.ts`
+
+---
+
+## ISSUE 8: Preview/View Results navigation not working
+
+**Root cause:** `navigate('/student/${id}?tab=tests')` changes the URL, but `StudentPage` reads `searchParams.get('tab')` only once in `useState` initializer (line 55). When URL changes via programmatic navigation ON THE SAME PAGE, the component doesn't re-read the param.
+
+**Fix:** Add a `useEffect` that watches `searchParams` and syncs `activeTab`:
+```typescript
+useEffect(() => {
+  const tab = searchParams.get('tab');
+  if (tab && tab !== activeTab) {
+    setActiveTab(tab);
+  }
+}, [searchParams]);
+```
+
+Also for "View Results": pass testId in URL so Tests tab auto-opens the specific test:
+`navigate('/student/${id}?tab=tests&testId=${testId}')`
+
+**Files:** `StudentPage.tsx`, `WelcomeTestSuggestion.tsx`
+
+---
+
+## ISSUE 9: Teacher access control on student test link
+
+**9.1 Teacher should NOT answer the test:**
+Currently, if a teacher opens the student's test link, they get the version selector and can answer questions, which would pollute the student's data.
+
+**Fix:** When `isTeacher` is detected (authenticated user), show a blocking screen:
+- "This is the student's test link"
+- "To view answers, go to Student Profile > Tests tab"
+- Button: "Go to Student Results" (links to `/student/${studentId}?tab=tests&testId=${testId}`)
+
+**9.2 Teacher preview mode:**
+- Add a button "Take Test as Teacher (Preview)" that generates a separate URL/mode
+- Use a query param `?mode=teacher_preview` that enables answering but does NOT save to the student's record
+- Or simpler: just let teacher click through questions in read-only mode (no saving)
+
+**Files:** `WelcomeTestPage.tsx`, `useWelcomeTest.tsx`
+
+---
+
+## ISSUE 10: Teacher notes + Re-take option
+
+**Teacher notes per question:**
+- In `TestDetailsView`, add a small textarea below each question for teacher notes
+- Store in `student_test_questions.question_data` JSON (add a `teacher_note` field) or new column
+- Save on blur with debounce
+
+**Re-take option:**
+- Add "Re-take Test" button in TestDetailsView header
+- Creates a new welcome test (new ID), archives the old one
+- Student gets a fresh test link
+
+**Files:** `TestDetailsView.tsx`, `StudentTestsTab.tsx`
+
+---
+
+## ISSUE 11: Mobile-first checks
+
+Key areas to fix:
+- `VersionSelector`: already uses responsive grid, but check card padding
+- Section tabs: horizontal scroll works but needs touch-friendly sizing
+- Question dots at bottom: 49 dots at 24px each = too many for small screens. Switch to progress bar on mobile
+- Navigation buttons: stack vertically on very small screens
+- SpeakingRecorder: microphone button should be larger on mobile (thumb-friendly)
+- Email modal: ensure full-width on mobile
+
+**Files:** `WelcomeTestPage.tsx`, `VersionSelector.tsx`, `SpeakingRecorder.tsx`
+
+---
+
+## ISSUE 12: Email modal blurred background
+
+**Root cause:** The current implementation (lines 213-266) already shows blurred content with fake placeholder questions. The issue is that it uses hardcoded placeholder text instead of real test content, and the blur effect may not be visible enough.
+
+**Fix:** Increase blur intensity, use actual first section questions from `WELCOME_TEST_SECTIONS_WITH_QUESTIONS`, and ensure the overlay covers properly.
+
+**Files:** `WelcomeTestPage.tsx`
+
+---
+
+## ISSUE 13: Teacher completion email with link to results
+
+**Root cause:** The email says "View the full learning profile in the student's profile page" but has no clickable link.
+
+**Fix:** Add a clickable link to the student's test results page in the email HTML. Need to know the app's public URL -- use `SUPABASE_URL` to derive it or pass it from the frontend.
+
+**Files:** `supabase/functions/process-welcome-test/index.ts`
+
+---
 
 ## IMPLEMENTATION ORDER
 
-1. **Database migration** (unblocks everything)
-2. **Edge function fixes** (email sender, notification insert)
-3. **Frontend fixes** (all UI bugs)
-4. **New features** (teacher notes, PDF, re-take, placeholder)
-5. **Documentation updates**
+1. **Database/Backend fixes** (Issues 3, 4, 6)
+   - Fix event logging (debounce + upsert)
+   - Fix score calculation for welcome tests
+   - Fix trait detection server-side
+   
+2. **Critical UX fixes** (Issues 1, 2, 5, 8, 9)
+   - Fix SpeakingRecorder cross-browser
+   - Generate audio for listening questions
+   - Fix cross-device resume
+   - Fix tab navigation
+   - Block teacher from answering
+
+3. **Feature additions** (Issues 10, 7, 13)
+   - Teacher notes + re-take
+   - Auto-translation from profile
+   - Email with results link
+
+4. **Polish** (Issues 11, 12)
+   - Mobile-first responsive fixes
+   - Email modal blur improvement
+
+---
+
+## FILES CHANGED
+
+| File | Action | Issues |
+|------|--------|--------|
+| `src/components/welcome-test/SpeakingRecorder.tsx` | EDIT | 1, 11 |
+| `src/components/welcome-test/ListeningPlayer.tsx` | EDIT | 2 |
+| `src/hooks/useWelcomeTest.tsx` | EDIT | 3, 5, 7, 9 |
+| `src/pages/WelcomeTestPage.tsx` | EDIT | 3, 9, 11, 12 |
+| `src/pages/StudentPage.tsx` | EDIT | 8 |
+| `src/components/student-tests/TestDetailsView.tsx` | EDIT | 1, 4, 10 |
+| `src/components/student-tests/StudentTestsTab.tsx` | EDIT | 4 |
+| `src/components/dashboard/WelcomeTestSuggestion.tsx` | EDIT | 8 |
+| `src/data/welcomeTestQuestions.ts` | EDIT | 2 (audio URLs) |
+| `src/data/welcomeTestTranslations.ts` | EDIT | 7 (add 9 languages) |
+| `supabase/functions/process-welcome-test/index.ts` | EDIT | 6, 13 |
+| `supabase/functions/generate-welcome-test-audio/index.ts` | NEW | 2 |
+| `supabase/functions/transcribe-audio/index.ts` | NEW | 1, 6 |
+| Documentation (6 files) | EDIT | all |
+
