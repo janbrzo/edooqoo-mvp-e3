@@ -383,7 +383,7 @@ const scenarioQuestions: WelcomeTestQuestionDef[] = [
     section: 'scenarios',
     question_type: 'listening_comprehension',
     question_text: 'Listen to this short conversation and answer: What does the customer want?',
-    audio_url: '', // Will be pre-generated
+    audio_url: 'https://pub-1b974ada9ae240948229c52d927980ee.r2.dev/audio/welcome-test-listening-1771175003441.mp3',
     audio_transcript: 'A: "Excuse me, I ordered a medium latte about twenty minutes ago and I\'m still waiting."\nB: "I\'m sorry about that. Let me check with the barista. Would you like me to make you a fresh one right away?"\nA: "Yes please, and could I get it with oat milk this time instead?"',
     options: [
       'A refund for the late order',
