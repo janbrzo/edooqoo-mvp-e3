@@ -1,7 +1,7 @@
 /**
  * generate-welcome-test-audio - Generate TTS audio for Welcome Test listening questions.
- * Uses gpt-4o-audio-preview via OpenAI API, uploads to R2.
- * Requires a valid OPENAI_API_KEY with quota (LOVABLE_API_KEY does not support audio models).
+ * Uses OpenAI TTS-1 API for exact verbatim reading (no improvisation).
+ * Uploads to R2 for permanent storage.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -25,53 +25,42 @@ serve(async (req) => {
       });
     }
 
-    // Audio models require direct OpenAI API key (LOVABLE_API_KEY gateway doesn't support audio)
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     
     if (!OPENAI_API_KEY) {
-      return new Response(JSON.stringify({ error: 'OPENAI_API_KEY not configured. Audio generation requires a direct OpenAI API key.' }), {
+      return new Response(JSON.stringify({ error: 'OPENAI_API_KEY not configured.' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const selectedVoice = voice || 'alloy';
+    const selectedVoice = voice || 'nova';
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Use TTS-1 for exact verbatim reading (no improvisation)
+    const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-audio-preview',
-        modalities: ['audio', 'text'],
-        audio: { voice: selectedVoice, format: 'mp3' },
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a voice actor. Read the following dialogue naturally, with appropriate pauses and intonation. Do NOT add any commentary - just read exactly what is given.' 
-          },
-          { role: 'user', content: transcript }
-        ]
+        model: 'tts-1',
+        input: transcript,
+        voice: selectedVoice,
+        response_format: 'mp3',
       }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('Audio generation error:', errText);
+      console.error('TTS generation error:', errText);
       return new Response(JSON.stringify({ error: 'Audio generation failed', details: errText }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const data = await response.json();
-    const audioBase64 = data.choices?.[0]?.message?.audio?.data;
-
-    if (!audioBase64) {
-      return new Response(JSON.stringify({ error: 'No audio data in response' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // TTS returns raw audio bytes
+    const audioArrayBuffer = await response.arrayBuffer();
+    const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(audioArrayBuffer)));
 
     // Upload to R2
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
