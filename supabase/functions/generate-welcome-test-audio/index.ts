@@ -58,9 +58,18 @@ serve(async (req) => {
       });
     }
 
-    // TTS returns raw audio bytes
+    // TTS returns raw audio bytes - use chunked conversion to avoid stack overflow
     const audioArrayBuffer = await response.arrayBuffer();
-    const audioBase64 = btoa(String.fromCharCode(...new Uint8Array(audioArrayBuffer)));
+    const bytes = new Uint8Array(audioArrayBuffer);
+    const chunkSize = 8192;
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+      for (let j = 0; j < chunk.length; j++) {
+        binary += String.fromCharCode(chunk[j]);
+      }
+    }
+    const audioBase64 = btoa(binary);
 
     // Upload to R2
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

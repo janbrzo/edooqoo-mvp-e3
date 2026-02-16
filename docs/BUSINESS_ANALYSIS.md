@@ -1,7 +1,9 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Feature (Feb 2026):** Welcome Test v2 Round 2 — hardened cross-browser support (Safari/iOS recording), debounced event system reducing DB writes by ~90%, teacher tools (per-question notes, re-take, access control), 10-language auto-translation from student profile, and server-side trait detection ensuring reliable profiling even across device switches. These improvements reduce support overhead and increase teacher confidence in the profiling system.
+**Latest Feature (Feb 2026):** Welcome Test v2 Round 3 — speaking auto-save on navigation, teacher audio playback in test results, OpenAI Whisper transcription for AI analysis of speaking answers, TTS-1 verbatim audio generation (chunked base64 fix), re-take preserving previous results, auto-translate button, completed 10-language translations, improved blur modal, and auth redirect for email links. These improvements complete the speaking/listening pipeline and eliminate data loss scenarios.
+
+**Previous Feature (Feb 2026):** Welcome Test v2 Round 2 — hardened cross-browser support (Safari/iOS recording), debounced event system reducing DB writes by ~90%, teacher tools (per-question notes, re-take, access control), 10-language auto-translation from student profile, and server-side trait detection ensuring reliable profiling even across device switches.
 
 **Previous Feature (Feb 2026):** Welcome Test v2 — comprehensive student profiling system that combines self-assessment, grammar/vocabulary testing, speaking recording, and listening comprehension. AI generates learning profiles with recommendations, enabling personalized lesson planning.
 

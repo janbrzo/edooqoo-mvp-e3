@@ -3,7 +3,21 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Feb 2026) - Welcome Test v2 Round 2 ✅
+### Recently Completed (Feb 2026) - Welcome Test v2 Round 3 ✅
+- SpeakingRecorder auto-save on question navigation (questionId prop)
+- Teacher audio playback with R2 URL detection in TestDetailsView
+- Transcribe-audio rewritten to OpenAI Whisper (binary audio processing)
+- TTS audio chunked base64 fix (stack overflow prevention)
+- Q21 listening audio re-generated with TTS-1 verbatim reading
+- AI Analysis includes transcribed speaking answers
+- Event dedup: sectionKey simplified to sectionId
+- Re-take preserves previous test results (no soft-delete)
+- Auto-translate button from student native_language
+- Full 10-language translations completed
+- Blur modal improved (4 preview questions, opacity 0.50)
+- Auth redirect on StudentPage for unauthenticated users
+
+### Previously Completed (Feb 2026) - Welcome Test v2 Round 2 ✅
 - Cross-browser SpeakingRecorder (mimeType detection: webm/mp4/fallback)
 - Debounced event logging (commitAnswer on blur/navigation only)
 - Separate skill vs profiling score display

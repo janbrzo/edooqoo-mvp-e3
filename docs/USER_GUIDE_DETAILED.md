@@ -14,11 +14,19 @@
 
 ## Getting Started
 
-**Latest Improvements (Round 2):**
+**Latest Improvements (Round 3):**
+- **Auto-save recordings**: Speaking answers auto-save when navigating to next question (no need to click Save)
+- **Teacher playback**: Teachers can listen to student recordings directly in test results
+- **AI transcription**: Speaking answers are transcribed (OpenAI Whisper) and included in AI analysis
+- **Correct listening audio**: Q21 café dialogue re-generated with exact verbatim text via TTS-1
+- **Re-take preserves results**: Previous test results remain visible after re-take
+- **Auto-translate button**: One-click translation using student's native language from profile
+- **Complete translations**: All 10 languages now have full question coverage
+- **Better email links**: Clicking "View Results" in email redirects to login if needed, then back to results
+
+**Previous Improvements (Round 2):**
 - **Cross-browser recording**: Speaking recorder works on Safari/iOS with automatic mimeType detection
 - **Teacher notes**: Add notes per question in test results view
-- **Re-take option**: Create new test for student, archiving previous results
-- **Auto-translation**: Student's native language auto-selects translation language (10 languages)
 - **Smart resume**: Cross-device resume finds first unanswered question automatically
 - **Teacher access control**: Teachers can't accidentally answer student's test
 - **Mobile optimized**: Compact progress bar replaces question dots on mobile
