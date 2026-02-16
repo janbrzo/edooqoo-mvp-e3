@@ -34,6 +34,7 @@ const EVENT_SOURCE_ICONS: Record<EventSource, React.ReactNode> = {
   test: <ClipboardCheck className="h-3 w-3" />,
   worksheet: <Eye className="h-3 w-3" />,
   teacher: <MessageSquare className="h-3 w-3" />,
+  welcome_test: <ClipboardCheck className="h-3 w-3" />,
   system: <Brain className="h-3 w-3" />
 };
 
@@ -43,6 +44,7 @@ const EVENT_SOURCE_COLORS: Record<EventSource, string> = {
   test: 'bg-green-500/10 text-green-600 border-green-500/20',
   worksheet: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
   teacher: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
+  welcome_test: 'bg-teal-500/10 text-teal-600 border-teal-500/20',
   system: 'bg-gray-500/10 text-gray-600 border-gray-500/20'
 };
 
