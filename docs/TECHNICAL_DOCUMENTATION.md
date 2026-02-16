@@ -5,6 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
+**Latest Update (February 2026) - DSLM Layer A Audit & Normalization:**
+- **Event naming normalized**: All old event_type/event_source variants consolidated to canonical names via SQL migration (5 UPDATE operations covering ~250 events)
+- **Flashcard mastery formula**: Changed from binary 0/100 to weighted scale (0=fail, 50=1st correct, 70=2nd correct, 90=well-known, 100=mastered) based on SM-2 repetition + interval_days
+- **Mastery column populated**: Flashcard trigger now sets `student_events.mastery` column (was NULL before)
+- **Welcome test bloat cleanup**: Reduced from 146 to 14 `welcome_test_section_progress` events (kept latest per student+section)
+- **TypeScript types synced**: `src/types/dslm/events.ts` rewritten with canonical event types, typed payloads, and `welcome_test` event source
+- **EventLogPanel updated**: Added `welcome_test` to event source icons and colors
+
 **Latest Update (February 2026) - Welcome Test v2 Round 3 Bug Fixes:**
 - **SpeakingRecorder auto-save**: Added `questionId` prop — auto-uploads recording to R2 when student navigates to next question without clicking Save
 - **Teacher audio playback**: Improved `isAudioAnswer` detection in `TestDetailsView` — recognizes R2 URLs (`pub-`, `r2.dev`), shows audio player for speaking answers

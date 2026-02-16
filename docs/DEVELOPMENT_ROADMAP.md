@@ -3,7 +3,15 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Feb 2026) - Welcome Test v2 Round 3 ✅
+### Recently Completed (Feb 2026) - DSLM Layer A Audit ✅
+- Event naming normalized to canonical types via SQL migration
+- Flashcard mastery: weighted scale (0/50/70/90/100) replacing binary 0/100
+- Mastery column populated for flashcard events in student_events
+- Welcome test section_progress bloat cleaned (146→14 events)
+- TypeScript events.ts rewritten with canonical types and typed payloads
+- EventLogPanel updated with welcome_test source
+
+### Previously Completed (Feb 2026) - Welcome Test v2 Round 3 ✅
 - SpeakingRecorder auto-save on question navigation (questionId prop)
 - Teacher audio playback with R2 URL detection in TestDetailsView
 - Transcribe-audio rewritten to OpenAI Whisper (binary audio processing)

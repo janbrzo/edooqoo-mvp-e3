@@ -14,7 +14,12 @@
 
 ## Getting Started
 
-**Latest Improvements (Round 3):**
+**Latest Improvements (DSLM Layer A Audit):**
+- **Event normalization**: All student learning events now use consistent canonical naming across worksheet, homework, flashcard, and welcome test sources
+- **Flashcard mastery**: Weighted mastery scoring (0→50→70→90→100) based on spaced repetition progress instead of binary pass/fail
+- **Data integrity**: Mastery column populated for all event types; duplicate/bloated events cleaned up
+
+**Previous Improvements (Round 3):**
 - **Auto-save recordings**: Speaking answers auto-save when navigating to next question (no need to click Save)
 - **Teacher playback**: Teachers can listen to student recordings directly in test results
 - **AI transcription**: Speaking answers are transcribed (OpenAI Whisper) and included in AI analysis
