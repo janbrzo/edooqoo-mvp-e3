@@ -6,69 +6,124 @@
  * teacher blocking (Issue 9), mobile-first (Issue 11), blur fix (Issue 12)
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Confetti from 'react-confetti';
-import { 
-  ChevronLeft, ChevronRight, CheckCircle, Loader2, Sparkles,
-  User, BookOpen, MessageSquare, PenTool, MessageCircle, Target,
-  SkipForward, HelpCircle, Pause, Clock, Globe, PartyPopper,
-  ShieldAlert, ExternalLink, Eye
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useWelcomeTest } from '@/hooks/useWelcomeTest';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { VersionSelector } from '@/components/welcome-test/VersionSelector';
-import { InstructionScreen } from '@/components/welcome-test/InstructionScreen';
-import { SpeakingRecorder } from '@/components/welcome-test/SpeakingRecorder';
-import { ListeningPlayer } from '@/components/welcome-test/ListeningPlayer';
-import { TRANSLATION_LANGUAGES, getTranslation, hasTranslation } from '@/data/welcomeTestTranslations';
-import { WELCOME_TEST_SECTIONS_WITH_QUESTIONS } from '@/data/welcomeTestQuestions';
-import type { WelcomeTestQuestionDef } from '@/types/welcomeTest';
+import { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import Confetti from "react-confetti";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  Loader2,
+  Sparkles,
+  User,
+  BookOpen,
+  MessageSquare,
+  PenTool,
+  MessageCircle,
+  Target,
+  SkipForward,
+  HelpCircle,
+  Pause,
+  Clock,
+  Globe,
+  PartyPopper,
+  ShieldAlert,
+  ExternalLink,
+  Eye,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useWelcomeTest } from "@/hooks/useWelcomeTest";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { VersionSelector } from "@/components/welcome-test/VersionSelector";
+import { InstructionScreen } from "@/components/welcome-test/InstructionScreen";
+import { SpeakingRecorder } from "@/components/welcome-test/SpeakingRecorder";
+import { ListeningPlayer } from "@/components/welcome-test/ListeningPlayer";
+import { TRANSLATION_LANGUAGES, getTranslation, hasTranslation } from "@/data/welcomeTestTranslations";
+import { WELCOME_TEST_SECTIONS_WITH_QUESTIONS } from "@/data/welcomeTestQuestions";
+import type { WelcomeTestQuestionDef } from "@/types/welcomeTest";
 
 const SECTION_ICONS: Record<string, React.ReactNode> = {
-  'User': <User className="h-4 w-4" />,
-  'BookOpen': <BookOpen className="h-4 w-4" />,
-  'MessageSquare': <MessageSquare className="h-4 w-4" />,
-  'PenTool': <PenTool className="h-4 w-4" />,
-  'MessageCircle': <MessageCircle className="h-4 w-4" />,
-  'Target': <Target className="h-4 w-4" />,
+  User: <User className="h-4 w-4" />,
+  BookOpen: <BookOpen className="h-4 w-4" />,
+  MessageSquare: <MessageSquare className="h-4 w-4" />,
+  PenTool: <PenTool className="h-4 w-4" />,
+  MessageCircle: <MessageCircle className="h-4 w-4" />,
+  Target: <Target className="h-4 w-4" />,
 };
 
-type Stage = 'loading' | 'error' | 'email' | 'teacher_block' | 'version' | 'instructions' | 'test' | 'paused' | 'completed' | 'section_celebration';
+type Stage =
+  | "loading"
+  | "error"
+  | "email"
+  | "teacher_block"
+  | "version"
+  | "instructions"
+  | "test"
+  | "paused"
+  | "completed"
+  | "section_celebration";
 
 export default function WelcomeTestPage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const {
-    loading, error, title, answers, sections, currentSection,
-    currentQuestion, globalQuestionIndex, totalQuestions, answeredCount,
-    progress, isLastQuestion, canComplete, completed, submitting,
-    currentSectionIndex, currentQuestionIndex, testVersion, paused,
-    estimatedMinutesRemaining, isTeacherMode, studentNativeLanguage,
-    saveAnswer, saveIdontKnow, skipQuestion, goToNext, goToPrevious,
-    goToSection, goToQuestionInSection, completeTest, setTestVersion,
-    pauseTest, resumeTest, flushPendingAnswer,
-    testId, studentId,
+    loading,
+    error,
+    title,
+    answers,
+    sections,
+    currentSection,
+    currentQuestion,
+    globalQuestionIndex,
+    totalQuestions,
+    answeredCount,
+    progress,
+    isLastQuestion,
+    canComplete,
+    completed,
+    submitting,
+    currentSectionIndex,
+    currentQuestionIndex,
+    testVersion,
+    paused,
+    estimatedMinutesRemaining,
+    isTeacherMode,
+    studentNativeLanguage,
+    saveAnswer,
+    saveIdontKnow,
+    skipQuestion,
+    goToNext,
+    goToPrevious,
+    goToSection,
+    goToQuestionInSection,
+    completeTest,
+    setTestVersion,
+    pauseTest,
+    resumeTest,
+    flushPendingAnswer,
+    testId,
+    studentId,
   } = useWelcomeTest({ shareToken: token || null });
 
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
-  const [emailInput, setEmailInput] = useState('');
+  const [emailInput, setEmailInput] = useState("");
   const [showInstructions, setShowInstructions] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [translationLang, setTranslationLang] = useState<string | null>(null);
-  const [sectionCelebration, setSectionCelebration] = useState<{ fromSection: string; nextSection: string } | null>(null);
+  const [sectionCelebration, setSectionCelebration] = useState<{ fromSection: string; nextSection: string } | null>(
+    null,
+  );
   const [teacherPreviewMode, setTeacherPreviewMode] = useState(false);
 
   // Track previous section for celebration
@@ -77,8 +132,8 @@ export default function WelcomeTestPage() {
   // Window size for confetti
   useEffect(() => {
     const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Auto-set translation language from student profile
@@ -86,19 +141,40 @@ export default function WelcomeTestPage() {
     if (studentNativeLanguage && !translationLang) {
       // Map native language name to translation language
       const langMap: Record<string, string> = {
-        'Polish': 'Polish', 'polski': 'Polish', 'pl': 'Polish',
-        'Spanish': 'Spanish', 'español': 'Spanish', 'es': 'Spanish',
-        'German': 'German', 'Deutsch': 'German', 'de': 'German',
-        'French': 'French', 'français': 'French', 'fr': 'French',
-        'Portuguese': 'Portuguese', 'português': 'Portuguese', 'pt': 'Portuguese',
-        'Italian': 'Italian', 'italiano': 'Italian', 'it': 'Italian',
-        'Turkish': 'Turkish', 'Türkçe': 'Turkish', 'tr': 'Turkish',
-        'Russian': 'Russian', 'русский': 'Russian', 'ru': 'Russian',
-        'Czech': 'Czech', 'čeština': 'Czech', 'cs': 'Czech',
-        'Ukrainian': 'Ukrainian', 'українська': 'Ukrainian', 'uk': 'Ukrainian',
+        Polish: "Polish",
+        polski: "Polish",
+        pl: "Polish",
+        Spanish: "Spanish",
+        español: "Spanish",
+        es: "Spanish",
+        German: "German",
+        Deutsch: "German",
+        de: "German",
+        French: "French",
+        français: "French",
+        fr: "French",
+        Portuguese: "Portuguese",
+        português: "Portuguese",
+        pt: "Portuguese",
+        Italian: "Italian",
+        italiano: "Italian",
+        it: "Italian",
+        Turkish: "Turkish",
+        Türkçe: "Turkish",
+        tr: "Turkish",
+        Russian: "Russian",
+        русский: "Russian",
+        ru: "Russian",
+        Czech: "Czech",
+        čeština: "Czech",
+        cs: "Czech",
+        Ukrainian: "Ukrainian",
+        українська: "Ukrainian",
+        uk: "Ukrainian",
       };
-      const matched = langMap[studentNativeLanguage] || 
-        TRANSLATION_LANGUAGES.find(l => l.toLowerCase() === studentNativeLanguage.toLowerCase());
+      const matched =
+        langMap[studentNativeLanguage] ||
+        TRANSLATION_LANGUAGES.find((l) => l.toLowerCase() === studentNativeLanguage.toLowerCase());
       if (matched) {
         setTranslationLang(matched);
       }
@@ -117,14 +193,16 @@ export default function WelcomeTestPage() {
         } else {
           localStorage.removeItem(`wt_email_${token}`);
         }
-      } catch { localStorage.removeItem(`wt_email_${token}`); }
+      } catch {
+        localStorage.removeItem(`wt_email_${token}`);
+      }
     }
   }, [token]);
 
   // Auto-verify teacher
   useEffect(() => {
     if (isTeacherMode && !verifiedEmail) {
-      setVerifiedEmail('teacher');
+      setVerifiedEmail("teacher");
     }
   }, [isTeacherMode]);
 
@@ -154,7 +232,10 @@ export default function WelcomeTestPage() {
   }, [currentSectionIndex, sections, completed, testVersion]);
 
   const handleVerifyEmail = () => {
-    if (!emailInput.trim()) { toast.error('Please enter your email'); return; }
+    if (!emailInput.trim()) {
+      toast.error("Please enter your email");
+      return;
+    }
     const email = emailInput.trim().toLowerCase();
     if (token) {
       const expiresAt = new Date();
@@ -166,16 +247,16 @@ export default function WelcomeTestPage() {
 
   // Determine stage
   const getStage = (): Stage => {
-    if (loading) return 'loading';
-    if (error) return 'error';
-    if (isTeacherMode && !teacherPreviewMode) return 'teacher_block';
-    if (!verifiedEmail && !isTeacherMode) return 'email';
-    if (completed) return 'completed';
-    if (paused) return 'paused';
-    if (!testVersion) return 'version';
-    if (showInstructions) return 'instructions';
-    if (sectionCelebration) return 'section_celebration';
-    return 'test';
+    if (loading) return "loading";
+    if (error) return "error";
+    if (isTeacherMode && !teacherPreviewMode) return "teacher_block";
+    if (!verifiedEmail && !isTeacherMode) return "email";
+    if (completed) return "completed";
+    if (paused) return "paused";
+    if (!testVersion) return "version";
+    if (showInstructions) return "instructions";
+    if (sectionCelebration) return "section_celebration";
+    return "test";
   };
 
   // Check if instructions were shown before (resume flow)
@@ -192,7 +273,7 @@ export default function WelcomeTestPage() {
 
   const handleStartTest = () => {
     if (token) {
-      localStorage.setItem(`wt_instructions_seen_${token}`, 'true');
+      localStorage.setItem(`wt_instructions_seen_${token}`, "true");
     }
     setShowInstructions(false);
   };
@@ -206,7 +287,7 @@ export default function WelcomeTestPage() {
   const stage = getStage();
 
   // ===== LOADING =====
-  if (stage === 'loading') {
+  if (stage === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20">
         <div className="text-center">
@@ -218,7 +299,7 @@ export default function WelcomeTestPage() {
   }
 
   // ===== ERROR =====
-  if (stage === 'error') {
+  if (stage === "error") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
         <Card className="max-w-md">
@@ -233,7 +314,7 @@ export default function WelcomeTestPage() {
   }
 
   // ===== TEACHER BLOCK (Issue 9) =====
-  if (stage === 'teacher_block') {
+  if (stage === "teacher_block") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
         <Card className="max-w-lg w-full">
@@ -243,7 +324,8 @@ export default function WelcomeTestPage() {
           </CardHeader>
           <CardContent className="space-y-4 text-center">
             <p className="text-sm text-muted-foreground">
-              This is the student's test link. As a teacher, you cannot answer the test to avoid polluting the student's data.
+              This is the student's test link. As a teacher, you cannot answer the test to avoid polluting the student's
+              data.
             </p>
             <p className="text-sm text-muted-foreground">
               To view the student's answers, go to <strong>Student Profile → Tests tab</strong>.
@@ -255,11 +337,11 @@ export default function WelcomeTestPage() {
                   Go to Student Results
                 </Button>
               )}
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setTeacherPreviewMode(true);
-                  setVerifiedEmail('teacher_preview');
+                  setVerifiedEmail("teacher_preview");
                 }}
               >
                 <Eye className="h-4 w-4 mr-2" />
@@ -273,13 +355,13 @@ export default function WelcomeTestPage() {
   }
 
   // ===== EMAIL (blurred background with real test content) =====
-  if (stage === 'email') {
+  if (stage === "email") {
     const previewQuestions = WELCOME_TEST_SECTIONS_WITH_QUESTIONS[0]?.questions.slice(0, 4) || [];
     const previewSections = WELCOME_TEST_SECTIONS_WITH_QUESTIONS.slice(0, 3);
     return (
       <div className="min-h-screen relative overflow-hidden">
         {/* Blurred real test content behind modal */}
-        <div className="absolute inset-0 filter blur-md opacity-50 pointer-events-none overflow-hidden scale-105">
+        <div className="absolute inset-0 filter blur-md opacity-70 pointer-events-none overflow-hidden scale-105">
           <div className="max-w-2xl mx-auto p-4 mt-4">
             {/* Fake header */}
             <div className="flex items-center gap-2 mb-3">
@@ -292,7 +374,10 @@ export default function WelcomeTestPage() {
             {/* Fake section tabs */}
             <div className="flex gap-1 mb-3">
               {previewSections.map((s, i) => (
-                <div key={i} className={`px-2.5 py-1 rounded-full text-[10px] font-medium ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                <div
+                  key={i}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-medium ${i === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                >
                   {s.title}
                 </div>
               ))}
@@ -301,10 +386,12 @@ export default function WelcomeTestPage() {
             <div className="space-y-3">
               {previewQuestions.map((q, qi) => (
                 <Card key={qi} className="p-4">
-                  <p className="text-sm font-medium mb-3">{q.question_text.split('\n')[0]}</p>
+                  <p className="text-sm font-medium mb-3">{q.question_text.split("\n")[0]}</p>
                   <div className="space-y-2">
                     {(q.options || []).slice(0, 4).map((opt, i) => (
-                      <div key={i} className="p-2.5 rounded-lg border text-sm text-muted-foreground">{opt}</div>
+                      <div key={i} className="p-2.5 rounded-lg border text-sm text-muted-foreground">
+                        {opt}
+                      </div>
                     ))}
                   </div>
                 </Card>
@@ -328,7 +415,7 @@ export default function WelcomeTestPage() {
                 placeholder="your.email@example.com"
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleVerifyEmail()}
+                onKeyDown={(e) => e.key === "Enter" && handleVerifyEmail()}
                 className="text-base"
               />
               <Button onClick={handleVerifyEmail} className="w-full" disabled={!emailInput.trim()}>
@@ -342,7 +429,7 @@ export default function WelcomeTestPage() {
   }
 
   // ===== COMPLETED (with confetti) =====
-  if (stage === 'completed') {
+  if (stage === "completed") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
         {showConfetti && (
@@ -361,11 +448,13 @@ export default function WelcomeTestPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-center">
             <p className="text-muted-foreground text-sm">
-              Thank you for completing the Welcome Test! Your teacher will review your results
-              and use them to personalize your learning experience.
+              Thank you for completing the Welcome Test! Your teacher will review your results and use them to
+              personalize your learning experience.
             </p>
             <div className="p-3 bg-primary/5 rounded-lg">
-              <div className="text-2xl font-bold text-primary">{answeredCount}/{totalQuestions}</div>
+              <div className="text-2xl font-bold text-primary">
+                {answeredCount}/{totalQuestions}
+              </div>
               <p className="text-xs text-muted-foreground">Questions answered</p>
             </div>
           </CardContent>
@@ -375,7 +464,7 @@ export default function WelcomeTestPage() {
   }
 
   // ===== PAUSED =====
-  if (stage === 'paused') {
+  if (stage === "paused") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
         <Card className="max-w-md w-full">
@@ -383,8 +472,8 @@ export default function WelcomeTestPage() {
             <Pause className="h-12 w-12 text-muted-foreground mx-auto" />
             <h2 className="text-xl font-semibold">Test Paused</h2>
             <p className="text-sm text-muted-foreground">
-              Your progress is saved ({answeredCount}/{totalQuestions} answered). 
-              You can close this page and come back anytime.
+              Your progress is saved ({answeredCount}/{totalQuestions} answered). You can close this page and come back
+              anytime.
             </p>
             <Button onClick={resumeTest} size="lg" className="min-h-[48px]">
               Resume Test
@@ -396,23 +485,17 @@ export default function WelcomeTestPage() {
   }
 
   // ===== VERSION SELECTOR =====
-  if (stage === 'version') {
+  if (stage === "version") {
     return <VersionSelector onSelect={setTestVersion} />;
   }
 
   // ===== INSTRUCTIONS =====
-  if (stage === 'instructions') {
-    return (
-      <InstructionScreen
-        version={testVersion!}
-        totalQuestions={totalQuestions}
-        onStart={handleStartTest}
-      />
-    );
+  if (stage === "instructions") {
+    return <InstructionScreen version={testVersion!} totalQuestions={totalQuestions} onStart={handleStartTest} />;
   }
 
   // ===== SECTION CELEBRATION =====
-  if (stage === 'section_celebration' && sectionCelebration) {
+  if (stage === "section_celebration" && sectionCelebration) {
     const remainingSections = sections.length - currentSectionIndex;
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
@@ -423,7 +506,8 @@ export default function WelcomeTestPage() {
             You completed <strong>{sectionCelebration.fromSection}</strong>!
           </p>
           <p className="text-xs text-muted-foreground">
-            {remainingSections} more {remainingSections === 1 ? 'section' : 'sections'} to go → <strong>{sectionCelebration.nextSection}</strong>
+            {remainingSections} more {remainingSections === 1 ? "section" : "sections"} to go →{" "}
+            <strong>{sectionCelebration.nextSection}</strong>
           </p>
           <Button onClick={() => setSectionCelebration(null)} size="sm" className="mt-2">
             Continue
@@ -457,13 +541,12 @@ export default function WelcomeTestPage() {
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <span className="text-xs text-muted-foreground items-center gap-1 hidden sm:flex">
-                <Clock className="h-3 w-3" />
-                ~{estimatedMinutesRemaining} min
+                <Clock className="h-3 w-3" />~{estimatedMinutesRemaining} min
               </span>
               {/* Auto-translate button */}
               {studentNativeLanguage && (
                 <Button
-                  variant={translationLang ? 'default' : 'outline'}
+                  variant={translationLang ? "default" : "outline"}
                   size="sm"
                   className="h-7 text-xs px-2 gap-1"
                   onClick={() => {
@@ -472,37 +555,65 @@ export default function WelcomeTestPage() {
                     } else {
                       // Auto-detect from student profile
                       const langMap: Record<string, string> = {
-                        'Polish': 'Polish', 'polski': 'Polish', 'pl': 'Polish',
-                        'Spanish': 'Spanish', 'español': 'Spanish', 'es': 'Spanish',
-                        'German': 'German', 'Deutsch': 'German', 'de': 'German',
-                        'French': 'French', 'français': 'French', 'fr': 'French',
-                        'Portuguese': 'Portuguese', 'português': 'Portuguese', 'pt': 'Portuguese',
-                        'Italian': 'Italian', 'italiano': 'Italian', 'it': 'Italian',
-                        'Turkish': 'Turkish', 'Türkçe': 'Turkish', 'tr': 'Turkish',
-                        'Russian': 'Russian', 'русский': 'Russian', 'ru': 'Russian',
-                        'Czech': 'Czech', 'čeština': 'Czech', 'cs': 'Czech',
-                        'Ukrainian': 'Ukrainian', 'українська': 'Ukrainian', 'uk': 'Ukrainian',
+                        Polish: "Polish",
+                        polski: "Polish",
+                        pl: "Polish",
+                        Spanish: "Spanish",
+                        español: "Spanish",
+                        es: "Spanish",
+                        German: "German",
+                        Deutsch: "German",
+                        de: "German",
+                        French: "French",
+                        français: "French",
+                        fr: "French",
+                        Portuguese: "Portuguese",
+                        português: "Portuguese",
+                        pt: "Portuguese",
+                        Italian: "Italian",
+                        italiano: "Italian",
+                        it: "Italian",
+                        Turkish: "Turkish",
+                        Türkçe: "Turkish",
+                        tr: "Turkish",
+                        Russian: "Russian",
+                        русский: "Russian",
+                        ru: "Russian",
+                        Czech: "Czech",
+                        čeština: "Czech",
+                        cs: "Czech",
+                        Ukrainian: "Ukrainian",
+                        українська: "Ukrainian",
+                        uk: "Ukrainian",
                       };
-                      const matched = langMap[studentNativeLanguage] || 
-                        TRANSLATION_LANGUAGES.find(l => l.toLowerCase() === studentNativeLanguage.toLowerCase());
+                      const matched =
+                        langMap[studentNativeLanguage] ||
+                        TRANSLATION_LANGUAGES.find((l) => l.toLowerCase() === studentNativeLanguage.toLowerCase());
                       if (matched) setTranslationLang(matched);
                     }
                   }}
                 >
-                  <Globe className={`h-3.5 w-3.5 ${translationLang ? '' : 'text-muted-foreground'}`} />
-                  <span className="hidden sm:inline">{translationLang ? 'Translated' : 'Translate'}</span>
+                  <Globe className={`h-3.5 w-3.5 ${translationLang ? "" : "text-muted-foreground"}`} />
+                  <span className="hidden sm:inline">{translationLang ? "Translated" : "Translate"}</span>
                 </Button>
               )}
               {/* Translation dropdown */}
-              <Select value={translationLang || 'none'} onValueChange={(v) => setTranslationLang(v === 'none' ? null : v)}>
+              <Select
+                value={translationLang || "none"}
+                onValueChange={(v) => setTranslationLang(v === "none" ? null : v)}
+              >
                 <SelectTrigger className="h-7 gap-1 px-2 text-xs border rounded-md w-auto min-w-0">
-                  <Globe className={`h-3.5 w-3.5 flex-shrink-0 ${translationLang ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="hidden sm:inline truncate max-w-[60px]">{translationLang || 'Lang'}</span>
+                  <Globe
+                    className={`h-3.5 w-3.5 flex-shrink-0 ${translationLang ? "text-primary" : "text-muted-foreground"}`}
+                  />
+                  <span className="hidden sm:inline truncate max-w-[60px]">{translationLang || "Lang"}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">English only</SelectItem>
-                  {TRANSLATION_LANGUAGES.map(lang => (
-                    <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                  {TRANSLATION_LANGUAGES.map((lang) => (
+                    <SelectItem key={lang} value={lang}>
+                      {lang}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -516,7 +627,9 @@ export default function WelcomeTestPage() {
             <span className="text-xs text-muted-foreground">
               Question {globalQuestionIndex + 1} of {totalQuestions}
             </span>
-            <Badge variant="secondary" className="text-xs">{progress}%</Badge>
+            <Badge variant="secondary" className="text-xs">
+              {progress}%
+            </Badge>
           </div>
           <Progress value={progress} className="h-1.5" />
         </div>
@@ -524,7 +637,7 @@ export default function WelcomeTestPage() {
         {/* Section tabs - compact, touch-friendly */}
         <div className="flex gap-1 mb-3 sm:mb-4 overflow-x-auto pb-1 -mx-1 px-1">
           {sections.map((section, idx) => {
-            const sectionAnswered = section.questions.filter(q => answers[q.id] !== undefined).length;
+            const sectionAnswered = section.questions.filter((q) => answers[q.id] !== undefined).length;
             const sectionTotal = section.questions.length;
             const isActive = idx === currentSectionIndex;
             const isDone = sectionAnswered === sectionTotal;
@@ -535,16 +648,18 @@ export default function WelcomeTestPage() {
                 onClick={() => goToSection(idx)}
                 className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors min-h-[32px] ${
                   isActive
-                    ? 'bg-primary text-primary-foreground'
+                    ? "bg-primary text-primary-foreground"
                     : isDone
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
                 {isDone && <CheckCircle className="h-2.5 w-2.5" />}
                 <span className="hidden sm:inline">{section.title}</span>
                 <span className="sm:hidden">{idx + 1}</span>
-                <span className="opacity-60">{sectionAnswered}/{sectionTotal}</span>
+                <span className="opacity-60">
+                  {sectionAnswered}/{sectionTotal}
+                </span>
               </button>
             );
           })}
@@ -570,9 +685,13 @@ export default function WelcomeTestPage() {
               {/* Translation */}
               {currentTranslation && !isSkillQuestion && (
                 <div className="mt-2 p-2 bg-muted/30 rounded border-l-2 border-primary/30">
-                  <p className="text-xs text-muted-foreground italic whitespace-pre-line">{currentTranslation.question}</p>
+                  <p className="text-xs text-muted-foreground italic whitespace-pre-line">
+                    {currentTranslation.question}
+                  </p>
                   {currentTranslation.description && (
-                    <p className="text-[11px] text-muted-foreground/70 mt-0.5 italic">{currentTranslation.description}</p>
+                    <p className="text-[11px] text-muted-foreground/70 mt-0.5 italic">
+                      {currentTranslation.description}
+                    </p>
                   )}
                 </div>
               )}
@@ -589,13 +708,13 @@ export default function WelcomeTestPage() {
             {/* Answer status + I don't know */}
             <div className="flex items-center justify-between">
               <div>
-                {answers[currentQuestion.id] !== undefined && answers[currentQuestion.id] !== '__IDK__' && (
+                {answers[currentQuestion.id] !== undefined && answers[currentQuestion.id] !== "__IDK__" && (
                   <div className="flex items-center gap-1.5 text-xs text-green-600">
                     <CheckCircle className="h-3 w-3" />
                     <span>Saved</span>
                   </div>
                 )}
-                {answers[currentQuestion.id] === '__IDK__' && (
+                {answers[currentQuestion.id] === "__IDK__" && (
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <HelpCircle className="h-3 w-3" />
                     <span>Marked as "I don't know"</span>
@@ -609,8 +728,7 @@ export default function WelcomeTestPage() {
                   className="text-xs h-7 text-muted-foreground"
                   onClick={() => saveIdontKnow(currentQuestion.id)}
                 >
-                  <HelpCircle className="h-3 w-3 mr-1" />
-                  I don't know
+                  <HelpCircle className="h-3 w-3 mr-1" />I don't know
                 </Button>
               )}
             </div>
@@ -619,8 +737,15 @@ export default function WelcomeTestPage() {
 
         {/* Navigation - compact, mobile-friendly */}
         <div className="flex items-center justify-between gap-2">
-          <Button variant="outline" size="sm" onClick={goToPrevious} disabled={globalQuestionIndex === 0} className="min-h-[40px]">
-            <ChevronLeft className="h-3.5 w-3.5 mr-1" /> <span className="hidden sm:inline">Previous</span><span className="sm:hidden">Prev</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToPrevious}
+            disabled={globalQuestionIndex === 0}
+            className="min-h-[40px]"
+          >
+            <ChevronLeft className="h-3.5 w-3.5 mr-1" /> <span className="hidden sm:inline">Previous</span>
+            <span className="sm:hidden">Prev</span>
           </Button>
 
           <Button
@@ -640,7 +765,11 @@ export default function WelcomeTestPage() {
               disabled={!canComplete || submitting || teacherPreviewMode}
               className="bg-green-600 hover:bg-green-700 min-h-[40px]"
             >
-              {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <CheckCircle className="h-3.5 w-3.5 mr-1" />}
+              {submitting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+              ) : (
+                <CheckCircle className="h-3.5 w-3.5 mr-1" />
+              )}
               Complete
             </Button>
           ) : (
@@ -656,11 +785,18 @@ export default function WelcomeTestPage() {
           <div className="sm:hidden">
             <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
               <span>Section progress</span>
-              <span>{currentSection.questions.filter(q => answers[q.id] !== undefined).length}/{currentSection.questions.length}</span>
+              <span>
+                {currentSection.questions.filter((q) => answers[q.id] !== undefined).length}/
+                {currentSection.questions.length}
+              </span>
             </div>
-            <Progress 
-              value={(currentSection.questions.filter(q => answers[q.id] !== undefined).length / currentSection.questions.length) * 100} 
-              className="h-1.5" 
+            <Progress
+              value={
+                (currentSection.questions.filter((q) => answers[q.id] !== undefined).length /
+                  currentSection.questions.length) *
+                100
+              }
+              className="h-1.5"
             />
           </div>
           {/* Desktop: dots */}
@@ -671,12 +807,12 @@ export default function WelcomeTestPage() {
                 onClick={() => goToQuestionInSection(currentSectionIndex, idx)}
                 className={`w-6 h-6 rounded-full text-[10px] font-medium transition-colors ${
                   idx === currentQuestionIndex
-                    ? 'bg-primary text-primary-foreground'
-                    : answers[q.id] === '__IDK__'
-                    ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30'
-                    : answers[q.id] !== undefined
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30'
-                    : 'bg-muted text-muted-foreground'
+                    ? "bg-primary text-primary-foreground"
+                    : answers[q.id] === "__IDK__"
+                      ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30"
+                      : answers[q.id] !== undefined
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/30"
+                        : "bg-muted text-muted-foreground"
                 }`}
               >
                 {idx + 1}
@@ -706,18 +842,30 @@ function QuestionInput({
   translatedOptions?: string[];
   disabled?: boolean;
 }) {
-  const displayAnswer = answer === '__IDK__' ? '' : answer;
+  const displayAnswer = answer === "__IDK__" ? "" : answer;
 
   if (disabled) {
     // Read-only mode for teacher preview
     return (
       <div className="opacity-60 pointer-events-none">
-        <QuestionInputInner question={question} answer={displayAnswer} onAnswer={() => {}} translatedOptions={translatedOptions} />
+        <QuestionInputInner
+          question={question}
+          answer={displayAnswer}
+          onAnswer={() => {}}
+          translatedOptions={translatedOptions}
+        />
       </div>
     );
   }
 
-  return <QuestionInputInner question={question} answer={displayAnswer} onAnswer={onAnswer} translatedOptions={translatedOptions} />;
+  return (
+    <QuestionInputInner
+      question={question}
+      answer={displayAnswer}
+      onAnswer={onAnswer}
+      translatedOptions={translatedOptions}
+    />
+  );
 }
 
 function QuestionInputInner({
@@ -732,34 +880,34 @@ function QuestionInputInner({
   translatedOptions?: string[];
 }) {
   switch (question.question_type) {
-    case 'speaking_record':
+    case "speaking_record":
       return (
         <SpeakingRecorder
           maxSeconds={question.max_recording_seconds || 60}
-          answer={typeof answer === 'string' ? answer : undefined}
+          answer={typeof answer === "string" ? answer : undefined}
           onAnswer={(url) => onAnswer(url)}
           questionId={question.id}
         />
       );
 
-    case 'listening_comprehension':
+    case "listening_comprehension":
       return (
         <div className="space-y-4">
           {(question.audio_url !== undefined || question.audio_transcript) && (
-            <ListeningPlayer
-              audioUrl={question.audio_url || ''}
-              transcript={question.audio_transcript}
-            />
+            <ListeningPlayer audioUrl={question.audio_url || ""} transcript={question.audio_transcript} />
           )}
           {question.options && (
-            <RadioGroup
-              value={(answer as string) || ''}
-              onValueChange={onAnswer}
-            >
+            <RadioGroup value={(answer as string) || ""} onValueChange={onAnswer}>
               {question.options.map((option, idx) => (
-                <div key={idx} className="flex items-center space-x-2.5 p-2.5 rounded-lg border hover:bg-muted/50 transition-colors">
+                <div
+                  key={idx}
+                  className="flex items-center space-x-2.5 p-2.5 rounded-lg border hover:bg-muted/50 transition-colors"
+                >
                   <RadioGroupItem value={option} id={`opt-${question.id}-${idx}`} />
-                  <Label htmlFor={`opt-${question.id}-${idx}`} className="flex-1 cursor-pointer text-sm leading-relaxed">
+                  <Label
+                    htmlFor={`opt-${question.id}-${idx}`}
+                    className="flex-1 cursor-pointer text-sm leading-relaxed"
+                  >
                     {option}
                   </Label>
                 </div>
@@ -769,16 +917,16 @@ function QuestionInputInner({
         </div>
       );
 
-    case 'self_assessment':
-    case 'scenario_reaction':
-    case 'multiple_choice':
+    case "self_assessment":
+    case "scenario_reaction":
+    case "multiple_choice":
       return (
-        <RadioGroup
-          value={(answer as string) || ''}
-          onValueChange={onAnswer}
-        >
+        <RadioGroup value={(answer as string) || ""} onValueChange={onAnswer}>
           {question.options?.map((option, idx) => (
-            <div key={idx} className="flex items-center space-x-2.5 p-2.5 rounded-lg border hover:bg-muted/50 transition-colors">
+            <div
+              key={idx}
+              className="flex items-center space-x-2.5 p-2.5 rounded-lg border hover:bg-muted/50 transition-colors"
+            >
               <RadioGroupItem value={option} id={`opt-${question.id}-${idx}`} />
               <Label htmlFor={`opt-${question.id}-${idx}`} className="flex-1 cursor-pointer text-sm leading-relaxed">
                 {option}
@@ -791,7 +939,7 @@ function QuestionInputInner({
         </RadioGroup>
       );
 
-    case 'preference_choice':
+    case "preference_choice":
       if (question.multi_select) {
         const selected = (answer as string[]) || [];
         return (
@@ -800,7 +948,10 @@ function QuestionInputInner({
               const isChecked = selected.includes(option);
               const atMax = question.max_selections ? selected.length >= question.max_selections : false;
               return (
-                <div key={idx} className="flex items-center space-x-2.5 p-2.5 rounded-lg border hover:bg-muted/50 transition-colors">
+                <div
+                  key={idx}
+                  className="flex items-center space-x-2.5 p-2.5 rounded-lg border hover:bg-muted/50 transition-colors"
+                >
                   <Checkbox
                     id={`pref-${question.id}-${idx}`}
                     checked={isChecked}
@@ -809,14 +960,16 @@ function QuestionInputInner({
                       if (checked) {
                         onAnswer([...selected, option]);
                       } else {
-                        onAnswer(selected.filter(s => s !== option));
+                        onAnswer(selected.filter((s) => s !== option));
                       }
                     }}
                   />
                   <Label htmlFor={`pref-${question.id}-${idx}`} className="flex-1 cursor-pointer text-sm">
                     {option}
                     {translatedOptions?.[idx] && (
-                      <span className="block text-xs text-muted-foreground italic mt-0.5">{translatedOptions[idx]}</span>
+                      <span className="block text-xs text-muted-foreground italic mt-0.5">
+                        {translatedOptions[idx]}
+                      </span>
                     )}
                   </Label>
                 </div>
@@ -829,9 +982,12 @@ function QuestionInputInner({
         );
       }
       return (
-        <RadioGroup value={(answer as string) || ''} onValueChange={onAnswer}>
+        <RadioGroup value={(answer as string) || ""} onValueChange={onAnswer}>
           {question.options?.map((option, idx) => (
-            <div key={idx} className="flex items-center space-x-2.5 p-2.5 rounded-lg border hover:bg-muted/50 transition-colors">
+            <div
+              key={idx}
+              className="flex items-center space-x-2.5 p-2.5 rounded-lg border hover:bg-muted/50 transition-colors"
+            >
               <RadioGroupItem value={option} id={`pref-${question.id}-${idx}`} />
               <Label htmlFor={`pref-${question.id}-${idx}`} className="flex-1 cursor-pointer text-sm">
                 {option}
@@ -844,28 +1000,28 @@ function QuestionInputInner({
         </RadioGroup>
       );
 
-    case 'fill_blank':
+    case "fill_blank":
       return (
         <Input
-          value={(answer as string) || ''}
+          value={(answer as string) || ""}
           onChange={(e) => onAnswer(e.target.value)}
           placeholder="Type your answer..."
           className="text-sm"
         />
       );
 
-    case 'open_ended':
-    case 'open_reflection':
+    case "open_ended":
+    case "open_reflection":
       return (
         <Textarea
-          value={(answer as string) || ''}
+          value={(answer as string) || ""}
           onChange={(e) => onAnswer(e.target.value)}
-          placeholder={question.question_type === 'open_reflection' ? 'Share your thoughts...' : 'Write your answer...'}
+          placeholder={question.question_type === "open_reflection" ? "Share your thoughts..." : "Write your answer..."}
           className="min-h-[90px] text-sm"
         />
       );
 
-    case 'self_assessment_matrix':
+    case "self_assessment_matrix":
       const matrixAnswers = (answer as Record<string, number>) || {};
       return (
         <div className="space-y-3">
@@ -873,28 +1029,29 @@ function QuestionInputInner({
             <div key={idx} className="space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium">{item}</span>
-                <span className="text-[10px] text-muted-foreground font-medium">
-                  {matrixAnswers[item] || '—'}
-                </span>
+                <span className="text-[10px] text-muted-foreground font-medium">{matrixAnswers[item] || "—"}</span>
               </div>
               <div className="flex gap-1.5">
-                {Array.from({ length: (question.matrix_scale?.max || 5) - (question.matrix_scale?.min || 1) + 1 }, (_, i) => {
-                  const val = (question.matrix_scale?.min || 1) + i;
-                  const isSelected = matrixAnswers[item] === val;
-                  return (
-                    <button
-                      key={val}
-                      onClick={() => onAnswer({ ...matrixAnswers, [item]: val })}
-                      className={`flex-1 py-1.5 rounded text-xs font-medium transition-colors min-h-[36px] ${
-                        isSelected
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted hover:bg-muted/80 text-muted-foreground'
-                      }`}
-                    >
-                      {val}
-                    </button>
-                  );
-                })}
+                {Array.from(
+                  { length: (question.matrix_scale?.max || 5) - (question.matrix_scale?.min || 1) + 1 },
+                  (_, i) => {
+                    const val = (question.matrix_scale?.min || 1) + i;
+                    const isSelected = matrixAnswers[item] === val;
+                    return (
+                      <button
+                        key={val}
+                        onClick={() => onAnswer({ ...matrixAnswers, [item]: val })}
+                        className={`flex-1 py-1.5 rounded text-xs font-medium transition-colors min-h-[36px] ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                        }`}
+                      >
+                        {val}
+                      </button>
+                    );
+                  },
+                )}
               </div>
               {question.matrix_scale?.labels && idx === 0 && (
                 <div className="flex justify-between text-[9px] text-muted-foreground">
@@ -910,7 +1067,7 @@ function QuestionInputInner({
     default:
       return (
         <Input
-          value={(answer as string) || ''}
+          value={(answer as string) || ""}
           onChange={(e) => onAnswer(e.target.value)}
           placeholder="Type your answer..."
         />
