@@ -5,7 +5,21 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Welcome Test v2 Round 2 Bug Fixes:**
+**Latest Update (February 2026) - Welcome Test v2 Round 3 Bug Fixes:**
+- **SpeakingRecorder auto-save**: Added `questionId` prop — auto-uploads recording to R2 when student navigates to next question without clicking Save
+- **Teacher audio playback**: Improved `isAudioAnswer` detection in `TestDetailsView` — recognizes R2 URLs (`pub-`, `r2.dev`), shows audio player for speaking answers
+- **Transcription (Whisper)**: Rewrote `transcribe-audio` edge function to use OpenAI Whisper API (fetches audio binary, sends to `/v1/audio/transcriptions`)
+- **TTS audio fix**: Fixed `generate-welcome-test-audio` — chunked base64 conversion (8KB chunks) to avoid stack overflow on large audio files
+- **Q21 audio re-generated**: New TTS-1 audio with exact verbatim transcript (café dialogue), stored at R2
+- **AI Analysis + speaking**: `process-welcome-test` now transcribes speaking answers (wt_q16s, wt_q36s, wt_q41s) via Whisper before AI analysis
+- **Event dedup fix**: `useWelcomeTest` section key changed from `${sectionId}_${count}` to just `sectionId` — one event per section
+- **Re-take preserves results**: Removed soft-delete of old test in `handleRetake` — previous test stays visible with results
+- **Translate button**: Added auto-translate button that picks language from student's `native_language` profile
+- **Full translations**: Completed all 10 language translation sets (PL, ES, DE, FR, PT, IT, TR, RU, CS, UK) to match Polish coverage
+- **Blur modal improved**: Increased preview questions (2→4), opacity (0.30→0.50), stronger blur effect
+- **Auth redirect**: `StudentPage` now redirects unauthenticated users to login with return URL instead of showing "Student not found"
+
+**Previous Update (February 2026) - Welcome Test v2 Round 2 Bug Fixes:**
 - **SpeakingRecorder**: Cross-browser mimeType detection (webm → mp4 → fallback), stale closure fix via `statusRef`, larger mobile button
 - **Event logging**: Debounced `commitAnswer` — events only on blur/navigation, not every keystroke. Split `saveAnswer` into local update + commit
 - **Score calculation**: Welcome tests now separate skill questions (grammar/vocab/reading/listening) from profiling questions in display

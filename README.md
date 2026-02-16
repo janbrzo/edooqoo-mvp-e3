@@ -11,7 +11,7 @@ A professional tool that generates high-quality, customized English worksheets i
 
 - **AI-Powered Generation**: Creates unique worksheets based on lesson goals and student needs
 - **20+ Exercise Types**: Multiple choice, fill-in-blanks, reading, dialogue, matching, listening, speaking, and more
-- **Welcome Test**: Comprehensive student profiling with 49 questions, speaking recording, listening comprehension, and AI-powered analysis
+- **Welcome Test**: Comprehensive student profiling with 49 questions, speaking recording (auto-save + Whisper transcription), listening comprehension (TTS-1 audio), AI-powered analysis, 10-language translations
 - **Dual Versions**: Clean student worksheets + comprehensive teacher versions with answers
 - **Homework System**: Interactive homework with AI evaluation and progress tracking
 - **Flashcards**: Spaced repetition learning with shared sets

@@ -6,7 +6,21 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-15) - Welcome Test v2 Round 2:**
+**Ostatnia naprawa (2026-02-16) - Welcome Test v2 Round 3:**
+- ✅ **SpeakingRecorder auto-save**: Auto-upload nagrania do R2 przy nawigacji do następnego pytania (questionId prop)
+- ✅ **Odtwarzanie audio nauczyciel**: Rozpoznawanie R2 URL w TestDetailsView, audio player dla speaking answers
+- ✅ **Transkrypcja Whisper**: Przepisana edge function transcribe-audio na OpenAI Whisper API
+- ✅ **TTS audio fix**: Chunked base64 conversion (8KB) w generate-welcome-test-audio
+- ✅ **Q21 re-generated**: Nowe audio TTS-1 z dokładnym dialogiem kawiarni
+- ✅ **AI Analysis + speaking**: process-welcome-test transkrybuje odpowiedzi mówione przed analizą AI
+- ✅ **Event dedup**: sectionKey zmieniony na sectionId (jeden event per sekcja)
+- ✅ **Re-take zachowuje wyniki**: Usunięto soft-delete starego testu
+- ✅ **Przycisk Translate**: Auto-dobieranie języka z profilu studenta
+- ✅ **Pełne tłumaczenia**: Wszystkie 10 języków z pełnym pokryciem pytań
+- ✅ **Blur modal**: Więcej pytań w tle (4), wyższa opacity (0.50)
+- ✅ **Auth redirect**: StudentPage przekierowuje niezalogowanych na login z return URL
+
+**Poprzednia naprawa (2026-02-15) - Welcome Test v2 Round 2:**
 - ✅ **SpeakingRecorder**: Detekcja mimeType (webm/mp4/fallback), fix stale closure via statusRef, większy przycisk mobile
 - ✅ **Event logging**: Debounced commitAnswer — eventy tylko na blur/nawigację, nie na każdy keystroke
 - ✅ **Score calculation**: Osobne wyświetlanie skill questions vs profiling questions
