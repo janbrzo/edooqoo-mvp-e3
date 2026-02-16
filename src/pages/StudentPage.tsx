@@ -106,11 +106,29 @@ const StudentPage = () => {
     refetchWorksheets();
   }, [currentPage, deletedCurrentPage]);
 
-  if (loading || studentsLoading) {
+  // Auth check for "student not found" - redirect to login if not authenticated
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsAuthenticated(!!user);
+      setAuthChecked(true);
+    });
+  }, []);
+
+  if (loading || studentsLoading || !authChecked) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
   if (!student) {
+    // If not authenticated, redirect to login with return URL
+    if (!isAuthenticated) {
+      const returnUrl = `/student/${id}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
+      return <div className="min-h-screen flex items-center justify-center">Redirecting to login...</div>;
+    }
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
         <div className="max-w-4xl mx-auto">

@@ -274,17 +274,31 @@ export default function WelcomeTestPage() {
 
   // ===== EMAIL (blurred background with real test content) =====
   if (stage === 'email') {
-    const previewQuestions = WELCOME_TEST_SECTIONS_WITH_QUESTIONS[0]?.questions.slice(0, 2) || [];
+    const previewQuestions = WELCOME_TEST_SECTIONS_WITH_QUESTIONS[0]?.questions.slice(0, 4) || [];
+    const previewSections = WELCOME_TEST_SECTIONS_WITH_QUESTIONS.slice(0, 3);
     return (
       <div className="min-h-screen relative overflow-hidden">
         {/* Blurred real test content behind modal */}
-        <div className="absolute inset-0 filter blur-lg opacity-30 pointer-events-none overflow-hidden scale-105">
-          <div className="max-w-2xl mx-auto p-4 mt-8">
-            <div className="flex items-center gap-2 mb-4">
+        <div className="absolute inset-0 filter blur-md opacity-50 pointer-events-none overflow-hidden scale-105">
+          <div className="max-w-2xl mx-auto p-4 mt-4">
+            {/* Fake header */}
+            <div className="flex items-center gap-2 mb-3">
               <Sparkles className="h-5 w-5 text-primary" />
               <span className="text-lg font-semibold">Welcome Test</span>
+              <span className="text-xs text-muted-foreground ml-auto">Question 1 of 49</span>
             </div>
-            <div className="space-y-4">
+            {/* Fake progress bar */}
+            <Progress value={3} className="h-1.5 mb-3" />
+            {/* Fake section tabs */}
+            <div className="flex gap-1 mb-3">
+              {previewSections.map((s, i) => (
+                <div key={i} className={`px-2.5 py-1 rounded-full text-[10px] font-medium ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                  {s.title}
+                </div>
+              ))}
+            </div>
+            {/* Fake questions */}
+            <div className="space-y-3">
               {previewQuestions.map((q, qi) => (
                 <Card key={qi} className="p-4">
                   <p className="text-sm font-medium mb-3">{q.question_text.split('\n')[0]}</p>
@@ -299,7 +313,7 @@ export default function WelcomeTestPage() {
           </div>
         </div>
         {/* Modal overlay */}
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center p-4">
           <Card className="max-w-md w-full shadow-xl">
             <CardHeader className="text-center pb-3">
               <Sparkles className="h-8 w-8 text-primary mx-auto mb-2" />
@@ -446,11 +460,44 @@ export default function WelcomeTestPage() {
                 <Clock className="h-3 w-3" />
                 ~{estimatedMinutesRemaining} min
               </span>
-              {/* Translation toggle */}
+              {/* Auto-translate button */}
+              {studentNativeLanguage && (
+                <Button
+                  variant={translationLang ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-7 text-xs px-2 gap-1"
+                  onClick={() => {
+                    if (translationLang) {
+                      setTranslationLang(null);
+                    } else {
+                      // Auto-detect from student profile
+                      const langMap: Record<string, string> = {
+                        'Polish': 'Polish', 'polski': 'Polish', 'pl': 'Polish',
+                        'Spanish': 'Spanish', 'español': 'Spanish', 'es': 'Spanish',
+                        'German': 'German', 'Deutsch': 'German', 'de': 'German',
+                        'French': 'French', 'français': 'French', 'fr': 'French',
+                        'Portuguese': 'Portuguese', 'português': 'Portuguese', 'pt': 'Portuguese',
+                        'Italian': 'Italian', 'italiano': 'Italian', 'it': 'Italian',
+                        'Turkish': 'Turkish', 'Türkçe': 'Turkish', 'tr': 'Turkish',
+                        'Russian': 'Russian', 'русский': 'Russian', 'ru': 'Russian',
+                        'Czech': 'Czech', 'čeština': 'Czech', 'cs': 'Czech',
+                        'Ukrainian': 'Ukrainian', 'українська': 'Ukrainian', 'uk': 'Ukrainian',
+                      };
+                      const matched = langMap[studentNativeLanguage] || 
+                        TRANSLATION_LANGUAGES.find(l => l.toLowerCase() === studentNativeLanguage.toLowerCase());
+                      if (matched) setTranslationLang(matched);
+                    }
+                  }}
+                >
+                  <Globe className={`h-3.5 w-3.5 ${translationLang ? '' : 'text-muted-foreground'}`} />
+                  <span className="hidden sm:inline">{translationLang ? 'Translated' : 'Translate'}</span>
+                </Button>
+              )}
+              {/* Translation dropdown */}
               <Select value={translationLang || 'none'} onValueChange={(v) => setTranslationLang(v === 'none' ? null : v)}>
                 <SelectTrigger className="h-7 gap-1 px-2 text-xs border rounded-md w-auto min-w-0">
                   <Globe className={`h-3.5 w-3.5 flex-shrink-0 ${translationLang ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="hidden sm:inline truncate max-w-[60px]">{translationLang || 'Translate'}</span>
+                  <span className="hidden sm:inline truncate max-w-[60px]">{translationLang || 'Lang'}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">English only</SelectItem>
@@ -691,6 +738,7 @@ function QuestionInputInner({
           maxSeconds={question.max_recording_seconds || 60}
           answer={typeof answer === 'string' ? answer : undefined}
           onAnswer={(url) => onAnswer(url)}
+          questionId={question.id}
         />
       );
 

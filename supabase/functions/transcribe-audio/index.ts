@@ -1,6 +1,6 @@
 /**
- * transcribe-audio - Edge function to transcribe audio URLs using Lovable AI
- * Used by teachers to get text from speaking recordings in Welcome Test
+ * transcribe-audio - Edge function to transcribe audio URLs using OpenAI Whisper
+ * Fetches audio binary from URL, sends to Whisper API for transcription
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -24,45 +24,59 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }), {
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      return new Response(JSON.stringify({ error: 'OPENAI_API_KEY not configured' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Use Gemini multimodal to transcribe audio
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Step 1: Fetch the audio file as binary
+    console.log('[transcribe-audio] Fetching audio from:', audio_url);
+    const audioResponse = await fetch(audio_url);
+    if (!audioResponse.ok) {
+      return new Response(JSON.stringify({ error: `Failed to fetch audio: ${audioResponse.status}` }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const audioBlob = await audioResponse.blob();
+    const contentType = audioResponse.headers.get('content-type') || 'audio/webm';
+    
+    // Determine file extension
+    let ext = 'webm';
+    if (contentType.includes('mp4') || contentType.includes('m4a')) ext = 'mp4';
+    else if (contentType.includes('ogg')) ext = 'ogg';
+    else if (contentType.includes('wav')) ext = 'wav';
+    else if (contentType.includes('mpeg') || contentType.includes('mp3')) ext = 'mp3';
+
+    // Step 2: Send to OpenAI Whisper API
+    const formData = new FormData();
+    formData.append('file', audioBlob, `recording.${ext}`);
+    formData.append('model', 'whisper-1');
+    formData.append('language', 'en');
+
+    console.log('[transcribe-audio] Sending to Whisper API, size:', audioBlob.size);
+    const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
       },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a transcription assistant. Listen to the audio and transcribe exactly what the speaker says. Return ONLY the transcription text, nothing else. If you cannot access the audio, return "Unable to transcribe audio."'
-          },
-          {
-            role: 'user',
-            content: `Please transcribe the audio at this URL: ${audio_url}`
-          }
-        ],
-      }),
+      body: formData,
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('AI transcription error:', errText);
-      return new Response(JSON.stringify({ error: 'Transcription failed' }), {
+    if (!whisperResponse.ok) {
+      const errText = await whisperResponse.text();
+      console.error('[transcribe-audio] Whisper error:', errText);
+      return new Response(JSON.stringify({ error: 'Transcription failed', details: errText }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const data = await response.json();
-    const transcription = data.choices?.[0]?.message?.content || 'Unable to transcribe audio.';
+    const whisperData = await whisperResponse.json();
+    const transcription = whisperData.text || 'Unable to transcribe audio.';
+
+    console.log('[transcribe-audio] Transcription successful, length:', transcription.length);
 
     return new Response(JSON.stringify({ success: true, transcription }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

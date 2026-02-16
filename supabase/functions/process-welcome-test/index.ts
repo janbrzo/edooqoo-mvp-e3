@@ -398,14 +398,58 @@ serve(async (req) => {
       }
     }
 
-    // --- Point 15: AI Analysis of open answers ---
+    // --- Point 15: AI Analysis of open answers (including speaking transcriptions) ---
     let aiSummary: string | null = null;
     if (LOVABLE_API_KEY) {
       try {
         const openQuestionIds = ['wt_q12', 'wt_q13', 'wt_q16', 'wt_q17', 'wt_q36', 'wt_q37', 'wt_q40', 'wt_q41', 'wt_q45'];
-        const openAnswers = openQuestionIds
-          .filter(id => answers?.[id] && answers[id] !== '__IDK__')
-          .map(id => `${id}: "${answers[id]}"`)
+        const speakingQuestionIds = ['wt_q16s', 'wt_q36s', 'wt_q41s'];
+        
+        // Transcribe speaking answers before AI analysis
+        const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+        const transcriptions: Record<string, string> = {};
+        
+        if (OPENAI_API_KEY) {
+          for (const sqId of speakingQuestionIds) {
+            const audioUrl = answers?.[sqId];
+            if (audioUrl && typeof audioUrl === 'string' && audioUrl.startsWith('http') && (audioUrl.includes('r2.dev') || audioUrl.startsWith('https://pub-'))) {
+              try {
+                console.log(`[process-welcome-test] Transcribing speaking answer: ${sqId}`);
+                // Call transcribe-audio edge function
+                const transcribeResponse = await fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${supabaseKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ audio_url: audioUrl }),
+                });
+                
+                if (transcribeResponse.ok) {
+                  const transcribeData = await transcribeResponse.json();
+                  if (transcribeData.transcription) {
+                    transcriptions[sqId] = transcribeData.transcription;
+                    console.log(`[process-welcome-test] Transcribed ${sqId}: ${transcribeData.transcription.substring(0, 50)}...`);
+                  }
+                }
+              } catch (transcribeErr) {
+                console.error(`[process-welcome-test] Failed to transcribe ${sqId}:`, transcribeErr);
+              }
+            }
+          }
+        }
+        
+        // Build open answers including transcriptions
+        const allAnswerIds = [...openQuestionIds, ...speakingQuestionIds];
+        const openAnswers = allAnswerIds
+          .filter(id => {
+            if (transcriptions[id]) return true; // has transcription
+            return answers?.[id] && answers[id] !== '__IDK__' && !String(answers[id]).startsWith('http');
+          })
+          .map(id => {
+            if (transcriptions[id]) return `${id} (speaking - transcribed): "${transcriptions[id]}"`;
+            return `${id}: "${answers[id]}"`;
+          })
           .join('\n');
 
         if (openAnswers) {

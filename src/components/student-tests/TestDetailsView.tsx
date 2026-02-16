@@ -22,7 +22,8 @@ import {
   Play,
   Pause,
   FileText,
-  Download
+  Download,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -131,12 +132,7 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
     if (!test || test.test_type !== 'welcome') return;
     setRetaking(true);
     try {
-      // Soft-delete old test
-      await supabase
-        .from('student_tests')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', testId);
-
+      // Do NOT soft-delete old test - keep results visible
       // Get student name
       const { data: student } = await supabase
         .from('students')
@@ -430,8 +426,13 @@ function QuestionCard({ question, index, isWelcomeTest, testId }: {
   testId: string;
 }) {
   const hasAnswer = question.student_answer !== null;
-  const isAudioAnswer = typeof question.student_answer === 'string' && 
-    (String(question.student_answer).startsWith('http') && (String(question.student_answer).includes('.webm') || String(question.student_answer).includes('.mp4') || String(question.student_answer).includes('.ogg')));
+  const answerStr = String(question.student_answer || '');
+  const isAudioAnswer = typeof question.student_answer === 'string' && (
+    (answerStr.startsWith('https://pub-') || answerStr.includes('r2.dev')) ||
+    (answerStr.startsWith('http') && (answerStr.includes('.webm') || answerStr.includes('.mp4') || answerStr.includes('.ogg')))
+  );
+  const isFailedRecording = typeof question.student_answer === 'string' && 
+    /^recording_\d+/.test(answerStr) && !answerStr.startsWith('http');
   
   const [teacherNote, setTeacherNote] = useState<string>('');
   const [noteLoading, setNoteLoading] = useState(false);
@@ -532,9 +533,14 @@ function QuestionCard({ question, index, isWelcomeTest, testId }: {
           </div>
           <p className="mb-2 text-sm">{question.question_text}</p>
           
-          {hasAnswer && (
+            {hasAnswer && (
             <div className="text-sm space-y-1">
-              {isAudioAnswer ? (
+              {isFailedRecording ? (
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span>Recording was not uploaded (saved as: {answerStr})</span>
+                </div>
+              ) : isAudioAnswer ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-muted-foreground">Student's answer:</span>

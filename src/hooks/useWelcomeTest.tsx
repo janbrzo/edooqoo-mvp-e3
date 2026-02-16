@@ -318,7 +318,8 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
         const sectionAnswerCount = sectionQuestions.filter(q => currentAnswers[q.id] !== undefined).length;
 
         // Only log once per section change (debounce)
-        const sectionKey = `${sectionId}_${sectionAnswerCount}`;
+        // Use sectionId only (not with answer count) to prevent event bloat
+        const sectionKey = sectionId;
         if (!committedSections.current.has(sectionKey)) {
           committedSections.current.add(sectionKey);
 
