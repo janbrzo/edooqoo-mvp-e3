@@ -5,7 +5,16 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - DSLM Layer A Audit & Normalization:**
+**Latest Update (February 2026) - Welcome Test v2 Round 4 Bug Fixes:**
+- **SpeakingRecorder auto-save race condition fixed**: Merged auto-save and reset effects into one `useEffect` to prevent blob being cleared before upload. Now recordings reliably upload to R2 on Next click.
+- **Skip question white screen fixed**: Added `flushPendingAnswer` and `goToNext` as dependencies to `skipQuestion` callback, preventing stale closures on section boundaries.
+- **Teacher preview version guard**: `setTestVersion` now checks `isTeacherMode` — teacher preview no longer persists version to localStorage/DB, preventing student version lock.
+- **Share link URL fixed**: `ShareTestModal` now accepts `testType` prop and generates correct `/welcome-test/` URL for welcome tests instead of `/test/`.
+- **Quick Version results UI**: `TestDetailsView` filters out questions not in `WELCOME_TEST_SHORT_QUESTION_IDS` when displaying Quick Version results.
+- **Translation default OFF**: Removed auto-set `translationLang` useEffect — translation now starts disabled, activates only on button click.
+- **AI Analysis context**: `process-welcome-test` now receives and includes `test_version` in AI prompt for accurate Quick Version analysis.
+
+**Previous Update (February 2026) - DSLM Layer A Audit & Normalization:**
 - **Event naming normalized**: All old event_type/event_source variants consolidated to canonical names via SQL migration (5 UPDATE operations covering ~250 events)
 - **Flashcard mastery formula**: Changed from binary 0/100 to weighted scale (0=fail, 50=1st correct, 70=2nd correct, 90=well-known, 100=mastered) based on SM-2 repetition + interval_days
 - **Mastery column populated**: Flashcard trigger now sets `student_events.mastery` column (was NULL before)

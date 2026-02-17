@@ -50,11 +50,19 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
   useEffect(() => { onAnswerRef.current = onAnswer; }, [onAnswer]);
 
   // Auto-save when questionId changes (user navigates away)
+  // CRITICAL: This must capture the blob BEFORE the reset effect clears it
   useEffect(() => {
-    if (prevQuestionIdRef.current && questionId && prevQuestionIdRef.current !== questionId) {
+    const prevId = prevQuestionIdRef.current;
+    const currentBlob = blobRef.current;
+    const currentStatus = statusRef.current;
+    
+    // Update ref immediately to track changes
+    prevQuestionIdRef.current = questionId;
+    
+    if (prevId && questionId && prevId !== questionId) {
       // Question changed - auto-save if recorded but not saved
-      if (blobRef.current && statusRef.current === 'recorded') {
-        const blob = blobRef.current;
+      if (currentBlob && currentStatus === 'recorded') {
+        const blob = currentBlob;
         const mimeType = blob.type || 'audio/webm';
         const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
         const fileName = `welcome-test-speaking-${Date.now()}.${ext}`;
@@ -79,18 +87,20 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
         mediaRecorderRef.current.stop();
         if (timerRef.current) clearInterval(timerRef.current);
       }
+      
+      // Reset state for new question (moved here from separate effect to avoid race condition)
+      blobRef.current = null;
+      setSeconds(0);
+      setIsPlaying(false);
+      setErrorMsg(null);
     }
-    prevQuestionIdRef.current = questionId;
   }, [questionId]);
 
-  // Reset state when answer prop changes (new question)
+  // Reset visual state when answer prop changes (new question)
+  // NOTE: blobRef reset is handled in the auto-save effect above to prevent race conditions
   useEffect(() => {
     setStatus(answer ? 'done' : 'idle');
     setAudioUrl(answer || null);
-    blobRef.current = null;
-    setSeconds(0);
-    setIsPlaying(false);
-    setErrorMsg(null);
   }, [answer, questionId]);
 
   // Cleanup on unmount

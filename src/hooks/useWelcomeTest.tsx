@@ -244,21 +244,24 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     }
   }, [state.currentSectionIndex, state.currentQuestionIndex, shareToken, state.completed, state.testVersion]);
 
-  // Set test version
+  // Set test version - only persist for students, not teacher preview
   const setTestVersion = useCallback((version: 'short' | 'full') => {
-    if (shareToken) {
-      localStorage.setItem(`wt_version_${shareToken}`, version);
-    }
-    // Also persist to DB for cross-device
-    if (state.testId) {
-      supabase
-        .from('student_tests')
-        .update({ generation_params: { test_version: version } as unknown as Json })
-        .eq('id', state.testId)
-        .then(() => {});
+    if (!state.isTeacherMode) {
+      // Only persist for students, not teacher preview
+      if (shareToken) {
+        localStorage.setItem(`wt_version_${shareToken}`, version);
+      }
+      // Also persist to DB for cross-device
+      if (state.testId) {
+        supabase
+          .from('student_tests')
+          .update({ generation_params: { test_version: version } as unknown as Json })
+          .eq('id', state.testId)
+          .then(() => {});
+      }
     }
     setState(prev => ({ ...prev, testVersion: version, currentSectionIndex: 0, currentQuestionIndex: 0 }));
-  }, [shareToken, state.testId]);
+  }, [shareToken, state.testId, state.isTeacherMode]);
 
   // Commit answer to DB + log event (called on blur/navigate for text, immediately for radio/checkbox)
   const commitAnswer = useCallback(async (questionId: string, answer: unknown) => {
@@ -392,12 +395,6 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     commitAnswer(questionId, '__IDK__');
   }, [commitAnswer]);
 
-  // Skip question (just move forward without saving)
-  const skipQuestion = useCallback(() => {
-    flushPendingAnswer();
-    goToNext();
-  }, []);
-
   // Navigation
   const goToNext = useCallback(() => {
     flushPendingAnswer();
@@ -412,6 +409,12 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
       return prev;
     });
   }, [sections, flushPendingAnswer]);
+
+  // Skip question (just move forward without saving)
+  const skipQuestion = useCallback(() => {
+    flushPendingAnswer();
+    goToNext();
+  }, [flushPendingAnswer, goToNext]);
 
   const goToPrevious = useCallback(() => {
     flushPendingAnswer();
@@ -472,6 +475,7 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           answers: state.answers,
           detected_traits: detectedTraits.current,
           answered_count: finalAnsweredCount,
+          test_version: state.testVersion,
         },
       });
 

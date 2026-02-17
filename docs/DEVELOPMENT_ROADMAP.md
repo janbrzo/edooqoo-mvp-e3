@@ -3,7 +3,16 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Feb 2026) - DSLM Layer A Audit ✅
+### Recently Completed (Feb 2026) - Welcome Test v2 Round 4 ✅
+- SpeakingRecorder auto-save race condition fixed (merged effects, blob preserved before reset)
+- Skip question white screen: added proper dependencies to skipQuestion callback
+- Teacher preview version guard: setTestVersion skips persist in teacher mode
+- ShareTestModal: correct /welcome-test/ URL for welcome tests via testType prop
+- Quick Version results: TestDetailsView filters questions not in SHORT_QUESTION_IDS
+- Translation OFF by default, activates on button click
+- AI Analysis receives test_version for Quick Version context
+
+### Previously Completed (Feb 2026) - DSLM Layer A Audit ✅
 - Event naming normalized to canonical types via SQL migration
 - Flashcard mastery: weighted scale (0/50/70/90/100) replacing binary 0/100
 - Mastery column populated for flashcard events in student_events
