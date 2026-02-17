@@ -311,47 +311,41 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
         .eq('test_id', state.testId)
         .eq('question_index', questionIndex);
 
-      // Log section-level event (one per section, upsert pattern via DELETE+INSERT)
+      // Log test_answer_submitted event with nano_skill_ratings
       if (state.studentId && state.teacherId) {
-        const sectionId = questionDef.section;
-        
-        // Collect all answers for this section
-        const currentAnswers = { ...state.answers, [questionId]: answer };
-        const sectionQuestions = ALL_WELCOME_TEST_QUESTIONS.filter(q => q.section === sectionId);
-        const sectionAnswerCount = sectionQuestions.filter(q => currentAnswers[q.id] !== undefined).length;
+        const nanoSkillRatings = questionDef.nano_skill ? [{
+          name: questionDef.nano_skill,
+          reason: questionDef.scoring_logic || questionDef.description || '',
+          mastery: isCorrect === true ? 100 : isCorrect === false ? 0 : -1,
+          hasValue: isCorrect !== null,
+          question_index: 0,
+        }] : [];
 
-        // Only log once per section change (debounce)
-        // Use sectionId only (not with answer count) to prevent event bloat
-        const sectionKey = sectionId;
-        if (!committedSections.current.has(sectionKey)) {
-          committedSections.current.add(sectionKey);
+        // DELETE previous event for this question, then INSERT new one
+        await supabase
+          .from('student_events')
+          .delete()
+          .eq('student_id', state.studentId)
+          .eq('source_id', state.testId)
+          .eq('event_type', 'test_answer_submitted')
+          .eq('element_type', questionDef.element_type || 'vocabulary');
 
-          // DELETE previous events for this section, then INSERT new one
-          await supabase
-            .from('student_events')
-            .delete()
-            .eq('student_id', state.studentId)
-            .eq('source_id', state.testId)
-            .eq('event_type', 'welcome_test_section_progress')
-            .eq('element_type', sectionId);
-
-          await supabase.rpc('add_student_event', {
-            p_student_id: state.studentId,
-            p_teacher_id: state.teacherId,
-            p_event_type: 'welcome_test_section_progress',
-            p_event_source: 'welcome_test',
-            p_source_id: state.testId,
-            p_element_type: sectionId,
-            p_event_payload: {
-              test_type: 'welcome',
-              section: sectionId,
-              section_answers_count: sectionAnswerCount,
-              section_total: sectionQuestions.length,
-              detected_traits: { ...detectedTraits.current },
-            } as unknown as Json,
-            p_skill_ids: [],
-          });
-        }
+        await supabase.rpc('add_student_event', {
+          p_student_id: state.studentId,
+          p_teacher_id: state.teacherId,
+          p_event_type: 'test_answer_submitted',
+          p_event_source: 'welcome_test',
+          p_source_id: state.testId,
+          p_element_type: questionDef.element_type || null,
+          p_event_payload: {
+            answer_id: questionId,
+            exercise_type: questionDef.question_type,
+            exercise_index: questionIndex,
+            nano_skill_ratings: nanoSkillRatings,
+            time_spent_seconds: timeSpent,
+          } as unknown as Json,
+          p_skill_ids: questionDef.nano_skill ? [questionDef.nano_skill] : [],
+        });
       }
     } catch (err) {
       console.error('Error committing answer:', err);

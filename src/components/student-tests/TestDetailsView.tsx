@@ -205,11 +205,18 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
   const testVersion = (test as any).generation_params?.test_version as string | undefined;
   const isQuickVersion = testVersion === 'short';
   
-  const answeredQuestions = questions.filter(q => q.student_answer !== null);
+  // For Quick Version, filter visible questions
+  const visibleQuestions = isWelcomeTest && isQuickVersion
+    ? questions.filter((_, i) => {
+        const qDef = ALL_WELCOME_TEST_QUESTIONS[i];
+        return qDef && WELCOME_TEST_SHORT_QUESTION_IDS.includes(qDef.id);
+      })
+    : questions;
+  const answeredQuestions = visibleQuestions.filter(q => q.student_answer !== null);
 
   // Issue 4: For welcome tests, only count skill questions (those with correct_answer)
   const skillQuestions = isWelcomeTest 
-    ? questions.filter(q => q.correct_answer && q.correct_answer !== '' && q.correct_answer !== '""')
+    ? visibleQuestions.filter(q => q.correct_answer && q.correct_answer !== '' && q.correct_answer !== '""')
     : questions;
   const correctSkillQuestions = skillQuestions.filter(q => q.is_correct === true);
   const skillScorePercent = skillQuestions.length > 0 
@@ -278,7 +285,7 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
         <CardContent>
           <div className={`grid ${isWelcomeTest ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-4'} gap-4`}>
             <div className="text-center p-4 bg-muted/30 rounded-lg">
-              <div className="text-2xl font-bold">{answeredQuestions.length}/{questions.length}</div>
+              <div className="text-2xl font-bold">{answeredQuestions.length}/{visibleQuestions.length}</div>
               <div className="text-sm text-muted-foreground">Answered</div>
             </div>
             {isWelcomeTest ? (

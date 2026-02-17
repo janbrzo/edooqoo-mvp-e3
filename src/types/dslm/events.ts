@@ -42,11 +42,8 @@ export type StudentEventType =
   | 'knowledge_entry_added'       // source: teacher
 
   // Test events
-  | 'test_answer_submitted'       // source: test
-
-  // Welcome test events
-  | 'welcome_test_section_progress' // source: welcome_test
-  | 'welcome_test_completed';       // source: welcome_test
+  | 'test_answer_submitted'       // source: test | welcome_test
+  ;
 
 // =====================================================
 // Element Types - skill categories
@@ -102,25 +99,7 @@ export interface TestAnswerPayload {
   difficulty_level: number | null;
 }
 
-export interface WelcomeTestSectionPayload {
-  section: string;
-  test_type: 'welcome';
-  section_total: number;
-  section_answers_count: number;
-  detected_traits: Record<string, string>;
-}
-
-export interface WelcomeTestCompletedPayload {
-  test_type: 'welcome';
-  estimated_level: string;
-  grammar_score: number;
-  vocabulary_score: number;
-  total_questions: number;
-  completed_questions: number;
-  self_assessed_level: string;
-  level_gap: string;
-  profile_summary: Record<string, unknown>;
-}
+// Welcome test types removed - now uses test_answer_submitted with event_source='welcome_test'
 
 export interface TeacherObservationPayload {
   observation_type: 'strength' | 'weakness' | 'behavior' | 'progress' | 'note';
