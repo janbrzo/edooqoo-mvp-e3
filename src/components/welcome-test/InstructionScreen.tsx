@@ -7,12 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface InstructionScreenProps {
-  version: 'short' | 'full';
   totalQuestions: number;
   onStart: () => void;
 }
 
-export function InstructionScreen({ version, totalQuestions, onStart }: InstructionScreenProps) {
+export function InstructionScreen({ totalQuestions, onStart }: InstructionScreenProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/20 p-4">
       <div className="max-w-lg w-full space-y-5">
@@ -20,7 +19,7 @@ export function InstructionScreen({ version, totalQuestions, onStart }: Instruct
           <Sparkles className="h-10 w-10 text-primary mx-auto mb-3" />
           <h1 className="text-2xl font-bold">Before You Begin</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {totalQuestions} questions • {version === 'short' ? '~15 min' : '~30 min'}
+            {totalQuestions} questions • ~30 min
           </p>
         </div>
 

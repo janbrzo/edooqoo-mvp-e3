@@ -35,7 +35,7 @@ import { toast } from 'sonner';
 import { ShareTestModal } from './ShareTestModal';
 import { supabase } from '@/integrations/supabase/client';
 import { WelcomeTestResults } from './WelcomeTestResults';
-import { ALL_WELCOME_TEST_QUESTIONS, WELCOME_TEST_SHORT_QUESTION_IDS } from '@/data/welcomeTestQuestions';
+import { ALL_WELCOME_TEST_QUESTIONS } from '@/data/welcomeTestQuestions';
 import { 
   TEST_STATUS_CONFIG, 
   TEST_TYPES, 
@@ -201,22 +201,12 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
   const questions = test.questions || [];
   const isWelcomeTest = test.test_type === 'welcome';
   
-  // Detect Quick Version from generation_params
-  const testVersion = (test as any).generation_params?.test_version as string | undefined;
-  const isQuickVersion = testVersion === 'short';
-  
-  // For Quick Version, filter visible questions
-  const visibleQuestions = isWelcomeTest && isQuickVersion
-    ? questions.filter((_, i) => {
-        const qDef = ALL_WELCOME_TEST_QUESTIONS[i];
-        return qDef && WELCOME_TEST_SHORT_QUESTION_IDS.includes(qDef.id);
-      })
-    : questions;
-  const answeredQuestions = visibleQuestions.filter(q => q.student_answer !== null);
+  // No Quick Version logic - always show all questions
+  const answeredQuestions = questions.filter(q => q.student_answer !== null);
 
   // Issue 4: For welcome tests, only count skill questions (those with correct_answer)
   const skillQuestions = isWelcomeTest 
-    ? visibleQuestions.filter(q => q.correct_answer && q.correct_answer !== '' && q.correct_answer !== '""')
+    ? questions.filter(q => q.correct_answer && q.correct_answer !== '' && q.correct_answer !== '""')
     : questions;
   const correctSkillQuestions = skillQuestions.filter(q => q.is_correct === true);
   const skillScorePercent = skillQuestions.length > 0 
@@ -285,7 +275,7 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
         <CardContent>
           <div className={`grid ${isWelcomeTest ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-4'} gap-4`}>
             <div className="text-center p-4 bg-muted/30 rounded-lg">
-              <div className="text-2xl font-bold">{answeredQuestions.length}/{visibleQuestions.length}</div>
+              <div className="text-2xl font-bold">{answeredQuestions.length}/{questions.length}</div>
               <div className="text-sm text-muted-foreground">Answered</div>
             </div>
             {isWelcomeTest ? (
@@ -416,13 +406,6 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
         <CardContent>
           <div className="space-y-4">
             {questions.map((question, index) => {
-              // For Quick Version, check if this question was included
-              const questionDef = ALL_WELCOME_TEST_QUESTIONS[index];
-              const isExcludedFromQuickVersion = isWelcomeTest && isQuickVersion && questionDef && 
-                !WELCOME_TEST_SHORT_QUESTION_IDS.includes(questionDef.id);
-              
-              if (isExcludedFromQuickVersion) return null;
-              
               return (
                 <QuestionCard 
                   key={question.id} 
@@ -433,11 +416,6 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
                 />
               );
             })}
-            {isWelcomeTest && isQuickVersion && (
-              <p className="text-xs text-muted-foreground text-center py-2">
-                Quick Version — {questions.length - WELCOME_TEST_SHORT_QUESTION_IDS.length} questions not included
-              </p>
-            )}
           </div>
         </CardContent>
       </Card>

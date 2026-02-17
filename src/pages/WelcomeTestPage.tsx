@@ -44,7 +44,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useWelcomeTest } from "@/hooks/useWelcomeTest";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { VersionSelector } from "@/components/welcome-test/VersionSelector";
+// VersionSelector removed - always full test
 import { InstructionScreen } from "@/components/welcome-test/InstructionScreen";
 import { SpeakingRecorder } from "@/components/welcome-test/SpeakingRecorder";
 import { ListeningPlayer } from "@/components/welcome-test/ListeningPlayer";
@@ -66,7 +66,6 @@ type Stage =
   | "error"
   | "email"
   | "teacher_block"
-  | "version"
   | "instructions"
   | "test"
   | "paused"
@@ -94,7 +93,6 @@ export default function WelcomeTestPage() {
     submitting,
     currentSectionIndex,
     currentQuestionIndex,
-    testVersion,
     paused,
     estimatedMinutesRemaining,
     isTeacherMode,
@@ -107,7 +105,6 @@ export default function WelcomeTestPage() {
     goToSection,
     goToQuestionInSection,
     completeTest,
-    setTestVersion,
     pauseTest,
     resumeTest,
     flushPendingAnswer,
@@ -185,7 +182,7 @@ export default function WelcomeTestPage() {
 
   // Section celebration detection
   useEffect(() => {
-    if (currentSectionIndex > prevSectionRef[0] && currentSectionIndex > 0 && !completed && testVersion) {
+    if (currentSectionIndex > prevSectionRef[0] && currentSectionIndex > 0 && !completed) {
       const prevSection = sections[prevSectionRef[0]];
       const nextSection = sections[currentSectionIndex];
       if (prevSection && nextSection) {
@@ -197,7 +194,7 @@ export default function WelcomeTestPage() {
       }
     }
     prevSectionRef[0] = currentSectionIndex;
-  }, [currentSectionIndex, sections, completed, testVersion]);
+  }, [currentSectionIndex, sections, completed]);
 
   const handleVerifyEmail = async () => {
     if (!emailInput.trim()) {
@@ -231,7 +228,6 @@ export default function WelcomeTestPage() {
     if (!verifiedEmail && !isTeacherMode) return "email";
     if (completed) return "completed";
     if (paused) return "paused";
-    if (!testVersion) return "version";
     if (showInstructions) return "instructions";
     if (sectionCelebration) return "section_celebration";
     return "test";
@@ -239,7 +235,7 @@ export default function WelcomeTestPage() {
 
   // Check if instructions were shown before (resume flow)
   useEffect(() => {
-    if (testVersion && !completed && !paused) {
+    if (!completed && !paused) {
       const instructionsSeen = localStorage.getItem(`wt_instructions_seen_${token}`);
       if (instructionsSeen) {
         setShowInstructions(false);
@@ -247,7 +243,7 @@ export default function WelcomeTestPage() {
         setShowInstructions(true);
       }
     }
-  }, [testVersion, token, completed, paused, answers]);
+  }, [token, completed, paused, answers]);
 
   const handleStartTest = () => {
     if (token) {
@@ -462,14 +458,9 @@ export default function WelcomeTestPage() {
     );
   }
 
-  // ===== VERSION SELECTOR =====
-  if (stage === "version") {
-    return <VersionSelector onSelect={setTestVersion} />;
-  }
-
   // ===== INSTRUCTIONS =====
   if (stage === "instructions") {
-    return <InstructionScreen version={testVersion!} totalQuestions={totalQuestions} onStart={handleStartTest} />;
+    return <InstructionScreen totalQuestions={totalQuestions} onStart={handleStartTest} />;
   }
 
   // ===== SECTION CELEBRATION =====

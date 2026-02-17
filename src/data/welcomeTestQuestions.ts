@@ -878,22 +878,4 @@ export const ALL_WELCOME_TEST_QUESTIONS: WelcomeTestQuestionDef[] =
 
 export const WELCOME_TEST_TOTAL_QUESTIONS = ALL_WELCOME_TEST_QUESTIONS.length;
 
-// Short version: ~25 key questions covering all sections + trait detectors + 1 speaking + 1 listening
-export const WELCOME_TEST_SHORT_QUESTION_IDS = [
-  // About You (4): self-assessment, motivation, anxiety, input channel
-  'wt_q1', 'wt_q3', 'wt_q7', 'wt_q8',
-  // Experience (2): duration, open challenge
-  'wt_q9', 'wt_q12',
-  // Scenarios (4): error attitude, writing task, speaking, listening
-  'wt_q14', 'wt_q16', 'wt_q16s', 'wt_q18l',
-  // Grammar (3): A2 simple, B2 conditional, B1-B2 transformation
-  'wt_q20', 'wt_q22', 'wt_q26',
-  // Vocabulary (3): collocation, word formation, idiom
-  'wt_q28', 'wt_q30', 'wt_q34',
-  // Communication (2): open declining, natural sounding
-  'wt_q36', 'wt_q38',
-  // Goals (4): feedback pref, interests, confidence matrix, self-intro speaking
-  'wt_q42', 'wt_q43', 'wt_q44', 'wt_q41s',
-];
-
-export const WELCOME_TEST_SHORT_QUESTIONS_COUNT = WELCOME_TEST_SHORT_QUESTION_IDS.length;
+// Short version exports removed - always full test
