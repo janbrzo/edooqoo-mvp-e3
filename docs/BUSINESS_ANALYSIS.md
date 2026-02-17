@@ -1,7 +1,7 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Feb 2026):** DSLM Layer A Audit — normalized event naming across all sources (5 old naming variants → 1 canonical), flashcard mastery changed from binary 0/100 to weighted scale based on SM-2 parameters, mastery column populated for all triggers, welcome test bloat cleaned (146→14 events). Layer A is now ready for Layer B (metrics/signals computation).
+**Latest Update (Feb 2026):** Welcome Test v2 Round 4 — fixed speaking auto-save race condition (recordings now reliably upload on Next), skip question white screen on section boundaries, teacher preview no longer pollutes student version choice, share link corrected to /welcome-test/, Quick Version results filter excluded questions, translation OFF by default, AI analysis includes test_version context for accurate Quick Version profiling.
 
 **Previous Feature (Feb 2026):** Welcome Test v2 Round 3 — speaking auto-save on navigation, teacher audio playback in test results, OpenAI Whisper transcription for AI analysis of speaking answers, TTS-1 verbatim audio generation (chunked base64 fix), re-take preserving previous results, auto-translate button, completed 10-language translations, improved blur modal, and auth redirect for email links. These improvements complete the speaking/listening pipeline and eliminate data loss scenarios.
 

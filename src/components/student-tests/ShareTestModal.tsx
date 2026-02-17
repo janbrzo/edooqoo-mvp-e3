@@ -19,6 +19,7 @@ interface ShareTestModalProps {
   testTitle: string;
   studentEmail?: string;
   teacherName?: string;
+  testType?: string;
 }
 
 export function ShareTestModal({
@@ -28,6 +29,7 @@ export function ShareTestModal({
   testTitle,
   studentEmail = '',
   teacherName = '',
+  testType = '',
 }: ShareTestModalProps) {
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState(studentEmail);
@@ -39,7 +41,7 @@ export function ShareTestModal({
   }, [studentEmail, open]);
 
   const shareUrl = shareToken 
-    ? `${window.location.origin}/test/${shareToken}`
+    ? `${window.location.origin}/${testType === 'welcome' ? 'welcome-test' : 'test'}/${shareToken}`
     : '';
 
   const handleCopy = async () => {

@@ -136,50 +136,8 @@ export default function WelcomeTestPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Auto-set translation language from student profile
-  useEffect(() => {
-    if (studentNativeLanguage && !translationLang) {
-      // Map native language name to translation language
-      const langMap: Record<string, string> = {
-        Polish: "Polish",
-        polski: "Polish",
-        pl: "Polish",
-        Spanish: "Spanish",
-        español: "Spanish",
-        es: "Spanish",
-        German: "German",
-        Deutsch: "German",
-        de: "German",
-        French: "French",
-        français: "French",
-        fr: "French",
-        Portuguese: "Portuguese",
-        português: "Portuguese",
-        pt: "Portuguese",
-        Italian: "Italian",
-        italiano: "Italian",
-        it: "Italian",
-        Turkish: "Turkish",
-        Türkçe: "Turkish",
-        tr: "Turkish",
-        Russian: "Russian",
-        русский: "Russian",
-        ru: "Russian",
-        Czech: "Czech",
-        čeština: "Czech",
-        cs: "Czech",
-        Ukrainian: "Ukrainian",
-        українська: "Ukrainian",
-        uk: "Ukrainian",
-      };
-      const matched =
-        langMap[studentNativeLanguage] ||
-        TRANSLATION_LANGUAGES.find((l) => l.toLowerCase() === studentNativeLanguage.toLowerCase());
-      if (matched) {
-        setTranslationLang(matched);
-      }
-    }
-  }, [studentNativeLanguage]);
+  // Translation language is OFF by default (null).
+  // The Translate button will auto-detect language from profile when clicked.
 
   // Check localStorage for email
   useEffect(() => {

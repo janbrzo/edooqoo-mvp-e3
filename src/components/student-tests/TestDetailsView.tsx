@@ -35,7 +35,7 @@ import { toast } from 'sonner';
 import { ShareTestModal } from './ShareTestModal';
 import { supabase } from '@/integrations/supabase/client';
 import { WelcomeTestResults } from './WelcomeTestResults';
-import { ALL_WELCOME_TEST_QUESTIONS } from '@/data/welcomeTestQuestions';
+import { ALL_WELCOME_TEST_QUESTIONS, WELCOME_TEST_SHORT_QUESTION_IDS } from '@/data/welcomeTestQuestions';
 import { 
   TEST_STATUS_CONFIG, 
   TEST_TYPES, 
@@ -199,8 +199,13 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
 
   const statusConfig = TEST_STATUS_CONFIG[test.status];
   const questions = test.questions || [];
-  const answeredQuestions = questions.filter(q => q.student_answer !== null);
   const isWelcomeTest = test.test_type === 'welcome';
+  
+  // Detect Quick Version from generation_params
+  const testVersion = (test as any).generation_params?.test_version as string | undefined;
+  const isQuickVersion = testVersion === 'short';
+  
+  const answeredQuestions = questions.filter(q => q.student_answer !== null);
 
   // Issue 4: For welcome tests, only count skill questions (those with correct_answer)
   const skillQuestions = isWelcomeTest 
@@ -254,6 +259,7 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
         testTitle={test.title}
         studentEmail={studentEmail}
         teacherName={teacherName}
+        testType={test.test_type}
       />
 
       {/* Test Info Card - Issue 4: separate skill score from total engagement */}
@@ -402,15 +408,29 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {questions.map((question, index) => (
-              <QuestionCard 
-                key={question.id} 
-                question={question} 
-                index={index} 
-                isWelcomeTest={isWelcomeTest}
-                testId={testId}
-              />
-            ))}
+            {questions.map((question, index) => {
+              // For Quick Version, check if this question was included
+              const questionDef = ALL_WELCOME_TEST_QUESTIONS[index];
+              const isExcludedFromQuickVersion = isWelcomeTest && isQuickVersion && questionDef && 
+                !WELCOME_TEST_SHORT_QUESTION_IDS.includes(questionDef.id);
+              
+              if (isExcludedFromQuickVersion) return null;
+              
+              return (
+                <QuestionCard 
+                  key={question.id} 
+                  question={question} 
+                  index={index} 
+                  isWelcomeTest={isWelcomeTest}
+                  testId={testId}
+                />
+              );
+            })}
+            {isWelcomeTest && isQuickVersion && (
+              <p className="text-xs text-muted-foreground text-center py-2">
+                Quick Version — {questions.length - WELCOME_TEST_SHORT_QUESTION_IDS.length} questions not included
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

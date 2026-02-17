@@ -4,7 +4,7 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **DSLM Layer A Audit** — event naming normalized to canonical types, flashcard mastery changed from binary 0/100 to weighted scale (50→70→90→100), mastery column populated for all event sources, welcome test event bloat cleaned up, TypeScript types rewritten.
+**Latest Update:** **Welcome Test v2 Round 4** — speaking auto-save race condition fixed (recordings now reliably upload on Next click), skip question white screen fixed, teacher preview no longer locks student's version choice, share link generates correct /welcome-test/ URL, Quick Version results hide excluded questions, translation OFF by default (activates on click), AI analysis includes test_version context.
 
 **Previous Update:** **Welcome Test v2 Round 3** — speaking recorder auto-saves on navigation, teacher can play back student recordings, AI analysis includes transcribed speaking answers (Whisper), Q21 listening audio re-generated with correct dialogue, re-take preserves old test results, auto-translate button from student profile, full 10-language translations, improved blur modal, and auth redirect for email links.
 

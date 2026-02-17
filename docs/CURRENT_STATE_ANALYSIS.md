@@ -6,13 +6,22 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-16) - DSLM Layer A Audit:**
-- ✅ **Event naming**: Znormalizowano wszystkie event_type/event_source do kanonicznych nazw (student_learning_activity, homework_submitted, mark_done_evaluation, flashcard_review/flashcard)
-- ✅ **Flashcard mastery**: Zmieniono z binarnego 0/100 na weighted scale (0→50→70→90→100) opartą o SM-2 repetition + interval_days
-- ✅ **Mastery column**: Trigger flashcard teraz zapisuje `student_events.mastery` (wcześniej NULL)
+**Ostatnia naprawa (2026-02-17) - Welcome Test v2 Round 4:**
+- ✅ **SpeakingRecorder race condition**: Scalono efekty auto-save i reset w jeden useEffect — blob nie jest kasowany przed uploadem
+- ✅ **Skip question biały ekran**: Dodano zależności do skipQuestion callback (flushPendingAnswer, goToNext)
+- ✅ **Teacher preview version guard**: setTestVersion nie zapisuje wersji dla nauczyciela (localStorage/DB)
+- ✅ **Share link URL**: ShareTestModal generuje prawidłowy /welcome-test/ URL dla welcome testów
+- ✅ **Quick Version results**: TestDetailsView filtruje pytania spoza WELCOME_TEST_SHORT_QUESTION_IDS
+- ✅ **Tłumaczenie domyślnie OFF**: Usunięto auto-set translationLang — aktywacja tylko po kliknięciu przycisku
+- ✅ **AI Analysis test_version**: process-welcome-test otrzymuje i uwzględnia test_version w promcie AI
+
+**Poprzednia naprawa (2026-02-16) - DSLM Layer A Audit:**
+- ✅ **Event naming**: Znormalizowano wszystkie event_type/event_source do kanonicznych nazw
+- ✅ **Flashcard mastery**: Zmieniono z binarnego 0/100 na weighted scale (0→50→70→90→100)
+- ✅ **Mastery column**: Trigger flashcard teraz zapisuje `student_events.mastery`
 - ✅ **Welcome test cleanup**: Usunięto bloat z 146 do 14 eventów section_progress
-- ✅ **TypeScript types**: Przepisano events.ts z kanonicznymi typami i typed payloads
-- ✅ **EventLogPanel**: Dodano welcome_test do ikon i kolorów źródeł zdarzeń
+- ✅ **TypeScript types**: Przepisano events.ts z kanonicznymi typami
+- ✅ **EventLogPanel**: Dodano welcome_test do ikon i kolorów
 
 **Poprzednia naprawa (2026-02-16) - Welcome Test v2 Round 3:**
 - ✅ **SpeakingRecorder auto-save**: Auto-upload nagrania do R2 przy nawigacji do następnego pytania (questionId prop)
