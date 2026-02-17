@@ -270,33 +270,7 @@ serve(async (req) => {
         .eq('id', test_id);
     }
 
-    // Log welcome_test_completed event
-    await supabase.rpc('add_student_event', {
-      p_student_id: student_id,
-      p_teacher_id: teacher_id,
-      p_event_type: 'welcome_test_completed',
-      p_event_source: 'welcome_test',
-      p_source_id: test_id,
-      p_event_payload: {
-        test_type: 'welcome',
-        total_questions: questions.length,
-        completed_questions: questions.filter((q: any) => q.student_answer !== null).length,
-        grammar_score: grammarScore,
-        vocabulary_score: vocabularyScore,
-        estimated_level: estimatedLevel,
-        self_assessed_level: selfAssessedLevel,
-        level_gap: levelConfidence,
-        profile_summary: {
-          motivation_type: traits.motivation_type,
-          anxiety_level: traits.anxiety_level,
-          preferred_activities: preferredActivities.slice(0, 3),
-          interest_topics: interestTopics.slice(0, 3),
-          feedback_preference: traits.feedback_preference,
-          strongest_skill: strongest,
-          weakest_skill: weakest,
-        },
-      },
-    });
+    // Note: welcome_test_completed event removed - only test_answer_submitted events are logged per-question
 
     // --- Point 6: Create notification for teacher ---
     try {
@@ -477,7 +451,8 @@ Format as JSON: {"summary": "...", "recommendations": ["...", "..."], "writing_q
 - Vocabulary score: ${vocabularyScore}%
 - Motivation: ${traits.motivation_type || 'unknown'}
 - Anxiety: ${traits.anxiety_level || 'unknown'}
-- Test version: ${test_version === 'short' ? 'Quick Version (22 key questions)' : 'Complete Version (49 questions)'}
+- Test version: ${test_version === 'short' ? `Quick Version (29 key questions out of 49 — student only saw selected questions)` : 'Complete Version (49 questions)'}
+- Questions answered: ${questions.filter((q: any) => q.student_answer !== null).length}/${test_version === 'short' ? '29' : '49'}
 
 Open-ended answers:
 ${openAnswers}`

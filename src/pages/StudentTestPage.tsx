@@ -21,6 +21,8 @@ import type { TestQuestion, MultipleChoiceData } from '@/types/studentTests';
 export default function StudentTestPage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+
+  // Redirect welcome tests to correct route
   const {
     test,
     questions,
@@ -70,6 +72,13 @@ export default function StudentTestPage() {
       }
     }
   }, [token]);
+
+  // Redirect welcome tests to /welcome-test/:token
+  useEffect(() => {
+    if (test?.test_type === 'welcome' && token) {
+      navigate(`/welcome-test/${token}`, { replace: true });
+    }
+  }, [test?.test_type, token, navigate]);
 
   // PROBLEM 4 FIX: Check if logged-in user is the teacher
   useEffect(() => {

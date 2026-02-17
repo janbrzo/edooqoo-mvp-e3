@@ -126,6 +126,16 @@ export default function WelcomeTestPage() {
   );
   const [teacherPreviewMode, setTeacherPreviewMode] = useState(false);
 
+  // Global auto-save handler for SpeakingRecorder (bypasses stale closures)
+  useEffect(() => {
+    (window as any).__welcomeTestAutoSave = (questionId: string, audioUrl: string) => {
+      saveAnswer(questionId, audioUrl);
+    };
+    return () => {
+      delete (window as any).__welcomeTestAutoSave;
+    };
+  }, [saveAnswer]);
+
   // Track previous section for celebration
   const prevSectionRef = useState<number>(0);
 
@@ -189,12 +199,22 @@ export default function WelcomeTestPage() {
     prevSectionRef[0] = currentSectionIndex;
   }, [currentSectionIndex, sections, completed, testVersion]);
 
-  const handleVerifyEmail = () => {
+  const handleVerifyEmail = async () => {
     if (!emailInput.trim()) {
       toast.error("Please enter your email");
       return;
     }
     const email = emailInput.trim().toLowerCase();
+    
+    // Verify against student's email in DB
+    if (studentId) {
+      const { data } = await supabase.from('students').select('student_email').eq('id', studentId).single();
+      if (data?.student_email && data.student_email.toLowerCase() !== email) {
+        toast.error("This email doesn't match the student assigned to this test.");
+        return;
+      }
+    }
+    
     if (token) {
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 24);
@@ -319,7 +339,7 @@ export default function WelcomeTestPage() {
     return (
       <div className="min-h-screen relative overflow-hidden">
         {/* Blurred real test content behind modal */}
-        <div className="absolute inset-0 filter blur-md opacity-70 pointer-events-none overflow-hidden scale-105">
+        <div className="absolute inset-0 filter blur-sm opacity-40 pointer-events-none overflow-hidden scale-105">
           <div className="max-w-2xl mx-auto p-4 mt-4">
             {/* Fake header */}
             <div className="flex items-center gap-2 mb-3">
@@ -358,7 +378,7 @@ export default function WelcomeTestPage() {
           </div>
         </div>
         {/* Modal overlay */}
-        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-background/30 backdrop-blur-md flex items-center justify-center p-4">
           <Card className="max-w-md w-full shadow-xl">
             <CardHeader className="text-center pb-3">
               <Sparkles className="h-8 w-8 text-primary mx-auto mb-2" />
@@ -513,36 +533,26 @@ export default function WelcomeTestPage() {
                     } else {
                       // Auto-detect from student profile
                       const langMap: Record<string, string> = {
-                        Polish: "Polish",
-                        polski: "Polish",
-                        pl: "Polish",
-                        Spanish: "Spanish",
-                        español: "Spanish",
-                        es: "Spanish",
-                        German: "German",
-                        Deutsch: "German",
-                        de: "German",
-                        French: "French",
-                        français: "French",
-                        fr: "French",
-                        Portuguese: "Portuguese",
-                        português: "Portuguese",
-                        pt: "Portuguese",
-                        Italian: "Italian",
-                        italiano: "Italian",
-                        it: "Italian",
-                        Turkish: "Turkish",
-                        Türkçe: "Turkish",
-                        tr: "Turkish",
-                        Russian: "Russian",
-                        русский: "Russian",
-                        ru: "Russian",
-                        Czech: "Czech",
-                        čeština: "Czech",
-                        cs: "Czech",
-                        Ukrainian: "Ukrainian",
-                        українська: "Ukrainian",
-                        uk: "Ukrainian",
+                        Polish: "Polish", polski: "Polish", pl: "Polish",
+                        Spanish: "Spanish", español: "Spanish", es: "Spanish",
+                        German: "German", Deutsch: "German", de: "German",
+                        French: "French", français: "French", fr: "French",
+                        Portuguese: "Portuguese", português: "Portuguese", pt: "Portuguese",
+                        Italian: "Italian", italiano: "Italian", it: "Italian",
+                        Turkish: "Turkish", Türkçe: "Turkish", tr: "Turkish",
+                        Russian: "Russian", русский: "Russian", ru: "Russian",
+                        Czech: "Czech", čeština: "Czech", cs: "Czech",
+                        Ukrainian: "Ukrainian", українська: "Ukrainian", uk: "Ukrainian",
+                        Dutch: "Dutch", Nederlands: "Dutch", nl: "Dutch",
+                        Japanese: "Japanese", 日本語: "Japanese", ja: "Japanese",
+                        Korean: "Korean", 한국어: "Korean", ko: "Korean",
+                        Chinese: "Chinese", 中文: "Chinese", zh: "Chinese",
+                        Arabic: "Arabic", العربية: "Arabic", ar: "Arabic",
+                        Hungarian: "Hungarian", magyar: "Hungarian", hu: "Hungarian",
+                        Romanian: "Romanian", română: "Romanian", ro: "Romanian",
+                        Greek: "Greek", ελληνικά: "Greek", el: "Greek",
+                        Croatian: "Croatian", hrvatski: "Croatian", hr: "Croatian",
+                        Swedish: "Swedish", svenska: "Swedish", sv: "Swedish",
                       };
                       const matched =
                         langMap[studentNativeLanguage] ||
@@ -717,19 +727,26 @@ export default function WelcomeTestPage() {
           </Button>
 
           {isLastQuestion ? (
-            <Button
-              size="sm"
-              onClick={completeTest}
-              disabled={!canComplete || submitting || teacherPreviewMode}
-              className="bg-green-600 hover:bg-green-700 min-h-[40px]"
-            >
-              {submitting ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-              ) : (
-                <CheckCircle className="h-3.5 w-3.5 mr-1" />
+            <div className="flex flex-col items-end">
+              <Button
+                size="sm"
+                onClick={completeTest}
+                disabled={!canComplete || submitting || teacherPreviewMode}
+                className="bg-green-600 hover:bg-green-700 min-h-[40px]"
+              >
+                {submitting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                ) : (
+                  <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                )}
+                Complete
+              </Button>
+              {!canComplete && !teacherPreviewMode && (
+                <p className="text-[10px] text-amber-600 text-center mt-1">
+                  Answer at least {Math.ceil(totalQuestions * 0.5)} of {totalQuestions} questions ({answeredCount} answered)
+                </p>
               )}
-              Complete
-            </Button>
+            </div>
           ) : (
             <Button size="sm" onClick={goToNext} className="min-h-[40px]">
               Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
@@ -845,6 +862,11 @@ function QuestionInputInner({
           answer={typeof answer === "string" ? answer : undefined}
           onAnswer={(url) => onAnswer(url)}
           questionId={question.id}
+          onAutoSave={(qId, url) => {
+            // This bypasses stale closures - saves directly with the correct questionId
+            // The parent's saveAnswer handles routing to commitAnswer
+            (window as any).__welcomeTestAutoSave?.(qId, url);
+          }}
         />
       );
 

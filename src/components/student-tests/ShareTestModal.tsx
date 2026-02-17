@@ -80,6 +80,7 @@ export function ShareTestModal({
           recipientEmail: email,
           testTitle,
           teacherName,
+          testType,
         },
       });
 
