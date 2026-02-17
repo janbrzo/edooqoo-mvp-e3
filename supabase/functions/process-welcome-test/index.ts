@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { test_id, student_id, teacher_id, answers, detected_traits, answered_count, test_version } = await req.json();
+    const { test_id, student_id, teacher_id, answers, detected_traits, answered_count } = await req.json();
 
     if (!test_id || !student_id || !teacher_id) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -451,8 +451,7 @@ Format as JSON: {"summary": "...", "recommendations": ["...", "..."], "writing_q
 - Vocabulary score: ${vocabularyScore}%
 - Motivation: ${traits.motivation_type || 'unknown'}
 - Anxiety: ${traits.anxiety_level || 'unknown'}
-- Test version: ${test_version === 'short' ? `Quick Version (29 key questions out of 49 — student only saw selected questions)` : 'Complete Version (49 questions)'}
-- Questions answered: ${questions.filter((q: any) => q.student_answer !== null).length}/${test_version === 'short' ? '29' : '49'}
+- Questions answered: ${questions.filter((q: any) => q.student_answer !== null).length}/${questions.length}
 
 Open-ended answers:
 ${openAnswers}`

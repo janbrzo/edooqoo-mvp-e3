@@ -1,7 +1,7 @@
 /**
  * useWelcomeTest - Hook for Welcome Test session management
- * Handles answer submission, timing, trait detection, version filtering, pause/resume
- * Issues fixed: debounced events, cross-device resume, teacher mode, auto-translation
+ * Handles answer submission, timing, trait detection, pause/resume
+ * Round 6: Removed Quick Version, fixed element_type, enriched payload, fixed dedup
  */
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 import { 
   ALL_WELCOME_TEST_QUESTIONS, 
   WELCOME_TEST_SECTIONS_WITH_QUESTIONS,
-  WELCOME_TEST_SHORT_QUESTION_IDS 
 } from '@/data/welcomeTestQuestions';
 import type { WelcomeTestQuestionDef, WelcomeTestSectionDef } from '@/types/welcomeTest';
 import type { Json } from '@/integrations/supabase/types';
@@ -18,8 +17,6 @@ import type { Json } from '@/integrations/supabase/types';
 interface UseWelcomeTestProps {
   shareToken: string | null;
 }
-
-type TestVersion = 'short' | 'full' | null;
 
 interface WelcomeTestState {
   testId: string | null;
@@ -33,7 +30,6 @@ interface WelcomeTestState {
   currentQuestionIndex: number;
   completed: boolean;
   submitting: boolean;
-  testVersion: TestVersion;
   paused: boolean;
   persistedAnsweredCount: number | null;
   isTeacherMode: boolean;
@@ -56,7 +52,6 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     currentQuestionIndex: 0,
     completed: false,
     submitting: false,
-    testVersion: null,
     paused: false,
     persistedAnsweredCount: null,
     isTeacherMode: false,
@@ -133,11 +128,7 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           }
         }
 
-        // Restore version from localStorage OR generation_params
-        const storedVersion = localStorage.getItem(`wt_version_${shareToken}`);
-        const dbVersion = (fullTest?.generation_params as any)?.test_version || null;
-        const resolvedVersion = (storedVersion || dbVersion) as TestVersion;
-
+        // No version selection - always full test
         const isCompleted = testInfo.status === 'completed' || testInfo.status === 'reviewed';
         const hasExistingAnswers = Object.keys(existingAnswers).length > 0;
 
@@ -153,16 +144,8 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
         let restoredSectionIndex = 0;
         let restoredQuestionIndex = 0;
         
-        if (hasExistingAnswers && resolvedVersion && !isCompleted) {
-          // Compute visible questions for this version
-          const visibleSections = resolvedVersion === 'short'
-            ? WELCOME_TEST_SECTIONS_WITH_QUESTIONS.map(s => ({
-                ...s,
-                questions: s.questions.filter(q => WELCOME_TEST_SHORT_QUESTION_IDS.includes(q.id)),
-              })).filter(s => s.questions.length > 0)
-            : WELCOME_TEST_SECTIONS_WITH_QUESTIONS;
-          
-          // Find first unanswered question
+        if (hasExistingAnswers && !isCompleted) {
+          const visibleSections = WELCOME_TEST_SECTIONS_WITH_QUESTIONS;
           let found = false;
           for (let si = 0; si < visibleSections.length && !found; si++) {
             for (let qi = 0; qi < visibleSections[si].questions.length && !found; qi++) {
@@ -174,16 +157,13 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
             }
           }
           if (!found) {
-            // All answered, go to last question
             const lastSection = visibleSections.length - 1;
             restoredSectionIndex = lastSection;
             restoredQuestionIndex = visibleSections[lastSection].questions.length - 1;
           }
         }
 
-        // If has existing answers but not completed, show paused state
-        const shouldPause = !isCompleted && hasExistingAnswers && !!resolvedVersion && !isTeacher;
-
+        const shouldPause = !isCompleted && hasExistingAnswers && !isTeacher;
         const persistedCount = (testInfo as any).answered_count || dbAnsweredCount || null;
 
         setState(prev => ({
@@ -195,7 +175,6 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           answers: existingAnswers,
           loading: false,
           completed: isCompleted,
-          testVersion: resolvedVersion,
           currentSectionIndex: restoredSectionIndex,
           currentQuestionIndex: restoredQuestionIndex,
           persistedAnsweredCount: persistedCount,
@@ -212,16 +191,8 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     fetchTest();
   }, [shareToken]);
 
-  // Filter sections based on version
-  const sections = useMemo(() => {
-    if (state.testVersion === 'short') {
-      return WELCOME_TEST_SECTIONS_WITH_QUESTIONS.map(section => ({
-        ...section,
-        questions: section.questions.filter(q => WELCOME_TEST_SHORT_QUESTION_IDS.includes(q.id)),
-      })).filter(section => section.questions.length > 0);
-    }
-    return WELCOME_TEST_SECTIONS_WITH_QUESTIONS;
-  }, [state.testVersion]);
+  // Always full test - no version filtering
+  const sections = WELCOME_TEST_SECTIONS_WITH_QUESTIONS;
 
   const allVisibleQuestions = useMemo(() => sections.flatMap(s => s.questions), [sections]);
   const currentSection = sections[state.currentSectionIndex];
@@ -236,32 +207,15 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
 
   // Persist position on navigation (localStorage only - fast)
   useEffect(() => {
-    if (shareToken && !state.completed && state.testVersion) {
+    if (shareToken && !state.completed) {
       localStorage.setItem(`wt_position_${shareToken}`, JSON.stringify({
         sectionIndex: state.currentSectionIndex,
         questionIndex: state.currentQuestionIndex,
       }));
     }
-  }, [state.currentSectionIndex, state.currentQuestionIndex, shareToken, state.completed, state.testVersion]);
+  }, [state.currentSectionIndex, state.currentQuestionIndex, shareToken, state.completed]);
 
-  // Set test version - only persist for students, not teacher preview
-  const setTestVersion = useCallback((version: 'short' | 'full') => {
-    if (!state.isTeacherMode) {
-      // Only persist for students, not teacher preview
-      if (shareToken) {
-        localStorage.setItem(`wt_version_${shareToken}`, version);
-      }
-      // Also persist to DB for cross-device
-      if (state.testId) {
-        supabase
-          .from('student_tests')
-          .update({ generation_params: { test_version: version } as unknown as Json })
-          .eq('id', state.testId)
-          .then(() => {});
-      }
-    }
-    setState(prev => ({ ...prev, testVersion: version, currentSectionIndex: 0, currentQuestionIndex: 0 }));
-  }, [shareToken, state.testId, state.isTeacherMode]);
+  // commitAnswer with fixed element_type, enriched payload, and fixed dedup
 
   // Commit answer to DB + log event (called on blur/navigate for text, immediately for radio/checkbox)
   const commitAnswer = useCallback(async (questionId: string, answer: unknown) => {
@@ -321,14 +275,26 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           question_index: 0,
         }] : [];
 
-        // DELETE previous event for this question, then INSERT new one
+        // DELETE previous event for this question using answer_id (fixes dedup)
         await supabase
           .from('student_events')
           .delete()
           .eq('student_id', state.studentId)
           .eq('source_id', state.testId)
           .eq('event_type', 'test_answer_submitted')
-          .eq('element_type', questionDef.element_type || 'vocabulary');
+          .filter('event_payload->>answer_id', 'eq', questionId);
+
+        // Detect trait value for profiling questions
+        let detectedTraitData: Record<string, string> | undefined;
+        if (questionDef.detected_trait && typeof answer === 'string') {
+          const optionIndex = questionDef.options?.indexOf(answer);
+          if (optionIndex !== undefined && optionIndex >= 0) {
+            const traitValue = questionDef.detected_trait.mapping[String(optionIndex)];
+            if (traitValue) {
+              detectedTraitData = { [questionDef.detected_trait.trait_name]: traitValue };
+            }
+          }
+        }
 
         await supabase.rpc('add_student_event', {
           p_student_id: state.studentId,
@@ -336,12 +302,14 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           p_event_type: 'test_answer_submitted',
           p_event_source: 'welcome_test',
           p_source_id: state.testId,
-          p_element_type: questionDef.element_type || null,
+          p_element_type: questionDef.element_type || questionDef.question_type || null,
           p_event_payload: {
             answer_id: questionId,
             exercise_type: questionDef.question_type,
             exercise_index: questionIndex,
+            is_correct: isCorrect,
             nano_skill_ratings: nanoSkillRatings,
+            detected_traits: detectedTraitData,
             time_spent_seconds: timeSpent,
           } as unknown as Json,
           p_skill_ids: questionDef.nano_skill ? [questionDef.nano_skill] : [],
@@ -469,7 +437,6 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           answers: state.answers,
           detected_traits: detectedTraits.current,
           answered_count: finalAnsweredCount,
-          test_version: state.testVersion,
         },
       });
 
@@ -532,7 +499,6 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     goToSection,
     goToQuestionInSection,
     completeTest,
-    setTestVersion,
     pauseTest,
     resumeTest,
     flushPendingAnswer,

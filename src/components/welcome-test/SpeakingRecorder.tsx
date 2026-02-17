@@ -115,15 +115,49 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
     setAudioUrl(answer || null);
   }, [answer, questionId]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount - AUTO-SAVE recording if not yet saved
+  // This is the CRITICAL fix: when navigating from speaking_record to a different question type,
+  // React unmounts SpeakingRecorder entirely. The useEffect([questionId]) never fires.
+  // This cleanup uses refs (always current) + global handler (always current) to save.
   useEffect(() => {
     return () => {
+      const blob = blobRef.current;
+      const currentStatus = statusRef.current;
+      const prevId = prevQuestionIdRef.current;
+
+      if (blob && (currentStatus === 'recorded' || currentStatus === 'recording')) {
+        // Stop recording if still in progress
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+        }
+
+        const mimeType = blob.type || 'audio/webm';
+        const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+        const fileName = `welcome-test-speaking-${Date.now()}.${ext}`;
+        const formData = new FormData();
+        formData.append('file', blob, fileName);
+
+        console.log('[SpeakingRecorder] Unmount auto-save for question:', prevId);
+
+        // Fire-and-forget upload, use global handler to bypass stale closures
+        supabase.functions.invoke('upload-to-r2', { body: formData })
+          .then(({ data }) => {
+            const url = data?.url || data?.publicUrl;
+            if (url && prevId) {
+              console.log('[SpeakingRecorder] Unmount auto-save success:', prevId);
+              (window as any).__welcomeTestAutoSave?.(prevId, url);
+            }
+          })
+          .catch((err) => {
+            console.error('[SpeakingRecorder] Unmount auto-save failed:', err);
+          });
+      }
+
       if (timerRef.current) clearInterval(timerRef.current);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
-      if (audioUrl && audioUrl.startsWith('blob:')) URL.revokeObjectURL(audioUrl);
     };
   }, []);
 
