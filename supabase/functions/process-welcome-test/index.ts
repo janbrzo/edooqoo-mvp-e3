@@ -485,6 +485,29 @@ ${openAnswers}`
             .eq('student_id', student_id)
             .eq('teacher_id', teacher_id);
           console.log('[process-welcome-test] AI summary generated and saved');
+
+          // Update mastery in student_events for open/speaking questions
+          try {
+            const parsed = JSON.parse(aiSummary);
+            const writingQuality = parsed.writing_quality;
+            const masteryValue = writingQuality === 'advanced' ? 75 :
+                                 writingQuality === 'intermediate' ? 50 : 25;
+            
+            const allOpenSpeakingIds = [...openQuestionIds, ...speakingQuestionIds];
+            for (const qId of allOpenSpeakingIds) {
+              if (answers?.[qId] && answers[qId] !== '__IDK__') {
+                await supabase
+                  .from('student_events')
+                  .update({ mastery: masteryValue })
+                  .eq('source_id', test_id)
+                  .eq('event_type', 'test_answer_submitted')
+                  .filter('event_payload->>answer_id', 'eq', qId);
+              }
+            }
+            console.log(`[process-welcome-test] Updated mastery (${masteryValue}) for ${allOpenSpeakingIds.length} open/speaking events`);
+          } catch (masteryErr) {
+            console.error('[process-welcome-test] Error updating mastery:', masteryErr);
+          }
         }
       } catch (aiError) {
         console.error('Error generating AI summary:', aiError);

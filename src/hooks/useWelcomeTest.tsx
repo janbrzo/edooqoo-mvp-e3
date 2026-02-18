@@ -296,6 +296,17 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           }
         }
 
+        // Fallback: for profiling questions without detected_trait, save answer value
+        if (!detectedTraitData && !questionDef.correct_answer && !questionDef.nano_skill) {
+          if (questionDef.question_type === 'self_assessment_matrix' && typeof answer === 'object') {
+            detectedTraitData = { confidence_matrix: JSON.stringify(answer) };
+          } else if (questionDef.question_type === 'preference_choice' && Array.isArray(answer)) {
+            detectedTraitData = { selected_preferences: (answer as string[]).join('; ') };
+          } else if (answer !== undefined && answer !== null && answer !== '__IDK__') {
+            detectedTraitData = { answer_value: typeof answer === 'string' ? answer : JSON.stringify(answer) };
+          }
+        }
+
         await supabase.rpc('add_student_event', {
           p_student_id: state.studentId,
           p_teacher_id: state.teacherId,
@@ -357,9 +368,37 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     commitAnswer(questionId, '__IDK__');
   }, [commitAnswer]);
 
+  // Flush pending speaking recording before navigation (synchronous approach)
+  const flushSpeakingIfNeeded = useCallback(async () => {
+    const pending = (window as any).__pendingSpeakingRecording;
+    if (!pending?.blob || !pending?.questionId) return;
+    
+    delete (window as any).__pendingSpeakingRecording;
+    
+    try {
+      const formData = new FormData();
+      const mimeType = pending.blob.type || 'audio/webm';
+      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+      formData.append('file', pending.blob, `welcome-test-speaking-${Date.now()}.${ext}`);
+      
+      console.log('[flushSpeaking] Uploading pending recording for:', pending.questionId);
+      const { data } = await supabase.functions.invoke('upload-to-r2', { body: formData });
+      const url = data?.url || data?.publicUrl;
+      if (url) {
+        console.log('[flushSpeaking] Upload success, saving answer:', url);
+        await saveAnswer(pending.questionId, url);
+        await commitAnswer(pending.questionId, url);
+      }
+    } catch (err) {
+      console.error('[flushSpeaking] Upload failed:', err);
+      await saveAnswer(pending.questionId, `recording_pending_${Date.now()}`);
+    }
+  }, [saveAnswer, commitAnswer]);
+
   // Navigation
-  const goToNext = useCallback(() => {
-    flushPendingAnswer();
+  const goToNext = useCallback(async () => {
+    await flushSpeakingIfNeeded();
+    await flushPendingAnswer();
     setState(prev => {
       const section = sections[prev.currentSectionIndex];
       if (!section) return prev;
@@ -370,16 +409,18 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
       }
       return prev;
     });
-  }, [sections, flushPendingAnswer]);
+  }, [sections, flushPendingAnswer, flushSpeakingIfNeeded]);
 
   // Skip question (just move forward without saving)
-  const skipQuestion = useCallback(() => {
-    flushPendingAnswer();
-    goToNext();
-  }, [flushPendingAnswer, goToNext]);
+  const skipQuestion = useCallback(async () => {
+    await flushSpeakingIfNeeded();
+    await flushPendingAnswer();
+    await goToNext();
+  }, [flushPendingAnswer, flushSpeakingIfNeeded, goToNext]);
 
-  const goToPrevious = useCallback(() => {
-    flushPendingAnswer();
+  const goToPrevious = useCallback(async () => {
+    await flushSpeakingIfNeeded();
+    await flushPendingAnswer();
     setState(prev => {
       if (prev.currentQuestionIndex > 0) {
         return { ...prev, currentQuestionIndex: prev.currentQuestionIndex - 1 };
@@ -389,7 +430,7 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
       }
       return prev;
     });
-  }, [sections, flushPendingAnswer]);
+  }, [sections, flushPendingAnswer, flushSpeakingIfNeeded]);
 
   const goToSection = useCallback((sectionIndex: number) => {
     flushPendingAnswer();
@@ -502,5 +543,6 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     pauseTest,
     resumeTest,
     flushPendingAnswer,
+    flushSpeakingIfNeeded,
   };
 }

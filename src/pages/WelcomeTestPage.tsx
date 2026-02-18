@@ -122,6 +122,7 @@ export default function WelcomeTestPage() {
     null,
   );
   const [teacherPreviewMode, setTeacherPreviewMode] = useState(false);
+  const [savingSpeaking, setSavingSpeaking] = useState(false);
 
   // Global auto-save handler for SpeakingRecorder (bypasses stale closures)
   useEffect(() => {
@@ -544,6 +545,11 @@ export default function WelcomeTestPage() {
                         Greek: "Greek", ελληνικά: "Greek", el: "Greek",
                         Croatian: "Croatian", hrvatski: "Croatian", hr: "Croatian",
                         Swedish: "Swedish", svenska: "Swedish", sv: "Swedish",
+                        Hindi: "Hindi", हिन्दी: "Hindi", hi: "Hindi",
+                        Vietnamese: "Vietnamese", "Tiếng Việt": "Vietnamese", vi: "Vietnamese",
+                        Thai: "Thai", ไทย: "Thai", th: "Thai",
+                        Norwegian: "Norwegian", norsk: "Norwegian", no: "Norwegian", nb: "Norwegian",
+                        Danish: "Danish", dansk: "Danish", da: "Danish",
                       };
                       const matched =
                         langMap[studentNativeLanguage] ||
@@ -739,8 +745,20 @@ export default function WelcomeTestPage() {
               )}
             </div>
           ) : (
-            <Button size="sm" onClick={goToNext} className="min-h-[40px]">
-              Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+            <Button
+              size="sm"
+              onClick={async () => {
+                setSavingSpeaking(true);
+                try { await goToNext(); } finally { setSavingSpeaking(false); }
+              }}
+              disabled={savingSpeaking}
+              className="min-h-[40px]"
+            >
+              {savingSpeaking ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> Saving...</>
+              ) : (
+                <>Next <ChevronRight className="h-3.5 w-3.5 ml-1" /></>
+              )}
             </Button>
           )}
         </div>
