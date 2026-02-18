@@ -256,30 +256,6 @@ export const TEST_TYPES: { value: TestType; label: string; description: string; 
     description: 'Comprehensive placement & profiling test for new students',
     icon: 'Sparkles'
   },
-  { 
-    value: 'placement', 
-    label: 'Placement Test', 
-    description: 'Initial assessment to determine student level',
-    icon: 'ClipboardCheck'
-  },
-  { 
-    value: 'progress_check', 
-    label: 'Progress Check', 
-    description: 'Regular test to verify learning progress',
-    icon: 'TrendingUp'
-  },
-  { 
-    value: 'skill_verification', 
-    label: 'Skill Verification', 
-    description: 'Confirm mastery of specific skills',
-    icon: 'CheckCircle'
-  },
-  { 
-    value: 'goal_check', 
-    label: 'Goal Achievement', 
-    description: 'Comprehensive test before completing a goal',
-    icon: 'Target'
-  },
 ];
 
 export const QUESTION_TYPES: { value: QuestionType; label: string; description: string }[] = [

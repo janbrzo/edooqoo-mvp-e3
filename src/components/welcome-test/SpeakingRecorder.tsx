@@ -1,8 +1,8 @@
 /**
  * SpeakingRecorder - Microphone recording component for Welcome Test speaking questions
- * Records up to 60s of audio, uploads to R2, saves URL as answer
+ * Records up to 60s of audio, uploads to R2 via base64 JSON, saves URL as answer
  * Cross-browser: tries audio/webm, audio/mp4, then no mimeType
- * Auto-saves via onAutoSave prop when navigating (bypasses stale closure issues)
+ * Round 8: Fixed upload - converts blob to base64 JSON (upload-to-r2 expects JSON, not FormData)
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -15,8 +15,8 @@ interface SpeakingRecorderProps {
   maxSeconds?: number;
   answer?: string; // URL if already recorded
   onAnswer: (audioUrl: string) => void;
-  questionId?: string; // triggers auto-save when changed
-  onAutoSave?: (questionId: string, audioUrl: string) => void; // bypasses stale closure
+  questionId?: string;
+  onAutoSave?: (questionId: string, audioUrl: string) => void;
 }
 
 function getSupportedMimeType(): string | undefined {
@@ -26,6 +26,48 @@ function getSupportedMimeType(): string | undefined {
     if (MediaRecorder.isTypeSupported(type)) return type;
   }
   return undefined;
+}
+
+/**
+ * Convert blob to base64 and upload to R2 via JSON endpoint.
+ * Returns the public URL or null on failure.
+ */
+export async function uploadBlobToR2(blob: Blob): Promise<string | null> {
+  if (!blob || blob.size === 0) return null;
+
+  try {
+    const base64Full = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+
+    const base64Data = base64Full.split(',')[1];
+    if (!base64Data) return null;
+
+    const mimeType = blob.type || 'audio/webm';
+    const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+    const fileName = `welcome-test-speaking-${Date.now()}.${ext}`;
+
+    const { data, error } = await supabase.functions.invoke('upload-to-r2', {
+      body: {
+        base64Data,
+        filename: fileName,
+        contentType: mimeType,
+      },
+    });
+
+    if (error) {
+      console.error('[uploadBlobToR2] Edge function error:', error);
+      return null;
+    }
+
+    return data?.url || data?.publicUrl || null;
+  } catch (err) {
+    console.error('[uploadBlobToR2] Failed:', err);
+    return null;
+  }
 }
 
 export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId, onAutoSave }: SpeakingRecorderProps) {
@@ -45,46 +87,34 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
   const statusRef = useRef(status);
   const prevQuestionIdRef = useRef(questionId);
 
-  // Keep refs in sync
   useEffect(() => { statusRef.current = status; }, [status]);
 
-  // Auto-save when questionId changes (user navigates away)
-  // Uses onAutoSave prop to bypass stale closure issues with onAnswer
+  // Auto-save when questionId changes (user navigates away via useEffect - FALLBACK)
   useEffect(() => {
     const prevId = prevQuestionIdRef.current;
     const currentBlob = blobRef.current;
     const currentStatus = statusRef.current;
     
-    // Update ref immediately to track changes
     prevQuestionIdRef.current = questionId;
     
     if (prevId && questionId && prevId !== questionId) {
-      // Question changed - auto-save if recorded but not saved
       if (currentBlob && (currentStatus === 'recorded' || currentStatus === 'recording')) {
-        // Stop recording if still in progress
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
           mediaRecorderRef.current.stop();
           if (timerRef.current) clearInterval(timerRef.current);
         }
         
         const blob = currentBlob;
-        const capturedPrevId = prevId; // Capture for async closure
-        const mimeType = blob.type || 'audio/webm';
-        const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
-        const fileName = `welcome-test-speaking-${Date.now()}.${ext}`;
-        const formData = new FormData();
-        formData.append('file', blob, fileName);
+        const capturedPrevId = prevId;
         
-        console.log('[SpeakingRecorder] Auto-saving recording for question:', capturedPrevId);
+        console.log('[SpeakingRecorder] Auto-saving (questionId change) for:', capturedPrevId);
         
-        supabase.functions.invoke('upload-to-r2', { body: formData })
-          .then(({ data }) => {
-            const url = data?.url || data?.publicUrl;
+        uploadBlobToR2(blob)
+          .then((url) => {
             if (url && onAutoSave) {
-              console.log('[SpeakingRecorder] Auto-save success, calling onAutoSave with:', capturedPrevId);
+              console.log('[SpeakingRecorder] Auto-save success:', capturedPrevId, url);
               onAutoSave(capturedPrevId, url);
             } else if (url) {
-              // Fallback to onAnswer if onAutoSave not provided
               onAnswer(url);
             } else if (onAutoSave) {
               onAutoSave(capturedPrevId, `recording_autosaved_${Date.now()}`);
@@ -96,12 +126,10 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
             }
           });
       } else if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-        // Stop recording without blob (recording just started)
         mediaRecorderRef.current.stop();
         if (timerRef.current) clearInterval(timerRef.current);
       }
       
-      // Reset state for new question
       blobRef.current = null;
       setSeconds(0);
       setIsPlaying(false);
@@ -109,16 +137,13 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
     }
   }, [questionId, onAutoSave, onAnswer]);
 
-  // Reset visual state when answer prop changes (new question)
+  // Reset visual state when answer prop changes
   useEffect(() => {
     setStatus(answer ? 'done' : 'idle');
     setAudioUrl(answer || null);
   }, [answer, questionId]);
 
-  // Cleanup on unmount - AUTO-SAVE recording if not yet saved
-  // This is the CRITICAL fix: when navigating from speaking_record to a different question type,
-  // React unmounts SpeakingRecorder entirely. The useEffect([questionId]) never fires.
-  // This cleanup uses refs (always current) + global handler (always current) to save.
+  // Cleanup on unmount - FALLBACK auto-save
   useEffect(() => {
     return () => {
       const blob = blobRef.current;
@@ -126,23 +151,14 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
       const prevId = prevQuestionIdRef.current;
 
       if (blob && (currentStatus === 'recorded' || currentStatus === 'recording')) {
-        // Stop recording if still in progress
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
           mediaRecorderRef.current.stop();
         }
 
-        const mimeType = blob.type || 'audio/webm';
-        const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
-        const fileName = `welcome-test-speaking-${Date.now()}.${ext}`;
-        const formData = new FormData();
-        formData.append('file', blob, fileName);
+        console.log('[SpeakingRecorder] Unmount auto-save for:', prevId);
 
-        console.log('[SpeakingRecorder] Unmount auto-save for question:', prevId);
-
-        // Fire-and-forget upload, use global handler to bypass stale closures
-        supabase.functions.invoke('upload-to-r2', { body: formData })
-          .then(({ data }) => {
-            const url = data?.url || data?.publicUrl;
+        uploadBlobToR2(blob)
+          .then((url) => {
             if (url && prevId) {
               console.log('[SpeakingRecorder] Unmount auto-save success:', prevId);
               (window as any).__welcomeTestAutoSave?.(prevId, url);
@@ -233,7 +249,7 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
       }
       setStatus('error');
     }
-  }, [maxSeconds]);
+  }, [maxSeconds, questionId]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
@@ -265,7 +281,6 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
     setStatus('idle');
     setIsPlaying(false);
     setErrorMsg(null);
-    // Clear pending since user chose to re-record
     delete (window as any).__pendingSpeakingRecording;
   }, [audioUrl]);
 
@@ -274,25 +289,13 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
     setStatus('uploading');
 
     try {
-      const formData = new FormData();
-      const mimeType = blobRef.current.type || 'audio/webm';
-      const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
-      const fileName = `welcome-test-speaking-${Date.now()}.${ext}`;
-      formData.append('file', blobRef.current, fileName);
+      const url = await uploadBlobToR2(blobRef.current);
 
-      const { data, error } = await supabase.functions.invoke('upload-to-r2', {
-        body: formData,
-      });
+      if (!url) throw new Error('No URL returned from upload');
 
-      if (error) throw error;
-
-      const uploadedUrl = data?.url || data?.publicUrl;
-      if (!uploadedUrl) throw new Error('No URL returned from upload');
-
-      setAudioUrl(uploadedUrl);
+      setAudioUrl(url);
       setStatus('done');
-      onAnswer(uploadedUrl);
-      // Clear pending since manually saved
+      onAnswer(url);
       delete (window as any).__pendingSpeakingRecording;
       toast.success('Recording saved!');
     } catch (err) {
@@ -307,7 +310,6 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
 
   return (
     <div className="space-y-3">
-      {/* Waveform-like visualization */}
       {status === 'recording' && (
         <div className="flex items-center justify-center gap-0.5 h-12 bg-red-50 dark:bg-red-900/10 rounded-lg px-4">
           {Array.from({ length: 20 }, (_, i) => (
@@ -324,14 +326,12 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
         </div>
       )}
 
-      {/* Timer */}
       {(status === 'recording' || status === 'recorded') && (
         <div className="text-center text-sm font-mono text-muted-foreground">
           {formatTime(seconds)} / {formatTime(maxSeconds)}
         </div>
       )}
 
-      {/* Error state */}
       {status === 'error' && (
         <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg text-sm text-destructive">
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
@@ -339,7 +339,6 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
         </div>
       )}
 
-      {/* Controls */}
       <div className="flex items-center justify-center gap-2 flex-wrap">
         {(status === 'idle' || status === 'error') && (
           <Button onClick={startRecording} variant="outline" size="sm" className="gap-2 min-h-[44px] px-4">
@@ -393,7 +392,6 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
         )}
       </div>
 
-      {/* Help text */}
       {status === 'idle' && (
         <p className="text-[11px] text-muted-foreground text-center">
           Click to record your answer. You can record up to {maxSeconds} seconds.

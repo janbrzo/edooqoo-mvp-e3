@@ -297,13 +297,30 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
         }
 
         // Fallback: for profiling questions without detected_trait, save answer value
+        // Round 8: Use semantic trait keys instead of generic 'answer_value'
+        const QUESTION_TRAIT_FALLBACK: Record<string, string> = {
+          'wt_q2': 'main_frustrations',
+          'wt_q6': 'preferred_activities',
+          'wt_q9': 'learning_duration',
+          'wt_q10': 'learning_background',
+          'wt_q11': 'exam_experience',
+          'wt_q12': 'learning_goal',
+          'wt_q13': 'desired_topics',
+          'wt_q15': 'reading_strategy',
+          'wt_q41': 'learning_priorities',
+          'wt_q43': 'interest_topics',
+          'wt_q45': 'final_message',
+        };
+
         if (!detectedTraitData && !questionDef.correct_answer && !questionDef.nano_skill) {
           if (questionDef.question_type === 'self_assessment_matrix' && typeof answer === 'object') {
             detectedTraitData = { confidence_matrix: JSON.stringify(answer) };
           } else if (questionDef.question_type === 'preference_choice' && Array.isArray(answer)) {
-            detectedTraitData = { selected_preferences: (answer as string[]).join('; ') };
+            const traitKey = QUESTION_TRAIT_FALLBACK[questionId] || 'selected_preferences';
+            detectedTraitData = { [traitKey]: (answer as string[]).join('; ') };
           } else if (answer !== undefined && answer !== null && answer !== '__IDK__') {
-            detectedTraitData = { answer_value: typeof answer === 'string' ? answer : JSON.stringify(answer) };
+            const traitKey = QUESTION_TRAIT_FALLBACK[questionId] || 'answer_value';
+            detectedTraitData = { [traitKey]: typeof answer === 'string' ? answer : JSON.stringify(answer) };
           }
         }
 
@@ -369,6 +386,7 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
   }, [commitAnswer]);
 
   // Flush pending speaking recording before navigation (synchronous approach)
+  // Round 8: Uses uploadBlobToR2 (base64 JSON) instead of FormData
   const flushSpeakingIfNeeded = useCallback(async () => {
     const pending = (window as any).__pendingSpeakingRecording;
     if (!pending?.blob || !pending?.questionId) return;
@@ -376,22 +394,24 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     delete (window as any).__pendingSpeakingRecording;
     
     try {
-      const formData = new FormData();
-      const mimeType = pending.blob.type || 'audio/webm';
-      const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-      formData.append('file', pending.blob, `welcome-test-speaking-${Date.now()}.${ext}`);
+      const { uploadBlobToR2 } = await import('@/components/welcome-test/SpeakingRecorder');
       
       console.log('[flushSpeaking] Uploading pending recording for:', pending.questionId);
-      const { data } = await supabase.functions.invoke('upload-to-r2', { body: formData });
-      const url = data?.url || data?.publicUrl;
+      const url = await uploadBlobToR2(pending.blob);
       if (url) {
         console.log('[flushSpeaking] Upload success, saving answer:', url);
         await saveAnswer(pending.questionId, url);
         await commitAnswer(pending.questionId, url);
+      } else {
+        console.warn('[flushSpeaking] Upload returned no URL, saving placeholder');
+        await saveAnswer(pending.questionId, `recording_pending_${Date.now()}`);
+        await commitAnswer(pending.questionId, `recording_pending_${Date.now()}`);
       }
     } catch (err) {
       console.error('[flushSpeaking] Upload failed:', err);
-      await saveAnswer(pending.questionId, `recording_pending_${Date.now()}`);
+      const placeholder = `recording_pending_${Date.now()}`;
+      await saveAnswer(pending.questionId, placeholder);
+      await commitAnswer(pending.questionId, placeholder);
     }
   }, [saveAnswer, commitAnswer]);
 
