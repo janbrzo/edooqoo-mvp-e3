@@ -1,112 +1,120 @@
 
-# Welcome Test v2 - Round 6 Poprawek
+# Welcome Test v2 - Round 7 Poprawek
 
 ## Podsumowanie
 
-Zidentyfikowalem 4 glowne problemy. Najwazniejszy to **Problem 1** - znalazlem PRAWDZIWA przyczyne dlaczego auto-save nagrywania nie dziala (3 poprzednie proby naprawy chybialy).
+Przeanalizowalem kazdy problem do glebokosci kodu i znalazlem PRAWDZIWA przyczyne dlaczego auto-save nagrywania nie dziala po 4 probach naprawy, oraz rozwiazania dla pozostalych problemow.
 
 ---
 
-## PROBLEM 1: Auto-zapis nagrywania - PRAWDZIWA PRZYCZYNA
+## PROBLEM 1: Auto-zapis nagrywania - 5ta proba, INNE podejscie
 
-### Dlaczego 3 poprzednie proby nie zadzialy
+### Dlaczego cleanup-on-unmount NIE DZIALA (mimo poprawnego kodu)
 
-Wszystkie poprzednie poprawki zakladaly, ze `SpeakingRecorder` dostaje nowy `questionId` i efekt `useEffect([questionId])` odpala auto-save. To NIE jest prawidlowe zalozenie.
+Przeanalizowalem caly flow linia po linii. Kod w `SpeakingRecorder.tsx` (linie 122-162) WYGLADA poprawnie:
+- `blobRef.current` powinien zawierac blob
+- `statusRef.current` powinien byc 'recorded'
+- `prevQuestionIdRef.current` powinien miec ID pytania
+- Upload do R2 jest wywolywany
+- `window.__welcomeTestAutoSave` powinien byc dostepny
 
-**PRAWDZIWA PRZYCZYNA:** Kiedy student przechodzi z pytania `speaking_record` (np. Q20) do INNEGO typu pytania (np. Q21 `multiple_choice`), komponent `QuestionInputInner` renderuje INNY komponent (RadioGroup zamiast SpeakingRecorder). React **ODMONTOWUJE** SpeakingRecorder. Efekt `useEffect([questionId])` NIGDY sie nie odpala, bo komponent juz nie istnieje. Cleanup effect (linia 118-128) tez NIE zapisuje nagrania.
+Problem prawdopodobnie lezy w jednym z:
+1. Upload do R2 FAILS cisza (catch handler na linii 151 loguje blad ale nic nie zapisuje)
+2. Blob jest pusty/uszkodzony w momencie cleanup (timing issue z MediaRecorder)
+3. `window.__welcomeTestAutoSave` jest undefined w momencie wywolania (timing)
 
-Zapis dziala TYLKO gdy student przechodzi z jednego pytania `speaking_record` do INNEGO pytania `speaking_record` - wtedy komponent sie re-renderuje z nowym `questionId`. Ale w Welcome Test pytania speaking sa rozdzielone wieloma pytaniami innego typu, wiec SpeakingRecorder zawsze sie odmontowuje.
+**NOWE PODEJSCIE - SYNCHRONICZNE zamiast asynchronicznego:**
+
+Zamiast polegac na fire-and-forget upload w cleanup (ktory jest z natury racy i nie gwarantuje ukonczenia), przeniose logike NA POZIOM RODZICA, PRZED nawigacja:
+
+1. `SpeakingRecorder` ustawia globalny obiekt `window.__pendingSpeakingRecording = { questionId, blob, status }` za kazdym razem gdy blob sie zmienia (w `onstop` callback, linia 196-197)
+2. W `SpeakingRecorder`, reset tego globala na `null` gdy uzytkownik klika "Save" (bo juz zapisano) lub "Re-record" (bo blob jest kasowany)
+3. W `useWelcomeTest.tsx`, metoda `goToNext` sprawdza `window.__pendingSpeakingRecording` PRZED nawigacja. Jesli istnieje, uploaduje blob do R2 i wywoluje `commitAnswer` z URL-em. Dopiero potem nawiguje.
+4. Analogicznie w `skipQuestion` i `goToPrevious`
+
+To podejscie jest **fundamentalnie inne** od wszystkich poprzednich prob:
+- NIE polega na efektach React (useEffect cleanup)
+- NIE polega na kolejnosci efektow
+- NIE jest fire-and-forget (czeka na upload)
+- Blob jest przechwytywany ZANIM komponent sie odmontuje
+
+**Konsekwencja dla UX:** Klikniecie Next na pytaniu speaking moze trwac 2-3 sekundy (upload). Dodam spinner "Saving recording..." na przycisku Next.
+
+### Zmiany w plikach:
+
+**`SpeakingRecorder.tsx`:**
+- W `mediaRecorder.onstop` (linia 196): dodac `(window as any).__pendingSpeakingRecording = { questionId, blob }`
+- W `uploadAndSave` (linia 287-289): po sukcesie dodac `delete (window as any).__pendingSpeakingRecording`
+- W `resetRecording` (linia 260): dodac `delete (window as any).__pendingSpeakingRecording`
+- Zostawic cleanup na unmount (linie 122-162) jako FALLBACK, ale dodac tez zapis do globalnego pending
+- Eksportowac nowa funkcje helper `flushPendingSpeakingRecording(): Promise<string | null>` ktora:
+  - Sprawdza `window.__pendingSpeakingRecording`
+  - Jesli blob istnieje, uploaduje do R2
+  - Zwraca URL lub null
+  - Kasuje globalny pending
+
+**`useWelcomeTest.tsx`:**
+- Nowa metoda `flushSpeakingIfNeeded()`:
+```typescript
+const flushSpeakingIfNeeded = useCallback(async () => {
+    const pending = (window as any).__pendingSpeakingRecording;
+    if (!pending?.blob || !pending?.questionId) return;
+    
+    delete (window as any).__pendingSpeakingRecording;
+    
+    try {
+        const formData = new FormData();
+        const mimeType = pending.blob.type || 'audio/webm';
+        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        formData.append('file', pending.blob, `welcome-test-speaking-${Date.now()}.${ext}`);
+        
+        const { data } = await supabase.functions.invoke('upload-to-r2', { body: formData });
+        const url = data?.url || data?.publicUrl;
+        if (url) {
+            await saveAnswer(pending.questionId, url);
+        }
+    } catch (err) {
+        console.error('[flushSpeaking] Upload failed:', err);
+        // Fallback: save placeholder so answer isn't lost entirely
+        await saveAnswer(pending.questionId, `recording_pending_${Date.now()}`);
+    }
+}, [saveAnswer]);
+```
+
+- `goToNext`: dodac `await flushSpeakingIfNeeded()` PRZED `setState`
+- `skipQuestion`: to samo
+- `goToPrevious`: to samo
+- Eksportowac `flushSpeakingIfNeeded` z hooka
+
+**`WelcomeTestPage.tsx`:**
+- Na przycisku Next: dodac stan `savingSpeaking` ktory blokuje przycisk i pokazuje spinner podczas uploadu nagrania
+
+### 1.2 i 1.3 - Automatycznie naprawione
+
+Po naprawieniu auto-save (1.1):
+- URL R2 bedzie w `student_test_questions.student_answer` -> odtwarzacz audio w `TestDetailsView` juz rozpoznaje URL R2 (linie 457-460)
+- Przycisk "Transcribe" juz istnieje (linie 513-526) i bedzie dzialal
+- `process-welcome-test` juz transkrybuje speaking answers (linie 386-413) i uwzglednia je w AI summary
+
+---
+
+## PROBLEM 2: student_events - event_source 'test'
+
+### 2.1 Stan bazy danych
+
+W bazie nadal jest 69 eventow z `event_source = 'test'`:
+- 49 nalezacych do Welcome Test (test_type = 'welcome', title = "Welcome Test - MATE Galloway (Retake)")
+- 20 nalezacych do Placement Tests (test_type = 'placement')
+
+Migracja z Round 6 powinna byla naprawic welcome test eventy, ale te 49 zostaly utworzone PO migracji (student robil test po wdrozeniu). To oznacza ze JEST kod ktory tworzy eventy z `event_source = 'test'` dla welcome testow.
+
+Ale sprawdzilem - `useWelcomeTest.tsx` linia 303 juz uzywa `p_event_source: 'welcome_test'`. Wiec skad te 49?
+
+Sprawdzilem: ten test to "Retake" - moze student zaczal go PRZED migracja a skonczyl PO? Albo jest cache w przegladarce ze starym kodem?
 
 ### Rozwiazanie
 
-Przeniesc logike auto-save NA POZIOM RODZICA. W `WelcomeTestPage.tsx` (lub w `useWelcomeTest.tsx`), PRZED nawigacja (w `goToNext` i `skipQuestion`) sprawdzic:
-1. Czy aktualne pytanie jest typu `speaking_record`
-2. Czy istnieje nagranie w stanie `recorded` ale nie zapisane
-
-Problem: rodzic nie ma dostepu do `blobRef` w SpeakingRecorder.
-
-**Rozwiazanie z `useImperativeHandle`:**
-1. SpeakingRecorder eksponuje metode `flushRecording()` przez `forwardRef` + `useImperativeHandle`
-2. `flushRecording()` uploaduje blob do R2 i zwraca URL (lub null jesli brak nagrania)
-3. W `goToNext` (w `useWelcomeTest.tsx`), dodac callback `onBeforeNavigate` ktory jest wywolywany PRZED zmiana pytania
-4. W `WelcomeTestPage.tsx`, callback `onBeforeNavigate` wywoluje `speakingRecorderRef.current?.flushRecording()` i czeka na wynik
-
-Prostsze rozwiazanie (bez ref):
-1. Dodac do SpeakingRecorder efekt `useEffect` na **unmount** (cleanup w `[]`), ktory uploaduje blob
-2. Problem: cleanup w `[]` nie ma dostepu do aktualnych stanow (stale closure). Ale uzywa refow (`blobRef`, `prevQuestionIdRef`) ktore sa zawsze aktualne.
-
-**NAJPROSTSZE DZIALAJACE ROZWIAZANIE:**
-W cleanup efekcie `useEffect([], return cleanup)` na linii 118-128, dodac auto-save logike:
-
-```typescript
-useEffect(() => {
-    return () => {
-      // Auto-save on unmount (when navigating away from speaking question)
-      const blob = blobRef.current;
-      const currentStatus = statusRef.current;
-      const prevId = prevQuestionIdRef.current;
-      
-      if (blob && (currentStatus === 'recorded' || currentStatus === 'recording')) {
-        // Stop recording if still in progress
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          mediaRecorderRef.current.stop();
-        }
-        
-        const mimeType = blob.type || 'audio/webm';
-        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-        const fileName = `welcome-test-speaking-${Date.now()}.${ext}`;
-        const formData = new FormData();
-        formData.append('file', blob, fileName);
-        
-        // Fire-and-forget upload, use global handler to bypass stale closures
-        supabase.functions.invoke('upload-to-r2', { body: formData })
-          .then(({ data }) => {
-            const url = data?.url || data?.publicUrl;
-            if (url && prevId) {
-              (window as any).__welcomeTestAutoSave?.(prevId, url);
-            }
-          })
-          .catch(() => {});
-      }
-      
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    };
-}, []);
-```
-
-To uzywa:
-- `blobRef.current` - ref, zawsze aktualny
-- `statusRef.current` - ref, zawsze aktualny 
-- `prevQuestionIdRef.current` - ref z ID aktualnego pytania (ustawiany na poczatku efektu questionId)
-- `window.__welcomeTestAutoSave` - globalny handler, zawsze aktualny
-
-To rozwiazanie jest **bullet-proof** bo dziala przy KAZDYM odmontowaniu komponentu - niezaleznie od przyczyny (zmiana pytania, zmiana sekcji, zamkniecie strony).
-
-### 1.2A, 1.2B, 1.3 - Automatycznie naprawione
-
-Po naprawieniu auto-save, nagrania beda uploadowane do R2. Istniejacy kod w `TestDetailsView.tsx` (linie 457-460) juz rozpoznaje URL R2 i pokazuje odtwarzacz. Przycisk "Transcribe" juz dziala (linia 513-526). AI Analysis juz transkrybuje speaking answers.
-
----
-
-## PROBLEM 2: student_events - element_type i event_source
-
-### 2.1 Brakujacy element_type
-
-**Obecny stan bazy:** 336 eventow z `element_type = null`. To sa pytania profilowe (self_assessment, preference_choice, scenario_reaction) ktore nie maja zdefiniowanego `element_type` w definicji pytania (`welcomeTestQuestions.ts`).
-
-**Rozwiazanie:** W `commitAnswer` (linia 339), zmiana logiki:
-```typescript
-p_element_type: questionDef.element_type || questionDef.question_type || null,
-```
-
-Dzieki temu pytania profilowe beda mialy `element_type` ustawiony na swoj `question_type` (np. `self_assessment`, `preference_choice`, `scenario_reaction`). Pytania umiejetnosciowe zachowaja swoje `element_type` (grammar, vocabulary, speaking, etc.).
-
-### 2.2 Stare eventy z event_source = 'test'
-
-**Obecny stan:** 729 eventow z `event_source = 'test'` nalezacych do Welcome Testow. To sa stare eventy sprzed poprawki z Round 5.
-
-**Rozwiazanie:** Migracja SQL:
+Nowa migracja SQL:
 ```sql
 UPDATE student_events SET event_source = 'welcome_test'
 WHERE event_type = 'test_answer_submitted' 
@@ -114,136 +122,144 @@ AND event_source = 'test'
 AND source_id IN (SELECT id FROM student_tests WHERE test_type = 'welcome');
 ```
 
-### 2.3 Payload - brakujace dane
+Eventy z `event_source = 'test'` dla `test_type = 'placement'` zostaja bez zmian - to sa inne testy (Intelligent Tests), nie Welcome Test.
 
-**Obecny stan nowych eventow (po Round 5):**
-```json
-{
-  "answer_id": "wt_q44",
-  "exercise_type": "self_assessment_matrix",
-  "exercise_index": 47,
-  "nano_skill_ratings": [],
-  "time_spent_seconds": 9
+---
+
+## PROBLEM 3: student_events.event_payload - brakujace dane
+
+### 3A. preference_choice bez detected_traits (np. wt_q2)
+
+**Przyczyna:** `wt_q2` NIE MA `detected_trait` w definicji pytania (`welcomeTestQuestions.ts`). Pytanie "What frustrates you most?" jest multi-select i nie mapuje sie na jeden trait.
+
+**Rozwiazanie:** Dla pytan multi-select (`preference_choice` z `multi_select: true`), dodac do payloadu pole `selected_options` z wybranymi opcjami. To nie jest trait, ale dane preferencji.
+
+W `commitAnswer`:
+```typescript
+// For multi-select preference questions, save selected options as detected data
+if (questionDef.question_type === 'preference_choice' && Array.isArray(answer)) {
+    detectedTraitData = detectedTraitData || {};
+    detectedTraitData['selected_preferences'] = answer.join('; ');
 }
 ```
 
-Pytania profilowe maja pusty `nano_skill_ratings` bo nie maja `nano_skill` zdefiniowanego - to jest POPRAWNE bo pytania profilowe NIE mierza umiejetnosci jezykowych. One zbieraja cechy osobowosci/preferencje.
+Ale to nie jest idealne. Lepsza opcja: dodac `detected_trait` do definicji brakujacych pytan w `welcomeTestQuestions.ts`:
+- `wt_q2` (frustrations): dodac detected_trait z mapping na `main_frustration`
+- `wt_q6` (activities): dodac detected_trait z mapping na `preferred_activities`
+- `wt_q10` (learning background): dodac detected_trait z mapping na `learning_background`
 
-Natomiast payload powinien zawierac wiecej danych kontekstowych:
-- `is_correct` - czy odpowiedz jest poprawna (dla pytan umiejetnosciowych)
-- `detected_traits` - wykryte cechy (dla pytan profilowych)
+Ale pytania multi-select nie maja prostego mappingu 1-do-1. Rozwiazanie: w `commitAnswer`, dla pytan bez `detected_trait`, zapisac odpowiedz bezposrednio jako trait:
 
-**Rozwiazanie:** W `commitAnswer`, wzbogacic payload:
 ```typescript
-p_event_payload: {
-    answer_id: questionId,
-    exercise_type: questionDef.question_type,
-    exercise_index: questionIndex,
-    is_correct: isCorrect,
-    nano_skill_ratings: nanoSkillRatings,
-    detected_traits: questionDef.detected_trait ? {
-        [questionDef.detected_trait.trait_name]: detectedTraitValue
-    } : undefined,
-    time_spent_seconds: timeSpent,
+// Fallback for profiling questions without explicit detected_trait mapping
+if (!detectedTraitData && !questionDef.correct_answer && !questionDef.nano_skill) {
+    detectedTraitData = { answer_value: typeof answer === 'string' ? answer : JSON.stringify(answer) };
 }
 ```
 
-### 2.3 Usuwanie duplikatow
+### 3B. self_assessment_matrix (wt_q44) bez detected_traits
 
-**Obecny problem:** DELETE w commitAnswer (linia 324-331) filtruje po `element_type`, co powoduje ze:
-- Pytania z `element_type = null` NIE sa usuwane (bo szuka `element_type = null` a nie IS NULL)
-- Rrozne pytania z tym samym `element_type` (np. 2 pytania grammar) nadpisuja sie nawzajem
+**Przyczyna:** `wt_q44` nie ma `detected_trait` bo to macierz z wieloma wartosciami (confidence levels per skill). Wartosc odpowiedzi to obiekt `{ "Speaking": 3, "Writing": 4, ... }`.
 
-**Rozwiazanie:** Zmienic DELETE aby filtrowac po `event_payload->>'answer_id'` zamiast `element_type`:
+**Rozwiazanie:** Dodac do payloadu:
 ```typescript
-await supabase
-    .from('student_events')
-    .delete()
-    .eq('student_id', state.studentId)
-    .eq('source_id', state.testId)
-    .eq('event_type', 'test_answer_submitted')
-    .filter('event_payload->>answer_id', 'eq', questionId);
+if (questionDef.question_type === 'self_assessment_matrix' && typeof answer === 'object') {
+    detectedTraitData = { confidence_matrix: JSON.stringify(answer) };
+}
+```
+
+### 3C. open_reflection (wt_q12) - brak detected_traits
+
+**To jest POPRAWNE.** Pytania otwarte (open_reflection, open_ended) nie maja detected_traits przy zapisie. Ich tresc jest analizowana pozniej przez AI w `process-welcome-test`. AI powinno po analizie nadpisac `mastery` w eventach.
+
+### 3D. Nadpisywanie mastery po AI Analysis
+
+**Obecny stan:** `process-welcome-test/index.ts` NIE nadpisuje mastery w `student_events`. Po AI Analysis, mastery w payloadach pytan otwartych/speaking pozostaje `-1`.
+
+**Rozwiazanie:** Na koncu `process-welcome-test`, po wygenerowaniu AI summary, dodac logike:
+1. Dla pytan otwartych: AI ocenia `writing_quality` ('basic'/'intermediate'/'advanced') - mapowac na mastery (25/50/75)
+2. Dla pytan speaking: po transkrypcji, AI ocenia quality - mapowac na mastery
+3. UPDATE `student_events` SET mastery = nowa_wartosc WHERE answer_id IN (lista pytan otwartych/speaking)
+
+```typescript
+// After AI analysis, update mastery for open/speaking questions
+if (aiSummary) {
+    const parsed = JSON.parse(aiSummary);
+    const writingMastery = parsed.writing_quality === 'advanced' ? 75 :
+                           parsed.writing_quality === 'intermediate' ? 50 : 25;
+    
+    const openSpeakingIds = [...openQuestionIds, ...speakingQuestionIds];
+    for (const qId of openSpeakingIds) {
+        if (answers?.[qId] && answers[qId] !== '__IDK__') {
+            await supabase
+                .from('student_events')
+                .update({ mastery: writingMastery })
+                .eq('source_id', test_id)
+                .eq('event_type', 'test_answer_submitted')
+                .filter('event_payload->>answer_id', 'eq', qId);
+        }
+    }
+}
 ```
 
 ---
 
-## PROBLEM 3: Brak informacji dlaczego przycisk Complete jest zablokowany
+## PROBLEM 4: Tlumaczenia dla nowych jezykow
 
-**Juz naprawione w Round 5** - komunikat jest na liniach 744-748. Sprawdzam czy dziala poprawnie - tak, wyswietla "Answer at least X of Y questions (Z answered)".
+### Obecne tlumaczenia (10): 
+Polish, Spanish, German, French, Portuguese, Italian, Turkish, Russian, Czech, Ukrainian
 
-**Nie wymaga zmian.**
+### Dostepne jezyki w profilu studenta (44):
+Arabic, Bengali, Bulgarian, Catalan, Chinese, Croatian, Czech, Danish, Dutch, Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Javanese, Korean, Malay, Marathi, Norwegian, Persian, Polish, Portuguese, Punjabi, Romanian, Russian, Serbian, Slovak, Slovenian, Spanish, Swahili, Swedish, Tagalog, Tamil, Telugu, Thai, Turkish, Ukrainian, Urdu, Vietnamese
 
----
+### Brakujace (34 jezykow)
 
-## PROBLEM 4: Usuniecie Quick Version - jeden test
+Dodam 15 najpopularniejszych z perspektywy rynku ESL:
+1. **Dutch** - Europa zachodnia
+2. **Japanese** - ogromny rynek ESL
+3. **Korean** - duzy rynek ESL
+4. **Chinese** - najwiekszy rynek ESL
+5. **Arabic** - duzy rynek ESL
+6. **Hungarian** - Europa srodkowa
+7. **Romanian** - Europa wschodnia
+8. **Greek** - Europa poludniowa
+9. **Croatian** - Europa srodkowa
+10. **Swedish** - Skandynawia
+11. **Hindi** - Indie, ogromny rynek
+12. **Vietnamese** - Azja, szybko rosnacy rynek
+13. **Thai** - Azja
+14. **Norwegian** - Skandynawia
+15. **Danish** - Skandynawia
 
-**Zmiana koncepcyjna:** Usuwamy VersionSelector. Nie ma wyboru dlugosci. Zawsze pelna wersja (49 pytan).
+Kazdy jezyk musi miec PELNE tlumaczenia: wt_q1 do wt_q45 (wszystkie pytania profilowe, nie skill questions).
 
-### Zmiany w kodzie:
-
-**1. `useWelcomeTest.tsx`:**
-- Usunac state `testVersion` i wszystko co z nim zwiazane
-- `sections` = zawsze `WELCOME_TEST_SECTIONS_WITH_QUESTIONS` (bez filtrowania)
-- Usunac `setTestVersion` callback
-- Usunac zapis/odczyt `test_version` z localStorage i bazy danych
-- Usunac filtrowanie `WELCOME_TEST_SHORT_QUESTION_IDS`
-
-**2. `WelcomeTestPage.tsx`:**
-- Usunac stage `version` - przejsc od razu do `instructions` (lub `test` jesli juz widziano instrukcje)
-- Usunac import `VersionSelector`
-- Usunac `setTestVersion` z destrukturyzacji hooka
-- W `getStage()`: usunac warunek `if (!testVersion) return "version"` - zastapic instrukcjami
-
-**3. `VersionSelector.tsx`:**
-- Usunac plik (lub zostawic ale nie importowac)
-
-**4. `InstructionScreen.tsx`:**
-- Usunac prop `version` - zawsze pelna wersja
-- Zaktualizowac tekst (49 pytan, ~30 min)
-
-**5. `TestDetailsView.tsx`:**
-- Usunac logike `isQuickVersion` i `WELCOME_TEST_SHORT_QUESTION_IDS`
-- Pokazywac zawsze wszystkie 49 pytan
-- Usunac komunikat "Quick Version — X questions not included"
-
-**6. `process-welcome-test/index.ts`:**
-- Usunac `test_version` z body
-- Usunac informacje o wersji z promptu AI
-
-**7. `events.ts`:** Usunac referencje do Quick Version
-
-**8. `welcomeTestQuestions.ts`:**
-- Usunac export `WELCOME_TEST_SHORT_QUESTION_IDS` i `WELCOME_TEST_SHORT_QUESTIONS_COUNT`
+W `langMap` w `WelcomeTestPage.tsx` tez trzeba dodac mapowania dla nowych jezykow.
 
 ---
 
-## Podsumowanie zmian
+## Podsumowanie zmian w plikach
 
 | Plik | Zmiana | Problem |
 |------|--------|---------|
-| `SpeakingRecorder.tsx` | Dodac auto-save w cleanup unmount | 1.1 |
-| `useWelcomeTest.tsx` | Usunac testVersion, naprawic element_type, wzbogacic payload, naprawic DELETE | 2, 4 |
-| `WelcomeTestPage.tsx` | Usunac stage 'version', przejsc od razu do instructions | 4 |
-| `InstructionScreen.tsx` | Usunac prop version, zaktualizowac tekst | 4 |
-| `VersionSelector.tsx` | Usunac lub nie importowac | 4 |
-| `TestDetailsView.tsx` | Usunac logike Quick Version | 4 |
-| `process-welcome-test/index.ts` | Usunac test_version | 4 |
-| `welcomeTestQuestions.ts` | Usunac SHORT_QUESTION_IDS eksporty | 4 |
-| `events.ts` | Usunac referencje Quick Version | 4 |
-| SQL migracja | Naprawic event_source test->welcome_test | 2.2 |
-| Dokumentacja (6 plikow) | Zaktualizowac | wszystkie |
+| `SpeakingRecorder.tsx` | Ustawiac `window.__pendingSpeakingRecording` w `onstop`, kasowac w `Save`/`Re-record` | 1.1 |
+| `useWelcomeTest.tsx` | Dodac `flushSpeakingIfNeeded()`, wywolywac w `goToNext`/`skip`/`goToPrevious`, wzbogacic payload o fallback detected_traits | 1.1, 3 |
+| `WelcomeTestPage.tsx` | Spinner na Next podczas uploadu, dodac nowe jezyki do `langMap` | 1.1, 4 |
+| `process-welcome-test/index.ts` | Po AI analysis nadpisac mastery w student_events | 3D |
+| `welcomeTestTranslations.ts` | Dodac 15 nowych jezykow z pelnymi tlumaczeniami | 4 |
+| SQL migracja | Naprawic event_source 'test' -> 'welcome_test' (ponownie) | 2 |
+| 6 plikow dokumentacji | Zaktualizowac o Round 7 | wszystkie |
 
 ### Czego NIE zmieniamy:
-- Routing w App.tsx - bez zmian
-- Edge functions (poza usunieciem test_version)
-- Logika homework, flashcards, worksheet - niezmieniona
-- Istniejace dane w student_test_questions - niezmienione
+- Routing w App.tsx
+- Edge functions (poza drobnym dodaniem mastery update)
+- Logika homework, flashcards, worksheet
+- Baza danych (brak zmian schematu, tylko data fix migration)
 
 ### Kolejnosc implementacji:
-1. `SpeakingRecorder.tsx` - unmount auto-save (1.1)
-2. SQL migracja - naprawic stare event_source (2.2)
-3. `useWelcomeTest.tsx` - usunac Quick Version + naprawic eventy (2, 4)
-4. `WelcomeTestPage.tsx` + `InstructionScreen.tsx` - usunac version selection (4)
-5. `TestDetailsView.tsx` + `welcomeTestQuestions.ts` - usunac Quick Version UI (4)
-6. `process-welcome-test/index.ts` - usunac test_version (4)
+1. `SpeakingRecorder.tsx` - pending blob global (1.1)
+2. `useWelcomeTest.tsx` - flushSpeaking + payload enrichment (1.1, 3)
+3. `WelcomeTestPage.tsx` - spinner + langMap (1.1, 4)
+4. SQL migracja - event_source fix (2)
+5. `process-welcome-test/index.ts` - mastery update (3D)
+6. `welcomeTestTranslations.ts` - 15 nowych jezykow (4)
 7. Dokumentacja
