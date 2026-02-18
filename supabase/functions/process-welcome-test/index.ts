@@ -441,7 +441,8 @@ serve(async (req) => {
                   content: `You are an expert ESL teacher analyzing a student's Welcome Test answers. Based on their open-ended responses, provide:
 1. A concise 3-4 sentence profile summary covering their English level, strengths, weaknesses, and personality as a learner.
 2. 2-3 specific teaching recommendations.
-Format as JSON: {"summary": "...", "recommendations": ["...", "..."], "writing_quality": "basic|intermediate|advanced", "key_observations": ["...", "..."]}`
+3. For EACH open/speaking answer, rate the quality on a 0-100 scale (0=no meaningful content, 25=basic, 50=intermediate, 75=advanced, 100=near-native).
+Format as JSON: {"summary": "...", "recommendations": ["...", "..."], "writing_quality": "basic|intermediate|advanced", "key_observations": ["...", "..."], "per_question_scores": {"wt_q16": 45, "wt_q36": 70, "wt_q16s": 55, ...}}`
                 },
                 {
                   role: 'user',
@@ -487,24 +488,29 @@ ${openAnswers}`
           console.log('[process-welcome-test] AI summary generated and saved');
 
           // Update mastery in student_events for open/speaking questions
+          // Round 8: Use per_question_scores for individual mastery, fallback to writing_quality
           try {
             const parsed = JSON.parse(aiSummary);
             const writingQuality = parsed.writing_quality;
-            const masteryValue = writingQuality === 'advanced' ? 75 :
-                                 writingQuality === 'intermediate' ? 50 : 25;
+            const fallbackMastery = writingQuality === 'advanced' ? 75 :
+                                    writingQuality === 'intermediate' ? 50 : 25;
+            const perScores = parsed.per_question_scores || {};
             
             const allOpenSpeakingIds = [...openQuestionIds, ...speakingQuestionIds];
+            let updatedCount = 0;
             for (const qId of allOpenSpeakingIds) {
               if (answers?.[qId] && answers[qId] !== '__IDK__') {
+                const score = perScores[qId] !== undefined ? Math.round(perScores[qId]) : fallbackMastery;
                 await supabase
                   .from('student_events')
-                  .update({ mastery: masteryValue })
+                  .update({ mastery: score })
                   .eq('source_id', test_id)
                   .eq('event_type', 'test_answer_submitted')
                   .filter('event_payload->>answer_id', 'eq', qId);
+                updatedCount++;
               }
             }
-            console.log(`[process-welcome-test] Updated mastery (${masteryValue}) for ${allOpenSpeakingIds.length} open/speaking events`);
+            console.log(`[process-welcome-test] Updated mastery for ${updatedCount} open/speaking events (per_question_scores: ${Object.keys(perScores).length} keys)`);
           } catch (masteryErr) {
             console.error('[process-welcome-test] Error updating mastery:', masteryErr);
           }

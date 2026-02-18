@@ -1,17 +1,16 @@
 /**
  * Student Tests Tab - Main component for viewing and managing tests
- * Point 17: Welcome test always visible in list
+ * Round 8: Removed Create AI-Powered Test - only Welcome Test remains
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { Plus, FileText, TrendingUp, Target, CheckCircle, Loader2, Eye, Sparkles, BookOpen } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { FileText, Loader2, Eye, Sparkles, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useStudentTests } from '@/hooks/useStudentTests';
-import { TEST_STATUS_CONFIG, TEST_TYPES } from '@/types/studentTests';
+import { TEST_STATUS_CONFIG } from '@/types/studentTests';
 import type { StudentTest } from '@/types/studentTests';
-import { CreateTestModal } from './CreateTestModal';
 import { TestDetailsView } from './TestDetailsView';
 import { ALL_WELCOME_TEST_QUESTIONS, WELCOME_TEST_SECTIONS_WITH_QUESTIONS } from '@/data/welcomeTestQuestions';
 
@@ -23,15 +22,12 @@ interface StudentTestsTabProps {
 
 export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTestsTabProps) {
   const { tests, loading, getTestStats, refetch } = useStudentTests({ studentId, teacherId });
-  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const [showWelcomePreview, setShowWelcomePreview] = useState(false);
   const stats = getTestStats();
 
-  // Check if welcome test exists
   const hasWelcomeTest = useMemo(() => tests.some(t => t.test_type === 'welcome'), [tests]);
 
-  // Sort tests: welcome test first, then by date
   const sortedTests = [...tests].sort((a, b) => {
     if (a.test_type === 'welcome' && b.test_type !== 'welcome') return -1;
     if (a.test_type !== 'welcome' && b.test_type === 'welcome') return 1;
@@ -47,7 +43,6 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
     );
   }
 
-  // Show test details view if a test is selected
   if (selectedTestId) {
     return (
       <TestDetailsView
@@ -64,18 +59,12 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
 
   return (
     <div className="space-y-6">
-      {/* Header with stats */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Tests</h2>
-          <p className="text-muted-foreground">
-            {stats.total} tests • {stats.completed} completed • Avg score: {stats.avgScore.toFixed(0)}%
-          </p>
-        </div>
-        <Button onClick={() => setCreateModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Test
-        </Button>
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold">Tests</h2>
+        <p className="text-muted-foreground">
+          {stats.total} tests • {stats.completed} completed
+        </p>
       </div>
 
       {/* Welcome Test Placeholder - always visible if no welcome test exists */}
@@ -134,18 +123,14 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
       )}
 
       {/* Tests list */}
-      {sortedTests.length === 0 && hasWelcomeTest ? null : sortedTests.length === 0 ? (
+      {sortedTests.length === 0 && !hasWelcomeTest ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
             <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-semibold mb-2">No tests yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create AI-powered tests to verify student progress and identify skill gaps.
+            <p className="text-muted-foreground">
+              Send the Welcome Test to this student to get started with placement & profiling.
             </p>
-            <Button onClick={() => setCreateModalOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create First Test
-            </Button>
           </CardContent>
         </Card>
       ) : (
@@ -160,34 +145,20 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
         </div>
       )}
 
-      {/* Info about features */}
+      {/* Info about Welcome Test */}
       <Card className="bg-muted/30 border-dashed">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            Intelligent Testing Features
+            <Sparkles className="h-5 w-5 text-primary" />
+            Welcome Test
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>• <strong>AI-Generated Questions</strong> based on student's Progress, Knowledge Base, and Flashcards</p>
-          <p>• <strong>Automatic Progress Updates</strong> - test results update Learning Element ratings</p>
-          <p>• <strong>Skill Verification</strong> - confirm mastery before marking goals as achieved</p>
-          <p>• <strong>Welcome Test</strong> - comprehensive placement & profiling assessment</p>
+          <p>• <strong>Comprehensive Placement</strong> - estimates CEFR level from grammar, vocabulary, reading & writing tasks</p>
+          <p>• <strong>Learning Profile</strong> - discovers motivation, anxiety, learning style & preferences</p>
+          <p>• <strong>AI Analysis</strong> - generates teaching recommendations from open-ended answers</p>
         </CardContent>
       </Card>
-
-      {/* Create Test Modal */}
-      <CreateTestModal
-        open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
-        studentId={studentId}
-        teacherId={teacherId}
-        studentName={studentName}
-        onTestCreated={(testId) => {
-          refetch();
-          setSelectedTestId(testId);
-        }}
-      />
     </div>
   );
 }
@@ -199,19 +170,7 @@ interface TestCardProps {
 
 function TestCard({ test, onClick }: TestCardProps) {
   const statusConfig = TEST_STATUS_CONFIG[test.status];
-  const testTypeInfo = TEST_TYPES.find(t => t.value === test.test_type);
   const isWelcome = test.test_type === 'welcome';
-
-  const getIcon = () => {
-    if (isWelcome) return <Sparkles className="h-5 w-5" />;
-    switch (test.test_type) {
-      case 'placement': return <FileText className="h-5 w-5" />;
-      case 'progress_check': return <TrendingUp className="h-5 w-5" />;
-      case 'skill_verification': return <CheckCircle className="h-5 w-5" />;
-      case 'goal_check': return <Target className="h-5 w-5" />;
-      default: return <FileText className="h-5 w-5" />;
-    }
-  };
 
   return (
     <Card 
@@ -222,12 +181,12 @@ function TestCard({ test, onClick }: TestCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              {getIcon()}
+              {isWelcome ? <Sparkles className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
             </div>
             <div>
               <h3 className="font-semibold">{test.title}</h3>
               <p className="text-sm text-muted-foreground">
-                {isWelcome ? 'Welcome Test' : testTypeInfo?.label} • {test.total_questions || 0} questions
+                {isWelcome ? 'Welcome Test' : test.test_type} • {test.total_questions || 0} questions
               </p>
             </div>
           </div>
