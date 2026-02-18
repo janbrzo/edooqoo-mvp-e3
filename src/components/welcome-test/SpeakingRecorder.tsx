@@ -199,6 +199,9 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
         setAudioUrl(url);
         setStatus('recorded');
         stream.getTracks().forEach(t => t.stop());
+        // Set global pending recording for parent-level flush before navigation
+        (window as any).__pendingSpeakingRecording = { questionId, blob };
+        console.log('[SpeakingRecorder] Set __pendingSpeakingRecording for:', questionId);
       };
 
       mediaRecorder.onerror = () => {
@@ -262,6 +265,8 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
     setStatus('idle');
     setIsPlaying(false);
     setErrorMsg(null);
+    // Clear pending since user chose to re-record
+    delete (window as any).__pendingSpeakingRecording;
   }, [audioUrl]);
 
   const uploadAndSave = useCallback(async () => {
@@ -287,6 +292,8 @@ export function SpeakingRecorder({ maxSeconds = 60, answer, onAnswer, questionId
       setAudioUrl(uploadedUrl);
       setStatus('done');
       onAnswer(uploadedUrl);
+      // Clear pending since manually saved
+      delete (window as any).__pendingSpeakingRecording;
       toast.success('Recording saved!');
     } catch (err) {
       console.error('Upload error:', err);
