@@ -3,14 +3,20 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Feb 2026) - Welcome Test v2 Round 4 ✅
-- SpeakingRecorder auto-save race condition fixed (merged effects, blob preserved before reset)
-- Skip question white screen: added proper dependencies to skipQuestion callback
-- Teacher preview version guard: setTestVersion skips persist in teacher mode
-- ShareTestModal: correct /welcome-test/ URL for welcome tests via testType prop
-- Quick Version results: TestDetailsView filters questions not in SHORT_QUESTION_IDS
-- Translation OFF by default, activates on button click
-- AI Analysis receives test_version for Quick Version context
+### Recently Completed (Feb 2026) - Welcome Test v2 Round 9 ✅
+- Auto-transcription saved to question_data.transcription (no Transcribe button needed)
+- AI per-question scoring (0-100) for open-ended and speaking answers
+- is_correct set from AI score (≥40 = true), ai_score saved to question_data
+- New speaking_score column in student_learning_profiles
+- writing_score updated from AI scores instead of binary is_correct
+- Communication → Speaking in WelcomeTestResults Skill Scores
+- Event payload nano_skill_ratings.mastery updated from -1 to actual AI score
+- Trigger log_test_answer_event skips welcome tests (prevents duplicates)
+- Deleted duplicate events with event_source='test' for welcome tests
+- visibilitychange timer: pauses when tab inactive
+- calculate_test_results re-called after AI scoring
+
+### Previously Completed (Feb 2026) - Welcome Test v2 Round 4 ✅
 
 ### Previously Completed (Feb 2026) - DSLM Layer A Audit ✅
 - Event naming normalized to canonical types via SQL migration

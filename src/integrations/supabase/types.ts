@@ -1095,6 +1095,7 @@ export type Database = {
           raw_answers: Json | null
           reading_score: number | null
           self_assessed_level: string | null
+          speaking_score: number | null
           strongest_skill: string | null
           student_id: string
           teacher_id: string
@@ -1130,6 +1131,7 @@ export type Database = {
           raw_answers?: Json | null
           reading_score?: number | null
           self_assessed_level?: string | null
+          speaking_score?: number | null
           strongest_skill?: string | null
           student_id: string
           teacher_id: string
@@ -1165,6 +1167,7 @@ export type Database = {
           raw_answers?: Json | null
           reading_score?: number | null
           self_assessed_level?: string | null
+          speaking_score?: number | null
           strongest_skill?: string | null
           student_id?: string
           teacher_id?: string

@@ -6,7 +6,20 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-17) - Welcome Test v2 Round 4:**
+**Ostatnia naprawa (2026-02-19) - Welcome Test v2 Round 9:**
+- ✅ **Automatyczna transkrypcja**: process-welcome-test zapisuje transkrypcje do question_data.transcription — nauczyciel widzi je automatycznie
+- ✅ **Usunięto przycisk Transcribe**: TestDetailsView ładuje transkrypcje z question_data, bez ręcznego klikania
+- ✅ **AI scoring per-question (0-100)**: Każda odpowiedź otwarta/mówiona oceniana indywidualnie; is_correct ustawiany na score ≥ 40
+- ✅ **Speaking score**: Nowa kolumna speaking_score w student_learning_profiles, obliczana z AI scores
+- ✅ **Writing score AI**: writing_score obliczany z AI per-question scores zamiast binarnego is_correct
+- ✅ **Communication → Speaking**: Zamieniono w Skill Scores UI
+- ✅ **Event payload mastery fix**: nano_skill_ratings mastery w event_payload aktualizowany z wartością AI (nie -1)
+- ✅ **Trigger fix**: log_test_answer_event pomija welcome testy (zapobiega duplikatom event_source='test')
+- ✅ **Czyszczenie duplikatów**: Usunięto eventy event_source='test' dla welcome testów
+- ✅ **Timer precision**: visibilitychange listener pauzuje timer przy nieaktywnej karcie
+- ✅ **Przeliczenie wyników**: calculate_test_results wywoływany po AI scoring
+
+**Poprzednia naprawa (2026-02-17) - Welcome Test v2 Round 4:**
 - ✅ **SpeakingRecorder race condition**: Scalono efekty auto-save i reset w jeden useEffect — blob nie jest kasowany przed uploadem
 - ✅ **Skip question biały ekran**: Dodano zależności do skipQuestion callback (flushPendingAnswer, goToNext)
 - ✅ **Teacher preview version guard**: setTestVersion nie zapisuje wersji dla nauczyciela (localStorage/DB)

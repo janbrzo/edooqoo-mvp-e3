@@ -188,7 +188,7 @@ export function WelcomeTestResults({ testId, studentId, teacherId }: WelcomeTest
             { label: 'Vocabulary', score: profile.vocabulary_score },
             { label: 'Reading', score: profile.reading_score },
             { label: 'Writing', score: profile.writing_score },
-            { label: 'Communication', score: profile.communication_score },
+            { label: 'Speaking', score: (profile as any).speaking_score },
           ].map(({ label, score }) => (
             <div key={label} className="flex items-center gap-3">
               <span className="w-28 text-sm">{label}</span>

@@ -62,6 +62,23 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
   const detectedTraits = useRef<Record<string, string>>({});
   const committedSections = useRef<Set<string>>(new Set());
   const pendingCommit = useRef<string | null>(null);
+  
+  // PROBLEM 5: Visibility change timer - pause when tab is inactive
+  const pausedAtRef = useRef<number | null>(null);
+  const accumulatedPauseRef = useRef(0);
+  
+  useEffect(() => {
+    const handler = () => {
+      if (document.hidden) {
+        pausedAtRef.current = Date.now();
+      } else if (pausedAtRef.current) {
+        accumulatedPauseRef.current += (Date.now() - pausedAtRef.current);
+        pausedAtRef.current = null;
+      }
+    };
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
+  }, []);
 
   // Load test by share token
   useEffect(() => {
@@ -225,9 +242,13 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
     if (!questionDef) return;
 
     const questionIndex = ALL_WELCOME_TEST_QUESTIONS.indexOf(questionDef);
-    const timeSpent = questionTimers.current[questionId]
-      ? Math.round((Date.now() - questionTimers.current[questionId]) / 1000)
+    // PROBLEM 5: Subtract paused time from total time
+    const rawTime = questionTimers.current[questionId]
+      ? Date.now() - questionTimers.current[questionId]
       : 0;
+    const pauseTime = accumulatedPauseRef.current;
+    accumulatedPauseRef.current = 0; // Reset for next question
+    const timeSpent = Math.max(0, Math.round((rawTime - pauseTime) / 1000));
 
     let isCorrect: boolean | null = null;
     if (questionDef.correct_answer) {
