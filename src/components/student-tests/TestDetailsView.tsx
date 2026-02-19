@@ -443,14 +443,17 @@ function QuestionCard({ question, index, isWelcomeTest, testId }: {
   const [noteLoading, setNoteLoading] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [transcription, setTranscription] = useState<string | null>(null);
-  const [transcribing, setTranscribing] = useState(false);
   const audioPlayerRef = useState<HTMLAudioElement | null>(null);
 
-  // Load teacher note from question_data
+  // Load teacher note and transcription from question_data
   useEffect(() => {
     const qData = question.question_data as any;
     if (qData?.teacher_note) {
       setTeacherNote(qData.teacher_note);
+    }
+    // PROBLEM 1: Auto-load transcription saved by process-welcome-test
+    if (qData?.transcription) {
+      setTranscription(qData.transcription);
     }
   }, [question.question_data]);
 
@@ -485,23 +488,6 @@ function QuestionCard({ question, index, isWelcomeTest, testId }: {
     audio.onended = () => setIsPlayingAudio(false);
     audio.play();
     setIsPlayingAudio(true);
-  };
-
-  // Transcribe audio
-  const handleTranscribe = async () => {
-    setTranscribing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-        body: { audio_url: String(question.student_answer) },
-      });
-      if (error) throw error;
-      setTranscription(data?.transcription || 'Unable to transcribe');
-    } catch (err) {
-      console.error('Transcription error:', err);
-      toast.error('Failed to transcribe audio');
-    } finally {
-      setTranscribing(false);
-    }
   };
 
   // For welcome test: don't show ✓/✗ for profile questions (no correct_answer)
@@ -549,19 +535,9 @@ function QuestionCard({ question, index, isWelcomeTest, testId }: {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-muted-foreground">Student's answer:</span>
-                    <Button variant="outline" size="sm" onClick={toggleAudio} className="gap-1.5 h-7">
+                     <Button variant="outline" size="sm" onClick={toggleAudio} className="gap-1.5 h-7">
                       {isPlayingAudio ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
                       {isPlayingAudio ? 'Pause' : 'Play Recording'}
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={handleTranscribe} 
-                      disabled={transcribing}
-                      className="gap-1.5 h-7 text-xs"
-                    >
-                      {transcribing ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
-                      Transcribe
                     </Button>
                   </div>
                   {transcription && (

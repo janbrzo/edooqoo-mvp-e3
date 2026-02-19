@@ -1,7 +1,7 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Feb 2026):** Welcome Test v2 Round 4 — fixed speaking auto-save race condition (recordings now reliably upload on Next), skip question white screen on section boundaries, teacher preview no longer pollutes student version choice, share link corrected to /welcome-test/, Quick Version results filter excluded questions, translation OFF by default, AI analysis includes test_version context for accurate Quick Version profiling.
+**Latest Update (Feb 2026):** Welcome Test v2 Round 9 — auto-transcription of speaking answers (no manual button), AI per-question scoring (0-100) for writing and speaking, new speaking_score in learning profile, Communication→Speaking in Skill Scores UI, timer pauses on inactive tab, event payload mastery updated from -1 to actual AI scores, trigger fix preventing duplicate events, test results recalculated after AI scoring.
 
 **Previous Feature (Feb 2026):** Welcome Test v2 Round 3 — speaking auto-save on navigation, teacher audio playback in test results, OpenAI Whisper transcription for AI analysis of speaking answers, TTS-1 verbatim audio generation (chunked base64 fix), re-take preserving previous results, auto-translate button, completed 10-language translations, improved blur modal, and auth redirect for email links. These improvements complete the speaking/listening pipeline and eliminate data loss scenarios.
 

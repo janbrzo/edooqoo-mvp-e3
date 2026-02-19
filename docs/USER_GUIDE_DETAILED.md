@@ -14,7 +14,14 @@
 
 ## Getting Started
 
-**Latest Improvements (DSLM Layer A Audit):**
+**Latest Improvements (Welcome Test v2 Round 9):**
+- **Auto-transcription**: Speaking answers transcribed automatically after test completion — no manual button needed
+- **AI per-question scoring**: Each open/speaking answer scored 0-100 individually by AI
+- **Speaking score**: New skill score in learning profile, calculated from AI analysis of speaking answers
+- **Timer precision**: Tab-inactive time excluded from question timers
+- **Event data quality**: Mastery values in event payloads updated from placeholder -1 to actual AI scores
+
+**Previous Improvements (DSLM Layer A Audit):**
 - **Event normalization**: All student learning events now use consistent canonical naming across worksheet, homework, flashcard, and welcome test sources
 - **Flashcard mastery**: Weighted mastery scoring (0→50→70→90→100) based on spaced repetition progress instead of binary pass/fail
 - **Data integrity**: Mastery column populated for all event types; duplicate/bloated events cleaned up

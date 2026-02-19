@@ -5,7 +5,20 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Welcome Test v2 Round 4 Bug Fixes:**
+**Latest Update (February 2026) - Welcome Test v2 Round 9:**
+- **Automatic transcription**: `process-welcome-test` now saves speaking transcriptions to `question_data.transcription` — teachers see them automatically without clicking "Transcribe"
+- **Transcribe button removed**: `TestDetailsView` no longer shows manual "Transcribe" button; transcriptions auto-load from `question_data`
+- **AI per-question scoring (0-100)**: Each open-ended/speaking answer gets individual AI score; `is_correct` set based on score ≥40 threshold
+- **Speaking score**: New `speaking_score` column in `student_learning_profiles`, calculated from AI scores of speaking questions (wt_q16s, wt_q36s, wt_q41s)
+- **Writing score AI-based**: `writing_score` now uses AI per-question scores instead of binary is_correct counting
+- **Communication → Speaking**: Replaced "Communication" with "Speaking" in Skill Scores UI (`WelcomeTestResults.tsx`)
+- **Event payload mastery fix**: `nano_skill_ratings[0].mastery` inside `event_payload` JSON now updated with actual AI score (was stuck at -1)
+- **Trigger fix**: `log_test_answer_event` trigger now skips welcome tests (prevents duplicate events with `event_source='test'`)
+- **Duplicate events cleanup**: Deleted all `event_source='test'` events for welcome tests from `student_events`
+- **Timer precision**: Added `visibilitychange` listener in `useWelcomeTest` — timer pauses when tab is inactive
+- **Test results recalculation**: `calculate_test_results` called after AI scoring to update "Results by Skill" with correct speaking/writing scores
+
+**Previous Update (February 2026) - Welcome Test v2 Round 4 Bug Fixes:**
 - **SpeakingRecorder auto-save race condition fixed**: Merged auto-save and reset effects into one `useEffect` to prevent blob being cleared before upload. Now recordings reliably upload to R2 on Next click.
 - **Skip question white screen fixed**: Added `flushPendingAnswer` and `goToNext` as dependencies to `skipQuestion` callback, preventing stale closures on section boundaries.
 - **Teacher preview version guard**: `setTestVersion` now checks `isTeacherMode` — teacher preview no longer persists version to localStorage/DB, preventing student version lock.

@@ -383,13 +383,25 @@ serve(async (req) => {
         const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
         const transcriptions: Record<string, string> = {};
         
+        // Build question index map: answer_id -> question_index
+        const questionIndexMap: Record<string, number> = {};
+        for (let i = 0; i < questions.length; i++) {
+          // Map question_index to the question's ID from the welcomeTestQuestions
+          // speakingQuestionIds are like wt_q16s, wt_q36s, wt_q41s
+          // openQuestionIds are like wt_q12, wt_q16, wt_q17, etc.
+          // We need to find which question_index corresponds to which answer_id
+          // The answer_id is stored in event_payload, but here we work with questions array
+          // Question index i maps to ALL_WELCOME_TEST_QUESTIONS[i].id
+        }
+        // Build map from answers keys that match question indices
+        const allAnswerKeys = Object.keys(answers || {});
+        
         if (OPENAI_API_KEY) {
           for (const sqId of speakingQuestionIds) {
             const audioUrl = answers?.[sqId];
             if (audioUrl && typeof audioUrl === 'string' && audioUrl.startsWith('http') && (audioUrl.includes('r2.dev') || audioUrl.startsWith('https://pub-'))) {
               try {
                 console.log(`[process-welcome-test] Transcribing speaking answer: ${sqId}`);
-                // Call transcribe-audio edge function
                 const transcribeResponse = await fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
                   method: 'POST',
                   headers: {
@@ -404,6 +416,23 @@ serve(async (req) => {
                   if (transcribeData.transcription) {
                     transcriptions[sqId] = transcribeData.transcription;
                     console.log(`[process-welcome-test] Transcribed ${sqId}: ${transcribeData.transcription.substring(0, 50)}...`);
+                    
+                    // PROBLEM 1: Save transcription to question_data for teacher auto-view
+                    // Find the question index for this speaking question
+                    const speakingQ = questions.find((q: any) => {
+                      const sa = String(q.student_answer || '');
+                      return sa === audioUrl;
+                    });
+                    if (speakingQ) {
+                      const existingData = (speakingQ.question_data || {}) as Record<string, unknown>;
+                      await supabase
+                        .from('student_test_questions')
+                        .update({
+                          question_data: { ...existingData, transcription: transcribeData.transcription },
+                        })
+                        .eq('id', speakingQ.id);
+                      console.log(`[process-welcome-test] Saved transcription to question_data for ${sqId}`);
+                    }
                   }
                 }
               } catch (transcribeErr) {
@@ -487,8 +516,7 @@ ${openAnswers}`
             .eq('teacher_id', teacher_id);
           console.log('[process-welcome-test] AI summary generated and saved');
 
-          // Update mastery in student_events for open/speaking questions
-          // Round 8: Use per_question_scores for individual mastery, fallback to writing_quality
+          // PROBLEM 2 & 4: Update mastery, is_correct, question_data.ai_score, and event_payload
           try {
             const parsed = JSON.parse(aiSummary);
             const writingQuality = parsed.writing_quality;
@@ -501,16 +529,93 @@ ${openAnswers}`
             for (const qId of allOpenSpeakingIds) {
               if (answers?.[qId] && answers[qId] !== '__IDK__') {
                 const score = perScores[qId] !== undefined ? Math.round(perScores[qId]) : fallbackMastery;
+                
+                // Update is_correct and ai_score in student_test_questions
+                const matchQ = questions.find((q: any) => {
+                  // Match by student_answer value for speaking, or by index position
+                  const sa = String(q.student_answer || '');
+                  if (qId.endsWith('s')) {
+                    // Speaking question - match by audio URL
+                    return sa === String(answers[qId]);
+                  }
+                  // Open-ended - match by answer text
+                  return sa === String(answers[qId]);
+                });
+                if (matchQ) {
+                  const existingData = (matchQ.question_data || {}) as Record<string, unknown>;
+                  await supabase
+                    .from('student_test_questions')
+                    .update({
+                      is_correct: score >= 40,
+                      question_data: { ...existingData, ai_score: score },
+                    })
+                    .eq('id', matchQ.id);
+                }
+
+                // Update mastery column in student_events
                 await supabase
                   .from('student_events')
                   .update({ mastery: score })
                   .eq('source_id', test_id)
                   .eq('event_type', 'test_answer_submitted')
                   .filter('event_payload->>answer_id', 'eq', qId);
+                
+                // PROBLEM 4: Also update nano_skill_ratings inside event_payload
+                const { data: evt } = await supabase
+                  .from('student_events')
+                  .select('id, event_payload')
+                  .eq('source_id', test_id)
+                  .eq('event_type', 'test_answer_submitted')
+                  .eq('event_source', 'welcome_test')
+                  .filter('event_payload->>answer_id', 'eq', qId)
+                  .maybeSingle();
+                
+                if (evt?.event_payload) {
+                  const payload = evt.event_payload as any;
+                  if (payload.nano_skill_ratings?.length > 0) {
+                    payload.nano_skill_ratings[0].mastery = score;
+                    payload.nano_skill_ratings[0].hasValue = true;
+                  }
+                  await supabase
+                    .from('student_events')
+                    .update({ event_payload: payload, mastery: score })
+                    .eq('id', evt.id);
+                }
+                
                 updatedCount++;
               }
             }
-            console.log(`[process-welcome-test] Updated mastery for ${updatedCount} open/speaking events (per_question_scores: ${Object.keys(perScores).length} keys)`);
+            console.log(`[process-welcome-test] Updated mastery/is_correct for ${updatedCount} open/speaking questions (per_question_scores: ${Object.keys(perScores).length} keys)`);
+            
+            // PROBLEM 2: Calculate speaking_score and update writing_score from AI scores
+            const speakingIds = ['wt_q16s', 'wt_q36s', 'wt_q41s'];
+            const speakingScoresArr = speakingIds.map(id => perScores[id]).filter((s: any) => s !== undefined);
+            const speakingScoreAI = speakingScoresArr.length > 0
+              ? Math.round(speakingScoresArr.reduce((a: number, b: number) => a + b, 0) / speakingScoresArr.length)
+              : null;
+
+            const writingIds = ['wt_q16', 'wt_q17', 'wt_q36', 'wt_q37', 'wt_q40'];
+            const writingScoresArr = writingIds.map(id => perScores[id]).filter((s: any) => s !== undefined);
+            const writingScoreAI = writingScoresArr.length > 0
+              ? Math.round(writingScoresArr.reduce((a: number, b: number) => a + b, 0) / writingScoresArr.length)
+              : null;
+
+            const profileUpdate: Record<string, any> = {};
+            if (speakingScoreAI !== null) profileUpdate.speaking_score = speakingScoreAI;
+            if (writingScoreAI !== null) profileUpdate.writing_score = writingScoreAI;
+            
+            if (Object.keys(profileUpdate).length > 0) {
+              await supabase
+                .from('student_learning_profiles')
+                .update(profileUpdate)
+                .eq('student_id', student_id)
+                .eq('teacher_id', teacher_id);
+              console.log(`[process-welcome-test] Updated profile scores: speaking=${speakingScoreAI}, writing=${writingScoreAI}`);
+            }
+
+            // Re-calculate test results after updating is_correct
+            await supabase.rpc('calculate_test_results', { p_test_id: test_id });
+            console.log('[process-welcome-test] Re-calculated test results after AI scoring');
           } catch (masteryErr) {
             console.error('[process-welcome-test] Error updating mastery:', masteryErr);
           }
