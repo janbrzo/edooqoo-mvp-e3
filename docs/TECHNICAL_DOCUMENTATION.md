@@ -5,7 +5,12 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Welcome Test v2 Round 9:**
+**Latest Update (February 2026) - Welcome Test v2 Round 10:**
+- **Transcription cache fix**: `process-welcome-test` now fetches FRESH `question_data` from DB before saving `ai_score`, preventing transcription overwrite by stale cache
+- **Strict AI scoring prompt**: Detailed rubric with word count, time analysis, relevance checks. Brief/off-topic speaking = max 20-30pts. Minimal writing = max 15-25pts. Scale: 0-15 minimal → 86-100 excellent
+- **Time context for AI**: Word count and `time_spent_seconds` passed to AI for fluency evaluation
+
+**Previous Update (February 2026) - Welcome Test v2 Round 9:**
 - **Automatic transcription**: `process-welcome-test` now saves speaking transcriptions to `question_data.transcription` — teachers see them automatically without clicking "Transcribe"
 - **Transcribe button removed**: `TestDetailsView` no longer shows manual "Transcribe" button; transcriptions auto-load from `question_data`
 - **AI per-question scoring (0-100)**: Each open-ended/speaking answer gets individual AI score; `is_correct` set based on score ≥40 threshold
