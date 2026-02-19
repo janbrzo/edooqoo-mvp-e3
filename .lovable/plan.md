@@ -1,186 +1,224 @@
 
 
-# Welcome Test v2 - Round 8: Prawdziwa przyczyna znaleziona
+# Welcome Test - Round 9: Zaktualizowany kompleksowy plan
 
-## PROBLEM 1: Nagrywanie NIE DZIALA - PRAWDZIWA PRZYCZYNA (6ta proba)
+## Podsumowanie
 
-### Diagnoza
-
-Przeanalizowalem dane w bazie. **ZERO nagrań zostało kiedykolwiek uploadowanych do R2.** Wszystkie 20 rekordów speaking_record mają albo `NULL` albo placeholder typu `recording_1771436392071_12s`. Żaden nie ma URL R2.
-
-Sprawdziłem kod `upload-to-r2/index.ts` linia 94:
-```
-const { base64Image, base64Data, filename, contentType } = await req.json();
-```
-
-A `SpeakingRecorder.tsx` linia 283 wysyła:
-```
-supabase.functions.invoke('upload-to-r2', { body: formData })
-```
-
-**FormData (blob binarny) != JSON.** `req.json()` rzuca błąd parsowania na FormData. Edge function zwraca 500. `uploadAndSave` łapie błąd w catch (linia 298) i zapisuje PLACEHOLDER `recording_XXXX_Xs`. Dlatego nawet przycisk "Save" nigdy nie działał!
-
-### Rozwiązanie
-
-Zmienić SpeakingRecorder aby konwertował blob na base64 i wysyłał jako JSON (format obsługiwany przez upload-to-r2):
-
-```typescript
-// Convert blob to base64
-const reader = new FileReader();
-const base64Promise = new Promise<string>((resolve) => {
-  reader.onloadend = () => resolve(reader.result as string);
-  reader.readAsDataURL(blob);
-});
-const base64Full = await base64Promise;
-const base64Data = base64Full.split(',')[1]; // Remove data:audio/webm;base64, prefix
-
-const mimeType = blob.type || 'audio/webm';
-const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-const fileName = `welcome-test-speaking-${Date.now()}.${ext}`;
-
-const { data, error } = await supabase.functions.invoke('upload-to-r2', {
-  body: JSON.stringify({
-    base64Data,
-    filename: fileName,
-    contentType: mimeType,
-  }),
-});
-```
-
-Ta zmiana dotyczy:
-1. `uploadAndSave()` (przycisk Save) - linie 272-304
-2. Auto-save w cleanup unmount - linie 122-162 
-3. Auto-save w `useEffect([questionId])` - linie 53-110
-4. `flushSpeakingIfNeeded()` w `useWelcomeTest.tsx` - linie 371-396
-
-Wyodrębnię konwersję blob->base64 do funkcji pomocniczej `uploadBlobToR2(blob: Blob)` aby nie duplikować kodu.
-
-### Konsekwencje (1.2, 1.3)
-Po naprawieniu uploadu:
-- URL R2 trafi do `student_test_questions.student_answer`
-- `TestDetailsView.tsx` (linie 457-460) automatycznie pokaże odtwarzacz audio (rozpoznaje URL z `pub-` lub `r2.dev`)
-- Przycisk "Transcribe" (linie 513-526) zadziała bo wywoła `transcribe-audio` z prawdziwym URL
-- `process-welcome-test` (linie 386-413) automatycznie transkrybuje speaking answers i uwzględni w AI Analysis
+Po glebokiej analizie kodu i danych w bazie znalazlem 6 konkretnych problemow. Ponizej zaktualizowany plan z uwzglednieniem Twoich uwag.
 
 ---
 
-## PROBLEM 2 (dawny 3): student_events.event_source = 'test' 
+## PROBLEM 1: Automatyczna transkrypcja (bez przycisku Transcribe)
 
-### Stan bazy
-- 58 eventów welcome test z `event_source = 'test'` (zweryfikowane: 58 to welcome, 20 to placement)
-- Kod `useWelcomeTest.tsx` linia 314 już używa `'welcome_test'` - nowe eventy są OK
-- Stare eventy powstały z cache przeglądarki ze starym kodem
+### Stan obecny
+Nagrania dzialaja (R2 upload OK). `process-welcome-test` juz transkrybuje speaking answers (linie 386-413), ale transkrypcja jest uzywana TYLKO wewnetrznie w prompcie AI. Nie jest zapisywana do bazy. Nauczyciel widzi przycisk "Transcribe" ktory musi recznie kliknac.
 
-### Rozwiązanie
-Migracja SQL:
+### Rozwiazanie
+1. W `process-welcome-test/index.ts` - po udanej transkrypcji, zapisac ja do `student_test_questions.question_data.transcription`:
+```typescript
+if (transcriptions[sqId]) {
+  await supabase
+    .from('student_test_questions')
+    .update({
+      question_data: { ...existingData, transcription: transcriptions[sqId] }
+    })
+    .eq('test_id', test_id)
+    .eq('question_index', questionIndexForSqId);
+}
+```
+
+2. W `TestDetailsView.tsx` - QuestionCard:
+   - Zaladowac transkrypcje z `question.question_data.transcription` (useEffect)
+   - Wyswietlac ja automatycznie pod odtwarzaczem
+   - USUNAC przycisk "Transcribe" calkowicie
+   - USUNAC funkcje `handleTranscribe`
+   - USUNAC stany `transcribing`
+   - Zostawic stan `transcription` do wyswietlania
+
+---
+
+## PROBLEM 2: Speaking i Writing score - analiza AI zamiast binarnego true/false
+
+### Stan obecny
+- `test_skill_results` pokazuje Speaking 0% (0/3), Writing 16.67% (1/6)
+- Wszystkie speaking/writing questions maja `is_correct = null` (bo nie sa pytaniami zamknietymi)
+- Funkcja `calculate_test_results` liczy score na podstawie `is_correct` - null traktuje jako 0
+- W learning profile `writing_score = null`, `communication_score = null`
+
+### Rozwiazanie - ocena AI per-question (0-100)
+Zamiast prostego true/false, AI oceni kazde pytanie na skali 0-100:
+
+1. W `process-welcome-test/index.ts` - prompt AI juz prosi o `per_question_scores`. Dodac logike:
+   - Dla kazdego open_ended/speaking pytania, ustawic `is_correct` na podstawie score:
+     - score >= 40: `is_correct = true` (student podejmuje realna probe)
+     - score < 40: `is_correct = false`
+   - Zapisac indywidualny score do `question_data.ai_score` (0-100) aby nauczyciel widzial dokladna ocene
+   - Na koncu wywolac `calculate_test_results` aby przeliczyc "Results by Skill"
+
+2. Dodatkowo obliczyc `speaking_score` i zaktualizowac `writing_score` w `student_learning_profiles`:
+```typescript
+// Calculate speaking score from per_question_scores
+const speakingIds = ['wt_q16s', 'wt_q36s', 'wt_q41s'];
+const speakingScores = speakingIds.map(id => perScores[id]).filter(s => s !== undefined);
+const speakingScore = speakingScores.length > 0
+  ? Math.round(speakingScores.reduce((a,b) => a+b, 0) / speakingScores.length)
+  : null;
+
+// Calculate writing score from AI (open_ended questions only)
+const writingIds = ['wt_q16', 'wt_q17', 'wt_q36', 'wt_q37', 'wt_q40'];
+const writingScores = writingIds.map(id => perScores[id]).filter(s => s !== undefined);
+const writingScoreAI = writingScores.length > 0
+  ? Math.round(writingScores.reduce((a,b) => a+b, 0) / writingScores.length)
+  : null;
+
+// Update learning profile with AI-based scores
+await supabase
+  .from('student_learning_profiles')
+  .update({
+    writing_score: writingScoreAI ?? writingScore,  // AI score or fallback to is_correct-based
+    // speaking_score column doesn't exist - need migration
+  })
+  .eq('student_id', student_id)
+  .eq('teacher_id', teacher_id);
+```
+
+3. W `WelcomeTestResults.tsx`:
+   - Zamienic "Communication" na "Speaking" ze score z `per_question_scores`
+   - Potrzebna migracja SQL: dodac kolumne `speaking_score numeric` do `student_learning_profiles`
+
+---
+
+## PROBLEM 3: student_events.event_source = 'test' (67 rekordow)
+
+### Przyczyna (ZNALEZIONA)
+Istnieje trigger bazodanowy `log_test_answer_event` ktory automatycznie tworzy event z hardcoded `event_source = 'test'` przy kazdym UPDATE `student_test_questions`. Jednoczesnie frontend w `useWelcomeTest.tsx` tworzy event z `event_source = 'welcome_test'`. Kazda odpowiedz generuje DWA eventy.
+
+### Rozwiazanie - migracja SQL
+1. Zmodyfikowac trigger aby pomijal welcome testy:
 ```sql
-UPDATE student_events SET event_source = 'welcome_test'
-WHERE event_type = 'test_answer_submitted' 
-AND event_source = 'test'
+CREATE OR REPLACE FUNCTION public.log_test_answer_event()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+  v_student_id UUID;
+  v_teacher_id UUID;
+  v_test_type TEXT;
+BEGIN
+  IF NEW.student_answer IS NOT NULL AND (OLD IS NULL OR OLD.student_answer IS NULL) THEN
+    SELECT st.student_id, st.teacher_id, st.test_type
+    INTO v_student_id, v_teacher_id, v_test_type
+    FROM public.student_tests st WHERE st.id = NEW.test_id;
+    
+    -- Skip welcome tests - frontend handles with richer payload
+    IF v_test_type = 'welcome' THEN RETURN NEW; END IF;
+    
+    IF v_student_id IS NOT NULL AND v_teacher_id IS NOT NULL THEN
+      INSERT INTO public.student_events (...) VALUES (...);
+    END IF;
+  END IF;
+  RETURN NEW;
+END; $$;
+```
+
+2. Usunac zduplikowane eventy:
+```sql
+DELETE FROM student_events 
+WHERE event_source = 'test' 
+AND event_type = 'test_answer_submitted'
 AND source_id IN (SELECT id FROM student_tests WHERE test_type = 'welcome');
 ```
 
 ---
 
-## PROBLEM 3 (dawny 4): student_events.event_payload - brakujące dane
+## PROBLEM 4: student_events.event_payload - mastery nadal -1
 
-### A. preference_choice z generycznym `answer_value`
+### Stan faktyczny
+Sprawdzilem baze danych. Kolumna `mastery` w `student_events` JUZ ma wartosci (45, 55, 60, 70 itd.) dla najnowszego testu. ALE `nano_skill_ratings` wewnatrz `event_payload` JSON nadal ma `mastery: -1`.
 
-Pytania jak `wt_q9` (How long learning), `wt_q10` (Where learned), `wt_q11` (Exam experience) mają w payloadzie:
-```json
-{"detected_traits": {"answer_value": "More than 10 years"}}
-```
+Uzytkownik patrzy na `event_payload` i widzi `-1` w `nano_skill_ratings[0].mastery`. To jest stale - ten JSON nie jest aktualizowany po AI Analysis. Tylko kolumna `mastery` jest aktualizowana.
 
-To jest mało użyteczne dla DSLM. Potrzebujemy semantycznych kluczy. Rozwiązanie: dodać `detected_trait` do definicji tych pytań w `welcomeTestQuestions.ts`, albo w `commitAnswer` mapować `question.id` na semantyczny klucz.
-
-Prostsze rozwiązanie: w `commitAnswer`, zamiast generycznego `answer_value`, użyć ID pytania jako klucza. Np. dla `wt_q9`:
-```json
-{"detected_traits": {"learning_duration": "More than 10 years"}}
-```
-
-Dodam mapę `QUESTION_TRAIT_FALLBACK`:
-```typescript
-const QUESTION_TRAIT_FALLBACK: Record<string, string> = {
-  'wt_q2': 'main_frustrations',
-  'wt_q6': 'preferred_activities',
-  'wt_q9': 'learning_duration',
-  'wt_q10': 'learning_background',
-  'wt_q11': 'exam_experience',
-  'wt_q12': 'learning_goal',
-  'wt_q13': 'desired_topics',
-  'wt_q15': 'reading_strategy',
-  'wt_q41': 'learning_priorities',
-  'wt_q43': 'interest_topics',
-  'wt_q45': 'final_message',
-};
-```
-
-### B. self_assessment_matrix (wt_q44) bez detected_traits
-
-Obecny payload:
-```json
-{"detected_traits": {"confidence_matrix": "{...}"}}
-```
-To jest OK - macierz jest zapisana jako JSON string.
-
-### C. open_ended/speaking - mastery = -1 po AI Analysis
-
-`process-welcome-test/index.ts` linie 489-510 już aktualizują mastery. Ale update może nie działać jeśli `answers[qId]` jest placeholderem (nie URL). Po naprawieniu uploadu (Problem 1) to powinno zadziałać automatycznie.
-
-Dodatkowo: AI analysis daje jedną wartość `writing_quality` (basic/intermediate/advanced) dla WSZYSTKICH pytań otwartych/speaking. To jest zbyt uproszczone. Lepiej: dodać do AI promptu instrukcję oceny każdego pytania osobno.
-
-Zmiana promptu AI w `process-welcome-test`:
-```
-For each open answer, rate quality on 0-100 scale:
-{"per_question_scores": {"wt_q16": 45, "wt_q36": 70, ...}, "writing_quality": "intermediate", ...}
-```
-
-Potem zamiast jednego `masteryValue` dla wszystkich, użyć `per_question_scores[qId]`:
+### Rozwiazanie
+Po AI Analysis, zaktualizowac tez `nano_skill_ratings` wewnatrz `event_payload`:
 ```typescript
 for (const qId of allOpenSpeakingIds) {
-  const score = parsed.per_question_scores?.[qId];
+  const score = perScores[qId];
   if (score !== undefined) {
-    await supabase.from('student_events')
+    // Update mastery column
+    await supabase
+      .from('student_events')
       .update({ mastery: score })
       .eq('source_id', test_id)
       .filter('event_payload->>answer_id', 'eq', qId);
+    
+    // Also update nano_skill_ratings inside event_payload
+    const { data: evt } = await supabase
+      .from('student_events')
+      .select('event_payload')
+      .eq('source_id', test_id)
+      .filter('event_payload->>answer_id', 'eq', qId)
+      .eq('event_source', 'welcome_test')
+      .single();
+    
+    if (evt?.event_payload) {
+      const payload = evt.event_payload;
+      if (payload.nano_skill_ratings?.length > 0) {
+        payload.nano_skill_ratings[0].mastery = score;
+        payload.nano_skill_ratings[0].hasValue = true;
+      }
+      await supabase
+        .from('student_events')
+        .update({ event_payload: payload, mastery: score })
+        .eq('source_id', test_id)
+        .filter('event_payload->>answer_id', 'eq', qId)
+        .eq('event_source', 'welcome_test');
+    }
   }
 }
 ```
 
 ---
 
-## PROBLEM 4 (dawny 5): Usunięcie Create AI-Powered Test
+## PROBLEM 5: Timer - visibilitychange
 
-### Co usuwamy:
-1. **`CreateTestModal.tsx`** - cały plik
-2. **`StudentTestsTab.tsx`** - przycisk "Create Test" i import CreateTestModal  
-3. **`generate-test/index.ts`** - edge function (usunięcie pliku + usunięcie deploymentu)
-4. **`supabase/config.toml`** - usunąć `[functions.generate-test]`
-5. **`studentTests.ts`** - z `TEST_TYPES` usunąć `placement`, `progress_check`, `skill_verification`, `goal_check` (zostawić tylko `welcome`)
+### Stan obecny
+Timer liczy czas od `Date.now()` w momencie wyswietlenia pytania do `commitAnswer`. Nie pauzuje gdy tab nieaktywny.
 
-### Co ZOSTAWIAMY:
-- **`StudentTestsTab.tsx`** - widok listy testów (Welcome Test placeholder, karty testów)
-- **`TestDetailsView.tsx`** - widok szczegółów testu/wyników
-- **`useStudentTests.tsx`** - hook (zarówno `useStudentTests` jak i `useStudentTestSession`)
-- **`ShareTestModal.tsx`** - udostępnianie Welcome Test
-- Tabele `student_tests`, `student_test_questions`, `test_skill_results` - potrzebne dla Welcome Test
-- **`process-welcome-test/index.ts`** - analiza AI
-- **`WelcomeTestPage.tsx`** - strona testu
-- **`useWelcomeTest.tsx`** - hook Welcome Test
+### Rozwiazanie
+W `useWelcomeTest.tsx`:
+```typescript
+const pausedAtRef = useRef<number | null>(null);
+const accumulatedPauseRef = useRef(0);
 
-### Zmiany w StudentTestsTab:
-- Usunąć przycisk "Create Test" z headera
-- Usunąć import `CreateTestModal`
-- Usunąć state `createModalOpen`
-- Usunąć `<CreateTestModal />` z JSX
-- Zmienić pusty stan "No tests yet" - usunąć przycisk "Create First Test"
-- Usunąć lub zmienić sekcję "Intelligent Testing Features" (zostawić tylko info o Welcome Test)
-- Zamienić przycisk "Create Test" w pustym stanie na tekst informacyjny
+useEffect(() => {
+  const handler = () => {
+    if (document.hidden) {
+      pausedAtRef.current = Date.now();
+    } else if (pausedAtRef.current) {
+      accumulatedPauseRef.current += (Date.now() - pausedAtRef.current);
+      pausedAtRef.current = null;
+    }
+  };
+  document.addEventListener('visibilitychange', handler);
+  return () => document.removeEventListener('visibilitychange', handler);
+}, []);
+```
 
-### Zmiany w TestCard:
-- Usunąć switch na typy testów inne niż welcome (placement, progress_check, etc.)
-- Zostawić obsługę welcome test i fallback
+W `commitAnswer` - odejmowac czas pauzy:
+```typescript
+const rawTime = Date.now() - questionTimers.current[questionId];
+const pauseTime = accumulatedPauseRef.current;
+accumulatedPauseRef.current = 0;
+const timeSpent = Math.max(0, Math.round((rawTime - pauseTime) / 1000));
+```
+
+---
+
+## PROBLEM 6: Communication -> Speaking w Skill Scores
+
+### Rozwiazanie
+1. Migracja SQL: dodac kolumne `speaking_score numeric` do `student_learning_profiles`
+2. W `WelcomeTestResults.tsx`: zamienic "Communication" na "Speaking"
+3. W `process-welcome-test`: zapisywac `speaking_score` obliczony z AI per_question_scores
 
 ---
 
@@ -188,29 +226,25 @@ for (const qId of allOpenSpeakingIds) {
 
 | Plik | Zmiana | Problem |
 |------|--------|---------|
-| `SpeakingRecorder.tsx` | Naprawić upload: blob -> base64 -> JSON zamiast FormData | 1 |
-| `useWelcomeTest.tsx` | Naprawić `flushSpeakingIfNeeded`: blob -> base64, dodać semantyczne klucze traitów | 1, 3 |
-| `process-welcome-test/index.ts` | Zmienić prompt AI na per-question scoring, użyć indywidualnych mastery | 3 |
-| `StudentTestsTab.tsx` | Usunąć "Create Test", CreateTestModal import, info o AI tests | 4 |
-| `CreateTestModal.tsx` | USUNĄĆ plik | 4 |
-| `generate-test/index.ts` | USUNĄĆ edge function | 4 |
-| `supabase/config.toml` | Usunąć `[functions.generate-test]` | 4 |
-| `studentTests.ts` | Usunąć typy testów inne niż welcome | 4 |
-| SQL migracja | Naprawić event_source 'test' -> 'welcome_test' | 2 |
-| 6 plików dokumentacji | Zaktualizować o Round 8 | wszystkie |
+| `process-welcome-test/index.ts` | Zapisac transkrypcje do question_data, ustawic is_correct po AI score, zaktualizowac nano_skill_ratings w payloadzie, obliczyc speaking_score, wywolac calculate_test_results | 1, 2, 4 |
+| `TestDetailsView.tsx` | Usunac przycisk Transcribe, auto-ladowac transkrypcje z question_data | 1 |
+| `WelcomeTestResults.tsx` | Zamienic Communication na Speaking | 6 |
+| `useWelcomeTest.tsx` | Dodac visibilitychange listener | 5 |
+| SQL migracja | Dodac speaking_score, naprawic trigger, usunac duplikaty | 2, 3, 6 |
+| 6 plikow dokumentacji | Zaktualizowac o Round 9 | wszystkie |
 
 ### Czego NIE zmieniamy:
-- `upload-to-r2/index.ts` - działa poprawnie, problem był po stronie klienta (FormData vs JSON)
-- `WelcomeTestPage.tsx` - bez zmian (poza ewentualnym import fix)
-- Routing w App.tsx
-- Logika homework, flashcards, worksheet
+- SpeakingRecorder.tsx - upload base64 dziala
+- WelcomeTestPage.tsx - bez zmian
+- Routing, homework, flashcards, worksheet
+- upload-to-r2 - bez zmian
 
-### Kolejność implementacji:
-1. `SpeakingRecorder.tsx` - naprawić upload blob->base64 (KRYTYCZNE)
-2. `useWelcomeTest.tsx` - naprawić flushSpeaking + semantyczne klucze traitów
-3. SQL migracja - event_source fix
-4. `process-welcome-test/index.ts` - per-question mastery scoring
-5. Usunąć CreateTestModal + generate-test + config.toml cleanup
-6. `StudentTestsTab.tsx` + `studentTests.ts` - uprościć
+### Kolejnosc implementacji:
+1. SQL migracja - speaking_score + trigger fix + delete duplikaty
+2. `process-welcome-test/index.ts` - transkrypcje + is_correct + speaking_score + payload fix
+3. `TestDetailsView.tsx` - usunac Transcribe, auto-wyswietlac transkrypcje
+4. `WelcomeTestResults.tsx` - Communication -> Speaking
+5. `useWelcomeTest.tsx` - visibilitychange
+6. Deploy process-welcome-test
 7. Dokumentacja
 
