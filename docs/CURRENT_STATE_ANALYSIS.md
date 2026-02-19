@@ -6,7 +6,13 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-19) - Welcome Test v2 Round 10:**
+**Ostatnia naprawa (2026-02-19) - DSLM Layer A Cleanup Round 11:**
+- ✅ **Czyszczenie danych**: Usunięto ~500 śmieciowych eventów welcome_test (NULL answer_id) i 20 legacy event_source='test'
+- ✅ **Flashcard backfill**: Naprawiono 55 starych eventów z zawyżonym mastery=100 (repetition=1 → teraz 50)
+- ✅ **Auto-obliczanie mastery w triggerach**: Triggery worksheet/homework automatycznie liczą mastery ze średniej nano_skill_ratings gdy NEW.mastery IS NULL
+- ✅ **Backfill mastery**: Zaktualizowano ~194 istniejących eventów worksheet/homework z NULL mastery
+
+**Poprzednia naprawa (2026-02-19) - Welcome Test v2 Round 10:**
 - ✅ **Fix cache transkrypcji**: process-welcome-test pobiera ŚWIEŻE question_data z bazy przed zapisem ai_score (nie nadpisuje transcription)
 - ✅ **Zaostrzony prompt AI**: Szczegółowe kryteria oceny z analizą word count, czasu, relevance. Krótkie/off-topic speaking = max 20-30pkt
 - ✅ **Kontekst czasowy dla AI**: Word count i time_spent_seconds przekazywane do AI dla oceny fluency

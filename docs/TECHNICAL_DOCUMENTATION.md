@@ -5,7 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Welcome Test v2 Round 10:**
+**Latest Update (February 2026) - DSLM Layer A Cleanup Round 11:**
+- **Data cleanup**: Deleted ~500 trash welcome_test events (NULL answer_id from old trigger), 20 legacy `event_source='test'` events
+- **Flashcard mastery backfill**: Fixed 55 old events with inflated mastery=100 for repetition=1 (now correctly 50 per weighted formula)
+- **Mastery auto-calculation in triggers**: Worksheet and homework triggers now auto-calculate mastery from `nano_skill_ratings` average when `NEW.mastery` IS NULL — ensures `student_events.mastery` column is always populated
+- **Mastery backfill**: Updated ~194 existing worksheet/homework events with NULL mastery by computing average from their nano_skill_ratings payloads
+
+**Previous Update (February 2026) - Welcome Test v2 Round 10:**
 - **Transcription cache fix**: `process-welcome-test` now fetches FRESH `question_data` from DB before saving `ai_score`, preventing transcription overwrite by stale cache
 - **Strict AI scoring prompt**: Detailed rubric with word count, time analysis, relevance checks. Brief/off-topic speaking = max 20-30pts. Minimal writing = max 15-25pts. Scale: 0-15 minimal → 86-100 excellent
 - **Time context for AI**: Word count and `time_spent_seconds` passed to AI for fluency evaluation
