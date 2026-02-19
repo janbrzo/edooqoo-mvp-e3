@@ -6,7 +6,12 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-19) - Welcome Test v2 Round 9:**
+**Ostatnia naprawa (2026-02-19) - Welcome Test v2 Round 10:**
+- ✅ **Fix cache transkrypcji**: process-welcome-test pobiera ŚWIEŻE question_data z bazy przed zapisem ai_score (nie nadpisuje transcription)
+- ✅ **Zaostrzony prompt AI**: Szczegółowe kryteria oceny z analizą word count, czasu, relevance. Krótkie/off-topic speaking = max 20-30pkt
+- ✅ **Kontekst czasowy dla AI**: Word count i time_spent_seconds przekazywane do AI dla oceny fluency
+
+**Poprzednia naprawa (2026-02-19) - Welcome Test v2 Round 9:**
 - ✅ **Automatyczna transkrypcja**: process-welcome-test zapisuje transkrypcje do question_data.transcription — nauczyciel widzi je automatycznie
 - ✅ **Usunięto przycisk Transcribe**: TestDetailsView ładuje transkrypcje z question_data, bez ręcznego klikania
 - ✅ **AI scoring per-question (0-100)**: Każda odpowiedź otwarta/mówiona oceniana indywidualnie; is_correct ustawiany na score ≥ 40

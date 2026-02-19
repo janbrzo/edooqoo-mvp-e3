@@ -442,7 +442,7 @@ serve(async (req) => {
           }
         }
         
-        // Build open answers including transcriptions
+        // Build open answers including transcriptions and time info for AI context
         const allAnswerIds = [...openQuestionIds, ...speakingQuestionIds];
         const openAnswers = allAnswerIds
           .filter(id => {
@@ -450,8 +450,19 @@ serve(async (req) => {
             return answers?.[id] && answers[id] !== '__IDK__' && !String(answers[id]).startsWith('http');
           })
           .map(id => {
-            if (transcriptions[id]) return `${id} (speaking - transcribed): "${transcriptions[id]}"`;
-            return `${id}: "${answers[id]}"`;
+            // Find matching question to get time_spent_seconds
+            const matchQ = questions.find((q: any) => {
+              const sa = String(q.student_answer || '');
+              return sa === String(answers?.[id]);
+            });
+            const timeSec = matchQ?.time_spent_seconds || null;
+            const timeInfo = timeSec ? ` [recording/answering time: ${timeSec}s]` : '';
+            
+            if (transcriptions[id]) {
+              const wordCount = transcriptions[id].split(/\s+/).filter(Boolean).length;
+              return `${id} (speaking - transcribed, ${wordCount} words${timeInfo}): "${transcriptions[id]}"`;
+            }
+            return `${id}${timeInfo}: "${answers[id]}"`;
           })
           .join('\n');
 
@@ -468,10 +479,33 @@ serve(async (req) => {
                 {
                   role: 'system',
                   content: `You are an expert ESL teacher analyzing a student's Welcome Test answers. Based on their open-ended responses, provide:
-1. A concise 3-4 sentence profile summary covering their English level, strengths, weaknesses, and personality as a learner.
+1. A concise 3-4 sentence profile summary covering their English level, strengths, weaknesses, and personality as a learner. For speaking answers, analyze the transcription critically - comment on fluency, word count relative to recording time, relevance to the prompt, and grammatical accuracy. Do NOT be generous with praise for minimal effort.
 2. 2-3 specific teaching recommendations.
-3. For EACH open/speaking answer, rate the quality on a 0-100 scale (0=no meaningful content, 25=basic, 50=intermediate, 75=advanced, 100=near-native).
-Format as JSON: {"summary": "...", "recommendations": ["...", "..."], "writing_quality": "basic|intermediate|advanced", "key_observations": ["...", "..."], "per_question_scores": {"wt_q16": 45, "wt_q36": 70, "wt_q16s": 55, ...}}`
+3. For EACH open/speaking answer, rate the quality on a 0-100 scale using these STRICT criteria:
+
+SPEAKING answers (IDs ending with "s"):
+- Evaluate: fluency (count words in transcription vs available recording time - e.g. 10 words in 30 seconds = very low fluency), grammatical correctness, vocabulary range, and RELEVANCE to the prompt.
+- A single greeting sentence like "Hello, my name is X, how are you?" for a 30-second prompt = max 20-30 points.
+- Off-topic, minimal, or generic responses = 0-15 points.
+- Only responses with sustained, relevant speech (at least 3-4 complete sentences addressing the prompt) can score above 50.
+
+WRITING answers (open_ended/open_reflection):
+- Evaluate: grammar accuracy, vocabulary range, coherence, and RELEVANCE to the prompt.
+- A 2-5 word answer to a question expecting a paragraph = max 15-25 points.
+- Only responses with complete, relevant sentences can score above 50.
+
+SCORING SCALE:
+- 0: No answer, gibberish, or completely off-topic
+- 1-15: Minimal attempt (1 short sentence, mostly off-topic)
+- 16-30: Very basic attempt (1-2 short sentences, partially relevant, major errors)
+- 31-50: Basic attempt (a few sentences, partially relevant, notable errors)
+- 51-70: Good attempt (mostly relevant, some errors, reasonable length)
+- 71-85: Strong response (fully relevant, few errors, good length)
+- 86-100: Excellent (near-native quality, fully addresses the prompt)
+
+BE STRICT. Do NOT inflate scores. Most brief or off-topic answers should score below 30.
+
+Format as JSON: {"summary": "...", "recommendations": ["...", "..."], "writing_quality": "basic|intermediate|advanced", "key_observations": ["...", "..."], "per_question_scores": {"wt_q16": 45, "wt_q36": 70, "wt_q16s": 15, ...}}`
                 },
                 {
                   role: 'user',
@@ -542,7 +576,13 @@ ${openAnswers}`
                   return sa === String(answers[qId]);
                 });
                 if (matchQ) {
-                  const existingData = (matchQ.question_data || {}) as Record<string, unknown>;
+                  // Fetch FRESH data from DB (transcription may have been saved above and cache is stale)
+                  const { data: freshQ } = await supabase
+                    .from('student_test_questions')
+                    .select('question_data')
+                    .eq('id', matchQ.id)
+                    .single();
+                  const existingData = (freshQ?.question_data || {}) as Record<string, unknown>;
                   await supabase
                     .from('student_test_questions')
                     .update({
