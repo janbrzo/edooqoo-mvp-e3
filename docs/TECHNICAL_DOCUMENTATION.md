@@ -5,12 +5,20 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - DSLM Layer A Finalization Round 12:**
-- **Flashcard mastery backfill**: Calculated mastery for 407 old flashcard events using SM-2 weighted formula (rep=0→0, rep=1→50, rep=2→70, rep≥3→90, rep≥4+interval≥21→100)
-- **Flashcard element_type backfill**: Set element_type='vocabulary' for 441 old flashcard events
+**Latest Update (February 2026) - DSLM Layer B Implementation:**
+- **student_skill_metrics table**: New table storing aggregated skill metrics per nano_skill per student with time-weighted mastery (exponential decay, half-life ~23 days)
+- **compute_skill_metric() function**: SQL function that computes weighted average mastery, trend analysis (improving/declining/stable), and maintains history for each nano_skill
+- **Auto-refresh trigger**: `trg_refresh_skill_metrics` fires AFTER INSERT on `student_events` to automatically recompute affected metrics
+- **extract_skill_category() function**: Maps 20+ nano_skill prefixes (ns.grammar.*, ns.vocab.*, ns.spelling.*, etc.) to 7 canonical categories
+- **student_category_metrics view**: Aggregates nano_skills into category-level metrics (grammar, vocabulary, reading, speaking, writing, listening, pronunciation)
+- **backfill_skill_metrics() function**: One-time function to compute metrics from all existing events (859 skills computed)
+- **SkillsOverviewPanel component**: New "Skills" tab in StudentPage with radar chart, category breakdown, and nano_skill list with mastery bars and trend indicators
+- **Layer B status**: 855 nano_skills + flashcards across 7 categories, only 13 "other" remaining
+
+**Previous Update (February 2026) - DSLM Layer A Finalization Round 12:**
+- **Flashcard mastery backfill**: Calculated mastery for 407 old flashcard events using SM-2 weighted formula
 - **Welcome test mastery backfill**: Calculated mastery from nano_skill_ratings average for ~180 welcome_test events
-- **Worksheet/homework element_type backfill**: Set element_type from exercise_type for 175 old events
-- **Layer A status**: ALL sources now have complete mastery and element_type data. Remaining NULLs are valid (student didn't answer, teacher observations)
+- **Layer A status**: ALL sources now have complete mastery and element_type data
 
 **Previous Update (February 2026) - DSLM Layer A Cleanup Round 11:**
 - **Data cleanup**: Deleted ~500 trash welcome_test events (NULL answer_id from old trigger), 20 legacy `event_source='test'` events

@@ -6,12 +6,15 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-20) - DSLM Layer A Finalization Round 12:**
-- ✅ **Flashcard mastery backfill**: Obliczono mastery dla 407 starych eventów flashcard (SM-2 weighted formula)
-- ✅ **Flashcard element_type**: Ustawiono element_type='vocabulary' dla 441 starych eventów
-- ✅ **Welcome test mastery**: Obliczono mastery ze średniej nano_skill_ratings dla ~180 eventów
-- ✅ **Worksheet/homework element_type**: Ustawiono element_type z exercise_type dla 175 eventów
-- ✅ **Layer A GOTOWA**: Wszystkie źródła mają kompletne mastery i element_type. Pozostałe NULL są prawidłowe
+**Ostatnia naprawa (2026-02-20) - DSLM Layer B Implementation:**
+- ✅ **student_skill_metrics tabela**: Zagregowane metryki per nano_skill per student z ważoną średnią mastery (exp decay)
+- ✅ **Auto-refresh trigger**: Metryki odświeżają się automatycznie po każdym nowym evencie w student_events
+- ✅ **extract_skill_category()**: Mapuje 20+ prefiksów ns.* na 7 kategorii (grammar, vocabulary, reading, speaking, writing, listening, pronunciation)
+- ✅ **SkillsOverviewPanel**: Nowa zakładka "Skills" w StudentPage z radar chart, category breakdown i listą nano_skills
+- ✅ **Backfill**: 859 metryk obliczonych z istniejących danych, 855 poprawnie skategoryzowanych
+
+**Poprzednia naprawa (2026-02-20) - DSLM Layer A Finalization Round 12:**
+- ✅ **Layer A GOTOWA**: Wszystkie źródła mają kompletne mastery i element_type
 
 **Poprzednia naprawa (2026-02-19) - DSLM Layer A Cleanup Round 11:**
 - ✅ **Czyszczenie danych**: Usunięto ~500 śmieciowych eventów welcome_test (NULL answer_id) i 20 legacy event_source='test'

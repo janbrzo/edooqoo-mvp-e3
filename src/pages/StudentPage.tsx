@@ -22,8 +22,9 @@ import { FlashcardSetsSection } from '@/components/flashcards/FlashcardSetsSecti
 import { StudentProgressTab } from '@/components/student-progress/StudentProgressTab';
 import { StudentTestsTab } from '@/components/student-tests/StudentTestsTab';
 import { EventLogPanel } from '@/components/dslm/EventLogPanel';
+import { SkillsOverviewPanel } from '@/components/dslm/SkillsOverviewPanel';
 import { WelcomeTestSuggestion } from '@/components/dashboard/WelcomeTestSuggestion';
-import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2, TrendingUp, ClipboardCheck, Activity, Pencil } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2, TrendingUp, ClipboardCheck, Activity, Pencil, BarChart3 } from 'lucide-react';
 import { formatGoalLabel } from '@/constants/studentGoals';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
@@ -216,7 +217,7 @@ const StudentPage = () => {
 
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-8 mb-6">
+          <TabsList className="grid w-full grid-cols-9 mb-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Overview
@@ -236,6 +237,10 @@ const StudentPage = () => {
             <TabsTrigger value="tests" className="flex items-center gap-2">
               <ClipboardCheck className="h-4 w-4" />
               Tests
+            </TabsTrigger>
+            <TabsTrigger value="skills" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Skills
             </TabsTrigger>
             <TabsTrigger value="knowledge" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
@@ -807,6 +812,14 @@ const StudentPage = () => {
               studentId={id || ''}
               teacherId={student.teacher_id}
               studentName={student.name}
+            />
+          </TabsContent>
+
+          {/* Skills Overview Tab - DSLM Layer B */}
+          <TabsContent value="skills">
+            <SkillsOverviewPanel
+              studentId={id || ''}
+              teacherId={student.teacher_id}
             />
           </TabsContent>
 
