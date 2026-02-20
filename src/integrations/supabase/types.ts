@@ -1258,6 +1258,62 @@ export type Database = {
           },
         ]
       }
+      student_skill_metrics: {
+        Row: {
+          created_at: string
+          current_mastery: number | null
+          first_event_at: string | null
+          id: string
+          last_event_at: string | null
+          mastery_history: Json | null
+          skill_category: string
+          skill_name: string
+          student_id: string
+          teacher_id: string
+          total_events: number | null
+          trend: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_mastery?: number | null
+          first_event_at?: string | null
+          id?: string
+          last_event_at?: string | null
+          mastery_history?: Json | null
+          skill_category: string
+          skill_name: string
+          student_id: string
+          teacher_id: string
+          total_events?: number | null
+          trend?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_mastery?: number | null
+          first_event_at?: string | null
+          id?: string
+          last_event_at?: string | null
+          mastery_history?: Json | null
+          skill_category?: string
+          skill_name?: string
+          student_id?: string
+          teacher_id?: string
+          total_events?: number | null
+          trend?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_skill_metrics_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_test_questions: {
         Row: {
           ai_feedback: string | null
@@ -1994,6 +2050,27 @@ export type Database = {
         }
         Relationships: []
       }
+      student_category_metrics: {
+        Row: {
+          avg_mastery: number | null
+          category: string | null
+          last_activity: string | null
+          skill_count: number | null
+          student_id: string | null
+          teacher_id: string | null
+          total_events: number | null
+          trend: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_skill_metrics_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_student_event: {
@@ -2019,6 +2096,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      backfill_skill_metrics: {
+        Args: { p_student_id?: string }
+        Returns: number
+      }
       calculate_test_results: { Args: { p_test_id: string }; Returns: Json }
       clean_old_geolocation_cache: { Args: never; Returns: undefined }
       cleanup_worksheet_base64: {
@@ -2029,10 +2110,20 @@ export type Database = {
           worksheets_cleaned: number
         }[]
       }
+      compute_skill_metric: {
+        Args: {
+          p_skill_category: string
+          p_skill_name: string
+          p_student_id: string
+          p_teacher_id: string
+        }
+        Returns: undefined
+      }
       consume_token: {
         Args: { p_teacher_id: string; p_worksheet_id: string }
         Returns: boolean
       }
+      extract_skill_category: { Args: { skill_name: string }; Returns: string }
       generate_flashcard_share_token: {
         Args: {
           p_expires_hours?: number
