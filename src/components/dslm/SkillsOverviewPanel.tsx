@@ -2,9 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useSkillMetrics, SkillMetric, CategoryMetric } from '@/hooks/useSkillMetrics';
-import { TrendingUp, TrendingDown, Minus, BarChart3, List, ArrowUpDown, Filter } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { useSkillMetrics, SkillMetric, CategoryMetric, MicroSkillMetric } from '@/hooks/useSkillMetrics';
+import { TrendingUp, TrendingDown, Minus, BarChart3, List, ArrowUpDown, Filter, Layers } from 'lucide-react';
+import { MasterySparkline } from './MasterySparkline';
 import {
   ResponsiveContainer,
   RadarChart,
@@ -31,7 +32,30 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
+const MICRO_SKILL_LABELS: Record<string, string> = {
+  ps: 'Past Simple', pc: 'Past Continuous', pp: 'Past Perfect',
+  prs: 'Present Simple', prc: 'Present Continuous', prp: 'Present Perfect', prpc: 'Pres. Perfect Cont.',
+  fs: 'Future Simple', fg: 'Future Going To', fc: 'Future Continuous',
+  cond1: 'First Conditional', cond2: 'Second Conditional', cond3: 'Third Conditional', condm: 'Mixed Conditionals',
+  passive: 'Passive Voice', rs: 'Reported Speech', rel: 'Relative Clauses', mod: 'Modal Verbs',
+  ger_inf: 'Gerund/Infinitive', phr: 'Phrasal Verbs', comp: 'Comparatives', sup: 'Superlatives',
+  art: 'Articles', prep: 'Prepositions', wo: 'Word Order', neg: 'Negative Prefixes', wf: 'Word Formation',
+  vocab: 'Vocabulary', coll: 'Collocations', idiom: 'Idioms', syn: 'Synonyms', ant: 'Antonyms',
+  reading: 'Reading', speaking: 'Speaking', writing: 'Writing', listening: 'Listening',
+  grammar_other: 'Grammar (Other)', pronunciation: 'Pronunciation',
+};
+
 const CATEGORY_ORDER = ['grammar', 'vocabulary', 'reading', 'speaking', 'writing', 'listening', 'pronunciation'];
+
+const PERIOD_PRESETS = [
+  { label: '7d', days: 7 },
+  { label: '14d', days: 14 },
+  { label: '30d', days: 30 },
+  { label: '60d', days: 60 },
+  { label: '90d', days: 90 },
+  { label: '180d', days: 180 },
+  { label: 'All', days: null as number | null },
+];
 
 function TrendIcon({ trend }: { trend: string }) {
   if (trend === 'improving') return <TrendingUp className="h-4 w-4 text-green-500" />;
@@ -53,21 +77,21 @@ function MasteryBar({ value }: { value: number }) {
 
 function formatSkillName(name: string): string {
   if (name.startsWith('flashcard:')) return `Flashcard ${name.slice(10, 18)}…`;
-  // ns.grammar.conditional_2_comprehension -> Conditional 2 Comprehension
   const parts = name.split('.');
   const last = parts[parts.length - 1];
-  return last
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase());
+  return last.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPanelProps) {
-  const { skills, categories, isLoading, error } = useSkillMetrics(studentId, teacherId);
+  const [periodDays, setPeriodDays] = useState<number | null>(null);
+  const [customPeriod, setCustomPeriod] = useState('');
+  const [viewMode, setViewMode] = useState<'nano' | 'micro'>('micro');
+
+  const { skills, categories, microSkills, isLoading, error } = useSkillMetrics(studentId, teacherId, periodDays);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'mastery' | 'events' | 'name'>('mastery');
   const [showFlashcards, setShowFlashcards] = useState(false);
 
-  // Filter out flashcard skills from the main list (too many, show separately)
   const nanoSkills = useMemo(() => {
     let filtered = skills.filter(s => showFlashcards || !s.skill_name.startsWith('flashcard:'));
     if (selectedCategory) {
@@ -80,7 +104,18 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
     });
   }, [skills, selectedCategory, sortBy, showFlashcards]);
 
-  // Radar chart data - only main categories
+  const filteredMicroSkills = useMemo(() => {
+    let filtered = microSkills;
+    if (selectedCategory) {
+      filtered = filtered.filter(s => s.skill_category === selectedCategory);
+    }
+    return filtered.sort((a, b) => {
+      if (sortBy === 'mastery') return b.avg_mastery - a.avg_mastery;
+      if (sortBy === 'events') return b.total_events - a.total_events;
+      return a.micro_skill.localeCompare(b.micro_skill);
+    });
+  }, [microSkills, selectedCategory, sortBy]);
+
   const radarData = useMemo(() => {
     return CATEGORY_ORDER
       .map(cat => {
@@ -94,12 +129,18 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
       .filter(d => d.events > 0 || categories.length > 0);
   }, [categories]);
 
-  // Stats
   const totalSkills = skills.filter(s => !s.skill_name.startsWith('flashcard:')).length;
   const flashcardCount = skills.filter(s => s.skill_name.startsWith('flashcard:')).length;
   const overallMastery = categories.length > 0
     ? Math.round(categories.reduce((sum, c) => sum + c.avg_mastery, 0) / categories.length)
     : 0;
+
+  const handleCustomPeriod = () => {
+    const val = parseInt(customPeriod);
+    if (val > 0 && val <= 365) {
+      setPeriodDays(val);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -138,6 +179,35 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
 
   return (
     <div className="space-y-6">
+      {/* Period Filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm font-medium text-muted-foreground">Period:</span>
+        {PERIOD_PRESETS.map(p => (
+          <Button
+            key={p.label}
+            variant={periodDays === p.days ? 'default' : 'outline'}
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setPeriodDays(p.days)}
+          >
+            {p.label}
+          </Button>
+        ))}
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            placeholder="Custom"
+            className="h-7 w-20 text-xs"
+            value={customPeriod}
+            onChange={e => setCustomPeriod(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleCustomPeriod()}
+          />
+          <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={handleCustomPeriod}>
+            Go
+          </Button>
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
@@ -154,8 +224,8 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3 text-center">
-            <p className="text-2xl font-bold">{categories.length}</p>
-            <p className="text-xs text-muted-foreground">Categories</p>
+            <p className="text-2xl font-bold">{microSkills.length}</p>
+            <p className="text-xs text-muted-foreground">Micro Skills</p>
           </CardContent>
         </Card>
         <Card>
@@ -168,7 +238,6 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
 
       {/* Radar Chart + Category List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Radar */}
         {radarData.length >= 3 && (
           <Card>
             <CardHeader>
@@ -183,13 +252,7 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
                   <PolarGrid />
                   <PolarAngleAxis dataKey="category" tick={{ fontSize: 12 }} />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
-                  <Radar
-                    name="Mastery"
-                    dataKey="mastery"
-                    stroke="hsl(var(--primary))"
-                    fill="hsl(var(--primary))"
-                    fillOpacity={0.3}
-                  />
+                  <Radar name="Mastery" dataKey="mastery" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
                   <Tooltip />
                 </RadarChart>
               </ResponsiveContainer>
@@ -197,7 +260,6 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
           </Card>
         )}
 
-        {/* Category Breakdown */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Category Breakdown</CardTitle>
@@ -231,23 +293,33 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
         </Card>
       </div>
 
-      {/* Nano Skills List */}
+      {/* Skills List */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-base flex items-center gap-2">
               <List className="h-4 w-4" />
-              {selectedCategory ? `${CATEGORY_LABELS[selectedCategory]} Skills` : 'All Nano Skills'}
-              <Badge variant="outline">{nanoSkills.length}</Badge>
+              {viewMode === 'micro' ? 'Micro Skills' : (selectedCategory ? `${CATEGORY_LABELS[selectedCategory]} Skills` : 'All Nano Skills')}
+              <Badge variant="outline">{viewMode === 'micro' ? filteredMicroSkills.length : nanoSkills.length}</Badge>
             </CardTitle>
             <div className="flex gap-2">
               <Button
-                variant={showFlashcards ? 'default' : 'outline'}
+                variant={viewMode === 'micro' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setShowFlashcards(!showFlashcards)}
+                onClick={() => setViewMode(viewMode === 'micro' ? 'nano' : 'micro')}
               >
-                {showFlashcards ? 'Hide' : 'Show'} Flashcards
+                <Layers className="h-3 w-3 mr-1" />
+                {viewMode === 'micro' ? 'Micro View' : 'Nano View'}
               </Button>
+              {viewMode === 'nano' && (
+                <Button
+                  variant={showFlashcards ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setShowFlashcards(!showFlashcards)}
+                >
+                  {showFlashcards ? 'Hide' : 'Show'} Flashcards
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -266,24 +338,50 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
         </CardHeader>
         <CardContent>
           <div className="space-y-2 max-h-[500px] overflow-y-auto">
-            {nanoSkills.slice(0, 100).map(skill => (
-              <div key={skill.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50">
-                <TrendIcon trend={skill.trend} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{formatSkillName(skill.skill_name)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {skill.total_events} event{skill.total_events !== 1 ? 's' : ''} · {skill.skill_category}
+            {viewMode === 'micro' ? (
+              <>
+                {filteredMicroSkills.map(ms => (
+                  <div key={ms.micro_skill} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50">
+                    <TrendIcon trend={ms.trend} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{MICRO_SKILL_LABELS[ms.micro_skill] || ms.micro_skill}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {ms.total_events} event{ms.total_events !== 1 ? 's' : ''} · {ms.nano_skill_count} nano skills · {ms.skill_category}
+                      </p>
+                    </div>
+                    <div className="w-32">
+                      <MasteryBar value={ms.avg_mastery} />
+                    </div>
+                  </div>
+                ))}
+                {filteredMicroSkills.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No micro skills found for this filter.</p>
+                )}
+              </>
+            ) : (
+              <>
+                {nanoSkills.slice(0, 100).map(skill => (
+                  <div key={skill.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50">
+                    <TrendIcon trend={skill.trend} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{formatSkillName(skill.skill_name)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {skill.total_events} event{skill.total_events !== 1 ? 's' : ''} · {skill.skill_category}
+                        {skill.micro_skill && ` · ${MICRO_SKILL_LABELS[skill.micro_skill] || skill.micro_skill}`}
+                      </p>
+                    </div>
+                    <MasterySparkline history={skill.mastery_history} trend={skill.trend} />
+                    <div className="w-32">
+                      <MasteryBar value={skill.current_mastery} />
+                    </div>
+                  </div>
+                ))}
+                {nanoSkills.length > 100 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">
+                    Showing 100 of {nanoSkills.length} skills
                   </p>
-                </div>
-                <div className="w-32">
-                  <MasteryBar value={skill.current_mastery} />
-                </div>
-              </div>
-            ))}
-            {nanoSkills.length > 100 && (
-              <p className="text-xs text-muted-foreground text-center py-2">
-                Showing 100 of {nanoSkills.length} skills
-              </p>
+                )}
+              </>
             )}
           </div>
         </CardContent>

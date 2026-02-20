@@ -12,7 +12,7 @@ export const getReadingExercise = () => `    {
       "content": "New York City is famous for its restaurants. People from all over the world live there, so the city offers many different types of food. You can find Italian, Chinese, Mexican, Japanese, Greek, Thai, Indian, and many more international cuisines. American-style diners and fast food restaurants are also very popular.\\nMost restaurants in New York have menus that include appetizers, main dishes, and desserts. Appetizers are small dishes that people eat before the main meal, such as soups, salads, or garlic bread. Main dishes are usually bigger and include meat, fish, or vegetarian options, often served with rice, potatoes, or pasta. Desserts like cheesecake, brownies, or ice cream are very common.\\nSome of the most popular types of food in New York include pizza, burgers, sushi, and pasta. People also enjoy trying food from food trucks, especially for lunch. One of the most famous dishes in the United States, and especially in New York, is the New York-style pizza. It's a thin, wide slice of pizza, usually eaten with your hands.\\nOf course, not every restaurant visit is perfect. Some common complaints that people make in New York restaurants include:\\n\\"The food is cold.\\"\\n\\"This is not what I ordered.\\"\\n\\"The portion is too small.\\"\\n\\"I waited too long for my food.\\"\\n\\"The bill is incorrect.\\"\\nLearning how to order food and make polite complaints in English is very useful if you ever visit New York or work in customer service.",
       "questions": [
         {"text": "Why is there such a wide variety of food in New York City restaurants?", "answer": "Because people from all over the world live in New York, so the city offers many different types of international cuisine.", "nano_skill": [{"name": "ns.reading.main_idea_extraction", "confidence": 0.95, "reason": "Requires identifying the main cause-effect relationship from the text"}]},
-        {"text": "What are some typical examples of appetizers, main dishes, and desserts mentioned in the text?", "answer": "Appetizers: soups, salads, garlic bread; Main dishes: meat, fish, or vegetarian options with rice, potatoes, or pasta; Desserts: cheesecake, brownies, ice cream.", "nano_skill": [{"name": "ns.reading.categorization_from_text", "confidence": 0.92, "reason": "Requires grouping information into given categories"}]},
+        {"text": "What are some typical examples of appetizers, main dishes, and desserts mentioned in the text?", "answer": "Appetizers: soups, salads, garlic bread; Main dishes: meat, fish, or vegetarian options with rice, potatoes, or pasta; Desserts: cheesecake, brownies, ice cream.", "nano_skill": [{"name": "ns.reading.detail_extraction", "confidence": 0.92, "reason": "Requires extracting and grouping specific details from the text"}]},
         {"text": "What is special about New York-style pizza?", "answer": "It is a thin, wide slice of pizza, usually eaten with your hands.", "nano_skill": [...]},
         {"text": "What are some of the most popular international cuisines in New York?", "answer": "Italian, Chinese, Mexican, Japanese, Greek, Thai, and Indian cuisines.", "nano_skill": [...]},
         {"text": "What are some common complaints that customers make in New York restaurants?", "answer": "The food is cold, This is not what I ordered, The portion is too small, I waited too long for my food, and The bill is incorrect.", "nano_skill": [...]}
@@ -49,7 +49,7 @@ export const getMatchingExercise = () => `    {
       "instructions": "Match each term with its correct definition.",
       "items": [
         {"term": "Appetizer", "definition": "A small dish served before the main course to stimulate the appetite.", "nano_skill": [{"name": "ns.vocab.definition_matching", "confidence": 0.90, "reason": "Requires matching term to its definition"}]},
-        {"term": "Cuisine", "definition": "A style or method of cooking, especially as characteristic of a particular country or region.", "nano_skill": [{"name": "ns.vocab.food_culture_terms", "confidence": 0.93, "reason": "Tests understanding of culinary terminology"}]},
+        {"term": "Cuisine", "definition": "A style or method of cooking, especially as characteristic of a particular country or region.", "nano_skill": [{"name": "ns.vocab.contextual_meaning", "confidence": 0.93, "reason": "Tests understanding of culinary terminology in context"}]},
         {"term": "Portion", "definition": "The amount of food served to one person at a meal.", "nano_skill": [...]},
         {"term": "Incorrect", "definition": "Not accurate or wrong; used especially in the context of errors with orders or bills.", "nano_skill": [...]},
         {"term": "Complaint", "definition": "A statement that something is wrong or not satisfactory, especially in service or quality.", "nano_skill": [...]},
@@ -70,8 +70,8 @@ export const getFillInBlanksExercise = () => `    {
       "instructions": "Complete each sentence with the correct word from the box.",
       "word_bank": ["famous", "international", "incorrect", "small", "popular", "cold", "different", "thin", "expensive", "common"],
       "sentences": [
-        {"text": "New York is _____ for its wide variety of restaurants and street food.", "answer": "famous", "nano_skill": [{"name": "ns.vocab.adjective_collocation_for", "confidence": 0.94, "reason": "Tests 'famous for' collocation"}]},
-        {"text": "The city offers many _____ cuisines, like Thai, Italian, and Indian.", "answer": "international", "nano_skill": [{"name": "ns.vocab.nationality_category_adjective", "confidence": 0.93, "reason": "Tests adjective describing origin/nationality scope"}]},
+        {"text": "New York is _____ for its wide variety of restaurants and street food.", "answer": "famous", "nano_skill": [{"name": "ns.coll.adjective_preposition", "confidence": 0.94, "reason": "Tests 'famous for' collocation"}]},
+        {"text": "The city offers many _____ cuisines, like Thai, Italian, and Indian.", "answer": "international", "nano_skill": [{"name": "ns.vocab.contextual_word_choice", "confidence": 0.93, "reason": "Tests selecting correct adjective from word bank by context"}]},
         {"text": "Customers often complain when their bill is _____.", "answer": "incorrect", "nano_skill": [...]},
         {"text": "Appetizers are usually _____ dishes served before the main course.", "answer": "small", "nano_skill": [...]},
         {"text": "Pizza is one of the most _____ foods in New York.", "answer": "popular", "nano_skill": [...]},
@@ -99,7 +99,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "best", "correct": false},
             {"label": "D", "text": "the better", "correct": false}
           ],
-          "nano_skill": [{"name": "ns.grammar.comparative_irregular_good", "confidence": 0.95, "reason": "Tests irregular comparative form of 'good'"}]
+          "nano_skill": [{"name": "ns.comp.irregular_form", "confidence": 0.95, "reason": "Tests irregular comparative form of 'good'"}]
         },
         {
           "text": "That was the ______ meal I've ever had!",
@@ -109,7 +109,7 @@ export const getMultipleChoiceExercise = () => `    {
             {"label": "C", "text": "deliciouser", "correct": false},
             {"label": "D", "text": "deliciousest", "correct": false}
           ],
-          "nano_skill": [{"name": "ns.grammar.superlative_long_adjective", "confidence": 0.94, "reason": "Tests 'most + adjective' superlative form"}]
+          "nano_skill": [{"name": "ns.sup.long_adjective_form", "confidence": 0.94, "reason": "Tests 'most + adjective' superlative form"}]
         },
         {
           "text": "Chinese food is usually ______ than British food.",
@@ -216,8 +216,8 @@ export const getDialogueExercise = () => `    {
         {"speaker": "Customer", "text": "No problem. Thank you for your help."}
       ],
       "expressions": [
-        {"text": "I'd like to order the ……, please.", "nano_skill": [{"name": "ns.speaking.polite_request_ordering", "confidence": 0.95, "reason": "Tests polite ordering structure with 'I'd like'"}]},
-        {"text": "Can I see the menu, please?", "nano_skill": [{"name": "ns.speaking.polite_request_can", "confidence": 0.94, "reason": "Tests 'Can I' for polite requests"}]},
+        {"text": "I'd like to order the ……, please.", "nano_skill": [{"name": "ns.speaking.polite_request", "confidence": 0.95, "reason": "Tests polite ordering structure with 'I'd like'"}]},
+        {"text": "Can I see the menu, please?", "nano_skill": [{"name": "ns.speaking.asking_for_information", "confidence": 0.94, "reason": "Tests 'Can I' for polite requests"}]},
         {"text": "Could you recommend something vegetarian?", "nano_skill": [...]},
         {"text": "I think there's a mistake with my order.", "nano_skill": [...]},
         {"text": "Excuse me, but this isn't what I asked for.", "nano_skill": [...]},
@@ -239,7 +239,7 @@ export const getDiscussionExercise = () => `    {
       "instructions": "Discuss these questions with your teacher or partner.",
       "questions": [
         {"text": "What is your favorite type of restaurant and why?", "nano_skill": [{"name": "ns.speaking.opinion_expression", "confidence": 0.95, "reason": "Tests ability to express and justify personal preferences"}]},
-        {"text": "Have you ever had a bad experience in a restaurant? What happened?", "nano_skill": [{"name": "ns.speaking.narrative_past_experience", "confidence": 0.93, "reason": "Tests past tense narrative and sequencing"}]},
+        {"text": "Have you ever had a bad experience in a restaurant? What happened?", "nano_skill": [{"name": "ns.speaking.narrating_past_experience", "confidence": 0.93, "reason": "Tests past tense narrative and sequencing"}]},
         {"text": "Do you prefer eating at home or dining out? Give reasons using comparatives.", "nano_skill": [...]},
         {"text": "What dish would you recommend to someone visiting your country for the first time?", "nano_skill": [...]},
         {"text": "Which restaurant in your city is the most popular? Why do you think it's the best?", "nano_skill": [...]},
@@ -259,8 +259,8 @@ export const getErrorCorrectionExercise = () => `    {
       "time": 7,
       "instructions": "Find and correct the errors in these sentences.",
       "sentences": [
-        {"text": "This pizza is more better than the one I had yesterday.", "correction": "This pizza is better than the one I had yesterday.", "nano_skill": [{"name": "ns.grammar.double_comparative_error", "confidence": 0.96, "reason": "Tests recognition of redundant 'more' with irregular comparative"}]},
-        {"text": "She is the most tallest girl in the class.", "correction": "She is the tallest girl in the class.", "nano_skill": [{"name": "ns.grammar.double_superlative_error", "confidence": 0.95, "reason": "Tests recognition of redundant 'most' with -est ending"}]},
+        {"text": "This pizza is more better than the one I had yesterday.", "correction": "This pizza is better than the one I had yesterday.", "nano_skill": [{"name": "ns.comp.double_comparative_error", "confidence": 0.96, "reason": "Tests recognition of redundant 'more' with irregular comparative"}]},
+        {"text": "She is the most tallest girl in the class.", "correction": "She is the tallest girl in the class.", "nano_skill": [{"name": "ns.sup.double_superlative_error", "confidence": 0.95, "reason": "Tests recognition of redundant 'most' with -est ending"}]},
         {"text": "My house is more big than yours.", "correction": "My house is bigger than yours.", "nano_skill": [...]},
         {"text": "Today is the most hottest day of the year.", "correction": "Today is the hottest day of the year.", "nano_skill": [...]},
         {"text": "This restaurant is more expensiveer than the other one.", "correction": "This restaurant is more expensive than the other one.", "nano_skill": [...]},
@@ -283,7 +283,7 @@ export const getOddOneOutExercise = () => `    {
       "instructions": "In each group, find the word that is grammatically different from the others (different part of speech).",
       "questions": [
         {"options": ["running", "swimming", "cycling", "sport", "dancing"], "correct_answer": "sport", "nano_skill": [{"name": "ns.vocab.gerund_recognition", "confidence": 0.94, "reason": "Tests identifying gerunds (-ing forms) as a group"}]},
-        {"options": ["quickly", "slowly", "carefully", "fast", "quietly"], "correct_answer": "fast", "nano_skill": [{"name": "ns.vocab.adverb_ly_pattern", "confidence": 0.93, "reason": "Tests recognition of -ly adverb pattern"}]},
+        {"options": ["quickly", "slowly", "carefully", "fast", "quietly"], "correct_answer": "fast", "nano_skill": [{"name": "ns.vocab.part_of_speech_recognition", "confidence": 0.93, "reason": "Tests recognition of -ly adverb pattern"}]},
         {"options": ["delicious", "tasty", "eat", "spicy", "sweet"], "correct_answer": "eat", "nano_skill": [...]},
         {"options": ["waiter", "chef", "serve", "cook", "bartender"], "correct_answer": "serve", "nano_skill": [...]},
         {"options": ["reservation", "booking", "order", "complain", "menu"], "correct_answer": "complain", "nano_skill": [...]},
@@ -304,8 +304,8 @@ export const getSynonymsExercise = () => `    {
       "time": 5,
       "instructions": "Match each word on the left with its synonym (word with similar meaning) on the right.",
       "items": [
-        { "term": "delicious", "definition": "tasty", "letter": "A", "nano_skill": [{"name": "ns.vocab.synonym_food_adjective", "confidence": 0.95, "reason": "Tests knowledge of synonyms for taste description"}]},
-        { "term": "expensive", "definition": "costly", "letter": "B", "nano_skill": [{"name": "ns.vocab.synonym_price_adjective", "confidence": 0.94, "reason": "Tests knowledge of synonyms for high cost"}]},
+        { "term": "delicious", "definition": "tasty", "letter": "A", "nano_skill": [{"name": "ns.syn.adjective_synonym", "confidence": 0.95, "reason": "Tests knowledge of synonyms for taste description"}]},
+        { "term": "expensive", "definition": "costly", "letter": "B", "nano_skill": [{"name": "ns.syn.adjective_synonym", "confidence": 0.94, "reason": "Tests knowledge of synonyms for high cost"}]},
         { "term": "recommend", "definition": "suggest", "letter": "C", "nano_skill": [...]},
         { "term": "popular", "definition": "well-liked", "letter": "D", "nano_skill": [...]},
         { "term": "affordable", "definition": "reasonably priced", "letter": "E", "nano_skill": [...]},
@@ -326,8 +326,8 @@ export const getAntonymsExercise = () => `    {
       "time": 5,
       "instructions": "Match each word on the left with its antonym (word with opposite meaning) on the right.",
       "items": [
-        { "term": "expensive", "definition": "cheap", "letter": "A", "nano_skill": [{"name": "ns.vocab.antonym_price_adjective", "confidence": 0.95, "reason": "Tests knowledge of opposite price descriptors"}]},
-        { "term": "delicious", "definition": "tasteless", "letter": "B", "nano_skill": [{"name": "ns.vocab.antonym_taste_adjective", "confidence": 0.94, "reason": "Tests knowledge of opposite taste descriptions"}]},
+        { "term": "expensive", "definition": "cheap", "letter": "A", "nano_skill": [{"name": "ns.ant.adjective_antonym", "confidence": 0.95, "reason": "Tests knowledge of opposite price descriptors"}]},
+        { "term": "delicious", "definition": "tasteless", "letter": "B", "nano_skill": [{"name": "ns.ant.adjective_antonym", "confidence": 0.94, "reason": "Tests knowledge of opposite taste descriptions"}]},
         { "term": "spicy", "definition": "mild", "letter": "C", "nano_skill": [...]},
         { "term": "fresh", "definition": "stale", "letter": "D", "nano_skill": [...]},
         { "term": "hot", "definition": "cold", "letter": "E", "nano_skill": [...]},
@@ -348,8 +348,8 @@ export const getSynonymsAntonymsExercise = () => `    {
       "time": 7,
       "instructions": "Match each word with its synonym or antonym from the options provided.",
       "items": [
-        { "term": "delicious", "definition": "tasty", "letter": "A", "nano_skill": [{"name": "ns.vocab.synonym_food_adjective", "confidence": 0.95, "reason": "Tests knowledge of taste description synonyms"}] },
-        { "term": "expensive", "definition": "cheap", "letter": "B", "nano_skill": [{"name": "ns.vocab.antonym_price_adjective", "confidence": 0.94, "reason": "Tests knowledge of opposite price descriptors"}] },
+        { "term": "delicious", "definition": "tasty", "letter": "A", "nano_skill": [{"name": "ns.syn.adjective_synonym", "confidence": 0.95, "reason": "Tests knowledge of taste description synonyms"}] },
+        { "term": "expensive", "definition": "cheap", "letter": "B", "nano_skill": [{"name": "ns.ant.adjective_antonym", "confidence": 0.94, "reason": "Tests knowledge of opposite price descriptors"}] },
         { "term": "popular", "definition": "famous", "letter": "C", "nano_skill": [...]},
         { "term": "fresh", "definition": "new", "letter": "D", "nano_skill": [...]},
         { "term": "hot", "definition": "cold", "letter": "E", "nano_skill": [...]},
@@ -369,8 +369,8 @@ export const getSentenceTransformationExercise = () => `    {
       "time": 8,
       "instructions": "Transform these sentences as instructed, keeping the same meaning.",
       "sentences": [
-        {"original": "The chef prepares the meals every morning.", "instruction": "Change to passive voice", "transformed": "The meals are prepared by the chef every morning.", "nano_skill": [{"name": "ns.grammar.passive_present_simple", "confidence": 0.95, "reason": "Tests transformation to present simple passive"}]},
-        {"original": "The restaurant is more expensive than the café.", "instruction": "Use 'not as... as'", "transformed": "The café is not as expensive as the restaurant.", "nano_skill": [{"name": "ns.grammar.not_as_as_comparison", "confidence": 0.94, "reason": "Tests 'not as... as' structure formation"}]},
+        {"original": "The chef prepares the meals every morning.", "instruction": "Change to passive voice", "transformed": "The meals are prepared by the chef every morning.", "nano_skill": [{"name": "ns.passive.active_to_passive", "confidence": 0.95, "reason": "Tests transformation to present simple passive"}]},
+        {"original": "The restaurant is more expensive than the café.", "instruction": "Use 'not as... as'", "transformed": "The café is not as expensive as the restaurant.", "nano_skill": [{"name": "ns.comp.not_as_as_structure", "confidence": 0.94, "reason": "Tests 'not as... as' structure formation"}]},
         {"original": "I have never eaten such delicious pizza.", "instruction": "Use superlative", "transformed": "This is the most delicious pizza I have ever eaten.", "nano_skill": [...]},
         {"original": "The waiter said, 'Your table is ready.'", "instruction": "Change to reported speech", "transformed": "The waiter said that our table was ready.", "nano_skill": [...]},
         {"original": "We ordered dessert after we finished the main course.", "instruction": "Use 'having + past participle'", "transformed": "Having finished the main course, we ordered dessert.", "nano_skill": [...]},
@@ -390,8 +390,8 @@ export const getWordOrderExercise = () => `    {
       "time": 6,
       "instructions": "Put the words in the correct order to make meaningful sentences about restaurants.",
       "sentences": [
-        {"scrambled_words": "this / restaurant / the / in / food / neighborhood / best / serves", "correct_order": "This restaurant serves the best food in the neighborhood.", "nano_skill": [{"name": "ns.grammar.word_order_svo", "confidence": 0.94, "reason": "Tests Subject-Verb-Object word order"}]},
-        {"scrambled_words": "always / we / tip / good / service / for / leave / a", "correct_order": "We always leave a tip for good service.", "nano_skill": [{"name": "ns.grammar.adverb_frequency_position", "confidence": 0.93, "reason": "Tests placing 'always' between subject and verb"}]},
+        {"scrambled_words": "this / restaurant / the / in / food / neighborhood / best / serves", "correct_order": "This restaurant serves the best food in the neighborhood.", "nano_skill": [{"name": "ns.wo.subject_verb_object", "confidence": 0.94, "reason": "Tests Subject-Verb-Object word order"}]},
+        {"scrambled_words": "always / we / tip / good / service / for / leave / a", "correct_order": "We always leave a tip for good service.", "nano_skill": [{"name": "ns.wo.adverb_frequency_position", "confidence": 0.93, "reason": "Tests placing 'always' between subject and verb"}]},
         {"scrambled_words": "menu / has / the / variety / wide / of / dishes / a", "correct_order": "The menu has a wide variety of dishes.", "nano_skill": [...]},
         {"scrambled_words": "complained / customer / the / about / cold / the / food", "correct_order": "The customer complained about the cold food.", "nano_skill": [...]},
         {"scrambled_words": "book / should / you / advance / table / in / a", "correct_order": "You should book a table in advance.", "nano_skill": [...]},
@@ -411,8 +411,8 @@ export const getGapTextExercise = () => `    {
       "time": 8,
       "instructions": "Fill in the gaps with the correct form of the verbs in brackets. The word in parentheses after each gap is the incorrect-word that needs transformation:",
       "sentences": [
-        {"text": "Yesterday I _____ (go) to the restaurant to meet my friend.", "answer": "went", "verb": "go", "nano_skill": [{"name": "ns.grammar.past_simple_irregular_go", "confidence": 0.95, "reason": "Tests irregular past form 'go' → 'went'"}]},
-        {"text": "The waiter _____ (be) very polite and helpful throughout the meal.", "answer": "was", "verb": "be", "nano_skill": [{"name": "ns.grammar.past_simple_be_singular", "confidence": 0.94, "reason": "Tests 'was' for singular subject in past"}]},
+        {"text": "Yesterday I _____ (go) to the restaurant to meet my friend.", "answer": "went", "verb": "go", "nano_skill": [{"name": "ns.ps.irregular_verb_form", "confidence": 0.95, "reason": "Tests irregular past form 'go' → 'went'"}]},
+        {"text": "The waiter _____ (be) very polite and helpful throughout the meal.", "answer": "was", "verb": "be", "nano_skill": [{"name": "ns.ps.simple_past_formation", "confidence": 0.94, "reason": "Tests 'was' for singular subject in past"}]},
         {"text": "She has _____ (work) as a chef in this restaurant for five years now.", "answer": "been working", "verb": "work", "nano_skill": [...]},
         {"text": "If I _____ (be) you, I would try the seafood special today.", "answer": "were", "verb": "be", "nano_skill": [...]},
         {"text": "The food was so _____ (spice) that I had to drink three glasses of water.", "answer": "spicy", "verb": "spice", "nano_skill": [...]},
@@ -432,8 +432,8 @@ export const getNegativePrefixesExercise = () => `    {
       "time": 6,
       "instructions": "Add the correct negative prefix (un-, in-, im-, dis-) to create the opposite meaning.",
       "words": [
-        {"word": "satisfied", "answer": "dissatisfied", "nano_skill": [{"name": "ns.vocab.prefix_dis_meaning", "confidence": 0.95, "reason": "Tests 'dis-' prefix for negation"}]},
-        {"word": "cooked", "answer": "uncooked", "nano_skill": [{"name": "ns.vocab.prefix_un_meaning", "confidence": 0.94, "reason": "Tests 'un-' prefix for negation"}]},
+        {"word": "satisfied", "answer": "dissatisfied", "nano_skill": [{"name": "ns.neg.prefix_dis_selection", "confidence": 0.95, "reason": "Tests 'dis-' prefix for negation"}]},
+        {"word": "cooked", "answer": "uncooked", "nano_skill": [{"name": "ns.neg.prefix_un_selection", "confidence": 0.94, "reason": "Tests 'un-' prefix for negation"}]},
         {"word": "polite", "answer": "impolite", "nano_skill": [...]},
         {"word": "correct", "answer": "incorrect", "nano_skill": [...]},
         {"word": "fresh", "answer": "unfresh", "nano_skill": [...]},
@@ -455,8 +455,8 @@ export const getCategorizeExercise = () => `    {
       "time": 7,
       "instructions": "Sort these food and restaurant-related items into the correct categories.",
       "items": [
-        {"word": "pizza", "nano_skill": [{"name": "ns.vocab.semantic_category_food", "confidence": 0.95, "reason": "Tests categorization of 'pizza' as food item"}]},
-        {"word": "waiter", "nano_skill": [{"name": "ns.vocab.semantic_category_occupation", "confidence": 0.95, "reason": "Tests categorization of 'waiter' as staff"}]},
+        {"word": "pizza", "nano_skill": [{"name": "ns.vocab.semantic_categorization", "confidence": 0.95, "reason": "Tests categorization of 'pizza' as food item"}]},
+        {"word": "waiter", "nano_skill": [{"name": "ns.vocab.semantic_categorization", "confidence": 0.95, "reason": "Tests categorization of 'waiter' as staff"}]},
         {"word": "spoon", "nano_skill": [...]},
         {"word": "breakfast", "nano_skill": [...]},
         {"word": "sushi", "nano_skill": [...]},
@@ -473,8 +473,8 @@ export const getCategorizeExercise = () => `    {
         {"word": "snack", "nano_skill": [...]}
       ],
       "categories": [
-        {"name": "Food Items", "correct_items": ["pizza", "sushi", "pasta", "burger"], "nano_skill": [{"name": "ns.vocab.semantic_grouping_food", "confidence": 0.95, "reason": "Tests ability to group food vocabulary"}]},
-        {"name": "Restaurant Staff", "correct_items": ["waiter", "chef", "manager", "customer"], "nano_skill": [{"name": "ns.vocab.semantic_grouping_people", "confidence": 0.94, "reason": "Tests ability to group restaurant personnel vocabulary"}]},
+        {"name": "Food Items", "correct_items": ["pizza", "sushi", "pasta", "burger"], "nano_skill": [{"name": "ns.vocab.word_family_grouping", "confidence": 0.95, "reason": "Tests ability to group food vocabulary"}]},
+        {"name": "Restaurant Staff", "correct_items": ["waiter", "chef", "manager", "customer"], "nano_skill": [{"name": "ns.vocab.word_family_grouping", "confidence": 0.94, "reason": "Tests ability to group restaurant personnel vocabulary"}]},
         {"name": "Eating Utensils", "correct_items": ["spoon", "fork", "knife", "plate"], "nano_skill": [...]},
         {"name": "Meal Times", "correct_items": ["breakfast", "lunch", "dinner", "snack"], "nano_skill": [...]}
       ],
@@ -488,8 +488,8 @@ export const getParaphrasingExercise = () => `    {
       "time": 8,
       "instructions": "Rewrite these sentences about restaurant experiences using different words but keeping the same meaning.",
       "sentences": [
-        {"original": "The food was absolutely delicious.", "word_to_use": "tasty", "answer": "The meal was extremely tasty.", "nano_skill": [{"name": "ns.vocab.synonym_selection_delicious", "confidence": 0.95, "reason": "Tests ability to find synonyms for 'delicious'"}]},
-        {"original": "We had to wait a long time for our order.", "word_to_use": "ages", "answer": "Our food took ages to arrive.", "nano_skill": [{"name": "ns.vocab.time_expression_alternatives", "confidence": 0.94, "reason": "Tests expressing duration with different phrases"}]},
+        {"original": "The food was absolutely delicious.", "word_to_use": "tasty", "answer": "The meal was extremely tasty.", "nano_skill": [{"name": "ns.writing.synonym_substitution", "confidence": 0.95, "reason": "Tests ability to find synonyms for 'delicious'"}]},
+        {"original": "We had to wait a long time for our order.", "word_to_use": "ages", "answer": "Our food took ages to arrive.", "nano_skill": [{"name": "ns.writing.structural_paraphrase", "confidence": 0.94, "reason": "Tests expressing duration with different phrases"}]},
         {"original": "The restaurant is always crowded on weekends.", "word_to_use": "busy", "answer": "The place gets really busy on Saturdays and Sundays.", "nano_skill": [...]},
         {"original": "I complained about the cold soup.", "word_to_use": "temperature", "answer": "I told the waiter that my soup wasn't the right temperature.", "nano_skill": [...]},
         {"original": "This café serves the best coffee in town.", "word_to_use": "finest", "answer": "This place has the finest coffee around.", "nano_skill": [...]},
@@ -505,8 +505,8 @@ export const getCompleteWordExercise = () => `    {
       "time": 6,
       "instructions": "Complete these restaurant and food-related words by filling in the missing letters.",
       "words": [
-        {"partial": "rest_urant", "complete": "restaurant", "clue": "A place where people go to eat meals", "nano_skill": [{"name": "ns.spelling.vowel_placement_a", "confidence": 0.95, "reason": "Tests correct placement of vowel 'a' in 'restaurant'"}]},
-        {"partial": "del_cious", "complete": "delicious", "clue": "Having a very pleasant taste", "nano_skill": [{"name": "ns.spelling.vowel_placement_i", "confidence": 0.94, "reason": "Tests correct placement of vowel 'i' in 'delicious'"}]},
+        {"partial": "rest_urant", "complete": "restaurant", "clue": "A place where people go to eat meals", "nano_skill": [{"name": "ns.vocab.vowel_pattern_recognition", "confidence": 0.95, "reason": "Tests correct placement of vowel 'a' in 'restaurant'"}]},
+        {"partial": "del_cious", "complete": "delicious", "clue": "Having a very pleasant taste", "nano_skill": [{"name": "ns.vocab.spelling_from_context", "confidence": 0.94, "reason": "Tests correct placement of vowel 'i' in 'delicious'"}]},
         {"partial": "_ppetizer", "complete": "appetizer", "clue": "A small dish served before the main course", "nano_skill": [...]},
         {"partial": "reserv_tion", "complete": "reservation", "clue": "Booking a table in advance", "nano_skill": [...]},
         {"partial": "cust_mer", "complete": "customer", "clue": "A person who buys food or service", "nano_skill": [...]},
@@ -526,8 +526,8 @@ export const getMatchingHalvesExercise = () => `    {
       "time": 7,
       "instructions": "Match the first half of each sentence with the correct second half.",
       "sentence_halves": [
-        {"first_half": "I'd like to make a reservation", "second_half": "for four people at 7:30 PM this Friday.", "id": 1, "nano_skill": [{"name": "ns.grammar.would_like_pattern", "confidence": 0.95, "reason": "Tests understanding of 'I'd like to' polite request pattern"}]},
-        {"first_half": "The waiter recommended the grilled salmon", "second_half": "because it's the chef's specialty this week.", "id": 2, "nano_skill": [{"name": "ns.grammar.past_simple_recommend", "confidence": 0.94, "reason": "Tests understanding of recommendation context"}]},
+        {"first_half": "I'd like to make a reservation", "second_half": "for four people at 7:30 PM this Friday.", "id": 1, "nano_skill": [{"name": "ns.speaking.polite_request", "confidence": 0.95, "reason": "Tests understanding of 'I'd like to' polite request pattern"}]},
+        {"first_half": "The waiter recommended the grilled salmon", "second_half": "because it's the chef's specialty this week.", "id": 2, "nano_skill": [{"name": "ns.reading.clause_connection", "confidence": 0.94, "reason": "Tests understanding of because-clause connection"}]},
         {"first_half": "Could you bring us two glasses of sparkling water", "second_half": "and the dessert menu, please?", "id": 3, "nano_skill": [...]},
         {"first_half": "I ordered the vegetarian pasta", "second_half": "but they brought me a seafood dish instead.", "id": 4, "nano_skill": [...]},
         {"first_half": "This Italian restaurant is famous", "second_half": "for serving the most authentic pizza in town.", "id": 5, "nano_skill": [...]},
@@ -572,8 +572,8 @@ export const getAnswerQuestionsExercise = () => `    {
       "time": 8,
       "instructions": "Answer these questions about your personal food preferences and restaurant experiences.",
       "questions": [
-        {"question": "What's your favorite restaurant in your city, and why do you think it's better than others?", "focus": "Comparatives and personal preferences", "nano_skill": [{"name": "ns.grammar.comparative_better_than", "confidence": 0.95, "reason": "Tests comparative 'better than' structure"}]},
-        {"question": "Describe the worst restaurant experience you've ever had. What went wrong?", "focus": "Past tense and complaint language", "nano_skill": [{"name": "ns.grammar.superlative_worst", "confidence": 0.94, "reason": "Tests superlative 'worst'"}]},
+        {"question": "What's your favorite restaurant in your city, and why do you think it's better than others?", "focus": "Comparatives and personal preferences", "nano_skill": [{"name": "ns.comp.irregular_form", "confidence": 0.95, "reason": "Tests comparative 'better than' structure"}]},
+        {"question": "Describe the worst restaurant experience you've ever had. What went wrong?", "focus": "Past tense and complaint language", "nano_skill": [{"name": "ns.sup.irregular_form", "confidence": 0.94, "reason": "Tests superlative 'worst'"}]},
         {"question": "If you could open your own restaurant, what type of cuisine would you serve and why?", "focus": "Conditional and future plans", "nano_skill": [...]},
         {"question": "How do you usually react when you receive poor service in a restaurant?", "focus": "Present habits and complaint strategies", "nano_skill": [...]},
         {"question": "What's the most expensive meal you've ever eaten? Was it worth the price?", "focus": "Superlatives and past experiences", "nano_skill": [...]},
@@ -601,7 +601,7 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "C", "text": "A kitchen interior", "correct": false},
             {"label": "D", "text": "A food delivery", "correct": false}
           ],
-          "nano_skill": [{"name": "ns.reading.main_idea_identification", "confidence": 0.95, "reason": "Tests ability to identify main focus of visual"}]
+          "nano_skill": [{"name": "ns.reading.main_idea_extraction", "confidence": 0.95, "reason": "Tests ability to identify main focus of visual"}]
         },
         {
           "text": "How would you describe the atmosphere in this image?",
@@ -611,7 +611,7 @@ export const getMultipleChoicePictureExercise = () => `    {
             {"label": "C", "text": "Formal and elegant", "correct": false},
             {"label": "D", "text": "Dark and gloomy", "correct": false}
           ],
-          "nano_skill": [{"name": "ns.vocab.atmosphere_adjectives", "confidence": 0.94, "reason": "Tests atmosphere description adjectives"}]
+          "nano_skill": [{"name": "ns.vocab.contextual_meaning", "confidence": 0.94, "reason": "Tests atmosphere description adjectives"}]
         },
         {
           "text": "What type of food can you see in the picture?",
@@ -797,7 +797,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "C", "text": "To complain", "correct": false},
             {"label": "D", "text": "To persuade", "correct": false}
           ],
-          "nano_skill": [{"name": "ns.listening.purpose_identification", "confidence": 0.96, "reason": "Tests identifying speaker's main purpose"}]
+          "nano_skill": [{"name": "ns.listening.main_idea_identification", "confidence": 0.96, "reason": "Tests identifying speaker's main purpose"}]
         },
         {
           "text": "Where does this conversation most likely take place?",
@@ -807,7 +807,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "C", "text": "At a school", "correct": false},
             {"label": "D", "text": "At an office", "correct": false}
           ],
-          "nano_skill": [{"name": "ns.listening.setting_inference", "confidence": 0.95, "reason": "Tests inferring location from audio cues"}]
+          "nano_skill": [{"name": "ns.listening.detail_extraction", "confidence": 0.95, "reason": "Tests inferring location from audio cues"}]
         },
         {
           "text": "What time is mentioned in the audio?",
@@ -827,7 +827,7 @@ export const getMultipleChoiceAudioExercise = () => `    {
             {"label": "C", "text": "Concerned", "correct": true},
             {"label": "D", "text": "Indifferent", "correct": false}
           ],
-          "nano_skill": [{"name": "ns.listening.emotion_inference", "confidence": 0.94, "reason": "Tests inferring speaker emotion from voice"}, {"name": "ns.listening.tone_interpretation", "confidence": 0.88, "reason": "Tests interpreting emotional tone"}],
+          "nano_skill": [{"name": "ns.listening.emotion_inference", "confidence": 0.94, "reason": "Tests inferring speaker emotion from voice"}],
           "micro_skill": [{"name": "ms.listening.audio_multiple_choice", "confidence": 0.94, "reason": "Tests audio-based multiple choice ability"}]
         },
         {
@@ -902,8 +902,8 @@ export const getTrueFalseAudioExercise = () => `    {
       "instructions": "Listen to the audio carefully and decide if each statement is true or false based on what you hear.",
       "audio_url": null,
       "statements": [
-        {"text": "The speakers mention a specific time in the audio.", "isTrue": true, "nano_skill": [{"name": "ns.listening.time_mention_detection", "confidence": 0.95, "reason": "Tests detecting time references in audio"}]},
-        {"text": "The conversation takes place in the morning.", "isTrue": false, "nano_skill": [{"name": "ns.listening.time_of_day_inference", "confidence": 0.94, "reason": "Tests inferring time of day from context"}]},
+        {"text": "The speakers mention a specific time in the audio.", "isTrue": true, "nano_skill": [{"name": "ns.listening.detail_extraction", "confidence": 0.95, "reason": "Tests detecting time references in audio"}]},
+        {"text": "The conversation takes place in the morning.", "isTrue": false, "nano_skill": [{"name": "ns.listening.inference_validation", "confidence": 0.94, "reason": "Tests inferring time of day from context"}]},
         {"text": "One of the speakers expresses dissatisfaction.", "isTrue": true, "nano_skill": [...]},
         {"text": "The audio mentions a price or cost.", "isTrue": true, "nano_skill": [...]},
         {"text": "The speakers are planning to leave immediately.", "isTrue": false, "nano_skill": [...]},
@@ -923,8 +923,8 @@ export const getFillInBlanksAudioExercise = () => `    {
       "time": 10,
       "instructions": "Listen to the audio and complete the sentences below with the missing words you hear.",
       "sentences": [
-        {"text": "Welcome to _______ Restaurant.", "answer": "Mario's", "nano_skill": [{"name": "ns.listening.proper_noun_recognition", "confidence": 0.95, "reason": "Tests recognizing proper noun from audio"}]},
-        {"text": "I'm _______ and I'll be your _______ today.", "answer": "Jennifer, waitress", "nano_skill": [{"name": "ns.listening.name_recognition", "confidence": 0.94, "reason": "Tests recognizing names from audio"}]},
+        {"text": "Welcome to _______ Restaurant.", "answer": "Mario's", "nano_skill": [{"name": "ns.listening.detail_extraction", "confidence": 0.95, "reason": "Tests recognizing proper noun from audio"}]},
+        {"text": "I'm _______ and I'll be your _______ today.", "answer": "Jennifer, waitress", "nano_skill": [{"name": "ns.listening.detail_extraction", "confidence": 0.94, "reason": "Tests recognizing names from audio"}]},
         {"text": "Can I start you off with something to _______?", "answer": "drink", "nano_skill": [...]},
         {"text": "We have some _______ specials today.", "answer": "excellent", "nano_skill": [...]},
         {"text": "The chef _______ the grilled salmon.", "answer": "recommends", "nano_skill": [...]},
@@ -946,8 +946,8 @@ export const getAnswerQuestionsAudioExercise = () => `    {
       "instructions": "Listen to the audio and answer these questions based on what you hear and your personal opinions.",
       "audio_url": null,
       "questions": [
-        {"question": "Describe the main situation or event you hear in the audio. What is happening?", "focus": "Comprehension and summary", "nano_skill": [{"name": "ns.listening.main_idea_summary", "confidence": 0.95, "reason": "Tests summarizing main audio content"}]},
-        {"question": "What emotions or attitudes do you hear in the speakers' voices? How can you tell?", "focus": "Tone analysis and inference", "nano_skill": [{"name": "ns.listening.emotion_analysis", "confidence": 0.94, "reason": "Tests analyzing emotions in speech"}]},
+        {"question": "Describe the main situation or event you hear in the audio. What is happening?", "focus": "Comprehension and summary", "nano_skill": [{"name": "ns.listening.main_idea_identification", "confidence": 0.95, "reason": "Tests summarizing main audio content"}]},
+        {"question": "What emotions or attitudes do you hear in the speakers' voices? How can you tell?", "focus": "Tone analysis and inference", "nano_skill": [{"name": "ns.listening.emotion_inference", "confidence": 0.94, "reason": "Tests analyzing emotions in speech"}]},
         {"question": "What specific words or phrases stood out to you? Why?", "focus": "Vocabulary and attention to detail", "nano_skill": [...]},
         {"question": "If you were in this situation, how would you respond? What would you say?", "focus": "Personal application and speaking practice", "nano_skill": [...]},
         {"question": "Compare this situation to a similar experience you've had. What's similar or different?", "focus": "Personal connection and comparison", "nano_skill": [...]},
