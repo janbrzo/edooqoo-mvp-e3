@@ -6,7 +6,14 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-19) - DSLM Layer A Cleanup Round 11:**
+**Ostatnia naprawa (2026-02-20) - DSLM Layer A Finalization Round 12:**
+- ✅ **Flashcard mastery backfill**: Obliczono mastery dla 407 starych eventów flashcard (SM-2 weighted formula)
+- ✅ **Flashcard element_type**: Ustawiono element_type='vocabulary' dla 441 starych eventów
+- ✅ **Welcome test mastery**: Obliczono mastery ze średniej nano_skill_ratings dla ~180 eventów
+- ✅ **Worksheet/homework element_type**: Ustawiono element_type z exercise_type dla 175 eventów
+- ✅ **Layer A GOTOWA**: Wszystkie źródła mają kompletne mastery i element_type. Pozostałe NULL są prawidłowe
+
+**Poprzednia naprawa (2026-02-19) - DSLM Layer A Cleanup Round 11:**
 - ✅ **Czyszczenie danych**: Usunięto ~500 śmieciowych eventów welcome_test (NULL answer_id) i 20 legacy event_source='test'
 - ✅ **Flashcard backfill**: Naprawiono 55 starych eventów z zawyżonym mastery=100 (repetition=1 → teraz 50)
 - ✅ **Auto-obliczanie mastery w triggerach**: Triggery worksheet/homework automatycznie liczą mastery ze średniej nano_skill_ratings gdy NEW.mastery IS NULL
