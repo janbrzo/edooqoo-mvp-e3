@@ -149,14 +149,52 @@ AUDIO DURATION: ${audioDuration} seconds
       : ""
 }
 
-22. PEDAGOGICAL SKILL TAGGING
-Each individual exercise item MUST include EXACTLY one nano_skill with its own confidence and its own reason
-A nano_skill represents the smallest observable and testable unit of language ability
+22. PEDAGOGICAL SKILL TAGGING (NANO_SKILL SYSTEM)
+Each individual exercise item MUST include EXACTLY one nano_skill with its own confidence and its own reason.
+A nano_skill represents the smallest observable and testable unit of language ability.
 A nano_skill MUST be verifiable from a single learner answer without external context.
-A nano_skill MUST NOT describe broad grammar topics lesson goals exercise types or teaching strategies
+A nano_skill MUST NOT describe broad grammar topics, lesson goals, exercise types, or teaching strategies.
 Confidence values MUST be in range 0.00–1.00 and express certainty that the item genuinely tests the skill.
 Reason MUST explain why this specific item tests the skill, not how it should be taught.
 nano_skill tagging MUST be logically consistent with lesson topic, lesson focus and exercise type.
+
+NANO_SKILL NAMING CONVENTION - CRITICAL:
+Format: ns.[topic_prefix].[skill_name]
+The skill_name MUST describe the LINGUISTIC SKILL being tested, NOT the lesson context.
+Keep names REUSABLE across different lessons and topics.
+Do NOT include lesson-specific words (city names, food, travel, etc.).
+Use 2-4 word descriptors separated by underscores.
+
+Topic prefixes (use ONLY these):
+GRAMMAR: ps=Past Simple, pc=Past Continuous, pp=Past Perfect, prs=Present Simple, prc=Present Continuous, prp=Present Perfect, prpc=Present Perfect Continuous, fs=Future Simple (will), fg=Future Going To, fc=Future Continuous, cond1=First Conditional, cond2=Second Conditional, cond3=Third Conditional, condm=Mixed Conditionals, passive=Passive Voice, rs=Reported Speech, rel=Relative Clauses, mod=Modal Verbs, ger_inf=Gerund vs Infinitive, phr=Phrasal Verbs, comp=Comparatives, sup=Superlatives, art=Articles, prep=Prepositions, wo=Word Order, neg=Negative Prefixes, wf=Word Formation
+VOCABULARY: vocab=General Vocabulary, coll=Collocations, idiom=Idioms, syn=Synonyms, ant=Antonyms
+SKILLS: reading=Reading, speaking=Speaking, writing=Writing, listening=Listening
+
+If grammarFocus matches a topic above, use that prefix. Otherwise choose the most fitting prefix for what the item actually tests.
+
+GOLDEN EXAMPLES per exercise type (nano_skill name only - your output must include full object with confidence and reason):
+reading: ns.reading.main_idea_extraction, ns.reading.detail_extraction, ns.reading.inference_from_context, ns.reading.paraphrase_recognition, ns.reading.sequence_of_events, ns.reading.cause_effect_identification, ns.reading.character_emotion_analysis, ns.reading.vocabulary_in_context
+true-false: ns.reading.paraphrase_recognition, ns.reading.negation_detection, ns.reading.detail_verification, ns.reading.inference_validation, ns.reading.fact_vs_opinion
+matching: ns.vocab.definition_matching, ns.vocab.contextual_meaning, ns.vocab.word_category_recognition, ns.coll.verb_noun_pairing, ns.vocab.register_awareness
+fill-in-blanks: ns.vocab.adjective_collocation, ns.vocab.contextual_word_choice, ns.vocab.semantic_field_selection, ns.[grammar_prefix].form_selection, ns.coll.fixed_expression
+multiple-choice: ns.[grammar_prefix].form_recognition, ns.comp.irregular_form, ns.sup.long_adjective_form, ns.comp.short_adjective_form, ns.comp.adverb_form
+dialogue: ns.speaking.polite_request, ns.speaking.making_complaint, ns.speaking.expressing_gratitude, ns.speaking.apologizing, ns.speaking.ordering_food, ns.speaking.asking_for_information
+discussion: ns.speaking.opinion_expression, ns.speaking.justifying_preference, ns.speaking.narrating_past_experience, ns.speaking.comparison_and_contrast, ns.speaking.hypothetical_reasoning
+error-correction: ns.[grammar_prefix].form_error_recognition, ns.[grammar_prefix].word_order_error, ns.comp.double_comparative_error, ns.sup.double_superlative_error
+odd-one-out: ns.vocab.part_of_speech_recognition, ns.vocab.gerund_recognition, ns.vocab.semantic_category_identification
+synonyms: ns.syn.adjective_synonym, ns.syn.verb_synonym, ns.syn.formal_informal_equivalent
+antonyms: ns.ant.adjective_antonym, ns.ant.verb_antonym, ns.ant.gradable_opposite
+sentence-transformation: ns.passive.active_to_passive, ns.rs.direct_to_indirect, ns.comp.not_as_as_structure, ns.sup.superlative_transformation, ns.cond1.unless_transformation
+word-order: ns.wo.subject_verb_object, ns.wo.adverb_frequency_position, ns.wo.question_inversion, ns.wo.adjective_order
+gap-text: ns.ps.irregular_verb_form, ns.prp.continuous_form, ns.cond2.subjunctive_were, ns.[grammar_prefix].verb_conjugation
+negative-prefixes: ns.neg.prefix_un_selection, ns.neg.prefix_dis_selection, ns.neg.prefix_im_selection, ns.neg.prefix_in_selection, ns.neg.prefix_ir_selection
+categorize: ns.vocab.semantic_categorization, ns.vocab.word_family_grouping, ns.vocab.register_categorization
+paraphrasing: ns.writing.synonym_substitution, ns.writing.structural_paraphrase, ns.writing.meaning_preservation
+complete-word: ns.vocab.vowel_pattern_recognition, ns.vocab.spelling_from_context
+matching-halves: ns.reading.clause_connection, ns.reading.semantic_coherence, ns.[grammar_prefix].subordinate_clause
+listening-comprehension: ns.listening.main_idea_identification, ns.listening.detail_extraction, ns.listening.speaker_identification, ns.listening.emotion_inference, ns.listening.sequence_of_events
+describe-picture: ns.speaking.scene_description, ns.speaking.object_identification, ns.speaking.spatial_description
+answer-questions: ns.speaking.opinion_expression, ns.speaking.narrating_past_experience, ns.[grammar_prefix].form_in_context
 
 ${exerciseFocusMap && Object.keys(exerciseFocusMap).length > 0 ? `
 25. EXERCISE FOCUS TAGS:

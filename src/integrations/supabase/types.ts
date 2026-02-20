@@ -1266,6 +1266,7 @@ export type Database = {
           id: string
           last_event_at: string | null
           mastery_history: Json | null
+          micro_skill: string | null
           skill_category: string
           skill_name: string
           student_id: string
@@ -1281,6 +1282,7 @@ export type Database = {
           id?: string
           last_event_at?: string | null
           mastery_history?: Json | null
+          micro_skill?: string | null
           skill_category: string
           skill_name: string
           student_id: string
@@ -1296,6 +1298,7 @@ export type Database = {
           id?: string
           last_event_at?: string | null
           mastery_history?: Json | null
+          micro_skill?: string | null
           skill_category?: string
           skill_name?: string
           student_id?: string
@@ -2071,6 +2074,28 @@ export type Database = {
           },
         ]
       }
+      student_micro_skill_metrics: {
+        Row: {
+          avg_mastery: number | null
+          last_activity: string | null
+          micro_skill: string | null
+          nano_skill_count: number | null
+          skill_category: string | null
+          student_id: string | null
+          teacher_id: string | null
+          total_events: number | null
+          trend: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_skill_metrics_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_student_event: {
@@ -2123,6 +2148,7 @@ export type Database = {
         Args: { p_teacher_id: string; p_worksheet_id: string }
         Returns: boolean
       }
+      extract_micro_skill: { Args: { skill_name: string }; Returns: string }
       extract_skill_category: { Args: { skill_name: string }; Returns: string }
       generate_flashcard_share_token: {
         Args: {
