@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - DSLM Layer A Cleanup Round 11:**
+**Latest Update (February 2026) - DSLM Layer A Finalization Round 12:**
+- **Flashcard mastery backfill**: Calculated mastery for 407 old flashcard events using SM-2 weighted formula (rep=0→0, rep=1→50, rep=2→70, rep≥3→90, rep≥4+interval≥21→100)
+- **Flashcard element_type backfill**: Set element_type='vocabulary' for 441 old flashcard events
+- **Welcome test mastery backfill**: Calculated mastery from nano_skill_ratings average for ~180 welcome_test events
+- **Worksheet/homework element_type backfill**: Set element_type from exercise_type for 175 old events
+- **Layer A status**: ALL sources now have complete mastery and element_type data. Remaining NULLs are valid (student didn't answer, teacher observations)
+
+**Previous Update (February 2026) - DSLM Layer A Cleanup Round 11:**
 - **Data cleanup**: Deleted ~500 trash welcome_test events (NULL answer_id from old trigger), 20 legacy `event_source='test'` events
 - **Flashcard mastery backfill**: Fixed 55 old events with inflated mastery=100 for repetition=1 (now correctly 50 per weighted formula)
 - **Mastery auto-calculation in triggers**: Worksheet and homework triggers now auto-calculate mastery from `nano_skill_ratings` average when `NEW.mastery` IS NULL — ensures `student_events.mastery` column is always populated
