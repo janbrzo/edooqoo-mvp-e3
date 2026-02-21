@@ -137,3 +137,28 @@ export const safeGetNanoSkill = (item: any): NanoSkill | null => {
   
   return null;
 };
+
+// NEW: Helper to safely extract ALL nano_skills from an item (for dual nano_skill support)
+// Returns array of all nano_skills (primary + writing)
+export const safeGetAllNanoSkills = (item: any): NanoSkill[] => {
+  if (typeof item !== 'object' || item === null) {
+    return [];
+  }
+  
+  const ns = item.nano_skill;
+  if (!ns) {
+    return [];
+  }
+  
+  // If nano_skill is an array, return all elements
+  if (Array.isArray(ns)) {
+    return ns.filter((s: any) => s && typeof s === 'object' && s.name);
+  }
+  
+  // If it's a single object, wrap in array
+  if (typeof ns === 'object' && ns.name) {
+    return [ns];
+  }
+  
+  return [];
+};

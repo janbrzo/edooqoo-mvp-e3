@@ -67,13 +67,14 @@ export const OPEN_ENDED_EXERCISE_TYPES = [
 
 /**
  * Safely extract nano_skill from an item (handles various data structures)
+ * Returns the FIRST nano_skill (primary)
  */
 export const safeGetNanoSkill = (item: any): NanoSkillData | null => {
   if (!item) return null;
   
   let ns = item?.nano_skill || item?.nanoSkill;
   
-  // Handle arrays - Gemini sometimes returns nano_skill as array
+  // Handle arrays - take first element (primary skill)
   if (Array.isArray(ns)) {
     ns = ns[0];
   }
@@ -86,6 +87,39 @@ export const safeGetNanoSkill = (item: any): NanoSkillData | null => {
     };
   }
   return null;
+};
+
+/**
+ * Safely extract ALL nano_skills from an item (for dual nano_skill support)
+ * Returns array of all nano_skills (primary + writing)
+ */
+export const safeGetAllNanoSkills = (item: any): NanoSkillData[] => {
+  if (!item) return [];
+  
+  const ns = item?.nano_skill || item?.nanoSkill;
+  if (!ns) return [];
+  
+  // Handle arrays - return all elements
+  if (Array.isArray(ns)) {
+    return ns
+      .filter((s: any) => s && typeof s === 'object' && s.name)
+      .map((s: any) => ({
+        name: s.name,
+        reason: s.reason || '',
+        confidence: s.confidence
+      }));
+  }
+  
+  // Single object - wrap in array
+  if (typeof ns === 'object' && ns.name) {
+    return [{
+      name: ns.name,
+      reason: ns.reason || '',
+      confidence: ns.confidence
+    }];
+  }
+  
+  return [];
 };
 
 /**
@@ -372,15 +406,16 @@ export const buildItemEvaluations = (
   const items = getExerciseItems(exerciseData);
   
   items.forEach((item: any, idx: number) => {
-    const nanoSkill = safeGetNanoSkill(item);
-    if (!nanoSkill) return;
+    // Get ALL nano_skills (primary + secondary writing)
+    const allNanoSkills = safeGetAllNanoSkills(item);
+    if (allNanoSkills.length === 0) return;
     
-    // PROBLEM 1 FIX: Skip questions without student answers
+    // Skip questions without student answers
     const studentAnswer = answers[idx];
     const hasStudentAnswer = studentAnswer !== undefined && 
                              studentAnswer !== null && 
                              String(studentAnswer).trim() !== '';
-    if (!hasStudentAnswer) return; // Don't log empty answers
+    if (!hasStudentAnswer) return;
     
     let itemMastery: number | null = null;
     
@@ -389,20 +424,21 @@ export const buildItemEvaluations = (
       if (aiEvaluations?.[idx]?.quality_score !== undefined) {
         itemMastery = Math.round(aiEvaluations[idx].quality_score! * 100);
       } else {
-        // Has answer but no AI eval yet - unknown mastery (pending)
         itemMastery = null;
       }
     } else {
-      // Closed exercise - calculate automatically
       itemMastery = calculateItemMastery(exerciseType, exerciseData, idx, studentAnswer);
     }
     
-    itemEvaluations.push({
-      question_index: idx,  // Indeks pytania dla precyzyjnego mapowania
-      name: nanoSkill.name,
-      reason: nanoSkill.reason,
-      mastery: itemMastery !== null ? itemMastery : -1, // -1 = pending AI evaluation
-      hasValue: itemMastery !== null
+    // Create evaluation for EACH nano_skill in the item
+    allNanoSkills.forEach((nanoSkill) => {
+      itemEvaluations.push({
+        question_index: idx,
+        name: nanoSkill.name,
+        reason: nanoSkill.reason,
+        mastery: itemMastery !== null ? itemMastery : -1,
+        hasValue: itemMastery !== null
+      });
     });
   });
   
