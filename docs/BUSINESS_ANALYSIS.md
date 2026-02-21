@@ -1,7 +1,7 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Feb 2026):** DSLM Layer B v5 — dual nano_skill system (primary + writing) for open-ended exercises, CEFR-tagged naming convention (ns.A2.past_simple.irregular_verb_go), visual_comprehension category for picture tasks, updated SQL extraction functions with 3-format backward compatibility, NanoSkillBadge dual display.
+**Latest Update (Feb 2026):** DSLM Layer B v5 Phase 2 — flashcard events use `ns.[CEFR].vocabulary.definition_[word]` format, translation/definition mastery modifier (0.85x/1.0x), period filter always visible, CEFR level filter (A1-C2), student switcher popover, backfilled all flashcard:UUID metrics.
 
 **Previous Update (Feb 2026):** Welcome Test v2 Round 9 — auto-transcription of speaking answers (no manual button), AI per-question scoring (0-100) for writing and speaking, new speaking_score in learning profile, Communication→Speaking in Skill Scores UI, timer pauses on inactive tab, event payload mastery updated from -1 to actual AI scores, trigger fix preventing duplicate events, test results recalculated after AI scoring.
 

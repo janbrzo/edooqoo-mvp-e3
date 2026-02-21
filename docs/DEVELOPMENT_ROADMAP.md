@@ -3,7 +3,16 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Feb 2026) - DSLM Layer B v5 ✅
+### Recently Completed (Feb 2026) - DSLM Layer B v5 Phase 2 ✅
+- Flashcard trigger generates `ns.[CEFR].vocabulary.definition_[word]` (CEFR from student level)
+- back_type mastery modifier: translation=0.85x, definition=1.0x
+- Backfilled all flashcard:UUID metrics to new ns.* format
+- Period filter always visible in SkillsOverviewPanel (contextual "no data" message)
+- CEFR level filter (A1-C2 buttons) in SkillsOverviewPanel
+- Student switcher popover on StudentPage header icon
+- visual_comprehension added to category labels/order
+
+### Previously Completed (Feb 2026) - DSLM Layer B v5 ✅
 - Dual nano_skill system for open-ended exercises (primary + writing skill)
 - CEFR-tagged nano_skill naming: ns.[CEFR].[topic].[skill_name] with full English names
 - visual_comprehension category for picture exercises

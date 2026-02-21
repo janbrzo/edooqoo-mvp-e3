@@ -6,7 +6,16 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-21) - DSLM Layer B v5:**
+**Ostatnia naprawa (2026-02-21) - DSLM Layer B v5 Phase 2:**
+- ✅ **Flashcard nano_skill**: Trigger generuje `ns.[CEFR].vocabulary.definition_[word]` zamiast `flashcard:UUID`. CEFR z poziomu studenta
+- ✅ **back_type modifier**: Translation = 0.85x mastery (łatwiejsze), Definition = 1.0x (pełne mastery)
+- ✅ **Backfill flashcard metrics**: Wszystkie `flashcard:UUID` zmigowane do nowego formatu z mergowaniem duplikatów
+- ✅ **Period filter fix**: Filtr okresu widoczny ZAWSZE, nawet gdy brak danych - komunikat kontekstowy
+- ✅ **CEFR level filter**: Przyciski A1-C2 do filtrowania umiejętności po poziomie CEFR
+- ✅ **Student switcher**: Klikalna ikona studenta z popoverem i listą studentów do szybkiej nawigacji
+- ✅ **visual_comprehension**: Dodana do CATEGORY_ORDER i CATEGORY_LABELS
+
+**Poprzednia naprawa (2026-02-21) - DSLM Layer B v5:**
 - ✅ **Dual nano_skill**: Zadania otwarte mają 2 nano_skills (primary + writing). Speaking confidence obniżony (0.35-0.45) bo ocena pośrednia
 - ✅ **CEFR w nano_skill**: Nowy format `ns.[CEFR].[topic].[skill_name]` z pełnymi nazwami (past_simple zamiast ps)
 - ✅ **visual_comprehension**: Nowa kategoria dla zadań z obrazkami (zamiast reading)

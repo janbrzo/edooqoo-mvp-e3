@@ -14,7 +14,14 @@
 
 ## Getting Started
 
-**Latest Improvements (DSLM Layer B v5):**
+**Latest Improvements (DSLM Layer B v5 Phase 2):**
+- **Flashcard CEFR naming**: Flashcard reviews now tracked as `ns.[CEFR].vocabulary.definition_[word]` instead of `flashcard:UUID`
+- **Translation vs Definition**: Translation-based flashcards get 0.85x mastery modifier (easier), English definitions get full mastery
+- **Period filter fix**: Filter stays visible even when no data exists for selected period, with helpful message
+- **CEFR filter**: New A1-C2 buttons to filter skills by CEFR level in Skills panel
+- **Student switcher**: Click the user icon on any student page to quickly switch between students
+
+**Previous Improvements (DSLM Layer B v5):**
 - **CEFR-tagged skills**: Each nano_skill now includes CEFR level (A1-C2) reflecting actual item difficulty
 - **Dual nano_skills**: Open-ended exercises track both primary skill (reading/listening/speaking) and writing ability
 - **Visual comprehension**: Picture exercises correctly categorized as visual_comprehension instead of reading

@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useSkillMetrics, SkillMetric, CategoryMetric, MicroSkillMetric } from '@/hooks/useSkillMetrics';
-import { TrendingUp, TrendingDown, Minus, BarChart3, List, ArrowUpDown, Filter, Layers } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, BarChart3, List, ArrowUpDown, Filter, Layers, GraduationCap } from 'lucide-react';
 import { MasterySparkline } from './MasterySparkline';
 import {
   ResponsiveContainer,
@@ -29,6 +29,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   writing: 'Writing',
   listening: 'Listening',
   pronunciation: 'Pronunciation',
+  visual_comprehension: 'Visual Comprehension',
   other: 'Other',
 };
 
@@ -45,7 +46,7 @@ const MICRO_SKILL_LABELS: Record<string, string> = {
   grammar_other: 'Grammar (Other)', pronunciation: 'Pronunciation',
 };
 
-const CATEGORY_ORDER = ['grammar', 'vocabulary', 'reading', 'speaking', 'writing', 'listening', 'pronunciation'];
+const CATEGORY_ORDER = ['grammar', 'vocabulary', 'reading', 'speaking', 'writing', 'listening', 'pronunciation', 'visual_comprehension'];
 
 const PERIOD_PRESETS = [
   { label: '7d', days: 7 },
@@ -56,6 +57,8 @@ const PERIOD_PRESETS = [
   { label: '180d', days: 180 },
   { label: 'All', days: null as number | null },
 ];
+
+const CEFR_LEVELS = ['All', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 
 function TrendIcon({ trend }: { trend: string }) {
   if (trend === 'improving') return <TrendingUp className="h-4 w-4 text-green-500" />;
@@ -86,14 +89,27 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
   const [periodDays, setPeriodDays] = useState<number | null>(null);
   const [customPeriod, setCustomPeriod] = useState('');
   const [viewMode, setViewMode] = useState<'nano' | 'micro'>('micro');
+  const [cefrFilter, setCefrFilter] = useState<string>('All');
 
   const { skills, categories, microSkills, isLoading, error } = useSkillMetrics(studentId, teacherId, periodDays);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'mastery' | 'events' | 'name'>('mastery');
   const [showFlashcards, setShowFlashcards] = useState(false);
 
+  // Helper: extract CEFR level from skill_name like ns.A2.vocabulary.xxx
+  const extractCefr = (skillName: string): string | null => {
+    const match = skillName.match(/^ns\.([A-C][12])\./);
+    return match ? match[1] : null;
+  };
+
+  const matchesCefr = (skillName: string): boolean => {
+    if (cefrFilter === 'All') return true;
+    return extractCefr(skillName) === cefrFilter;
+  };
+
   const nanoSkills = useMemo(() => {
     let filtered = skills.filter(s => showFlashcards || !s.skill_name.startsWith('flashcard:'));
+    filtered = filtered.filter(s => matchesCefr(s.skill_name));
     if (selectedCategory) {
       filtered = filtered.filter(s => s.skill_category === selectedCategory);
     }
@@ -102,19 +118,27 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
       if (sortBy === 'events') return b.total_events - a.total_events;
       return a.skill_name.localeCompare(b.skill_name);
     });
-  }, [skills, selectedCategory, sortBy, showFlashcards]);
+  }, [skills, selectedCategory, sortBy, showFlashcards, cefrFilter]);
 
   const filteredMicroSkills = useMemo(() => {
     let filtered = microSkills;
     if (selectedCategory) {
       filtered = filtered.filter(s => s.skill_category === selectedCategory);
     }
+    // CEFR filter for micro skills - filter underlying nano skills
+    if (cefrFilter !== 'All') {
+      const microSkillsWithCefr = skills
+        .filter(s => matchesCefr(s.skill_name) && s.micro_skill)
+        .map(s => s.micro_skill);
+      const uniqueMicro = new Set(microSkillsWithCefr);
+      filtered = filtered.filter(s => uniqueMicro.has(s.micro_skill));
+    }
     return filtered.sort((a, b) => {
       if (sortBy === 'mastery') return b.avg_mastery - a.avg_mastery;
       if (sortBy === 'events') return b.total_events - a.total_events;
       return a.micro_skill.localeCompare(b.micro_skill);
     });
-  }, [microSkills, selectedCategory, sortBy]);
+  }, [microSkills, selectedCategory, sortBy, cefrFilter, skills]);
 
   const radarData = useMemo(() => {
     return CATEGORY_ORDER
@@ -163,23 +187,12 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
     );
   }
 
-  if (skills.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No skill data yet</h3>
-          <p className="text-muted-foreground">
-            Skills will appear here after the student completes worksheets, homework, or flashcard reviews.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Period filter is now always visible (moved to render below)
+  const hasNoData = skills.length === 0;
 
   return (
     <div className="space-y-6">
-      {/* Period Filter */}
+      {/* Period Filter - always visible */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-sm font-medium text-muted-foreground">Period:</span>
         {PERIOD_PRESETS.map(p => (
@@ -207,6 +220,43 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
           </Button>
         </div>
       </div>
+
+      {/* CEFR Level Filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+          <GraduationCap className="h-4 w-4" />
+          CEFR:
+        </span>
+        {CEFR_LEVELS.map(level => (
+          <Button
+            key={level}
+            variant={cefrFilter === level ? 'default' : 'outline'}
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setCefrFilter(level)}
+          >
+            {level}
+          </Button>
+        ))}
+      </div>
+
+      {/* No data message - shown below filters */}
+      {hasNoData && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No skill data yet</h3>
+            <p className="text-muted-foreground">
+              {periodDays !== null
+                ? `No skills found for the last ${periodDays} days. Try selecting a longer period.`
+                : 'Skills will appear here after the student completes worksheets, homework, or flashcard reviews.'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {hasNoData ? null : (
+      <>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -386,6 +436,8 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
           </div>
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   );
 }
