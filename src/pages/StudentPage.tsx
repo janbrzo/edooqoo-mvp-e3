@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import ShareWorksheetModal from '@/components/ShareWorksheetModal';
 import RenameDialog from '@/components/RenameDialog';
+import { StudentSwitcherPopover } from '@/components/StudentSwitcherPopover';
 import { toast } from 'sonner';
 
 const StudentPage = () => {
@@ -204,7 +205,11 @@ const StudentPage = () => {
             </Button>
             <div>
               <h1 className="text-3xl font-bold flex items-center">
-                <User className="h-8 w-8 mr-3" />
+                <StudentSwitcherPopover 
+                  students={students} 
+                  currentStudentId={student.id} 
+                  onSelect={(sid) => navigate(`/student/${sid}`)} 
+                />
                 {student.name}
               </h1>
               <p className="text-muted-foreground">Student Profile & Worksheets</p>

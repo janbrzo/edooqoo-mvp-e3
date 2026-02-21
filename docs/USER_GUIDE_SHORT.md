@@ -4,7 +4,7 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **DSLM Layer B v5** — nano_skills now include CEFR levels (A1-C2), dual tagging for open-ended exercises (primary skill + writing skill), and visual_comprehension category for picture exercises. Skills panel shows richer data.
+**Latest Update:** **DSLM Layer B v5 Phase 2** — Flashcard events now use `ns.[CEFR].vocabulary.definition_[word]` format. Period filter stays visible when no data. CEFR level filter (A1-C2). Student switcher popover for quick navigation. Translation vs definition mastery modifier (0.85x vs 1.0x).
 
 **Previous Update:** **Welcome Test v2 Round 9** — transcriptions now auto-generated and displayed (no manual Transcribe button), AI scores each open/speaking answer 0-100 individually, Speaking score added to Skill Scores (replacing Communication), timer pauses when tab is inactive, duplicate events cleaned, event payload mastery updated from -1 to actual AI scores.
 

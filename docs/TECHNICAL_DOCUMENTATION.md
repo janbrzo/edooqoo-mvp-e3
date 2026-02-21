@@ -5,7 +5,16 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - DSLM Layer B v5 Implementation:**
+**Latest Update (February 2026) - DSLM Layer B v5 Phase 2:**
+- **Flashcard nano_skill naming**: Trigger `log_flashcard_review_event()` now generates `ns.[CEFR].vocabulary.definition_[word]` format (e.g. `ns.A2.vocabulary.definition_advice`) instead of `flashcard:UUID`. CEFR level derived from `students.english_level`
+- **Flashcard back_type mastery modifier**: Translation (native language) gets 0.85x mastery modifier (easier), English definition gets 1.0x (full mastery)
+- **Flashcard backfill**: All existing `flashcard:UUID` metrics migrated to new `ns.*` format with duplicate merging
+- **Period filter always visible**: SkillsOverviewPanel now shows period filter even when no data exists for selected period, with contextual message
+- **CEFR level filter**: New filter buttons (A1-C2) in SkillsOverviewPanel to show only skills at a specific CEFR level
+- **Student switcher popover**: Clickable user icon in StudentPage header opens a popover with sorted student list for quick navigation
+- **visual_comprehension category**: Added to CATEGORY_ORDER and CATEGORY_LABELS in SkillsOverviewPanel
+
+**Previous Update (February 2026) - DSLM Layer B v5 Implementation:**
 - **Dual nano_skill system**: Open-ended exercises now include TWO nano_skills (primary skill + writing skill). Speaking nano_skills in written exercises use lower confidence (0.35-0.45) since assessment is indirect
 - **CEFR-tagged nano_skills**: New naming convention `ns.[CEFR].[topic].[skill_name]` (e.g. `ns.A2.past_simple.irregular_verb_go`). Full English topic names replace abbreviations
 - **visual_comprehension category**: New skill category for picture-based exercises (replacing incorrect "reading" categorization)
