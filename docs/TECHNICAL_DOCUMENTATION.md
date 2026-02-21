@@ -5,15 +5,23 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - DSLM Layer B Implementation:**
-- **student_skill_metrics table**: New table storing aggregated skill metrics per nano_skill per student with time-weighted mastery (exponential decay, half-life ~23 days)
-- **compute_skill_metric() function**: SQL function that computes weighted average mastery, trend analysis (improving/declining/stable), and maintains history for each nano_skill
-- **Auto-refresh trigger**: `trg_refresh_skill_metrics` fires AFTER INSERT on `student_events` to automatically recompute affected metrics
-- **extract_skill_category() function**: Maps 20+ nano_skill prefixes (ns.grammar.*, ns.vocab.*, ns.spelling.*, etc.) to 7 canonical categories
-- **student_category_metrics view**: Aggregates nano_skills into category-level metrics (grammar, vocabulary, reading, speaking, writing, listening, pronunciation)
-- **backfill_skill_metrics() function**: One-time function to compute metrics from all existing events (859 skills computed)
-- **SkillsOverviewPanel component**: New "Skills" tab in StudentPage with radar chart, category breakdown, and nano_skill list with mastery bars and trend indicators
-- **Layer B status**: 855 nano_skills + flashcards across 7 categories, only 13 "other" remaining
+**Latest Update (February 2026) - DSLM Layer B v5 Implementation:**
+- **Dual nano_skill system**: Open-ended exercises now include TWO nano_skills (primary skill + writing skill). Speaking nano_skills in written exercises use lower confidence (0.35-0.45) since assessment is indirect
+- **CEFR-tagged nano_skills**: New naming convention `ns.[CEFR].[topic].[skill_name]` (e.g. `ns.A2.past_simple.irregular_verb_go`). Full English topic names replace abbreviations
+- **visual_comprehension category**: New skill category for picture-based exercises (replacing incorrect "reading" categorization)
+- **Word-specific matching**: Matching exercises use `ns.A2.vocabulary.definition_appetizer` instead of generic `definition_matching`
+- **extract_micro_skill() updated**: Supports 3 formats: new CEFR (`ns.A2.past_simple.*`), old abbreviations (`ns.ps.*`), and legacy (`ns.grammar.past_simple_*`) with full backward compatibility
+- **extract_skill_category() updated**: Maps CEFR-format skills to 8 categories (grammar, vocabulary, reading, speaking, writing, listening, visual_comprehension, pronunciation)
+- **NanoSkillBadge dual display**: Shows both primary and secondary (writing) badges with category-specific labels (rd, wr, sp, li, vc)
+- **masteryCalculator.ts**: `buildItemEvaluations()` now iterates ALL nano_skills per item, creating evaluations for each
+- **safeGetAllNanoSkills()**: New utility in textObjectFixer.ts returning full nano_skill array
+
+**Previous Update (February 2026) - DSLM Layer B Implementation:**
+- **student_skill_metrics table**: Aggregated skill metrics per nano_skill per student with time-weighted mastery (exponential decay)
+- **compute_skill_metric() function**: Weighted average mastery, trend analysis, history maintenance
+- **Auto-refresh trigger**: `trg_refresh_skill_metrics` fires AFTER INSERT on `student_events`
+- **student_category_metrics view**: Aggregates nano_skills into category-level metrics
+- **SkillsOverviewPanel component**: "Skills" tab in StudentPage with radar chart and nano_skill list
 
 **Previous Update (February 2026) - DSLM Layer A Finalization Round 12:**
 - **Flashcard mastery backfill**: Calculated mastery for 407 old flashcard events using SM-2 weighted formula

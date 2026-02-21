@@ -6,12 +6,21 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-20) - DSLM Layer B Implementation:**
+**Ostatnia naprawa (2026-02-21) - DSLM Layer B v5:**
+- ✅ **Dual nano_skill**: Zadania otwarte mają 2 nano_skills (primary + writing). Speaking confidence obniżony (0.35-0.45) bo ocena pośrednia
+- ✅ **CEFR w nano_skill**: Nowy format `ns.[CEFR].[topic].[skill_name]` z pełnymi nazwami (past_simple zamiast ps)
+- ✅ **visual_comprehension**: Nowa kategoria dla zadań z obrazkami (zamiast reading)
+- ✅ **extract_micro_skill()**: Obsługuje 3 formaty (CEFR, stare skróty, legacy) z backward compatibility
+- ✅ **extract_skill_category()**: 8 kategorii + visual_comprehension
+- ✅ **NanoSkillBadge**: Wyświetla dual badges z etykietami kategorii (rd, wr, sp, li, vc)
+- ✅ **masteryCalculator**: buildItemEvaluations iteruje po WSZYSTKICH nano_skills per item
+
+**Poprzednia naprawa (2026-02-20) - DSLM Layer B Implementation:**
 - ✅ **student_skill_metrics tabela**: Zagregowane metryki per nano_skill per student z ważoną średnią mastery (exp decay)
 - ✅ **Auto-refresh trigger**: Metryki odświeżają się automatycznie po każdym nowym evencie w student_events
-- ✅ **extract_skill_category()**: Mapuje 20+ prefiksów ns.* na 7 kategorii (grammar, vocabulary, reading, speaking, writing, listening, pronunciation)
-- ✅ **SkillsOverviewPanel**: Nowa zakładka "Skills" w StudentPage z radar chart, category breakdown i listą nano_skills
-- ✅ **Backfill**: 859 metryk obliczonych z istniejących danych, 855 poprawnie skategoryzowanych
+- ✅ **extract_skill_category()**: Mapuje 20+ prefiksów ns.* na 7 kategorii
+- ✅ **SkillsOverviewPanel**: Nowa zakładka "Skills" w StudentPage z radar chart
+- ✅ **Backfill**: 859 metryk obliczonych z istniejących danych
 
 **Poprzednia naprawa (2026-02-20) - DSLM Layer A Finalization Round 12:**
 - ✅ **Layer A GOTOWA**: Wszystkie źródła mają kompletne mastery i element_type

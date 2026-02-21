@@ -3,6 +3,12 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
+## Latest: DSLM Layer B v5
+- Dual nano_skill tagging (primary + writing) for open-ended exercises
+- CEFR levels (A1-C2) in nano_skill names: `ns.A2.past_simple.irregular_verb_go`
+- `visual_comprehension` category for picture-based exercises
+- Updated SQL extraction functions with full backward compatibility
+
 ## 🎯 What This Is
 
 A professional tool that generates high-quality, customized English worksheets in under 60 seconds. Each worksheet includes both student and teacher versions, with content tailored to specific learning objectives and student profiles.

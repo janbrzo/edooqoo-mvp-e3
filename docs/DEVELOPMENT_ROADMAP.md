@@ -3,7 +3,15 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Feb 2026) - Welcome Test v2 Round 9 ✅
+### Recently Completed (Feb 2026) - DSLM Layer B v5 ✅
+- Dual nano_skill system for open-ended exercises (primary + writing skill)
+- CEFR-tagged nano_skill naming: ns.[CEFR].[topic].[skill_name] with full English names
+- visual_comprehension category for picture exercises
+- Updated extract_micro_skill() and extract_skill_category() with 3-format backward compatibility
+- NanoSkillBadge displays dual badges with category labels
+- masteryCalculator iterates all nano_skills per item
+
+### Previously Completed (Feb 2026) - Welcome Test v2 Round 9 ✅
 - Auto-transcription saved to question_data.transcription (no Transcribe button needed)
 - AI per-question scoring (0-100) for open-ended and speaking answers
 - is_correct set from AI score (≥40 = true), ai_score saved to question_data
