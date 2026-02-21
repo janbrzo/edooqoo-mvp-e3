@@ -4,7 +4,9 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **Welcome Test v2 Round 9** — transcriptions now auto-generated and displayed (no manual Transcribe button), AI scores each open/speaking answer 0-100 individually, Speaking score added to Skill Scores (replacing Communication), timer pauses when tab is inactive, duplicate events cleaned, event payload mastery updated from -1 to actual AI scores.
+**Latest Update:** **DSLM Layer B v5** — nano_skills now include CEFR levels (A1-C2), dual tagging for open-ended exercises (primary skill + writing skill), and visual_comprehension category for picture exercises. Skills panel shows richer data.
+
+**Previous Update:** **Welcome Test v2 Round 9** — transcriptions now auto-generated and displayed (no manual Transcribe button), AI scores each open/speaking answer 0-100 individually, Speaking score added to Skill Scores (replacing Communication), timer pauses when tab is inactive, duplicate events cleaned, event payload mastery updated from -1 to actual AI scores.
 
 **Previous Update:** **Welcome Test v2 Round 3** — speaking recorder auto-saves on navigation, teacher can play back student recordings, AI analysis includes transcribed speaking answers (Whisper), Q21 listening audio re-generated with correct dialogue, re-take preserves old test results, auto-translate button from student profile, full 10-language translations, improved blur modal, and auth redirect for email links.
 

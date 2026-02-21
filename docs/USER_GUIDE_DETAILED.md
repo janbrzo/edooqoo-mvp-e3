@@ -14,7 +14,13 @@
 
 ## Getting Started
 
-**Latest Improvements (Welcome Test v2 Round 9):**
+**Latest Improvements (DSLM Layer B v5):**
+- **CEFR-tagged skills**: Each nano_skill now includes CEFR level (A1-C2) reflecting actual item difficulty
+- **Dual nano_skills**: Open-ended exercises track both primary skill (reading/listening/speaking) and writing ability
+- **Visual comprehension**: Picture exercises correctly categorized as visual_comprehension instead of reading
+- **Richer Skills panel**: Shows more granular skill data with accurate category mapping
+
+**Previous Improvements (Welcome Test v2 Round 9):**
 - **Auto-transcription**: Speaking answers transcribed automatically after test completion — no manual button needed
 - **AI per-question scoring**: Each open/speaking answer scored 0-100 individually by AI
 - **Speaking score**: New skill score in learning profile, calculated from AI analysis of speaking answers
