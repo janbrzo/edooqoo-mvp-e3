@@ -27,7 +27,7 @@ interface ExerciseWritingTaskProps extends Partial<InteractiveExerciseProps> {
   viewMode: "student" | "teacher";
   liveSessionAnswer?: Record<string, any>;
   disabled?: boolean;
-  onNanoSkillChange?: (taskIndex: number, questionIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (taskIndex: number, questionIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
 }
 
@@ -95,7 +95,7 @@ const ExerciseWritingTask: React.FC<ExerciseWritingTaskProps> = ({
               
               // Extract nano_skill from question
               const nanoSkill = safeGetNanoSkill(q);
-              const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+              const showNanoSkill = viewMode === 'teacher' && nanoSkill;
               
               // Get question text
               const questionText = typeof q === 'string' ? q : (q.question || '');
@@ -115,7 +115,7 @@ const ExerciseWritingTask: React.FC<ExerciseWritingTaskProps> = ({
                         allNanoSkills={safeGetAllNanoSkills(q)}
                         isEditing={isEditing}
                         onEdit={onNanoSkillChange 
-                          ? (ns) => onNanoSkillChange(taskIndex, qIndex, ns) 
+                          ? (ns, idx) => onNanoSkillChange(taskIndex, qIndex, ns, idx) 
                           : undefined}
                       />
                     )}

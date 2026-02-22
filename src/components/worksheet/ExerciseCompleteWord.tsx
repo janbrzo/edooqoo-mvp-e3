@@ -13,7 +13,7 @@ interface ExerciseCompleteWordProps extends Partial<InteractiveExerciseProps> {
   // A3: Disable inputs after homework submission
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (wIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (wIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
 }
 
@@ -47,7 +47,7 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
           const isEmpty = showCorrectAnswers && !studentAnswer;
           const nanoSkill = safeGetNanoSkill(wordItem);
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+          const showNanoSkill = viewMode === 'teacher' && nanoSkill;
 
           return (
             <div key={wIndex} className="border rounded-lg p-3 bg-white">
@@ -84,7 +84,7 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
                         nanoSkill={nanoSkill}
                         allNanoSkills={safeGetAllNanoSkills(wordItem)}
                         isEditing={isEditing}
-                        onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(wIndex, ns) : undefined}
+                        onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(wIndex, ns, idx) : undefined}
                       />
                     )}
                   </div>

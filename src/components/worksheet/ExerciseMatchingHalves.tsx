@@ -14,7 +14,7 @@ interface ExerciseMatchingHalvesProps extends Partial<InteractiveExerciseProps> 
   // A3: Disable inputs after homework submission
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (hIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (hIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
 }
 
@@ -126,7 +126,7 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
             const correctAnswer = String.fromCharCode(65 + shuffledSecondHalves.findIndex(shuffled => shuffled.second_half === item.second_half));
             const liveAnswer = liveSessionAnswer?.[hIndex];
             const nanoSkill = safeGetNanoSkill(item);
-            const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+            const showNanoSkill = viewMode === 'teacher' && nanoSkill;
             
             // PROBLEM 5: Get student answer for inline display
             const studentAnswer = studentAnswers[hIndex];
@@ -197,7 +197,7 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
                       nanoSkill={nanoSkill}
                       allNanoSkills={safeGetAllNanoSkills(item)}
                       isEditing={isEditing}
-                      onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(hIndex, ns) : undefined}
+                      onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(hIndex, ns, idx) : undefined}
                     />
                   )}
                 </div>

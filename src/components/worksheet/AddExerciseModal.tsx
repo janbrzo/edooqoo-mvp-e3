@@ -124,11 +124,11 @@ ${additionalInstructions ? `Additional instructions: ${additionalInstructions}` 
           prompt,
           formData: {
             ...worksheetFormData,
-            lessonTime: '15 min', // Short time for single exercise
-            selectedExercises: [selectedType],
+            targetExerciseTypes: [selectedType],
+            exerciseCountPerType: 1,
           },
           userId,
-          singleExercise: true,
+          isBatchGeneration: true,
         },
       });
 

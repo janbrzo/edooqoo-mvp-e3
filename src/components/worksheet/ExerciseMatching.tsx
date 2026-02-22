@@ -17,7 +17,7 @@ interface ExerciseMatchingProps extends Partial<InteractiveExerciseProps> {
   // A3: Disable inputs after homework submission
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (iIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (iIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
 }
 
@@ -90,7 +90,7 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
           const isEmpty = showCorrectAnswers && !selectedAnswer;
           const liveAnswer = liveSessionAnswer?.[iIndex];
           const nanoSkill = safeGetNanoSkill(item);
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+          const showNanoSkill = viewMode === 'teacher' && nanoSkill;
 
           return (
             <div key={iIndex} className={`p-2 border rounded-md bg-white min-h-[52px] flex items-center
@@ -153,7 +153,7 @@ const ExerciseMatching: React.FC<ExerciseMatchingProps> = ({
                     nanoSkill={nanoSkill}
                     allNanoSkills={safeGetAllNanoSkills(item)}
                     isEditing={isEditing}
-                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(iIndex, ns) : undefined}
+                    onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(iIndex, ns, idx) : undefined}
                     className="ml-auto"
                   />
                 )}

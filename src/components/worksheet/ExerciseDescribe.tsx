@@ -17,7 +17,7 @@ interface ExerciseDescribeProps extends Partial<InteractiveExerciseProps> {
   // A3: Disable inputs after homework submission
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
@@ -75,7 +75,7 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
             const studentAnswer = studentAnswers[qIndex];
             const liveAnswer = liveSessionAnswer?.[qIndex];
             const nanoSkill = safeGetNanoSkill(question);
-            const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+            const showNanoSkill = viewMode === 'teacher' && nanoSkill;
             
             return (
               <div key={qIndex} className="border-b pb-2">
@@ -98,7 +98,7 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
                       nanoSkill={nanoSkill}
                       allNanoSkills={safeGetAllNanoSkills(prompt)}
                       isEditing={isEditing}
-                      onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
+                      onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(qIndex, ns, idx) : undefined}
                     />
                   )}
                   {/* Live Session: show student answer in blue for teacher view */}

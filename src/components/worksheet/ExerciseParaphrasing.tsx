@@ -14,7 +14,7 @@ interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
   // A3: Disable inputs after homework submission
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
   // AI Evaluations per sentence
   aiEvaluations?: Record<number, AiEvaluation>;
@@ -79,7 +79,7 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
           const studentAnswer = studentAnswers[sIndex] || '';
           const isEmpty = showCorrectAnswers && !studentAnswer;
           const nanoSkill = safeGetNanoSkill(sentence);
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+          const showNanoSkill = viewMode === 'teacher' && nanoSkill;
           
           // Extract values using helpers for multi-format support
           const wordToUse = getWordToUse(sentence);
@@ -121,7 +121,7 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                       nanoSkill={nanoSkill}
                       allNanoSkills={safeGetAllNanoSkills(sentence)}
                       isEditing={isEditing}
-                      onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
+                      onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(sIndex, ns, idx) : undefined}
                     />
                   )}
                 </div>

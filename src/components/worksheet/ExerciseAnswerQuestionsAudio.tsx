@@ -19,7 +19,7 @@ interface ExerciseAnswerQuestionsAudioProps extends Partial<InteractiveExerciseP
   onQuestionChange: (qIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
-  onNanoSkillChange?: (qIndex: number, newSkill: NanoSkill) => void;
+  onNanoSkillChange?: (qIndex: number, newSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
@@ -94,7 +94,7 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
                       nanoSkill={nanoSkill}
                       allNanoSkills={safeGetAllNanoSkills(q)}
                       isEditing={isEditing}
-                      onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(qIndex, newSkill) : undefined}
+                      onEdit={onNanoSkillChange ? (newSkill, idx) => onNanoSkillChange(qIndex, newSkill, idx) : undefined}
                     />
                   )}
                   {/* Live Session: show student answer in blue */}

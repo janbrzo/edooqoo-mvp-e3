@@ -15,7 +15,7 @@ interface ExerciseMultipleChoiceProps extends Partial<InteractiveExerciseProps> 
   // A3: Disable inputs after homework submission
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   // Hide nano skills on shared worksheets
   isSharedWorksheet?: boolean;
   // PROBLEM 4: Worksheet ID for deterministic shuffle
@@ -113,7 +113,7 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
         const nanoSkill = safeGetNanoSkill(question);
         const selectedAnswer = studentAnswers[qIndex];
         const liveAnswer = liveSessionAnswer?.[qIndex];
-        const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+        const showNanoSkill = viewMode === 'teacher' && nanoSkill;
         
         return (
           <div key={qIndex} className="border-b pb-2 multiple-choice-question">
@@ -136,7 +136,7 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
                   nanoSkill={nanoSkill}
                   allNanoSkills={safeGetAllNanoSkills(question)}
                   isEditing={isEditing}
-                  onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
+                  onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(qIndex, ns, idx) : undefined}
                 />
               )}
             </div>

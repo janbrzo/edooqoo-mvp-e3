@@ -642,6 +642,15 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
     }
   });
   
+  // Helper: update nano_skill at specific index in array, or replace entirely for single skills
+  const updateNanoSkillValue = (currentItem: any, newSkill: any, skillIndex?: number) => {
+    const currentNs = currentItem?.nano_skill;
+    if (skillIndex !== undefined && Array.isArray(currentNs) && currentNs.length > 1) {
+      return currentNs.map((s: any, i: number) => i === skillIndex ? newSkill : s);
+    }
+    return newSkill;
+  };
+
   // Get nano skills for mastery modal
   const exerciseNanoSkills = extractNanoSkillsFromExercise(exercise);
   // Use originalIndex for array operations, index for display
@@ -822,10 +831,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
             liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
-            onNanoSkillChange={(qIndex, newSkill) => {
+            onNanoSkillChange={(qIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
-              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: newSkill };
+              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: updateNanoSkillValue(newQuestions[qIndex], newSkill, skillIndex) };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], questions: newQuestions };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
             }}
@@ -845,10 +854,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
-            onNanoSkillChange={(iIndex, newSkill) => {
+            onNanoSkillChange={(iIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newItems = [...exercise.items];
-              newItems[iIndex] = { ...newItems[iIndex], nano_skill: newSkill };
+              newItems[iIndex] = { ...newItems[iIndex], nano_skill: updateNanoSkillValue(newItems[iIndex], newSkill, skillIndex) };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], items: newItems };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
             }}

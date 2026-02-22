@@ -20,7 +20,7 @@ interface ExerciseTrueFalseAudioProps extends Partial<InteractiveExerciseProps> 
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
   isSharedWorksheet?: boolean;
-  onNanoSkillChange?: (sIndex: number, nanoSkill: any) => void;
+  onNanoSkillChange?: (sIndex: number, nanoSkill: any, skillIndex?: number) => void;
   exerciseVariant?: 'audio' | 'picture' | 'plain'; // PROBLEM 4 FIX: distinguish media type
 }
 
@@ -64,7 +64,7 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
           const statementText = safeGetText(statement?.text ?? statement);
           // Extract nano skill for badge display
           const nanoSkill = safeGetNanoSkill(statement);
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+          const showNanoSkill = viewMode === 'teacher' && nanoSkill;
 
           return (
             <div key={sIndex} className="border-b pb-2">
@@ -86,7 +86,7 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
                     <NanoSkillBadge
                       nanoSkill={nanoSkill}
                       allNanoSkills={safeGetAllNanoSkills(statement)}
-                      onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(sIndex, newSkill) : undefined}
+                      onEdit={onNanoSkillChange ? (newSkill, idx) => onNanoSkillChange(sIndex, newSkill, idx) : undefined}
                     />
                   )}
                 </div>

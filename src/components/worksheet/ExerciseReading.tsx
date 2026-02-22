@@ -14,7 +14,7 @@ interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
@@ -50,7 +50,7 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
       // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
       const questionText = safeGetText(question?.text ?? question);
       const nanoSkill = safeGetNanoSkill(question);
-      const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+      const showNanoSkill = viewMode === 'teacher' && nanoSkill;
       
       return (
         <div key={qIndex} className="border rounded-lg p-3 bg-white">
@@ -75,7 +75,7 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
                     nanoSkill={nanoSkill}
                     allNanoSkills={safeGetAllNanoSkills(question)}
                     isEditing={isEditing}
-                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
+                    onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(qIndex, ns, idx) : undefined}
                   />
                 )}
               </div>

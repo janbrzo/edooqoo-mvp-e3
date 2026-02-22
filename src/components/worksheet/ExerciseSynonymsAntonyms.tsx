@@ -14,7 +14,7 @@ interface ExerciseSynonymsAntonymsProps extends Partial<InteractiveExerciseProps
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (iIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (iIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
 }
 
@@ -87,7 +87,7 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
           const correctAnswer = String.fromCharCode(65 + shuffledDefinitions.findIndex(i => i.term === item.term));
           const liveAnswer = liveSessionAnswer?.[iIndex];
           const nanoSkill = safeGetNanoSkill(item);
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+          const showNanoSkill = viewMode === 'teacher' && nanoSkill;
           
           // Get student answer for inline display (like Matching Halves)
           const studentAnswer = studentAnswers[iIndex];
@@ -159,7 +159,7 @@ const ExerciseSynonymsAntonyms: React.FC<ExerciseSynonymsAntonymsProps> = ({
                     nanoSkill={nanoSkill}
                     allNanoSkills={safeGetAllNanoSkills(item)}
                     isEditing={isEditing}
-                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(iIndex, ns) : undefined}
+                    onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(iIndex, ns, idx) : undefined}
                   />
                 )}
               </div>

@@ -27,7 +27,7 @@ interface ExerciseAnswerQuestionsProps extends Partial<InteractiveExerciseProps>
   // A3: Disable inputs after homework submission
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
@@ -126,7 +126,7 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
           // CRITICAL FIX: Use safeGetText to prevent "Cannot read properties of undefined (reading 'replace')"
           const questionText = safeGetText(question?.text ?? question?.question ?? question);
           const nanoSkill = safeGetNanoSkill(question);
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+          const showNanoSkill = viewMode === 'teacher' && nanoSkill;
 
           return (
             <div key={qIndex} className="border-b pb-3">
@@ -151,7 +151,7 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
                     nanoSkill={nanoSkill}
                     allNanoSkills={safeGetAllNanoSkills(question)}
                     isEditing={isEditing}
-                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
+                    onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(qIndex, ns, idx) : undefined}
                   />
                 )}
                 {viewMode === 'teacher' && (question.answer || question.focus) && !isInteractive && (

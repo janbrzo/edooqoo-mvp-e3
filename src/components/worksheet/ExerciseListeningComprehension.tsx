@@ -14,7 +14,7 @@ interface ExerciseListeningComprehensionProps extends Partial<InteractiveExercis
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
@@ -54,7 +54,7 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
         const isEmpty = showCorrectAnswers && !studentAnswer;
         const questionText = safeGetText(q.text);
         const nanoSkill = safeGetNanoSkill(q);
-        const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+        const showNanoSkill = viewMode === 'teacher' && nanoSkill;
 
         return (
           <div key={qIndex} className="border rounded-lg p-3 bg-white">
@@ -79,7 +79,7 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                       nanoSkill={nanoSkill}
                       allNanoSkills={safeGetAllNanoSkills(q)}
                       isEditing={isEditing}
-                      onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
+                      onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(qIndex, ns, idx) : undefined}
                     />
                   )}
                 </div>
