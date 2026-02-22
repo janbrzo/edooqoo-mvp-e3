@@ -769,6 +769,8 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
           viewMode={viewMode}
           isMarkedDone={isMarkedDone}
           onMarkDone={handleMarkDone}
+          // [V]/[G] focus tag from form data
+          exerciseFocus={originalFormData?.exerciseFocusMap?.[exercise.type]}
         />
 
         <Collapsible open={!isCollapsed} onOpenChange={() => onToggleCollapse?.()}>

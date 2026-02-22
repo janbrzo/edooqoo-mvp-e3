@@ -5,14 +5,20 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - DSLM Layer B v5 Phase 2:**
-- **Flashcard nano_skill naming**: Trigger `log_flashcard_review_event()` now generates `ns.[CEFR].vocabulary.definition_[word]` format (e.g. `ns.A2.vocabulary.definition_advice`) instead of `flashcard:UUID`. CEFR level derived from `students.english_level`
-- **Flashcard back_type mastery modifier**: Translation (native language) gets 0.85x mastery modifier (easier), English definition gets 1.0x (full mastery)
-- **Flashcard backfill**: All existing `flashcard:UUID` metrics migrated to new `ns.*` format with duplicate merging
-- **Period filter always visible**: SkillsOverviewPanel now shows period filter even when no data exists for selected period, with contextual message
-- **CEFR level filter**: New filter buttons (A1-C2) in SkillsOverviewPanel to show only skills at a specific CEFR level
-- **Student switcher popover**: Clickable user icon in StudentPage header opens a popover with sorted student list for quick navigation
-- **visual_comprehension category**: Added to CATEGORY_ORDER and CATEGORY_LABELS in SkillsOverviewPanel
+**Latest Update (February 2026) - DSLM + UX Improvements Phase 3:**
+- **NanoSkill badges in all exercises**: All 22+ exercise components now pass `allNanoSkills` to `NanoSkillBadge`, enabling dual badge display (e.g. reading + writing) in Reading and other exercises
+- **[V]/[G] exercise focus tags**: Exercises display `[V]` (vocabulary) or `[G]` (grammar) focus tags in both InputParamsCard ("Selected Exercise Types") and ExerciseHeader titles (e.g. "Exercise 7: [V] Discussing")
+- **Add Exercise in Live Session**: New "Add Exercise" button in toolbar (Live Session only) opens `AddExerciseModal` to generate and append exercises to the worksheet (max 12). Auto-saves to database and syncs with shared worksheet
+- **Delete worksheet in Overview**: `DeleteWorksheetButton` added to "Recent Worksheets" section in student Overview tab
+- **Period + CEFR filters side-by-side**: SkillsOverviewPanel displays Period and CEFR filters in a single horizontal row
+- **Student switcher scroll fix**: Replaced Radix ScrollArea with native `overflow-y-auto` div for reliable scrolling, blue icon color
+- **Toolbar label shortening**: In Live Session mode, button labels shortened: "Homework" (was "Create Homework"), "Draw" (was "Draw on Worksheet"), "Hide"/"Show" (was "Hide/Show Drawings")
+
+**Previous Update (February 2026) - DSLM Layer B v5 Phase 2:**
+- **Flashcard nano_skill naming**: Trigger `log_flashcard_review_event()` now generates `ns.[CEFR].vocabulary.definition_[word]` format
+- **Period filter always visible**: SkillsOverviewPanel now shows period filter even when no data exists for selected period
+- **CEFR level filter**: New filter buttons (A1-C2) in SkillsOverviewPanel
+- **Student switcher popover**: Clickable user icon in StudentPage header opens a popover with sorted student list
 
 **Previous Update (February 2026) - DSLM Layer B v5 Implementation:**
 - **Dual nano_skill system**: Open-ended exercises now include TWO nano_skills (primary skill + writing skill). Speaking nano_skills in written exercises use lower confidence (0.35-0.45) since assessment is indirect
