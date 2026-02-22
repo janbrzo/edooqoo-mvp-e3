@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface Option {
@@ -126,6 +126,7 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
               {viewMode === 'teacher' && nanoSkill && (
                 <NanoSkillBadge
                   nanoSkill={nanoSkill}
+                  allNanoSkills={safeGetAllNanoSkills(question)}
                   isEditing={isEditing}
                   onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(qIndex, newSkill) : undefined}
                 />

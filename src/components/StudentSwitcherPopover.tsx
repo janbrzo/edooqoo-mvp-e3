@@ -34,7 +34,7 @@ export function StudentSwitcherPopover({ students, currentStudentId, onSelect }:
           className="flex items-center gap-1 mr-3 p-1 rounded-md hover:bg-muted transition-colors cursor-pointer"
           title="Switch student"
         >
-          <User className="h-8 w-8" />
+          <User className="h-8 w-8 text-blue-600" />
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
         </button>
       </PopoverTrigger>
@@ -42,8 +42,7 @@ export function StudentSwitcherPopover({ students, currentStudentId, onSelect }:
         <div className="px-3 py-2 border-b">
           <p className="text-sm font-medium">Switch Student</p>
         </div>
-        <ScrollArea className="max-h-72">
-          <div className="p-1">
+        <div className="max-h-72 overflow-y-auto p-1">
             {sorted.map(s => (
               <button
                 key={s.id}
@@ -65,8 +64,7 @@ export function StudentSwitcherPopover({ students, currentStudentId, onSelect }:
                 </Badge>
               </button>
             ))}
-          </div>
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );

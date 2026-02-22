@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseMatchingHalvesProps extends Partial<InteractiveExerciseProps> {
@@ -195,6 +195,7 @@ const ExerciseMatchingHalves: React.FC<ExerciseMatchingHalvesProps> = ({
                   {showNanoSkill && (
                     <NanoSkillBadge
                       nanoSkill={nanoSkill}
+                      allNanoSkills={safeGetAllNanoSkills(item)}
                       isEditing={isEditing}
                       onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(hIndex, ns) : undefined}
                     />

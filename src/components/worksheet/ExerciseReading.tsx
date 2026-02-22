@@ -1,7 +1,7 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
-import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
 
@@ -73,6 +73,7 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
                 {showNanoSkill && (
                   <NanoSkillBadge
                     nanoSkill={nanoSkill}
+                    allNanoSkills={safeGetAllNanoSkills(question)}
                     isEditing={isEditing}
                     onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
                   />

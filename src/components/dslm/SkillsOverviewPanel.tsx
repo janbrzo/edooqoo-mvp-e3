@@ -219,10 +219,9 @@ export function SkillsOverviewPanel({ studentId, teacherId }: SkillsOverviewPane
             Go
           </Button>
         </div>
-      </div>
 
-      {/* CEFR Level Filter */}
-      <div className="flex items-center gap-2 flex-wrap">
+        <div className="h-5 w-px bg-border mx-1" />
+
         <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
           <GraduationCap className="h-4 w-4" />
           CEFR:

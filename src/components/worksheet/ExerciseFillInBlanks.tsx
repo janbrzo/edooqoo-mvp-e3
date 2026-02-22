@@ -3,7 +3,7 @@ import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
 import { answersMatch } from "@/utils/textNormalization";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
-import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 
 interface ExerciseFillInBlanksProps extends Partial<InteractiveExerciseProps> {
   word_bank?: string[];
@@ -131,6 +131,7 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
                     {showNanoSkill && (
                       <NanoSkillBadge
                         nanoSkill={nanoSkill}
+                        allNanoSkills={safeGetAllNanoSkills(sentence)}
                         isEditing={isEditing}
                         onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
                       />

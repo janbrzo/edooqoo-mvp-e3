@@ -1,7 +1,7 @@
 import React from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
-import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge from "./NanoSkillBadge";
 
 interface ExerciseFillInBlanksAudioProps extends Partial<InteractiveExerciseProps> {
@@ -135,6 +135,7 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
                       <div className="mt-1">
                         <NanoSkillBadge
                           nanoSkill={nanoSkill}
+                          allNanoSkills={safeGetAllNanoSkills(sentence)}
                           isEditing={isEditing}
                           onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(sIndex, newSkill) : undefined}
                           className="text-xs"

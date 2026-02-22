@@ -2,7 +2,7 @@
 import React, { useMemo } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
-import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 
 interface ExerciseMultipleChoiceProps extends Partial<InteractiveExerciseProps> {
   questions: any[];
@@ -134,6 +134,7 @@ const ExerciseMultipleChoice: React.FC<ExerciseMultipleChoiceProps> = ({
               {showNanoSkill && (
                 <NanoSkillBadge
                   nanoSkill={nanoSkill}
+                  allNanoSkills={safeGetAllNanoSkills(question)}
                   isEditing={isEditing}
                   onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
                 />

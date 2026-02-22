@@ -1,6 +1,6 @@
 import React, { useRef, useMemo } from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
-import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseOddOneOutProps extends Partial<InteractiveExerciseProps> {
@@ -176,6 +176,7 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
                 {showNanoSkill && (
                   <NanoSkillBadge
                     nanoSkill={nanoSkill}
+                    allNanoSkills={safeGetAllNanoSkills(question)}
                     isEditing={isEditing}
                     onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
                   />

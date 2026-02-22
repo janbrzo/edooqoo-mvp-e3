@@ -2,7 +2,7 @@ import React from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge from "./NanoSkillBadge";
 
 interface Statement {
@@ -85,6 +85,7 @@ const ExerciseTrueFalseAudio: React.FC<ExerciseTrueFalseAudioProps> = ({
                   {showNanoSkill && (
                     <NanoSkillBadge
                       nanoSkill={nanoSkill}
+                      allNanoSkills={safeGetAllNanoSkills(statement)}
                       onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(sIndex, newSkill) : undefined}
                     />
                   )}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
-import { safeGetNanoSkill, safeGetText } from "@/utils/textObjectFixer";
+import { safeGetNanoSkill, safeGetText, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
 
@@ -92,6 +92,7 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
                   {nanoSkill && (
                     <NanoSkillBadge
                       nanoSkill={nanoSkill}
+                      allNanoSkills={safeGetAllNanoSkills(q)}
                       isEditing={isEditing}
                       onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(qIndex, newSkill) : undefined}
                     />
