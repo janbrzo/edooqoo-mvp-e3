@@ -13,7 +13,7 @@ interface ExerciseOddOneOutProps extends Partial<InteractiveExerciseProps> {
   // A3: Disable inputs after homework submission
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (qIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
 }
 
@@ -108,7 +108,7 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
           const hasAnswered = selectedAnswer !== undefined;
           const isEmpty = showCorrectAnswers && !hasAnswered;
           const nanoSkill = safeGetNanoSkill(question);
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+          const showNanoSkill = viewMode === 'teacher' && nanoSkill;
 
           return (
             <div key={qIndex} className="border-b pb-2">
@@ -178,7 +178,7 @@ const ExerciseOddOneOut: React.FC<ExerciseOddOneOutProps> = ({
                     nanoSkill={nanoSkill}
                     allNanoSkills={safeGetAllNanoSkills(question)}
                     isEditing={isEditing}
-                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(qIndex, ns) : undefined}
+                    onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(qIndex, ns, idx) : undefined}
                   />
                 )}
               </div>

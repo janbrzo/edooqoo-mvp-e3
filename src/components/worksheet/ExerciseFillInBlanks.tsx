@@ -16,7 +16,7 @@ interface ExerciseFillInBlanksProps extends Partial<InteractiveExerciseProps> {
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
   // For NanoSkill editing
-  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   // Hide nano skills on shared worksheets
   isSharedWorksheet?: boolean;
 }
@@ -108,7 +108,7 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
           const isEmpty = showCorrectAnswers && !studentAnswer;
           const liveAnswer = liveSessionAnswer?.[sIndex];
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+          const showNanoSkill = viewMode === 'teacher' && nanoSkill;
 
           return (
             <div key={sIndex} className="border rounded-lg p-3 bg-white">
@@ -133,7 +133,7 @@ const ExerciseFillInBlanks: React.FC<ExerciseFillInBlanksProps> = ({
                         nanoSkill={nanoSkill}
                         allNanoSkills={safeGetAllNanoSkills(sentence)}
                         isEditing={isEditing}
-                        onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
+                        onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(sIndex, ns, idx) : undefined}
                       />
                     )}
                   </div>

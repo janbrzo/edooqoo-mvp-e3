@@ -24,7 +24,7 @@ interface ExerciseMultipleChoiceAudioProps extends Partial<InteractiveExercisePr
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
-  onNanoSkillChange?: (qIndex: number, newSkill: NanoSkill) => void;
+  onNanoSkillChange?: (qIndex: number, newSkill: NanoSkill, skillIndex?: number) => void;
   // PROBLEM 4: Worksheet ID for deterministic shuffle
   worksheetId?: string;
 }
@@ -128,7 +128,7 @@ const ExerciseMultipleChoiceAudio: React.FC<ExerciseMultipleChoiceAudioProps> = 
                   nanoSkill={nanoSkill}
                   allNanoSkills={safeGetAllNanoSkills(question)}
                   isEditing={isEditing}
-                  onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(qIndex, newSkill) : undefined}
+                  onEdit={onNanoSkillChange ? (newSkill, idx) => onNanoSkillChange(qIndex, newSkill, idx) : undefined}
                 />
               )}
             </div>

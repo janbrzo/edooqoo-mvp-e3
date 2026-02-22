@@ -19,7 +19,7 @@ interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   // A3: Disable inputs after homework submission
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (eIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (eIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
@@ -106,7 +106,7 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
               // Support expressions as objects with nano_skill
               const expressionText = typeof expr === 'object' ? safeGetText(expr?.text || expr?.expression || expr) : expr;
               const nanoSkill = typeof expr === 'object' ? safeGetNanoSkill(expr) : null;
-              const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+              const showNanoSkill = viewMode === 'teacher' && nanoSkill;
               
               return (
                 <div key={eIndex} className="p-3 border rounded-lg bg-white">
@@ -130,7 +130,7 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
                         nanoSkill={nanoSkill}
                         allNanoSkills={safeGetAllNanoSkills(expr)}
                         isEditing={isEditing}
-                        onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(eIndex, ns) : undefined}
+                        onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(eIndex, ns, idx) : undefined}
                       />
                     )}
                   </div>

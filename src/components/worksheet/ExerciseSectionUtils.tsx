@@ -180,7 +180,7 @@ export const renderOtherExerciseTypes = (
   // PROBLEM 1: Live Session answer prop for displaying student answers in blue
   liveSessionAnswer?: Record<number, any>,
   // NanoSkill edit callback
-  onNanoSkillChange?: (sentenceIndex: number, newSkill: any) => void
+  onNanoSkillChange?: (sentenceIndex: number, newSkill: any, skillIndex?: number) => void
 ) => (
   <div>
     <div className="space-y-2">
@@ -218,7 +218,7 @@ export const renderOtherExerciseTypes = (
                   {showNanoSkill && (
                     <NanoSkillBadge
                       nanoSkill={nanoSkill}
-                      onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(sIndex, newSkill) : undefined}
+                      onEdit={onNanoSkillChange ? (newSkill, idx) => onNanoSkillChange(sIndex, newSkill, idx) : undefined}
                     />
                   )}
                 </div>

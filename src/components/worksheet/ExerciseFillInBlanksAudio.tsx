@@ -16,7 +16,7 @@ interface ExerciseFillInBlanksAudioProps extends Partial<InteractiveExerciseProp
   onAnswersChange?: (value: string) => void;
   onWordBankChange?: (wIndex: number, value: string) => void;
   onSentenceChange?: (sIndex: number, field: string, value: string) => void;
-  onNanoSkillChange?: (sIndex: number, nanoSkill: any) => void;
+  onNanoSkillChange?: (sIndex: number, nanoSkill: any, skillIndex?: number) => void;
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
 }
@@ -137,7 +137,7 @@ const ExerciseFillInBlanksAudio: React.FC<ExerciseFillInBlanksAudioProps> = ({
                           nanoSkill={nanoSkill}
                           allNanoSkills={safeGetAllNanoSkills(sentence)}
                           isEditing={isEditing}
-                          onEdit={onNanoSkillChange ? (newSkill) => onNanoSkillChange(sIndex, newSkill) : undefined}
+                          onEdit={onNanoSkillChange ? (newSkill, idx) => onNanoSkillChange(sIndex, newSkill, idx) : undefined}
                           className="text-xs"
                         />
                       </div>

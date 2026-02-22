@@ -12,7 +12,7 @@ interface ExerciseGapTextProps extends Partial<InteractiveExerciseProps> {
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
   // NanoSkill editing
-  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
 }
 
@@ -46,7 +46,7 @@ const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
         const isEmpty = showCorrectAnswers && !studentAnswer;
         const sentenceText = safeGetText(sentence?.text || sentence);
         const nanoSkill = safeGetNanoSkill(sentence);
-        const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+        const showNanoSkill = viewMode === 'teacher' && nanoSkill;
 
         return (
           <div key={sIndex} className="border rounded-lg p-3 bg-white">
@@ -71,7 +71,7 @@ const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
                     nanoSkill={nanoSkill}
                     allNanoSkills={safeGetAllNanoSkills(sentence)}
                     isEditing={isEditing}
-                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
+                    onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(sIndex, ns, idx) : undefined}
                     />
                   )}
                 </div>

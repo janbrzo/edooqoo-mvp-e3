@@ -12,7 +12,7 @@ interface ExerciseSentenceTransformationProps extends Partial<InteractiveExercis
   onSentenceChange: (sIndex: number, field: string, value: string) => void;
   liveSessionAnswer?: Record<number, any>;
   disabled?: boolean;
-  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (sIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
   aiEvaluations?: Record<number, AiEvaluation>;
   liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
@@ -41,7 +41,7 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
           const isIncorrect = showCorrectAnswers && studentAnswer && !isCorrect;
           const isEmpty = showCorrectAnswers && !studentAnswer;
           const nanoSkill = safeGetNanoSkill(sentence);
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+          const showNanoSkill = viewMode === 'teacher' && nanoSkill;
 
           return (
             <div key={sIndex} className="border rounded-lg p-3 bg-white">
@@ -75,7 +75,7 @@ const ExerciseSentenceTransformation: React.FC<ExerciseSentenceTransformationPro
                       nanoSkill={nanoSkill}
                       allNanoSkills={safeGetAllNanoSkills(sentence)}
                       isEditing={isEditing}
-                      onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
+                      onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(sIndex, ns, idx) : undefined}
                     />
                   )}
                 </div>

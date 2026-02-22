@@ -16,9 +16,9 @@ interface ExerciseCategorizeProps extends Partial<InteractiveExerciseProps> {
   // A3: Disable inputs after homework submission
   disabled?: boolean;
   // NanoSkill editing (for categories)
-  onNanoSkillChange?: (cIndex: number, nanoSkill: NanoSkill) => void;
+  onNanoSkillChange?: (cIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   // NanoSkill editing (for individual items/words)
-  onItemNanoSkillChange?: (wIndex: number, nanoSkill: NanoSkill) => void;
+  onItemNanoSkillChange?: (wIndex: number, nanoSkill: NanoSkill, skillIndex?: number) => void;
   isSharedWorksheet?: boolean;
 }
 
@@ -130,7 +130,7 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
             {actualWords.map((wordItem, wIndex) => {
               const word = safeGetWord(wordItem);
               const nanoSkill = typeof wordItem === 'object' ? safeGetNanoSkill(wordItem) : null;
-              const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+              const showNanoSkill = viewMode === 'teacher' && nanoSkill;
               
               return (
                 <div key={wIndex} className="bg-blue-100 px-3 py-1 rounded-md flex items-center gap-1">
@@ -163,7 +163,7 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {categories.map((category, cIndex) => {
           const nanoSkill = safeGetNanoSkill(category);
-          const showNanoSkill = viewMode === 'teacher' && !isSharedWorksheet && nanoSkill;
+          const showNanoSkill = viewMode === 'teacher' && nanoSkill;
           
           return (
             <div key={cIndex} className="border rounded-lg p-3">
@@ -184,7 +184,7 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
                   <NanoSkillBadge
                     nanoSkill={nanoSkill}
                     isEditing={isEditing}
-                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(cIndex, ns) : undefined}
+                    onEdit={onNanoSkillChange ? (ns, idx) => onNanoSkillChange(cIndex, ns, idx) : undefined}
                   />
                 )}
               </div>

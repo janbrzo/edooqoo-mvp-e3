@@ -21,21 +21,17 @@ interface NanoSkillBadgeProps {
   /** Additional nano_skills (e.g. secondary writing skill) */
   allNanoSkills?: NanoSkill[];
   isEditing?: boolean;
-  onEdit?: (newSkill: NanoSkill) => void;
+  onEdit?: (newSkill: NanoSkill, skillIndex?: number) => void;
   className?: string;
 }
 
 // Format: ns.A2.grammar.third_person_s -> "A2 · third person s"
 const formatDisplayName = (name: string): string => {
-  // Extract CEFR level if present (new format: ns.A2.topic.skill)
   const cefrMatch = name.match(/^ns\.([ABC][12])\./);
   const cefrLevel = cefrMatch ? cefrMatch[1] : null;
-  
-  // Remove prefix: ns.A2.topic. or ns.topic.
   const skillPart = cefrLevel
     ? name.replace(/^ns\.[ABC][12]\./, "").replace(/_/g, " ")
     : name.replace(/^ns\.[a-z_]+\./, "").replace(/_/g, " ");
-  
   return cefrLevel ? `${cefrLevel} · ${skillPart}` : skillPart;
 };
 
@@ -48,7 +44,6 @@ const getBadgeColor = (confidence: number): string => {
 
 // Determine badge label based on skill category
 const getBadgeLabel = (name: string): string => {
-  // Check if it's a writing skill (secondary dual tag)
   if (/\bwriting\b/.test(name)) return "wr";
   if (/\bspeaking\b/.test(name)) return "sp";
   if (/\blistening\b/.test(name)) return "li";
@@ -60,9 +55,13 @@ const getBadgeLabel = (name: string): string => {
 const SingleBadge: React.FC<{
   nanoSkill: NanoSkill;
   label?: string;
-}> = ({ nanoSkill, label }) => {
+  skillIndex: number;
+  onEdit?: (newSkill: NanoSkill, skillIndex: number) => void;
+}> = ({ nanoSkill, label, skillIndex, onEdit }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
+  const [editedSkill, setEditedSkill] = useState<NanoSkill | null>(null);
 
   const displayName = formatDisplayName(nanoSkill.name);
   const confidencePercent = Math.round(nanoSkill.confidence * 100);
@@ -74,8 +73,23 @@ const SingleBadge: React.FC<{
     setIsHovered(true);
   };
 
+  const handleEditStart = () => {
+    setEditedSkill({ ...nanoSkill });
+    setIsEditPopoverOpen(true);
+  };
+
+  const handleEditSave = () => {
+    if (editedSkill && onEdit) onEdit(editedSkill, skillIndex);
+    setIsEditPopoverOpen(false);
+  };
+
+  const handleEditCancel = () => {
+    setEditedSkill(null);
+    setIsEditPopoverOpen(false);
+  };
+
   return (
-    <>
+    <span className="inline-flex items-center gap-0.5">
       <Badge
         variant="outline"
         className={`text-xs cursor-help ${getBadgeColor(nanoSkill.confidence)}`}
@@ -108,48 +122,8 @@ const SingleBadge: React.FC<{
         </div>,
         document.body
       )}
-    </>
-  );
-};
 
-const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
-  nanoSkill,
-  allNanoSkills,
-  isEditing = false,
-  onEdit,
-  className = "",
-}) => {
-  const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
-  const [editedSkill, setEditedSkill] = useState<NanoSkill | null>(null);
-
-  if (!nanoSkill) return null;
-
-  // Build list of skills to display
-  const skillsToShow: NanoSkill[] = allNanoSkills && allNanoSkills.length > 0
-    ? allNanoSkills
-    : [nanoSkill];
-
-  const handleEditStart = () => {
-    setEditedSkill({ ...nanoSkill });
-    setIsEditPopoverOpen(true);
-  };
-
-  const handleEditSave = () => {
-    if (editedSkill && onEdit) onEdit(editedSkill);
-    setIsEditPopoverOpen(false);
-  };
-
-  const handleEditCancel = () => {
-    setEditedSkill(null);
-    setIsEditPopoverOpen(false);
-  };
-
-  return (
-    <div className={`inline-flex items-center gap-1 flex-wrap ${className}`}>
-      {skillsToShow.map((skill, idx) => (
-        <SingleBadge key={`${skill.name}-${idx}`} nanoSkill={skill} />
-      ))}
-
+      {/* Per-skill edit button */}
       {onEdit && (
         <Popover open={isEditPopoverOpen} onOpenChange={setIsEditPopoverOpen}>
           <PopoverTrigger asChild>
@@ -199,6 +173,34 @@ const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
           </PopoverContent>
         </Popover>
       )}
+    </span>
+  );
+};
+
+const NanoSkillBadge: React.FC<NanoSkillBadgeProps> = ({
+  nanoSkill,
+  allNanoSkills,
+  isEditing = false,
+  onEdit,
+  className = "",
+}) => {
+  if (!nanoSkill) return null;
+
+  // Build list of skills to display
+  const skillsToShow: NanoSkill[] = allNanoSkills && allNanoSkills.length > 0
+    ? allNanoSkills
+    : [nanoSkill];
+
+  return (
+    <div className={`inline-flex items-center gap-1 flex-wrap ${className}`}>
+      {skillsToShow.map((skill, idx) => (
+        <SingleBadge
+          key={`${skill.name}-${idx}`}
+          nanoSkill={skill}
+          skillIndex={idx}
+          onEdit={onEdit}
+        />
+      ))}
     </div>
   );
 };
