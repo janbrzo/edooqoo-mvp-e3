@@ -73,6 +73,7 @@ interface InputParamsCardProps {
     languageStyle?: number;
   };
   selectedExercises?: string[];
+  exerciseFocusMap?: Record<string, string>;
   /** 
    * Called when user clicks on an exercise name.
    * @param exerciseType - The exercise type identifier (e.g., 'odd-one-out')
@@ -129,7 +130,7 @@ const formatExerciseName = (id: string): string => {
   ).join(' ');
 };
 
-const InputParamsCard = ({ inputParams, selectedExercises, onExerciseClick }: InputParamsCardProps) => {
+const InputParamsCard = ({ inputParams, selectedExercises, exerciseFocusMap, onExerciseClick }: InputParamsCardProps) => {
   const [expandedFields, setExpandedFields] = useState<Record<string, boolean>>({});
   const MAX_CHARS = 55;
 
@@ -332,9 +333,12 @@ const InputParamsCard = ({ inputParams, selectedExercises, onExerciseClick }: In
                     const exerciseName = formatExerciseName(exerciseId);
                     const isLast = index === selectedExercises.length - 1;
                     const needsNewLine = (index + 1) % 8 === 0 && !isLast;
+                    const focus = exerciseFocusMap?.[exerciseId];
+                    const focusTag = focus === 'vocabulary' ? '[V] ' : focus === 'grammar' ? '[G] ' : '';
                     
                       return (
                       <span key={exerciseId}>
+                        {focusTag && <span className="font-bold text-worksheet-purple">{focusTag}</span>}
                         {onExerciseClick ? (
                           <button
                             type="button"

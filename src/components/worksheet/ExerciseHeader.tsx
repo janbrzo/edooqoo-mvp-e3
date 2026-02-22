@@ -24,6 +24,8 @@ interface ExerciseHeaderProps {
   viewMode?: "student" | "teacher" | "live-session";
   isMarkedDone?: boolean;
   onMarkDone?: () => void;
+  // Exercise focus tag [V] or [G]
+  exerciseFocus?: string;
 }
 
 const getIconComponent = (iconName: string) => {
@@ -66,8 +68,21 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
   // PROBLEM 5: Live Session props
   viewMode,
   isMarkedDone = false,
-  onMarkDone
-}) => (
+  onMarkDone,
+  exerciseFocus
+}) => {
+  // Build the focus tag [V] or [G] to insert into title
+  const focusTag = exerciseFocus === 'vocabulary' ? '[V] ' : exerciseFocus === 'grammar' ? '[G] ' : '';
+  
+  // Insert focus tag after "Exercise N: " pattern
+  const displayTitle = (() => {
+    if (!focusTag) return title;
+    const match = title.match(/^(Exercise\s+\d+:\s*)(.*)$/i);
+    if (match) return `${match[1]}${focusTag}${match[2]}`;
+    return `${focusTag}${title}`;
+  })();
+
+  return (
   <div className={cn(
     "bg-worksheet-purple text-white p-2 flex justify-between items-center exercise-header",
     // PROBLEM 5: Apply "done" styling when exercise is marked done in Live Session
@@ -89,7 +104,7 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
               onChange={e => onTitleChange(e.target.value)}
               className="bg-transparent border-b border-white/30 text-white w-full p-1"
             />
-          ) : title}
+          ) : displayTitle}
         </h3>
         {canRegenerate && (
           <Button
@@ -170,6 +185,7 @@ const ExerciseHeader: React.FC<ExerciseHeaderProps> = ({
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default ExerciseHeader;

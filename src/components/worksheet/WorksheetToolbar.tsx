@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen, Copy, Radio, Paintbrush, Eye, EyeOff } from "lucide-react";
+import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen, Copy, Radio, Paintbrush, Eye, EyeOff, Plus } from "lucide-react";
 import { isFreeCustomDemoWeek } from "@/utils/promoUtils";
 import PaymentPopup from "@/components/PaymentPopup";
 import ShareWorksheetModal from "@/components/ShareWorksheetModal";
@@ -38,6 +38,7 @@ interface WorksheetToolbarProps {
   onExpandAll?: () => void;
   onCloseSidebar?: () => void;
   onCreateHomework?: () => void;
+  onAddExercise?: () => void;
   onDuplicateSuccess?: () => void;
   // Drawing overlay props (for Live Session mode)
   isDrawingEnabled?: boolean;
@@ -66,6 +67,7 @@ const WorksheetToolbar = ({
   onExpandAll,
   onCloseSidebar,
   onCreateHomework,
+  onAddExercise,
   onDuplicateSuccess,
   isDrawingEnabled = false,
   isDrawingLayerVisible = false,
@@ -378,7 +380,7 @@ const WorksheetToolbar = ({
                     className={`border-worksheet-purple text-worksheet-purple ${isMobile ? '' : 'mr-2'}`}
                     size="sm"
                   >
-                    <BookOpen className="mr-2 h-4 w-4" /> Create Homework
+                    <BookOpen className="mr-2 h-4 w-4" /> {viewMode === 'live-session' ? 'Homework' : 'Create Homework'}
                   </Button>
                 ) : !isRegisteredUser && worksheetId && (
                   <Tooltip>
@@ -389,13 +391,25 @@ const WorksheetToolbar = ({
                         className="opacity-50 cursor-not-allowed border-gray-300 text-gray-400 mr-2"
                         size="sm"
                       >
-                        <BookOpen className="mr-2 h-4 w-4" /> Create Homework
+                        <BookOpen className="mr-2 h-4 w-4" /> Homework
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>🔒 Login to create homework</p>
                     </TooltipContent>
                   </Tooltip>
+                )}
+                
+                {/* Add Exercise button - only in Live Session */}
+                {viewMode === 'live-session' && isRegisteredUser && onAddExercise && (
+                  <Button
+                    variant="outline"
+                    onClick={onAddExercise}
+                    className={`border-green-600 text-green-600 hover:bg-green-50 ${isMobile ? '' : 'mr-2'}`}
+                    size="sm"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add Exercise
+                  </Button>
                 )}
               </>
             )}
@@ -456,7 +470,7 @@ const WorksheetToolbar = ({
                       size="sm"
                     >
                       <Paintbrush className="mr-2 h-4 w-4" />
-                      {isDrawingEnabled ? 'Stop Drawing' : 'Draw on Worksheet'}
+                      {isDrawingEnabled ? 'Stop Drawing' : 'Draw'}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -473,7 +487,7 @@ const WorksheetToolbar = ({
                         size="sm"
                       >
                         {isDrawingLayerVisible ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
-                        {isDrawingLayerVisible ? 'Hide Drawings' : 'Show Drawings'}
+                        {isDrawingLayerVisible ? 'Hide' : 'Show'}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>

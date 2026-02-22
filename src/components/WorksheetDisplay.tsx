@@ -21,6 +21,7 @@ import { useStudents } from "@/hooks/useStudents";
 import { useFlashcardSets } from "@/hooks/useFlashcardSets";
 import { useLiveSessionAnswers } from "@/hooks/useLiveSessionAnswers";
 import { CreateHomeworkModal } from "@/components/homework/CreateHomeworkModal";
+import { AddExerciseModal } from "@/components/worksheet/AddExerciseModal";
 import { QuickAddWordToFlashcardsModal } from "@/components/flashcards/QuickAddWordToFlashcardsModal";
 import { ViewFlashcardSetsModal } from "@/components/flashcards/ViewFlashcardSetsModal";
 import { SelectWordFAB, QuickAddWordFAB } from "@/components/flashcards/FlashcardFABs";
@@ -233,6 +234,7 @@ export default function WorksheetDisplay({
   const [miniListCategoryFilter, setMiniListCategoryFilter] = useState<KnowledgeCategory | null>(null);
   const MINI_LIST_PAGE_SIZE = 8;
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
+  const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
   const [isAiEvalLoading, setIsAiEvalLoading] = useState(false);
   
   // Flashcard FAB buttons state (Problem 4)
@@ -979,6 +981,7 @@ export default function WorksheetDisplay({
           <InputParamsCard 
             inputParams={inputParams} 
             selectedExercises={inputParams.selectedExercises}
+            exerciseFocusMap={inputParams.exerciseFocusMap}
             onExerciseClick={(exerciseType: string) => {
               // Find the actual index of the exercise in the worksheet by its type
               const activeExercises = editableWorksheet?.exercises?.filter((ex: any) => !ex.deleted) || [];
@@ -1011,6 +1014,7 @@ export default function WorksheetDisplay({
             onExpandAll={expandAllRef || (() => {})}
             onCloseSidebar={closeSidebarRef || (() => {})}
             onCreateHomework={handleCreateHomework}
+            onAddExercise={() => setShowAddExerciseModal(true)}
             isDrawingEnabled={isDrawingEnabled}
             isDrawingLayerVisible={isDrawingLayerVisible}
             onDrawingToggle={() => {
@@ -1167,6 +1171,20 @@ export default function WorksheetDisplay({
           audioUrl ||
           inputParams?.selectedAudio
         )}
+      />
+      
+      {/* Add Exercise Modal - Live Session */}
+      <AddExerciseModal
+        open={showAddExerciseModal}
+        onOpenChange={setShowAddExerciseModal}
+        worksheetId={worksheetId || ''}
+        worksheetFormData={inputParams}
+        currentExerciseCount={editableWorksheet?.exercises?.filter((ex: any) => !ex.deleted)?.length || 0}
+        editableWorksheet={editableWorksheet}
+        setEditableWorksheet={setEditableWorksheet}
+        userId={userId || ''}
+        worksheetHasPicture={!!(selectedImage || editableWorksheet?.selected_image || inputParams?.selectedImage)}
+        worksheetHasAudio={!!(selectedAudio || editableWorksheet?.selected_audio || editableWorksheet?.audio_url || audioUrl || inputParams?.selectedAudio)}
       />
       
       {/* Login Required Modal for anonymous users */}
