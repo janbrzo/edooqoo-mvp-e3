@@ -47,7 +47,7 @@ import {
   getMatchedItems,
   renderOtherExerciseTypes
 } from "./ExerciseSectionUtils";
-import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudentEvents } from "@/hooks/dslm/useStudentEvents";
@@ -1013,7 +1013,7 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                     {showNanoSkill && (
                       <NanoSkillBadge
                         nanoSkill={nanoSkill}
-                        isEditing={isEditing}
+                        allNanoSkills={typeof question === 'object' ? safeGetAllNanoSkills(question) : []}
                         onEdit={(newSkill) => {
                           const updatedExercises = [...editableWorksheet.exercises];
                           const newQuestions = [...exercise.questions!];

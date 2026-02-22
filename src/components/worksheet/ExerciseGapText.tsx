@@ -1,7 +1,7 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
-import { safeGetText, safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetText, safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseGapTextProps extends Partial<InteractiveExerciseProps> {
@@ -67,10 +67,11 @@ const ExerciseGapText: React.FC<ExerciseGapTextProps> = ({
                   </p>
                   {/* NanoSkill Badge */}
                   {showNanoSkill && (
-                    <NanoSkillBadge
-                      nanoSkill={nanoSkill}
-                      isEditing={isEditing}
-                      onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
+                  <NanoSkillBadge
+                    nanoSkill={nanoSkill}
+                    allNanoSkills={safeGetAllNanoSkills(sentence)}
+                    isEditing={isEditing}
+                    onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
                     />
                   )}
                 </div>

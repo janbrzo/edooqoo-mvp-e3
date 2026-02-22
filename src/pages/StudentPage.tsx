@@ -417,11 +417,11 @@ const StudentPage = () => {
                   <div className="space-y-3">
                     {worksheets.slice(0, 5).map((worksheet) => (
                       <div key={worksheet.id}>
-                        <Link
-                          to={`/worksheet/${worksheet.id}`}
-                          className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                        >
-                          <div className="flex items-center space-x-3 flex-1">
+                        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                          <Link
+                            to={`/worksheet/${worksheet.id}`}
+                            className="flex items-center space-x-3 flex-1 cursor-pointer"
+                          >
                             <FileText className="h-4 w-4 text-primary" />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
@@ -438,8 +438,15 @@ const StudentPage = () => {
                                 {format(new Date(worksheet.created_at), 'MMM dd, yyyy')}
                               </p>
                             </div>
-                          </div>
-                        </Link>
+                          </Link>
+                          <DeleteWorksheetButton
+                            worksheetId={worksheet.id}
+                            worksheetTitle={worksheet.title || 'Untitled Worksheet'}
+                            onDelete={deleteWorksheet}
+                            variant="ghost"
+                            size="sm"
+                          />
+                        </div>
                         <WorksheetHomeworkSection 
                           worksheetId={worksheet.id}
                           compact={true}

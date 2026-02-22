@@ -2,7 +2,7 @@ import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
 import { answersMatch } from "@/utils/textNormalization";
-import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseWordOrderProps extends Partial<InteractiveExerciseProps> {
@@ -79,6 +79,7 @@ const ExerciseWordOrder: React.FC<ExerciseWordOrderProps> = ({
                   {showNanoSkill && (
                     <NanoSkillBadge
                       nanoSkill={nanoSkill}
+                      allNanoSkills={safeGetAllNanoSkills(sentence)}
                       isEditing={isEditing}
                       onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(sIndex, ns) : undefined}
                     />

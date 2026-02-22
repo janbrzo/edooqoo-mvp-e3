@@ -1,7 +1,7 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { safeGetNanoSkill, safeGetWord } from "@/utils/textObjectFixer";
+import { safeGetNanoSkill, safeGetWord, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseCategorizeProps extends Partial<InteractiveExerciseProps> {
@@ -146,7 +146,8 @@ const ExerciseCategorize: React.FC<ExerciseCategorizeProps> = ({
                   )}
                   {showNanoSkill && (
                     <NanoSkillBadge 
-                      nanoSkill={nanoSkill} 
+                      nanoSkill={nanoSkill}
+                      allNanoSkills={safeGetAllNanoSkills(wordItem)}
                       isEditing={isEditing}
                       onEdit={onItemNanoSkillChange ? (ns) => onItemNanoSkillChange(wIndex, ns) : undefined}
                     />

@@ -1,7 +1,7 @@
 import React from "react";
 import { InteractiveExerciseProps } from "@/types/interactiveHomework";
 import { Input } from "@/components/ui/input";
-import { safeGetNanoSkill } from "@/utils/textObjectFixer";
+import { safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 
 interface ExerciseCompleteWordProps extends Partial<InteractiveExerciseProps> {
@@ -82,6 +82,7 @@ const ExerciseCompleteWord: React.FC<ExerciseCompleteWordProps> = ({
                     {showNanoSkill && (
                       <NanoSkillBadge
                         nanoSkill={nanoSkill}
+                        allNanoSkills={safeGetAllNanoSkills(wordItem)}
                         isEditing={isEditing}
                         onEdit={onNanoSkillChange ? (ns) => onNanoSkillChange(wIndex, ns) : undefined}
                       />
