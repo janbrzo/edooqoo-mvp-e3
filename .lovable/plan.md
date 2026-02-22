@@ -1,147 +1,135 @@
 
-# DSLM - Naprawa Flashcards, Homework nano_skills + UI fixes
+
+# Plan wdrozenia - 6 problemow DSLM + UX
 
 ---
 
-## ANALIZA 6 PROBLEMOW
+## Problem 1: Brak badge nano_skill w zadaniu Reading + dual badges
 
-### Problem 1: Homework nano_skills - czy korzystamy z tego samego kodu?
+**Przyczyna**: `ExerciseReading.tsx` linia 52 uzywa `safeGetNanoSkill(question)` ktory zwraca TYLKO pierwszy nano_skill. Komponent `NanoSkillBadge` otrzymuje prop `nanoSkill` ale NIE otrzymuje `allNanoSkills`, wiec drugi nano_skill (writing) nigdy sie nie wyswietla.
 
-**Wynik analizy**: TAK, homework juz korzysta z tego samego kodu co worksheety. Hook `useInteractiveHomework.tsx` importuje `buildItemEvaluations` z `masteryCalculator.ts` (linia 11). Dane w bazie to potwierdzaja - homework eventy maja juz nano_skill_ratings z formatem `ns.vocab.*`.
+Dodatkowo warunek widocznosci (linia 53): `viewMode === 'teacher' && !isSharedWorksheet && nanoSkill` - w Live Session `viewMode` jest konwertowany na `'teacher'` w `ExerciseSection.tsx` linia 651, wiec badge POWINIEN byc widoczny. Problem moze lezec w tym ze AI nie generuje `nano_skill` jako array w nowym formacie, ale to trzeba zweryfikowac na danych.
 
-**Ale jest problem**: Homework korzysta z nano_skills ktore AI wygenerowalo W MOMENCIE TWORZENIA WORKSHEETU. Jesli worksheet byl wygenerowany PRZED naszymi zmianami v5, to nano_skills w nim beda w STARYM formacie (np. `ns.vocab.idiom_definition_blind_date` zamiast `ns.A2.vocabulary.definition_blind_date`).
+**Rozwiazanie**:
+- W `ExerciseReading.tsx`: dodac import `safeGetAllNanoSkills` i przekazac wynik jako prop `allNanoSkills` do `NanoSkillBadge`
+- Ten sam wzorzec zastosowac we WSZYSTKICH 29 komponentach cwiczen (ExerciseDialogue, ExerciseMatching, ExerciseFillInBlanks, itd.)
+- Kazdy komponent ktory renderuje `NanoSkillBadge` musi przekazywac `allNanoSkills={safeGetAllNanoSkills(item)}`
 
-**Wniosek**: Nie trzeba zmieniac kodu homework - on juz uzywa `buildItemEvaluations`. Nowe worksheety beda generowac nano_skills w nowym formacie v5, wiec homework z tych worksheetow tez bedzie mial nowy format. Stare worksheety pozostana ze starym formatem - backward compatibility w SQL to obsluguje.
+**Pliki do zmiany**: ExerciseReading.tsx, ExerciseDialogue.tsx, ExerciseMatching.tsx, ExerciseFillInBlanks.tsx, ExerciseMultipleChoice.tsx, ExerciseOddOneOut.tsx, ExerciseAnswerQuestions.tsx, ExerciseGapText.tsx, ExerciseMatchingHalves.tsx, ExerciseCompleteWord.tsx, ExerciseCategorize.tsx, ExerciseParaphrasing.tsx, ExerciseSentenceTransformation.tsx, ExerciseNegativePrefixes.tsx, ExerciseWordOrder.tsx, ExerciseSynonymsAntonyms.tsx, ExerciseListeningComprehension.tsx, ExerciseMultipleChoiceAudio.tsx, ExerciseTrueFalseAudio.tsx, ExerciseFillInBlanksAudio.tsx, ExerciseAnswerQuestionsAudio.tsx, ExerciseDescribe.tsx + True/False components
 
 ---
 
-### Problem 2.1 + 2.2: Flashcards - ujednolicenie eventow + poziomy CEFR
+## Problem 2: Przycisk "Add Exercise" w Live Session
 
-**Stan obecny**: Trigger `log_flashcard_review_event()` wstawia eventy z:
-- `skill_ids`: NULL (puste!)
-- Dane w `student_skill_metrics` maja format `flashcard:UUID_karty` (np. `flashcard:c93fddc7-...`)
+**Opis**: Nowy przycisk obok Create Homework w toolbarze Live Session. Otwiera modal podobny do CreateHomeworkModal, ale zamiast tworzyc homework, generuje nowe cwiczenie i dodaje je do biezacego worksheetu (pod ostatnim Exercise, przed Vocabulary Sheet). Limit: max 12 cwiczen na worksheet.
 
-**Co trzeba zrobic**: Zmienic trigger SQL zeby generowal `skill_ids` w formacie `ns.[CEFR].vocabulary.definition_[word]`. Trigger ma dostep do `front_text` (angielskie slowo) i `back_text` (tlumaczenie/definicja). Ale trigger NIE WIE jaki jest poziom CEFR slowa.
+**Rozwiazanie techniczne**:
 
-**Rozwiazanie**: AI nie moze byc wywolywane w triggerze SQL (zbyt wolne). Wiec CEFR level bedzie ustalany deterministycznie:
+1. **Nowy komponent `AddExerciseModal.tsx`**:
+   - Modal z lista typow cwiczen do wyboru (jak w CreateHomeworkModal)
+   - Pole na dodatkowe instrukcje (opcjonalne)
+   - Przycisk "Generate" ktory wywoluje edge function `generateWorksheet` z parametrem `single_exercise: true`
+   - Po wygenerowaniu: dodaje cwiczenie do `editableWorksheet.exercises` i zapisuje do bazy
 
-1. **Dla nowych flashcards**: Przy tworzeniu karty (import z vocabulary sheet lub manual add), system ustala CEFR na podstawie poziomu studenta z tabeli `students.english_level`. To jest dobre przyblizenie - jesli student jest na A2, to slowa ktore sie uczy sa na poziomie A2-B1.
+2. **Zmiany w `WorksheetToolbar.tsx`**:
+   - Nowy prop `onAddExercise`
+   - Przycisk "Add Exercise" widoczny TYLKO w Live Session mode
+   - Skrocenie nazw przyciskow: "Homework" zamiast "Create Homework", "Draw" zamiast "Draw on Worksheet", "Hide" zamiast "Hide Drawings"
 
-2. **Trigger `log_flashcard_review_event()`**: Pobierze `english_level` studenta i uzyje go jako CEFR prefix. Zmieni `skill_ids` z NULL na `ARRAY['ns.[CEFR].vocabulary.definition_[sanitized_word]']`.
+3. **Zapis do bazy**: 
+   - UPDATE `worksheets.ai_response` z nowym cwiczeniem
+   - Automatyczna synchronizacja z shared worksheet (student zobaczy nowe cwiczenie w real-time bo czyta z tego samego rekordu)
 
-3. **back_type rozroznienie**: Trigger sprawdzi `back_type` z `flashcard_sets`:
-   - `translation` (native language) -> confidence nizsza (0.75) bo latwiejsze
-   - `definition` (English) -> confidence wyzsza (0.90)
-   
-   Ale confidence nie jest przechowywana w `student_events` bezposrednio - jest w nano_skill w prompcie. Dla flashcards, roznice translation vs definition beda wplywac na mastery (translation=latwiejsze, wiec ten sam wynik SM-2 daje nieco nizsza wartosc mastery).
+4. **Limit 12 cwiczen**: Walidacja w modalu - jesli `exercises.length >= 12`, przycisk "Add Exercise" jest disabled z tooltip "Maximum 12 exercises per worksheet"
 
-**Konkretne zmiany w triggerze**:
+**Pliki do zmiany**: Nowy `AddExerciseModal.tsx`, WorksheetToolbar.tsx, WorksheetContainer.tsx (lub WorksheetContent.tsx - tam gdzie jest logika worksheetu)
+
+---
+
+## Problem 3: Ikona usuwania w Overview > Recent Worksheets
+
+**Przyczyna**: W zakladce Overview (StudentPage.tsx linie 418-448) nie ma przycisku Delete - jest tylko link do worksheetu i WorksheetHomeworkSection.
+
+**Rozwiazanie**: Dodac `DeleteWorksheetButton` obok kazdego worksheetu w sekcji Recent Worksheets (linie 418-448). Uzyc tego samego komponentu co w zakladce Worksheets (linia 641-644).
+
+**Zmiana w `StudentPage.tsx`**:
+- W sekcji Recent Worksheets, wewnatrz mapowania `worksheets.slice(0, 5).map(...)`, dodac `DeleteWorksheetButton` po prawej stronie kazdego wiersza
+- Trzeba zmienic layout z `<Link>` na `<div>` z osobnym linkiem i przyciskiem delete, zeby klikniecie delete nie nawigowalo do worksheetu
+
+---
+
+## Problem 4: Znaczniki [V] i [G] na worksheet
+
+**Opis**: Na formularzu mozna wybrac V (vocabulary) lub G (grammar) per exercise. Te znaczniki sa zapisywane w `formData.exerciseFocusMap` (np. `{"reading": "vocabulary", "fill-in-blanks": "grammar"}`). Trzeba je wyswietlac w 2 miejscach:
+
+**A. InputParamsCard.tsx** - w "Selected Exercise Types":
+- Przed nazwa cwiczenia dodac `[V]` lub `[G]` w kwadratowym nawiasie
+- Np. `[V] Discussion, [G] Fill in the Blanks, Reading`
+- Trzeba przekazac `exerciseFocusMap` jako nowy prop
+
+**B. ExerciseHeader.tsx** - w naglowku cwiczenia:
+- Po "Exercise 7:" dodac `[V]` lub `[G]`
+- Np. "Exercise 7: [V] Discussing"
+- Trzeba przekazac `exerciseFocus` jako nowy prop z ExerciseSection
+
+**Pliki do zmiany**:
+- `InputParamsCard.tsx`: nowy prop `exerciseFocusMap`, wyswietlanie [V]/[G] przed nazwa
+- `ExerciseHeader.tsx`: nowy prop `exerciseFocus`, wyswietlanie [V]/[G] w tytule
+- `ExerciseSection.tsx`: przekazanie `exerciseFocus` z `originalFormData?.exerciseFocusMap?.[exercise.type]`
+- `WorksheetContent.tsx` lub komponent renderujacy InputParamsCard: przekazanie `exerciseFocusMap`
+
+---
+
+## Problem 5: Period i CEFR filtry obok siebie
+
+**Przyczyna**: W `SkillsOverviewPanel.tsx` linie 196-241, Period filter i CEFR filter sa w osobnych `<div>` co powoduje ze sa pod soba.
+
+**Rozwiazanie**: Polaczyc oba filtry w jeden `<div>` z separatorem `|` lub dodatkowym marginesem, zeby byly w jednej linii:
 
 ```text
-Obecny skill_name w metrics: flashcard:c93fddc7-da38-45f0-bfb8-4c8260ef78f3
-Nowy skill_name:             ns.A2.vocabulary.definition_advice
+Period: [7d] [14d] [30d] ... [Custom] [Go]  |  CEFR: [All] [A1] [A2] [B1] [B2] [C1] [C2]
 ```
 
-Sanityzacja slowa: lowercase, spacje -> underscore, usuwanie znakow specjalnych. Przyklady:
-- "mother-in-law" -> `ns.B1.vocabulary.definition_mother_in_law`
-- "career-wise" -> `ns.B1.vocabulary.definition_career_wise`
-- "August" -> `ns.A1.vocabulary.definition_august`
+Zmiana w `SkillsOverviewPanel.tsx` linie 196-241: zamiast dwoch osobnych div, jeden div z `flex-wrap` i separator miedzy nimi.
 
 ---
 
-### Problem 3: Period filter znika gdy brak danych
+## Problem 6: StudentSwitcherPopover - scroll + niebieski ludzik
 
-**Przyczyna**: W `SkillsOverviewPanel.tsx` linia 166-178, warunek `if (skills.length === 0)` zwraca "No skill data yet" BEZ period filtera. Gdy uzytkownik wybierze krotki okres (np. 7d) i nie ma eventow w tym okresie, `skills` jest pusty i caly panel znika lacznie z filterem.
+**Przyczyna scroll**: `ScrollArea` ma `max-h-72` (288px) co powinno dzialac, ale moze nie dzialac poprawnie z Radix ScrollArea. Problem moze byc w tym ze `ScrollArea` wymaga konkretnej wysokosci a nie max-height, lub brakuje `overflow-y-auto` na wewnetrznym kontenerze.
 
-**Rozwiazanie**: Przeniesc period filter PRZED warunek `skills.length === 0`, zeby zawsze byl widoczny. Komunikat "No skill data" powinien pojawiac sie PONIZEJ filtra.
+**Przyczyna koloru**: Ikona `<User>` nie ma zadnego koloru - domyslnie jest czarna/szara.
 
----
-
-### Problem 4: Klikalna ikona studenta z lista studentow
-
-**Stan obecny**: Na stronie `/student/:id` (linia 206-208) jest ikona `<User>` obok imienia studenta, ale nie jest klikalna.
-
-**Rozwiazanie**: Zamienic ikone `<User>` na klikalny `Popover` z lista studentow (posortowana jak w dashboard - `updated_at DESC`). Po kliknieciu na studenta -> `navigate('/student/' + studentId)`.
+**Rozwiazanie**:
+- W `StudentSwitcherPopover.tsx`:
+  - Zmienic kolor ikony User na niebieski: `className="h-8 w-8 text-blue-600"`
+  - Dodac `h-72` (zamiast `max-h-72`) do ScrollArea lub uzyc natywnego `overflow-y-auto` zamiast Radix ScrollArea
+  - Alternatywnie: zastapic `<ScrollArea className="max-h-72">` na `<div className="max-h-72 overflow-y-auto">`
 
 ---
 
-### Problem 5: Filtrowanie po CEFR level w SkillsOverviewPanel
+## Kolejnosc implementacji
 
-**Rozwiazanie**: Dodac przycisk CEFR filter obok istniejacego period filtra:
+1. **Problem 6** - Najszybsza zmiana (StudentSwitcherPopover - 2 linie)
+2. **Problem 5** - Szybka zmiana (filtry obok siebie - kilka linii)
+3. **Problem 3** - Srednia zmiana (delete w Overview)
+4. **Problem 1** - Srednia zmiana (allNanoSkills we wszystkich komponentach)
+5. **Problem 4** - Srednia zmiana ([V]/[G] tagi)
+6. **Problem 2** - Najwieksza zmiana (Add Exercise modal + logika)
 
-```text
-CEFR: [All] [A1] [A2] [B1] [B2] [C1] [C2]
-```
-
-Filtrowanie dziala na poziomie nano_skill names - wystarczy sprawdzic czy `skill_name` zawiera `.A2.` itp. To jest czysto frontendowe filtrowanie na danych juz pobranych z `useSkillMetrics`.
-
----
-
-### Problem 6: Backfill istniejacych nano_skills
-
-**Stan obecny**: W bazie mamy ~855 nano_skills w starym formacie + 127 flashcard nano_skills w formacie `flashcard:UUID`.
-
-**Rozwiazanie**: SQL migracja z backfillem:
-
-1. **Flashcard metrics**: Zamiana `flashcard:UUID` na `ns.[CEFR].vocabulary.definition_[word]` - wymaga joina z `flashcard_cards` zeby pobrac `front_text`, i z `students` zeby pobrac `english_level`.
-
-2. **Stare nano_skills**: NIE ruszamy - backward compatibility w `extract_micro_skill()` i `extract_skill_category()` juz obsluguje stare formaty. Nowe worksheety beda generowac nowy format.
-
----
-
-## PLAN IMPLEMENTACJI
-
-### Krok 1: SQL - Nowy trigger flashcard_review + backfill
-
-Nowa wersja `log_flashcard_review_event()` ktora:
-- Pobiera `english_level` z `students` 
-- Pobiera `back_type` z `flashcard_sets`
-- Sanityzuje `front_text` do formatu nano_skill
-- Wstawia `skill_ids = ARRAY['ns.[CEFR].vocabulary.definition_[word]']`
-- Mastery modyfikowane o wspolczynnik trudnosci (translation: x0.85, definition: x1.0)
-
-Backfill istniejacych flashcard metrics:
-- UPDATE `student_skill_metrics` SET `skill_name` = nowy format WHERE `skill_name` LIKE `flashcard:%`
-- Wymaga joina z `flashcard_cards` i `students`
-
-### Krok 2: Frontend - Period filter fix (SkillsOverviewPanel.tsx)
-
-Przeniesc period filter i CEFR filter PRZED warunek `skills.length === 0`.
-
-### Krok 3: Frontend - CEFR filter (SkillsOverviewPanel.tsx)
-
-Dodac state `cefrFilter` i przyciski A1-C2. Filtrowac `nanoSkills` i `microSkills` po wybranym CEFR.
-
-### Krok 4: Frontend - Klikalna ikona studenta (StudentPage.tsx)
-
-Zamienic `<User>` ikone na `Popover` z lista studentow posortowana `updated_at DESC`.
-
-### Krok 5: Dokumentacja
-
-Aktualizacja 6 plikow dokumentacji.
-
----
-
-## SZCZEGOLY TECHNICZNE
-
-### Pliki do zmiany:
+## Pliki do zmiany (podsumowanie)
 
 | Plik | Zmiana |
 |------|--------|
-| SQL migracja | Nowy `log_flashcard_review_event()` z nano_skill naming, backfill flashcard metrics |
-| `SkillsOverviewPanel.tsx` | Period filter zawsze widoczny, CEFR filter, micro skill labels update |
-| `StudentPage.tsx` | Klikalna ikona studenta z Popover lista |
-| `useSkillMetrics.tsx` | Opcjonalnie: CEFR filtrowanie na poziomie query |
-| 6 plikow dokumentacji | Aktualizacja |
+| StudentSwitcherPopover.tsx | Niebieski kolor ikony + fix scroll |
+| SkillsOverviewPanel.tsx | Period + CEFR w jednej linii |
+| StudentPage.tsx | DeleteWorksheetButton w Overview > Recent Worksheets |
+| ExerciseReading.tsx + 20+ exercise components | allNanoSkills prop do NanoSkillBadge |
+| InputParamsCard.tsx | exerciseFocusMap prop, wyswietlanie [V]/[G] |
+| ExerciseHeader.tsx | exerciseFocus prop, [V]/[G] w tytule |
+| ExerciseSection.tsx | Przekazanie exerciseFocus do ExerciseHeader |
+| WorksheetToolbar.tsx | Przycisk Add Exercise, skrocone nazwy |
+| Nowy: AddExerciseModal.tsx | Modal do generowania nowego cwiczenia |
+| WorksheetContainer.tsx | Logika dodawania cwiczenia do worksheetu |
+| Dokumentacja (6 plikow) | Aktualizacja |
 
-### Czego NIE zmieniamy:
-- `useInteractiveHomework.tsx` - juz uzywa `buildItemEvaluations` (problem 1 = brak problemu)
-- `useFlashcardLearning.tsx` - nie ruszamy logiki SM-2
-- `FlashcardDisplay.tsx` - UI flashcards bez zmian
-- `masteryCalculator.ts` - juz obsluguje dual nano_skills
-- `core-instructions.ts` / `individual-exercises.ts` - juz zaktualizowane w v5
-
-### Kolejnosc:
-1. SQL: Nowy trigger + backfill
-2. Frontend: Period filter fix + CEFR filter + Student switcher
-3. Dokumentacja
