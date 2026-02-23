@@ -123,6 +123,7 @@ export default function HomeworkPage() {
   
   const {
     answers,
+    audioAnswers,
     aiEvaluations,
     isLoading: answersLoading,
     isSaving,
@@ -131,6 +132,7 @@ export default function HomeworkPage() {
     submittedAt,
     isWaitingForAiEval,
     updateAnswer,
+    updateAudioAnswer,
     saveOnBlur,
     submitHomework,
     verifyStudentEmail,
@@ -702,6 +704,10 @@ export default function HomeworkPage() {
                 viewMode={isTeacher ? "teacher" : "student"}
                 aiEvaluation={aiEvaluations[index]}
                 isWaitingForAiEval={isWaitingForAiEval}
+                audioAnswers={audioAnswers[index]}
+                onAudioAnswerChange={
+                  finalIsSubmitted ? undefined : (qIndex: number, audioUrl: string) => updateAudioAnswer(index, qIndex, audioUrl)
+                }
               />
             </div>
           ))}

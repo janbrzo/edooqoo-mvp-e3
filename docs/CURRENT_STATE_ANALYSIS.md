@@ -6,7 +6,14 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-21) - DSLM Layer B v5 Phase 2:**
+**Ostatnia naprawa (2026-02-23) - Speaking Integration:**
+- ✅ **HomeworkSpeakingRecorder**: Komponent do nagrywania audio przez studenta w zadaniach otwartych (Homework + Shared Worksheet)
+- ✅ **Transkrypcja audio**: Przed AI eval, audio URLs transkrybowane przez Whisper (`transcribe-audio`), dane speaking przekazane do `verify-open-answers`
+- ✅ **Speaking score**: AI zwraca `writing_score` i `speaking_score`, mapowane na nano-skille `.wr.`/`.sp.` w `masteryCalculator`
+- ✅ **Triple nano-skill**: Zadania otwarte mają 3 nano-skille (primary + writing + speaking) w promptach
+- ✅ **Admin impersonacja**: Panel admina `/admin`, Magic Link przez `admin-impersonate`, logi w `admin_activity_log`
+
+**Poprzednia naprawa (2026-02-21) - DSLM Layer B v5 Phase 2:**
 - ✅ **Flashcard nano_skill**: Trigger generuje `ns.[CEFR].vocabulary.definition_[word]` zamiast `flashcard:UUID`. CEFR z poziomu studenta
 - ✅ **back_type modifier**: Translation = 0.85x mastery (łatwiejsze), Definition = 1.0x (pełne mastery)
 - ✅ **Backfill flashcard metrics**: Wszystkie `flashcard:UUID` zmigowane do nowego formatu z mergowaniem duplikatów

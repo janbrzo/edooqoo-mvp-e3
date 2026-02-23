@@ -5,7 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - DSLM + UX Improvements Phase 3:**
+**Latest Update (February 2026) - Speaking Integration Phase:**
+- **HomeworkSpeakingRecorder**: Students can record audio answers for open-ended exercises in Homework and Shared Worksheets. Audio is uploaded to R2 via `upload-to-r2` edge function
+- **Audio transcription before AI eval**: On homework submission, audio URLs are transcribed via `transcribe-audio` (OpenAI Whisper) before being sent to `verify-open-answers` with `audio_transcription`, `audio_word_count`, `audio_duration_seconds`
+- **Speaking score in AI eval**: `verify-open-answers` returns separate `writing_score` and `speaking_score` per answer, mapped to nano-skills containing `.wr.`/`.writing.` and `.sp.`/`.speaking.` respectively
+- **Triple nano-skill tagging**: Open-ended exercises now generate 3 nano-skills (primary + writing + speaking) in prompt templates
+- **Admin impersonation**: Admin dashboard at `/admin` with Magic Link login via `admin-impersonate` edge function, activity logging in `admin_activity_log` table
+
+**Previous Update (February 2026) - DSLM + UX Improvements Phase 3:**
 - **NanoSkill badges in all exercises**: All 22+ exercise components now pass `allNanoSkills` to `NanoSkillBadge`, enabling dual badge display (e.g. reading + writing) in Reading and other exercises
 - **[V]/[G] exercise focus tags**: Exercises display `[V]` (vocabulary) or `[G]` (grammar) focus tags in both InputParamsCard ("Selected Exercise Types") and ExerciseHeader titles (e.g. "Exercise 7: [V] Discussing")
 - **Add Exercise in Live Session**: New "Add Exercise" button in toolbar (Live Session only) opens `AddExerciseModal` to generate and append exercises to the worksheet (max 12). Auto-saves to database and syncs with shared worksheet
