@@ -1,6 +1,5 @@
 /**
- * HomeworkSpeakingRecorder - Simplified audio recorder for homework/shared worksheet exercises
- * Adapted from SpeakingRecorder.tsx (Welcome Test) with simpler interface
+ * HomeworkSpeakingRecorder - Minimalist inline audio recorder for homework/shared worksheet exercises
  * Records audio, uploads to R2, returns audio_url
  */
 
@@ -46,7 +45,6 @@ export function HomeworkSpeakingRecorder({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const blobRef = useRef<Blob | null>(null);
 
-  // Reset when existingAudioUrl changes
   useEffect(() => {
     if (existingAudioUrl) {
       setStatus('done');
@@ -54,17 +52,11 @@ export function HomeworkSpeakingRecorder({
     }
   }, [existingAudioUrl]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-      if (mediaRecorderRef.current?.state === 'recording') {
-        mediaRecorderRef.current.stop();
-      }
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
     };
   }, []);
 
@@ -74,11 +66,8 @@ export function HomeworkSpeakingRecorder({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mimeType = getSupportedMimeType();
       let mediaRecorder: MediaRecorder;
-      
       try {
-        mediaRecorder = mimeType 
-          ? new MediaRecorder(stream, { mimeType })
-          : new MediaRecorder(stream);
+        mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       } catch {
         try { mediaRecorder = new MediaRecorder(stream); } catch {
           stream.getTracks().forEach(t => t.stop());
@@ -87,49 +76,32 @@ export function HomeworkSpeakingRecorder({
           return;
         }
       }
-
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       mediaRecorder.onstop = () => {
-        const actualMime = mediaRecorder.mimeType || 'audio/webm';
-        const blob = new Blob(chunksRef.current, { type: actualMime });
+        const blob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType || 'audio/webm' });
         blobRef.current = blob;
         setAudioUrl(URL.createObjectURL(blob));
         setStatus('recorded');
         stream.getTracks().forEach(t => t.stop());
       };
-
       mediaRecorder.onerror = () => {
-        setErrorMsg('Recording failed. Please try again.');
+        setErrorMsg('Recording failed.');
         setStatus('error');
         stream.getTracks().forEach(t => t.stop());
       };
-
       mediaRecorder.start();
       setStatus('recording');
       setSeconds(0);
-
       timerRef.current = setInterval(() => {
         setSeconds(prev => {
-          if (prev >= maxSeconds - 1) {
-            mediaRecorder.stop();
-            if (timerRef.current) clearInterval(timerRef.current);
-            return maxSeconds;
-          }
+          if (prev >= maxSeconds - 1) { mediaRecorder.stop(); if (timerRef.current) clearInterval(timerRef.current); return maxSeconds; }
           return prev + 1;
         });
       }, 1000);
     } catch (err: any) {
-      if (err.name === 'NotAllowedError') {
-        setErrorMsg('Microphone access denied. Please allow microphone permission.');
-      } else {
-        setErrorMsg('Could not access microphone.');
-      }
+      setErrorMsg(err.name === 'NotAllowedError' ? 'Microphone access denied.' : 'Could not access microphone.');
       setStatus('error');
     }
   }, [maxSeconds]);
@@ -151,19 +123,11 @@ export function HomeworkSpeakingRecorder({
     setIsPlaying(true);
   }, [audioUrl]);
 
-  const pauseAudio = useCallback(() => {
-    audioRef.current?.pause();
-    setIsPlaying(false);
-  }, []);
+  const pauseAudio = useCallback(() => { audioRef.current?.pause(); setIsPlaying(false); }, []);
 
   const resetRecording = useCallback(() => {
     if (audioUrl?.startsWith('blob:')) URL.revokeObjectURL(audioUrl);
-    setAudioUrl(null);
-    blobRef.current = null;
-    setSeconds(0);
-    setStatus('idle');
-    setIsPlaying(false);
-    setErrorMsg(null);
+    setAudioUrl(null); blobRef.current = null; setSeconds(0); setStatus('idle'); setIsPlaying(false); setErrorMsg(null);
   }, [audioUrl]);
 
   const uploadAndSave = useCallback(async () => {
@@ -172,115 +136,83 @@ export function HomeworkSpeakingRecorder({
     try {
       const url = await uploadBlobToR2(blobRef.current);
       if (!url) throw new Error('No URL returned');
-      setAudioUrl(url);
-      setStatus('done');
-      onAudioSaved(url);
+      setAudioUrl(url); setStatus('done'); onAudioSaved(url);
       toast.success('Recording saved!');
     } catch {
-      setStatus('error');
-      setErrorMsg('Upload failed. Please try again.');
+      setStatus('error'); setErrorMsg('Upload failed. Please try again.');
     }
   }, [onAudioSaved]);
-
-  /** Expose blob for parent-level flush (transcription before submit) */
-  const getBlob = useCallback(() => blobRef.current, []);
-  const getDuration = useCallback(() => seconds, [seconds]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   return (
-    <div className="space-y-2 p-3 border border-dashed border-muted-foreground/30 rounded-lg bg-muted/20">
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-        <Mic className="h-3 w-3" />
-        <span>Speaking option</span>
-      </div>
+    <div className="flex items-center gap-1.5 flex-wrap py-0.5">
+      {(status === 'idle' || status === 'error') && (
+        <Button onClick={startRecording} variant="ghost" size="sm"
+          disabled={disabled} className="gap-1 h-7 px-2 text-xs text-muted-foreground hover:text-foreground">
+          <Mic className="h-3 w-3 text-red-400" />
+          Record
+        </Button>
+      )}
 
       {status === 'recording' && (
-        <div className="flex items-center justify-center gap-0.5 h-10 bg-red-50 dark:bg-red-900/10 rounded-lg px-3">
-          {Array.from({ length: 16 }, (_, i) => (
-            <div
-              key={i}
-              className="w-0.5 bg-red-400 rounded-full animate-pulse"
-              style={{
-                height: `${8 + Math.random() * 20}px`,
-                animationDelay: `${i * 50}ms`,
-                animationDuration: `${300 + Math.random() * 400}ms`,
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      {(status === 'recording' || status === 'recorded') && (
-        <div className="text-center text-xs font-mono text-muted-foreground">
-          {formatTime(seconds)} / {formatTime(maxSeconds)}
-        </div>
-      )}
-
-      {status === 'error' && (
-        <div className="flex items-center gap-2 p-2 bg-destructive/10 rounded text-xs text-destructive">
-          <AlertTriangle className="h-3 w-3 flex-shrink-0" />
-          <span>{errorMsg}</span>
-        </div>
-      )}
-
-      <div className="flex items-center justify-center gap-1.5 flex-wrap">
-        {(status === 'idle' || status === 'error') && (
-          <Button onClick={startRecording} variant="outline" size="sm" disabled={disabled} className="gap-1.5 h-8 text-xs">
-            <Mic className="h-3.5 w-3.5 text-red-500" />
-            Record
+        <>
+          <span className="flex items-center gap-1 text-xs text-red-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+            {formatTime(seconds)}
+          </span>
+          <Button onClick={stopRecording} variant="ghost" size="sm" className="gap-1 h-7 px-2 text-xs">
+            <Square className="h-2.5 w-2.5" />
+            Stop
           </Button>
-        )}
+        </>
+      )}
 
-        {status === 'recording' && (
-          <Button onClick={stopRecording} variant="destructive" size="sm" className="gap-1.5 h-8 text-xs">
-            <Square className="h-3 w-3" />
-            Stop ({formatTime(maxSeconds - seconds)})
+      {status === 'recorded' && (
+        <>
+          <Button onClick={isPlaying ? pauseAudio : playAudio} variant="ghost" size="sm" className="h-7 px-2 text-xs">
+            {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
           </Button>
-        )}
+          <Button onClick={resetRecording} variant="ghost" size="sm" className="h-7 px-2 text-xs">
+            <RotateCcw className="h-3 w-3" />
+          </Button>
+          <Button onClick={uploadAndSave} variant="ghost" size="sm" className="gap-1 h-7 px-2 text-xs text-green-600">
+            <Upload className="h-3 w-3" />
+            Save
+          </Button>
+        </>
+      )}
 
-        {status === 'recorded' && (
-          <>
-            <Button onClick={isPlaying ? pauseAudio : playAudio} variant="outline" size="sm" className="gap-1 h-8 text-xs">
+      {status === 'uploading' && (
+        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Saving...
+        </span>
+      )}
+
+      {status === 'done' && (
+        <>
+          <span className="flex items-center gap-1 text-xs text-green-600">
+            <CheckCircle className="h-3 w-3" />
+            Saved
+          </span>
+          {audioUrl && (
+            <Button onClick={isPlaying ? pauseAudio : playAudio} variant="ghost" size="sm" className="h-6 w-6 p-0">
               {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-              {isPlaying ? 'Pause' : 'Play'}
             </Button>
-            <Button onClick={resetRecording} variant="ghost" size="sm" className="gap-1 h-8 text-xs">
-              <RotateCcw className="h-3 w-3" />
-              Re-record
-            </Button>
-            <Button onClick={uploadAndSave} size="sm" className="gap-1 h-8 text-xs">
-              <Upload className="h-3 w-3" />
-              Save
-            </Button>
-          </>
-        )}
-
-        {status === 'uploading' && (
-          <Button disabled size="sm" className="gap-1.5 h-8 text-xs">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            Saving...
+          )}
+          <Button onClick={resetRecording} variant="ghost" size="sm" disabled={disabled} className="h-6 px-1 text-xs">
+            <RotateCcw className="h-3 w-3" />
           </Button>
-        )}
+        </>
+      )}
 
-        {status === 'done' && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <div className="flex items-center gap-1 text-xs text-green-600">
-              <CheckCircle className="h-3.5 w-3.5" />
-              Saved
-            </div>
-            {audioUrl && (
-              <Button onClick={isPlaying ? pauseAudio : playAudio} variant="ghost" size="sm" className="gap-1 h-7 text-xs">
-                {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-              </Button>
-            )}
-            <Button onClick={resetRecording} variant="ghost" size="sm" disabled={disabled} className="gap-1 h-7 text-xs">
-              <RotateCcw className="h-3 w-3" />
-              Re-record
-            </Button>
-          </div>
-        )}
-      </div>
+      {status === 'error' && errorMsg && (
+        <span className="text-xs text-destructive flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3" />
+          {errorMsg}
+        </span>
+      )}
     </div>
   );
 }

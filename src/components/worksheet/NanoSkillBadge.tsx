@@ -42,15 +42,24 @@ const getBadgeColor = (confidence: number): string => {
   return "bg-muted text-muted-foreground border-border";
 };
 
+// Grammar topics that don't contain the word "grammar" in their nano_skill name
+const GRAMMAR_TOPICS = /\b(past_simple|past_continuous|past_perfect|present_simple|present_continuous|present_perfect|present_perfect_continuous|future_simple|future_going_to|future_continuous|first_conditional|second_conditional|third_conditional|mixed_conditionals|passive_voice|reported_speech|relative_clauses|modal_verbs|gerund_infinitive|phrasal_verbs|comparatives|superlatives|articles|prepositions|word_order|negative_prefixes|word_formation|sentence_transformation|error_correction)\b/;
+
+const VOCABULARY_TOPICS = /\b(vocabulary|collocations|idioms|synonyms|antonyms)\b/;
+
 // Determine badge label based on skill category
 const getBadgeLabel = (name: string): string => {
-  if (/\bwriting\b/.test(name)) return "wr";
-  if (/\bspeaking\b/.test(name)) return "sp";
+  if (/\bwriting\b/.test(name) || /\bwr\b/.test(name)) return "wr";
+  if (/\bspeaking\b/.test(name) || /\bsp\b/.test(name)) return "sp";
   if (/\blistening\b/.test(name)) return "li";
   if (/\breading\b/.test(name)) return "rd";
   if (/\bvisual_comprehension\b/.test(name)) return "vc";
-  if (/\bgrammar\b/.test(name)) return "gr";
-  if (/\bvocabulary\b/.test(name)) return "vo";
+  if (/\bgrammar\b/.test(name) || GRAMMAR_TOPICS.test(name)) return "gr";
+  if (VOCABULARY_TOPICS.test(name)) return "vo";
+  if (/\bparaphrasing\b/.test(name)) return "wr";
+  if (/\bdialogue\b/.test(name)) return "sp";
+  if (/\bfunctional\b/.test(name)) return "sp";
+  if (/\bcomprehension\b/.test(name)) return "rd";
   return "ns";
 };
 

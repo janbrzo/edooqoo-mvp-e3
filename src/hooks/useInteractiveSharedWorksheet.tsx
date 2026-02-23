@@ -180,7 +180,7 @@ export const useInteractiveSharedWorksheet = ({
     // PROBLEM 1: Build per-item evaluations with nano_skill_ratings
     const exerciseData = { ...exercises[exerciseIndex], worksheetId };
     const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
-    const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
+    const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType, null, audioAnswers[exerciseIndex] || null);
     
     // PROBLEM 1 FIX: Don't send item_evaluations if they contain no real AI eval data
     // This prevents overwriting genuine AI evaluations in the DB via COALESCE
@@ -246,7 +246,7 @@ export const useInteractiveSharedWorksheet = ({
       // PROBLEM 1: Build per-item evaluations with nano_skill_ratings
       const exerciseData = { ...exercises[exerciseIndex], worksheetId };
       const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
-      const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
+      const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType, null, audioAnswers[exerciseIndex] || null);
       // PROBLEM 1 FIX: Don't send item_evaluations if they contain no real AI eval data
       const hasRealAiEval = itemEvaluations?.some(e => e.hasValue !== false);
       const evalToSend = hasRealAiEval ? itemEvaluations : null;

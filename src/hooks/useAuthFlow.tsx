@@ -33,17 +33,6 @@ export function useAuthFlow() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInAnonymously = async () => {
-    try {
-      const { data, error } = await supabase.auth.signInAnonymously();
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error('Anonymous sign in error:', error);
-      return { data: null, error };
-    }
-  };
-
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -60,7 +49,6 @@ export function useAuthFlow() {
     loading,
     isAnonymous,
     isRegisteredUser,
-    signInAnonymously,
     signOut
   };
 }

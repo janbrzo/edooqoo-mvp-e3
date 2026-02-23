@@ -5,11 +5,15 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Speaking Integration Phase:**
-- **HomeworkSpeakingRecorder**: Students can record audio answers for open-ended exercises in Homework and Shared Worksheets. Audio is uploaded to R2 via `upload-to-r2` edge function
-- **Audio transcription before AI eval**: On homework submission, audio URLs are transcribed via `transcribe-audio` (OpenAI Whisper) before being sent to `verify-open-answers` with `audio_transcription`, `audio_word_count`, `audio_duration_seconds`
-- **Speaking score in AI eval**: `verify-open-answers` returns separate `writing_score` and `speaking_score` per answer, mapped to nano-skills containing `.wr.`/`.writing.` and `.sp.`/`.speaking.` respectively
-- **Triple nano-skill tagging**: Open-ended exercises now generate 3 nano-skills (primary + writing + speaking) in prompt templates
+**Latest Update (February 2026) - DSLM Fixes + Speaking UX + Cleanup:**
+- **NanoSkillBadge label fix**: `getBadgeLabel()` now recognizes 30+ grammar topics (present_simple, comparatives, superlatives, etc.) and vocabulary topics, returning proper `gr`/`vo` labels instead of fallback `ns`
+- **Discussion speaking**: `HomeworkExerciseRenderer` now includes `HomeworkSpeakingRecorder` in `discussion` exercise type for audio recording
+- **Minimalist recorder UI**: `HomeworkSpeakingRecorder` completely redesigned to inline flex layout - no borders, no waveform animation, single-line controls for all states (idle/recording/recorded/done)
+- **Dynamic confidence**: New `adjustConfidenceByAnswerType()` in `masteryCalculator.ts` adjusts nano_skill confidence based on answer type: speaking skill gets 0.90 with audio / 0.30 with text only; writing skill gets 0.90 with text / 0.70 with audio only
+- **Anonymous account cleanup**: Removed `signInAnonymously()` from `useAnonymousAuth` and `useAuthFlow` hooks. Created `cleanup-anonymous-users` Edge Function to delete ~1469 orphaned anonymous accounts
+- **Previous: HomeworkSpeakingRecorder**: Students can record audio answers for open-ended exercises in Homework and Shared Worksheets
+- **Previous: Audio transcription before AI eval**: On homework submission, audio URLs are transcribed via `transcribe-audio` (OpenAI Whisper) before being sent to `verify-open-answers`
+- **Previous: Triple nano-skill tagging**: Open-ended exercises now generate 3 nano-skills (primary + writing + speaking) in prompt templates
 - **Admin impersonation**: Admin dashboard at `/admin` with Magic Link login via `admin-impersonate` edge function, activity logging in `admin_activity_log` table
 
 **Previous Update (February 2026) - DSLM + UX Improvements Phase 3:**
