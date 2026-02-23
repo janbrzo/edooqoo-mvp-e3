@@ -49,6 +49,8 @@ const getBadgeLabel = (name: string): string => {
   if (/\blistening\b/.test(name)) return "li";
   if (/\breading\b/.test(name)) return "rd";
   if (/\bvisual_comprehension\b/.test(name)) return "vc";
+  if (/\bgrammar\b/.test(name)) return "gr";
+  if (/\bvocabulary\b/.test(name)) return "vo";
   return "ns";
 };
 
