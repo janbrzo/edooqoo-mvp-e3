@@ -45,7 +45,9 @@ interface HomeworkExerciseRendererProps {
   disabled: boolean;
   viewMode: 'student' | 'teacher';
   aiEvaluation?: Record<number, AiEvaluation>;
-  isWaitingForAiEval?: boolean; // Problem 5: show loading indicator while AI evaluates
+  isWaitingForAiEval?: boolean;
+  audioAnswers?: Record<number, string>;
+  onAudioAnswerChange?: (questionIndex: number, audioUrl: string) => void;
 }
 
 // Helper function to normalize exercise type (removes -picture and -audio suffixes for component matching)
@@ -73,7 +75,9 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
   disabled,
   viewMode,
   aiEvaluation,
-  isWaitingForAiEval = false
+  isWaitingForAiEval = false,
+  audioAnswers,
+  onAudioAnswerChange
 }) => {
   const normalizedType = normalizeExerciseType(exercise.type);
   const isOpenEnded = OPEN_ENDED_TYPES.includes(exercise.type) || OPEN_ENDED_TYPES.includes(normalizedType);

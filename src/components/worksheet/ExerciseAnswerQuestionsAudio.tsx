@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { safeGetNanoSkill, safeGetText, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
+import { HomeworkSpeakingRecorder } from "@/components/homework/HomeworkSpeakingRecorder";
 
 interface Question {
   question: string;
@@ -24,6 +25,8 @@ interface ExerciseAnswerQuestionsAudioProps extends Partial<InteractiveExerciseP
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
   liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
+  audioAnswers?: Record<number, string>;
+  onAudioAnswerChange?: (questionIndex: number, audioUrl: string) => void;
 }
 
 const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> = ({
@@ -42,7 +45,9 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
   isSharedWorksheet = false,
   // AI Evaluations
   aiEvaluations,
-  liveSessionContext
+  liveSessionContext,
+  audioAnswers,
+  onAudioAnswerChange
 }) => {
   return (
     <div className="space-y-0.5">
@@ -115,6 +120,14 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
                   disabled={disabled}
                   className={`h-10 mt-1 ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}`}
                 />
+                {/* Speaking recorder */}
+                {onAudioAnswerChange && (
+                  <HomeworkSpeakingRecorder
+                    existingAudioUrl={audioAnswers?.[qIndex]}
+                    onAudioSaved={(url) => onAudioAnswerChange(qIndex, url)}
+                    disabled={disabled}
+                  />
+                )}
                 {/* AI Evaluation badge per question */}
                 {aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet) && (
                   <AiEvaluationBadge 

@@ -4,6 +4,7 @@ import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import { safeGetNanoSkill, safeGetText, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
+import { HomeworkSpeakingRecorder } from "@/components/homework/HomeworkSpeakingRecorder";
 
 interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   dialogue: any[];
@@ -24,6 +25,8 @@ interface ExerciseDialogueProps extends Partial<InteractiveExerciseProps> {
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
   liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
+  audioAnswers?: Record<number, string>;
+  onAudioAnswerChange?: (questionIndex: number, audioUrl: string) => void;
 }
 
 const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
@@ -49,7 +52,9 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
   isSharedWorksheet = false,
   // AI Evaluations
   aiEvaluations,
-  liveSessionContext
+  liveSessionContext,
+  audioAnswers,
+  onAudioAnswerChange
 }) => {
   return (
     <div>
@@ -151,6 +156,14 @@ const ExerciseDialogue: React.FC<ExerciseDialogueProps> = ({
                         <AiEvaluationBadge 
                           evaluation={aiEvaluations[eIndex]} 
                           showFeedback={true}
+                        />
+                      )}
+                      {/* Speaking recorder */}
+                      {onAudioAnswerChange && (
+                        <HomeworkSpeakingRecorder
+                          existingAudioUrl={audioAnswers?.[eIndex]}
+                          onAudioSaved={(url) => onAudioAnswerChange(eIndex, url)}
+                          disabled={disabled}
                         />
                       )}
                     </div>

@@ -4,6 +4,7 @@ import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import { safeGetNanoSkill, safeGetText, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
+import { HomeworkSpeakingRecorder } from "@/components/homework/HomeworkSpeakingRecorder";
 
 interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
   sentences: any[];
@@ -19,6 +20,8 @@ interface ExerciseParaphrasingProps extends Partial<InteractiveExerciseProps> {
   // AI Evaluations per sentence
   aiEvaluations?: Record<number, AiEvaluation>;
   liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
+  audioAnswers?: Record<number, string>;
+  onAudioAnswerChange?: (questionIndex: number, audioUrl: string) => void;
 }
 
 // Helper to extract word_to_use from multiple possible data formats
@@ -70,7 +73,9 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
   isSharedWorksheet = false,
   // AI Evaluations
   aiEvaluations,
-  liveSessionContext
+  liveSessionContext,
+  audioAnswers,
+  onAudioAnswerChange
 }) => {
   return (
     <div>
@@ -137,6 +142,14 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
                       rows={1}
                       disabled={disabled}
                     />
+                    {/* Speaking recorder */}
+                    {onAudioAnswerChange && (
+                      <HomeworkSpeakingRecorder
+                        existingAudioUrl={audioAnswers?.[sIndex]}
+                        onAudioSaved={(url) => onAudioAnswerChange(sIndex, url)}
+                        disabled={disabled}
+                      />
+                    )}
                     {/* AI Evaluation badge moved below suggested answer section */}
                   </>
                 )}

@@ -4,6 +4,7 @@ import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import { safeGetText, safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
+import { HomeworkSpeakingRecorder } from "@/components/homework/HomeworkSpeakingRecorder";
 
 interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   questions: any[];
@@ -20,6 +21,9 @@ interface ExerciseReadingProps extends Partial<InteractiveExerciseProps> {
   aiEvaluations?: Record<number, AiEvaluation>;
   // Live Session feedback context
   liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
+  // Speaking recorder
+  audioAnswers?: Record<number, string>;
+  onAudioAnswerChange?: (questionIndex: number, audioUrl: string) => void;
 }
 
 const ExerciseReading: React.FC<ExerciseReadingProps> = ({
@@ -40,7 +44,10 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
   isSharedWorksheet = false,
   // AI Evaluations
   aiEvaluations,
-  liveSessionContext
+  liveSessionContext,
+  // Speaking
+  audioAnswers,
+  onAudioAnswerChange
 }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
     {questions.map((question, qIndex) => {
@@ -99,6 +106,14 @@ const ExerciseReading: React.FC<ExerciseReadingProps> = ({
                   <AiEvaluationBadge 
                     evaluation={aiEvaluations[qIndex]} 
                     showFeedback={true}
+                  />
+                )}
+                {/* Speaking recorder */}
+                {onAudioAnswerChange && (
+                  <HomeworkSpeakingRecorder
+                    existingAudioUrl={audioAnswers?.[qIndex]}
+                    onAudioSaved={(url) => onAudioAnswerChange(qIndex, url)}
+                    disabled={disabled}
                   />
                 )}
               </>

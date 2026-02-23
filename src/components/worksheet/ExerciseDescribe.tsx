@@ -4,6 +4,7 @@ import { AutoResizeTextarea } from "@/components/ui/AutoResizeTextarea";
 import { safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
+import { HomeworkSpeakingRecorder } from "@/components/homework/HomeworkSpeakingRecorder";
 
 interface ExerciseDescribeProps extends Partial<InteractiveExerciseProps> {
   image_url?: string;
@@ -24,6 +25,8 @@ interface ExerciseDescribeProps extends Partial<InteractiveExerciseProps> {
   // Exercise variant for media hints
   exerciseVariant?: 'audio' | 'picture' | 'plain';
   liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
+  audioAnswers?: Record<number, string>;
+  onAudioAnswerChange?: (questionIndex: number, audioUrl: string) => void;
 }
 
 const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
@@ -49,7 +52,9 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
   aiEvaluations,
   // Exercise variant
   exerciseVariant = 'plain',
-  liveSessionContext
+  liveSessionContext,
+  audioAnswers,
+  onAudioAnswerChange
 }) => {
   return (
     <div className="space-y-4">
@@ -125,6 +130,14 @@ const ExerciseDescribe: React.FC<ExerciseDescribeProps> = ({
                       <AiEvaluationBadge 
                         evaluation={aiEvaluations[qIndex]} 
                         showFeedback={true}
+                      />
+                    )}
+                    {/* Speaking recorder */}
+                    {onAudioAnswerChange && (
+                      <HomeworkSpeakingRecorder
+                        existingAudioUrl={audioAnswers?.[qIndex]}
+                        onAudioSaved={(url) => onAudioAnswerChange(qIndex, url)}
+                        disabled={disabled}
                       />
                     )}
                   </div>
