@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { safeGetText, safeGetNanoSkill, safeGetAllNanoSkills } from "@/utils/textObjectFixer";
 import NanoSkillBadge, { NanoSkill } from "./NanoSkillBadge";
 import { AiEvaluationBadge, AiEvaluation } from "@/components/homework/AiEvaluationBadge";
+import { HomeworkSpeakingRecorder } from "@/components/homework/HomeworkSpeakingRecorder";
 
 interface ExerciseListeningComprehensionProps extends Partial<InteractiveExerciseProps> {
   questions?: Array<{ text: string; answer: string }>;
@@ -19,6 +20,8 @@ interface ExerciseListeningComprehensionProps extends Partial<InteractiveExercis
   // AI Evaluations per question
   aiEvaluations?: Record<number, AiEvaluation>;
   liveSessionContext?: { worksheetId: string; exerciseIndex: number; exerciseType: string; teacherId: string; };
+  audioAnswers?: Record<number, string>;
+  onAudioAnswerChange?: (questionIndex: number, audioUrl: string) => void;
 }
 
 const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionProps> = ({
@@ -39,7 +42,9 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
   isSharedWorksheet = false,
   // AI Evaluations
   aiEvaluations,
-  liveSessionContext
+  liveSessionContext,
+  audioAnswers,
+  onAudioAnswerChange
 }) => {
   return (
     <div className="space-y-2">
@@ -96,6 +101,14 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                       ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
                     `}
                   />
+                  {/* Speaking recorder */}
+                  {onAudioAnswerChange && (
+                    <HomeworkSpeakingRecorder
+                      existingAudioUrl={audioAnswers?.[qIndex]}
+                      onAudioSaved={(url) => onAudioAnswerChange(qIndex, url)}
+                      disabled={disabled}
+                    />
+                  )}
                   {/* AI Evaluation badge moved below suggested answer section */}
                 </>
               )}
