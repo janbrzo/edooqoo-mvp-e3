@@ -30,6 +30,18 @@ const safeTimestamp = (timestamp: number | null | undefined): string => {
   }
 };
 
+// Map amount to plan details
+const getPlanDetails = (amount: number): { type: string; limit: number } => {
+  switch (amount) {
+    case 900: return { type: 'Side-Gig', limit: 15 };
+    case 1900: return { type: 'Full-Time 30', limit: 30 };
+    case 3900: return { type: 'Full-Time 60', limit: 60 };
+    case 5900: return { type: 'Full-Time 90', limit: 90 };
+    case 7900: return { type: 'Full-Time 120', limit: 120 };
+    default: return { type: 'Unknown', limit: 0 };
+  }
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -79,7 +91,7 @@ serve(async (req) => {
       throw new Error(`Webhook signature verification failed: ${errorMessage}`);
     }
 
-    // SIMPLIFIED: Only process subscription events
+    // Only process subscription events
     if (!event.type.startsWith('customer.subscription.')) {
       logStep('Ignoring non-subscription event', { eventType: event.type });
       return new Response(JSON.stringify({ received: true, skipped: 'non_subscription_event' }), {
@@ -88,8 +100,23 @@ serve(async (req) => {
       });
     }
 
+    // DUPLICATE CHECK: Prevent processing the same Stripe event twice
+    const { data: existingEvent } = await supabaseService
+      .from('subscription_events')
+      .select('id')
+      .eq('stripe_event_id', event.id)
+      .maybeSingle();
+
+    if (existingEvent) {
+      logStep('DUPLICATE: Event already processed, skipping', { stripeEventId: event.id });
+      return new Response(JSON.stringify({ received: true, skipped: 'duplicate_event' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
     // Get subscription object
-    let subscription = event.data.object as Stripe.Subscription;
+    const subscription = event.data.object as Stripe.Subscription;
     
     logStep('Processing subscription event', { 
       subscriptionId: subscription.id,
@@ -124,51 +151,101 @@ serve(async (req) => {
 
     logStep('Profile found', { userId: profile.id, currentType: profile.subscription_type });
 
-    // SIMPLIFIED: Determine plan type from amount
+    // Determine plan type from amount
     const priceId = subscription.items.data[0].price.id;
     const price = await stripe.prices.retrieve(priceId);
     const amount = price.unit_amount || 0;
-    
-    let subscriptionType = 'Unknown';
-    let monthlyLimit = 0;
-    
-    if (amount === 900) {
-      subscriptionType = 'Side-Gig';
-      monthlyLimit = 15;
-    } else if (amount === 1900) {
-      subscriptionType = 'Full-Time 30';
-      monthlyLimit = 30;
-    } else if (amount === 3900) {
-      subscriptionType = 'Full-Time 60';
-      monthlyLimit = 60;
-    } else if (amount === 5900) {
-      subscriptionType = 'Full-Time 90';
-      monthlyLimit = 90;
-    } else if (amount === 7900) {
-      subscriptionType = 'Full-Time 120';
-      monthlyLimit = 120;
-    }
+    const { type: subscriptionType, limit: monthlyLimit } = getPlanDetails(amount);
 
     logStep('Plan determined', { subscriptionType, monthlyLimit, priceAmount: amount });
 
-    // SIMPLIFIED: Determine old and new plan types
-    let oldPlanType = profile.subscription_type || 'Free Demo';
+    // Determine old and new plan types
+    const oldPlanType = profile.subscription_type || 'Free Demo';
     let newPlanType = subscriptionType;
     
     if (event.type === 'customer.subscription.deleted') {
       newPlanType = 'Inactive';
     }
 
-    // CRITICAL: Always insert into subscription_events FIRST
+    // RENEWAL DETECTION: Check if this is a subscription renewal
+    let isRenewal = false;
+    let renewalTokens = 0;
+    let finalEventType = event.type;
+
+    if (
+      event.type === 'customer.subscription.updated' &&
+      oldPlanType === newPlanType &&
+      !subscription.cancel_at_period_end &&
+      subscription.status === 'active'
+    ) {
+      // Potential renewal - check it's not an upgrade echo or first-day duplicate
+      const { data: recentUpgrade } = await supabaseService
+        .from('subscription_events')
+        .select('id')
+        .eq('teacher_id', profile.id)
+        .eq('event_type', 'upgraded')
+        .gte('created_at', new Date(Date.now() - 120 * 1000).toISOString()) // 2 minutes
+        .limit(1);
+
+      const { data: recentRenewal } = await supabaseService
+        .from('subscription_events')
+        .select('id')
+        .eq('teacher_id', profile.id)
+        .eq('event_type', 'subscription_renewed')
+        .gte('created_at', new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString()) // 25 days
+        .limit(1);
+
+      // Also check for first-day echo: if subscription was created very recently
+      const { data: recentCreated } = await supabaseService
+        .from('subscription_events')
+        .select('id')
+        .eq('teacher_id', profile.id)
+        .in('event_type', ['customer.subscription.created', 'upgraded', 'downgraded'])
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // 24 hours
+        .limit(1);
+
+      if (recentUpgrade && recentUpgrade.length > 0) {
+        logStep('NOT a renewal: recent upgrade detected within 2 minutes');
+      } else if (recentRenewal && recentRenewal.length > 0) {
+        logStep('NOT a renewal: already renewed within 25 days');
+      } else if (recentCreated && recentCreated.length > 0) {
+        logStep('NOT a renewal: subscription created/changed within 24 hours (first-day echo)');
+      } else {
+        isRenewal = true;
+        renewalTokens = monthlyLimit;
+        finalEventType = 'subscription_renewed';
+        logStep('✓ RENEWAL DETECTED', { plan: subscriptionType, tokens: renewalTokens });
+      }
+    }
+
+    // If renewal, add tokens via RPC
+    if (isRenewal && renewalTokens > 0) {
+      const { error: addTokensError } = await supabaseService.rpc('add_tokens', {
+        p_teacher_id: profile.id,
+        p_amount: renewalTokens,
+        p_description: `Monthly renewal - ${subscriptionType}`,
+        p_reference_id: null
+      });
+
+      if (addTokensError) {
+        logStep('ERROR: Failed to add renewal tokens', addTokensError);
+        // Don't throw - still log the event, but with 0 tokens
+        renewalTokens = 0;
+      } else {
+        logStep('✓ Renewal tokens added successfully', { amount: renewalTokens });
+      }
+    }
+
+    // Insert into subscription_events
     const eventInsertResult = await supabaseService
       .from('subscription_events')
       .insert({
         teacher_id: profile.id,
         email: email,
-        event_type: event.type,
+        event_type: finalEventType,
         old_plan_type: oldPlanType,
         new_plan_type: newPlanType,
-        tokens_added: 0,
+        tokens_added: renewalTokens,
         stripe_event_id: event.id,
         event_data: {
           subscription_id: subscription.id,
@@ -189,17 +266,18 @@ serve(async (req) => {
         details: eventInsertResult.error 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400, // Make Stripe retry
+        status: 400,
       });
     }
 
     logStep('✓ Subscription event logged successfully', { 
-      eventType: event.type, 
+      eventType: finalEventType, 
       oldPlan: oldPlanType, 
-      newPlan: newPlanType 
+      newPlan: newPlanType,
+      tokensAdded: renewalTokens
     });
 
-    // CRITICAL: Update BOTH profiles AND subscriptions tables directly
+    // Update profiles and subscriptions tables
     let subscriptionStatus = 'active';
     let finalSubscriptionType = subscriptionType;
     
@@ -230,14 +308,7 @@ serve(async (req) => {
       });
     }
 
-    // CRITICAL FIX: Also update subscriptions table directly
-    logStep('Preparing subscription data', {
-      rawStart: subscription.current_period_start,
-      rawEnd: subscription.current_period_end,
-      hasStart: !!subscription.current_period_start,
-      hasEnd: !!subscription.current_period_end
-    });
-
+    // Update subscriptions table
     const subscriptionUpsertData = {
       teacher_id: profile.id,
       email: email,
@@ -269,9 +340,11 @@ serve(async (req) => {
     }
 
     logStep('Webhook processing completed successfully', {
-      eventType: event.type,
+      eventType: finalEventType,
       subscriptionId: subscription.id,
-      email: email
+      email: email,
+      isRenewal,
+      tokensAdded: renewalTokens
     });
 
     return new Response(JSON.stringify({ received: true }), {
