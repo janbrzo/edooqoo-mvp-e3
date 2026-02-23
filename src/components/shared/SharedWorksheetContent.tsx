@@ -49,6 +49,9 @@ interface SharedWorksheetContentProps {
   exerciseRefs?: React.MutableRefObject<(HTMLElement | null)[]>;
   // AI Evaluation feedback
   itemEvaluations?: Record<number, any[]>;
+  // Speaking audio answers
+  audioAnswers?: Record<number, Record<number, string>>;
+  onAudioAnswerChange?: (exerciseIndex: number, questionIndex: number, audioUrl: string) => void;
 }
 
 // Helper to convert item_evaluations (DB format) to AiEvaluation (component format)
@@ -89,7 +92,9 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
   onAnswerChange,
   onBlur,
   exerciseRefs, // PROBLEM 2: Navigation refs
-  itemEvaluations // AI Evaluation feedback
+  itemEvaluations, // AI Evaluation feedback
+  audioAnswers,
+  onAudioAnswerChange
 }) => {
   // PROBLEM 3: Effective interactive mode (disabled if read-only)
   const effectiveInteractive = isInteractive && !isReadOnly;
@@ -370,6 +375,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                   isSharedWorksheet={true}
                   aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
+                  audioAnswers={audioAnswers?.[index]}
+                  onAudioAnswerChange={(qIndex, url) => onAudioAnswerChange?.(index, qIndex, url)}
                 />
               )}
 
@@ -431,6 +438,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                   isSharedWorksheet={true}
                   aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
+                  audioAnswers={audioAnswers?.[index]}
+                  onAudioAnswerChange={(qIndex, url) => onAudioAnswerChange?.(index, qIndex, url)}
                 />
               )}
 
@@ -515,6 +524,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                   isSharedWorksheet={true}
                   aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
+                  audioAnswers={audioAnswers?.[index]}
+                  onAudioAnswerChange={(qIndex, url) => onAudioAnswerChange?.(index, qIndex, url)}
                 />
               )}
 
@@ -636,6 +647,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                   isSharedWorksheet={true}
                   aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
+                  audioAnswers={audioAnswers?.[index]}
+                  onAudioAnswerChange={(qIndex, url) => onAudioAnswerChange?.(index, qIndex, url)}
                 />
               )}
 
@@ -652,6 +665,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   onAnswerChange={(qIndex, value) => onAnswerChange?.(index, exercise.type, qIndex, value)}
                   isSharedWorksheet={true}
                   aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
+                  audioAnswers={audioAnswers?.[index]}
+                  onAudioAnswerChange={(qIndex, url) => onAudioAnswerChange?.(index, qIndex, url)}
                 />
               )}
 
@@ -720,6 +735,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isSharedWorksheet={true}
                   aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
                   exerciseVariant="picture"
+                  audioAnswers={audioAnswers?.[index]}
+                  onAudioAnswerChange={(qIndex, url) => onAudioAnswerChange?.(index, qIndex, url)}
                 />
               )}
 
@@ -737,6 +754,8 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                   isSharedWorksheet={true}
                   aiEvaluations={convertItemEvalsToAiEvals(itemEvaluations?.[index])}
                   exerciseVariant={exercise.type.includes('-picture') ? 'picture' : 'plain'}
+                  audioAnswers={audioAnswers?.[index]}
+                  onAudioAnswerChange={(qIndex, url) => onAudioAnswerChange?.(index, qIndex, url)}
                 />
               )}
 
