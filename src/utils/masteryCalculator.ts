@@ -391,6 +391,42 @@ export const getExerciseItems = (exerciseData: any): any[] => {
 };
 
 /**
+ * Adjust nano_skill confidence based on answer type (audio vs text)
+ * - Speaking skill: high confidence (0.90) if audio recorded, low (0.30) if only text
+ * - Writing skill: high confidence (0.90) if text written, medium (0.70) if only audio (from transcription)
+ * - Both audio+text: both get high confidence (0.90)
+ */
+export const adjustConfidenceByAnswerType = (
+  nanoSkills: NanoSkillData[],
+  hasTextAnswer: boolean,
+  hasAudioAnswer: boolean
+): NanoSkillData[] => {
+  return nanoSkills.map(ns => {
+    const nsName = ns.name.toLowerCase();
+    const isSpeaking = nsName.includes('.speaking.') || nsName.includes('.sp.');
+    const isWriting = nsName.includes('.writing.') || nsName.includes('.wr.');
+    
+    if (isSpeaking) {
+      if (hasAudioAnswer) {
+        return { ...ns, confidence: 0.90 };
+      } else if (hasTextAnswer) {
+        return { ...ns, confidence: 0.30 };
+      }
+    }
+    
+    if (isWriting) {
+      if (hasTextAnswer) {
+        return { ...ns, confidence: 0.90 };
+      } else if (hasAudioAnswer) {
+        return { ...ns, confidence: 0.70 };
+      }
+    }
+    
+    return ns;
+  });
+};
+
+/**
  * Build per-item evaluations for an exercise
  * Returns array of { name, reason, mastery } for each item with nano_skill
  */
@@ -398,7 +434,8 @@ export const buildItemEvaluations = (
   exerciseData: any,
   answers: Record<string | number, any>,
   exerciseType: string,
-  aiEvaluations?: Record<number, { quality_score?: number; writing_score?: number; speaking_score?: number }> | null
+  aiEvaluations?: Record<number, { quality_score?: number; writing_score?: number; speaking_score?: number }> | null,
+  audioAnswers?: Record<number, string> | null
 ): ItemEvaluation[] | null => {
   if (!exerciseData) return null;
   
@@ -431,9 +468,15 @@ export const buildItemEvaluations = (
       itemMastery = calculateItemMastery(exerciseType, exerciseData, idx, studentAnswer);
     }
     
+    // Adjust confidence dynamically based on whether student used audio/text
+    const hasTextForItem = studentAnswer !== undefined && studentAnswer !== null && String(studentAnswer).trim() !== '';
+    const hasAudioForItem = audioAnswers?.[idx] != null;
+    const adjustedNanoSkills = adjustConfidenceByAnswerType(allNanoSkills, hasTextForItem, hasAudioForItem);
+    
     // Create evaluation for EACH nano_skill in the item
     // Map writing_score and speaking_score to the appropriate nano_skill
-    allNanoSkills.forEach((nanoSkill) => {
+    // Adjust confidence dynamically based on answer type (audio vs text)
+    adjustedNanoSkills.forEach((nanoSkill) => {
       const nsName = nanoSkill.name.toLowerCase();
       let skillMastery = itemMastery;
       

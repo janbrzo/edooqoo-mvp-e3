@@ -9,6 +9,7 @@ import { getOfficialExerciseName } from '@/utils/exerciseProcessor';
 import { safeGetText } from '@/utils/textObjectFixer';
 import { AiEvaluationBadge, AiEvaluation } from './AiEvaluationBadge';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
+import { HomeworkSpeakingRecorder } from '@/components/homework/HomeworkSpeakingRecorder';
 
 // Exercise components
 import ExerciseMatching from '@/components/worksheet/ExerciseMatching';
@@ -235,11 +236,19 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
                         rows={1}
                         disabled={disabled}
                       />
-                      {/* PROBLEM 3.1 FIX: AI Evaluation badge for discussion */}
+                      {/* AI Evaluation badge for discussion */}
                       {aiEvaluation?.[qIndex] && disabled && (
                         <AiEvaluationBadge 
                           evaluation={aiEvaluation[qIndex]} 
                           showFeedback={true}
+                        />
+                      )}
+                      {/* Speaking recorder for discussion */}
+                      {onAudioAnswerChange && (
+                        <HomeworkSpeakingRecorder
+                          existingAudioUrl={audioAnswers?.[qIndex]}
+                          onAudioSaved={(url) => onAudioAnswerChange(qIndex, url)}
+                          disabled={disabled}
                         />
                       )}
                     </>

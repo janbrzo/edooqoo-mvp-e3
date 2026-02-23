@@ -6,11 +6,12 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-23) - Speaking Integration:**
-- ✅ **HomeworkSpeakingRecorder**: Komponent do nagrywania audio przez studenta w zadaniach otwartych (Homework + Shared Worksheet)
-- ✅ **Transkrypcja audio**: Przed AI eval, audio URLs transkrybowane przez Whisper (`transcribe-audio`), dane speaking przekazane do `verify-open-answers`
-- ✅ **Speaking score**: AI zwraca `writing_score` i `speaking_score`, mapowane na nano-skille `.wr.`/`.sp.` w `masteryCalculator`
-- ✅ **Triple nano-skill**: Zadania otwarte mają 3 nano-skille (primary + writing + speaking) w promptach
+**Ostatnia naprawa (2026-02-23) - DSLM Fixes + Speaking UX + Cleanup:**
+- ✅ **NanoSkillBadge labels**: getBadgeLabel() rozpoznaje 30+ tematów gramatycznych (present_simple, comparatives, superlatives itp.) - wyświetla `gr`/`vo` zamiast `ns`
+- ✅ **Discussion speaking**: Dodano HomeworkSpeakingRecorder do zadań Discussion w homework/shared worksheet
+- ✅ **Minimalistyczny recorder**: UI przebudowany na inline flex - brak ramek, brak animacji waveform, jednoliniowe kontrolki
+- ✅ **Dynamiczny confidence**: Nowa funkcja adjustConfidenceByAnswerType() - speaking 0.90 z audio / 0.30 z tekstu, writing 0.90 z tekstu / 0.70 z audio
+- ✅ **Czyszczenie anonimowych kont**: Usunięto signInAnonymously z hooków, Edge Function cleanup-anonymous-users do usuwania ~1469 pustych kont
 - ✅ **Admin impersonacja**: Panel admina `/admin`, Magic Link przez `admin-impersonate`, logi w `admin_activity_log`
 
 **Poprzednia naprawa (2026-02-21) - DSLM Layer B v5 Phase 2:**

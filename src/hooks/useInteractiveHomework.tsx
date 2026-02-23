@@ -203,7 +203,7 @@ export const useInteractiveHomework = ({
     const effectiveWorksheetId = sourceWorksheetId || homeworkId;
     const exerciseData = { ...exercises[exerciseIndex], worksheetId: effectiveWorksheetId };
     const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
-    const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
+    const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType, null, audioAnswers[exerciseIndex] || null);
 
     console.log('[useInteractiveHomework] Saving with itemEvaluations:', {
       exerciseIndex,
@@ -260,7 +260,7 @@ export const useInteractiveHomework = ({
       const effectiveWorksheetId = sourceWorksheetId || homeworkId;
       const exerciseData = { ...exercises[exerciseIndex], worksheetId: effectiveWorksheetId };
       const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
-      const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType);
+      const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType, null, audioAnswers[exerciseIndex] || null);
       saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);
     }
   }, [answers, saveAnswer, exercises]);
