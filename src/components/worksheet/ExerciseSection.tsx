@@ -1155,10 +1155,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             liveSessionAnswer={liveSessionAnswer}
             worksheetId={worksheetId}
             disabled={disabled}
-            onNanoSkillChange={(qIndex, newSkill) => {
+            onNanoSkillChange={(qIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
-              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: newSkill };
+              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: updateNanoSkillValue(newQuestions[qIndex], newSkill, skillIndex) };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], questions: newQuestions };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
             }}
@@ -1178,10 +1178,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
-            onNanoSkillChange={(iIndex, newSkill) => {
+            onNanoSkillChange={(iIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newItems = [...exercise.items];
-              newItems[iIndex] = { ...newItems[iIndex], nano_skill: newSkill };
+              newItems[iIndex] = { ...newItems[iIndex], nano_skill: updateNanoSkillValue(newItems[iIndex], newSkill, skillIndex) };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], items: newItems };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
             }}
@@ -1218,11 +1218,11 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
-            onNanoSkillChange={(sIndex, newSkill) => {
+            onNanoSkillChange={(sIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newSentences = [...exercise.sentences];
               newSentences[sIndex] = typeof newSentences[sIndex] === 'object'
-                ? { ...newSentences[sIndex], nano_skill: newSkill }
+                ? { ...newSentences[sIndex], nano_skill: updateNanoSkillValue(newSentences[sIndex], newSkill, skillIndex) }
                 : { text: newSentences[sIndex], nano_skill: newSkill };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], sentences: newSentences };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
@@ -1242,11 +1242,11 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
-            onNanoSkillChange={(sIndex, newSkill) => {
+            onNanoSkillChange={(sIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newSentences = [...exercise.sentences];
               newSentences[sIndex] = typeof newSentences[sIndex] === 'object'
-                ? { ...newSentences[sIndex], nano_skill: newSkill }
+                ? { ...newSentences[sIndex], nano_skill: updateNanoSkillValue(newSentences[sIndex], newSkill, skillIndex) }
                 : { text: newSentences[sIndex], nano_skill: newSkill };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], sentences: newSentences };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
@@ -1281,10 +1281,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
-            onNanoSkillChange={(wIndex, newSkill) => {
+            onNanoSkillChange={(wIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newWords = [...exercise.words];
-              newWords[wIndex] = { ...newWords[wIndex], nano_skill: newSkill };
+              newWords[wIndex] = { ...newWords[wIndex], nano_skill: updateNanoSkillValue(newWords[wIndex], newSkill, skillIndex) };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], words: newWords };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
             }}
@@ -1371,11 +1371,11 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
             liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
-            onNanoSkillChange={(sIndex, newSkill) => {
+            onNanoSkillChange={(sIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newSentences = [...exercise.sentences];
               newSentences[sIndex] = typeof newSentences[sIndex] === 'object'
-                ? { ...newSentences[sIndex], nano_skill: newSkill }
+                ? { ...newSentences[sIndex], nano_skill: updateNanoSkillValue(newSentences[sIndex], newSkill, skillIndex) }
                 : { text: newSentences[sIndex], nano_skill: newSkill };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], sentences: newSentences };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
@@ -1410,10 +1410,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
-            onNanoSkillChange={(wIndex, newSkill) => {
+            onNanoSkillChange={(wIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newWords = [...exercise.words];
-              newWords[wIndex] = { ...newWords[wIndex], nano_skill: newSkill };
+              newWords[wIndex] = { ...newWords[wIndex], nano_skill: updateNanoSkillValue(newWords[wIndex], newSkill, skillIndex) };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], words: newWords };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
             }}
@@ -1489,12 +1489,12 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 showCorrectAnswers={showCorrectAnswers}
                 liveSessionAnswer={liveSessionAnswer}
                 disabled={disabled}
-                onNanoSkillChange={(taskIdx, qIdx, newSkill) => {
+                onNanoSkillChange={(taskIdx, qIdx, newSkill, skillIndex) => {
                   // Update nano_skill in the tasks structure
                   const updatedExercises = [...editableWorksheet.exercises];
                   const updatedContent = JSON.parse(JSON.stringify(parsedContent));
                   if (updatedContent.tasks[taskIdx]?.questions?.[qIdx]) {
-                    updatedContent.tasks[taskIdx].questions[qIdx].nano_skill = newSkill;
+                    updatedContent.tasks[taskIdx].questions[qIdx].nano_skill = updateNanoSkillValue(updatedContent.tasks[taskIdx].questions[qIdx], newSkill, skillIndex);
                   }
                   updatedExercises[arrayIndex] = {
                     ...updatedExercises[arrayIndex],
@@ -1609,10 +1609,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
             liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
-            onNanoSkillChange={(qIndex, newSkill) => {
+            onNanoSkillChange={(qIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
-              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: newSkill };
+              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: updateNanoSkillValue(newQuestions[qIndex], newSkill, skillIndex) };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], questions: newQuestions };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
             }}
@@ -1633,10 +1633,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             liveSessionAnswer={liveSessionAnswer}
             worksheetId={worksheetId}
             disabled={disabled}
-            onNanoSkillChange={(qIndex, newSkill) => {
+            onNanoSkillChange={(qIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
-              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: newSkill };
+              newQuestions[qIndex] = { ...newQuestions[qIndex], nano_skill: updateNanoSkillValue(newQuestions[qIndex], newSkill, skillIndex) };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], questions: newQuestions };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
             }}
@@ -1656,10 +1656,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             showCorrectAnswers={showCorrectAnswers}
             liveSessionAnswer={liveSessionAnswer}
             disabled={disabled}
-            onNanoSkillChange={(sIndex, newSkill) => {
+            onNanoSkillChange={(sIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newStatements = [...exercise.statements];
-              newStatements[sIndex] = { ...newStatements[sIndex], nano_skill: newSkill };
+              newStatements[sIndex] = { ...newStatements[sIndex], nano_skill: updateNanoSkillValue(newStatements[sIndex], newSkill, skillIndex) };
               updatedExercises[arrayIndex] = {
                 ...updatedExercises[arrayIndex],
                 statements: newStatements
@@ -1708,10 +1708,10 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
                 exercises: updatedExercises
               });
             }}
-            onNanoSkillChange={(sIndex, newSkill) => {
+            onNanoSkillChange={(sIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newSentences = [...(exercise.sentences || [])];
-              newSentences[sIndex] = { ...newSentences[sIndex], nano_skill: newSkill };
+              newSentences[sIndex] = { ...newSentences[sIndex], nano_skill: updateNanoSkillValue(newSentences[sIndex], newSkill, skillIndex) };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], sentences: newSentences };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
             }}
@@ -1740,11 +1740,11 @@ const ExerciseSection = forwardRef<HTMLDivElement, ExerciseSectionProps>(({
             aiEvaluations={liveAiEvaluations}
             isSharedWorksheet={viewMode === 'live-session'}
             liveSessionContext={viewMode === 'live-session' && worksheetIdForStorage && validTeacherId ? { worksheetId: worksheetIdForStorage, exerciseIndex: exerciseIdx, exerciseType: exercise.type, teacherId: validTeacherId } : undefined}
-            onNanoSkillChange={(qIndex, newSkill) => {
+            onNanoSkillChange={(qIndex, newSkill, skillIndex) => {
               const updatedExercises = [...editableWorksheet.exercises];
               const newQuestions = [...exercise.questions];
               newQuestions[qIndex] = typeof newQuestions[qIndex] === 'object'
-                ? { ...newQuestions[qIndex], nano_skill: newSkill }
+                ? { ...newQuestions[qIndex], nano_skill: updateNanoSkillValue(newQuestions[qIndex], newSkill, skillIndex) }
                 : { text: newQuestions[qIndex], nano_skill: newSkill };
               updatedExercises[arrayIndex] = { ...updatedExercises[arrayIndex], questions: newQuestions };
               setEditableWorksheet({ ...editableWorksheet, exercises: updatedExercises });
