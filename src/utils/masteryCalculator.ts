@@ -398,7 +398,7 @@ export const buildItemEvaluations = (
   exerciseData: any,
   answers: Record<string | number, any>,
   exerciseType: string,
-  aiEvaluations?: Record<number, { quality_score?: number }> | null
+  aiEvaluations?: Record<number, { quality_score?: number; writing_score?: number; speaking_score?: number }> | null
 ): ItemEvaluation[] | null => {
   if (!exerciseData) return null;
   
@@ -406,7 +406,7 @@ export const buildItemEvaluations = (
   const items = getExerciseItems(exerciseData);
   
   items.forEach((item: any, idx: number) => {
-    // Get ALL nano_skills (primary + secondary writing)
+    // Get ALL nano_skills (primary + secondary writing + speaking)
     const allNanoSkills = safeGetAllNanoSkills(item);
     if (allNanoSkills.length === 0) return;
     
@@ -418,11 +418,12 @@ export const buildItemEvaluations = (
     if (!hasStudentAnswer) return;
     
     let itemMastery: number | null = null;
+    const aiEval = aiEvaluations?.[idx];
     
     // For open-ended, use AI evaluation if available
     if (!isClosedExerciseType(exerciseType)) {
-      if (aiEvaluations?.[idx]?.quality_score !== undefined) {
-        itemMastery = Math.round(aiEvaluations[idx].quality_score! * 100);
+      if (aiEval?.quality_score !== undefined) {
+        itemMastery = Math.round(aiEval.quality_score * 100);
       } else {
         itemMastery = null;
       }
@@ -431,13 +432,36 @@ export const buildItemEvaluations = (
     }
     
     // Create evaluation for EACH nano_skill in the item
+    // Map writing_score and speaking_score to the appropriate nano_skill
     allNanoSkills.forEach((nanoSkill) => {
+      const nsName = nanoSkill.name.toLowerCase();
+      let skillMastery = itemMastery;
+      
+      // If AI returned separate writing/speaking scores, use them for matching nano_skills
+      if (aiEval && !isClosedExerciseType(exerciseType)) {
+        if (nsName.includes('.writing.') || nsName.includes('.wr.')) {
+          // Writing nano_skill gets writing_score if available
+          if (aiEval.writing_score !== undefined) {
+            skillMastery = Math.round(aiEval.writing_score * 100);
+          }
+        } else if (nsName.includes('.speaking.') || nsName.includes('.sp.')) {
+          // Speaking nano_skill gets speaking_score if available
+          if (aiEval.speaking_score !== undefined) {
+            skillMastery = Math.round(aiEval.speaking_score * 100);
+          } else {
+            // No audio was submitted - don't evaluate speaking, keep as unevaluated
+            skillMastery = -1;
+          }
+        }
+        // Primary skill (reading/listening/grammar/vocab) keeps quality_score
+      }
+      
       itemEvaluations.push({
         question_index: idx,
         name: nanoSkill.name,
         reason: nanoSkill.reason,
-        mastery: itemMastery !== null ? itemMastery : -1,
-        hasValue: itemMastery !== null
+        mastery: skillMastery !== null ? skillMastery : -1,
+        hasValue: skillMastery !== null && skillMastery >= 0
       });
     });
   });

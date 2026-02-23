@@ -91,3 +91,9 @@ verify_jwt = true
 
 [functions.process-welcome-test]
 verify_jwt = false
+
+[functions.admin-impersonate]
+verify_jwt = false
+
+[functions.transcribe-audio]
+verify_jwt = false

@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_activity_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_teacher_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_teacher_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_teacher_id?: string | null
+        }
+        Relationships: []
+      }
       download_sessions: {
         Row: {
           created_at: string

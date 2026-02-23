@@ -33,6 +33,8 @@ import WelcomeTestPage from "./pages/WelcomeTestPage";
 import CookieBanner from "./components/CookieBanner";
 import GlobalFooter from "./components/GlobalFooter";
 import OnboardingChecklist from "./components/OnboardingChecklist";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminImpersonationBanner from "./components/AdminImpersonationBanner";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +45,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <div className="min-h-screen flex flex-col">
+          <AdminImpersonationBanner />
           <div className="flex-1">
             <Routes>
               <Route path="/" element={<Index />} />
@@ -70,6 +73,7 @@ const App = () => (
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/shared/:token" element={<SharedWorksheet />} />
               <Route path="/test-exercises" element={<TestExercises />} />
+              <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/waiting-list" element={<Navigate to="/" replace />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

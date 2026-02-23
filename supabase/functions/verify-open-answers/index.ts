@@ -13,6 +13,10 @@ interface AnswerToEvaluate {
   suggested_answer?: string;
   exercise_type: string;
   exercise_index?: number;
+  // Speaking data
+  audio_transcription?: string;
+  audio_duration_seconds?: number;
+  audio_word_count?: number;
 }
 
 interface EvaluationResult {
@@ -21,6 +25,8 @@ interface EvaluationResult {
   quality_score: number;
   is_acceptable: boolean;
   feedback: string;
+  writing_score?: number;
+  speaking_score?: number;
 }
 
 serve(async (req) => {
@@ -51,6 +57,9 @@ serve(async (req) => {
       });
     }
 
+    // Check if any answers have audio transcription
+    const hasAnySpeaking = answers.some(a => a.audio_transcription);
+
     const systemPrompt = `You are a STRICT English language teacher evaluating student answers.
 The student's English level is: ${english_level || "Intermediate"}
 
@@ -58,11 +67,23 @@ Your task is to evaluate each answer based on:
 1. Relevance - Does it answer the question?
 2. Language quality - Is the grammar and vocabulary appropriate for the student's level?
 3. Completeness - Is the answer sufficiently developed?
+${hasAnySpeaking ? `
+4. SPEAKING EVALUATION (only when audio_transcription is provided):
+   - Fluency: Calculate words per second (audio_word_count / audio_duration_seconds). 
+     A2 target: 1.0-1.5 wps. B1 target: 1.5-2.0 wps. B2+: 2.0+ wps.
+     Score 0.9+ if above target, 0.7-0.9 if near target, below 0.5 if very slow (<0.5 wps).
+   - Coherence: Does the transcribed speech form logical, complete sentences?
+   - Grammar accuracy: Are sentences grammatically correct for the level?
+   - Task completion: Does the spoken response address the question/prompt?
+   - Pronunciation proxy: Whisper transcription accuracy suggests pronunciation clarity.
+` : ''}
 
 For each answer, provide:
 - quality_score: A number from 0.0 to 1.0 (0.7+ is acceptable)
 - is_acceptable: true if quality_score >= 0.7
 - feedback: Specific, constructive feedback in English (max 40 words). Focus on WHAT the student did well or WHAT specifically needs improvement. Mention grammar errors by name, suggest better vocabulary, or point out missing content.
+- writing_score: (0.0-1.0) Score for the WRITTEN answer only. Omit if no written answer provided.
+- speaking_score: (0.0-1.0) Score for the SPOKEN answer (from transcription). Omit if no audio transcription provided.
 
 STRICT SCORING RULES (these override everything else):
 1. NON-ANSWERS (ALWAYS score 0.0-0.05): "I don't know", "idk", "nie wiem", "no idea", "no se", "не знаю", "dunno", "I have no idea", "I'm not sure", any equivalent in ANY language, or any response that does not attempt to answer the question. Score: 0.0. Feedback should be: "No answer provided. Try to form at least one sentence about the topic."
@@ -71,7 +92,14 @@ STRICT SCORING RULES (these override everything else):
 4. PARTIAL ANSWER (score 0.4-0.7): Shows some understanding but is incomplete, has significant errors, or doesn't fully address the question.
 5. ACCEPTABLE ANSWER (score 0.7-0.85): Genuine attempt with mostly correct English that addresses the topic. Minor errors are OK at the student's level.
 6. STRONG ANSWER (score 0.85-1.0): Well-structured, accurate, comprehensive response.
-
+${hasAnySpeaking ? `
+SPEAKING-SPECIFIC SCORING:
+- If audio_transcription is provided but is empty/gibberish: speaking_score 0.0-0.1
+- If audio is very short (<3 words for 10+ seconds): speaking_score 0.1-0.3 (hesitant/minimal)
+- If audio has good content but slow pace: speaking_score 0.5-0.7
+- If audio is fluent with correct grammar: speaking_score 0.7-0.9
+- If audio is fluent, accurate, and natural: speaking_score 0.9-1.0
+` : ''}
 IMPORTANT: Be demanding but fair. A score of 0.7+ means the student genuinely tried and produced meaningful English. Do NOT give 0.7+ to lazy or empty responses under any circumstances.
 
 CRITICAL: Return ONLY a valid JSON array. No markdown code blocks. No extra text. Just the array.`;
@@ -82,7 +110,10 @@ ${answers
   .map(
     (a, i) => `[Answer ${i + 1}]
 Question: ${a.question_text}
-Student's answer: ${a.student_answer}
+Student's written answer: ${a.student_answer || "(no written answer)"}
+${a.audio_transcription ? `Student's spoken answer (transcription): ${a.audio_transcription}` : ""}
+${a.audio_duration_seconds ? `Audio duration: ${a.audio_duration_seconds} seconds` : ""}
+${a.audio_word_count ? `Spoken word count: ${a.audio_word_count}` : ""}
 ${a.suggested_answer ? `Suggested answer: ${a.suggested_answer}` : ""}
 Exercise type: ${a.exercise_type}
 `,
@@ -91,7 +122,7 @@ Exercise type: ${a.exercise_type}
 ${context ? `Context: ${context}` : ""}
 
 Return exactly ${answers.length} evaluation objects in a JSON array:
-[{"question_index": 0, "quality_score": 0.85, "is_acceptable": true, "feedback": "Your explanation of X correctly identifies Y..."}]`;
+[{"question_index": 0, "quality_score": 0.85, "is_acceptable": true, "feedback": "...", "writing_score": 0.80, "speaking_score": 0.75}]`;
 
     console.log("[verify-open-answers] ========== PROMPTS ==========");
     console.log("[verify-open-answers] System prompt length:", systemPrompt.length);
@@ -271,12 +302,18 @@ Return exactly ${answers.length} evaluation objects in a JSON array:
           feedback = "No answer provided. Try to form at least one sentence about the topic.";
         }
 
+        // Extract writing and speaking scores
+        const writingScore = e.writing_score !== undefined ? parseFloat(e.writing_score) : undefined;
+        const speakingScore = e.speaking_score !== undefined ? parseFloat(e.speaking_score) : undefined;
+
         return {
           exercise_index: answers[idx]?.exercise_index,
           question_index: answers[idx]?.question_index,
           quality_score: qualityScore,
           is_acceptable: !isNonAnswer && (e.is_acceptable ?? qualityScore >= 0.7),
           feedback: feedback,
+          ...(writingScore !== undefined && !isNaN(writingScore) ? { writing_score: Math.max(0, Math.min(1, writingScore)) } : {}),
+          ...(speakingScore !== undefined && !isNaN(speakingScore) ? { speaking_score: Math.max(0, Math.min(1, speakingScore)) } : {}),
         };
       });
 
