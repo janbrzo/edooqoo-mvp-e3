@@ -30,6 +30,7 @@ export const useInteractiveSharedWorksheet = ({
   exercises = []
 }: UseInteractiveSharedWorksheetProps) => {
   const [answers, setAnswers] = useState<Record<number, ExerciseAnswers>>({});
+  const [audioAnswers, setAudioAnswers] = useState<Record<number, Record<number, string>>>({});
   const [itemEvaluations, setItemEvaluations] = useState<Record<number, any[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -507,13 +508,27 @@ export const useInteractiveSharedWorksheet = ({
     return () => clearInterval(interval);
   }, [worksheetId, studentEmail, itemEvaluations]);
 
+  // Update audio answer for a specific exercise/question
+  const updateAudioAnswer = useCallback((exerciseIndex: number, questionIndex: number, audioUrl: string) => {
+    setAudioAnswers(prev => ({
+      ...prev,
+      [exerciseIndex]: {
+        ...(prev[exerciseIndex] || {}),
+        [questionIndex]: audioUrl
+      }
+    }));
+    console.log('[useInteractiveSharedWorksheet] Audio answer saved:', { exerciseIndex, questionIndex, audioUrl: audioUrl.substring(0, 50) });
+  }, []);
+
   return {
     answers,
+    audioAnswers,
     itemEvaluations,
     isLoading,
     isSaving,
     lastSavedAt,
     updateAnswer,
+    updateAudioAnswer,
     saveOnBlur,
     verifyStudentEmail,
     getProgress,

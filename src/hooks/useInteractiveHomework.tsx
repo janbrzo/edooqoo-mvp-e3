@@ -33,6 +33,7 @@ export const useInteractiveHomework = ({
   exercises = []
 }: UseInteractiveHomeworkProps) => {
   const [answers, setAnswers] = useState<Record<number, ExerciseAnswers>>({});
+  const [audioAnswers, setAudioAnswers] = useState<Record<number, Record<number, string>>>({});
   const [aiEvaluations, setAiEvaluations] = useState<Record<number, Record<number, AiEvaluation>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -590,8 +591,21 @@ export const useInteractiveHomework = ({
     };
   }, []);
 
+  // Update audio answer for a specific exercise/question
+  const updateAudioAnswer = useCallback((exerciseIndex: number, questionIndex: number, audioUrl: string) => {
+    setAudioAnswers(prev => ({
+      ...prev,
+      [exerciseIndex]: {
+        ...(prev[exerciseIndex] || {}),
+        [questionIndex]: audioUrl
+      }
+    }));
+    console.log('[useInteractiveHomework] Audio answer saved:', { exerciseIndex, questionIndex, audioUrl: audioUrl.substring(0, 50) });
+  }, []);
+
   return {
     answers,
+    audioAnswers,
     aiEvaluations,
     isLoading,
     isSaving,
@@ -600,6 +614,7 @@ export const useInteractiveHomework = ({
     submittedAt,
     isWaitingForAiEval,
     updateAnswer,
+    updateAudioAnswer,
     saveOnBlur,
     submitHomework,
     verifyStudentEmail,

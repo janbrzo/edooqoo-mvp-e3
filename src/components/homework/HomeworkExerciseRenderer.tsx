@@ -138,6 +138,8 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             onAnswerChange={onAnswerChange}
             aiEvaluations={aiEvaluation}
             disabled={disabled}
+            audioAnswers={audioAnswers}
+            onAudioAnswerChange={onAudioAnswerChange}
           />
         )}
 
@@ -206,6 +208,8 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
             aiEvaluations={aiEvaluation}
+            audioAnswers={audioAnswers}
+            onAudioAnswerChange={onAudioAnswerChange}
           />
         )}
 
@@ -303,6 +307,8 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
             aiEvaluations={aiEvaluation}
+            audioAnswers={audioAnswers}
+            onAudioAnswerChange={onAudioAnswerChange}
           />
         )}
 
@@ -450,6 +456,8 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
             aiEvaluations={aiEvaluation}
+            audioAnswers={audioAnswers}
+            onAudioAnswerChange={onAudioAnswerChange}
           />
         )}
 
@@ -466,6 +474,8 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
             aiEvaluations={aiEvaluation}
+            audioAnswers={audioAnswers}
+            onAudioAnswerChange={onAudioAnswerChange}
           />
         )}
 
@@ -537,6 +547,8 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
             aiEvaluations={aiEvaluation}
+            audioAnswers={audioAnswers}
+            onAudioAnswerChange={onAudioAnswerChange}
           />
         )}
 
@@ -553,6 +565,8 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
             showCorrectAnswers={showCorrectAnswers}
             disabled={disabled}
             aiEvaluations={aiEvaluation}
+            audioAnswers={audioAnswers}
+            onAudioAnswerChange={onAudioAnswerChange}
           />
         )}
 
