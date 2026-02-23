@@ -310,6 +310,32 @@ export const useInteractiveHomework = ({
           // PROBLEM 4: Build answers with individual questions for per-question AI verification
           const answersToVerify: any[] = [];
           
+          // SPEAKING: Transcribe audio answers before AI evaluation
+          const transcriptionCache: Record<string, { text: string; duration?: number; wordCount?: number }> = {};
+          for (const [exIdxStr, questionAudios] of Object.entries(audioAnswers)) {
+            for (const [qIdxStr, audioUrl] of Object.entries(questionAudios as Record<number, string>)) {
+              if (!audioUrl || !audioUrl.startsWith('http')) continue;
+              const cacheKey = `${exIdxStr}_${qIdxStr}`;
+              try {
+                console.log(`[submitHomework] Transcribing audio for exercise ${exIdxStr}, question ${qIdxStr}`);
+                const { data: transcResult, error: transcError } = await supabase.functions.invoke('transcribe-audio', {
+                  body: { audio_url: audioUrl }
+                });
+                if (!transcError && transcResult?.transcription) {
+                  const words = transcResult.transcription.split(/\s+/).filter((w: string) => w.length > 0);
+                  transcriptionCache[cacheKey] = {
+                    text: transcResult.transcription,
+                    wordCount: words.length,
+                    duration: undefined // We don't have duration from Whisper, will be estimated
+                  };
+                  console.log(`[submitHomework] Transcription success: ${words.length} words`);
+                }
+              } catch (err) {
+                console.error(`[submitHomework] Transcription failed for ${cacheKey}:`, err);
+              }
+            }
+          }
+          
           for (const ans of savedAnswers.filter((a: any) => {
             const isOpen = openAnswerTypes.includes(a.exercise_type);
             console.log(`[submitHomework] Exercise ${a.exercise_index}: type=${a.exercise_type}, isOpen=${isOpen}`);
@@ -345,13 +371,22 @@ export const useInteractiveHomework = ({
                 questionText = `[Instructions: ${exerciseData.instructions}]\n\n${questionText}`;
               }
               
+              // SPEAKING: Include transcription data if audio was recorded
+              const transcKey = `${ans.exercise_index}_${qIdx}`;
+              const transcription = transcriptionCache[transcKey];
+              
               answersToVerify.push({
                 exercise_index: ans.exercise_index,
                 question_index: qIdx,
                 question_text: questionText,
                 student_answer: String(studentAnswer),
                 suggested_answer: suggestedAnswer || undefined,
-                exercise_type: ans.exercise_type
+                exercise_type: ans.exercise_type,
+                ...(transcription ? {
+                  audio_transcription: transcription.text,
+                  audio_word_count: transcription.wordCount,
+                  audio_duration_seconds: transcription.duration
+                } : {})
               });
             });
           }
@@ -502,7 +537,7 @@ export const useInteractiveHomework = ({
     } finally {
       setIsSaving(false);
     }
-  }, [homeworkId, studentEmail]);
+  }, [homeworkId, studentEmail, audioAnswers, exercises]);
 
   // Calculate progress - percentage based on individual tasks, exercises based on full completion
   const getProgress = useCallback((): HomeworkProgress => {
