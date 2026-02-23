@@ -150,7 +150,7 @@ AUDIO DURATION: ${audioDuration} seconds
 }
 
 22. PEDAGOGICAL SKILL TAGGING (NANO_SKILL SYSTEM)
-Each exercise item MUST include one or two nano_skill entries in the nano_skill array.
+Each exercise item MUST include nano_skill entries in the nano_skill array.
 A nano_skill represents the smallest observable and testable unit of language ability.
 A nano_skill MUST be verifiable from a single learner answer without external context.
 A nano_skill MUST NOT describe broad grammar topics, lesson goals, exercise types, or teaching strategies.
@@ -158,12 +158,18 @@ Confidence values MUST be in range 0.00-1.00 and express certainty that the item
 Reason MUST explain why this specific item tests the skill.
 nano_skill tagging MUST be logically consistent with lesson topic, lesson focus and exercise type.
 
-DUAL NANO_SKILL RULE:
-For open-ended exercises where students WRITE their answers (reading questions, dialogue, discussion, describe-picture, answer-questions, answer-questions-picture, listening-comprehension, answer-questions-audio), include TWO nano_skills:
-1. Primary skill (reading/listening/speaking/grammar) - the main ability being tested
-2. Writing skill - the ability to construct a written response
-For speaking-tagged nano_skills in written exercises, use LOWER confidence (0.35-0.45) because the student types rather than speaks, so speaking assessment is indirect.
-Writing nano_skills should have normal confidence (0.85-0.95).
+TRIPLE NANO_SKILL RULE FOR OPEN-ENDED EXERCISES:
+For open-ended exercises where students WRITE their answers (reading questions, answer-questions, answer-questions-picture, answer-questions-audio, listening-comprehension), include THREE nano_skills:
+1. Primary skill (reading/listening/grammar/vocabulary) - the main ability being tested, with confidence 0.90-0.95
+2. Writing skill (wr) - the ability to construct a written response, with confidence 0.85-0.92
+3. Speaking skill (sp) - indirect assessment of speaking ability from written text, with confidence 0.35-0.45 (increases to 0.85-0.95 when student records audio)
+
+DUAL NANO_SKILL RULE FOR DIALOGUE/DISCUSSION/DESCRIBE:
+For dialogue, discussion, and describe-picture exercises, include TWO nano_skills:
+1. Speaking skill (sp) - with confidence 0.35-0.45 (indirect from text)
+2. Writing skill (wr) - with confidence 0.85-0.95
+
+For CLOSED exercises (multiple-choice, true-false, matching, fill-in-blanks, etc.), include ONE nano_skill with appropriate confidence.
 
 NANO_SKILL NAMING CONVENTION - CRITICAL:
 Format: ns.[CEFR_level].[topic].[skill_name]
