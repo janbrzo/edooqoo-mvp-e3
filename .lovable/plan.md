@@ -1,365 +1,361 @@
 
 
-# Plan wdrozenia - 5 problemow DSLM
+# Plan wdrozenia - skorygowany (Problem 5: Welcome Test)
+
+**UWAGA: Pozostale problemy (1-4) pozostaja BEZ ZMIAN wzgledem poprzedniego planu. Ten dokument opisuje TYLKO skorygowany Problem 5.**
 
 ---
 
-## Problem 1: Badge "ns" zamiast skrotu kategorii
+## Problem 5: Welcome Test - algorytm Learning Path Score z 15 pytaniami
 
-### Przyczyna
+### Zasada projektowa
 
-Funkcja `getBadgeLabel()` w `NanoSkillBadge.tsx` (linia 46-55) sprawdza TYLKO nazwy kategorii (`grammar`, `vocabulary`, `reading` itp.), ale NIE rozpoznaje nazw topicow gramatycznych jak `present_simple`, `comparatives`, `superlatives`, `past_simple` itd.
-
-Przyklad: `ns.B1.present_simple.inference_from_evidence` - regex `\bgrammar\b` NIE matchuje bo slowo "grammar" nie wystepuje w nazwie. W rezultacie trafia do fallbacku `return "ns"`.
-
-Tymczasem w bazie danych istnieje funkcja SQL `extract_skill_category()`, ktora MA pelna liste topicow gramatycznych. Frontend musi uzyc tej samej logiki.
-
-### Rozwiazanie
-
-Przepisac `getBadgeLabel()` w `NanoSkillBadge.tsx` dodajac pelna liste topicow gramatycznych (identycznie jak w SQL `extract_skill_category`):
-
-```text
-const GRAMMAR_TOPICS = /\b(past_simple|past_continuous|past_perfect|present_simple|present_continuous|present_perfect|present_perfect_continuous|future_simple|future_going_to|future_continuous|first_conditional|second_conditional|third_conditional|mixed_conditionals|passive_voice|reported_speech|relative_clauses|modal_verbs|gerund_infinitive|phrasal_verbs|comparatives|superlatives|articles|prepositions|word_order|negative_prefixes|word_formation|sentence_transformation|error_correction)\b/;
-
-const VOCABULARY_TOPICS = /\b(vocabulary|collocations|idioms|synonyms|antonyms)\b/;
-
-const getBadgeLabel = (name: string): string => {
-  if (/\bwriting\b/.test(name)) return "wr";
-  if (/\bspeaking\b/.test(name)) return "sp";
-  if (/\blistening\b/.test(name)) return "li";
-  if (/\breading\b/.test(name)) return "rd";
-  if (/\bvisual_comprehension\b/.test(name)) return "vc";
-  if (/\bgrammar\b/.test(name) || GRAMMAR_TOPICS.test(name)) return "gr";
-  if (/\bvocabulary\b/.test(name) || VOCABULARY_TOPICS.test(name)) return "vo";
-  if (/\bparaphrasing\b/.test(name)) return "wr";
-  if (/\bdialogue\b/.test(name)) return "sp";
-  if (/\bfunctional\b/.test(name)) return "sp";
-  if (/\bcomprehension\b/.test(name)) return "rd";
-  return "ns";
-};
-```
-
-### Plik do zmiany
-- `src/components/worksheet/NanoSkillBadge.tsx` - linie 46-55
+Student NIE jest pytany wprost o preferencje sciezki nauki. Zamiast tego stosujemy pytania scenariuszowe/behawioralne (5 nowych) PLUS wyciagamy ukryty sygnal z 10 istniejacych pytan. Lacznie 15 zrodel danych zasila algorytm - to daje statystycznie solidna baze decyzyjna.
 
 ---
 
-## Problem 2: Discussion nie ma opcji nagrywania
+### CZESC A: 5 nowych pytan behawioralnych (bez zmian wzgledem poprzedniego planu)
 
-### Przyczyna
-
-W `HomeworkExerciseRenderer.tsx` (linie 216-250), blok `discussion` jest renderowany INLINE jako proste textarea zamiast dedykowanego komponentu. Nie przekazuje propsow `audioAnswers` i `onAudioAnswerChange`, wiec `HomeworkSpeakingRecorder` sie nie wyswietla.
-
-Inne typy cwiczen (reading, answer-questions, dialogue) maja dedykowane komponenty (np. `ExerciseReading`, `ExerciseDialogue`), do ktorych te propsy zostaly dodane. Discussion zostal pominiety bo jest renderowany bezposrednio w rendererze.
-
-### Rozwiazanie
-
-Dodac `HomeworkSpeakingRecorder` do bloku discussion w `HomeworkExerciseRenderer.tsx`, zaraz po `AutoResizeTextarea` i `AiEvaluationBadge`:
-
-```text
-// Po linii 244 (po AiEvaluationBadge), dodac:
-{onAudioAnswerChange && (
-  <HomeworkSpeakingRecorder
-    existingAudioUrl={audioAnswers?.[qIndex]}
-    onAudioSaved={(url) => onAudioAnswerChange(qIndex, url)}
-    disabled={disabled}
-  />
-)}
-```
-
-### Plik do zmiany
-- `src/components/homework/HomeworkExerciseRenderer.tsx` - blok discussion (~linia 238-245)
+Pytania Q3b, Q5b, Q13b, Q17b, Q41b - dokladna specyfikacja jest identyczna jak w poprzednim planie. Wplezione w sekcje about_you, experience, scenarios, goals.
 
 ---
 
-## Problem 3: UX nagrywania - za duzy, brzydki komponent
+### CZESC B: 10 istniejacych pytan jako dodatkowe zrodla sygnalu
 
-### Przyczyna
+Nie zmieniamy ZADNEGO istniejacego pytania. Tylko ODCZYTUJEMY ich odpowiedzi w algorytmie.
 
-Obecny `HomeworkSpeakingRecorder` (linie 191-284) uzywa:
-- Dashed border z padding i tlem (`p-3 border border-dashed rounded-lg bg-muted/20`)
-- Osobnych wierszy na waveform, timer, i przyciski
-- Duzych przerw (space-y-2)
-- Wyswietlania pod textarea (zawsze blokowe)
+#### Mapowanie istniejacych pytan na zmienne algorytmu:
 
-### Rozwiazanie
-
-Przepisac layout `HomeworkSpeakingRecorder.tsx` na minimalistyczny, inline:
-
-**Stan idle**: Jeden wiersz z ikona mikrofonu i tekstem "Record" - to wszystko:
+**1. Q3 - motivation_type (juz ma detected_trait)**
 ```text
-[🎤 Record]
+Sygnal: instrumental = cel zawodowy/egzaminacyjny = wyzszy drive
+Wartosc:
+  instrumental = 70
+  integrative = 30
+  mixed = 50
+Waga w algorytmie: 0.06
 ```
 
-**Stan recording**: Jeden wiersz z timerem i stop (w tej samej linii):
+**2. Q4 - ambiguity_tolerance (juz ma detected_trait)**
 ```text
-[● 0:12] [■ Stop]
+Sygnal: wysoka tolerancja = zniesie trudniejsza sciezke, nieznajosc nie paralizuje
+Wartosc:
+  high = 75
+  medium = 45
+  low = 15
+Waga w algorytmie: 0.06
 ```
 
-**Stan recorded**: Play, Re-record, Save - w jednej linii:
+**3. Q5 - weekly_study_time (juz ma detected_trait)**
 ```text
-[▶ Play] [↺ Re-record] [💾 Save]
+Sygnal: wiecej czasu = wiecej mozliwosci na przyspieszona sciezke
+Wartosc:
+  none = 10 (brak czasu = comfort path obowiazkowy)
+  15_30_min = 25
+  1_hour = 45
+  2_3_hours = 70
+  3_plus_hours = 90
+Waga w algorytmie: 0.07
 ```
 
-**Stan done**: Minimalne potwierdzenie:
+**4. Q7 - anxiety_level (juz ma detected_trait)**
 ```text
-[✓ Saved] [▶] [↺ Re-record]
+Sygnal: wysoki lek = potrzebuje bezpiecznej, przewidywalnej sciezki
+Wartosc (ODWROTNA - wysoki lek = niski score):
+  low = 70
+  medium = 40
+  high = 10
+Waga w algorytmie: 0.06
 ```
 
-Kluczowe zmiany CSS:
-1. Usunac `space-y-2 p-3 border border-dashed rounded-lg bg-muted/20` - zastapic `flex items-center gap-1.5 flex-wrap`
-2. Usunac waveform animation (linie 198-211) - niepotrzebna
-3. Usunac osobny wiersz na timer - wstawic timer inline w przycisk Stop
-4. Wszystko w jednej linii
-
-**Pozycjonowanie w cwiczeniach**:
-- W cwiczeniach 1-kolumnowych (answer-questions, discussion, dialogue): recorder obok textarea (po lewej stronie pola tekstowego lub nad nim w jednym wierszu z labelka)
-- W cwiczeniach 2-kolumnowych (reading): recorder pod textarea (bo nie ma miejsca obok)
-
-Zmiany w komponentach cwiczen:
-- `ExerciseAnswerQuestions.tsx` - owinac textarea + recorder we `flex items-start gap-2`
-- `ExerciseReading.tsx` - recorder zostaje pod (bo 2 kolumny)
-- `ExerciseDialogue.tsx` - recorder inline obok
-- `HomeworkExerciseRenderer.tsx` (discussion) - recorder inline obok
-- Pozostale (ListeningComprehension, AnswerQuestionsAudio, Paraphrasing, Describe) - analogicznie
-
-### Pelny nowy kod HomeworkSpeakingRecorder:
-
+**5. Q9 - learning_duration (NIE ma detected_trait - trzeba odczytac z odpowiedzi)**
 ```text
-return (
-  <div className="flex items-center gap-1.5 flex-wrap py-0.5">
-    {(status === 'idle' || status === 'error') && (
-      <Button onClick={startRecording} variant="ghost" size="sm" 
-        disabled={disabled} className="gap-1 h-7 px-2 text-xs text-muted-foreground hover:text-foreground">
-        <Mic className="h-3 w-3 text-red-400" />
-        Record
-      </Button>
-    )}
-
-    {status === 'recording' && (
-      <>
-        <span className="flex items-center gap-1 text-xs text-red-500">
-          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-          {formatTime(seconds)}
-        </span>
-        <Button onClick={stopRecording} variant="ghost" size="sm" className="gap-1 h-7 px-2 text-xs">
-          <Square className="h-2.5 w-2.5" />
-          Stop
-        </Button>
-      </>
-    )}
-
-    {status === 'recorded' && (
-      <>
-        <Button onClick={isPlaying ? pauseAudio : playAudio} variant="ghost" size="sm" className="h-7 px-2 text-xs">
-          {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-        </Button>
-        <Button onClick={resetRecording} variant="ghost" size="sm" className="h-7 px-2 text-xs">
-          <RotateCcw className="h-3 w-3" />
-        </Button>
-        <Button onClick={uploadAndSave} variant="ghost" size="sm" className="gap-1 h-7 px-2 text-xs text-green-600">
-          <Upload className="h-3 w-3" />
-          Save
-        </Button>
-      </>
-    )}
-
-    {status === 'uploading' && (
-      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-        <Loader2 className="h-3 w-3 animate-spin" />
-        Saving...
-      </span>
-    )}
-
-    {status === 'done' && (
-      <>
-        <span className="flex items-center gap-1 text-xs text-green-600">
-          <CheckCircle className="h-3 w-3" />
-          Saved
-        </span>
-        {audioUrl && (
-          <Button onClick={isPlaying ? pauseAudio : playAudio} variant="ghost" size="sm" className="h-6 w-6 p-0">
-            {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-          </Button>
-        )}
-        <Button onClick={resetRecording} variant="ghost" size="sm" disabled={disabled} className="h-6 px-1 text-xs">
-          <RotateCcw className="h-3 w-3" />
-        </Button>
-      </>
-    )}
-
-    {status === 'error' && errorMsg && (
-      <span className="text-xs text-destructive flex items-center gap-1">
-        <AlertTriangle className="h-3 w-3" />
-        {errorMsg}
-      </span>
-    )}
-  </div>
-);
+Sygnal: dluga nauka bez efektu = fosylizacja bledow, potrzeba systematycznej sciezki.
+Krotka nauka = swiezy umysl, latwiej przyspieszyc.
+Odczyt: index odpowiedzi (0-4)
+Wartosc:
+  0 (< 1 rok) = 70 (swiezy, mozna przyspieszyc)
+  1 (1-3 lata) = 60
+  2 (3-5 lat) = 45
+  3 (5-10 lat) = 30 (prawdopodobna fosylizacja)
+  4 (10+ lat) = 15 (prawie pewna fosylizacja, trzeba systematycznie)
+Waga w algorytmie: 0.04
 ```
 
-### Pliki do zmiany
-- `src/components/homework/HomeworkSpeakingRecorder.tsx` - kompletne przepisanie UI
-- `src/components/worksheet/ExerciseAnswerQuestions.tsx` - layout inline
-- `src/components/worksheet/ExerciseDialogue.tsx` - layout inline  
-- `src/components/homework/HomeworkExerciseRenderer.tsx` - discussion layout inline
-- `src/components/worksheet/ExerciseReading.tsx` - zostaje pod (2 kolumny)
-- `src/components/worksheet/ExerciseListeningComprehension.tsx` - layout inline
-- `src/components/worksheet/ExerciseAnswerQuestionsAudio.tsx` - layout inline
-- `src/components/worksheet/ExerciseParaphrasing.tsx` - layout inline
-- `src/components/worksheet/ExerciseDescribe.tsx` - layout inline
+**6. Q10 - learning_sources (multi-select, NIE ma detected_trait)**
+```text
+Sygnal: self-study/work = autonomia = wyzszy grit.
+Tylko school = pasywny = potrzebuje prowadzenia.
+Odczyt: tablica wybranych indeksow
+Logika: jezeli zawiera "Self-study" (index 4) LUB "Through work" (index 6) = autonomy_score = 70
+         jezeli zawiera "Living/working abroad" (index 5) = 80
+         jezeli TYLKO "School" (index 0) = 20
+         inaczej = 40
+Waga w algorytmie: 0.04
+```
+
+**7. Q14 - error_attitude (juz ma detected_trait)**
+```text
+Sygnal: comfortable z bledami = nie boi sie trudniejszej sciezki
+Wartosc:
+  comfortable = 75
+  cautious = 40
+  avoidant = 10
+Waga w algorytmie: 0.05
+```
+
+**8. Q15 - reading_strategy (NIE ma detected_trait)**
+```text
+Sygnal: "guess from context" = wysoka tolerancja niepewnosci = lepiej zniesie niestandardowa sciezke
+Odczyt: index odpowiedzi (0-4)
+Wartosc:
+  0 (read carefully, look up) = 50 (systematyczny ale wytrwaly)
+  1 (ask to clarify) = 55 (aktywny, nie unika)
+  2 (guess from context) = 75 (wysoka tolerancja)
+  3 (struggle, translate) = 25 (potrzebuje wsparcia)
+  4 (use ChatGPT) = 35 (unika, ale pragmatyczny)
+Waga w algorytmie: 0.04
+```
+
+**9. Q42 - feedback_preference (juz ma detected_trait)**
+```text
+Sygnal: "self-correct" = wysoka autonomia, "immediate" = chce szybko poprawiac = drive
+Wartosc:
+  immediate = 65 (wysoki drive do poprawy)
+  delayed_discussion = 45
+  major_only = 35 (nie zalezy mu na perfekcji)
+  written_review = 50
+  self_correct = 70 (wysoka autonomia)
+Waga w algorytmie: 0.04
+```
+
+**10. Q44 - confidence_matrix (self_assessment_matrix, NIE ma detected_trait)**
+```text
+Sygnal: srednia pewnosc siebie we wszystkich 6 obszarach. Wysoka pewnosc = mozna stawiac wieksze wyzwania.
+Odczyt: srednia arytmetyczna z 6 wartosci (1-5), przeskalowana na 0-100
+Logika: avg = srednia(speaking_strangers, writing_emails, movies, news, presentations, small_talk)
+        confidence_score = (avg - 1) * 25   // 1->0, 2->25, 3->50, 4->75, 5->100
+Waga w algorytmie: 0.04
+```
 
 ---
 
-## Problem 4: Confidence nano_skill dla speaking - rozne wartosci
+### CZESC C: Pelny algorytm Learning Path Score
 
-### Obecny stan
-
-Confidence dla speaking nano_skill jest STATYCZNY (0.35-0.45) ustawiany przy generowaniu worksheetu. Nie zmienia sie w zaleznosci od tego jak student odpowiada.
-
-### Rozwiazanie
-
-Logika confidence powinna byc dynamiczna w `masteryCalculator.ts` - w funkcji `buildItemEvaluations` (ktora oblicza mastery dla kazdego nano_skill):
-
-**Scenariusze confidence dla nano_skill z `.speaking.`/`.sp.`:**
-
-| Scenariusz | Odpowiedz | Confidence speaking | Confidence writing | Uzasadnienie |
-|---|---|---|---|---|
-| A: Tylko tekst | Napisana | 0.30 (niska, posrednia ocena) | 0.90 (wysoka, bezposrednia) | Tekst nie mowi nic o umiejetnosciach mowienia |
-| B: Tylko nagranie | Nagrana | 0.90 (wysoka, bezposrednia) | 0.70 (srednia, z transkrypcji) | Transkrypcja daje posredni wglad w pisanie |
-| C: Oba | Napisana + nagrana | 0.90 (wysoka) | 0.90 (wysoka) | Oba bezposrednio ocenione |
-| D: Brak odpowiedzi | Pusta | Pomin | Pomin | Nic do oceny |
-
-### Implementacja w `masteryCalculator.ts`:
-
-W funkcji `buildItemEvaluations`, po otrzymaniu wyniku AI eval, modyfikowac confidence przed zapisem do `student_events`:
+**Zmienne wejsciowe z 5 nowych pytan (laczna waga: 0.50):**
 
 ```text
-// W buildItemEvaluations, po mapowaniu AI eval results:
-for (const nanoSkill of itemNanoSkills) {
-  const hasAudioAnswer = audioAnswers?.[questionIndex] != null;
-  const hasTextAnswer = textAnswers?.[questionIndex] != null && textAnswers[questionIndex].trim() !== '';
-  
-  if (nanoSkill.name.includes('.speaking.') || nanoSkill.name.includes('.sp.')) {
-    if (hasAudioAnswer) {
-      nanoSkill.confidence = 0.90; // Bezposrednia ocena mowienia
-    } else if (hasTextAnswer) {
-      nanoSkill.confidence = 0.30; // Tylko posrednia ocena (z tekstu)
-    }
-  }
-  
-  if (nanoSkill.name.includes('.writing.') || nanoSkill.name.includes('.wr.')) {
-    if (hasTextAnswer) {
-      nanoSkill.confidence = 0.90; // Bezposrednia ocena pisania
-    } else if (hasAudioAnswer) {
-      nanoSkill.confidence = 0.70; // Posrednia ocena (z transkrypcji)
-    }
-  }
+// Z Q5b - deadline_response (waga 0.10)
+deadline_score:
+  intense_preparation = 80
+  pragmatic_coping = 60
+  avoidance = 20
+  confident = 50
+
+// Z Q41b - learning_timeline (waga 0.15)
+timeline_score:
+  urgent_specific = 95
+  ongoing_important = 60
+  long_term_steady = 25
+  hobby_growth = 10
+
+// Z Q13b - persistence_level (waga 0.10)
+persistence_score:
+  high = 80
+  medium = 50
+  low = 20
+
+// Z Q17b - career_english_importance (waga 0.10)
+importance_score:
+  critical = 90
+  high = 70
+  moderate = 40
+  not_career = 15
+
+// Z Q3b - usage_context (waga 0.05)
+context_score:
+  work_formal = 70 (formalny kontekst = wyzsze wymagania = wyzszy drive)
+  professional_field = 80 (ESP = silna specjalizacja)
+  travel = 40
+  social = 35
+  online_informal = 30
+  content_consumption = 25
+  // Jezeli multi-select: wez najwyzsza wartosc
+```
+
+**Zmienne wejsciowe z 10 istniejacych pytan (laczna waga: 0.50):**
+
+```text
+// Q3  - motivation_type         waga 0.06
+// Q4  - ambiguity_tolerance     waga 0.06
+// Q5  - weekly_study_time       waga 0.07
+// Q7  - anxiety_level           waga 0.06
+// Q9  - learning_duration       waga 0.04
+// Q10 - learning_autonomy       waga 0.04
+// Q14 - error_attitude          waga 0.05
+// Q15 - reading_strategy        waga 0.04
+// Q42 - feedback_preference     waga 0.04
+// Q44 - confidence_overall      waga 0.04
+```
+
+**Wzor obliczania:**
+
+```text
+learning_path_score = (
+  // 5 nowych pytan (50%)
+  deadline_score     * 0.10 +
+  timeline_score     * 0.15 +
+  persistence_score  * 0.10 +
+  importance_score   * 0.10 +
+  context_score      * 0.05 +
+
+  // 10 istniejacych pytan (50%)
+  motivation_score        * 0.06 +
+  ambiguity_score         * 0.06 +
+  study_time_score        * 0.07 +
+  anxiety_score           * 0.06 +
+  learning_duration_score * 0.04 +
+  autonomy_score          * 0.04 +
+  error_attitude_score    * 0.05 +
+  reading_strategy_score  * 0.04 +
+  feedback_score          * 0.04 +
+  confidence_score        * 0.04
+)
+
+// Clamp do 0-100
+learning_path_score = Math.max(0, Math.min(100, learning_path_score))
+```
+
+**Suma wag: 0.10 + 0.15 + 0.10 + 0.10 + 0.05 + 0.06 + 0.06 + 0.07 + 0.06 + 0.04 + 0.04 + 0.05 + 0.04 + 0.04 + 0.04 = 1.00**
+
+**Reguly nadrzedne (overrides):**
+
+```text
+// Regula 1: Pilny deadline + krytyczny cel = ZAWSZE target path
+if (timeline === 'urgent_specific' && importance === 'critical') {
+  learning_path_score = Math.max(learning_path_score, 85);
+}
+
+// Regula 2: Leniwy + hobby = ZAWSZE comfort path
+if (persistence === 'low' && timeline === 'hobby_growth') {
+  learning_path_score = Math.min(learning_path_score, 25);
+}
+
+// Regula 3: Pilny deadline + leniwy = deadline podnosi motywacje
+if (timeline === 'urgent_specific' && persistence === 'low') {
+  learning_path_score = Math.max(learning_path_score, 70);
+}
+
+// Regula 4: Bardzo wysoki lek + brak czasu = bezwzgledny comfort
+if (anxiety === 'high' && study_time === 'none') {
+  learning_path_score = Math.min(learning_path_score, 20);
+}
+
+// Regula 5: Dluga nauka (10+ lat) + niski grit = fosylizacja, potrzeba resetu
+if (learning_duration_index === 4 && persistence === 'low') {
+  learning_path_score = Math.min(learning_path_score, 30);
 }
 ```
 
-Ta logika musi byc zastosowana w:
-- `src/hooks/useInteractiveHomework.tsx` - przy budowaniu eventow do `student_events`
-- `src/hooks/useInteractiveSharedWorksheet.tsx` - analogicznie
-
-### Pliki do zmiany
-- `src/utils/masteryCalculator.ts` - nowa funkcja `adjustConfidenceByAnswerType()`
-- `src/hooks/useInteractiveHomework.tsx` - wywolanie adjustConfidence
-- `src/hooks/useInteractiveSharedWorksheet.tsx` - analogicznie
-
----
-
-## Problem 5: Puste anonimowe konta w bazie
-
-### Analiza
-
-W bazie jest **1469 anonimowych kont** (is_anonymous=true, email=null), utworzonych od 2025-04-22 do 2025-12-21. 
-
-Dobre wiesci: po poprawkach `useAnonymousAuth` (ktory teraz NIE tworzy automatycznie kont) **nowe konta anonimowe przestaly sie tworzyc** - ostatnie jest z 2025-12-21.
-
-Zrodlo problemu: stara wersja `useAnonymousAuth` automatycznie wywolywala `signInAnonymously()` przy kazdej wizycie. Teraz hook `useAnonymousAuth` jest uzywany w 2 miejscach:
-- `WorksheetForm/index.tsx` - pobiera `userId` do trackingu
-- `useWorksheetRating.ts` - pobiera `userId` do feedbacku
-
-Oba juz NIE wywoluja `signInAnonymously()` - tylko sprawdzaja istniejaca sesje.
-
-### Rozwiazanie
-
-**A. Usunac stare anonimowe konta z bazy:**
-
-SQL migration:
-
-```sql
--- Krok 1: Usunac powiazane profile (jesli istnieja)
-DELETE FROM public.profiles 
-WHERE id IN (SELECT id FROM auth.users WHERE is_anonymous = true AND email IS NULL);
-
--- Krok 2: Usunac konta anonimowe z auth.users
--- UWAGA: To wymaga service_role - wykonac przez Edge Function
-```
-
-Poniewaz nie mozna bezposrednio usuwac z `auth.users` przez migracje SQL, potrzebujemy Edge Function:
-
-**Nowa Edge Function `cleanup-anonymous-users/index.ts`**:
+**Interpretacja wyniku:**
 
 ```text
-Logika:
-1. Sprawdz ze caller ma role 'admin'
-2. Pobierz liste uzytkownikow z is_anonymous=true AND email IS NULL
-3. Dla kazdego: supabaseAdmin.auth.admin.deleteUser(userId)
-4. Usun powiazane profile (jesli zostaly)
-5. Zwroc { deleted_count: N }
+  0-25:  "Comfort Path"     - Natural Order, wolne tempo, duzo powtorzen, kolejnosc wg badan
+ 26-50:  "Guided Path"      - fundament tradycyjny, tematy dopasowane do kontekstu, umiarkowane tempo
+ 51-75:  "Accelerated Path" - mozna przeskakiwac mniej istotne struktury, goal-relevant grammar, szybsze tempo
+ 76-100: "Target Path"      - reverse engineering od celu, nauka chunkami, pomijanie nieistotnych struktur
 ```
-
-**B. Wylaczenie anonimowej autentykacji w Supabase:**
-
-W panelu Supabase: Authentication -> Providers -> Anonymous Sign-In -> WYLACZ
-
-To uniemozliwi tworzenie nowych anonimowych kont nawet jesli ktos by wywolal `signInAnonymously()`.
-
-**C. Sprzatanie kodu:**
-
-Hook `useAnonymousAuth.tsx` - usunac funkcje `signInAnonymously` calkowicie, zostawic tylko sprawdzanie sesji. Mozna tez rozwazyc wyeliminowanie calego hooka i zastapienie go prostym `useAuthFlow`.
-
-Hook `useAuthFlow.tsx` - usunac `signInAnonymously` z returnowanych wartosci.
-
-### Pliki do zmiany
-- Nowa Edge Function: `supabase/functions/cleanup-anonymous-users/index.ts`
-- `src/hooks/useAnonymousAuth.tsx` - usunac signInAnonymously
-- `src/hooks/useAuthFlow.tsx` - usunac signInAnonymously
-- `supabase/config.toml` - dodac config dla nowej edge function
-- Supabase Dashboard: wylaczenie Anonymous Sign-In
 
 ---
 
-## Kolejnosc implementacji
+### CZESC D: Odpornosc algorytmu (Robustness)
 
-1. **Problem 1** (NanoSkillBadge labels) - szybki fix, 1 plik
-2. **Problem 2** (Discussion speaking) - 1 linia w 1 pliku
-3. **Problem 3** (UX recorder) - przepisanie komponentu + drobne zmiany w 8 plikach
-4. **Problem 4** (Confidence dynamiczny) - logika w 3 plikach
-5. **Problem 5** (Anonimowe konta) - Edge Function + cleanup + kod
+**Co jesli student nie odpowie na wszystkie pytania?**
 
-## Pelne podsumowanie plikow do zmiany
+Kazda zmienna ma fallback = 50 (neutralna wartosc). Jesli brakuje odpowiedzi na dane pytanie, uzywamy 50.
 
-| Plik | Problem | Zmiana |
-|---|---|---|
-| `src/components/worksheet/NanoSkillBadge.tsx` | 1 | Rozszerzyc getBadgeLabel o topiki gramatyczne i vocabulary |
-| `src/components/homework/HomeworkExerciseRenderer.tsx` | 2, 3 | Dodac recorder do discussion + layout inline |
-| `src/components/homework/HomeworkSpeakingRecorder.tsx` | 3 | Przepisanie UI na minimalistyczny inline |
-| `src/components/worksheet/ExerciseAnswerQuestions.tsx` | 3 | Layout recorder inline obok textarea |
-| `src/components/worksheet/ExerciseDialogue.tsx` | 3 | Layout recorder inline |
-| `src/components/worksheet/ExerciseReading.tsx` | 3 | Zostaje pod (2 kolumny) |
-| `src/components/worksheet/ExerciseListeningComprehension.tsx` | 3 | Layout recorder inline |
-| `src/components/worksheet/ExerciseAnswerQuestionsAudio.tsx` | 3 | Layout recorder inline |
-| `src/components/worksheet/ExerciseParaphrasing.tsx` | 3 | Layout recorder inline |
-| `src/components/worksheet/ExerciseDescribe.tsx` | 3 | Layout recorder inline |
-| `src/utils/masteryCalculator.ts` | 4 | Nowa funkcja adjustConfidenceByAnswerType |
-| `src/hooks/useInteractiveHomework.tsx` | 4 | Wywolanie adjustConfidence |
-| `src/hooks/useInteractiveSharedWorksheet.tsx` | 4 | Analogicznie |
-| Nowy: `supabase/functions/cleanup-anonymous-users/index.ts` | 5 | Edge Function czyszczaca |
-| `src/hooks/useAnonymousAuth.tsx` | 5 | Usunac signInAnonymously |
-| `src/hooks/useAuthFlow.tsx` | 5 | Usunac signInAnonymously |
-| `supabase/config.toml` | 5 | Config nowej edge function |
-| Dokumentacja (6 plikow) | Wszystkie | Aktualizacja |
+**Co jesli student odpowie aspiracyjnie na nowe pytania?**
+
+Dlatego 50% wagi pochodzi z ISTNIEJACYCH pytan, ktore nie sa bezposrednio o sciezce nauki. Student nie wie, ze jego odpowiedz na "How do you react when you don't understand?" (Q4) wplywa na dobor sciezki. To sa pytania o naturalnych reakcjach, nie o preferencjach.
+
+Dodatkowo 3 z 5 nowych pytan sa scenariuszowe (Q5b, Q13b, Q17b) - pytaja "co ROBISZ" a nie "co CHCESZ". Tylko Q41b jest bardziej deklaratywna, ale pytanie jest sformulowane jako opis sytuacji ("Which is closest to yours?") a nie jako preferencja.
+
+**Walidacja krzyzowa:**
+
+Algorytm mozna walidowac porownujac deklarowany poziom pewnosci siebie (Q44) z rzeczywistymi wynikami gramatyki/vocab (Q20-Q35). Jesli student deklaruje wysoka pewnosc ale ma niskie wyniki = overestimates = confidence_score powinna byc obnizona. To jest juz realizowane przez istniejacy mechanizm `level_confidence` w process-welcome-test.
+
+---
+
+### CZESC E: Implementacja techniczna
+
+**Plik 1: `src/data/welcomeTestQuestions.ts`**
+- Dodac 5 nowych pytan w odpowiednich sekcjach (identycznie jak w poprzednim planie)
+- Rozmieszczenie:
+  - Q3b po Q3 (about_you)
+  - Q5b po Q5 (about_you)
+  - Q13b po Q13 (experience)
+  - Q17b po Q17 (scenarios)
+  - Q41b po Q41 (goals)
+
+**Plik 2: `src/types/welcomeTest.ts`**
+- Dodac komentarz dokumentujacy learning_path_score w raw_answers
+- Dodac typ LearningPathResult:
+```text
+export interface LearningPathResult {
+  score: number;                    // 0-100
+  path: 'comfort' | 'guided' | 'accelerated' | 'target';
+  component_scores: {
+    deadline_response: number;
+    learning_timeline: number;
+    persistence_level: number;
+    career_importance: number;
+    usage_context: number;
+    motivation_type: number;
+    ambiguity_tolerance: number;
+    weekly_study_time: number;
+    anxiety_level: number;
+    learning_duration: number;
+    learning_autonomy: number;
+    error_attitude: number;
+    reading_strategy: number;
+    feedback_preference: number;
+    confidence_overall: number;
+  };
+  overrides_applied: string[];      // np. ['urgent_critical_override']
+}
+```
+
+**Plik 3: `supabase/functions/process-welcome-test/index.ts`**
+- Dodac nowa funkcje `calculateLearningPathScore(detectedTraits, rawAnswers)`:
+  1. Wyciagnac detected_traits z 5 nowych pytan (Q3b, Q5b, Q13b, Q17b, Q41b)
+  2. Wyciagnac detected_traits z 5 istniejacych pytan z trait (Q3, Q4, Q7, Q14, Q42)
+  3. Wyciagnac odpowiedzi z 5 istniejacych pytan BEZ trait (Q5, Q9, Q10, Q15, Q44) - odczytac indeks odpowiedzi z raw_answers
+  4. Obliczyc kazda zmienna wedlug mapowania powyzej
+  5. Obliczyc weighted sum
+  6. Zastosowac reguly nadrzedne
+  7. Clamp do 0-100
+  8. Zwrocic LearningPathResult
+
+- Wywolac ta funkcje PO zakonczeniu analizy AI (scoring pytan otwartych)
+- Zapisac wynik w `raw_answers.learning_path` jako JSON
+
+**WAZNE:** Prompt do AI (process-welcome-test) NIE jest zmieniany. Obliczanie Learning Path Score jest CZYSTO DETERMINISTYCZNE - nie wymaga AI. To prosta matematyka na detected_traits i indeksach odpowiedzi.
+
+---
+
+### CZESC F: Co NIE wchodzi w zakres tego wdrozenia
+
+1. **Layer D (dobor sciezki nauki)** - algorytm oblicza score ale jeszcze NIE wplywa na generowanie worksheetow. To bedzie osobne zadanie.
+2. **UI wyswietlania wyniku** - score bedzie widoczny w WelcomeTestResults ale bez wizualnej sciezki. To bedzie osobne zadanie.
+3. **Dynamiczna modyfikacja sciezki** - score jest obliczany raz, przy zakonczeniu testu. Nie zmienia sie w czasie. Przyszla wersja moze go aktualizowac.
+
+---
+
+### Pliki do zmiany (Problem 5)
+
+| Plik | Zmiana |
+|---|---|
+| `src/data/welcomeTestQuestions.ts` | 5 nowych pytan behawioralnych wplecionych w sekcje |
+| `src/types/welcomeTest.ts` | Nowy typ LearningPathResult + komentarz |
+| `supabase/functions/process-welcome-test/index.ts` | Nowa funkcja calculateLearningPathScore() + zapis w raw_answers |
 
