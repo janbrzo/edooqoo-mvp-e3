@@ -112,30 +112,31 @@ const ExerciseAnswerQuestionsAudio: React.FC<ExerciseAnswerQuestionsAudioProps> 
               )}
             </div>
             {isInteractive && (
-              <>
-                <Input
-                  value={studentAnswers[qIndex] || ''}
-                  onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
-                  placeholder="Your answer..."
-                  disabled={disabled}
-                  className={`h-10 mt-1 ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}`}
-                />
-                {/* Speaking recorder */}
+              <div className="flex items-start gap-2 mt-1">
                 {onAudioAnswerChange && (
                   <HomeworkSpeakingRecorder
                     existingAudioUrl={audioAnswers?.[qIndex]}
                     onAudioSaved={(url) => onAudioAnswerChange(qIndex, url)}
                     disabled={disabled}
+                    registryKey={`aqa_${qIndex}`}
                   />
                 )}
-                {/* AI Evaluation badge per question */}
-                {aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet) && (
-                  <AiEvaluationBadge 
-                    evaluation={aiEvaluations[qIndex]} 
-                    showFeedback={true}
+                <div className="flex-1">
+                  <Input
+                    value={studentAnswers[qIndex] || ''}
+                    onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                    placeholder="Your answer..."
+                    disabled={disabled}
+                    className={`h-10 ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}`}
                   />
-                )}
-              </>
+                  {aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet) && (
+                    <AiEvaluationBadge 
+                      evaluation={aiEvaluations[qIndex]} 
+                      showFeedback={true}
+                    />
+                  )}
+                </div>
+              </div>
             )}
             {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}
             {!isInteractive && aiEvaluations?.[qIndex] && isSharedWorksheet && (

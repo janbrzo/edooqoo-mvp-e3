@@ -226,32 +226,32 @@ const HomeworkExerciseRenderer: React.FC<HomeworkExerciseRendererProps> = ({
                     {qIndex + 1}. {safeGetText(question)}
                   </p>
                   {isInteractive && (
-                    <>
-                      {/* PROBLEM 3 FIX: Auto-resize textarea */}
-                      <AutoResizeTextarea
-                        value={studentAnswer}
-                        onChange={(e) => onAnswerChange(qIndex, e.target.value)}
-                        placeholder="Share your thoughts..."
-                        className="w-full min-h-[40px]"
-                        rows={1}
-                        disabled={disabled}
-                      />
-                      {/* AI Evaluation badge for discussion */}
-                      {aiEvaluation?.[qIndex] && disabled && (
-                        <AiEvaluationBadge 
-                          evaluation={aiEvaluation[qIndex]} 
-                          showFeedback={true}
-                        />
-                      )}
-                      {/* Speaking recorder for discussion */}
+                    <div className="flex items-start gap-2">
                       {onAudioAnswerChange && (
                         <HomeworkSpeakingRecorder
                           existingAudioUrl={audioAnswers?.[qIndex]}
                           onAudioSaved={(url) => onAudioAnswerChange(qIndex, url)}
                           disabled={disabled}
+                          registryKey={`hw_disc_${index}_${qIndex}`}
                         />
                       )}
-                    </>
+                      <div className="flex-1">
+                        <AutoResizeTextarea
+                          value={studentAnswer}
+                          onChange={(e) => onAnswerChange(qIndex, e.target.value)}
+                          placeholder="Share your thoughts..."
+                          className="w-full min-h-[40px]"
+                          rows={1}
+                          disabled={disabled}
+                        />
+                        {aiEvaluation?.[qIndex] && disabled && (
+                          <AiEvaluationBadge 
+                            evaluation={aiEvaluation[qIndex]} 
+                            showFeedback={true}
+                          />
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               );

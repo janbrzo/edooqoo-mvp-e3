@@ -11,7 +11,14 @@ The English Worksheet Generator is a full-featured SaaS platform built on React,
 - **calculateLearningPathScore()** deterministic algorithm in `process-welcome-test` edge function: 15 weighted signals (5 new + 10 existing), 5 override rules, outputs 0-100 score mapped to 4 paths (comfort/guided/accelerated/target)
 - Score saved to `raw_answers.learning_path` in `student_learning_profiles`
 
-**Previous Update (February 2026) - DSLM Fixes + Speaking UX + Cleanup:**
+**Previous Update (February 2026) - 5 Critical Fixes:**
+- **SharedWorksheet Discussion recorder**: `SharedWorksheetContent.tsx` discussion questions now include `HomeworkSpeakingRecorder` + `AutoResizeTextarea` (was plain `<input>`)
+- **Recorder inline layout**: In 6 single-column exercise components (ExerciseAnswerQuestions, ExerciseDescribe, ExerciseParaphrasing, ExerciseListeningComprehension, ExerciseAnswerQuestionsAudio, HomeworkExerciseRenderer), recorder moved from below textarea to left side using `flex items-start gap-2`. Two-column exercises (Reading, Dialogue) unchanged
+- **Auto-save recordings**: `HomeworkSpeakingRecorder` has `registryKey` prop, global `__pendingSpeakingRecordings` registry, 30s auto-save countdown. `useInteractiveHomework.submitHomework` flushes pending recordings before submit
+- **Admin cleanup**: `AdminDashboardPage` filters out accounts without email, shows cleanup banner with count, "Clean up" button calls `cleanup-anonymous-users` edge function. `config.toml` `enable_anonymous_sign_ups = false`
+- **DSLM buildItemEvaluations fix**: `useInteractiveHomework.tsx` AI eval post-submit now uses `buildItemEvaluations()` instead of manual `safeGetNanoSkill()` mapping, capturing all nano_skills (primary + writing + speaking)
+
+**Previous Update (February 2026) - Speaking + Cleanup:**
 - **NanoSkillBadge label fix**: `getBadgeLabel()` now recognizes 30+ grammar topics (present_simple, comparatives, superlatives, etc.) and vocabulary topics, returning proper `gr`/`vo` labels instead of fallback `ns`
 - **Discussion speaking**: `HomeworkExerciseRenderer` now includes `HomeworkSpeakingRecorder` in `discussion` exercise type for audio recording
 - **Minimalist recorder UI**: `HomeworkSpeakingRecorder` completely redesigned to inline flex layout - no borders, no waveform animation, single-line controls for all states (idle/recording/recorded/done)

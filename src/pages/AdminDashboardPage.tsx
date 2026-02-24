@@ -34,6 +34,7 @@ export default function AdminDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
 
   // Check admin role
   useEffect(() => {
@@ -105,7 +106,27 @@ export default function AdminDashboardPage() {
 
   if (!isAdmin) return null;
 
+  const anonCount = teachers.filter(t => !t.email).length;
+
+  const handleCleanup = async () => {
+    setIsCleaningUp(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cleanup-anonymous-users');
+      if (error) throw error;
+      toast({ title: `Cleaned up ${data?.deleted_count || 0} anonymous accounts` });
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, first_name, last_name, subscription_type, subscription_status, available_tokens, total_worksheets_created, created_at')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+      setTeachers((profiles as TeacherProfile[]) || []);
+    } catch (err: any) {
+      toast({ title: 'Cleanup failed', description: err.message, variant: 'destructive' });
+    } finally { setIsCleaningUp(false); }
+  };
+
   const filteredTeachers = teachers.filter(t => {
+    if (!t.email) return false; // Hide anonymous accounts
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -156,6 +177,23 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Cleanup anonymous accounts */}
+      {anonCount > 0 && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <div className="font-medium text-amber-800">{anonCount} anonymous accounts (no email)</div>
+              <div className="text-xs text-amber-600">Legacy ghost accounts. Safe to remove.</div>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleCleanup} disabled={isCleaningUp}
+              className="border-amber-400 text-amber-700 hover:bg-amber-100">
+              {isCleaningUp ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+              Clean up
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search */}
       <div className="relative">

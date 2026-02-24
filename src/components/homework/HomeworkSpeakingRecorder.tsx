@@ -14,6 +14,12 @@ interface HomeworkSpeakingRecorderProps {
   existingAudioUrl?: string;
   onAudioSaved: (audioUrl: string) => void;
   disabled?: boolean;
+  registryKey?: string;
+}
+
+// Global registry for pending (unsaved) recordings
+if (typeof window !== 'undefined' && !(window as any).__pendingSpeakingRecordings) {
+  (window as any).__pendingSpeakingRecordings = new Map();
 }
 
 function getSupportedMimeType(): string | undefined {
@@ -29,7 +35,8 @@ export function HomeworkSpeakingRecorder({
   maxSeconds = 120, 
   existingAudioUrl, 
   onAudioSaved, 
-  disabled = false 
+  disabled = false,
+  registryKey 
 }: HomeworkSpeakingRecorderProps) {
   const [status, setStatus] = useState<'idle' | 'recording' | 'recorded' | 'uploading' | 'done' | 'error'>(
     existingAudioUrl ? 'done' : 'idle'
@@ -38,6 +45,7 @@ export function HomeworkSpeakingRecorder({
   const [audioUrl, setAudioUrl] = useState<string | null>(existingAudioUrl || null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [autoSaveCountdown, setAutoSaveCountdown] = useState<number | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -59,6 +67,7 @@ export function HomeworkSpeakingRecorder({
       if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
     };
   }, []);
+
 
   const startRecording = useCallback(async () => {
     setErrorMsg(null);
@@ -143,6 +152,30 @@ export function HomeworkSpeakingRecorder({
     }
   }, [onAudioSaved]);
 
+  // Auto-save: register pending recording + 30s countdown
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (status === 'recorded' && blobRef.current) {
+      if (registryKey) {
+        (window as any).__pendingSpeakingRecordings?.set(registryKey, { blob: blobRef.current, save: uploadAndSave });
+      }
+      setAutoSaveCountdown(30);
+      timer = setTimeout(() => { uploadAndSave(); }, 30000);
+    }
+    if (status === 'done' || status === 'idle') {
+      if (registryKey) (window as any).__pendingSpeakingRecordings?.delete(registryKey);
+      setAutoSaveCountdown(null);
+    }
+    return () => { if (timer) clearTimeout(timer); };
+  }, [status, registryKey, uploadAndSave]);
+
+  // Countdown ticker
+  useEffect(() => {
+    if (autoSaveCountdown === null || autoSaveCountdown <= 0) return;
+    const t = setInterval(() => setAutoSaveCountdown(p => p !== null && p > 0 ? p - 1 : null), 1000);
+    return () => clearInterval(t);
+  }, [autoSaveCountdown]);
+
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   return (
@@ -180,6 +213,9 @@ export function HomeworkSpeakingRecorder({
             <Upload className="h-3 w-3" />
             Save
           </Button>
+          {autoSaveCountdown !== null && autoSaveCountdown > 0 && (
+            <span className="text-xs text-muted-foreground">Auto-save {autoSaveCountdown}s</span>
+          )}
         </>
       )}
 

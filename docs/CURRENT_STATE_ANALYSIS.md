@@ -12,6 +12,13 @@
 - ✅ **LearningPathResult type**: Nowy interfejs z component_scores i overrides_applied
 - ✅ **Zapis w raw_answers.learning_path**: Deterministyczne obliczanie w process-welcome-test edge function
 
+**Naprawa (2026-02-24) - 5 krytycznych poprawek:**
+- ✅ **SharedWorksheet Discussion recorder**: Dodano HomeworkSpeakingRecorder + AutoResizeTextarea do pytań discussion (było plain `<input>`)
+- ✅ **Recorder inline layout**: W 6 komponentach jednokolumnowych recorder przeniesiony po lewej stronie textarea (flex items-start gap-2). Wyjątki: Reading, Dialogue (2 kolumny)
+- ✅ **Auto-save nagrań**: registryKey prop + globalny rejestr __pendingSpeakingRecordings + 30s countdown. Flush pending w submitHomework
+- ✅ **Admin cleanup**: Filtr kont bez emaila, banner z licznikiem, przycisk "Clean up", config.toml enable_anonymous_sign_ups=false
+- ✅ **DSLM buildItemEvaluations**: useInteractiveHomework AI eval post-submit używa buildItemEvaluations() zamiast ręcznego safeGetNanoSkill() - łapie ALL nano_skills
+
 **Poprzednia naprawa (2026-02-23) - DSLM Fixes + Speaking UX + Cleanup:**
 - ✅ **NanoSkillBadge labels**: getBadgeLabel() rozpoznaje 30+ tematów gramatycznych (present_simple, comparatives, superlatives itp.) - wyświetla `gr`/`vo` zamiast `ns`
 - ✅ **Discussion speaking**: Dodano HomeworkSpeakingRecorder do zadań Discussion w homework/shared worksheet
