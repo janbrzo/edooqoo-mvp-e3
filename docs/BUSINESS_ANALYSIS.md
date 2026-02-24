@@ -1,7 +1,9 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Feb 2026):** DSLM Layer B v5 Phase 2 — flashcard events use `ns.[CEFR].vocabulary.definition_[word]` format, translation/definition mastery modifier (0.85x/1.0x), period filter always visible, CEFR level filter (A1-C2), student switcher popover, backfilled all flashcard:UUID metrics.
+**Latest Update (Feb 2026):** Welcome Test Learning Path Score — 5 new behavioral questions (Q3b, Q5b, Q13b, Q17b, Q41b) detect student's learning path preference via scenarios (not direct questions). Deterministic algorithm with 15 weighted signals calculates 0-100 score → 4 paths (Comfort/Guided/Accelerated/Target). 5 override rules handle edge cases. Score saved to raw_answers.learning_path. Future: will influence worksheet generation order and difficulty.
+
+**Previous Update (Feb 2026):** DSLM Layer B v5 Phase 2 — flashcard events use `ns.[CEFR].vocabulary.definition_[word]` format, translation/definition mastery modifier (0.85x/1.0x), period filter always visible, CEFR level filter (A1-C2), student switcher popover, backfilled all flashcard:UUID metrics.
 
 **Previous Update (Feb 2026):** Welcome Test v2 Round 9 — auto-transcription of speaking answers (no manual button), AI per-question scoring (0-100) for writing and speaking, new speaking_score in learning profile, Communication→Speaking in Skill Scores UI, timer pauses on inactive tab, event payload mastery updated from -1 to actual AI scores, trigger fix preventing duplicate events, test results recalculated after AI scoring.
 

@@ -14,7 +14,12 @@
 
 ## Getting Started
 
-**Latest Improvements (DSLM Layer B v5 Phase 2):**
+**Latest Improvements (Welcome Test Learning Path Score):**
+- **5 behavioral questions**: New scenario-based questions (Q3b, Q5b, Q13b, Q17b, Q41b) detect deadline urgency, persistence, career importance, usage context, and learning timeline
+- **Learning Path Score**: Deterministic 0-100 score from 15 signals determines optimal learning path (Comfort/Guided/Accelerated/Target)
+- **Override rules**: Urgent deadline + critical career = always Target Path; lazy + hobby = always Comfort Path
+
+**Previous Improvements (DSLM Layer B v5 Phase 2):**
 - **Flashcard CEFR naming**: Flashcard reviews now tracked as `ns.[CEFR].vocabulary.definition_[word]` instead of `flashcard:UUID`
 - **Translation vs Definition**: Translation-based flashcards get 0.85x mastery modifier (easier), English definitions get full mastery
 - **Period filter fix**: Filter stays visible even when no data exists for selected period, with helpful message

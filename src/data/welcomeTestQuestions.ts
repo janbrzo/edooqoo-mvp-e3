@@ -80,6 +80,28 @@ const aboutYouQuestions: WelcomeTestQuestionDef[] = [
       },
     },
   },
+  // Q3b: Usage context (Learning Path Signal - professional context)
+  {
+    id: 'wt_q3b',
+    section: 'about_you',
+    question_type: 'preference_choice',
+    question_text: 'Where do you use (or want to use) English the most?',
+    multi_select: true,
+    max_selections: 2,
+    options: [
+      'At work - emails, meetings, calls',
+      'Traveling - airports, hotels, restaurants',
+      'Online - social media, forums, gaming',
+      'With friends/family who speak English',
+      'Consuming content - movies, books, podcasts',
+      'In my professional field (medical, legal, IT, etc.)',
+    ],
+    scoring_logic: 'Usage context determines vocabulary domain, register priority, and skill balance. Work-heavy = formal register. Travel = survival phrases. Online = informal. Professional field = ESP.',
+    detected_trait: {
+      trait_name: 'usage_context',
+      mapping: { '0': 'work_formal', '1': 'travel', '2': 'online_informal', '3': 'social', '4': 'content_consumption', '5': 'professional_field' },
+    },
+  },
   {
     id: 'wt_q4',
     section: 'about_you',
@@ -126,6 +148,24 @@ const aboutYouQuestions: WelcomeTestQuestionDef[] = [
         '3': '2_3_hours',
         '4': '3_plus_hours',
       },
+    },
+  },
+  // Q5b: Deadline response (Learning Path Signal - urgency behavior)
+  {
+    id: 'wt_q5b',
+    section: 'about_you',
+    question_type: 'scenario_reaction',
+    question_text: 'Imagine this: your boss just told you that in 3 weeks, you\'ll need to lead a meeting in English with international clients. How do you react?',
+    options: [
+      'I\'d panic at first, but then prepare intensively every day until the meeting',
+      'I\'d feel nervous but would ask a colleague for help and practice the key phrases',
+      'I\'d ask to postpone or let someone else handle it',
+      'I\'d feel fairly confident - I\'d just review some vocabulary beforehand',
+    ],
+    scoring_logic: 'Behavioral response to urgent deadline reveals stress tolerance and action orientation. Option 0 = intense preparation. Option 1 = pragmatic coping. Option 2 = avoidance. Option 3 = confident.',
+    detected_trait: {
+      trait_name: 'deadline_response',
+      mapping: { '0': 'intense_preparation', '1': 'pragmatic_coping', '2': 'avoidance', '3': 'confident' },
     },
   },
   {
@@ -267,6 +307,24 @@ const experienceQuestions: WelcomeTestQuestionDef[] = [
     description: 'Tell us what methods or approaches helped you learn best.',
     scoring_logic: 'What worked before = what will likely work again. Practical pedagogical intelligence.',
   },
+  // Q13b: Persistence/Grit (Learning Path Signal - behavioral transfer)
+  {
+    id: 'wt_q13b',
+    section: 'experience',
+    question_type: 'scenario_reaction',
+    question_text: 'Think about the last time you tried to learn something new (not English - anything: cooking, a sport, a skill). What happened?',
+    options: [
+      'I stuck with it and got pretty good at it',
+      'I practiced for a while but eventually moved on to something else',
+      'I started enthusiastically but lost motivation after a few weeks',
+      'I\'m still learning it - I haven\'t given up yet',
+    ],
+    scoring_logic: 'Transfer of persistence patterns from other domains (Duckworth Grit Scale proxy). Measures actual behavior, not self-image. Option 0 = high grit. Option 1 = medium. Option 2 = low. Option 3 = high (ongoing).',
+    detected_trait: {
+      trait_name: 'persistence_level',
+      mapping: { '0': 'high', '1': 'medium', '2': 'low', '3': 'high' },
+    },
+  },
 ];
 
 // =====================================================
@@ -330,6 +388,24 @@ const scenarioQuestions: WelcomeTestQuestionDef[] = [
     element_type: 'writing',
     scoring_logic: 'Pragmatic competence + discourse management under pressure. Formal/informal register, coherence, complexity.',
     nano_skill: 'ns.writing.formal_narrative',
+  },
+  // Q17b: Career English importance (Learning Path Signal - goal weight)
+  {
+    id: 'wt_q17b',
+    section: 'scenarios',
+    question_type: 'scenario_reaction',
+    question_text: 'You see a perfect job posting that matches your skills exactly, but it requires "fluent English." What goes through your mind?',
+    options: [
+      'This is exactly why I\'m learning English - I need to be ready for opportunities like this',
+      'I\'d apply anyway and hope my English improves by the time they interview me',
+      'I\'d skip it - I\'m not learning English for work reasons',
+      'I\'d apply and highlight my other strengths to compensate for my English',
+    ],
+    scoring_logic: 'Reveals goal importance (career-critical?) and urgency (take action now?). Option 0 = critical. Option 1 = high. Option 2 = not career. Option 3 = moderate.',
+    detected_trait: {
+      trait_name: 'career_english_importance',
+      mapping: { '0': 'critical', '1': 'high', '2': 'not_career', '3': 'moderate' },
+    },
   },
   {
     id: 'wt_q18',
@@ -729,6 +805,25 @@ const goalsQuestions: WelcomeTestQuestionDef[] = [
     question_text: 'If you could achieve ONE thing in English in the next 3 months, what would it be?',
     description: 'Write freely - there are no wrong answers.',
     scoring_logic: 'Goal Setting Theory (Locke & Latham). Concrete, ambitious goals increase outcomes 20-25%.',
+  },
+  // Q41b: Learning timeline (Learning Path Signal - time horizon + goal weight)
+  {
+    id: 'wt_q41b',
+    section: 'goals',
+    question_type: 'scenario_reaction',
+    question_text: 'Which of these situations is closest to yours right now?',
+    description: 'There are no right or wrong answers.',
+    options: [
+      'I have a specific event coming up soon where I need English (trip, interview, presentation)',
+      'I need English regularly for my work/life, and I want to get noticeably better in the next few months',
+      'I\'m learning English for the long term - there\'s no rush, but I want steady progress',
+      'English is something I enjoy learning - it\'s more about personal growth than a specific need',
+    ],
+    scoring_logic: 'Combines deadline urgency with goal importance. Option 0 = urgent + specific. Option 1 = ongoing + important. Option 2 = long-term steady. Option 3 = hobby/growth.',
+    detected_trait: {
+      trait_name: 'learning_timeline',
+      mapping: { '0': 'urgent_specific', '1': 'ongoing_important', '2': 'long_term_steady', '3': 'hobby_growth' },
+    },
   },
   // NEW: Speaking question - self-introduction
   {

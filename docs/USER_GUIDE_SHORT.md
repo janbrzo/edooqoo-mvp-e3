@@ -4,7 +4,9 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **DSLM + UX Phase 3** — NanoSkill badges now show in all exercise types including dual badges (reading+writing). [V]/[G] focus tags visible on worksheet. "Add Exercise" button in Live Session (max 12 exercises). Delete worksheets from Overview. Period+CEFR filters side-by-side. Student switcher scroll fixed with blue icon. Toolbar labels shortened in Live Session.
+**Latest Update:** **Welcome Test Learning Path Score** — 5 new behavioral questions detect student's learning timeline, persistence, deadline response, career importance, and usage context. Deterministic algorithm calculates Learning Path Score (0-100) from 15 signals, mapping to 4 paths: Comfort, Guided, Accelerated, Target.
+
+**Previous Update:** **DSLM + UX Phase 3** — NanoSkill badges now show in all exercise types including dual badges (reading+writing). [V]/[G] focus tags visible on worksheet. "Add Exercise" button in Live Session (max 12 exercises). Delete worksheets from Overview. Period+CEFR filters side-by-side. Student switcher scroll fixed with blue icon. Toolbar labels shortened in Live Session.
 
 **Previous Update:** **Welcome Test v2 Round 9** — transcriptions now auto-generated and displayed (no manual Transcribe button), AI scores each open/speaking answer 0-100 individually, Speaking score added to Skill Scores (replacing Communication), timer pauses when tab is inactive, duplicate events cleaned, event payload mastery updated from -1 to actual AI scores.
 
