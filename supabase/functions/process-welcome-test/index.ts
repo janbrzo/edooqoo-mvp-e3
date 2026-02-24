@@ -9,6 +9,222 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// =====================================================
+// Learning Path Score Algorithm (deterministic)
+// Uses 15 signals: 5 new behavioral + 10 existing questions
+// =====================================================
+
+function calculateLearningPathScore(
+  traits: Record<string, string>,
+  answers: Record<string, any> | null,
+  questions: any[]
+): { score: number; path: string; component_scores: Record<string, number>; overrides_applied: string[] } {
+  const FALLBACK = 50;
+  const overrides: string[] = [];
+
+  // --- 5 NEW BEHAVIORAL QUESTIONS (weight: 0.50) ---
+
+  // Q5b - deadline_response (weight 0.10)
+  const deadlineMap: Record<string, number> = { intense_preparation: 80, pragmatic_coping: 60, avoidance: 20, confident: 50 };
+  const deadlineScore = deadlineMap[traits.deadline_response] ?? FALLBACK;
+
+  // Q41b - learning_timeline (weight 0.15)
+  const timelineMap: Record<string, number> = { urgent_specific: 95, ongoing_important: 60, long_term_steady: 25, hobby_growth: 10 };
+  const timelineScore = timelineMap[traits.learning_timeline] ?? FALLBACK;
+
+  // Q13b - persistence_level (weight 0.10)
+  const persistenceMap: Record<string, number> = { high: 80, medium: 50, low: 20 };
+  const persistenceScore = persistenceMap[traits.persistence_level] ?? FALLBACK;
+
+  // Q17b - career_english_importance (weight 0.10)
+  const importanceMap: Record<string, number> = { critical: 90, high: 70, moderate: 40, not_career: 15 };
+  const importanceScore = importanceMap[traits.career_english_importance] ?? FALLBACK;
+
+  // Q3b - usage_context (weight 0.05) - multi-select: take highest
+  const contextMap: Record<string, number> = { work_formal: 70, professional_field: 80, travel: 40, social: 35, online_informal: 30, content_consumption: 25 };
+  let contextScore = FALLBACK;
+  const usageCtx = traits.usage_context;
+  if (usageCtx) {
+    // Could be single value or comma-separated from multi-select
+    const ctxValues = usageCtx.split(',').map(v => v.trim());
+    const ctxScores = ctxValues.map(v => contextMap[v] ?? FALLBACK);
+    contextScore = Math.max(...ctxScores);
+  }
+  // Also check raw answer array for multi-select
+  const q3bAnswer = answers?.wt_q3b;
+  if (Array.isArray(q3bAnswer)) {
+    const q3bOptions = [
+      'At work - emails, meetings, calls',
+      'Traveling - airports, hotels, restaurants',
+      'Online - social media, forums, gaming',
+      'With friends/family who speak English',
+      'Consuming content - movies, books, podcasts',
+      'In my professional field (medical, legal, IT, etc.)',
+    ];
+    const q3bContextMap: Record<number, number> = { 0: 70, 1: 40, 2: 30, 3: 35, 4: 25, 5: 80 };
+    const rawScores = q3bAnswer.map(a => {
+      const idx = q3bOptions.indexOf(a);
+      return idx >= 0 ? (q3bContextMap[idx] ?? FALLBACK) : FALLBACK;
+    });
+    if (rawScores.length > 0) contextScore = Math.max(...rawScores);
+  }
+
+  // --- 10 EXISTING QUESTIONS (weight: 0.50) ---
+
+  // Q3 - motivation_type (weight 0.06)
+  const motivationMap: Record<string, number> = { instrumental: 70, integrative: 30, mixed: 50 };
+  const motivationScore = motivationMap[traits.motivation_type] ?? FALLBACK;
+
+  // Q4 - ambiguity_tolerance (weight 0.06)
+  const ambiguityMap: Record<string, number> = { high: 75, medium: 45, low: 15 };
+  const ambiguityScore = ambiguityMap[traits.ambiguity_tolerance] ?? FALLBACK;
+
+  // Q5 - weekly_study_time (weight 0.07)
+  const studyTimeMap: Record<string, number> = { none: 10, '15_30_min': 25, '1_hour': 45, '2_3_hours': 70, '3_plus_hours': 90 };
+  const studyTimeScore = studyTimeMap[traits.weekly_study_time] ?? FALLBACK;
+
+  // Q7 - anxiety_level (weight 0.06) - INVERTED
+  const anxietyMap: Record<string, number> = { low: 70, medium: 40, high: 10 };
+  const anxietyScore = anxietyMap[traits.anxiety_level] ?? FALLBACK;
+
+  // Q9 - learning_duration (weight 0.04) - read from answer index
+  const q9Options = ['Less than 1 year', '1-3 years', '3-5 years', '5-10 years', 'More than 10 years'];
+  const durationIndexMap: Record<number, number> = { 0: 70, 1: 60, 2: 45, 3: 30, 4: 15 };
+  let durationScore = FALLBACK;
+  let durationIndex = -1;
+  const q9Answer = answers?.wt_q9;
+  if (typeof q9Answer === 'string') {
+    const idx = q9Options.indexOf(q9Answer);
+    if (idx >= 0) { durationScore = durationIndexMap[idx] ?? FALLBACK; durationIndex = idx; }
+  }
+
+  // Q10 - learning_autonomy (weight 0.04) - multi-select
+  const q10Options = ['School (as a subject)', 'University', 'Private lessons with a teacher', 'Language school/course', 'Self-study (apps, books, YouTube)', 'Living/working in an English-speaking country', 'Through work (using English daily)'];
+  let autonomyScore = FALLBACK;
+  const q10Answer = answers?.wt_q10;
+  if (Array.isArray(q10Answer)) {
+    const indices = q10Answer.map(a => q10Options.indexOf(a));
+    if (indices.includes(5)) autonomyScore = 80; // Living/working abroad
+    else if (indices.includes(4) || indices.includes(6)) autonomyScore = 70; // Self-study or through work
+    else if (indices.length === 1 && indices[0] === 0) autonomyScore = 20; // Only school
+    else autonomyScore = 40;
+  }
+
+  // Q14 - error_attitude (weight 0.05)
+  const errorMap: Record<string, number> = { comfortable: 75, cautious: 40, avoidant: 10 };
+  const errorScore = errorMap[traits.error_attitude] ?? FALLBACK;
+
+  // Q15 - reading_strategy (weight 0.04) - read from answer index
+  const q15Options = [
+    'I read it carefully, look up unknown words, and reply',
+    'I reply asking them to clarify the confusing parts',
+    'I understand most of it and guess the rest from context',
+    'I struggle to understand and need to translate most of it',
+    "I don't try to understand, I use ChatGPT",
+  ];
+  const readingStratMap: Record<number, number> = { 0: 50, 1: 55, 2: 75, 3: 25, 4: 35 };
+  let readingStratScore = FALLBACK;
+  const q15Answer = answers?.wt_q15;
+  if (typeof q15Answer === 'string') {
+    const idx = q15Options.indexOf(q15Answer);
+    if (idx >= 0) readingStratScore = readingStratMap[idx] ?? FALLBACK;
+  }
+
+  // Q42 - feedback_preference (weight 0.04)
+  const feedbackMap: Record<string, number> = { immediate: 65, delayed_discussion: 45, major_only: 35, written_review: 50, self_correct: 70 };
+  const feedbackScore = feedbackMap[traits.feedback_preference] ?? FALLBACK;
+
+  // Q44 - confidence_matrix (weight 0.04) - average of 6 values scaled 0-100
+  let confidenceScore = FALLBACK;
+  const q44Answer = answers?.wt_q44;
+  if (q44Answer && typeof q44Answer === 'object') {
+    const values = Object.values(q44Answer).filter(v => typeof v === 'number') as number[];
+    if (values.length > 0) {
+      const avg = values.reduce((a, b) => a + b, 0) / values.length;
+      confidenceScore = (avg - 1) * 25; // 1->0, 2->25, 3->50, 4->75, 5->100
+      confidenceScore = Math.max(0, Math.min(100, confidenceScore));
+    }
+  }
+
+  // --- WEIGHTED SUM ---
+  let score = (
+    deadlineScore     * 0.10 +
+    timelineScore     * 0.15 +
+    persistenceScore  * 0.10 +
+    importanceScore   * 0.10 +
+    contextScore      * 0.05 +
+    motivationScore   * 0.06 +
+    ambiguityScore    * 0.06 +
+    studyTimeScore    * 0.07 +
+    anxietyScore      * 0.06 +
+    durationScore     * 0.04 +
+    autonomyScore     * 0.04 +
+    errorScore        * 0.05 +
+    readingStratScore * 0.04 +
+    feedbackScore     * 0.04 +
+    confidenceScore   * 0.04
+  );
+
+  // --- OVERRIDE RULES ---
+
+  // Rule 1: Urgent deadline + critical career = ALWAYS target path
+  if (traits.learning_timeline === 'urgent_specific' && traits.career_english_importance === 'critical') {
+    if (score < 85) { score = Math.max(score, 85); overrides.push('urgent_critical_override'); }
+  }
+
+  // Rule 2: Low persistence + hobby = ALWAYS comfort path
+  if (traits.persistence_level === 'low' && traits.learning_timeline === 'hobby_growth') {
+    if (score > 25) { score = Math.min(score, 25); overrides.push('lazy_hobby_override'); }
+  }
+
+  // Rule 3: Urgent deadline + low persistence = deadline boosts motivation
+  if (traits.learning_timeline === 'urgent_specific' && traits.persistence_level === 'low') {
+    if (score < 70) { score = Math.max(score, 70); overrides.push('urgent_lazy_override'); }
+  }
+
+  // Rule 4: High anxiety + no study time = forced comfort
+  if (traits.anxiety_level === 'high' && traits.weekly_study_time === 'none') {
+    if (score > 20) { score = Math.min(score, 20); overrides.push('anxious_notime_override'); }
+  }
+
+  // Rule 5: 10+ years learning + low grit = fossilization risk
+  if (durationIndex === 4 && traits.persistence_level === 'low') {
+    if (score > 30) { score = Math.min(score, 30); overrides.push('fossilization_override'); }
+  }
+
+  // Clamp
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  // Determine path
+  let path = 'comfort';
+  if (score >= 76) path = 'target';
+  else if (score >= 51) path = 'accelerated';
+  else if (score >= 26) path = 'guided';
+
+  return {
+    score,
+    path,
+    component_scores: {
+      deadline_response: deadlineScore,
+      learning_timeline: timelineScore,
+      persistence_level: persistenceScore,
+      career_importance: importanceScore,
+      usage_context: contextScore,
+      motivation_type: motivationScore,
+      ambiguity_tolerance: ambiguityScore,
+      weekly_study_time: studyTimeScore,
+      anxiety_level: anxietyScore,
+      learning_duration: durationScore,
+      learning_autonomy: autonomyScore,
+      error_attitude: errorScore,
+      reading_strategy: readingStratScore,
+      feedback_preference: feedbackScore,
+      confidence_overall: confidenceScore,
+    },
+    overrides_applied: overrides,
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -174,6 +390,59 @@ serve(async (req) => {
           'I prefer to self-correct with hints',
         ],
         mapping: { '0': 'immediate', '1': 'delayed_discussion', '2': 'major_only', '3': 'written_review', '4': 'self_correct' },
+      },
+      // 5 new behavioral questions for Learning Path Score
+      usage_context: {
+        questionId: 'wt_q3b',
+        options: [
+          'At work - emails, meetings, calls',
+          'Traveling - airports, hotels, restaurants',
+          'Online - social media, forums, gaming',
+          'With friends/family who speak English',
+          'Consuming content - movies, books, podcasts',
+          'In my professional field (medical, legal, IT, etc.)',
+        ],
+        mapping: { '0': 'work_formal', '1': 'travel', '2': 'online_informal', '3': 'social', '4': 'content_consumption', '5': 'professional_field' },
+      },
+      deadline_response: {
+        questionId: 'wt_q5b',
+        options: [
+          "I'd panic at first, but then prepare intensively every day until the meeting",
+          "I'd feel nervous but would ask a colleague for help and practice the key phrases",
+          "I'd ask to postpone or let someone else handle it",
+          "I'd feel fairly confident - I'd just review some vocabulary beforehand",
+        ],
+        mapping: { '0': 'intense_preparation', '1': 'pragmatic_coping', '2': 'avoidance', '3': 'confident' },
+      },
+      persistence_level: {
+        questionId: 'wt_q13b',
+        options: [
+          'I stuck with it and got pretty good at it',
+          'I practiced for a while but eventually moved on to something else',
+          'I started enthusiastically but lost motivation after a few weeks',
+          "I'm still learning it - I haven't given up yet",
+        ],
+        mapping: { '0': 'high', '1': 'medium', '2': 'low', '3': 'high' },
+      },
+      career_english_importance: {
+        questionId: 'wt_q17b',
+        options: [
+          "This is exactly why I'm learning English - I need to be ready for opportunities like this",
+          "I'd apply anyway and hope my English improves by the time they interview me",
+          "I'd skip it - I'm not learning English for work reasons",
+          "I'd apply and highlight my other strengths to compensate for my English",
+        ],
+        mapping: { '0': 'critical', '1': 'high', '2': 'not_career', '3': 'moderate' },
+      },
+      learning_timeline: {
+        questionId: 'wt_q41b',
+        options: [
+          'I have a specific event coming up soon where I need English (trip, interview, presentation)',
+          'I need English regularly for my work/life, and I want to get noticeably better in the next few months',
+          "I'm learning English for the long term - there's no rush, but I want steady progress",
+          "English is something I enjoy learning - it's more about personal growth than a specific need",
+        ],
+        mapping: { '0': 'urgent_specific', '1': 'ongoing_important', '2': 'long_term_steady', '3': 'hobby_growth' },
       },
     };
 
@@ -665,7 +934,25 @@ ${openAnswers}`
       }
     }
 
-    return new Response(JSON.stringify({ success: true, estimated_level: estimatedLevel, ai_summary: aiSummary }), {
+    // --- Learning Path Score calculation (deterministic, no AI needed) ---
+    let learningPathResult: any = null;
+    try {
+      learningPathResult = calculateLearningPathScore(traits, answers, questions);
+      console.log(`[process-welcome-test] Learning Path Score: ${learningPathResult.score} (${learningPathResult.path}), overrides: ${learningPathResult.overrides_applied.join(', ') || 'none'}`);
+
+      // Save to raw_answers in learning profile
+      const existingRaw = answers || {};
+      existingRaw.learning_path = learningPathResult;
+      await supabase
+        .from('student_learning_profiles')
+        .update({ raw_answers: existingRaw })
+        .eq('student_id', student_id)
+        .eq('teacher_id', teacher_id);
+    } catch (lpError) {
+      console.error('[process-welcome-test] Error calculating Learning Path Score:', lpError);
+    }
+
+    return new Response(JSON.stringify({ success: true, estimated_level: estimatedLevel, ai_summary: aiSummary, learning_path: learningPathResult }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

@@ -5,7 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - DSLM Fixes + Speaking UX + Cleanup:**
+**Latest Update (February 2026) - Welcome Test Learning Path Score:**
+- **5 new behavioral questions** (Q3b, Q5b, Q13b, Q17b, Q41b) added to Welcome Test for Learning Path detection
+- **LearningPathResult type** in `src/types/welcomeTest.ts` with 15 component scores and override tracking
+- **calculateLearningPathScore()** deterministic algorithm in `process-welcome-test` edge function: 15 weighted signals (5 new + 10 existing), 5 override rules, outputs 0-100 score mapped to 4 paths (comfort/guided/accelerated/target)
+- Score saved to `raw_answers.learning_path` in `student_learning_profiles`
+
+**Previous Update (February 2026) - DSLM Fixes + Speaking UX + Cleanup:**
 - **NanoSkillBadge label fix**: `getBadgeLabel()` now recognizes 30+ grammar topics (present_simple, comparatives, superlatives, etc.) and vocabulary topics, returning proper `gr`/`vo` labels instead of fallback `ns`
 - **Discussion speaking**: `HomeworkExerciseRenderer` now includes `HomeworkSpeakingRecorder` in `discussion` exercise type for audio recording
 - **Minimalist recorder UI**: `HomeworkSpeakingRecorder` completely redesigned to inline flex layout - no borders, no waveform animation, single-line controls for all states (idle/recording/recorded/done)

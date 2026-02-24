@@ -3,7 +3,14 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Feb 2026) - DSLM Layer B v5 Phase 2 ✅
+### Recently Completed (Feb 2026) - Welcome Test Learning Path Score ✅
+- 5 new behavioral questions (Q3b, Q5b, Q13b, Q17b, Q41b) woven into existing sections
+- calculateLearningPathScore() deterministic algorithm: 15 signals, 5 overrides, 0-100 score
+- LearningPathResult type with component_scores and overrides_applied
+- Score saved to raw_answers.learning_path in student_learning_profiles
+- Paths: comfort (0-25), guided (26-50), accelerated (51-75), target (76-100)
+
+### Previously Completed (Feb 2026) - DSLM Layer B v5 Phase 2 ✅
 - Flashcard trigger generates `ns.[CEFR].vocabulary.definition_[word]` (CEFR from student level)
 - back_type mastery modifier: translation=0.85x, definition=1.0x
 - Backfilled all flashcard:UUID metrics to new ns.* format

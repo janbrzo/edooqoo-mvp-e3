@@ -142,6 +142,38 @@ export interface WelcomeTestAnswerPayload {
   detected_traits?: Record<string, string>;
 }
 
+// =====================================================
+// LEARNING PATH RESULT (calculated from Welcome Test)
+// Stored in raw_answers.learning_path in student_learning_profiles
+// =====================================================
+
+export type LearningPathType = 'comfort' | 'guided' | 'accelerated' | 'target';
+
+export interface LearningPathResult {
+  score: number;                    // 0-100
+  path: LearningPathType;
+  component_scores: {
+    // 5 new behavioral questions (50% weight)
+    deadline_response: number;
+    learning_timeline: number;
+    persistence_level: number;
+    career_importance: number;
+    usage_context: number;
+    // 10 existing questions (50% weight)
+    motivation_type: number;
+    ambiguity_tolerance: number;
+    weekly_study_time: number;
+    anxiety_level: number;
+    learning_duration: number;
+    learning_autonomy: number;
+    error_attitude: number;
+    reading_strategy: number;
+    feedback_preference: number;
+    confidence_overall: number;
+  };
+  overrides_applied: string[];      // e.g. ['urgent_critical_override']
+}
+
 export interface WelcomeTestCompletedPayload {
   test_type: 'welcome';
   total_questions: number;

@@ -6,7 +6,13 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-23) - DSLM Fixes + Speaking UX + Cleanup:**
+**Ostatnia naprawa (2026-02-24) - Welcome Test Learning Path Score:**
+- ✅ **5 nowych pytań behawioralnych**: Q3b (usage_context), Q5b (deadline_response), Q13b (persistence_level), Q17b (career_english_importance), Q41b (learning_timeline)
+- ✅ **Algorytm Learning Path Score**: 15 ważonych sygnałów (5 nowych + 10 istniejących), 5 reguł nadrzędnych, wynik 0-100 → 4 ścieżki (comfort/guided/accelerated/target)
+- ✅ **LearningPathResult type**: Nowy interfejs z component_scores i overrides_applied
+- ✅ **Zapis w raw_answers.learning_path**: Deterministyczne obliczanie w process-welcome-test edge function
+
+**Poprzednia naprawa (2026-02-23) - DSLM Fixes + Speaking UX + Cleanup:**
 - ✅ **NanoSkillBadge labels**: getBadgeLabel() rozpoznaje 30+ tematów gramatycznych (present_simple, comparatives, superlatives itp.) - wyświetla `gr`/`vo` zamiast `ns`
 - ✅ **Discussion speaking**: Dodano HomeworkSpeakingRecorder do zadań Discussion w homework/shared worksheet
 - ✅ **Minimalistyczny recorder**: UI przebudowany na inline flex - brak ramek, brak animacji waveform, jednoliniowe kontrolki
