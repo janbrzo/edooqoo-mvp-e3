@@ -4,7 +4,9 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **Welcome Test Learning Path Score** — 5 new behavioral questions detect student's learning timeline, persistence, deadline response, career importance, and usage context. Deterministic algorithm calculates Learning Path Score (0-100) from 15 signals, mapping to 4 paths: Comfort, Guided, Accelerated, Target.
+**Latest Update:** **5 Critical Fixes** — SharedWorksheet discussion questions now have audio recorder + auto-resize textarea. Recorder positioned inline (left of text input) in all single-column exercises. 30-second auto-save for unsaved recordings + flush on homework submit. Admin dashboard filters anonymous accounts with cleanup button. DSLM captures all nano-skills (primary+writing+speaking) after AI evaluation.
+
+**Previous Update:** **Welcome Test Learning Path Score** — 5 new behavioral questions detect student's learning timeline, persistence, deadline response, career importance, and usage context. Deterministic algorithm calculates Learning Path Score (0-100) from 15 signals, mapping to 4 paths: Comfort, Guided, Accelerated, Target.
 
 **Previous Update:** **DSLM + UX Phase 3** — NanoSkill badges now show in all exercise types including dual badges (reading+writing). [V]/[G] focus tags visible on worksheet. "Add Exercise" button in Live Session (max 12 exercises). Delete worksheets from Overview. Period+CEFR filters side-by-side. Student switcher scroll fixed with blue icon. Toolbar labels shortened in Live Session.
 

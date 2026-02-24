@@ -191,35 +191,36 @@ const ExerciseAnswerQuestions: React.FC<ExerciseAnswerQuestionsProps> = ({
 
               {/* Interactive answer input - PROBLEM 3 FIX: Auto-resize textarea */}
               {isInteractive && (
-                <div className="ml-4 mt-1">
-                  <AutoResizeTextarea
-                    value={studentAnswer || ''}
-                    onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
-                    placeholder="Your answer..."
-                    className={`min-h-[40px] ${showAsCorrect ? 'border-green-500' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-                    rows={1}
-                    disabled={disabled}
-                  />
-                  {/* AI Evaluation badge per question */}
-                  {aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet) && (
-                    <AiEvaluationBadge 
-                      evaluation={aiEvaluations[qIndex]} 
-                      showFeedback={true}
-                    />
-                  )}
-                  {/* Speaking recorder */}
+                <div className="ml-4 mt-1 flex items-start gap-2">
                   {onAudioAnswerChange && (
                     <HomeworkSpeakingRecorder
                       existingAudioUrl={audioAnswers?.[qIndex]}
                       onAudioSaved={(url) => onAudioAnswerChange(qIndex, url)}
                       disabled={disabled}
+                      registryKey={`aq_${qIndex}`}
                     />
                   )}
-                  {showCorrectAnswers && correctAnswer && (
-                    <p className="text-green-600 text-sm mt-1 italic">
-                      Suggested answer: {correctAnswer}
-                    </p>
-                  )}
+                  <div className="flex-1">
+                    <AutoResizeTextarea
+                      value={studentAnswer || ''}
+                      onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                      placeholder="Your answer..."
+                      className={`min-h-[40px] ${showAsCorrect ? 'border-green-500' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      rows={1}
+                      disabled={disabled}
+                    />
+                    {aiEvaluations?.[qIndex] && (disabled || isSharedWorksheet) && (
+                      <AiEvaluationBadge 
+                        evaluation={aiEvaluations[qIndex]} 
+                        showFeedback={true}
+                      />
+                    )}
+                    {showCorrectAnswers && correctAnswer && (
+                      <p className="text-green-600 text-sm mt-1 italic">
+                        Suggested answer: {correctAnswer}
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
               {/* AI Evaluation badge for teacher/live-session view (outside interactive block) */}

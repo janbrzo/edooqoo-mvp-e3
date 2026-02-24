@@ -133,25 +133,26 @@ const ExerciseParaphrasing: React.FC<ExerciseParaphrasingProps> = ({
 
                 {/* PROBLEM 3 FIX: Auto-resize textarea */}
                 {isInteractive && (
-                  <>
-                    <AutoResizeTextarea
-                      value={studentAnswer}
-                      onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
-                      placeholder="Write your paraphrased sentence..."
-                      className={`min-h-[40px] ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-                      rows={1}
-                      disabled={disabled}
-                    />
-                    {/* Speaking recorder */}
+                  <div className="flex items-start gap-2">
                     {onAudioAnswerChange && (
                       <HomeworkSpeakingRecorder
                         existingAudioUrl={audioAnswers?.[sIndex]}
                         onAudioSaved={(url) => onAudioAnswerChange(sIndex, url)}
                         disabled={disabled}
+                        registryKey={`par_${sIndex}`}
                       />
                     )}
-                    {/* AI Evaluation badge moved below suggested answer section */}
-                  </>
+                    <div className="flex-1">
+                      <AutoResizeTextarea
+                        value={studentAnswer}
+                        onChange={(e) => onAnswerChange?.(sIndex, e.target.value)}
+                        placeholder="Write your paraphrased sentence..."
+                        className={`min-h-[40px] ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''} ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        rows={1}
+                        disabled={disabled}
+                      />
+                    </div>
+                  </div>
                 )}
                 {(viewMode === 'teacher' || showCorrectAnswers) && (
                   <div className="flex items-center gap-2 flex-wrap">

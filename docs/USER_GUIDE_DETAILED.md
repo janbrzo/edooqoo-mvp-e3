@@ -14,7 +14,14 @@
 
 ## Getting Started
 
-**Latest Improvements (Welcome Test Learning Path Score):**
+**Latest Improvements (5 Critical Fixes):**
+- **SharedWorksheet discussion recorder**: Students can now record audio answers for discussion questions in shared worksheets (was text-only)
+- **Inline recorder layout**: Audio recorder appears to the left of the text input for better space usage in single-column exercises
+- **Auto-save recordings**: Unsaved recordings auto-save after 30 seconds; all pending recordings are flushed before homework submission
+- **Admin cleanup**: Admin dashboard hides anonymous accounts and provides a one-click cleanup button
+- **DSLM nano-skill capture**: AI evaluations now properly capture all nano-skills (primary + writing + speaking)
+
+**Previous Improvements (Welcome Test Learning Path Score):**
 - **5 behavioral questions**: New scenario-based questions (Q3b, Q5b, Q13b, Q17b, Q41b) detect deadline urgency, persistence, career importance, usage context, and learning timeline
 - **Learning Path Score**: Deterministic 0-100 score from 15 signals determines optimal learning path (Comfort/Guided/Accelerated/Target)
 - **Override rules**: Urgent deadline + critical career = always Target Path; lazy + hobby = always Comfort Path

@@ -3,7 +3,14 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Feb 2026) - Welcome Test Learning Path Score ✅
+### Recently Completed (Feb 2026) - 5 Critical Fixes ✅
+- SharedWorksheet discussion recorder (HomeworkSpeakingRecorder + AutoResizeTextarea)
+- Recorder inline layout in 6 single-column exercise components (left of textarea)
+- Auto-save recordings: registryKey, global registry, 30s countdown, flush on submit
+- Admin dashboard: filter anonymous accounts, cleanup banner + button, config.toml anon=false
+- DSLM buildItemEvaluations fix: captures all nano-skills (primary+writing+speaking) after AI eval
+
+### Previously Completed (Feb 2026) - Welcome Test Learning Path Score ✅
 - 5 new behavioral questions (Q3b, Q5b, Q13b, Q17b, Q41b) woven into existing sections
 - calculateLearningPathScore() deterministic algorithm: 15 signals, 5 overrides, 0-100 score
 - LearningPathResult type with component_scores and overrides_applied

@@ -90,27 +90,28 @@ const ExerciseListeningComprehension: React.FC<ExerciseListeningComprehensionPro
                 </div>
               </div>
               {isInteractive && (
-                <>
-                  <Input
-                    value={studentAnswer}
-                    onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
-                    placeholder="Type your answer..."
-                    disabled={disabled}
-                    className={`h-10 
-                      ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
-                      ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
-                    `}
-                  />
-                  {/* Speaking recorder */}
+                <div className="flex items-start gap-2">
                   {onAudioAnswerChange && (
                     <HomeworkSpeakingRecorder
                       existingAudioUrl={audioAnswers?.[qIndex]}
                       onAudioSaved={(url) => onAudioAnswerChange(qIndex, url)}
                       disabled={disabled}
+                      registryKey={`lc_${qIndex}`}
                     />
                   )}
-                  {/* AI Evaluation badge moved below suggested answer section */}
-                </>
+                  <div className="flex-1">
+                    <Input
+                      value={studentAnswer}
+                      onChange={(e) => onAnswerChange?.(qIndex, e.target.value)}
+                      placeholder="Type your answer..."
+                      disabled={disabled}
+                      className={`h-10 
+                        ${isEmpty ? 'bg-red-100 border-2 border-red-400' : ''}
+                        ${disabled ? 'bg-muted cursor-not-allowed opacity-70' : ''}
+                      `}
+                    />
+                  </div>
+                </div>
               )}
               {(viewMode === 'teacher' || showCorrectAnswers) && (
                 <div className="flex items-center gap-2 flex-wrap">

@@ -28,6 +28,8 @@ import MediaSection from '../worksheet/MediaSection';
 import { deepFixTextObjects, safeGetText } from '../../utils/textObjectFixer';
 import { getIconComponent } from '../../utils/iconUtils';
 import { getOfficialExerciseName } from '../../utils/exerciseProcessor';
+import { HomeworkSpeakingRecorder } from '@/components/homework/HomeworkSpeakingRecorder';
+import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 
 interface SharedWorksheetContentProps {
   worksheet: {
@@ -456,17 +458,28 @@ const SharedWorksheetContent: React.FC<SharedWorksheetContentProps> = ({
                           {qIndex + 1}. {safeGetText(question)}
                         </p>
                         {effectiveInteractive && (
-                          <input
-                            type="text"
-                            value={studentAnswer}
-                            onChange={(e) => onAnswerChange?.(index, exercise.type, qIndex, e.target.value)}
-                            placeholder="Share your thoughts..."
-                            className="w-full h-10 border rounded px-3"
-                          />
-                        )}
-                        {/* AI Evaluation Badge for discussion questions */}
-                        {aiEvals?.[qIndex] && (
-                          <AiEvaluationBadge evaluation={aiEvals[qIndex]} />
+                          <div className="flex items-start gap-2">
+                            {onAudioAnswerChange && (
+                              <HomeworkSpeakingRecorder
+                                existingAudioUrl={audioAnswers?.[index]?.[qIndex]}
+                                onAudioSaved={(url) => onAudioAnswerChange(index, qIndex, url)}
+                                registryKey={`sw_${index}_${qIndex}`}
+                              />
+                            )}
+                            <div className="flex-1">
+                              <AutoResizeTextarea
+                                value={studentAnswer}
+                                onChange={(e) => onAnswerChange?.(index, exercise.type, qIndex, e.target.value)}
+                                placeholder="Share your thoughts..."
+                                className="w-full min-h-[40px]"
+                                rows={1}
+                              />
+                              {/* AI Evaluation Badge for discussion questions */}
+                              {aiEvals?.[qIndex] && (
+                                <AiEvaluationBadge evaluation={aiEvals[qIndex]} />
+                              )}
+                            </div>
+                          </div>
                         )}
                       </div>
                     );

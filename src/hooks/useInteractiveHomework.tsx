@@ -13,7 +13,7 @@ import {
   OPEN_ENDED_EXERCISE_TYPES,
   ItemEvaluation 
 } from '@/utils/masteryCalculator';
-import { safeGetNanoSkill } from '@/utils/textObjectFixer';
+
 
 interface UseInteractiveHomeworkProps {
   homeworkId: string;
@@ -270,6 +270,14 @@ export const useInteractiveHomework = ({
     try {
       setIsSaving(true);
 
+      // Flush pending recordings before submit
+      const pendingMap = (window as any).__pendingSpeakingRecordings as Map<string, { save: () => Promise<void> }> | undefined;
+      if (pendingMap && pendingMap.size > 0) {
+        console.log(`[submitHomework] Flushing ${pendingMap.size} pending recordings...`);
+        await Promise.all(Array.from(pendingMap.values()).map(e => e.save().catch(console.error)));
+        await new Promise(r => setTimeout(r, 500));
+      }
+
       const { error } = await supabase.rpc('submit_homework_answers', {
         p_homework_id: homeworkId,
         p_student_email: studentEmail
@@ -442,29 +450,24 @@ export const useInteractiveHomework = ({
                 const exerciseData = exercises[exIdx];
                 const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || exerciseData?.items || [];
                 
-                // PROBLEM 2B FIX: Build lookup of items with nano_skill for proper mapping
-                const itemsWithNanoSkill = questionItems
-                  .map((item: any, idx: number) => ({ item, idx, nanoSkill: safeGetNanoSkill(item) }))
-                  .filter((x: any) => x.nanoSkill !== null);
-                
-                // Map AI results back to original nano_skills using position matching
-                const itemEvals: ItemEvaluation[] = evalData.question_evaluations.map((qEval: any, aiIdx: number) => {
-                  // Try to find by question_index first
-                  let matchedItem = itemsWithNanoSkill.find((x: any) => x.idx === qEval.question_index);
-                  
-                  // Fallback: if not found, use position in AI results array
-                  if (!matchedItem && aiIdx < itemsWithNanoSkill.length) {
-                    matchedItem = itemsWithNanoSkill[aiIdx];
-                  }
-                  
-                  return {
-                    question_index: matchedItem?.idx ?? qEval.question_index,
-                    name: matchedItem?.nanoSkill?.name || `question_${qEval.question_index}`,
-                    reason: matchedItem?.nanoSkill?.reason || '',
-                    mastery: Math.round(qEval.quality_score * 100), // 0-1 → 0-100
-                    hasValue: true
-                  };
-                });
+                // DSLM FIX: Use buildItemEvaluations to capture ALL nano_skills (primary + writing + speaking)
+                const aiEvalLookup: Record<number, { quality_score?: number; writing_score?: number; speaking_score?: number }> = {};
+                if (evalData.question_evaluations) {
+                  evalData.question_evaluations.forEach((qEval: any) => {
+                    const qIdx = qEval.question_index ?? 0;
+                    aiEvalLookup[qIdx] = {
+                      quality_score: qEval.quality_score,
+                      writing_score: qEval.writing_score,
+                      speaking_score: qEval.speaking_score,
+                    };
+                  });
+                }
+                const studentAnswersForThisExercise = answers[exIdx] || {};
+                const itemEvals = buildItemEvaluations(
+                  exerciseData, studentAnswersForThisExercise as Record<string | number, any>, 
+                  savedAnswers.find((a: any) => a.exercise_index === exIdx)?.exercise_type || '',
+                  aiEvalLookup, audioAnswers[exIdx] || null
+                ) || [];
                 
                 const overallMastery = itemEvals.length > 0
                   ? Math.round(itemEvals.reduce((sum, e) => sum + e.mastery, 0) / itemEvals.length)
