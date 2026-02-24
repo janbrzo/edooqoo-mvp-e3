@@ -1,361 +1,314 @@
 
 
-# Plan wdrozenia - skorygowany (Problem 5: Welcome Test)
+# Plan wdrozenia - 5 niezaimplementowanych problemow
 
-**UWAGA: Pozostale problemy (1-4) pozostaja BEZ ZMIAN wzgledem poprzedniego planu. Ten dokument opisuje TYLKO skorygowany Problem 5.**
+## Podsumowanie analizy stanu
 
----
+Przeanalizowalem caly kod. Oto co zostalo zrobione, a co NIE:
 
-## Problem 5: Welcome Test - algorytm Learning Path Score z 15 pytaniami
-
-### Zasada projektowa
-
-Student NIE jest pytany wprost o preferencje sciezki nauki. Zamiast tego stosujemy pytania scenariuszowe/behawioralne (5 nowych) PLUS wyciagamy ukryty sygnal z 10 istniejacych pytan. Lacznie 15 zrodel danych zasila algorytm - to daje statystycznie solidna baze decyzyjna.
-
----
-
-### CZESC A: 5 nowych pytan behawioralnych (bez zmian wzgledem poprzedniego planu)
-
-Pytania Q3b, Q5b, Q13b, Q17b, Q41b - dokladna specyfikacja jest identyczna jak w poprzednim planie. Wplezione w sekcje about_you, experience, scenarios, goals.
+| Problem | Status | Co brakuje |
+|---|---|---|
+| 1. Discussion speaking w SharedWorksheet | NIE ZROBIONE | `SharedWorksheetContent.tsx` linia 459 nadal uzywa `<input type="text">`, brak importu `HomeworkSpeakingRecorder` |
+| 2.1 Recorder inline (po lewej) | NIE ZROBIONE | Recorder nadal jest POD textarea we wszystkich komponentach (np. `ExerciseAnswerQuestions.tsx` linia 194, `ExerciseDescribe.tsx` linia 119) |
+| 2.2 Auto-save nagran | NIE ZROBIONE | Brak globalnego rejestru pending, brak flush w `submitHomework`, brak 30s timer |
+| 3. Admin - cleanup kont + filtr | CZESCIOWO | Edge functions SA deployed (admin-impersonate zwraca 401 nie 404 - dziala!). ALE: 1469 kont bez maila nadal w bazie, `config.toml` linia 16 nadal `enable_anonymous_sign_ups = true`, AdminDashboardPage NIE filtruje kont bez emaila, brak przycisku cleanup |
+| 4. DSLM fix buildItemEvaluations | NIE ZROBIONE | `useInteractiveHomework.tsx` linia 446 nadal uzywa `safeGetNanoSkill()` (1 skill) zamiast `buildItemEvaluations()` (wszystkie skille) |
 
 ---
 
-### CZESC B: 10 istniejacych pytan jako dodatkowe zrodla sygnalu
+## Problem 1: Discussion w SharedWorksheet - brak recordera
 
-Nie zmieniamy ZADNEGO istniejacego pytania. Tylko ODCZYTUJEMY ich odpowiedzi w algorytmie.
+**Plik:** `src/components/shared/SharedWorksheetContent.tsx`
 
-#### Mapowanie istniejacych pytan na zmienne algorytmu:
-
-**1. Q3 - motivation_type (juz ma detected_trait)**
-```text
-Sygnal: instrumental = cel zawodowy/egzaminacyjny = wyzszy drive
-Wartosc:
-  instrumental = 70
-  integrative = 30
-  mixed = 50
-Waga w algorytmie: 0.06
+**Zmiana 1:** Dodac import na gorze (po linii 28):
+```
+import { HomeworkSpeakingRecorder } from '@/components/homework/HomeworkSpeakingRecorder';
+import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 ```
 
-**2. Q4 - ambiguity_tolerance (juz ma detected_trait)**
-```text
-Sygnal: wysoka tolerancja = zniesie trudniejsza sciezke, nieznajosc nie paralizuje
-Wartosc:
-  high = 75
-  medium = 45
-  low = 15
-Waga w algorytmie: 0.06
+**Zmiana 2:** Zamienic linie 458-466 (blok discussion interactive):
 ```
+Z:
+  <input type="text" value={studentAnswer}
+    onChange={(e) => onAnswerChange?.(index, exercise.type, qIndex, e.target.value)}
+    placeholder="Share your thoughts..." className="w-full h-10 border rounded px-3" />
 
-**3. Q5 - weekly_study_time (juz ma detected_trait)**
-```text
-Sygnal: wiecej czasu = wiecej mozliwosci na przyspieszona sciezke
-Wartosc:
-  none = 10 (brak czasu = comfort path obowiazkowy)
-  15_30_min = 25
-  1_hour = 45
-  2_3_hours = 70
-  3_plus_hours = 90
-Waga w algorytmie: 0.07
-```
-
-**4. Q7 - anxiety_level (juz ma detected_trait)**
-```text
-Sygnal: wysoki lek = potrzebuje bezpiecznej, przewidywalnej sciezki
-Wartosc (ODWROTNA - wysoki lek = niski score):
-  low = 70
-  medium = 40
-  high = 10
-Waga w algorytmie: 0.06
-```
-
-**5. Q9 - learning_duration (NIE ma detected_trait - trzeba odczytac z odpowiedzi)**
-```text
-Sygnal: dluga nauka bez efektu = fosylizacja bledow, potrzeba systematycznej sciezki.
-Krotka nauka = swiezy umysl, latwiej przyspieszyc.
-Odczyt: index odpowiedzi (0-4)
-Wartosc:
-  0 (< 1 rok) = 70 (swiezy, mozna przyspieszyc)
-  1 (1-3 lata) = 60
-  2 (3-5 lat) = 45
-  3 (5-10 lat) = 30 (prawdopodobna fosylizacja)
-  4 (10+ lat) = 15 (prawie pewna fosylizacja, trzeba systematycznie)
-Waga w algorytmie: 0.04
-```
-
-**6. Q10 - learning_sources (multi-select, NIE ma detected_trait)**
-```text
-Sygnal: self-study/work = autonomia = wyzszy grit.
-Tylko school = pasywny = potrzebuje prowadzenia.
-Odczyt: tablica wybranych indeksow
-Logika: jezeli zawiera "Self-study" (index 4) LUB "Through work" (index 6) = autonomy_score = 70
-         jezeli zawiera "Living/working abroad" (index 5) = 80
-         jezeli TYLKO "School" (index 0) = 20
-         inaczej = 40
-Waga w algorytmie: 0.04
-```
-
-**7. Q14 - error_attitude (juz ma detected_trait)**
-```text
-Sygnal: comfortable z bledami = nie boi sie trudniejszej sciezki
-Wartosc:
-  comfortable = 75
-  cautious = 40
-  avoidant = 10
-Waga w algorytmie: 0.05
-```
-
-**8. Q15 - reading_strategy (NIE ma detected_trait)**
-```text
-Sygnal: "guess from context" = wysoka tolerancja niepewnosci = lepiej zniesie niestandardowa sciezke
-Odczyt: index odpowiedzi (0-4)
-Wartosc:
-  0 (read carefully, look up) = 50 (systematyczny ale wytrwaly)
-  1 (ask to clarify) = 55 (aktywny, nie unika)
-  2 (guess from context) = 75 (wysoka tolerancja)
-  3 (struggle, translate) = 25 (potrzebuje wsparcia)
-  4 (use ChatGPT) = 35 (unika, ale pragmatyczny)
-Waga w algorytmie: 0.04
-```
-
-**9. Q42 - feedback_preference (juz ma detected_trait)**
-```text
-Sygnal: "self-correct" = wysoka autonomia, "immediate" = chce szybko poprawiac = drive
-Wartosc:
-  immediate = 65 (wysoki drive do poprawy)
-  delayed_discussion = 45
-  major_only = 35 (nie zalezy mu na perfekcji)
-  written_review = 50
-  self_correct = 70 (wysoka autonomia)
-Waga w algorytmie: 0.04
-```
-
-**10. Q44 - confidence_matrix (self_assessment_matrix, NIE ma detected_trait)**
-```text
-Sygnal: srednia pewnosc siebie we wszystkich 6 obszarach. Wysoka pewnosc = mozna stawiac wieksze wyzwania.
-Odczyt: srednia arytmetyczna z 6 wartosci (1-5), przeskalowana na 0-100
-Logika: avg = srednia(speaking_strangers, writing_emails, movies, news, presentations, small_talk)
-        confidence_score = (avg - 1) * 25   // 1->0, 2->25, 3->50, 4->75, 5->100
-Waga w algorytmie: 0.04
+Na:
+  <div className="flex items-start gap-2">
+    {onAudioAnswerChange && (
+      <HomeworkSpeakingRecorder
+        existingAudioUrl={audioAnswers?.[index]?.[qIndex]}
+        onAudioSaved={(url) => onAudioAnswerChange(index, qIndex, url)}
+      />
+    )}
+    <div className="flex-1">
+      <AutoResizeTextarea
+        value={studentAnswer}
+        onChange={(e) => onAnswerChange?.(index, exercise.type, qIndex, e.target.value)}
+        placeholder="Share your thoughts..."
+        className="w-full min-h-[40px]" rows={1}
+      />
+    </div>
+  </div>
 ```
 
 ---
 
-### CZESC C: Pelny algorytm Learning Path Score
+## Problem 2.1: Recorder po lewej stronie textarea (zamiast pod)
 
-**Zmienne wejsciowe z 5 nowych pytan (laczna waga: 0.50):**
+Dotyczy 5 komponentow jednokolumnowych. W kazdym zamieniamy uklad z "recorder pod textarea" na "recorder po lewej w flex row":
 
-```text
-// Z Q5b - deadline_response (waga 0.10)
-deadline_score:
-  intense_preparation = 80
-  pragmatic_coping = 60
-  avoidance = 20
-  confident = 50
+**A. `ExerciseAnswerQuestions.tsx` linie 193-223:**
+Zamienic `<div className="ml-4 mt-1">` na `<div className="ml-4 mt-1 flex items-start gap-2">`, przeniesc `HomeworkSpeakingRecorder` PRZED `<div className="flex-1">` z textarea i badges.
 
-// Z Q41b - learning_timeline (waga 0.15)
-timeline_score:
-  urgent_specific = 95
-  ongoing_important = 60
-  long_term_steady = 25
-  hobby_growth = 10
+**B. `ExerciseDescribe.tsx` linie 118-143:**
+Identyczna zmiana.
 
-// Z Q13b - persistence_level (waga 0.10)
-persistence_score:
-  high = 80
-  medium = 50
-  low = 20
+**C. `HomeworkExerciseRenderer.tsx` linie 228-253 (discussion):**
+Owinac `AutoResizeTextarea` + `AiEvaluationBadge` + `HomeworkSpeakingRecorder` we `flex items-start gap-2`, recorder po lewej.
 
-// Z Q17b - career_english_importance (waga 0.10)
-importance_score:
-  critical = 90
-  high = 70
-  moderate = 40
-  not_career = 15
+**D. `ExerciseListeningComprehension.tsx`** - analogicznie tam gdzie jest recorder.
 
-// Z Q3b - usage_context (waga 0.05)
-context_score:
-  work_formal = 70 (formalny kontekst = wyzsze wymagania = wyzszy drive)
-  professional_field = 80 (ESP = silna specjalizacja)
-  travel = 40
-  social = 35
-  online_informal = 30
-  content_consumption = 25
-  // Jezeli multi-select: wez najwyzsza wartosc
+**E. `ExerciseParaphrasing.tsx`** - analogicznie.
+
+**F. `ExerciseAnswerQuestionsAudio.tsx`** - analogicznie.
+
+**WYJATKI BEZ ZMIAN:** `ExerciseReading.tsx`, `ExerciseDialogue.tsx` (2 kolumny).
+
+Wzorzec zmiany (identyczny we wszystkich):
+```
+Z:
+<div className="ml-4 mt-1">
+  <AutoResizeTextarea ... />
+  {aiEval badge}
+  {onAudioAnswerChange && (<HomeworkSpeakingRecorder ... />)}
+</div>
+
+Na:
+<div className="ml-4 mt-1 flex items-start gap-2">
+  {onAudioAnswerChange && (<HomeworkSpeakingRecorder ... />)}
+  <div className="flex-1">
+    <AutoResizeTextarea ... />
+    {aiEval badge}
+  </div>
+</div>
 ```
 
-**Zmienne wejsciowe z 10 istniejacych pytan (laczna waga: 0.50):**
+---
 
-```text
-// Q3  - motivation_type         waga 0.06
-// Q4  - ambiguity_tolerance     waga 0.06
-// Q5  - weekly_study_time       waga 0.07
-// Q7  - anxiety_level           waga 0.06
-// Q9  - learning_duration       waga 0.04
-// Q10 - learning_autonomy       waga 0.04
-// Q14 - error_attitude          waga 0.05
-// Q15 - reading_strategy        waga 0.04
-// Q42 - feedback_preference     waga 0.04
-// Q44 - confidence_overall      waga 0.04
-```
+## Problem 2.2: Auto-save nagran
 
-**Wzor obliczania:**
+**A. `HomeworkSpeakingRecorder.tsx` - dodac `registryKey` prop + globalny rejestr + 30s auto-save:**
 
-```text
-learning_path_score = (
-  // 5 nowych pytan (50%)
-  deadline_score     * 0.10 +
-  timeline_score     * 0.15 +
-  persistence_score  * 0.10 +
-  importance_score   * 0.10 +
-  context_score      * 0.05 +
+Dodac prop `registryKey?: string` do interfejsu.
 
-  // 10 istniejacych pytan (50%)
-  motivation_score        * 0.06 +
-  ambiguity_score         * 0.06 +
-  study_time_score        * 0.07 +
-  anxiety_score           * 0.06 +
-  learning_duration_score * 0.04 +
-  autonomy_score          * 0.04 +
-  error_attitude_score    * 0.05 +
-  reading_strategy_score  * 0.04 +
-  feedback_score          * 0.04 +
-  confidence_score        * 0.04
-)
-
-// Clamp do 0-100
-learning_path_score = Math.max(0, Math.min(100, learning_path_score))
-```
-
-**Suma wag: 0.10 + 0.15 + 0.10 + 0.10 + 0.05 + 0.06 + 0.06 + 0.07 + 0.06 + 0.04 + 0.04 + 0.05 + 0.04 + 0.04 + 0.04 = 1.00**
-
-**Reguly nadrzedne (overrides):**
-
-```text
-// Regula 1: Pilny deadline + krytyczny cel = ZAWSZE target path
-if (timeline === 'urgent_specific' && importance === 'critical') {
-  learning_path_score = Math.max(learning_path_score, 85);
-}
-
-// Regula 2: Leniwy + hobby = ZAWSZE comfort path
-if (persistence === 'low' && timeline === 'hobby_growth') {
-  learning_path_score = Math.min(learning_path_score, 25);
-}
-
-// Regula 3: Pilny deadline + leniwy = deadline podnosi motywacje
-if (timeline === 'urgent_specific' && persistence === 'low') {
-  learning_path_score = Math.max(learning_path_score, 70);
-}
-
-// Regula 4: Bardzo wysoki lek + brak czasu = bezwzgledny comfort
-if (anxiety === 'high' && study_time === 'none') {
-  learning_path_score = Math.min(learning_path_score, 20);
-}
-
-// Regula 5: Dluga nauka (10+ lat) + niski grit = fosylizacja, potrzeba resetu
-if (learning_duration_index === 4 && persistence === 'low') {
-  learning_path_score = Math.min(learning_path_score, 30);
+Na poczatku pliku (poza komponentem):
+```typescript
+if (typeof window !== 'undefined' && !(window as any).__pendingSpeakingRecordings) {
+  (window as any).__pendingSpeakingRecordings = new Map();
 }
 ```
 
-**Interpretacja wyniku:**
-
-```text
-  0-25:  "Comfort Path"     - Natural Order, wolne tempo, duzo powtorzen, kolejnosc wg badan
- 26-50:  "Guided Path"      - fundament tradycyjny, tematy dopasowane do kontekstu, umiarkowane tempo
- 51-75:  "Accelerated Path" - mozna przeskakiwac mniej istotne struktury, goal-relevant grammar, szybsze tempo
- 76-100: "Target Path"      - reverse engineering od celu, nauka chunkami, pomijanie nieistotnych struktur
+Dodac state:
+```typescript
+const [autoSaveCountdown, setAutoSaveCountdown] = useState<number | null>(null);
 ```
 
----
+Dodac useEffect po zmianie statusu na 'recorded':
+```typescript
+useEffect(() => {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  if (status === 'recorded' && blobRef.current) {
+    if (registryKey) {
+      (window as any).__pendingSpeakingRecordings?.set(registryKey, { blob: blobRef.current, save: uploadAndSave });
+    }
+    setAutoSaveCountdown(30);
+    timer = setTimeout(() => { if (status === 'recorded') uploadAndSave(); }, 30000);
+  }
+  if (status === 'done' || status === 'idle') {
+    if (registryKey) (window as any).__pendingSpeakingRecordings?.delete(registryKey);
+    setAutoSaveCountdown(null);
+  }
+  return () => { if (timer) clearTimeout(timer); };
+}, [status, registryKey, uploadAndSave]);
+```
 
-### CZESC D: Odpornosc algorytmu (Robustness)
+Countdown ticker:
+```typescript
+useEffect(() => {
+  if (autoSaveCountdown === null || autoSaveCountdown <= 0) return;
+  const t = setInterval(() => setAutoSaveCountdown(p => p !== null ? p - 1 : null), 1000);
+  return () => clearInterval(t);
+}, [autoSaveCountdown]);
+```
 
-**Co jesli student nie odpowie na wszystkie pytania?**
+W renderze (obok przyciskow 'recorded'):
+```
+{autoSaveCountdown !== null && autoSaveCountdown > 0 && (
+  <span className="text-xs text-muted-foreground">Auto-save {autoSaveCountdown}s</span>
+)}
+```
 
-Kazda zmienna ma fallback = 50 (neutralna wartosc). Jesli brakuje odpowiedzi na dane pytanie, uzywamy 50.
-
-**Co jesli student odpowie aspiracyjnie na nowe pytania?**
-
-Dlatego 50% wagi pochodzi z ISTNIEJACYCH pytan, ktore nie sa bezposrednio o sciezce nauki. Student nie wie, ze jego odpowiedz na "How do you react when you don't understand?" (Q4) wplywa na dobor sciezki. To sa pytania o naturalnych reakcjach, nie o preferencjach.
-
-Dodatkowo 3 z 5 nowych pytan sa scenariuszowe (Q5b, Q13b, Q17b) - pytaja "co ROBISZ" a nie "co CHCESZ". Tylko Q41b jest bardziej deklaratywna, ale pytanie jest sformulowane jako opis sytuacji ("Which is closest to yours?") a nie jako preferencja.
-
-**Walidacja krzyzowa:**
-
-Algorytm mozna walidowac porownujac deklarowany poziom pewnosci siebie (Q44) z rzeczywistymi wynikami gramatyki/vocab (Q20-Q35). Jesli student deklaruje wysoka pewnosc ale ma niskie wyniki = overestimates = confidence_score powinna byc obnizona. To jest juz realizowane przez istniejacy mechanizm `level_confidence` w process-welcome-test.
-
----
-
-### CZESC E: Implementacja techniczna
-
-**Plik 1: `src/data/welcomeTestQuestions.ts`**
-- Dodac 5 nowych pytan w odpowiednich sekcjach (identycznie jak w poprzednim planie)
-- Rozmieszczenie:
-  - Q3b po Q3 (about_you)
-  - Q5b po Q5 (about_you)
-  - Q13b po Q13 (experience)
-  - Q17b po Q17 (scenarios)
-  - Q41b po Q41 (goals)
-
-**Plik 2: `src/types/welcomeTest.ts`**
-- Dodac komentarz dokumentujacy learning_path_score w raw_answers
-- Dodac typ LearningPathResult:
-```text
-export interface LearningPathResult {
-  score: number;                    // 0-100
-  path: 'comfort' | 'guided' | 'accelerated' | 'target';
-  component_scores: {
-    deadline_response: number;
-    learning_timeline: number;
-    persistence_level: number;
-    career_importance: number;
-    usage_context: number;
-    motivation_type: number;
-    ambiguity_tolerance: number;
-    weekly_study_time: number;
-    anxiety_level: number;
-    learning_duration: number;
-    learning_autonomy: number;
-    error_attitude: number;
-    reading_strategy: number;
-    feedback_preference: number;
-    confidence_overall: number;
-  };
-  overrides_applied: string[];      // np. ['urgent_critical_override']
+**B. `useInteractiveHomework.tsx` - flush w submitHomework (linia 269, na poczatku):**
+```typescript
+// Flush pending recordings before submit
+const pendingMap = (window as any).__pendingSpeakingRecordings as Map<string, { save: () => Promise<void> }> | undefined;
+if (pendingMap && pendingMap.size > 0) {
+  console.log(`[submitHomework] Flushing ${pendingMap.size} pending recordings...`);
+  await Promise.all(Array.from(pendingMap.values()).map(e => e.save().catch(console.error)));
+  await new Promise(r => setTimeout(r, 500));
 }
 ```
 
-**Plik 3: `supabase/functions/process-welcome-test/index.ts`**
-- Dodac nowa funkcje `calculateLearningPathScore(detectedTraits, rawAnswers)`:
-  1. Wyciagnac detected_traits z 5 nowych pytan (Q3b, Q5b, Q13b, Q17b, Q41b)
-  2. Wyciagnac detected_traits z 5 istniejacych pytan z trait (Q3, Q4, Q7, Q14, Q42)
-  3. Wyciagnac odpowiedzi z 5 istniejacych pytan BEZ trait (Q5, Q9, Q10, Q15, Q44) - odczytac indeks odpowiedzi z raw_answers
-  4. Obliczyc kazda zmienna wedlug mapowania powyzej
-  5. Obliczyc weighted sum
-  6. Zastosowac reguly nadrzedne
-  7. Clamp do 0-100
-  8. Zwrocic LearningPathResult
-
-- Wywolac ta funkcje PO zakonczeniu analizy AI (scoring pytan otwartych)
-- Zapisac wynik w `raw_answers.learning_path` jako JSON
-
-**WAZNE:** Prompt do AI (process-welcome-test) NIE jest zmieniany. Obliczanie Learning Path Score jest CZYSTO DETERMINISTYCZNE - nie wymaga AI. To prosta matematyka na detected_traits i indeksach odpowiedzi.
+**C. Przekazywanie registryKey z rendererow:**
+We wszystkich komponentach ktore uzywaja `HomeworkSpeakingRecorder`, dodac prop `registryKey={`${exerciseIndex}_${qIndex}`}`. Wymaga dodania `exerciseIndex` jako prop tam gdzie go jeszcze nie ma - w HomeworkExerciseRenderer juz jest dostepny jako zmienna `index`.
 
 ---
 
-### CZESC F: Co NIE wchodzi w zakres tego wdrozenia
+## Problem 3: Admin cleanup + filtrowanie + config
 
-1. **Layer D (dobor sciezki nauki)** - algorytm oblicza score ale jeszcze NIE wplywa na generowanie worksheetow. To bedzie osobne zadanie.
-2. **UI wyswietlania wyniku** - score bedzie widoczny w WelcomeTestResults ale bez wizualnej sciezki. To bedzie osobne zadanie.
-3. **Dynamiczna modyfikacja sciezki** - score jest obliczany raz, przy zakonczeniu testu. Nie zmienia sie w czasie. Przyszla wersja moze go aktualizowac.
+**A. `supabase/config.toml` linia 16:**
+```
+Z: enable_anonymous_sign_ups = true
+Na: enable_anonymous_sign_ups = false
+```
+
+**B. `AdminDashboardPage.tsx`:**
+
+1. Dodac filtr kont bez emaila (linia 108):
+```typescript
+const filteredTeachers = teachers.filter(t => {
+  if (!t.email) return false; // Hide anonymous accounts
+  if (!searchQuery) return true;
+  const q = searchQuery.toLowerCase();
+  return t.email?.toLowerCase().includes(q) || t.first_name?.toLowerCase().includes(q) || t.last_name?.toLowerCase().includes(q);
+});
+```
+
+2. Dodac state `isCleaningUp` i handler `handleCleanup`:
+```typescript
+const [isCleaningUp, setIsCleaningUp] = useState(false);
+const handleCleanup = async () => {
+  setIsCleaningUp(true);
+  try {
+    const { data, error } = await supabase.functions.invoke('cleanup-anonymous-users');
+    if (error) throw error;
+    toast({ title: `Cleaned up ${data?.deleted_count || 0} anonymous accounts` });
+    // Refresh list
+    const { data: profiles } = await supabase.from('profiles')
+      .select('id, email, first_name, last_name, subscription_type, subscription_status, available_tokens, total_worksheets_created, created_at')
+      .is('deleted_at', null).order('created_at', { ascending: false });
+    setTeachers((profiles as TeacherProfile[]) || []);
+  } catch (err: any) {
+    toast({ title: 'Cleanup failed', description: err.message, variant: 'destructive' });
+  } finally { setIsCleaningUp(false); }
+};
+```
+
+3. Dodac sekcje cleanup (po Stats cards, przed Search):
+```
+{teachers.filter(t => !t.email).length > 0 && (
+  <Card className="border-amber-200 bg-amber-50">
+    <CardContent className="p-4 flex items-center justify-between">
+      <div>
+        <div className="font-medium text-amber-800">{teachers.filter(t => !t.email).length} anonymous accounts (no email)</div>
+        <div className="text-xs text-amber-600">Legacy ghost accounts. Safe to remove.</div>
+      </div>
+      <Button variant="outline" size="sm" onClick={handleCleanup} disabled={isCleaningUp}
+        className="border-amber-400 text-amber-700 hover:bg-amber-100">
+        {isCleaningUp ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+        Clean up
+      </Button>
+    </CardContent>
+  </Card>
+)}
+```
+
+**UWAGA:** Edge functions `admin-impersonate` i `cleanup-anonymous-users` SA juz deployed i dzialaja (zwracaja 401 bez auth). Blad 404 ktory widziales byl prawdopodobnie chwilowy problem z deploymentem - teraz dziala.
 
 ---
 
-### Pliki do zmiany (Problem 5)
+## Problem 4: DSLM fix - uzyc buildItemEvaluations
 
-| Plik | Zmiana |
+**Plik:** `src/hooks/useInteractiveHomework.tsx` linie 442-467
+
+Zamienic recznie budowane mapowanie:
+```typescript
+// STARY KOD (linie 445-467):
+const itemsWithNanoSkill = questionItems
+  .map((item: any, idx: number) => ({ item, idx, nanoSkill: safeGetNanoSkill(item) }))
+  .filter((x: any) => x.nanoSkill !== null);
+const itemEvals: ItemEvaluation[] = evalData.question_evaluations.map(...)
+```
+
+Na:
+```typescript
+import { buildItemEvaluations } from '@/utils/masteryCalculator';
+
+// NOWY KOD:
+const aiEvalLookup: Record<number, { quality_score?: number; writing_score?: number; speaking_score?: number }> = {};
+if (evalData.question_evaluations) {
+  evalData.question_evaluations.forEach((qEval: any, aiIdx: number) => {
+    const qIdx = qEval.question_index ?? aiIdx;
+    aiEvalLookup[qIdx] = {
+      quality_score: qEval.quality_score,
+      writing_score: qEval.writing_score,
+      speaking_score: qEval.speaking_score,
+    };
+  });
+}
+const itemEvals = buildItemEvaluations(
+  exerciseData, studentAnswersForExercise, ans.exercise_type, aiEvalLookup, audioAnswers[exIdx] || null
+) || [];
+```
+
+Reszta kodu (overallMastery, update do bazy) bez zmian.
+
+## DSLM Layer A/B Readiness Checklist
+
+```text
+#  | Element                                    | Status
+1  | student_events INSERT na kazda odpowiedz   | OK - triggery SQL dzialaja
+2  | event_type kanoniczny                      | OK
+3  | mastery kolumna wypelniana                  | OK - trigger ustawia z payload
+4  | element_type wypelniany                     | OK - extract_skill_category()
+5  | skill_ids wypelniany                        | OK - extract_skill_name()
+6  | Brak duplikatow                             | OK - DELETE+INSERT
+7  | buildItemEvaluations - ALL nano_skills      | DO NAPRAWY - homework gubi secondary skills
+8  | adjustConfidenceByAnswerType                | OK - zaimplementowane
+9  | student_skill_metrics auto-refresh          | OK - trigger trg_refresh_skill_metrics
+10 | student_category_metrics widok              | OK - VIEW z agregacja
+11 | Frontend Skills tab                         | OK - SkillsOverviewPanel
+12 | Dual nano_skill (writing+speaking)          | CZESCIOWY - fix w pkt 4 naprawi
+```
+
+---
+
+## Kolejnosc implementacji
+
+1. Config.toml - 1 linia
+2. SharedWorksheetContent - discussion recorder
+3. Recorder inline layout - 6 plikow
+4. Auto-save recorder - HomeworkSpeakingRecorder + useInteractiveHomework
+5. AdminDashboardPage - filtr + cleanup
+6. DSLM fix buildItemEvaluations
+7. Deploy edge functions (re-deploy dla pewnosci)
+8. Dokumentacja
+
+## Lista plikow do zmiany
+
+| Plik | Problem |
 |---|---|
-| `src/data/welcomeTestQuestions.ts` | 5 nowych pytan behawioralnych wplecionych w sekcje |
-| `src/types/welcomeTest.ts` | Nowy typ LearningPathResult + komentarz |
-| `supabase/functions/process-welcome-test/index.ts` | Nowa funkcja calculateLearningPathScore() + zapis w raw_answers |
+| `supabase/config.toml` | 3 - anonymous sign-ups false |
+| `src/components/shared/SharedWorksheetContent.tsx` | 1, 2.1 - import recorder, discussion, flex layout |
+| `src/components/worksheet/ExerciseAnswerQuestions.tsx` | 2.1 - flex layout |
+| `src/components/worksheet/ExerciseDescribe.tsx` | 2.1 - flex layout |
+| `src/components/worksheet/ExerciseListeningComprehension.tsx` | 2.1 - flex layout |
+| `src/components/worksheet/ExerciseAnswerQuestionsAudio.tsx` | 2.1 - flex layout |
+| `src/components/worksheet/ExerciseParaphrasing.tsx` | 2.1 - flex layout |
+| `src/components/homework/HomeworkExerciseRenderer.tsx` | 2.1 - discussion flex layout |
+| `src/components/homework/HomeworkSpeakingRecorder.tsx` | 2.2 - registryKey, globalny rejestr, 30s auto-save |
+| `src/hooks/useInteractiveHomework.tsx` | 2.2, 4 - flush pending + buildItemEvaluations |
+| `src/pages/AdminDashboardPage.tsx` | 3 - filtr + cleanup button |
+| Dokumentacja (6 plikow) | Aktualizacja |
 
