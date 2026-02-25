@@ -41,6 +41,358 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_payment_records: {
+        Row: {
+          amount: number
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          currency: string
+          id: string
+          is_confirmed: boolean
+          lessons_count: number | null
+          notes: string | null
+          payment_type: string
+          slot_id: string | null
+          student_id: string
+          teacher_id: string
+        }
+        Insert: {
+          amount: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          is_confirmed?: boolean
+          lessons_count?: number | null
+          notes?: string | null
+          payment_type?: string
+          slot_id?: string | null
+          student_id: string
+          teacher_id: string
+        }
+        Update: {
+          amount?: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          is_confirmed?: boolean
+          lessons_count?: number | null
+          notes?: string | null
+          payment_type?: string
+          slot_id?: string | null
+          student_id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_payment_records_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_payment_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_payment_records_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_recurrence_rules: {
+        Row: {
+          auto_generate_weeks_ahead: number
+          created_at: string
+          day_of_week: number
+          effective_from: string
+          effective_until: string | null
+          end_time: string
+          id: string
+          is_active: boolean
+          start_time: string
+          teacher_id: string
+        }
+        Insert: {
+          auto_generate_weeks_ahead?: number
+          created_at?: string
+          day_of_week: number
+          effective_from?: string
+          effective_until?: string | null
+          end_time: string
+          id?: string
+          is_active?: boolean
+          start_time: string
+          teacher_id: string
+        }
+        Update: {
+          auto_generate_weeks_ahead?: number
+          created_at?: string
+          day_of_week?: number
+          effective_from?: string
+          effective_until?: string | null
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          start_time?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_recurrence_rules_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_settings: {
+        Row: {
+          created_at: string
+          currency: string | null
+          default_booking_mode: string
+          default_lesson_duration_minutes: number
+          default_lesson_price: number | null
+          enforce_slot_limit: boolean
+          gcal_default_color: string | null
+          gcal_default_reminder_minutes: number | null
+          gcal_integration_enabled: boolean
+          id: string
+          max_slots_per_student_per_week: number | null
+          min_cancellation_hours: number | null
+          notify_on_booking: boolean
+          notify_on_cancellation: boolean
+          notify_payment_reminder: boolean
+          notify_student_reminder_hours: number | null
+          payment_tracking_enabled: boolean
+          public_calendar_enabled: boolean
+          public_calendar_token: string | null
+          teacher_id: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          default_booking_mode?: string
+          default_lesson_duration_minutes?: number
+          default_lesson_price?: number | null
+          enforce_slot_limit?: boolean
+          gcal_default_color?: string | null
+          gcal_default_reminder_minutes?: number | null
+          gcal_integration_enabled?: boolean
+          id?: string
+          max_slots_per_student_per_week?: number | null
+          min_cancellation_hours?: number | null
+          notify_on_booking?: boolean
+          notify_on_cancellation?: boolean
+          notify_payment_reminder?: boolean
+          notify_student_reminder_hours?: number | null
+          payment_tracking_enabled?: boolean
+          public_calendar_enabled?: boolean
+          public_calendar_token?: string | null
+          teacher_id: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          default_booking_mode?: string
+          default_lesson_duration_minutes?: number
+          default_lesson_price?: number | null
+          enforce_slot_limit?: boolean
+          gcal_default_color?: string | null
+          gcal_default_reminder_minutes?: number | null
+          gcal_integration_enabled?: boolean
+          id?: string
+          max_slots_per_student_per_week?: number | null
+          min_cancellation_hours?: number | null
+          notify_on_booking?: boolean
+          notify_on_cancellation?: boolean
+          notify_payment_reminder?: boolean
+          notify_student_reminder_hours?: number | null
+          payment_tracking_enabled?: boolean
+          public_calendar_enabled?: boolean
+          public_calendar_token?: string | null
+          teacher_id?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_settings_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_slots: {
+        Row: {
+          booked_at: string | null
+          booked_by: string | null
+          booking_type: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          confirmed_at: string | null
+          created_at: string
+          end_time: string
+          id: string
+          is_paid: boolean
+          notes: string | null
+          recurrence_rule_id: string | null
+          slot_date: string
+          start_time: string
+          status: string
+          student_id: string | null
+          student_notes: string | null
+          teacher_id: string
+          title: string | null
+          updated_at: string
+          worksheet_id: string | null
+        }
+        Insert: {
+          booked_at?: string | null
+          booked_by?: string | null
+          booking_type?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          end_time: string
+          id?: string
+          is_paid?: boolean
+          notes?: string | null
+          recurrence_rule_id?: string | null
+          slot_date: string
+          start_time: string
+          status?: string
+          student_id?: string | null
+          student_notes?: string | null
+          teacher_id: string
+          title?: string | null
+          updated_at?: string
+          worksheet_id?: string | null
+        }
+        Update: {
+          booked_at?: string | null
+          booked_by?: string | null
+          booking_type?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_paid?: boolean
+          notes?: string | null
+          recurrence_rule_id?: string | null
+          slot_date?: string
+          start_time?: string
+          status?: string
+          student_id?: string | null
+          student_notes?: string | null
+          teacher_id?: string
+          title?: string | null
+          updated_at?: string
+          worksheet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_slots_recurrence_rule_id_fkey"
+            columns: ["recurrence_rule_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_recurrence_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_slots_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_slots_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_slots_worksheet_id_fkey"
+            columns: ["worksheet_id"]
+            isOneToOne: false
+            referencedRelation: "worksheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_student_settings: {
+        Row: {
+          booking_mode_override: string | null
+          created_at: string
+          id: string
+          lesson_price_override: number | null
+          prepaid_lessons_remaining: number
+          student_id: string
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_mode_override?: string | null
+          created_at?: string
+          id?: string
+          lesson_price_override?: number | null
+          prepaid_lessons_remaining?: number
+          student_id: string
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_mode_override?: string | null
+          created_at?: string
+          id?: string
+          lesson_price_override?: number | null
+          prepaid_lessons_remaining?: number
+          student_id?: string
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_student_settings_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_student_settings_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       download_sessions: {
         Row: {
           created_at: string
