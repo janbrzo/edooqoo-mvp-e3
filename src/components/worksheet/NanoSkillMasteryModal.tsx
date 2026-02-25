@@ -542,6 +542,19 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
                   Skills without a set value won't be saved.
                 </div>
               )}
+
+              {/* FIX 3: Skip button moved to top, right after info text */}
+              {onSkip && (
+                <Button 
+                  variant="ghost" 
+                  onClick={handleSkip} 
+                  className="gap-2 text-muted-foreground w-full justify-start"
+                  disabled={isLoadingAiEvaluation}
+                >
+                  <SkipForward className="h-4 w-4" />
+                  Skip (mark done without evaluation)
+                </Button>
+              )}
             </>
           )}
 
@@ -588,16 +601,8 @@ const NanoSkillMasteryModal: React.FC<NanoSkillMasteryModalProps> = ({
 
         {/* PROBLEM 4: Disable buttons while loading */}
         <DialogFooter className="gap-2 flex-wrap">
-          <Button 
-            variant="ghost" 
-            onClick={handleSkip} 
-            className="gap-2 text-muted-foreground"
-            disabled={isLoadingAiEvaluation}
-          >
-            <SkipForward className="h-4 w-4" />
-            Skip (mark done without evaluation)
-          </Button>
-          <div className="flex gap-2">
+          {/* Skip button removed from footer - moved to top */}
+          <div className="flex gap-2 ml-auto">
             <Button variant="outline" onClick={onClose} disabled={isLoadingAiEvaluation}>
               Cancel
             </Button>

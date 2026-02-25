@@ -318,8 +318,8 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
         </CardContent>
       </Card>
 
-      {/* Welcome Test Learning Profile */}
-      {isWelcomeTest && (test.status === 'completed' || test.status === 'reviewed') && (
+      {/* Welcome Test Learning Profile - FIX 2.2: always show, even before completion */}
+      {isWelcomeTest && (
         <WelcomeTestResults testId={testId} studentId={studentId} teacherId={teacherId} />
       )}
 
@@ -359,8 +359,8 @@ export function TestDetailsView({ testId, teacherId, studentId, onBack }: TestDe
         </Card>
       )}
 
-      {/* Skill Results */}
-      {test.skill_results && test.skill_results.length > 0 && (
+      {/* Skill Results - FIX 2.1: Hide for welcome tests (merged into WelcomeTestResults Skill Scores) */}
+      {!isWelcomeTest && test.skill_results && test.skill_results.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

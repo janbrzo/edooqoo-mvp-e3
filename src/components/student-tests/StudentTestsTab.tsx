@@ -4,7 +4,8 @@
  */
 
 import { useState, useMemo } from 'react';
-import { FileText, Loader2, Eye, Sparkles, BookOpen } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { FileText, Loader2, Eye, Sparkles, BookOpen, ExternalLink, BarChart3, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,12 +22,67 @@ interface StudentTestsTabProps {
 }
 
 export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTestsTabProps) {
-  const { tests, loading, getTestStats, refetch } = useStudentTests({ studentId, teacherId });
+  const { tests, loading, getTestStats, refetch, createTest, addQuestions, generateShareToken } = useStudentTests({ studentId, teacherId });
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null);
   const [showWelcomePreview, setShowWelcomePreview] = useState(false);
+  const [creatingPreview, setCreatingPreview] = useState(false);
   const stats = getTestStats();
 
-  const hasWelcomeTest = useMemo(() => tests.some(t => t.test_type === 'welcome'), [tests]);
+  const welcomeTest = useMemo(() => tests.find(t => t.test_type === 'welcome'), [tests]);
+  const hasWelcomeTest = !!welcomeTest;
+
+  // FIX 2.2: Create draft test + share token and open preview in new tab
+  const handlePreviewTest = async () => {
+    setCreatingPreview(true);
+    try {
+      let testToPreview = welcomeTest;
+      if (!testToPreview) {
+        // Create draft test
+        const { data: student } = await supabase
+          .from('students')
+          .select('name')
+          .eq('id', studentId)
+          .single();
+
+        testToPreview = await createTest({
+          student_id: studentId,
+          test_type: 'welcome',
+          title: `Welcome Test - ${student?.name || studentName || 'Student'}`,
+          description: 'Comprehensive placement & learning profile assessment',
+        });
+
+        if (testToPreview) {
+          const questionsToAdd = ALL_WELCOME_TEST_QUESTIONS.map(q => ({
+            question_type: q.question_type as any,
+            question_text: q.question_text,
+            question_data: (q.options ? { options: q.options } : {}) as any,
+            correct_answer: (q.correct_answer || '') as any,
+            explanation: q.description || undefined,
+            element_type: q.element_type as any,
+            difficulty_level: q.difficulty_level,
+            skill_tags: q.nano_skill ? [q.nano_skill] : [],
+          }));
+          await addQuestions(testToPreview.id, questionsToAdd);
+          refetch();
+        }
+      }
+      
+      if (testToPreview) {
+        let token = testToPreview.share_token;
+        if (!token) {
+          token = await generateShareToken(testToPreview.id);
+          refetch();
+        }
+        if (token) {
+          window.open(`${window.location.origin}/welcome-test/${token}`, '_blank');
+        }
+      }
+    } catch (err) {
+      console.error('Error creating preview:', err);
+    } finally {
+      setCreatingPreview(false);
+    }
+  };
 
   const sortedTests = [...tests].sort((a, b) => {
     if (a.test_type === 'welcome' && b.test_type !== 'welcome') return -1;
@@ -69,10 +125,7 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
 
       {/* Welcome Test Placeholder - always visible if no welcome test exists */}
       {!hasWelcomeTest && (
-        <Card 
-          className="border-primary/30 border-dashed cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => setShowWelcomePreview(!showWelcomePreview)}
-        >
+        <Card className="border-primary/30 border-dashed">
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -88,7 +141,10 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">Not sent yet</Badge>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={handlePreviewTest} disabled={creatingPreview} title="Preview test in student view">
+                  {creatingPreview ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowWelcomePreview(!showWelcomePreview)} title="Show question list">
                   <Eye className="h-4 w-4" />
                 </Button>
               </div>
@@ -122,8 +178,46 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
         </Card>
       )}
 
-      {/* Tests list */}
-      {sortedTests.length === 0 && !hasWelcomeTest ? (
+      {/* Existing Welcome Test - show Results & Preview buttons */}
+      {welcomeTest && (
+        <Card className="border-primary/30">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedTestId(welcomeTest.id)}>
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">{welcomeTest.title}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Welcome Test • {welcomeTest.total_questions || ALL_WELCOME_TEST_QUESTIONS.length} questions
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {welcomeTest.score_percentage !== null && (
+                  <div className="text-right mr-2">
+                    <div className="text-lg font-bold">{welcomeTest.answered_count || 0}/{welcomeTest.total_questions}</div>
+                    <div className="text-xs text-muted-foreground">answered</div>
+                  </div>
+                )}
+                <Badge className={`${TEST_STATUS_CONFIG[welcomeTest.status]?.bgColor} ${TEST_STATUS_CONFIG[welcomeTest.status]?.color}`}>
+                  {TEST_STATUS_CONFIG[welcomeTest.status]?.label}
+                </Badge>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedTestId(welcomeTest.id)} title="View Results">
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handlePreviewTest} disabled={creatingPreview} title="Preview test">
+                  {creatingPreview ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tests list (non-welcome) */}
+      {sortedTests.filter(t => t.test_type !== 'welcome').length === 0 && !hasWelcomeTest ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
             <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
@@ -135,7 +229,7 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
         </Card>
       ) : (
         <div className="grid gap-4">
-          {sortedTests.map((test) => (
+          {sortedTests.filter(t => t.test_type !== 'welcome').map((test) => (
             <TestCard 
               key={test.id} 
               test={test} 

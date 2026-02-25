@@ -260,42 +260,45 @@ export const useInteractiveSharedWorksheet = ({
     let totalTasks = 0;
     let answeredTasks = 0;
     
-    // Count total tasks across ALL exercises
     for (let i = 0; i < totalExercises; i++) {
       const questionCount = exerciseQuestionCounts[i] || 1;
       totalTasks += questionCount;
     }
     
-    Object.keys(answers).forEach(exerciseIndexStr => {
-      const exerciseIndex = parseInt(exerciseIndexStr);
-      const exerciseAnswers = answers[exerciseIndex];
+    // FIX 1.3: Merge text answers and audio answers for complete progress
+    const allExerciseIndices = new Set([
+      ...Object.keys(answers).map(Number),
+      ...Object.keys(audioAnswers).map(Number)
+    ]);
+    
+    allExerciseIndices.forEach(exerciseIndex => {
+      const exerciseAnswers = answers[exerciseIndex] || {};
+      const exerciseAudio = audioAnswers[exerciseIndex] || {};
       const questionCount = exerciseQuestionCounts[exerciseIndex] || 1;
       
-      const answeredQuestionsCount = Object.values(exerciseAnswers || {})
-        .filter(answer => answer !== null && answer !== undefined && answer !== '')
-        .length;
+      const allQIndices = new Set([
+        ...Object.keys(exerciseAnswers).map(Number),
+        ...Object.keys(exerciseAudio).map(Number)
+      ]);
+      
+      let answeredQuestionsCount = 0;
+      allQIndices.forEach(qIdx => {
+        const hasText = exerciseAnswers[qIdx] !== null && exerciseAnswers[qIdx] !== undefined && exerciseAnswers[qIdx] !== '';
+        const hasAudio = !!exerciseAudio[qIdx];
+        if (hasText || hasAudio) answeredQuestionsCount++;
+      });
       
       answeredTasks += answeredQuestionsCount;
-      
-      if (answeredQuestionsCount >= questionCount) {
-        answeredExercises++;
-      }
+      if (answeredQuestionsCount >= questionCount) answeredExercises++;
     });
 
-    // PROBLEM 5.2 FIX: Cap answeredTasks to totalTasks to prevent >100%
     const cappedAnsweredTasks = Math.min(answeredTasks, totalTasks);
     const percentageComplete = totalTasks > 0 
       ? Math.min(100, Math.round((cappedAnsweredTasks / totalTasks) * 100))
       : 0;
 
-    return {
-      totalExercises,
-      answeredExercises,
-      percentageComplete,
-      totalTasks,
-      answeredTasks: cappedAnsweredTasks
-    };
-  }, [answers, totalExercises, exerciseQuestionCounts]);
+    return { totalExercises, answeredExercises, percentageComplete, totalTasks, answeredTasks: cappedAnsweredTasks };
+  }, [answers, audioAnswers, totalExercises, exerciseQuestionCounts]);
 
   // Load answers on mount
   useEffect(() => {
@@ -510,15 +513,30 @@ export const useInteractiveSharedWorksheet = ({
 
   // Update audio answer for a specific exercise/question
   const updateAudioAnswer = useCallback((exerciseIndex: number, questionIndex: number, audioUrl: string) => {
-    setAudioAnswers(prev => ({
-      ...prev,
-      [exerciseIndex]: {
-        ...(prev[exerciseIndex] || {}),
-        [questionIndex]: audioUrl
-      }
-    }));
-    console.log('[useInteractiveSharedWorksheet] Audio answer saved:', { exerciseIndex, questionIndex, audioUrl: audioUrl.substring(0, 50) });
-  }, []);
+    setAudioAnswers(prev => {
+      const updated = {
+        ...prev,
+        [exerciseIndex]: {
+          ...(prev[exerciseIndex] || {}),
+          [questionIndex]: audioUrl
+        }
+      };
+      return updated;
+    });
+    
+    // FIX 1.2+1.4: Trigger DB save so audio persists and SQL triggers fire for student_events
+    const exerciseType = exerciseTypesRef.current[exerciseIndex] || exercises[exerciseIndex]?.type || exercises[exerciseIndex]?.exercise_type || '';
+    const currentAnswers = answers[exerciseIndex] || {};
+    const exerciseData = { ...exercises[exerciseIndex], worksheetId };
+    const mastery = calculateOverallMastery(exerciseType, exerciseData, currentAnswers as Record<string | number, any>);
+    const newAudioForExercise = { ...(audioAnswers[exerciseIndex] || {}), [questionIndex]: audioUrl };
+    const itemEvals = buildItemEvaluations(exerciseData, currentAnswers as Record<string | number, any>, exerciseType, null, newAudioForExercise);
+    const hasRealAiEval = itemEvals?.some(e => e.hasValue !== false);
+    const evalToSend = hasRealAiEval ? itemEvals : null;
+    saveAnswer(exerciseIndex, exerciseType, currentAnswers, mastery, evalToSend);
+    
+    console.log('[useInteractiveSharedWorksheet] Audio answer saved to DB:', { exerciseIndex, questionIndex, audioUrl: audioUrl.substring(0, 50) });
+  }, [answers, exercises, saveAnswer, worksheetId, audioAnswers]);
 
   return {
     answers,
