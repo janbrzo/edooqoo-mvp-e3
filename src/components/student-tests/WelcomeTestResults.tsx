@@ -28,10 +28,18 @@ interface AiSummaryData {
   key_observations: string[];
 }
 
+interface SkillResultData {
+  element_type: string;
+  correct_answers: number;
+  total_questions: number;
+  score_percentage: number;
+}
+
 export function WelcomeTestResults({ testId, studentId, teacherId }: WelcomeTestResultsProps) {
   const [profile, setProfile] = useState<LearningProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [aiSummary, setAiSummary] = useState<AiSummaryData | null>(null);
+  const [skillResults, setSkillResults] = useState<SkillResultData[]>([]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -45,7 +53,6 @@ export function WelcomeTestResults({ testId, studentId, teacherId }: WelcomeTest
 
         if (data) {
           setProfile(data as unknown as LearningProfile);
-          // Parse AI summary
           if ((data as any).ai_summary) {
             try {
               const parsed = JSON.parse((data as any).ai_summary);
@@ -54,6 +61,25 @@ export function WelcomeTestResults({ testId, studentId, teacherId }: WelcomeTest
               setAiSummary({ summary: (data as any).ai_summary, recommendations: [], writing_quality: 'unknown', key_observations: [] });
             }
           }
+        }
+
+        // FIX 2.1: Fetch skill results from test_skill_results to merge into Skill Scores
+        const { data: testData } = await supabase
+          .from('student_tests')
+          .select('id')
+          .eq('student_id', studentId)
+          .eq('teacher_id', teacherId)
+          .eq('test_type', 'welcome')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (testData) {
+          const { data: results } = await supabase
+            .from('test_skill_results')
+            .select('element_type, correct_answers, total_questions, score_percentage')
+            .eq('test_id', testData.id);
+          setSkillResults((results as SkillResultData[]) || []);
         }
       } catch (err) {
         console.error('Error fetching learning profile:', err);
@@ -184,22 +210,32 @@ export function WelcomeTestResults({ testId, studentId, teacherId }: WelcomeTest
         </CardHeader>
         <CardContent className="space-y-3">
           {[
-            { label: 'Grammar', score: profile.grammar_score },
-            { label: 'Vocabulary', score: profile.vocabulary_score },
-            { label: 'Reading', score: profile.reading_score },
-            { label: 'Writing', score: profile.writing_score },
-            { label: 'Speaking', score: (profile as any).speaking_score },
-          ].map(({ label, score }) => (
-            <div key={label} className="flex items-center gap-3">
-              <span className="w-28 text-sm">{label}</span>
-              <div className="flex-1">
-                <Progress value={score || 0} className="h-2" />
+            { label: 'Grammar', score: profile.grammar_score, skill: 'grammar' },
+            { label: 'Vocabulary', score: profile.vocabulary_score, skill: 'vocabulary' },
+            { label: 'Reading', score: profile.reading_score, skill: 'reading' },
+            { label: 'Listening', score: null, skill: 'listening' },
+            { label: 'Writing', score: profile.writing_score, skill: 'writing' },
+            { label: 'Speaking', score: (profile as any).speaking_score, skill: 'speaking' },
+          ].map(({ label, score, skill }) => {
+            const result = skillResults.find(r => r.element_type === skill);
+            const displayScore = score ?? (result ? result.score_percentage : null);
+            return (
+              <div key={label} className="flex items-center gap-3">
+                <span className="w-24 text-sm">{label}</span>
+                <div className="flex-1">
+                  <Progress value={displayScore || 0} className="h-2" />
+                </div>
+                <span className="w-12 text-right text-sm font-medium">
+                  {displayScore !== null ? `${Math.round(displayScore)}%` : '—'}
+                </span>
+                {result && (
+                  <span className="w-14 text-right text-xs text-muted-foreground">
+                    ({result.correct_answers}/{result.total_questions})
+                  </span>
+                )}
               </div>
-              <span className="w-12 text-right text-sm font-medium">
-                {score !== null ? `${Math.round(score)}%` : '—'}
-              </span>
-            </div>
-          ))}
+            );
+          })}
           <div className="flex gap-4 mt-4 text-sm">
             <div className="flex items-center gap-1">
               <span className="text-muted-foreground">Strongest:</span>

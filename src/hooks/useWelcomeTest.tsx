@@ -263,13 +263,27 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
       }
     }
 
-    // Detect traits
-    if (questionDef.detected_trait && typeof answer === 'string') {
-      const optionIndex = questionDef.options?.indexOf(answer);
-      if (optionIndex !== undefined && optionIndex >= 0) {
-        const traitValue = questionDef.detected_trait.mapping[String(optionIndex)];
-        if (traitValue) {
-          detectedTraits.current[questionDef.detected_trait.trait_name] = traitValue;
+    // Detect traits - handle both single-select (string) and multi-select (array)
+    if (questionDef.detected_trait) {
+      if (Array.isArray(answer)) {
+        // FIX 2.3: Multi-select detected_trait mapping
+        const traitValues = (answer as string[]).map(a => {
+          const idx = questionDef.options?.indexOf(a);
+          if (idx !== undefined && idx >= 0) {
+            return questionDef.detected_trait!.mapping[String(idx)];
+          }
+          return null;
+        }).filter(Boolean);
+        if (traitValues.length > 0) {
+          detectedTraits.current[questionDef.detected_trait.trait_name] = traitValues.join(', ');
+        }
+      } else if (typeof answer === 'string') {
+        const optionIndex = questionDef.options?.indexOf(answer);
+        if (optionIndex !== undefined && optionIndex >= 0) {
+          const traitValue = questionDef.detected_trait.mapping[String(optionIndex)];
+          if (traitValue) {
+            detectedTraits.current[questionDef.detected_trait.trait_name] = traitValue;
+          }
         }
       }
     }
@@ -305,14 +319,28 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
           .eq('event_type', 'test_answer_submitted')
           .filter('event_payload->>answer_id', 'eq', questionId);
 
-        // Detect trait value for profiling questions
+        // Detect trait value for profiling questions - handle multi-select
         let detectedTraitData: Record<string, string> | undefined;
-        if (questionDef.detected_trait && typeof answer === 'string') {
-          const optionIndex = questionDef.options?.indexOf(answer);
-          if (optionIndex !== undefined && optionIndex >= 0) {
-            const traitValue = questionDef.detected_trait.mapping[String(optionIndex)];
-            if (traitValue) {
-              detectedTraitData = { [questionDef.detected_trait.trait_name]: traitValue };
+        if (questionDef.detected_trait) {
+          if (Array.isArray(answer)) {
+            // FIX 2.3: Multi-select detected_trait mapping for event payload
+            const traitValues = (answer as string[]).map(a => {
+              const idx = questionDef.options?.indexOf(a);
+              if (idx !== undefined && idx >= 0) {
+                return questionDef.detected_trait!.mapping[String(idx)];
+              }
+              return null;
+            }).filter(Boolean);
+            if (traitValues.length > 0) {
+              detectedTraitData = { [questionDef.detected_trait.trait_name]: traitValues.join(', ') };
+            }
+          } else if (typeof answer === 'string') {
+            const optionIndex = questionDef.options?.indexOf(answer);
+            if (optionIndex !== undefined && optionIndex >= 0) {
+              const traitValue = questionDef.detected_trait.mapping[String(optionIndex)];
+              if (traitValue) {
+                detectedTraitData = { [questionDef.detected_trait.trait_name]: traitValue };
+              }
             }
           }
         }

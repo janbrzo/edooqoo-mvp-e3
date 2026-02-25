@@ -3,7 +3,7 @@
  * Records audio, uploads to R2, returns audio_url
  */
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, type RefObject } from 'react';
 import { Mic, Square, Play, Pause, RotateCcw, Upload, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { uploadBlobToR2 } from '@/components/welcome-test/SpeakingRecorder';
@@ -52,6 +52,10 @@ export function HomeworkSpeakingRecorder({
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const blobRef = useRef<Blob | null>(null);
+  
+  // FIX 1.1: Stabilize onAudioSaved ref to prevent timer resets on parent re-renders
+  const onAudioSavedRef = useRef(onAudioSaved);
+  useEffect(() => { onAudioSavedRef.current = onAudioSaved; }, [onAudioSaved]);
 
   useEffect(() => {
     if (existingAudioUrl) {
@@ -145,12 +149,12 @@ export function HomeworkSpeakingRecorder({
     try {
       const url = await uploadBlobToR2(blobRef.current);
       if (!url) throw new Error('No URL returned');
-      setAudioUrl(url); setStatus('done'); onAudioSaved(url);
+      setAudioUrl(url); setStatus('done'); onAudioSavedRef.current(url);
       toast.success('Recording saved!');
     } catch {
       setStatus('error'); setErrorMsg('Upload failed. Please try again.');
     }
-  }, [onAudioSaved]);
+  }, []); // STABLE - no dependency on onAudioSaved
 
   // Auto-save: register pending recording + 30s countdown
   useEffect(() => {
@@ -167,7 +171,7 @@ export function HomeworkSpeakingRecorder({
       setAutoSaveCountdown(null);
     }
     return () => { if (timer) clearTimeout(timer); };
-  }, [status, registryKey, uploadAndSave]);
+  }, [status, registryKey]); // uploadAndSave is now stable via useRef
 
   // Countdown ticker
   useEffect(() => {
