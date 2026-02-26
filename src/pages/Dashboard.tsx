@@ -195,6 +195,12 @@ const Dashboard = () => {
             </Badge>
             <HomeworkNotificationBadge />
             <Button asChild variant="outline" size="sm">
+              <Link to="/calendar">
+                <Calendar className="h-4 w-4 mr-2" />
+                Calendar
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
               <Link to="/profile">
                 <User className="h-4 w-4 mr-2" />
                 Profile

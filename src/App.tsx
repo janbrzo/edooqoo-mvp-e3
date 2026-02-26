@@ -35,6 +35,8 @@ import GlobalFooter from "./components/GlobalFooter";
 import OnboardingChecklist from "./components/OnboardingChecklist";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminImpersonationBanner from "./components/AdminImpersonationBanner";
+import CalendarPage from "./pages/CalendarPage";
+import CalendarSettingsPage from "./pages/CalendarSettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +75,8 @@ const App = () => (
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/shared/:token" element={<SharedWorksheet />} />
               <Route path="/test-exercises" element={<TestExercises />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/calendar/settings" element={<CalendarSettingsPage />} />
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/waiting-list" element={<Navigate to="/" replace />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
