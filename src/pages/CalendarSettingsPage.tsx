@@ -54,12 +54,30 @@ const CalendarSettingsPage = () => {
             </div>
             <div className="flex items-center justify-between">
               <Label>Timezone</Label>
-              <Input
-                className="w-48"
+              <Select
                 value={settings.timezone}
-                onChange={e => updateSettings({ timezone: e.target.value })}
-                placeholder="Europe/Warsaw"
-              />
+                onValueChange={v => updateSettings({ timezone: v })}
+              >
+                <SelectTrigger className="w-56">
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[
+                    'Europe/Warsaw', 'Europe/London', 'Europe/Berlin', 'Europe/Paris',
+                    'Europe/Madrid', 'Europe/Rome', 'Europe/Prague', 'Europe/Bucharest',
+                    'Europe/Athens', 'Europe/Istanbul', 'Europe/Moscow',
+                    'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+                    'America/Sao_Paulo', 'America/Mexico_City', 'America/Buenos_Aires',
+                    'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Seoul', 'Asia/Kolkata',
+                    'Asia/Dubai', 'Asia/Bangkok', 'Asia/Singapore',
+                    'Australia/Sydney', 'Australia/Melbourne',
+                    'Pacific/Auckland',
+                    'Africa/Cairo', 'Africa/Johannesburg',
+                  ].map(tz => (
+                    <SelectItem key={tz} value={tz}>{tz.replace('_', ' ')}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center justify-between">
               <Label>Min. Cancellation Hours</Label>

@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { startOfWeek, endOfWeek, format, addDays, parseISO } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, addDays, addMonths } from 'date-fns';
+
+export type ViewMode = 'day' | 'week' | 'month';
 
 export interface CalendarSlot {
   id: string;
@@ -43,17 +45,38 @@ export interface CreateSlotInput {
 export function useCalendarSlots(teacherId?: string) {
   const [slots, setSlots] = useState<CalendarSlot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [currentDate, setCurrentDate] = useState(new Date());
   const { toast } = useToast();
 
-  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+  // Memoized date range based on viewMode
+  const dateRange = useMemo(() => {
+    if (viewMode === 'day') {
+      return { from: currentDate, to: currentDate };
+    } else if (viewMode === 'week') {
+      const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const we = endOfWeek(currentDate, { weekStartsOn: 1 });
+      return { from: ws, to: we };
+    } else {
+      // Month: fetch full calendar grid (start of first week to end of last week)
+      const ms = startOfMonth(currentDate);
+      const me = endOfMonth(currentDate);
+      const gridStart = startOfWeek(ms, { weekStartsOn: 1 });
+      const gridEnd = endOfWeek(me, { weekStartsOn: 1 });
+      return { from: gridStart, to: gridEnd };
+    }
+  }, [viewMode, currentDate]);
+
+  // Convenience accessors
+  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
+  const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
   const fetchSlots = useCallback(async () => {
     if (!teacherId) return;
     setLoading(true);
     try {
-      const from = format(weekStart, 'yyyy-MM-dd');
-      const to = format(weekEnd, 'yyyy-MM-dd');
+      const from = format(dateRange.from, 'yyyy-MM-dd');
+      const to = format(dateRange.to, 'yyyy-MM-dd');
 
       const { data, error } = await supabase
         .from('calendar_slots')
@@ -71,14 +94,13 @@ export function useCalendarSlots(teacherId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [teacherId, weekStart, weekEnd]);
+  }, [teacherId, dateRange]);
 
   useEffect(() => { fetchSlots(); }, [fetchSlots]);
 
   const createSlot = useCallback(async (input: CreateSlotInput) => {
     if (!teacherId) return null;
     try {
-      // Check for overlapping slots
       const { data: existing } = await supabase
         .from('calendar_slots')
         .select('id')
@@ -123,6 +145,40 @@ export function useCalendarSlots(teacherId?: string) {
     }
   }, [teacherId, fetchSlots, toast]);
 
+  // Batch create without individual conflict check (caller handles conflicts)
+  const createSlotsBatch = useCallback(async (inputs: CreateSlotInput[]) => {
+    if (!teacherId || inputs.length === 0) return null;
+    try {
+      const rows = inputs.map(input => ({
+        teacher_id: teacherId,
+        slot_date: input.slot_date,
+        start_time: input.start_time,
+        end_time: input.end_time,
+        student_id: input.student_id || null,
+        title: input.title || null,
+        notes: input.notes || null,
+        booking_type: input.booking_type || 'manual',
+        status: input.student_id ? 'booked' : (input.status || 'available'),
+        worksheet_id: input.worksheet_id || null,
+        confirmed_at: input.student_id ? new Date().toISOString() : null,
+        booked_at: input.student_id ? new Date().toISOString() : null,
+        booked_by: input.student_id ? 'teacher' : null,
+      }));
+
+      const { error } = await supabase
+        .from('calendar_slots')
+        .insert(rows as any);
+
+      if (error) throw error;
+      await fetchSlots();
+      toast({ title: `${inputs.length} slots created` });
+      return true;
+    } catch (err: any) {
+      toast({ title: 'Error creating slots', description: err.message, variant: 'destructive' });
+      return null;
+    }
+  }, [teacherId, fetchSlots, toast]);
+
   const updateSlot = useCallback(async (slotId: string, updates: Partial<CalendarSlot>) => {
     try {
       const { error } = await supabase
@@ -153,13 +209,17 @@ export function useCalendarSlots(teacherId?: string) {
     }
   }, [fetchSlots, toast]);
 
-  const navigateWeek = useCallback((direction: 'prev' | 'next' | 'today') => {
+  const navigate = useCallback((direction: 'prev' | 'next' | 'today') => {
     if (direction === 'today') {
-      setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
-    } else {
-      setWeekStart(prev => addDays(prev, direction === 'next' ? 7 : -7));
+      setCurrentDate(new Date());
+      return;
     }
-  }, []);
+    setCurrentDate(prev => {
+      if (viewMode === 'day') return addDays(prev, direction === 'next' ? 1 : -1);
+      if (viewMode === 'week') return addDays(prev, direction === 'next' ? 7 : -7);
+      return addMonths(prev, direction === 'next' ? 1 : -1);
+    });
+  }, [viewMode]);
 
   const getSlotsForDay = useCallback((date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -169,12 +229,18 @@ export function useCalendarSlots(teacherId?: string) {
   return {
     slots,
     loading,
+    viewMode,
+    setViewMode,
+    currentDate,
+    setCurrentDate,
     weekStart,
     weekEnd,
+    dateRange,
     createSlot,
+    createSlotsBatch,
     updateSlot,
     deleteSlot,
-    navigateWeek,
+    navigate,
     getSlotsForDay,
     refetch: fetchSlots,
   };
