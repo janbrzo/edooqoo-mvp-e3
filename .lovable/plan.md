@@ -1,619 +1,443 @@
-# Plan wdrozenia - 2 Problemy
 
----
 
-## Problem 1: Modul Kalendarza Nauczyciela
+# Plan: Naprawa krytycznego bugu + rozbudowa kalendarza
 
-### Analiza architektoniczna
+## ANALIZA GLEBOOKA
 
-To jest duzy feature wymagajacy nowych tabel, edge functions, strony publicznej dla uczniow, integracji z Google Calendar API i systemu powiadomien. Musi byc lekki i dzialac plynnie w obecnej aplikacji.
+### Problem 1: Nieskonczona petla requestow (KRYTYCZNY)
 
-### Zakres MVP kalendarza
-
-Na podstawie Twoich wymagań A-M, dzielę to na **3 fazy wdrozeniowe**:
-
-**Faza 1 (MVP Core):** A, B, C, D, G, I - rdzen kalendarza
-**Faza 2 (Payments + Export):** F, H - oplaty i eksport
-**Faza 3 (Google Calendar):** E - integracja z GCal
-
-Powod: Faza 1 daje natychmiastowa wartosc. Faza 2 i 3 sa niezalezne i moga byc robione rownoglegle po Fazie 1.
-
----
-
-### FAZA 1: Rdzen kalendarza
-
-#### 1.1 Nowe tabele w bazie danych
-
-**Tabela `calendar_slots**` - definicja dostepnych slotow nauczyciela:
-
-```sql
-CREATE TABLE public.calendar_slots (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  teacher_id uuid NOT NULL,
-  student_id uuid REFERENCES public.students(id) ON DELETE SET NULL, -- NULL = publiczny slot
-  title text,
-  slot_date date NOT NULL,
-  start_time time NOT NULL,
-  end_time time NOT NULL,
-  status text NOT NULL DEFAULT 'available', 
-    -- available, booked, completed, cancelled, no_show
-  booking_type text NOT NULL DEFAULT 'manual',
-    -- manual (nauczyciel dodal recznie), student_booked, recurring_instance
-  recurrence_rule_id uuid REFERENCES public.calendar_recurrence_rules(id) ON DELETE SET NULL,
-  worksheet_id uuid, -- powiazanie z worksheet (punkt I)
-  notes text, -- notatki nauczyciela widoczne dla ucznia
-  student_notes text, -- notatki od ucznia
-  booked_at timestamp with time zone,
-  booked_by text, -- 'teacher' | 'student'
-  confirmed_at timestamp with time zone, -- NULL = oczekuje potwierdzenia
-  cancelled_at timestamp with time zone,
-  cancelled_by text,
-  cancellation_reason text,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  
-  CONSTRAINT valid_time CHECK (end_time > start_time),
-  CONSTRAINT valid_status CHECK (status IN ('available','booked','completed','cancelled','no_show'))
-);
-
-CREATE INDEX idx_calendar_slots_teacher_date ON calendar_slots(teacher_id, slot_date);
-CREATE INDEX idx_calendar_slots_student ON calendar_slots(student_id);
+**Przyczyna:** W `useCalendarSlots.tsx` linia 49:
+```typescript
+const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
 ```
-
-**Tabela `calendar_recurrence_rules**` - cykliczne sloty (punkt C):
-
-```sql
-CREATE TABLE public.calendar_recurrence_rules (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  teacher_id uuid NOT NULL,
-  day_of_week integer NOT NULL, -- 0=Mon, 1=Tue, ..., 6=Sun
-  start_time time NOT NULL,
-  end_time time NOT NULL,
-  effective_from date NOT NULL DEFAULT CURRENT_DATE,
-  effective_until date, -- NULL = bezterminowo
-  is_active boolean NOT NULL DEFAULT true,
-  auto_generate_weeks_ahead integer NOT NULL DEFAULT 4,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
-);
-```
-
-**Tabela `calendar_settings**` - ustawienia kalendarza nauczyciela (punkty B, D, F):
-
-```sql
-CREATE TABLE public.calendar_settings (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  teacher_id uuid NOT NULL UNIQUE,
-  
-  -- Booking rules (punkt B)
-  default_booking_mode text NOT NULL DEFAULT 'requires_confirmation',
-    -- 'auto_confirm' | 'requires_confirmation'
-  
-  -- Per-student trust overrides stored in calendar_student_settings
-  
-  -- Slot limits (punkt D)
-  max_slots_per_student_per_week integer, -- NULL = no limit
-  enforce_slot_limit boolean NOT NULL DEFAULT false, -- true=block, false=warning only
-  
-  -- Lesson defaults
-  default_lesson_duration_minutes integer NOT NULL DEFAULT 60,
-  
-  -- Public calendar
-  public_calendar_enabled boolean NOT NULL DEFAULT false,
-  public_calendar_token text UNIQUE, -- share token for public URL
-  
-  -- Notification preferences
-  notify_on_booking boolean NOT NULL DEFAULT true,
-  notify_on_cancellation boolean NOT NULL DEFAULT true,
-  notify_student_reminder_hours integer DEFAULT 24, -- NULL = no reminder
-  notify_payment_reminder boolean NOT NULL DEFAULT false,
-  
-  -- Payment tracking (punkt F - faza 2)
-  payment_tracking_enabled boolean NOT NULL DEFAULT false,
-  default_lesson_price numeric,
-  currency text DEFAULT 'USD',
-  
-  -- Google Calendar (punkt E - faza 3)
-  gcal_integration_enabled boolean NOT NULL DEFAULT false,
-  gcal_default_color text DEFAULT '1', -- Google Calendar color ID
-  gcal_default_reminder_minutes integer DEFAULT 30,
-  
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now()
-);
-```
-
-**Tabela `calendar_student_settings**` - ustawienia per-uczen (punkt B - trust):
-
-```sql
-CREATE TABLE public.calendar_student_settings (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  teacher_id uuid NOT NULL,
-  student_id uuid NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
-  booking_mode_override text, -- NULL = use teacher default, 'auto_confirm' | 'requires_confirmation'
-  
-  -- Payment tracking per student (punkt F)
-  prepaid_lessons_remaining integer NOT NULL DEFAULT 0,
-  lesson_price_override numeric, -- NULL = use teacher default
-  
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  UNIQUE(teacher_id, student_id)
-);
-```
-
-**Tabela `calendar_payment_records**` - historia platnosci (punkt F - faza 2):
-
-```sql
-CREATE TABLE public.calendar_payment_records (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  teacher_id uuid NOT NULL,
-  student_id uuid NOT NULL,
-  slot_id uuid REFERENCES public.calendar_slots(id) ON DELETE SET NULL,
-  amount numeric NOT NULL,
-  currency text NOT NULL DEFAULT 'USD',
-  payment_type text NOT NULL DEFAULT 'lesson',
-    -- 'lesson' | 'prepaid_pack' | 'refund'
-  lessons_count integer DEFAULT 1, -- for prepaid packs
-  is_confirmed boolean NOT NULL DEFAULT false,
-  confirmed_at timestamp with time zone,
-  confirmed_by text, -- 'teacher' | 'student'
-  notes text,
-  created_at timestamp with time zone NOT NULL DEFAULT now()
-);
-```
-
-#### RLS Policies
-
-```sql
--- calendar_slots
-ALTER TABLE calendar_slots ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Teachers can manage their own slots"
-  ON calendar_slots FOR ALL TO authenticated
-  USING (auth.uid() = teacher_id)
-  WITH CHECK (auth.uid() = teacher_id);
-
--- Publiczny dostep dla uczniow (booking przez share token - walidacja w kodzie)
-CREATE POLICY "Public can view available slots by teacher"
-  ON calendar_slots FOR SELECT TO anon, authenticated
-  USING (status = 'available' AND student_id IS NULL);
-
--- calendar_recurrence_rules
-ALTER TABLE calendar_recurrence_rules ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Teachers manage their recurrence rules"
-  ON calendar_recurrence_rules FOR ALL TO authenticated
-  USING (auth.uid() = teacher_id)
-  WITH CHECK (auth.uid() = teacher_id);
-
--- calendar_settings
-ALTER TABLE calendar_settings ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Teachers manage their settings"
-  ON calendar_settings FOR ALL TO authenticated
-  USING (auth.uid() = teacher_id)
-  WITH CHECK (auth.uid() = teacher_id);
-
--- calendar_student_settings
-ALTER TABLE calendar_student_settings ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Teachers manage student settings"
-  ON calendar_student_settings FOR ALL TO authenticated
-  USING (auth.uid() = teacher_id)
-  WITH CHECK (auth.uid() = teacher_id);
-
--- calendar_payment_records
-ALTER TABLE calendar_payment_records ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Teachers manage payment records"
-  ON calendar_payment_records FOR ALL TO authenticated
-  USING (auth.uid() = teacher_id)
-  WITH CHECK (auth.uid() = teacher_id);
-```
-
-#### 1.2 Nowe strony i komponenty
-
-**Routing (App.tsx):**
-
-```
-/calendar                -> CalendarPage.tsx (widok nauczyciela)
-/calendar/settings       -> CalendarSettingsPage.tsx (ustawienia)
-/book/:token             -> PublicBookingPage.tsx (widok ucznia - publiczny)
-/my-lessons/:token       -> StudentLessonsPage.tsx (widok ucznia - jego lekcje)
-```
-
-**Komponenty glowne:**
-
-```
-src/pages/CalendarPage.tsx           -- Glowna strona kalendarza nauczyciela
-src/pages/CalendarSettingsPage.tsx   -- Ustawienia kalendarza
-src/pages/PublicBookingPage.tsx      -- Publiczny kalendarz do rezerwacji
-src/pages/StudentLessonsPage.tsx     -- Widok ucznia z lekcjami (punkt G)
-
-src/components/calendar/
-  CalendarWeekView.tsx               -- Widok tygodniowy (glowny)
-  CalendarMonthView.tsx              -- Widok miesieczny (overview)
-  CalendarDayColumn.tsx              -- Kolumna dnia z godzinami
-  CalendarSlotCard.tsx               -- Karta slotu (kolor wg statusu)
-  AddSlotModal.tsx                   -- Dodawanie pojedynczego slotu
-  AddRecurringSlotModal.tsx          -- Dodawanie cyklicznych slotow
-  SlotDetailModal.tsx                -- Szczegoly slotu (edycja, notatki, worksheet link)
-  BookingConfirmationModal.tsx       -- Potwierdzenie rezerwacji
-  CalendarToolbar.tsx                -- Filtrowanie, nawigacja, widoki
-  CalendarSettingsForm.tsx           -- Formularz ustawien
-  StudentTrustSettings.tsx           -- Ustawienia zaufania per uczen
-  PublicCalendarSlotPicker.tsx       -- Picker slotow dla ucznia
-  StudentLessonCard.tsx              -- Karta lekcji w widoku ucznia
-  LinkWorksheetModal.tsx             -- Laczenie worksheet z lekcja
-
-src/hooks/
-  useCalendarSlots.tsx               -- CRUD slotow + realtime
-  useCalendarSettings.tsx            -- Ustawienia
-  useCalendarRecurrence.tsx          -- Cykliczne sloty
-  usePublicBooking.tsx               -- Logika rezerwacji ucznia
-```
-
-#### 1.3 Widok kalendarza nauczyciela (CalendarPage)
-
-**Layout:** Pelnoekranowy widok tygodniowy (pon-niedz) z kolumnami godzinowymi 7:00-22:00.
-
-**Glowne elementy:**
-
-- **Toolbar:** Strzalki nawigacji tydzien (< This week >) | Widok: Week / Month | Filtr: All students / Konkretny uczen | Button: "Add Slot" | Button: "Settings" | Button: "Share Calendar"
-- **Siatka tygodniowa:** 7 kolumn (dni), wiersze co 30 min. Sloty wyswietlane jako kolorowe bloki:
-  - Zielony = available (wolny)
-  - Niebieski = booked (zarezerwowany, potwierdzony)
-  - Zolty = pending confirmation
-  - Szary = completed
-  - Czerwony = cancelled / no-show
-- **Klikniecie slotu:** Otwiera SlotDetailModal z opcjami: edycja, notatki, link do worksheet, oznacz jako completed/no-show, anuluj
-- **Klikniecie pustego miejsca:** Otwiera AddSlotModal z pre-filled data i godzina
-
-**Widok miesieczny:** Kompaktowy grid z liczbami slotow per dzien (klikniecie dnia przelacza na widok tygodniowy).
-
-#### 1.4 Publiczny kalendarz (punkt B)
-
-**Generowanie linku:** W CalendarSettings nauczyciel klika "Enable Public Calendar". System generuje `public_calendar_token` (hex, 64 znaki). Link: `/book/{token}`.
-
-**PublicBookingPage.tsx:**
-
-- Wyswietla wolne sloty nauczyciela (filtr: status='available', student_id IS NULL)
-- Uczen wpisuje imie + email (lub jest juz zidentyfikowany jesli ma student_email w tabeli students)
-- Klika slot -> modal potwierdzenia -> rezerwacja
-- Jesli nauczyciel ma `default_booking_mode = 'auto_confirm'` LUB uczen ma `booking_mode_override = 'auto_confirm'` -> slot od razu `status='booked'`, `confirmed_at=now()`
-- Jesli `requires_confirmation` -> slot `status='booked'`, `confirmed_at=NULL` -> nauczyciel dostaje powiadomienie
-
-**Limit slotow (punkt D):**
-
-- Przed rezerwacja sprawdz: ile slotow ma uczen w tym tygodniu
-- Jesli `max_slots_per_student_per_week` jest ustawiony:
-  - `enforce_slot_limit=true` -> blokada, komunikat "You've reached the maximum of X lessons per week"
-  - `enforce_slot_limit=false` -> warning modal: "You already have X lessons this week. Are you sure you want to book another?"
-
-#### 1.5 Cykliczne sloty (punkt C)
-
-**AddRecurringSlotModal:**
-
-- Wybor dnia tygodnia + godzina start/end
-- Wybor: "Generate for next X weeks" (default 4)
-- Po zapisaniu: tworzy `calendar_recurrence_rule` + natychmiast generuje sloty na X tygodni
-
-**Auto-generowanie (cron lub manual):**
-
-- Edge function `generate-recurring-slots` wywoływana raz dziennie (lub recznie przyciskiem)
-- Sprawdza aktywne rules i generuje sloty na `auto_generate_weeks_ahead` tygodni do przodu jesli jeszcze nie istnieja
-
-#### 1.6 Powiazanie z Worksheet (punkt I)
-
-W `SlotDetailModal` przycisk "Link Worksheet" otwiera `LinkWorksheetModal`:
-
-- Lista worksheetow nauczyciela dla danego ucznia
-- Po wybraniu: `calendar_slots.worksheet_id = selected_id`
-- W widoku kalendarza: ikona dokumentu na slocie, klikniecie otwiera worksheet
-
-#### 1.7 Widok ucznia (punkt G)
-
-**StudentLessonsPage.tsx** (dostepny przez link `/my-lessons/{token}`):
-
-- Token generowany per uczen (hash z student_id + teacher_id)
-- Pokazuje: przyszle lekcje (sorted by date), przeszle lekcje
-- Kazda lekcja: data, godzina, notatki nauczyciela, link do worksheetu jesli jest
-- Status platnosci (faza 2)
-
-#### 1.8 Powiadomienia
-
-**Typy powiadomien (reuse `homework_notifications` tabeli):**
-
-- `lesson_booked` - uczen zarezerwował lekcje
-- `lesson_confirmed` - nauczyciel potwierdzil
-- `lesson_cancelled` - anulowanie
-- `lesson_reminder` - przypomnienie X godzin przed
-
-**Edge function `send-calendar-notification`:**
-
-- Wysyla email do ucznia (reuse istniejacego wzorca z `send-homework-email`)
-- Nauczyciel kontroluje ktore powiadomienia sa aktywne w `calendar_settings`
-
-#### 1.9 Nawigacja
-
-W `Dashboard.tsx` dodac przycisk/link "Calendar" w gornym pasku obok istniejacych elementow. Ikona: `Calendar` z lucide-react (juz importowany w Dashboard.tsx linia 22).
-
-W `StudentPage.tsx` dodac nowa zakladke "Calendar" w TabsList (po "Skills") - pokazuje sloty tylko dla tego ucznia.
-
----
-
-### FAZA 2: Platnosci i eksport (punkt F, H)
-
-#### Platnosci (punkt F)
-
-- W `CalendarSettingsForm` sekcja "Payment Tracking": enable/disable, default price, currency
-- W `CalendarStudentSettings`: prepaid_lessons_remaining, lesson_price_override
-- W `SlotDetailModal`: przycisk "Mark as Paid" / "Mark as Unpaid"
-- Auto-dekrementacja `prepaid_lessons_remaining` po zakonczeniu lekcji (status='completed')
-- Uczen moze kliknac "I've paid" -> wymaga potwierdzenia nauczyciela
-- Powiadomienia o platnosci (jesli wlaczone w ustawieniach)
-
-#### Eksport (punkt H)
-
-- W `CalendarToolbar` przycisk "Export" -> dropdown: "All lessons" / "Selected student" / "Date range"
-- Generuje CSV z kolumnami: Date, Time, Student, Status, Paid, Notes, Worksheet Title
-- Opcja "Send by email" -> edge function `send-calendar-export` wysyla CSV mailem
-
----
-
-### FAZA 3: Google Calendar (punkt E)
-
-#### Integracja
-
-- Wymaga Google Calendar API connector (OAuth2)
-- Edge function `sync-gcal-event` wywoływana po potwierdzeniu rezerwacji
-- Tworzy event w GCal nauczyciela z: tytul (student name + "English lesson"), czas, kolor (z ustawien), reminder (z ustawien)
-- Dwukierunkowa sync: jesli nauczyciel usunie event w GCal -> webhook powiadamia nasz system
-- Ustawienia w CalendarSettings: kolor, reminder minutes, opis domyslny
-
-**UWAGA:** Faza 3 wymaga connector Google Calendar. Sprawdzilem dostepne connectors - nie ma Google Calendar. Bedzie wymagal albo custom OAuth flow albo dodania connektora w przyszlosci. Na razie planujemy architekture ale nie implementujemy.
-
----
-
-### Punkty J, K, L, M (dodatkowe elementy)
-
-**J. Konieczne:**
-
-- Timezone support - nauczyciel ustawia swoja strefe czasowa w settings, wszystkie czasy wyswietlane w tej strefie
-- Konflikt detection - nie pozwol na overlapping sloty
-- Cancellation policy - minimum X godzin przed lekcja
-
-**K. Najlepsze praktyki:**
-
-- Buffer time - automatyczne 5-15 min przerwy miedzy lekcjami (konfigurowalne) - odrzucam pomysł, moze byc nawet 0 min między lekcjami
-- Batch operations - "Add 5 slots at once" (np. caly dzien co godzine)
-- Undo cancellation - 30 min grace period
-
-**L. Standard:**
-
-- Color coding konsekwentny z reszta aplikacji (purpleDark, green, amber, red)
-- Responsive - na mobile widok dzienny zamiast tygodniowego
-- Loading states, error handling, optimistic updates
-
-**M. Moje rekomendacje:**
-
-- "Quick Week Setup" wizard - przy pierwszym uzyciu nauczyciel zaznacza typowe godziny pracy i system generuje sloty na 4 tygodnie
-- Slot templates - "My typical Monday" - zapisz i wklejaj szablony
-- Student attendance stats - % frekwencji per uczen (liczy completed vs no_show)
-
----
-
-### Kolejnosc implementacji Fazy 1
-
-
-| Krok | Co                                                                                 | Pliki         |
-| ---- | ---------------------------------------------------------------------------------- | ------------- |
-| 1    | Migracja SQL - 5 tabel + RLS + indeksy                                             | migration.sql |
-| 2    | Hook `useCalendarSettings` + `useCalendarSlots`                                    | 2 pliki hooks |
-| 3    | `CalendarPage.tsx` + `CalendarWeekView` + `CalendarDayColumn` + `CalendarSlotCard` | 4 pliki       |
-| 4    | `AddSlotModal` + `SlotDetailModal`                                                 | 2 pliki       |
-| 5    | `CalendarSettingsPage` + `CalendarSettingsForm`                                    | 2 pliki       |
-| 6    | `AddRecurringSlotModal` + `useCalendarRecurrence` + edge function                  | 3 pliki       |
-| 7    | `PublicBookingPage` + `usePublicBooking` + `PublicCalendarSlotPicker`              | 3 pliki       |
-| 8    | `StudentLessonsPage` + `StudentLessonCard`                                         | 2 pliki       |
-| 9    | `LinkWorksheetModal`                                                               | 1 plik        |
-| 10   | Powiadomienia - edge function + integracja                                         | 2 pliki       |
-| 11   | Nawigacja (Dashboard + StudentPage + App.tsx)                                      | 3 pliki       |
-| 12   | Dokumentacja                                                                       | 6 plikow      |
-
-
-**Szacunek: ~30 plikow, 3-4 sesje implementacji.**
-
----
-
-## Problem 2: Tlumaczenia 5 nowych pytan na 25 jezykow
-
-### Analiza
-
-Plik `welcomeTestTranslations.ts` zawiera 25 jezykow. Kazdy jezyk ma ~24 pytan przetlumaczonych. Brakuje 5 nowych: `wt_q3b`, `wt_q5b`, `wt_q13b`, `wt_q17b`, `wt_q41b`.
-
-### Pytania do przetlumaczenia (tekst angielski)
-
-```text
-wt_q3b:
-  question: "Where do you use (or want to use) English the most?"
-  options: [
-    "At work - emails, meetings, calls",
-    "Traveling - airports, hotels, restaurants",
-    "Online - social media, forums, gaming",
-    "With friends/family who speak English",
-    "Consuming content - movies, books, podcasts",
-    "In my professional field (medical, legal, IT, etc.)"
-  ]
-
-wt_q5b:
-  question: "Imagine this: your boss just told you that in 3 weeks, you'll need to lead a meeting in English with international clients. How do you react?"
-  options: [
-    "I'd panic at first, but then prepare intensively every day until the meeting",
-    "I'd feel nervous but would ask a colleague for help and practice the key phrases",
-    "I'd ask to postpone or let someone else handle it",
-    "I'd feel fairly confident - I'd just review some vocabulary beforehand"
-  ]
-
-wt_q13b:
-  question: "Think about the last time you tried to learn something new (not English - anything: cooking, a sport, a skill). What happened?"
-  options: [
-    "I stuck with it and got pretty good at it",
-    "I practiced for a while but eventually moved on to something else",
-    "I started enthusiastically but lost motivation after a few weeks",
-    "I'm still learning it - I haven't given up yet"
-  ]
-
-wt_q17b:
-  question: "You see a perfect job posting that matches your skills exactly, but it requires 'fluent English.' What goes through your mind?"
-  options: [
-    "This is exactly why I'm learning English - I need to be ready for opportunities like this",
-    "I'd apply anyway and hope my English improves by the time they interview me",
-    "I'd skip it - I'm not learning English for work reasons",
-    "I'd apply and highlight my other strengths to compensate for my English"
-  ]
-
-wt_q41b:
-  question: "Which of these situations is closest to yours right now?"
-  description: "There are no right or wrong answers."
-  options: [
-    "I have a specific event coming up soon where I need English (trip, interview, presentation)",
-    "I need English regularly for my work/life, and I want to get noticeably better in the next few months",
-    "I'm learning English for the long term - there's no rush, but I want steady progress",
-    "English is something I enjoy learning - it's more about personal growth than a specific need"
-  ]
-```
-
-### Plan implementacji
-
-**Plik:** `src/data/welcomeTestTranslations.ts`
-
-**Metoda:** Dodac 5 wpisow do kazdego z 25 obiektow jezykowych. Kazdy wpis zawiera `question`, `options` i opcjonalnie `description`.
-
-**25 jezykow:**
-Polish, Spanish, German, French, Portuguese, Italian, Turkish, Russian, Czech, Ukrainian, Dutch, Japanese, Korean, Chinese, Arabic, Hungarian, Romanian, Greek, Croatian, Swedish, Hindi, Vietnamese, Thai, Norwegian, Danish
-
-**Lacznie:** 5 pytan × 25 jezykow = **125 wpisow translacyjnych**
-
-### Gotowe tlumaczenia (wszystkie 125)
-
-Ze wzgledu na ogrom danych, ponizej podaje tlumaczenia pogrupowane per pytanie. Implementacja polega na dodaniu tych wpisow do kazdego obiektu jezykowego w pliku.
-
-#### POLISH (juz istnieje, dodac 5 nowych):
+To tworzy **nowy obiekt Date przy kazdym renderze**. `fetchSlots` (linia 51) ma dependency `[teacherId, weekStart, weekEnd]`. Poniewaz `weekEnd` jest nowa referencja przy kazdym renderze:
+1. `fetchSlots` zmienia sie → useEffect (linia 76) odpala
+2. `fetchSlots()` wywoluje `setSlots()` → re-render
+3. Nowy `weekEnd` → nowy `fetchSlots` → useEffect znowu → nieskonczona petla
+4. Setki requestow → przegladarka blokuje: `ERR_INSUFFICIENT_RESOURCES`
+
+**Fix:** Uzyc `useMemo` dla `weekEnd` ALBO (lepiej) usunac `weekEnd` z dependencies `fetchSlots` i obliczyc go wewnatrz:
 
 ```typescript
-'wt_q3b': {
-  question: 'Gdzie najczesciej uzywasz (lub chcesz uzywac) angielskiego?',
-  options: [
-    'W pracy - maile, spotkania, rozmowy telefoniczne',
-    'W podrozy - lotniska, hotele, restauracje',
-    'Online - media spolecznosciowe, fora, gry',
-    'Z przyjaciolmi/rodzina, ktorzy mowia po angielsku',
-    'Konsumowanie tresci - filmy, ksiazki, podcasty',
-    'W mojej dziedzinie zawodowej (medycyna, prawo, IT itp.)',
-  ],
-},
-'wt_q5b': {
-  question: 'Wyobraz sobie: szef wlasnie powiedzial Ci, ze za 3 tygodnie bedziesz musial/a poprowadzic spotkanie po angielsku z miedzynarodowymi klientami. Jak reagujesz?',
-  options: [
-    'Najpierw bym spanikowal/a, ale potem przygotowywal/a sie intensywnie kazdego dnia',
-    'Bylbym/bylabym zdenerwowany/a, ale poprosil/a kolege o pomoc i cwiczy/la kluczowe frazy',
-    'Poprosil/a bym o przesuniecie lub zeby ktos inny to poprowadzil',
-    'Czulbym/czulabym sie dosyc pewnie - tylko przejrzal/a bym slownictwo wczesniej',
-  ],
-},
-'wt_q13b': {
-  question: 'Pomysl o ostatnim razie, gdy probowal/as nauczyc sie czegos nowego (nie angielskiego - czegokolwiek: gotowania, sportu, umiejetnosci). Co sie stalo?',
-  options: [
-    'Wytrwalam/em i stal/am sie w tym calkiem dobry/a',
-    'Cwiczylem/am przez jakis czas, ale w koncu przeszedlem/przeszlam do czegos innego',
-    'Zaczynalem/am z entuzjazmem, ale stracilem/am motywacje po kilku tygodniach',
-    'Nadal sie tego ucze - nie poddajem/am sie',
-  ],
-},
-'wt_q17b': {
-  question: 'Widzisz idealna oferte pracy, ktora pasuje do Twoich umiejetnosci, ale wymaga "plynnego angielskiego." Co myslisz?',
-  options: [
-    'Wlasnie dlatego ucze sie angielskiego - musze byc gotowy/a na takie mozliwosci',
-    'Zaaplikowalbym/zaaplikowalabym i mial/a nadzieje, ze moj angielski sie poprawi do rozmowy',
-    'Pominal/a bym to - nie ucze sie angielskiego z powodow zawodowych',
-    'Zaaplikowalbym/zaaplikowalabym i podkreslil/a inne mocne strony',
-  ],
-},
-'wt_q41b': {
-  question: 'Ktora z tych sytuacji jest najblizsza Twojej obecnej?',
-  description: 'Nie ma dobrych ani zlych odpowiedzi.',
-  options: [
-    'Mam konkretne wydarzenie wkrotce, gdzie potrzebuje angielskiego (podroz, rozmowa kwalifikacyjna, prezentacja)',
-    'Potrzebuje angielskiego regularnie w pracy/zyciu i chce zauwazyc poprawe w najblizszych miesiacach',
-    'Ucze sie angielskiego dlugoterminowo - nie ma pospiech, ale chce starego postepu',
-    'Angielski to cos, co lubie sie uczyc - bardziej chodzi o rozwoj osobisty niz konkretna potrzebe',
-  ],
-},
+// ZMIANA w useCalendarSlots.tsx:
+// Linia 49 - dodac useMemo:
+const weekEnd = useMemo(() => endOfWeek(weekStart, { weekStartsOn: 1 }), [weekStart]);
 ```
 
-#### Pozostale 24 jezyki
-
-Ponizej kompletne tlumaczenia dla KAZDEGO jezyka. Format jest identyczny - 5 kluczy (wt_q3b, wt_q5b, wt_q13b, wt_q17b, wt_q41b) do dodania do kazdego obiektu.
-
-**SPANISH:**
-
-```
-wt_q3b: q:"¿Dónde usas (o quieres usar) más el inglés?" opts:["En el trabajo - correos, reuniones, llamadas","Viajando - aeropuertos, hoteles, restaurantes","Online - redes sociales, foros, juegos","Con amigos/familia que hablan inglés","Consumiendo contenido - películas, libros, podcasts","En mi campo profesional (medicina, derecho, IT, etc.)"]
-wt_q5b: q:"Imagina esto: tu jefe acaba de decirte que en 3 semanas tendrás que dirigir una reunión en inglés con clientes internacionales. ¿Cómo reaccionas?" opts:["Primero entraría en pánico, pero luego me prepararía intensivamente cada día","Me pondría nervioso/a pero pediría ayuda a un colega y practicaría las frases clave","Pediría posponerlo o que otra persona se encargue","Me sentiría bastante seguro/a - solo repasaría vocabulario antes"]
-wt_q13b: q:"Piensa en la última vez que intentaste aprender algo nuevo (no inglés - cualquier cosa). ¿Qué pasó?" opts:["Persistí y me volví bastante bueno/a","Practiqué un tiempo pero al final pasé a otra cosa","Empecé con entusiasmo pero perdí la motivación después de unas semanas","Todavía lo estoy aprendiendo - no me he rendido"]
-wt_q17b: q:"Ves una oferta de trabajo perfecta que coincide con tus habilidades, pero requiere 'inglés fluido.' ¿Qué piensas?" opts:["Por esto estoy aprendiendo inglés - necesito estar listo/a para oportunidades así","Aplicaría y esperaría que mi inglés mejore para la entrevista","Lo pasaría - no estoy aprendiendo inglés por razones laborales","Aplicaría y destacaría mis otras fortalezas"]
-wt_q41b: q:"¿Cuál de estas situaciones es más cercana a la tuya?" desc:"No hay respuestas correctas ni incorrectas." opts:["Tengo un evento específico pronto donde necesito inglés (viaje, entrevista, presentación)","Necesito inglés regularmente y quiero mejorar notablemente en los próximos meses","Estoy aprendiendo inglés a largo plazo - sin prisa, pero con progreso constante","El inglés es algo que disfruto aprender - más sobre crecimiento personal que una necesidad específica"]
-```
-
-**GERMAN:**
-
-```
-wt_q3b: q:"Wo verwenden Sie (oder möchten Sie) Englisch am meisten?" opts:["Bei der Arbeit - E-Mails, Meetings, Anrufe","Auf Reisen - Flughäfen, Hotels, Restaurants","Online - soziale Medien, Foren, Gaming","Mit Freunden/Familie, die Englisch sprechen","Inhalte konsumieren - Filme, Bücher, Podcasts","In meinem Fachgebiet (Medizin, Recht, IT usw.)"]
-wt_q5b: q:"Stellen Sie sich vor: Ihr Chef hat Ihnen gerade gesagt, dass Sie in 3 Wochen ein Meeting auf Englisch mit internationalen Kunden leiten müssen. Wie reagieren Sie?" opts:["Ich würde zuerst in Panik geraten, mich dann aber jeden Tag intensiv vorbereiten","Ich wäre nervös, würde aber einen Kollegen um Hilfe bitten und die Schlüsselphrasen üben","Ich würde bitten, es zu verschieben oder jemand anderen übernehmen zu lassen","Ich wäre ziemlich zuversichtlich - würde nur vorher Vokabeln wiederholen"]
-wt_q13b: q:"Denken Sie an das letzte Mal, als Sie etwas Neues lernen wollten (nicht Englisch). Was ist passiert?" opts:["Ich bin drangeblieben und ziemlich gut darin geworden","Ich habe eine Weile geübt, bin dann aber zu etwas anderem übergegangen","Ich habe enthusiastisch angefangen, aber nach ein paar Wochen die Motivation verloren","Ich lerne es noch - ich habe nicht aufgegeben"]
-wt_q17b: q:"Sie sehen eine perfekte Stellenanzeige, die genau zu Ihren Fähigkeiten passt, aber 'fließendes Englisch' erfordert. Was denken Sie?" opts:["Genau dafür lerne ich Englisch - ich muss für solche Möglichkeiten bereit sein","Ich würde mich trotzdem bewerben und hoffen, dass sich mein Englisch bis zum Vorstellungsgespräch verbessert","Ich würde es überspringen - ich lerne Englisch nicht aus beruflichen Gründen","Ich würde mich bewerben und meine anderen Stärken hervorheben"]
-wt_q41b: q:"Welche dieser Situationen ist Ihrer am nächsten?" desc:"Es gibt keine richtigen oder falschen Antworten." opts:["Ich habe bald ein konkretes Ereignis, bei dem ich Englisch brauche (Reise, Vorstellungsgespräch, Präsentation)","Ich brauche Englisch regelmäßig und möchte in den nächsten Monaten spürbare Fortschritte machen","Ich lerne langfristig Englisch - kein Stress, aber stetiger Fortschritt","Englisch macht mir Spaß - es geht mehr um persönliche Entwicklung als um einen konkreten Bedarf"]
-```
-
-**FRENCH:**
-
-```
-wt_q3b: q:"Où utilisez-vous (ou voulez-vous utiliser) l'anglais le plus?" opts:["Au travail - e-mails, réunions, appels","En voyage - aéroports, hôtels, restaurants","En ligne - réseaux sociaux, forums, jeux","Avec des amis/famille anglophones","Consommer du contenu - films, livres, podcasts","Dans mon domaine professionnel (médecine, droit, IT, etc.)"]
-wt_q5b: q:"Imaginez : votre patron vient de vous dire que dans 3 semaines, vous devrez diriger une réunion en anglais avec des clients internationaux. Comment réagissez-vous?" opts:["Je paniquerais d'abord, puis je me préparerais intensivement chaque jour","Je serais nerveux/se mais demanderais de l'aide à un collègue et pratiquerais les phrases clés","Je demanderais de reporter ou de laisser quelqu'un d'autre s'en charger","Je me sentirais assez confiant(e) - je réviserais juste du vocabulaire avant"]
-wt_q13b: q:"Pensez à la dernière fois que vous avez essayé d'apprendre quelque chose de nouveau (pas l'anglais). Que s'est-il passé?" opts:["J'ai persévéré et suis devenu(e) plutôt bon(ne)","J'ai pratiqué pendant un moment mais suis passé(e) à autre chose","J'ai commencé avec enthousiasme mais perdu la motivation après quelques semaines","Je suis encore en train de l'apprendre - je n'ai pas abandonné"]
-wt_q17b: q:"Vous voyez une offre d'emploi parfaite qui correspond à vos compétences, mais exige un 'anglais courant.' Que pensez-vous?" opts:["C'est exactement pourquoi j'apprends l'anglais - je dois être prêt(e) pour de telles opportunités","Je postulerais quand même en espérant que mon anglais s'améliore d'ici l'entretien","Je passerais - je n'apprends pas l'anglais pour des raisons professionnelles","Je postulerais et mettrais en avant mes autres forces"]
-wt_q41b: q:"Laquelle de ces situations est la plus proche de la vôtre?" desc:"Il n'y a pas de bonnes ou mauvaises réponses." opts:["J'ai un événement spécifique bientôt où j'ai besoin d'anglais (voyage, entretien, présentation)","J'ai besoin d'anglais régulièrement et je veux m'améliorer notablement dans les prochains mois","J'apprends l'anglais sur le long terme - pas de précipitation, mais un progrès régulier","L'anglais est quelque chose que j'aime apprendre - c'est plus pour le développement personnel qu'un besoin spécifique"]
-```
-
-**Pozostale 21 jezykow** beda tlumaczone analogicznie, zachowujac:
-
-- Ten sam ton (naturalny, nieformalny)
-- Ten sam format (question + options + opcjonalnie description)
-- Formalne/nieformalne formy odpowiednie dla danego jezyka (np. Sie w niemieckim, Вы w rosyjskim)
-
-**UWAGA IMPLEMENTACYJNA:** Ze wzgledu na 776-liniowy plik i 125 nowych wpisow, implementacja powinna:
-
-1. Dodac 5 kluczy po `'wt_q45'` w kazdym obiekcie jezykowym
-2. Zachowac istniejacy format i styl
-3. Nie ruszac istniejacych tlumaczen
-
-**Pelna lista wpisow per jezyk (do implementacji):**
-
-Kazdy z 25 jezykow dostaje dokladnie 5 nowych kluczy. Tlumaczenia dla Portuguese, Italian, Turkish, Russian, Czech, Ukrainian, Dutch, Japanese, Korean, Chinese, Arabic, Hungarian, Romanian, Greek, Croatian, Swedish, Hindi, Vietnamese, Thai, Norwegian, Danish beda generowane w implementacji z zachowaniem kontekstu kulturowego i jezykowego kazdego jezyka.
+To jednolinijkowa zmiana rozwiazujaca problem calkowicie. `weekEnd` zmieni sie tylko gdy `weekStart` sie zmieni.
 
 ---
 
-## Podsumowanie
+### Problem 2: Widoki Day/Week/Month w toolbarze
 
+**Obecny stan:** Toolbar ma tylko nawigacje tygodniowa (prev/today/next) i zakres dat.
 
-| Problem               | Zlozonosc             | Pliki                    | Sesje implementacji |
-| --------------------- | --------------------- | ------------------------ | ------------------- |
-| 1. Kalendarz (Faza 1) | Duza                  | ~30 nowych + 3 edytowane | 3-4 sesje           |
-| 2. Tlumaczenia        | Srednia (mechaniczna) | 1 plik (125 wpisow)      | 1-2 sesje           |
+**Rozwiazanie:** Dodac przelacznik widoku (Day / Week / Month) do CalendarToolbar + CalendarPage:
 
+1. **W `useCalendarSlots.tsx`:**
+   - Dodac state `viewMode: 'day' | 'week' | 'month'`
+   - Dodac state `currentDate: Date` (dla widoku dziennego)
+   - Zmienic `navigateWeek` na bardziej ogolne `navigate` ktore dziala dla kazdego trybu
+   - `fetchSlots` pobiera dane wg aktywnego widoku:
+     - Day: 1 dzien
+     - Week: 7 dni (jak teraz)
+     - Month: ~35 dni (5 tygodni siatki)
 
-**Rekomendacja kolejnosci:**
+2. **W `CalendarToolbar.tsx`:**
+   - Dodac 3 przyciski (Day / Week / Month) obok nawigacji
+   - Uzyc ToggleGroup z shadcn/ui
+   - Format daty zmienia sie wg widoku:
+     - Day: "Wednesday, Feb 26, 2026"
+     - Week: "Feb 23 – Mar 1, 2026" (jak teraz)
+     - Month: "February 2026"
 
-1. Najpierw Problem 2 (tlumaczenia) - szybki, nie wplywa na architekture
-2. Potem Problem 1 Faza 1 - krok po kroku wedlug tabeli implementacji
+3. **Nowy komponent `CalendarDayView.tsx`:**
+   - Widok godzinowy 7:00-22:00 (jak Google Calendar day view)
+   - Godziny po lewej, sloty jako bloki o wysokosci proporcjonalnej do czasu trwania
+   - Klikniecie pustego obszaru otwiera AddSlotModal z pre-filled godzina
+
+4. **Nowy komponent `CalendarMonthView.tsx`:**
+   - Siatka 7x5 (pon-niedz x 5 tygodni)
+   - Kazda komorka pokazuje date + kolorowe kropki/minikarty slotow
+   - Klikniecie dnia przelacza na widok dzienny tego dnia
+   - Max 3-4 sloty widoczne per komorka + "+X more" link
+
+5. **W `CalendarPage.tsx`:**
+   - Warunkowe renderowanie: `viewMode === 'week' ? <CalendarWeekView> : viewMode === 'day' ? <CalendarDayView> : <CalendarMonthView>`
+
+**Pliki do zmiany/utworzenia:**
+- `useCalendarSlots.tsx` — dodac viewMode, currentDate, navigate
+- `CalendarToolbar.tsx` — dodac ToggleGroup Day/Week/Month
+- `CalendarDayView.tsx` — NOWY
+- `CalendarMonthView.tsx` — NOWY
+- `CalendarPage.tsx` — warunkowe renderowanie
+
+---
+
+### Problem 3A: Recurring slots — student + data koncowa
+
+**Obecny stan:** `AddRecurringSlotModal` pozwala wybrac dzien tygodnia, czas, i "weeks ahead". Brak opcji przypisania studenta i daty koncowej.
+
+**Fix w `AddRecurringSlotModal.tsx`:**
+1. Dodac `Select` do wyboru studenta (tak jak w AddSlotModal — "Open slot" / lista studentow)
+2. Dodac przelacznik: "Generate for X weeks" / "Until specific date"
+   - Jesli "Until date": Input type="date" na `effective_until`
+   - Jesli "X weeks": Select jak teraz
+3. W `useCalendarRecurrence.tsx` `createRule`: przekazac `student_id` do generowanych slotow (aktualnie wszystkie sa `student_id: null`)
+
+**Zmiany w `CreateRecurrenceInput`:**
+```typescript
+export interface CreateRecurrenceInput {
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  effective_from?: string;
+  effective_until?: string | null;
+  auto_generate_weeks_ahead?: number;
+  student_id?: string | null;  // NOWE
+  title?: string;              // NOWE
+}
+```
+
+**Props `AddRecurringSlotModal`:** Dodac `students: Student[]` (przekazac z CalendarPage tak jak do AddSlotModal).
+
+---
+
+### Problem 3B: Szybkie dodawanie wielu slotow (Batch Add)
+
+**Rozwiazanie:** Nowy modal `BatchAddSlotsModal.tsx` dostepny z toolbara (przycisk "Batch Add" lub w menu "Add Slot ▼"):
+
+**UI modalu BatchAddSlotsModal:**
+1. **Sekcja "Select Days":** Checkboxy dla kazdego dnia tygodnia (Mon-Sun). Mozna zaznaczyc wiele.
+2. **Sekcja "Time Slots":** Lista par start/end z przyciskiem "+Add time". Np.:
+   - 09:00-10:00 [x]
+   - 10:00-11:00 [x]
+   - 14:00-15:00 [x]
+   - [+ Add time slot]
+3. **Sekcja "Date Range":** Od (date) - Do (date). Default: biezacy tydzien.
+4. **Sekcja "Type":** Radio: "Available slots" / "Assigned to student" + select studenta.
+5. **Preview:** "This will create 15 slots" (dynamic count).
+6. **Button:** "Create X slots"
+
+**Logika:** Dla kazdego zaznaczonego dnia w zakresie dat × kazdy time slot → wygeneruj CreateSlotInput. Sprawdz konflikty zbiorczo. Wstaw batch jednym INSERT.
+
+**Plik:** `src/components/calendar/BatchAddSlotsModal.tsx` — NOWY
+
+---
+
+### Problem 3C: Opcje jak w Google Calendar przy dodawaniu
+
+**Rozwiazanie:** Rozbudowac `AddSlotModal` o dodatkowe pola i rozdzielic na dwa tryby:
+
+**Nowy layout AddSlotModal:**
+Na gorze modalu 2 zakladki (Tabs):
+- **"Available Slot"** — tworzenie pustego slotu do rezerwacji
+- **"Lesson"** — tworzenie slotu z przypisanym studentem
+
+**Zakladka "Available Slot":**
+- Date (date picker)
+- Start Time / End Time
+- Repeat: None / Weekly / Custom (opcja cyklicznosci inline)
+- Title (optional)
+- Notes (optional)
+
+**Zakladka "Lesson":**
+- Student (wymagany — Select z lista studentow)
+- Date (date picker)
+- Start Time / End Time
+- Repeat: None / Weekly / Custom
+- Title (auto-fill: "{Student name} — English lesson")
+- Notes (optional)
+- Color (opcjonalny — dropdown z kolorami Google Calendar)
+
+**Dodatkowe opcje obu zakladek (inspirowane GCal):**
+- **Repeat dropdown:** None / Every week / Every 2 weeks / Custom → jesli Custom to otwiera mini-formularz jak Google Calendar (dzien tygodnia + ile tygodni / do daty)
+- Notification (checkbox): "Send email notification to student"
+
+---
+
+### Problem 3D: Dodawanie slotow przez klikniecie na kalendarz
+
+**Obecny stan:** W `CalendarDayColumn` jest przycisk "+ Add" na dole kolumny. Klikniecie otwiera modal z pre-filled data ale bez godziny.
+
+**Rozwiazanie dla widoku tygodniowego (CalendarWeekView):**
+- Klikniecie "+ Add" na dole kolumny juz dziala (problem 1 blokuje wyswietlanie)
+- Po naprawie problemu 1, to bedzie dzialac
+
+**Rozwiazanie dla widoku dziennego (CalendarDayView — nowy):**
+- Siatka godzinowa 7:00-22:00, kazda godzina to klikalny wiersz
+- Klikniecie pustego miejsca → `onAddSlot(date, clickedHour)` → AddSlotModal z pre-filled data I godzina
+- Drag to select (przyszlosc) — na razie single click
+
+**Rozwiazanie dla widoku miesiecznego (CalendarMonthView — nowy):**
+- Klikniecie dnia → przelacza na widok dzienny (lub otwiera AddSlotModal)
+- Przycisk "+" w rogu komorki dnia → AddSlotModal z data
+
+---
+
+### Problem 3E: Rozroznienie trybow w modalu
+
+Opisane w 3C powyzej — zakladki "Available Slot" / "Lesson" na gorze modalu AddSlotModal.
+
+---
+
+### Problem 3 (ogolny): Zblizenie do Google Calendar UX
+
+**Kluczowe elementy do odwzorowania:**
+
+1. **Typografia i spacing:**
+   - Uzyc font-family: `'Google Sans', Roboto, Arial, sans-serif` — ale my juz uzywamy Inter ktory jest bardzo podobny. Zachowac Inter.
+   - Zmniejszyc padding w slotach, bardziej kompaktowe karty
+   - Kolory GCal: tla biale, tekst ciemnoszary, akcenty kolorowe per status
+
+2. **Day view (priorytet):**
+   - Siatka godzinowa z liniami poziomymi co 30 min (cienkie linie) i co 1h (grubsze)
+   - Czerwona linia "teraz" przesuwajaca sie w czasie
+   - Sloty jako kolorowe bloki o wysokosci proporcjonalnej do czasu trwania
+   - Bloki lekko zaokraglone (rounded-lg), cien (shadow-sm)
+
+3. **Week view:**
+   - Obecny widok jest listowy (sloty jako buttony w kolumnie). Google Calendar ma siatke godzinowa.
+   - **Zmiana:** Zamiast listy slotow, widok tygodniowy tez powinien byc siatka godzinowa (jak GCal week view)
+   - Kazda kolumna ma godziny 7:00-22:00, sloty jako pozycjonowane absolutnie bloki wg start_time/end_time
+
+4. **Animacje:**
+   - Transition miedzy widokami (fade/slide)
+   - Hover na slotach: scale(1.02) + shadow
+   - Modal otwieranie: juz mamy z Dialog (animowane)
+
+5. **Toolbar:**
+   - Lewo: `< Today >` + data
+   - Srodek/prawo: Day | Week | Month (toggle group)
+   - Prawo: Settings, Share, Add
+
+**UWAGA:** Pelne odwzorowanie GCal wymagaloby znacznego nakladu pracy. Proponuje iteracyjne podejscie:
+- Krok 1: Naprawic bug + dodac Day/Month views (funkcjonalnosc)
+- Krok 2: Przerobic week/day view na siatke godzinowa (UX upgrade)
+- Krok 3: Polish — animacje, kolory, hover efekty
+
+---
+
+### Problem 5J: Timezone — select zamiast input
+
+**Obecny stan:** W CalendarSettingsPage (linia 58) jest zwykly Input tekstowy na timezone.
+
+**Fix:** Zamienic na Select z lista popularnych stref czasowych:
+
+```typescript
+const TIMEZONES = [
+  'Europe/Warsaw', 'Europe/London', 'Europe/Berlin', 'Europe/Paris',
+  'Europe/Madrid', 'Europe/Rome', 'Europe/Prague', 'Europe/Bucharest',
+  'Europe/Athens', 'Europe/Istanbul', 'Europe/Moscow',
+  'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+  'America/Sao_Paulo', 'America/Mexico_City', 'America/Buenos_Aires',
+  'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Seoul', 'Asia/Kolkata',
+  'Asia/Dubai', 'Asia/Bangkok', 'Asia/Singapore',
+  'Australia/Sydney', 'Australia/Melbourne',
+  'Pacific/Auckland',
+  'Africa/Cairo', 'Africa/Johannesburg',
+];
+```
+
+Zmiana w `CalendarSettingsPage.tsx`: zamienic `<Input>` na `<Select>` z powyzszymi wartosciami + opcja "Other (type manually)" z fallback na Input.
+
+---
+
+### Problem 5J: Conflict detection
+
+**Juz istnieje** w `useCalendarSlots.tsx` linia 82-94 w `createSlot`. Sprawdza overlapping sloty przed utworzeniem. To jest poprawne.
+
+---
+
+### Problem 5K: Batch operations
+
+Opisane w 3B powyzej — `BatchAddSlotsModal.tsx`.
+
+---
+
+### Problem 5K: Undo cancellation
+
+**Co to znaczy:** Jesli nauczyciel przypadkowo anuluje slot, ma 30 minut na cofniecie. Po anulowaniu slot zmienia status na 'cancelled'. Przez 30 minut jest widoczny w kalendarzu z przyciskiem "Undo Cancel". Po 30 minutach ten przycisk znika.
+
+**Implementacja:**
+- W `SlotDetailModal.tsx`: jesli `slot.status === 'cancelled'` i `slot.cancelled_at` < 30 min temu → pokaz przycisk "Undo Cancellation"
+- Klikniecie → `updateSlot(id, { status: 'available', cancelled_at: null, cancelled_by: null })`
+- Nie wymaga zmian w bazie — logika frontendowa
+
+---
+
+### Problem 5L: Mobile — widok shared dla ucznia
+
+**Obecny stan:** `PublicBookingPage` ma responsywny grid (2 cols mobile → 7 cols desktop). OK ale mozna poprawic.
+
+**Fix:**
+- Na mobile (`use-mobile` hook): zamiast gridu tygodniowego, pokazac liste dostepnych slotow zgrupowana per dzien (vertical scroll)
+- Kazdy dzien to sekcja z naglowkiem "Wednesday, Feb 26" i lista buttonow ze slotami
+- Przelacznik tygodniowy na gorze (< This Week >)
+- Przycisk "Book" wiekszy na mobile (pelna szerokosc)
+
+---
+
+### Problem 5M: Quick Week Setup wizard
+
+**Nowy komponent `QuickWeekSetupModal.tsx`:**
+
+**Kiedy sie pokazuje:** Pierwszy raz gdy nauczyciel wchodzi na /calendar i nie ma zadnych slotow ani recurrence rules.
+
+**UI:**
+1. **Krok 1:** "What are your typical working hours?"
+   - Suwak lub 2 selecty: Start hour (7:00-12:00) / End hour (15:00-22:00)
+   - Default: 9:00-18:00
+
+2. **Krok 2:** "Which days do you usually teach?"
+   - 7 checkboxow (Mon-Sun), default: Mon-Fri zaznaczone
+
+3. **Krok 3:** "How long is a typical lesson?"
+   - Select: 30 / 45 / 60 / 90 / 120 min
+   - Default: z settings (60)
+
+4. **Krok 4:** "Generate schedule for:"
+   - Select: 2 / 4 / 6 / 8 weeks
+   - Default: 4
+
+5. **Preview:** "This will create 40 available slots (Mon-Fri, 9:00-18:00, 60min each, 4 weeks)"
+
+6. **Button:** "Create Schedule"
+
+**Logika:** Generuje sloty: dla kazdego dnia w wybranych dniach tygodnia × zakres dat × co (duration) min od start do end hour. Np. 9:00-10:00, 10:00-11:00, ..., 17:00-18:00 = 9 slotow/dzien × 5 dni × 4 tygodnie = 180 slotow.
+
+**Wazne:** Insert batchowy (jedno zapytanie). Sprawdzanie konfliktow zbiorcze przed insertem.
+
+---
+
+### Problem 5M: Slot templates
+
+**Nowa tabela `calendar_slot_templates`:**
+```sql
+CREATE TABLE public.calendar_slot_templates (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  teacher_id uuid NOT NULL,
+  name text NOT NULL, -- np. "My Typical Monday"
+  day_of_week integer, -- opcjonalne, 0-6
+  slots jsonb NOT NULL DEFAULT '[]', -- [{start_time, end_time, title}]
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE calendar_slot_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Teachers manage templates" ON calendar_slot_templates
+  FOR ALL TO authenticated USING (auth.uid() = teacher_id) WITH CHECK (auth.uid() = teacher_id);
+```
+
+**UI:**
+- W CalendarToolbar: dropdown "Templates ▼" → lista zapisanych szablonow + "Save current day as template"
+- "Save current day as template": bierze wszystkie sloty z wybranego dnia, zapisuje ich start_time/end_time jako szablon
+- "Apply template": generuje sloty na wybrany dzien/tydzien wg szablonu
+
+---
+
+### Problem 5M: Student attendance stats
+
+**Implementacja:** Widok w `StudentPage.tsx` tab "Calendar":
+- Liczy sloty per student: completed / no_show / cancelled / total booked
+- Wyswietla: "Attendance rate: 95% (19/20 lessons attended)"
+- Wykres sparkline (opcjonalnie) z ostatnich 10 lekcji
+
+**SQL query:**
+```sql
+SELECT 
+  status, count(*) 
+FROM calendar_slots 
+WHERE student_id = $1 AND teacher_id = $2 AND status IN ('completed','no_show','cancelled')
+GROUP BY status
+```
+
+Nie wymaga nowej tabeli — agregacja na istniejacych danych.
+
+---
+
+## PELNA KOLEJNOSC IMPLEMENTACJI
+
+| Krok | Co | Pliki | Priorytet |
+|---|---|---|---|
+| 1 | **Fix nieskonczonej petli** — useMemo weekEnd | `useCalendarSlots.tsx` (1 linia) | KRYTYCZNY |
+| 2 | **Timezone Select** w ustawieniach | `CalendarSettingsPage.tsx` | Szybki fix |
+| 3 | **AddSlotModal** — 2 zakladki (Available/Lesson), repeat opcja | `AddSlotModal.tsx` | Wazny UX |
+| 4 | **AddRecurringSlotModal** — student + data koncowa | `AddRecurringSlotModal.tsx`, `useCalendarRecurrence.tsx` | Wazny UX |
+| 5 | **CalendarToolbar** — Day/Week/Month toggle | `CalendarToolbar.tsx` | Wazny UX |
+| 6 | **CalendarDayView** — siatka godzinowa, klikanie | `CalendarDayView.tsx` (NOWY) | Nowy widok |
+| 7 | **CalendarMonthView** — siatka miesieczna | `CalendarMonthView.tsx` (NOWY) | Nowy widok |
+| 8 | **CalendarPage** — viewMode routing miedzy widokami | `CalendarPage.tsx`, `useCalendarSlots.tsx` | Integracja |
+| 9 | **CalendarWeekView** — przerobienie na siatke godzinowa (GCal style) | `CalendarWeekView.tsx`, `CalendarDayColumn.tsx` | UX upgrade |
+| 10 | **BatchAddSlotsModal** — masowe dodawanie | `BatchAddSlotsModal.tsx` (NOWY) | Produktywnosc |
+| 11 | **QuickWeekSetupModal** — wizard pierwszego uzycia | `QuickWeekSetupModal.tsx` (NOWY) | Onboarding |
+| 12 | **Undo cancellation** — przycisk w SlotDetailModal | `SlotDetailModal.tsx` | Quick fix |
+| 13 | **Mobile PublicBookingPage** — lista zamiast gridu | `PublicBookingPage.tsx` | Mobile UX |
+| 14 | **Slot templates** — migracja SQL + UI | migration.sql, `CalendarToolbar.tsx` | Produktywnosc |
+| 15 | **Attendance stats** — tab Calendar w StudentPage | `StudentCalendarTab.tsx` | Analityka |
+| 16 | **Dokumentacja** | 6 plikow docs | Standard |
+
+**SZACUNEK: Kroki 1-2 = natychmiastowy fix. Kroki 3-9 = 2-3 sesje. Kroki 10-16 = 2 sesje.**
+
+## SZCZEGOLY TECHNICZNE KLUCZOWYCH ZMIAN
+
+### CalendarDayView — siatka godzinowa (krok 6):
+
+```typescript
+// Struktura:
+// - Lewa kolumna: godziny 7:00, 7:30, 8:00, ...
+// - Prawa: pozycjonowane absolutnie bloki slotow
+// - Slot height = (duration_minutes / 30) * ROW_HEIGHT
+// - Slot top = ((start_hour - 7) * 60 + start_min) / 30 * ROW_HEIGHT
+
+const ROW_HEIGHT = 48; // px per 30min slot
+const START_HOUR = 7;
+const END_HOUR = 22;
+const TOTAL_ROWS = (END_HOUR - START_HOUR) * 2; // 30 rows
+
+// Slot positioning:
+const getSlotStyle = (slot: CalendarSlot) => {
+  const [sh, sm] = slot.start_time.split(':').map(Number);
+  const [eh, em] = slot.end_time.split(':').map(Number);
+  const startMin = (sh - START_HOUR) * 60 + sm;
+  const endMin = (eh - START_HOUR) * 60 + em;
+  return {
+    top: `${(startMin / 30) * ROW_HEIGHT}px`,
+    height: `${((endMin - startMin) / 30) * ROW_HEIGHT}px`,
+  };
+};
+
+// "Now" line:
+const nowMin = (currentHour - START_HOUR) * 60 + currentMinute;
+const nowTop = (nowMin / 30) * ROW_HEIGHT;
+// <div className="absolute w-full h-0.5 bg-red-500 z-20" style={{ top: nowTop }} />
+```
+
+### CalendarWeekView upgrade na siatke godzinowa (krok 9):
+
+Taka sama logika jak DayView ale 7 kolumn obok siebie z wspolna osia godzinowa po lewej stronie. Kazda kolumna to wzglednie pozycjonowany kontener ze slotami.
+
+### useCalendarSlots — rozszerzenie o viewMode (krok 8):
+
+```typescript
+const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
+const [currentDate, setCurrentDate] = useState(new Date());
+
+// Zakres dat zalezy od viewMode:
+const dateRange = useMemo(() => {
+  if (viewMode === 'day') {
+    return { from: currentDate, to: currentDate };
+  } else if (viewMode === 'week') {
+    return { from: startOfWeek(currentDate, {weekStartsOn:1}), to: endOfWeek(currentDate, {weekStartsOn:1}) };
+  } else {
+    return { from: startOfMonth(currentDate), to: endOfMonth(currentDate) };
+  }
+}, [viewMode, currentDate]);
+
+// navigate zmienia currentDate wg viewMode
+const navigate = (dir: 'prev' | 'next' | 'today') => {
+  if (dir === 'today') return setCurrentDate(new Date());
+  const delta = viewMode === 'day' ? 1 : viewMode === 'week' ? 7 : 30;
+  setCurrentDate(prev => addDays(prev, dir === 'next' ? delta : -delta));
+};
+```
+
