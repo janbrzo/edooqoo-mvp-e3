@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
 import { format, parseISO } from 'date-fns';
-import { Check, X, Trash2, FileText, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Check, X, Trash2, FileText, ExternalLink, AlertTriangle, Link2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface SlotDetailModalProps {
@@ -15,6 +15,7 @@ interface SlotDetailModalProps {
   studentName?: string;
   onUpdate: (id: string, updates: Partial<CalendarSlot>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onLinkWorksheet?: (slot: CalendarSlot) => void;
 }
 
 const STATUS_BADGES: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -25,10 +26,16 @@ const STATUS_BADGES: Record<string, { label: string; variant: 'default' | 'secon
   no_show: { label: 'No Show', variant: 'destructive' },
 };
 
-export function SlotDetailModal({ open, onOpenChange, slot, studentName, onUpdate, onDelete }: SlotDetailModalProps) {
+export function SlotDetailModal({ open, onOpenChange, slot, studentName, onUpdate, onDelete, onLinkWorksheet }: SlotDetailModalProps) {
   const [notes, setNotes] = useState(slot?.notes || '');
   const [confirming, setConfirming] = useState(false);
   const navigate = useNavigate();
+
+  // Reset notes when slot changes
+  React.useEffect(() => {
+    if (slot) setNotes(slot.notes || '');
+    setConfirming(false);
+  }, [slot?.id]);
 
   if (!slot) return null;
 
@@ -95,14 +102,25 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, onUpdat
               <span className="font-medium">{slot.title}</span>
             </div>
           )}
-          {slot.worksheet_id && (
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Worksheet</span>
-              <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => navigate(`/worksheet/${slot.worksheet_id}`)}>
-                <FileText className="h-3 w-3 mr-1" /> Open <ExternalLink className="h-3 w-3 ml-1" />
-              </Button>
+
+          {/* Worksheet link */}
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Worksheet</span>
+            <div className="flex items-center gap-1">
+              {slot.worksheet_id ? (
+                <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => navigate(`/worksheet/${slot.worksheet_id}`)}>
+                  <FileText className="h-3 w-3 mr-1" /> Open <ExternalLink className="h-3 w-3 ml-1" />
+                </Button>
+              ) : (
+                <span className="text-xs text-muted-foreground">None</span>
+              )}
+              {onLinkWorksheet && (
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-1" onClick={() => onLinkWorksheet(slot)}>
+                  <Link2 className="h-3 w-3" />
+                </Button>
+              )}
             </div>
-          )}
+          </div>
 
           <div>
             <span className="text-muted-foreground">Notes</span>
@@ -114,14 +132,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, onUpdat
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          {/* Pending confirmation */}
           {isPending && (
             <Button size="sm" onClick={handleConfirm} className="bg-green-600 hover:bg-green-700 text-white">
               <Check className="h-4 w-4 mr-1" /> Confirm
             </Button>
           )}
 
-          {/* Status actions */}
           {slot.status === 'booked' && slot.confirmed_at && (
             <>
               <Button size="sm" variant="outline" onClick={() => handleStatusChange('completed')}>

@@ -24,6 +24,7 @@ import { StudentTestsTab } from '@/components/student-tests/StudentTestsTab';
 import { EventLogPanel } from '@/components/dslm/EventLogPanel';
 import { SkillsOverviewPanel } from '@/components/dslm/SkillsOverviewPanel';
 import { WelcomeTestSuggestion } from '@/components/dashboard/WelcomeTestSuggestion';
+import { StudentCalendarTab } from '@/components/calendar/StudentCalendarTab';
 import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2, TrendingUp, ClipboardCheck, Activity, Pencil, BarChart3 } from 'lucide-react';
 import { formatGoalLabel } from '@/constants/studentGoals';
 import { Input } from '@/components/ui/input';
@@ -222,7 +223,7 @@ const StudentPage = () => {
 
         {/* Tabs Navigation */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-9 mb-6">
+          <TabsList className="grid w-full grid-cols-10 mb-6">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Overview
@@ -254,6 +255,10 @@ const StudentPage = () => {
             <TabsTrigger value="flashcards" className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
               Flashcards
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Calendar
             </TabsTrigger>
             <TabsTrigger value="events" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
@@ -854,6 +859,11 @@ const StudentPage = () => {
               initialEditingSetId={activeTab === 'flashcards' ? flashcardSetId : null}
               onSetChange={handleFlashcardSetChange}
             />
+          </TabsContent>
+
+          {/* Calendar Tab */}
+          <TabsContent value="calendar">
+            <StudentCalendarTab studentId={id || ''} teacherId={student.teacher_id} />
           </TabsContent>
 
           {/* Events Tab - DSLM Debug Panel */}

@@ -10,7 +10,22 @@
 6. [Download System](#download-system)
 7. [Editing & Customization](#editing--customization)
 8. [Subscription Management](#subscription-management)
-9. [Troubleshooting](#troubleshooting)
+9. [Calendar Module](#calendar-module)
+10. [Troubleshooting](#troubleshooting)
+
+## Calendar Module
+
+### Overview
+The Calendar module (`/calendar`) lets teachers manage their lesson schedule with a weekly view.
+
+### Features
+- **Add Slots**: Click "Add Slot" or click empty space in the calendar to create a lesson slot
+- **Recurring Slots**: Click "Recurring" to create weekly repeating slots (auto-generated for N weeks)
+- **Public Booking**: Enable in Settings → share link with students → they book available slots
+- **Slot Management**: Click any slot to confirm, complete, cancel, mark no-show, or delete
+- **Link Worksheets**: Attach worksheets to lessons from slot details
+- **Student Calendar Tab**: View student-specific lessons in their profile (Calendar tab)
+- **Settings** (`/calendar/settings`): Booking mode, lesson duration, public calendar, notifications, slot limits
 
 ## Getting Started
 

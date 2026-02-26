@@ -3,11 +3,11 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: DSLM Layer B v5
-- Dual nano_skill tagging (primary + writing) for open-ended exercises
-- CEFR levels (A1-C2) in nano_skill names: `ns.A2.past_simple.irregular_verb_go`
-- `visual_comprehension` category for picture-based exercises
-- Updated SQL extraction functions with full backward compatibility
+## Latest: Teacher Calendar Module
+- Weekly calendar view with color-coded lesson slots (available/booked/pending/completed/cancelled)
+- Single and recurring slot creation, public booking page for students
+- Worksheet linking, Calendar tab in student profile, settings page
+- 5 DB tables: `calendar_slots`, `calendar_recurrence_rules`, `calendar_settings`, `calendar_student_settings`, `calendar_payment_records`
 
 ## 🎯 What This Is
 

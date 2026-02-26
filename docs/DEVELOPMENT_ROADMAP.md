@@ -3,7 +3,16 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Feb 2026) - 5 Critical Fixes ✅
+### Recently Completed (Feb 2026) - Teacher Calendar Module (Faza 1) ✅
+- 5 new DB tables: calendar_slots, calendar_recurrence_rules, calendar_settings, calendar_student_settings, calendar_payment_records
+- Weekly calendar view (/calendar) with color-coded slots, week navigation, add/edit/delete
+- Recurring slots: useCalendarRecurrence hook auto-generates slots for N weeks ahead
+- Public booking page (/book/:token) for students, auto-confirm or requires confirmation
+- Student lessons page (/my-lessons/:token), LinkWorksheetModal, Calendar tab in StudentPage
+- Settings page (/calendar/settings) with booking rules, notifications, public calendar token
+- Welcome Test translations: 5 questions × 25 languages = 125 new entries
+
+### Previously Completed (Feb 2026) - 5 Critical Fixes ✅
 - SharedWorksheet discussion recorder (HomeworkSpeakingRecorder + AutoResizeTextarea)
 - Recorder inline layout in 6 single-column exercise components (left of textarea)
 - Auto-save recordings: registryKey, global registry, 30s countdown, flush on submit

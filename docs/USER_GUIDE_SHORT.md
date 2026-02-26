@@ -4,7 +4,7 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **5 Critical Fixes** — SharedWorksheet discussion questions now have audio recorder + auto-resize textarea. Recorder positioned inline (left of text input) in all single-column exercises. 30-second auto-save for unsaved recordings + flush on homework submit. Admin dashboard filters anonymous accounts with cleanup button. DSLM captures all nano-skills (primary+writing+speaking) after AI evaluation.
+**Latest Update:** **Teacher Calendar Module** — Full weekly calendar view at `/calendar` with color-coded lesson slots. Add single or recurring slots, manage bookings (confirm/complete/cancel/no-show). Public booking page for students via shareable link. Link worksheets to lessons. Calendar tab added to student profile. Settings page for booking rules, notifications, and public calendar token. Also: 125 new Welcome Test translations (5 questions × 25 languages).
 
 **Previous Update:** **Welcome Test Learning Path Score** — 5 new behavioral questions detect student's learning timeline, persistence, deadline response, career importance, and usage context. Deterministic algorithm calculates Learning Path Score (0-100) from 15 signals, mapping to 4 paths: Comfort, Guided, Accelerated, Target.
 
