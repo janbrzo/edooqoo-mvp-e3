@@ -1,7 +1,7 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Feb 2026):** 5 Critical Fixes — SharedWorksheet discussion recorder (was text-only input), recorder inline layout (left of textarea in 6 components), 30s auto-save for unsaved recordings + flush on submit, admin dashboard anonymous account filter + cleanup button, DSLM buildItemEvaluations fix capturing all nano-skills after AI evaluation.
+**Latest Update (Feb 2026):** Teacher Calendar Module (Faza 1) — Full weekly calendar at `/calendar` with color-coded slots (available/booked/pending/completed/cancelled). Recurring slots auto-generation. Public booking page (`/book/:token`) for students. Worksheet linking to lessons. Calendar tab in student profile. Settings for booking rules, notifications, public calendar token. Also: 125 Welcome Test translations (5 questions × 25 languages).
 
 **Previous Update (Feb 2026):** Welcome Test Learning Path Score — 5 new behavioral questions (Q3b, Q5b, Q13b, Q17b, Q41b) detect student's learning path preference via scenarios (not direct questions). Deterministic algorithm with 15 weighted signals calculates 0-100 score → 4 paths (Comfort/Guided/Accelerated/Target). 5 override rules handle edge cases. Score saved to raw_answers.learning_path. Future: will influence worksheet generation order and difficulty.
 

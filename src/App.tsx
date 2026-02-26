@@ -37,6 +37,8 @@ import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminImpersonationBanner from "./components/AdminImpersonationBanner";
 import CalendarPage from "./pages/CalendarPage";
 import CalendarSettingsPage from "./pages/CalendarSettingsPage";
+import PublicBookingPage from "./pages/PublicBookingPage";
+import StudentLessonsPage from "./pages/StudentLessonsPage";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +79,8 @@ const App = () => (
               <Route path="/test-exercises" element={<TestExercises />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/calendar/settings" element={<CalendarSettingsPage />} />
+              <Route path="/book/:token" element={<PublicBookingPage />} />
+              <Route path="/my-lessons/:token" element={<StudentLessonsPage />} />
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/waiting-list" element={<Navigate to="/" replace />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

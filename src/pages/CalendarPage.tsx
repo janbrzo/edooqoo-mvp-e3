@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { useCalendarSlots, CalendarSlot } from '@/hooks/useCalendarSlots';
 import { useCalendarSettings } from '@/hooks/useCalendarSettings';
+import { useCalendarRecurrence } from '@/hooks/useCalendarRecurrence';
 import { useStudents } from '@/hooks/useStudents';
 import { CalendarWeekView } from '@/components/calendar/CalendarWeekView';
 import { CalendarToolbar } from '@/components/calendar/CalendarToolbar';
 import { AddSlotModal } from '@/components/calendar/AddSlotModal';
+import { AddRecurringSlotModal } from '@/components/calendar/AddRecurringSlotModal';
 import { SlotDetailModal } from '@/components/calendar/SlotDetailModal';
+import { LinkWorksheetModal } from '@/components/calendar/LinkWorksheetModal';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Repeat } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CalendarPage = () => {
@@ -20,13 +23,16 @@ const CalendarPage = () => {
     if (!authLoading && !isRegisteredUser) navigate('/login');
   }, [authLoading, isRegisteredUser, navigate]);
 
-  const { slots, loading, weekStart, weekEnd, createSlot, updateSlot, deleteSlot, navigateWeek, getSlotsForDay } = useCalendarSlots(user?.id);
+  const { slots, loading, weekStart, weekEnd, createSlot, updateSlot, deleteSlot, navigateWeek, getSlotsForDay, refetch } = useCalendarSlots(user?.id);
   const { settings } = useCalendarSettings(user?.id);
+  const { rules, createRule } = useCalendarRecurrence(user?.id);
   const { students } = useStudents();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addModalDate, setAddModalDate] = useState<Date | undefined>();
+  const [recurringModalOpen, setRecurringModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
+  const [linkWorksheetSlot, setLinkWorksheetSlot] = useState<CalendarSlot | null>(null);
 
   const studentMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -56,6 +62,26 @@ const CalendarPage = () => {
     }
   };
 
+  const handleLinkWorksheet = (slot: CalendarSlot) => {
+    setSelectedSlot(null);
+    setLinkWorksheetSlot(slot);
+  };
+
+  const handleWorksheetLinked = async (worksheetId: string | null) => {
+    if (linkWorksheetSlot) {
+      await updateSlot(linkWorksheetSlot.id, { worksheet_id: worksheetId } as any);
+    }
+  };
+
+  // Refetch after recurring slots created
+  const handleRecurringCreated = async (input: any) => {
+    const result = await createRule(input);
+    if (result) {
+      await refetch();
+    }
+    return result;
+  };
+
   if (authLoading) return null;
 
   return (
@@ -77,6 +103,7 @@ const CalendarPage = () => {
           onAddSlot={() => handleAddSlot()}
           onSettings={() => navigate('/calendar/settings')}
           onShare={handleShare}
+          onAddRecurring={() => setRecurringModalOpen(true)}
         />
 
         {/* Legend */}
@@ -112,6 +139,13 @@ const CalendarPage = () => {
         defaultDuration={settings?.default_lesson_duration_minutes || 60}
       />
 
+      <AddRecurringSlotModal
+        open={recurringModalOpen}
+        onOpenChange={setRecurringModalOpen}
+        onSubmit={handleRecurringCreated}
+        defaultDuration={settings?.default_lesson_duration_minutes || 60}
+      />
+
       <SlotDetailModal
         open={!!selectedSlot}
         onOpenChange={(open) => { if (!open) setSelectedSlot(null); }}
@@ -119,7 +153,19 @@ const CalendarPage = () => {
         studentName={selectedSlot?.student_id ? studentMap[selectedSlot.student_id] : undefined}
         onUpdate={updateSlot}
         onDelete={deleteSlot}
+        onLinkWorksheet={handleLinkWorksheet}
       />
+
+      {linkWorksheetSlot && user && (
+        <LinkWorksheetModal
+          open={!!linkWorksheetSlot}
+          onOpenChange={(open) => { if (!open) setLinkWorksheetSlot(null); }}
+          teacherId={user.id}
+          studentId={linkWorksheetSlot.student_id}
+          currentWorksheetId={linkWorksheetSlot.worksheet_id}
+          onLink={handleWorksheetLinked}
+        />
+      )}
     </div>
   );
 };

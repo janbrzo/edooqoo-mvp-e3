@@ -5,7 +5,18 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Welcome Test Learning Path Score:**
+**Latest Update (February 2026) - Teacher Calendar Module (Faza 1):**
+- **5 new database tables**: `calendar_slots`, `calendar_recurrence_rules`, `calendar_settings`, `calendar_student_settings`, `calendar_payment_records` with full RLS policies
+- **Weekly calendar view**: `/calendar` page with color-coded slot cards (available/booked/pending/completed/cancelled), week navigation, drag-free click-to-add UX
+- **Recurring slots**: `useCalendarRecurrence` hook + `AddRecurringSlotModal` - auto-generates slots for N weeks ahead, deduplication logic
+- **Public booking**: `/book/:token` page lets students book available slots. Teacher controls booking mode (auto-confirm vs requires confirmation) in `/calendar/settings`
+- **Student lessons view**: `/my-lessons/:token` page shows student's upcoming and past lessons
+- **Worksheet linking**: `LinkWorksheetModal` lets teachers attach worksheets to calendar slots, openable from slot details
+- **Calendar tab in StudentPage**: New "Calendar" tab (10th) shows student-specific lesson history
+- **Settings page**: `/calendar/settings` with booking rules, public calendar token, notification preferences, slot limits per student
+- **Welcome Test translations**: 5 new questions (Q3b, Q5b, Q13b, Q17b, Q41b) translated to all 25 languages (125 entries)
+
+**Previous Update (February 2026) - Welcome Test Learning Path Score:**
 - **5 new behavioral questions** (Q3b, Q5b, Q13b, Q17b, Q41b) added to Welcome Test for Learning Path detection
 - **LearningPathResult type** in `src/types/welcomeTest.ts` with 15 component scores and override tracking
 - **calculateLearningPathScore()** deterministic algorithm in `process-welcome-test` edge function: 15 weighted signals (5 new + 10 existing), 5 override rules, outputs 0-100 score mapped to 4 paths (comfort/guided/accelerated/target)

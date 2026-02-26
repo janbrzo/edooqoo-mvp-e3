@@ -6,7 +6,18 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-24) - Welcome Test Learning Path Score:**
+**Ostatnia naprawa (2026-02-26) - Moduł Kalendarza Nauczyciela (Faza 1):**
+- ✅ **5 nowych tabel DB**: calendar_slots, calendar_recurrence_rules, calendar_settings, calendar_student_settings, calendar_payment_records + RLS
+- ✅ **Widok tygodniowy**: /calendar z kolorowymi slotami, nawigacja tygodniowa, toolbar z akcjami
+- ✅ **Sloty cykliczne**: useCalendarRecurrence + AddRecurringSlotModal - auto-generacja na N tygodni
+- ✅ **Publiczne rezerwacje**: /book/:token - uczniowie rezerwują wolne sloty, auto-confirm lub wymaga potwierdzenia
+- ✅ **Widok ucznia**: /my-lessons/:token - przyszłe i przeszłe lekcje
+- ✅ **Łączenie worksheetów**: LinkWorksheetModal przypisuje worksheet do slotu kalendarza
+- ✅ **Zakładka Calendar w StudentPage**: 10. zakładka pokazuje lekcje konkretnego ucznia
+- ✅ **Ustawienia**: /calendar/settings z booking rules, public token, powiadomienia, limity
+- ✅ **Tłumaczenia Welcome Test**: 5 nowych pytań × 25 języków = 125 wpisów
+
+**Poprzednia naprawa (2026-02-24) - Welcome Test Learning Path Score:**
 - ✅ **5 nowych pytań behawioralnych**: Q3b (usage_context), Q5b (deadline_response), Q13b (persistence_level), Q17b (career_english_importance), Q41b (learning_timeline)
 - ✅ **Algorytm Learning Path Score**: 15 ważonych sygnałów (5 nowych + 10 istniejących), 5 reguł nadrzędnych, wynik 0-100 → 4 ścieżki (comfort/guided/accelerated/target)
 - ✅ **LearningPathResult type**: Nowy interfejs z component_scores i overrides_applied
