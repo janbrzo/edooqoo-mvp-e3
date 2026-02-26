@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
-import { format, parseISO } from 'date-fns';
-import { Check, X, Trash2, FileText, ExternalLink, AlertTriangle, Link2 } from 'lucide-react';
+import { format, parseISO, differenceInMinutes } from 'date-fns';
+import { Check, X, Trash2, FileText, ExternalLink, AlertTriangle, Link2, Undo2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface SlotDetailModalProps {
@@ -31,7 +31,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, onUpdat
   const [confirming, setConfirming] = useState(false);
   const navigate = useNavigate();
 
-  // Reset notes when slot changes
   React.useEffect(() => {
     if (slot) setNotes(slot.notes || '');
     setConfirming(false);
@@ -42,8 +41,21 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, onUpdat
   const isPending = slot.status === 'booked' && !slot.confirmed_at;
   const badge = STATUS_BADGES[slot.status] || STATUS_BADGES.available;
 
+  // Undo cancellation: available for 30 minutes after cancellation
+  const canUndoCancel = slot.status === 'cancelled' && slot.cancelled_at &&
+    differenceInMinutes(new Date(), new Date(slot.cancelled_at)) < 30;
+
   const handleConfirm = async () => {
     await onUpdate(slot.id, { confirmed_at: new Date().toISOString() } as any);
+  };
+
+  const handleUndoCancel = async () => {
+    await onUpdate(slot.id, {
+      status: slot.student_id ? 'booked' : 'available',
+      cancelled_at: null,
+      cancelled_by: null,
+      cancellation_reason: null,
+    } as any);
   };
 
   const handleStatusChange = async (status: string) => {
@@ -132,6 +144,13 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, onUpdat
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
+          {/* Undo cancellation */}
+          {canUndoCancel && (
+            <Button size="sm" variant="outline" onClick={handleUndoCancel}>
+              <Undo2 className="h-4 w-4 mr-1" /> Undo Cancel
+            </Button>
+          )}
+
           {isPending && (
             <Button size="sm" onClick={handleConfirm} className="bg-green-600 hover:bg-green-700 text-white">
               <Check className="h-4 w-4 mr-1" /> Confirm

@@ -6,16 +6,18 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-26) - Moduł Kalendarza Nauczyciela (Faza 1):**
-- ✅ **5 nowych tabel DB**: calendar_slots, calendar_recurrence_rules, calendar_settings, calendar_student_settings, calendar_payment_records + RLS
-- ✅ **Widok tygodniowy**: /calendar z kolorowymi slotami, nawigacja tygodniowa, toolbar z akcjami
-- ✅ **Sloty cykliczne**: useCalendarRecurrence + AddRecurringSlotModal - auto-generacja na N tygodni
-- ✅ **Publiczne rezerwacje**: /book/:token - uczniowie rezerwują wolne sloty, auto-confirm lub wymaga potwierdzenia
-- ✅ **Widok ucznia**: /my-lessons/:token - przyszłe i przeszłe lekcje
-- ✅ **Łączenie worksheetów**: LinkWorksheetModal przypisuje worksheet do slotu kalendarza
-- ✅ **Zakładka Calendar w StudentPage**: 10. zakładka pokazuje lekcje konkretnego ucznia
-- ✅ **Ustawienia**: /calendar/settings z booking rules, public token, powiadomienia, limity
-- ✅ **Tłumaczenia Welcome Test**: 5 nowych pytań × 25 języków = 125 wpisów
+**Ostatnia naprawa (2026-02-26) - Moduł Kalendarza v2 (rozbudowa):**
+- ✅ **Fix krytyczny**: useMemo na weekEnd — naprawiona nieskończona pętla requestów (ERR_INSUFFICIENT_RESOURCES)
+- ✅ **3 widoki**: Day (siatka godzinowa 7-22h z "now" line) / Week (GCal-style hourly grid) / Month (siatka z kropkami statusów)
+- ✅ **Toolbar z ToggleGroup**: Day/Week/Month przełącznik + dropdown Add (Single/Recurring/Batch/Quick Setup)
+- ✅ **AddSlotModal z zakładkami**: "Available Slot" vs "Lesson" (z wyborem studenta, auto-fill title)
+- ✅ **AddRecurringSlotModal**: dodano wybór studenta, tytuł, tryb "Until date" vs "X weeks"
+- ✅ **BatchAddSlotsModal**: masowe dodawanie — wybór dni, zakres dat, wiele time slotów, preview count
+- ✅ **QuickWeekSetupModal**: wizard — godziny pracy, dni, duration, weeks ahead → batch create
+- ✅ **Undo cancellation**: 30-min grace period w SlotDetailModal
+- ✅ **Timezone Select**: dropdown z 30 strefami zamiast text input
+- ✅ **Attendance stats**: % frekwencji w StudentCalendarTab (completed/no_show/cancelled)
+- ✅ **Click-to-add**: kliknięcie pustego miejsca w siatce godzinowej otwiera modal z pre-filled godziną
 
 **Poprzednia naprawa (2026-02-24) - Welcome Test Learning Path Score:**
 - ✅ **5 nowych pytań behawioralnych**: Q3b (usage_context), Q5b (deadline_response), Q13b (persistence_level), Q17b (career_english_importance), Q41b (learning_timeline)

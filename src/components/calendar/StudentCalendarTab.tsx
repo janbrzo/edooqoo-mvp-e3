@@ -3,7 +3,7 @@ import { useCalendarSlots, CalendarSlot } from '@/hooks/useCalendarSlots';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, FileText, ExternalLink } from 'lucide-react';
+import { Calendar, Clock, FileText, ExternalLink, TrendingUp } from 'lucide-react';
 import { format, parseISO, isPast } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
@@ -36,6 +36,16 @@ export function StudentCalendarTab({ studentId, teacherId }: StudentCalendarTabP
 
   const upcoming = studentSlots.filter(s => !isPast(parseISO(s.slot_date)) && s.status !== 'cancelled' && s.status !== 'completed' && s.status !== 'no_show');
   const past = studentSlots.filter(s => isPast(parseISO(s.slot_date)) || s.status === 'completed' || s.status === 'cancelled' || s.status === 'no_show');
+
+  // Attendance stats
+  const attendanceStats = useMemo(() => {
+    const completed = studentSlots.filter(s => s.status === 'completed').length;
+    const noShow = studentSlots.filter(s => s.status === 'no_show').length;
+    const cancelled = studentSlots.filter(s => s.status === 'cancelled').length;
+    const total = completed + noShow;
+    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { completed, noShow, cancelled, total, rate };
+  }, [studentSlots]);
 
   if (loading) {
     return <p className="text-muted-foreground text-center py-8">Loading calendar...</p>;
@@ -82,6 +92,30 @@ export function StudentCalendarTab({ studentId, teacherId }: StudentCalendarTabP
           Open Calendar
         </Button>
       </div>
+
+      {/* Attendance Stats */}
+      {attendanceStats.total > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Attendance</span>
+            </div>
+            <div className="flex items-center gap-4 text-sm">
+              <span className="font-semibold text-lg text-primary">{attendanceStats.rate}%</span>
+              <span className="text-muted-foreground">
+                {attendanceStats.completed}/{attendanceStats.total} lessons attended
+              </span>
+              {attendanceStats.noShow > 0 && (
+                <span className="text-destructive text-xs">({attendanceStats.noShow} no-shows)</span>
+              )}
+              {attendanceStats.cancelled > 0 && (
+                <span className="text-muted-foreground text-xs">({attendanceStats.cancelled} cancelled)</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {studentSlots.length === 0 ? (
         <Card>

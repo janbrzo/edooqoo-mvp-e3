@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
-import { useCalendarSlots, CalendarSlot } from '@/hooks/useCalendarSlots';
+import { useCalendarSlots, CalendarSlot, ViewMode } from '@/hooks/useCalendarSlots';
 import { useCalendarSettings } from '@/hooks/useCalendarSettings';
 import { useCalendarRecurrence } from '@/hooks/useCalendarRecurrence';
 import { useStudents } from '@/hooks/useStudents';
 import { CalendarWeekView } from '@/components/calendar/CalendarWeekView';
+import { CalendarDayView } from '@/components/calendar/CalendarDayView';
+import { CalendarMonthView } from '@/components/calendar/CalendarMonthView';
 import { CalendarToolbar } from '@/components/calendar/CalendarToolbar';
 import { AddSlotModal } from '@/components/calendar/AddSlotModal';
 import { AddRecurringSlotModal } from '@/components/calendar/AddRecurringSlotModal';
 import { SlotDetailModal } from '@/components/calendar/SlotDetailModal';
 import { LinkWorksheetModal } from '@/components/calendar/LinkWorksheetModal';
+import { BatchAddSlotsModal } from '@/components/calendar/BatchAddSlotsModal';
+import { QuickWeekSetupModal } from '@/components/calendar/QuickWeekSetupModal';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Repeat } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CalendarPage = () => {
@@ -23,14 +27,21 @@ const CalendarPage = () => {
     if (!authLoading && !isRegisteredUser) navigate('/login');
   }, [authLoading, isRegisteredUser, navigate]);
 
-  const { slots, loading, weekStart, weekEnd, createSlot, updateSlot, deleteSlot, navigateWeek, getSlotsForDay, refetch } = useCalendarSlots(user?.id);
+  const {
+    slots, loading, viewMode, setViewMode, currentDate, setCurrentDate,
+    weekStart, weekEnd, createSlot, createSlotsBatch, updateSlot, deleteSlot,
+    navigate: calNavigate, getSlotsForDay, refetch,
+  } = useCalendarSlots(user?.id);
   const { settings } = useCalendarSettings(user?.id);
   const { rules, createRule } = useCalendarRecurrence(user?.id);
   const { students } = useStudents();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addModalDate, setAddModalDate] = useState<Date | undefined>();
+  const [addModalStartTime, setAddModalStartTime] = useState<string | undefined>();
   const [recurringModalOpen, setRecurringModalOpen] = useState(false);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [quickSetupOpen, setQuickSetupOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [linkWorksheetSlot, setLinkWorksheetSlot] = useState<CalendarSlot | null>(null);
 
@@ -42,8 +53,9 @@ const CalendarPage = () => {
 
   const studentList = useMemo(() => students.map(s => ({ id: s.id, name: s.name })), [students]);
 
-  const handleAddSlot = (date?: Date) => {
+  const handleAddSlot = (date?: Date, startTime?: string) => {
     setAddModalDate(date);
+    setAddModalStartTime(startTime);
     setAddModalOpen(true);
   };
 
@@ -73,13 +85,15 @@ const CalendarPage = () => {
     }
   };
 
-  // Refetch after recurring slots created
   const handleRecurringCreated = async (input: any) => {
     const result = await createRule(input);
-    if (result) {
-      await refetch();
-    }
+    if (result) await refetch();
     return result;
+  };
+
+  const handleDayClick = (date: Date) => {
+    setCurrentDate(date);
+    setViewMode('day');
   };
 
   if (authLoading) return null;
@@ -97,13 +111,16 @@ const CalendarPage = () => {
 
         {/* Toolbar */}
         <CalendarToolbar
-          weekStart={weekStart}
-          weekEnd={weekEnd}
-          onNavigate={navigateWeek}
+          currentDate={currentDate}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onNavigate={calNavigate}
           onAddSlot={() => handleAddSlot()}
           onSettings={() => navigate('/calendar/settings')}
           onShare={handleShare}
           onAddRecurring={() => setRecurringModalOpen(true)}
+          onBatchAdd={() => setBatchModalOpen(true)}
+          onQuickSetup={() => setQuickSetupOpen(true)}
         />
 
         {/* Legend */}
@@ -115,9 +132,26 @@ const CalendarPage = () => {
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 border border-red-300" /> Cancelled/No Show</span>
         </div>
 
-        {/* Week View */}
+        {/* Views */}
         {loading ? (
           <div className="flex items-center justify-center h-64 text-muted-foreground">Loading calendar...</div>
+        ) : viewMode === 'day' ? (
+          <CalendarDayView
+            date={currentDate}
+            slots={getSlotsForDay(currentDate)}
+            studentMap={studentMap}
+            onSlotClick={handleSlotClick}
+            onAddSlot={handleAddSlot}
+          />
+        ) : viewMode === 'month' ? (
+          <CalendarMonthView
+            currentDate={currentDate}
+            slots={slots}
+            studentMap={studentMap}
+            onDayClick={handleDayClick}
+            onAddSlot={(date) => handleAddSlot(date)}
+            onSlotClick={handleSlotClick}
+          />
         ) : (
           <CalendarWeekView
             weekStart={weekStart}
@@ -135,6 +169,7 @@ const CalendarPage = () => {
         onOpenChange={setAddModalOpen}
         onSubmit={createSlot}
         defaultDate={addModalDate}
+        defaultStartTime={addModalStartTime}
         students={studentList}
         defaultDuration={settings?.default_lesson_duration_minutes || 60}
       />
@@ -143,6 +178,23 @@ const CalendarPage = () => {
         open={recurringModalOpen}
         onOpenChange={setRecurringModalOpen}
         onSubmit={handleRecurringCreated}
+        defaultDuration={settings?.default_lesson_duration_minutes || 60}
+        students={studentList}
+      />
+
+      <BatchAddSlotsModal
+        open={batchModalOpen}
+        onOpenChange={setBatchModalOpen}
+        onSubmit={createSlotsBatch}
+        students={studentList}
+        defaultDuration={settings?.default_lesson_duration_minutes || 60}
+        currentDate={currentDate}
+      />
+
+      <QuickWeekSetupModal
+        open={quickSetupOpen}
+        onOpenChange={setQuickSetupOpen}
+        onSubmit={createSlotsBatch}
         defaultDuration={settings?.default_lesson_duration_minutes || 60}
       />
 

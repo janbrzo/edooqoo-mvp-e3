@@ -23,6 +23,8 @@ export interface CreateRecurrenceInput {
   effective_from?: string;
   effective_until?: string | null;
   auto_generate_weeks_ahead?: number;
+  student_id?: string | null;
+  title?: string;
 }
 
 export function useCalendarRecurrence(teacherId?: string) {
@@ -118,9 +120,13 @@ export function useCalendarRecurrence(teacherId?: string) {
         slot_date: slotDateStr,
         start_time: rule.start_time,
         end_time: rule.end_time,
-        status: 'available',
+        status: (rule as any).student_id ? 'booked' : 'available',
         booking_type: 'recurring_instance',
         recurrence_rule_id: rule.id,
+        student_id: (rule as any).student_id || null,
+        title: (rule as any).title || null,
+        booked_at: (rule as any).student_id ? new Date().toISOString() : null,
+        confirmed_at: (rule as any).student_id ? new Date().toISOString() : null,
       });
     }
 
