@@ -1,403 +1,289 @@
-# Plan: Konsolidacja modali kalendarza + naprawy
 
-## ANALIZA PROBLEMOW
 
-### Problem 1: Freeze strony po kliknieciu "Add"
-
-**Przyczyna:** `usePublicBooking.tsx` linia 16 — `weekEnd` jest obliczany na nowo przy kazdym renderze (identyczny bug jak wczesniej naprawiony w `useCalendarSlots`). To powoduje nieskonczona petle `fetchSlots` (linia 67 ma `weekEnd` w dependencies). To samo dotyczy **mrugania slotow na stronie /book/** (problem 8).
-
-Ale freeze na `/calendar` po kliknieciu "Add" to inny problem — `AddSlotModal` otwiera `Dialog` ktory moze kolidowac z innym otwartym dialogiem. Sprawdzam: w CalendarPage wszystkie modale moga sie otworzyc jednoczesnie. Freeze moze wynikac z renderowania listy studentow w Select wewnatrz modalu (jesli lista jest duza lub pusta z undefined).
-
-**Prawdziwa przyczyna freeze:** Dialog renderuje sie, ale `students` moze byc pusta tablica co powoduje problem z `SelectContent` renderujacym puste children. Albo — bardziej prawdopodobne — freeze wynika z nieprawidlowego stanu `open` i `onOpenChange` — modal otwiera sie ale kalendarzu nadal probuje renderowac siatke z setkami elementow DOM.
-
-Po analizie: Najprawdopodobniej freeze to efekt renderowania calej siatki godzinowej (30 rows × 7 columns × grid lines) + jednoczesne otwarcie modalu. Rozwiazanie: dodac `React.memo` na widoki + lazy rendering modali.
-
-### Problem 2-5: Konsolidacja modali
-
-Uzytkownik chce **JEDEN modal** zamiast 4 (AddSlot, AddRecurring, BatchAdd, QuickSetup). Ten modal musi:
-
-- Miec zakladki: **Available Slot** / **Lesson**
-- Pod Available Slot: **Single Slot** / **Batch Slots**
-- Pod Lesson: **Single Lesson** / **Recurring Lesson**
-- Byc otwierany we wszystkich scenariuszach (toolbar, klikniecie siatki, itp)
-
-### Problem 6: SlotDetailModal — edycja + attach/detach studenta
-
-- Trzeba dodac: edycja daty, czasu, tytulu
-- Mozliwosc dodania/zmiany/usuniecia studenta
-- "Cancel" button = zamkniecie modalu (nie anulowanie slotu)
-- Rozny wyglad dla slotu z/bez studenta
-- Edycja calej serii recurring
-
-### Problem 7: Nadpisywanie slotow — logika konfliktow
-
-3 scenariusze z roznymi zachowaniami
-
-### Problem 8: Mruganie na /book/
-
-Identyczny bug jak Problem 1 z infinite loop w `usePublicBooking.tsx`
+# Plan: Naprawy kalendarza FAZA 1 + plan FAZY 2 i 3
 
 ---
 
-## SZCZEGOLOWY PLAN IMPLEMENTACJI
+## FAZA 1 — Bugi i ulepszenia (do implementacji TERAZ)
 
-### Krok 1: Fix `usePublicBooking.tsx` — infinite loop (Problem 1 & 8)
+### 1. Odwrocone kreski godzinowe (Day + Week view)
 
-**Plik:** `src/hooks/usePublicBooking.tsx`
+**Problem:** W `CalendarWeekView.tsx` linia 107 i `CalendarDayView.tsx` linia 79: `i % 2 === 0` to pelna godzina, ale border-border/40 jest slabszy niz powinien. W gutter (linia 84 CalendarWeekView) jest `border-border/20` dla wszystkiego.
 
-Linia 16: 
-
-```typescript
-// PRZED:
-const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-
-// PO:
-const weekEnd = useMemo(() => endOfWeek(weekStart, { weekStartsOn: 1 }), [weekStart]);
-```
-
-Dodac `useMemo` do importow.
+**Fix:** W obu plikach zamienic:
+- Pelna godzina (i % 2 === 0): `border-border/60` (mocniejsza)
+- Pol godziny (i % 2 !== 0): `border-border/10` (slabsza)
+- W gutter tez: pelna godzina `border-border/30`, pol godziny `border-border/10`
 
 ---
 
-### Krok 2: Usunac stare modale, stworzyc UnifiedSlotModal
+### 2. Zmiana nazwy modalu: "Batch Add Slots" → "Add Slots"
 
-**Pliki do USUNIECIA:**
-
-- `src/components/calendar/AddSlotModal.tsx`
-- `src/components/calendar/AddRecurringSlotModal.tsx`  
-- `src/components/calendar/QuickWeekSetupModal.tsx`
-
-**Plik `BatchAddSlotsModal.tsx**` — **zachowac** ale zrefaktorowac i wchłonąć do nowego modalu.
-
-**NOWY plik:** `src/components/calendar/UnifiedSlotModal.tsx`
-
-**Struktura UI modalu:**
-
-```
-┌─────────────────────────────────────────┐
-│  Add Event                         [X]  │
-├─────────────────────────────────────────┤
-│  [Available Slot]  [Lesson]        ← Tabs │
-├─────────────────────────────────────────┤
-│  [Single Slot]  [Batch Slots]    ← Sub  │
-│  ─ lub ─                                │
-│  [Single Lesson]  [Recurring Lesson]    │
-├─────────────────────────────────────────┤
-│  << Pola formularza wg trybu >>         │
-│                                         │
-│  Preview: "This will create X slots"    │
-├─────────────────────────────────────────┤
-│               [Cancel]  [Create]        │
-└─────────────────────────────────────────┘
-```
-
-**Tryby i ich pola:**
-
-**A. Available Slot > Single Slot:**
-
-- Date (date input)
-- Start Time / End Time
-- Lesson Duration (select: 30/45/60/90/120 → auto-oblicza End Time)
-- Title (optional)
-- Notes (optional)
-
-**B. Available Slot > Batch Slots:**
-
-- Days of the week (7 checkboxow — layout rozciagniety jak w QuickWeekSetup: `flex gap-3 flex-wrap`, pelne nazwy "Mon", "Tue" itd)
-- Date range: From / To
-- Lesson Duration (select)
-- Working hours: Start / End (selecty jak w QuickSetup)
-- Time slots list z +Add / -Remove (jak w obecnym BatchAdd) — **LUB** auto-generuj z working hours + duration (przelacznik: "Auto-fill from working hours" / "Custom time slots")
-- Preview: "This will create X slots"
-
-**C. Lesson > Single Lesson:**
-
-- Student (wymagany — Select)
-- Date
-- Start Time / End Time
-- Lesson Duration (select)
-- Title (auto-fill: "{Student} — English lesson")
-- Link Worksheet (opcjonalny — przycisk "Link Worksheet" → inline lista worksheetow lub LinkWorksheetModal)
-- Notes (optional)
-
-**D. Lesson > Recurring Lesson:**
-
-- Student (wymagany — Select)
-- Day of Week (select)
-- Start Time / End Time
-- Lesson Duration (select)
-- Repeat until: "For X weeks" (select) / "Until date" (date input) — radio toggle
-- Title (optional)
-- Preview: "This will create X lessons"
-
-**Props UnifiedSlotModal:**
-
-```typescript
-interface UnifiedSlotModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreateSingle: (input: CreateSlotInput) => Promise<any>;
-  onCreateBatch: (inputs: CreateSlotInput[]) => Promise<any>;
-  onCreateRecurring: (input: CreateRecurrenceInput) => Promise<any>;
-  students: Student[];
-  defaultDuration: number;
-  defaultDate?: Date;
-  defaultStartTime?: string;
-  currentDate: Date;
-  existingSlots: CalendarSlot[]; // do conflict detection (Problem 7)
-}
-```
-
-**Stan wewnetrzny:**
-
-```typescript
-const [slotType, setSlotType] = useState<'available' | 'lesson'>('available');
-const [mode, setMode] = useState<'single' | 'batch'>('single'); // dla available
-// lub
-const [mode, setMode] = useState<'single' | 'recurring'>('single'); // dla lesson
-```
-
-Kiedy `slotType` zmienia sie, `mode` resetuje sie do 'single'.
+**Plik:** `UnifiedSlotModal.tsx` linia 282: DialogTitle zmiana z "Add Event" na "Add Slots" (dla available) / "Add Lesson" (dla lesson) — dynamicznie wg `slotType`.
 
 ---
 
-### Krok 3: Refaktor CalendarPage — usunac stare modale
+### 3A. Batch Slots — zmiana z "Working hours" na listę godzin z +Add
 
-**Plik:** `src/pages/CalendarPage.tsx`
+**Problem:** Obecny Batch ma Working hours from/to i auto-generuje sloty. Uzytkownik chce liste godzin (jak pary start-end) z przyciskiem "+Add" do dodawania kolejnych.
 
-Zmiany:
-
-1. Usunac importy: `AddSlotModal`, `AddRecurringSlotModal`, `QuickWeekSetupModal`, `BatchAddSlotsModal`
-2. Dodac import: `UnifiedSlotModal`
-3. Usunac stanu: `recurringModalOpen`, `batchModalOpen`, `quickSetupOpen`
-4. Jeden modal state: `addModalOpen` (juz istnieje)
-5. Zastapic 4 renderowania modali jednym `<UnifiedSlotModal>`
-6. Przekazac `existingSlots={slots}` do modalu (do conflict detection)
-
-**CalendarToolbar:** Uproscic — zamiast dropdown "Add" z 4 opcjami, jeden przycisk "Add" ktory otwiera UnifiedSlotModal. Usunac props: `onAddRecurring`, `onBatchAdd`, `onQuickSetup`.
-
-**Nowy CalendarToolbar props:**
-
-```typescript
-interface CalendarToolbarProps {
-  currentDate: Date;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
-  onNavigate: (dir: 'prev' | 'next' | 'today') => void;
-  onAddSlot: () => void;
-  onSettings: () => void;
-  onShare?: () => void;
-}
-```
-
-Toolbar HTML: zamiast DropdownMenu z Plus, prosty Button "+" Add.
+**Fix w `UnifiedSlotModal.tsx`:**
+- Usunac pola `workStart`/`workEnd` z Batch view
+- Dodac state: `timeSlotEntries: TimeSlotEntry[]` (juz zdefiniowany typ w linii 24-28)
+- Domyslnie jedna wpis: `[{ id: uuid(), start: '09:00', end: computeEndTime('09:00', duration) }]`
+- Przycisk "+Add" dodaje nastepna wpis z start = poprzedni end, end = start + duration
+- Kazdy wpis edytowalny (Input type="time") + przycisk X do usuniecia
+- `batchSlots` useMemo: zamiast generowac z working hours, iteruj po `timeSlotEntries` × `selectedDays` × date range
+- Dodac pelny zakres godzin do selectow From/To (7:00-23:00)
 
 ---
 
-### Krok 4: Rozbudowa SlotDetailModal — edycja + student management
+### 3B. Title domyslnie pusty
 
-**Plik:** `src/components/calendar/SlotDetailModal.tsx`
-
-**Nowy layout:**
-
-Widok rozni sie w zaleznosci od tego czy slot ma studenta:
-
-**A. Slot BEZ studenta (Available):**
-
-```
-┌─────────────────────────────────────────┐
-│  Available Slot              [Badge]    │
-├─────────────────────────────────────────┤
-│  Date:    [editable date input]         │
-│  Time:    [start] – [end]               │
-│  Title:   [editable input]              │
-│  Notes:   [editable textarea]           │
-│  Worksheet: None [Link]                 │
-│                                         │
-│  ── Assign Student ──                   │
-│  [Select student dropdown]  [Assign]    │
-├─────────────────────────────────────────┤
-│  [Close]  [Save Changes]  [Delete]      │
-└─────────────────────────────────────────┘
-```
-
-**B. Slot Z studentem (Lesson):**
-
-```
-┌─────────────────────────────────────────┐
-│  Lesson with {Student}       [Badge]    │
-├─────────────────────────────────────────┤
-│  Student: {Name}     [Change] [Remove]  │
-│  Date:    [editable date input]         │
-│  Time:    [start] – [end]               │
-│  Title:   [editable input]              │
-│  Notes:   [editable textarea]           │
-│  Worksheet: {Title} [Open] [Change]     │
-│                                         │
-│  ── Status Actions ──                   │
-│  [Confirm] [Complete] [No Show]         │
-│  [Cancel Lesson]                        │
-│                                         │
-│  {Jesli recurring:}                     │
-│  [Edit Entire Series]                   │
-├─────────────────────────────────────────┤
-│  [Close]  [Save Changes]  [Delete]      │
-└─────────────────────────────────────────┘
-```
-
-**Kluczowe zmiany w kodzie:**
-
-1. **Edycja wszystkich pol:** Dodac stan edycji:
-
-```typescript
-const [editDate, setEditDate] = useState(slot.slot_date);
-const [editStartTime, setEditStartTime] = useState(slot.start_time.slice(0,5));
-const [editEndTime, setEditEndTime] = useState(slot.end_time.slice(0,5));
-const [editTitle, setEditTitle] = useState(slot.title || '');
-const [editNotes, setEditNotes] = useState(slot.notes || '');
-const [editStudentId, setEditStudentId] = useState(slot.student_id || 'none');
-```
-
-2. **Przycisk "Cancel"** = zamknij modal (`onOpenChange(false)`), NIE anuluj slot.
-3. **Przycisk "Cancel Lesson"** = zmien status na cancelled (obecna logika).
-4. **"Save Changes"** = bulk update: `onUpdate(slot.id, { slot_date, start_time, end_time, title, notes, student_id })`.
-5. **"Remove Student"** = `setEditStudentId('none')` → po Save: `student_id: null, status: 'available'`.
-6. **"Change Student"** = Select dropdown z lista studentow.
-7. **"Edit Entire Series"** = jesli `slot.recurrence_rule_id`, pokaz opcje: "Update all future slots in this series" → query all slots with same `recurrence_rule_id` i `slot_date >= today` → batch update.
-
-**Nowe props:**
-
-```typescript
-interface SlotDetailModalProps {
-  // ...istniejace
-  students: Student[]; // NOWE — do zmiany studenta
-  onUpdateBatch?: (ruleId: string, updates: Partial<CalendarSlot>) => Promise<void>; // dla serii
-}
-```
+**Plik:** `UnifiedSlotModal.tsx` linia 109: `setTitle('')` — juz jest pusty. Ale linia 131-135: auto-fill title dla lesson. Zachowac auto-fill TYLKO dla lesson, upewnic sie ze dla available title jest zawsze pusty. OK — to juz dziala poprawnie.
 
 ---
 
-### Krok 5: Logika konfliktow (Problem 7)
+### 3C. Recurring Lesson tworzy puste sloty zamiast lesson
 
-**Implementacja w UnifiedSlotModal** (przed submit):
+**Przyczyna root:** Tabela `calendar_recurrence_rules` NIE MA kolumny `student_id` ani `title`. W `useCalendarRecurrence.tsx` linia 60-71 insert do tabeli nie wstawia student_id (bo kolumna nie istnieje). Potem w `generateSlotsForRule` linia 123: `(rule as any).student_id` jest `undefined` bo rule pochodzi z bazy i nie ma tej kolumny.
 
-```typescript
-const checkConflicts = (newSlots: CreateSlotInput[]): ConflictResult => {
-  const conflicts: ConflictInfo[] = [];
-  
-  for (const newSlot of newSlots) {
-    const overlapping = existingSlots.filter(existing => 
-      existing.slot_date === newSlot.slot_date &&
-      existing.status !== 'cancelled' &&
-      existing.start_time < newSlot.end_time &&
-      existing.end_time > newSlot.start_time
-    );
-    
-    if (overlapping.length > 0) {
-      conflicts.push({
-        newSlot,
-        overlapping,
-        hasStudentAssigned: overlapping.some(s => s.student_id !== null),
-      });
-    }
-  }
-  
-  return conflicts;
-};
-```
-
-**3 scenariusze:**
-
-**A. Dodajemy puste sloty na istniejace lekcje (z studentem):**
-
-- BLOKADA. Toast: "Cannot add available slots over existing lessons. Please remove the lessons first or edit them to unassign the student."
-- Submit zablokowany.
-
-**B. Dodajemy lekcje (z studentem) na puste sloty:**
-
-- AUTO-REPLACE. Usun puste sloty (`deleteSlot` dla kazdego) → dodaj nowe lekcje.
-- Toast: "X available slots were replaced with lessons."
-
-**C. Dodajemy lekcje na istniejace lekcje (inny student):**
-
-- BLOKADA. Toast: "Cannot add lessons over existing lessons. Please remove or edit the existing lessons first."
-- Submit zablokowany.
-
-**UI:** Przed submitem wyswietlic conflict summary w modalu:
-
-```
-⚠️ 3 time conflicts detected:
-- Mon Feb 26, 09:00-10:00 — Lesson with Anna (will be replaced)
-- Tue Feb 27, 10:00-11:00 — Lesson with John (BLOCKED)
-[Cancel] [Create anyway (non-conflicting only)]
-```
+**Fix:**
+1. **Migracja SQL:** Dodac kolumny `student_id uuid`, `title text` do `calendar_recurrence_rules`
+2. **`useCalendarRecurrence.tsx` linia 60-71:** Dodac `student_id` i `title` do insert
+3. Wtedy `generateSlotsForRule` bedzie prawidlowo czytac `rule.student_id`
 
 ---
 
-### Krok 6: CalendarToolbar — uproszczenie
+### 3D. Single Lesson — brak opcji linkowania Worksheet
 
-**Plik:** `src/components/calendar/CalendarToolbar.tsx`
+**Problem:** W `UnifiedSlotModal.tsx` dla Single Lesson nie ma przycisku "Link Worksheet".
 
-Usunac: `onAddRecurring`, `onBatchAdd`, `onQuickSetup` props i caly DropdownMenu.
-Zamiast tego: prosty `<Button onClick={onAddSlot}>`.
-
-```typescript
-<Button size="sm" className="h-8" onClick={onAddSlot}>
-  <Plus className="h-3.5 w-3.5 mr-1" /> Add
-</Button>
-```
+**Fix:** Po polach Title/Notes (linia 508-518), jesli `slotType === 'lesson' && lessonMode === 'single' && studentId !== 'none'`, dodac sekcje informacyjna: "You can link a worksheet after creating the lesson, from the slot details view." (Linkowanie wymaga istniejacego slot.id — nie mozna linkowac przed utworzeniem slotu.)
 
 ---
 
-### Krok 7: Fix freeze (Problem 1)
+### 3E. Conflict detection — bledy logiczne
 
-Dwa podejscia rownolegle:
+**Problem 1:** Lesson 11:00-12:00 na wolny slot 11:00-12:00 — system blokuje zamiast auto-replace.
 
-**A.** W `CalendarWeekView` dodac `React.memo`:
+**Przyczyna:** `handleSubmit` linia 229-247: sprawdza konflikty, ale logika jest bledna. `checkConflicts` oznacza KAZDY overlap jako conflict. Potem linia 233-237 szuka replaceable (slotow bez studenta), ale JESLI jest tez slot z studentem w overlapping, `blocked=true` i nigdy nie dociera do replace.
 
-```typescript
-export const CalendarWeekView = React.memo(function CalendarWeekView(...) { ... });
+**Problem 2:** Single Slot 19:30-12:30 — wykrywa konflikt z 18:30-19:30. To dlatego ze `12:30 < 19:30` jest true (string comparison `"12:30" < "19:30"`), wiec system mysli ze nowy slot 19:30-12:30 pokrywa sie z 18:30-19:30. To jest bug — uzytkownik prawdopodobnie chcial 19:30-20:30 ale wpisal 12:30 co jest blad walidacji. Ale niezaleznie od tego, `"19:30" < "12:30"` jest false wiec `end_time > start_time` wyrazenie `"19:30" > "19:30"` jest false — wiec NIE powinno byc konfliktu. Sprawdzam: `ex.end_time > ns.start_time` = `"19:30" > "19:30"` = false. Hmm wiec nie powinno byc konfliktu. ALE w bazie end_time moze byc "19:30:00" a ns.start_time to "19:30" — string comparison "19:30:00" > "19:30" = true. TO JEST BUG.
+
+**Fix:**
+1. W `checkConflicts`: normalizowac czasy do HH:MM przed porownaniem (`.slice(0,5)`)
+2. Przerobic logike conflicts — rozdzielic na 3 scenariusze z planu:
+   - A. Available na Lesson → BLOCK
+   - B. Lesson na Available → AUTO-REPLACE (usun available, dodaj lesson) — NIE BLOKUJ
+   - C. Lesson na Lesson → BLOCK
+3. Dodac czyszczenie conflictow gdy uzytkownik zmieni date/godziny (reset conflicts on field change)
+
+**Nowa logika checkConflicts:**
+```
+for each new slot:
+  find overlapping existing (normalize times to HH:MM)
+  for each overlap:
+    if adding available AND overlap has student → BLOCK
+    if adding lesson AND overlap has student → BLOCK  
+    if adding lesson AND overlap has NO student → REPLACEABLE (not blocked)
+    if adding available AND overlap has NO student → REPLACEABLE (not blocked)
+return { blocked, replaceable, info }
 ```
 
-**B.** W `CalendarSlotCard` dodac `React.memo`:
+Przy submit: jesli blocked → pokaz error. Jesli nie blocked ale sa replaceable → usun replaceable, potem insert.
 
-```typescript
-export const CalendarSlotCard = React.memo(function CalendarSlotCard(...) { ... });
-```
-
-**C.** W `UnifiedSlotModal` renderowac content tylko gdy `open=true` (Dialog juz to robi, ale upewnic sie ze ciezkie obliczenia typu `generatedSlots` nie odpalaja sie gdy modal jest zamkniety).
+**Dodac:** `useEffect` na `[date, startTime, endTime]` ktory resetuje `setConflicts([])` i `setConflictBlocked(false)`.
 
 ---
 
-### KROK 8 wygląd calendar  
-1. na widoku day i week zmniejsz o 55% wysokość tych kafelek ze slotami na kalendarzu. Dzięki temu zmeści się nam cały dzień na ekranie laptopa deskopt dodatkowo są 2  różne kreski na pełną godzinę n. 12:00 i na poł godizny np 12:30, Kreska na pół godziny obecnie jest mocniejsza niż na pełną a pwinno być odwrotnie więc popraw  
-  
-  
-Krok 9 Dokumentacja
+### 4. SlotDetailModal — "Cancel" button usuwa slot
 
-Zaktualizowac:
+**Problem:** Linia 331: `<Button onClick={() => onOpenChange(false)}>Close</Button>` — to zamyka modal. Ale linia 313: `Cancel Lesson` zmienia status na cancelled — to jest poprawne. Uzytkownik mowi ze "Cancel" usuwa slot. Sprawdzam linie 328-331:
+- Delete button (linia 328) — to jest delete, OK
+- Close button (linia 331) — to zamyka modal, NIE usuwa
 
-- `docs/TECHNICAL_DOCUMENTATION.md` — nowa architektura modali
-- `docs/USER_GUIDE_SHORT.md` — zmieniony flow dodawania slotow
-- `docs/USER_GUIDE_DETAILED.md` — szczegoly UnifiedSlotModal
-- `docs/CURRENT_STATE_ANALYSIS.md` — aktualny stan kalendarza
+Prawdopodobnie uzytkownik myli "Cancel Lesson" z "Cancel" (Close). Label "Close" moze byc myslacy. Zmienic na:
+- "Close" → "Cancel" (zamyka modal bez zmian, ale najpierw resetuj pola do oryginalnych wartosci)
+- "Cancel Lesson" → zostawic ale z potwierdzeniem
+
+**Fix:** Zmienic przycisk "Close" (linia 331) na "Cancel" ktory resetuje zmiany i zamyka modal. Przeniesc go obok "Save Changes" i "Delete".
 
 ---
 
-## KOLEJNOSC IMPLEMENTACJI
+### 4A. SlotDetailModal — modal rozjezdza sie po wybraniu ucznia
 
+**Problem:** Prawdopodobnie przyciski status actions (Confirm, Complete, No Show, Cancel Lesson) renderuja sie i rozciagaja modal.
 
-| Krok | Co                                               | Pliki                                          |
-| ---- | ------------------------------------------------ | ---------------------------------------------- |
-| 1    | Fix `usePublicBooking` infinite loop             | `usePublicBooking.tsx` (1 linia)               |
-| 2    | Stworzyc `UnifiedSlotModal`                      | `UnifiedSlotModal.tsx` (NOWY, ~300 linii)      |
-| 3    | Refaktor `CalendarPage` — usunac stare modale    | `CalendarPage.tsx`                             |
-| 4    | Uproscic `CalendarToolbar`                       | `CalendarToolbar.tsx`                          |
-| 5    | Rozbudowac `SlotDetailModal` — edycja + studenci | `SlotDetailModal.tsx`                          |
-| 6    | Dodac conflict detection do UnifiedSlotModal     | `UnifiedSlotModal.tsx`                         |
-| 7    | Dodac `React.memo` na widoki                     | `CalendarWeekView.tsx`, `CalendarSlotCard.tsx` |
-| 8    | Usunac stare pliki modali                        | 3 pliki do usuniecia                           |
-| 9    | Dokumentacja                                     | 4 pliki docs                                   |
+**Fix:** Dodac `overflow-y-auto max-h-[80vh]` na DialogContent. Uzyc `flex-wrap` na przyciskach statusu. Zmniejszyc rozmiary przyciskow.
 
+---
 
-**Szacunek:** 1-2 sesje implementacji. ~10 plikow zmienionych/utworzonych, 3 usuniete.
+### 5. Powiadomienia kalendarzowe
+
+**A. Dashboard — ikonka z numerkiem na przycisku Calendar:**
+- Nowa tabela `calendar_notifications` (teacher_id, type, message, slot_id, student_name, is_read, created_at)
+- Hook `useCalendarNotifications` — fetchuje unread count
+- Na Dashboard.tsx: `<Badge>` z liczbą unread na przycisku Calendar
+
+**B. Na /calendar — dzwoneczek z dropdownem:**
+- Komponent `CalendarNotificationBell` z Popover
+- Pokazuje ostatnie powiadomienia (nowa rezerwacja, anulowanie, itp.)
+- Mark as read on open
+
+---
+
+### 6. Rezerwacja ucznia nie pojawia sie w kalendarzu nauczyciela
+
+**Problem:** `usePublicBooking.bookSlot` (linia 87-99) aktualizuje slot w bazie. Ale na stronie `/calendar` nauczyciel widzi tylko sloty z `fetchSlots` ktory filtruje po `teacher_id`. Aktualizacja powinna byc widoczna.
+
+**Przyczyna prawdopodobna:** Slot po rezerwacji ma `status: 'booked'`. Calendar fetchSlots pobiera WSZYSTKIE statusy. Wiec powinno dzialac. Problem moze byc w tym ze `bookSlot` aktualizuje tylko sloty z `status: 'available'` (linia 99: `.eq('status', 'available')`). Jesli slot juz nie jest available (np. ktos inny zabrokowal) — aktualizacja sie nie powiedzie bez bledu.
+
+**Bardziej prawdopodobna przyczyna:** Nauczyciel musi odswiezyc strone. Brak real-time subscription. 
+
+**Fix:** Dodac tymczasowe rozwiazanie — auto-refetch co 30 sekund w `useCalendarSlots`. Lub dodac przycisk "Refresh". Docelowo Supabase Realtime subscription na `calendar_slots`.
+
+Dodatkowo: wstawiac rekord do `calendar_notifications` po udanej rezerwacji (INSERT trigger lub edge function).
+
+---
+
+### 7. Calendar Settings — brakujace opcje
+
+Obecne sekcje: General, Booking Rules, Public Calendar, Notifications. Brakuje:
+- **Payment Tracking** (juz jest tabela `calendar_payment_records` i `calendar_student_settings`): enable/disable, default price, currency
+- **Wyswietlanie working hours** w widoku kalendarza (start/end hour)
+
+**Fix:** Dodac sekcje "Payment" do CalendarSettingsPage z: payment_tracking_enabled switch, default_lesson_price input, currency select.
+
+---
+
+### 8. Komunikaty — "slot created" zamiast "lesson created"
+
+**Plik:** `useCalendarSlots.tsx` `createSlot` callback — toast mowi "Slot created" niezaleznie od tego czy to slot czy lesson.
+
+**Fix:** Zmienic toast w `createSlot`:
+```typescript
+toast({ title: input.student_id ? 'Lesson created' : 'Slot created' });
+```
+Analogicznie w batch: `${inputs.length} lessons created` vs `${inputs.length} slots created`.
+
+---
+
+### 9. Public Booking — opcja recurring booking
+
+**Plik:** `PublicBookingPage.tsx` — modal Confirm Booking.
+
+**Dodac:**
+- Checkbox/switch: "Book weekly at this time"
+- Jesli zaznaczone: date picker "Until" (data koncowa)
+- Ostrzezenie: "⚠️ You are booking a weekly recurring lesson every [Day] at [Time] until [Date]. This will book X lessons."
+- Logika: po zatwierdzeniu, book all available slots at same weekday/time w zakresie dat
+
+---
+
+### 10-11. Test end-to-end + readiness checklist
+
+To zrobie po implementacji. Plan:
+1. Przetestowac: dodawanie single slot, batch, single lesson, recurring lesson
+2. Edycja slotu — assign/remove student
+3. Public booking — single + recurring
+4. Conflict detection — 3 scenariusze
+5. Powiadomienia
+6. Responsywnosc mobile
+
+**Readiness checklist** (do dodania do dokumentacji):
+- [ ] Single slot creation works
+- [ ] Batch slot creation works  
+- [ ] Single lesson creation works (with student)
+- [ ] Recurring lesson creation works (with student)
+- [ ] Slot editing — change time/date/student
+- [ ] Conflict detection — all 3 scenarios
+- [ ] Public booking page loads
+- [ ] Student can book a slot
+- [ ] Teacher sees booked slots
+- [ ] Notifications on booking
+- [ ] Calendar Settings complete
+- [ ] Day/Week/Month views work
+- [ ] Mobile responsive
+
+---
+
+## FAZA 2 — Platnosci i eksport (PLAN)
+
+### Platnosci:
+
+1. **CalendarSettingsPage** — nowa sekcja "Payment Tracking":
+   - Switch: `payment_tracking_enabled`
+   - Input: `default_lesson_price` 
+   - Select: `currency` (USD, EUR, PLN, GBP)
+
+2. **SlotDetailModal** — przycisk "Mark as Paid" / "Mark as Unpaid":
+   - Toggle `is_paid` na `calendar_slots`
+   - Widoczny tylko gdy payment_tracking_enabled
+
+3. **Prepaid packs** — `calendar_student_settings.prepaid_lessons_remaining`:
+   - Auto-dekrementacja po `status='completed'` (trigger SQL)
+   - Warning gdy prepaid_lessons_remaining <= 2
+
+4. **Uczen "I've paid"** — w Public Booking / StudentLessonsPage:
+   - Przycisk tworzy rekord w `calendar_payment_records` z `is_confirmed=false`
+   - Nauczyciel widzi w SlotDetailModal i moze potwierdzic
+
+### Eksport:
+
+1. **CalendarToolbar** — przycisk "Export":
+   - Dropdown: All lessons / Selected student / Date range
+   - Generuje CSV: Date, Time, Student, Status, Paid, Notes, Worksheet Title
+   - Pobiera jako plik .csv
+
+2. **Opcja "Send by email"** — edge function `send-calendar-export`:
+   - Generuje CSV
+   - Wysyla email z attachment
+
+---
+
+## FAZA 3 — Google Calendar (PLAN ARCHITEKTURY)
+
+**Status:** Brak Google Calendar connector w Lovable. Wymaga custom OAuth2 flow.
+
+### Architektura:
+
+1. **OAuth2 flow:**
+   - Edge function `gcal-auth-start` — generuje URL do Google consent screen
+   - Callback endpoint — zapisuje refresh_token w `calendar_settings` (encrypted)
+
+2. **Sync flow:**
+   - Edge function `sync-gcal-event` — wywoływana po potwierdzeniu rezerwacji
+   - Tworzy event w GCal z: title, time, color, reminder
+   - Zapisuje `gcal_event_id` w `calendar_slots`
+
+3. **Dwukierunkowa sync:**
+   - Webhook / cron sprawdza zmiany w GCal
+   - Jesli usuniety event → anuluj slot w naszym systemie
+
+4. **Ustawienia w CalendarSettings:**
+   - Przycisk "Connect Google Calendar" → OAuth flow
+   - Kolor, reminder minutes, domyslny opis
+
+**UWAGA:** Implementacja wymaga Google Cloud Console setup + OAuth credentials. Na razie dokumentujemy architekture, nie implementujemy.
+
+---
+
+## KOLEJNOSC IMPLEMENTACJI FAZY 1
+
+| Krok | Co | Pliki |
+|---|---|---|
+| 1 | Migracja SQL: dodac student_id, title do calendar_recurrence_rules + tabela calendar_notifications | migration |
+| 2 | Fix kreski godzinowe (Day+Week) | CalendarDayView.tsx, CalendarWeekView.tsx |
+| 3 | Fix conflict detection — normalizacja czasow + 3 scenariusze + reset on change | UnifiedSlotModal.tsx |
+| 4 | Batch Slots — lista godzin zamiast Working hours | UnifiedSlotModal.tsx |
+| 5 | Recurring Lesson fix — student_id w insert + generate | useCalendarRecurrence.tsx |
+| 6 | SlotDetailModal — fix Cancel/overflow/komunikaty | SlotDetailModal.tsx |
+| 7 | Dynamic modal title + toast messages | UnifiedSlotModal.tsx, useCalendarSlots.tsx |
+| 8 | Public Booking — recurring option | PublicBookingPage.tsx, usePublicBooking.tsx |
+| 9 | Notifications — tabela + hook + badge na Dashboard + bell na Calendar | migration, hook, Dashboard.tsx, CalendarPage.tsx |
+| 10 | Calendar Settings — Payment sekcja | CalendarSettingsPage.tsx |
+| 11 | Single Lesson — info o linkowaniu worksheet | UnifiedSlotModal.tsx |
+| 12 | Auto-refetch slots (30s interval) | useCalendarSlots.tsx |
+| 13 | Dokumentacja | 4 pliki docs |
+
