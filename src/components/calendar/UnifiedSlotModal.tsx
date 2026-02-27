@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { format, addDays, getDay, isAfter } from 'date-fns';
-import { CalendarIcon, User, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { CalendarIcon, User, Plus, Trash2, AlertTriangle, Info } from 'lucide-react';
 import { CalendarSlot, CreateSlotInput } from '@/hooks/useCalendarSlots';
 import { CreateRecurrenceInput } from '@/hooks/useCalendarRecurrence';
 
@@ -36,6 +36,7 @@ interface ConflictInfo {
   time: string;
   hasStudent: boolean;
   studentName?: string;
+  type: 'blocked' | 'replaceable';
 }
 
 interface UnifiedSlotModalProps {
@@ -63,6 +64,14 @@ function computeEndTime(start: string, duration: number): string {
   return `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
 }
 
+function normalizeTime(t: string): string {
+  return t.slice(0, 5);
+}
+
+function generateId(): string {
+  return Math.random().toString(36).substring(2, 10);
+}
+
 export function UnifiedSlotModal({
   open, onOpenChange, onCreateSingle, onCreateBatch, onCreateRecurring,
   onDeleteSlot, students, defaultDuration, defaultDate, defaultStartTime,
@@ -81,12 +90,11 @@ export function UnifiedSlotModal({
   const [notes, setNotes] = useState('');
   const [studentId, setStudentId] = useState<string>('none');
 
-  // Batch fields
+  // Batch fields — time slot entries instead of working hours
   const [selectedDays, setSelectedDays] = useState([true, true, true, true, true, false, false]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [workStart, setWorkStart] = useState('09:00');
-  const [workEnd, setWorkEnd] = useState('17:00');
+  const [timeSlotEntries, setTimeSlotEntries] = useState<TimeSlotEntry[]>([]);
 
   // Recurring fields
   const [recurDayOfWeek, setRecurDayOfWeek] = useState('0');
@@ -105,7 +113,8 @@ export function UnifiedSlotModal({
       setDate(format(d, 'yyyy-MM-dd'));
       const st = defaultStartTime || '09:00';
       setStartTime(st);
-      setEndTime(computeEndTime(st, Number(duration)));
+      const dur = Number(duration);
+      setEndTime(computeEndTime(st, dur));
       setTitle('');
       setNotes('');
       setStudentId('none');
@@ -113,13 +122,25 @@ export function UnifiedSlotModal({
       setConflictBlocked(false);
       setDateFrom(format(d, 'yyyy-MM-dd'));
       setDateTo(format(addDays(d, 27), 'yyyy-MM-dd'));
+      // Initialize batch time slots
+      setTimeSlotEntries([{ id: generateId(), start: st, end: computeEndTime(st, dur) }]);
     }
   }, [open, defaultDate, defaultStartTime]);
+
+  // Reset conflicts when inputs change
+  useEffect(() => {
+    if (conflicts.length > 0) {
+      setConflicts([]);
+      setConflictBlocked(false);
+    }
+  }, [date, startTime, endTime, dateFrom, dateTo, selectedDays, studentId, slotType]);
 
   // Auto-compute end time from duration
   const handleDurationChange = (val: string) => {
     setDuration(val);
     setEndTime(computeEndTime(startTime, Number(val)));
+    // Update batch entries too
+    setTimeSlotEntries(prev => prev.map(e => ({ ...e, end: computeEndTime(e.start, Number(val)) })));
   };
 
   const handleStartTimeChange = (val: string) => {
@@ -135,18 +156,33 @@ export function UnifiedSlotModal({
     }
   }, [slotType, studentId]);
 
-  // Generate batch slots
+  // Batch time slot management
+  const addTimeSlotEntry = () => {
+    const last = timeSlotEntries[timeSlotEntries.length - 1];
+    const newStart = last ? last.end : '09:00';
+    setTimeSlotEntries(prev => [...prev, { id: generateId(), start: newStart, end: computeEndTime(newStart, Number(duration)) }]);
+  };
+
+  const removeTimeSlotEntry = (id: string) => {
+    if (timeSlotEntries.length <= 1) return;
+    setTimeSlotEntries(prev => prev.filter(e => e.id !== id));
+  };
+
+  const updateTimeSlotEntry = (id: string, field: 'start' | 'end', value: string) => {
+    setTimeSlotEntries(prev => prev.map(e => {
+      if (e.id !== id) return e;
+      if (field === 'start') return { ...e, start: value, end: computeEndTime(value, Number(duration)) };
+      return { ...e, [field]: value };
+    }));
+  };
+
+  // Generate batch slots from time entries × days × date range
   const batchSlots = useMemo(() => {
     if (slotType !== 'available' || availableMode !== 'batch') return [];
     const from = new Date(dateFrom);
     const to = new Date(dateTo);
     if (isNaN(from.getTime()) || isNaN(to.getTime())) return [];
-
-    const dur = Number(duration);
-    const [wsh, wsm] = workStart.split(':').map(Number);
-    const [weh, wem] = workEnd.split(':').map(Number);
-    const wsMin = wsh * 60 + wsm;
-    const weMin = weh * 60 + wem;
+    if (timeSlotEntries.length === 0) return [];
 
     const jsDayToOurDay = (jsDay: number) => jsDay === 0 ? 6 : jsDay - 1;
     const slots: CreateSlotInput[] = [];
@@ -155,96 +191,105 @@ export function UnifiedSlotModal({
     while (!isAfter(d, to)) {
       const ourDay = jsDayToOurDay(getDay(d));
       if (selectedDays[ourDay]) {
-        let current = wsMin;
-        while (current + dur <= weMin) {
-          const sH = Math.floor(current / 60);
-          const sM = current % 60;
-          const eH = Math.floor((current + dur) / 60);
-          const eM = (current + dur) % 60;
+        for (const entry of timeSlotEntries) {
           slots.push({
             slot_date: format(d, 'yyyy-MM-dd'),
-            start_time: `${String(sH).padStart(2, '0')}:${String(sM).padStart(2, '0')}`,
-            end_time: `${String(eH).padStart(2, '0')}:${String(eM).padStart(2, '0')}`,
+            start_time: entry.start,
+            end_time: entry.end,
           });
-          current += dur;
         }
       }
       d = addDays(d, 1);
     }
     return slots;
-  }, [slotType, availableMode, dateFrom, dateTo, selectedDays, duration, workStart, workEnd]);
+  }, [slotType, availableMode, dateFrom, dateTo, selectedDays, timeSlotEntries]);
 
-  // Check conflicts
-  const checkConflicts = (newSlots: CreateSlotInput[]): { blocked: boolean; info: ConflictInfo[] } => {
+  // Check conflicts with proper time normalization and 3-scenario logic
+  const checkConflicts = (newSlots: CreateSlotInput[]): { blocked: boolean; replaceable: CalendarSlot[]; info: ConflictInfo[] } => {
     const info: ConflictInfo[] = [];
     let blocked = false;
+    const replaceable: CalendarSlot[] = [];
     const isAddingLesson = slotType === 'lesson';
 
     for (const ns of newSlots) {
+      const nsStart = normalizeTime(ns.start_time);
+      const nsEnd = normalizeTime(ns.end_time);
+
       const overlapping = existingSlots.filter(ex =>
         ex.slot_date === ns.slot_date &&
         ex.status !== 'cancelled' &&
-        ex.start_time < ns.end_time &&
-        ex.end_time > ns.start_time
+        normalizeTime(ex.start_time) < nsEnd &&
+        normalizeTime(ex.end_time) > nsStart
       );
       for (const ov of overlapping) {
         const hasStudent = ov.student_id !== null;
-        info.push({
-          date: ov.slot_date,
-          time: `${ov.start_time.slice(0,5)}–${ov.end_time.slice(0,5)}`,
-          hasStudent,
-          studentName: hasStudent && ov.student_id ? studentMap[ov.student_id] : undefined,
-        });
-        // Adding available over lesson = blocked
-        if (!isAddingLesson && hasStudent) blocked = true;
-        // Adding lesson over lesson = blocked
-        if (isAddingLesson && hasStudent) blocked = true;
+
+        if (hasStudent) {
+          // Any overlap with a lesson → BLOCK
+          blocked = true;
+          info.push({
+            date: ov.slot_date,
+            time: `${normalizeTime(ov.start_time)}–${normalizeTime(ov.end_time)}`,
+            hasStudent: true,
+            studentName: ov.student_id ? studentMap[ov.student_id] : undefined,
+            type: 'blocked',
+          });
+        } else {
+          // Overlap with available slot
+          if (isAddingLesson) {
+            // Lesson over available → REPLACEABLE (auto-replace)
+            replaceable.push(ov);
+            info.push({
+              date: ov.slot_date,
+              time: `${normalizeTime(ov.start_time)}–${normalizeTime(ov.end_time)}`,
+              hasStudent: false,
+              type: 'replaceable',
+            });
+          } else {
+            // Available over available → just skip/replace silently
+            replaceable.push(ov);
+          }
+        }
       }
     }
-    return { blocked, info };
+    return { blocked, replaceable, info };
   };
 
   const handleSubmit = async () => {
     setSaving(true);
     try {
       if (slotType === 'available' && availableMode === 'single') {
-        // Single available slot
         const newSlots = [{ slot_date: date, start_time: startTime, end_time: endTime }];
         const { blocked, info } = checkConflicts(newSlots);
-        if (info.length > 0) {
+        if (blocked) {
           setConflicts(info);
-          setConflictBlocked(blocked);
-          if (blocked) { setSaving(false); return; }
+          setConflictBlocked(true);
+          setSaving(false);
+          return;
         }
         await onCreateSingle({ slot_date: date, start_time: startTime, end_time: endTime, title: title || undefined, notes: notes || undefined });
       } else if (slotType === 'available' && availableMode === 'batch') {
         if (batchSlots.length === 0) { setSaving(false); return; }
         const { blocked, info } = checkConflicts(batchSlots);
-        if (info.length > 0) {
+        if (blocked) {
           setConflicts(info);
-          setConflictBlocked(blocked);
-          if (blocked) { setSaving(false); return; }
+          setConflictBlocked(true);
+          setSaving(false);
+          return;
         }
         await onCreateBatch(batchSlots);
       } else if (slotType === 'lesson' && lessonMode === 'single') {
         if (studentId === 'none') { setSaving(false); return; }
         const newSlots = [{ slot_date: date, start_time: startTime, end_time: endTime, student_id: studentId }];
-        const { blocked, info } = checkConflicts(newSlots);
-        if (info.length > 0) {
-          // Auto-replace available slots
-          const replaceable = existingSlots.filter(ex =>
-            ex.slot_date === date && ex.status !== 'cancelled' &&
-            ex.start_time < endTime && ex.end_time > startTime && !ex.student_id
-          );
-          if (!blocked) {
-            for (const r of replaceable) await onDeleteSlot(r.id);
-          } else {
-            setConflicts(info);
-            setConflictBlocked(true);
-            setSaving(false);
-            return;
-          }
+        const { blocked, replaceable, info } = checkConflicts(newSlots);
+        if (blocked) {
+          setConflicts(info);
+          setConflictBlocked(true);
+          setSaving(false);
+          return;
         }
+        // Auto-replace available slots
+        for (const r of replaceable) await onDeleteSlot(r.id);
         await onCreateSingle({
           slot_date: date, start_time: startTime, end_time: endTime,
           student_id: studentId, title: title || undefined, notes: notes || undefined,
@@ -274,17 +319,18 @@ export function UnifiedSlotModal({
   })();
 
   const mode = slotType === 'available' ? availableMode : lessonMode;
+  const modalTitle = slotType === 'lesson' ? 'Add Lesson' : (availableMode === 'batch' ? 'Add Slots' : 'Add Slot');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Event</DialogTitle>
+          <DialogTitle>{modalTitle}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Top tabs: Available / Lesson */}
-          <Tabs value={slotType} onValueChange={v => { setSlotType(v as SlotType); setConflicts([]); }}>
+          <Tabs value={slotType} onValueChange={v => { setSlotType(v as SlotType); setConflicts([]); setConflictBlocked(false); }}>
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="available" className="text-xs">
                 <CalendarIcon className="h-3.5 w-3.5 mr-1" /> Available Slot
@@ -411,30 +457,27 @@ export function UnifiedSlotModal({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">Working hours from</Label>
-                  <Select value={workStart} onValueChange={setWorkStart}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 12 }, (_, i) => i + 7).map(h => (
-                        <SelectItem key={h} value={`${String(h).padStart(2, '0')}:00`}>{String(h).padStart(2, '0')}:00</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs">Working hours to</Label>
-                  <Select value={workEnd} onValueChange={setWorkEnd}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 10 }, (_, i) => i + 13).map(h => (
-                        <SelectItem key={h} value={`${String(h).padStart(2, '0')}:00`}>{String(h).padStart(2, '0')}:00</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+
+              {/* Time slot entries list */}
+              <div className="space-y-2">
+                <Label className="text-xs">Time slots</Label>
+                {timeSlotEntries.map((entry, idx) => (
+                  <div key={entry.id} className="flex items-center gap-2">
+                    <Input type="time" value={entry.start} onChange={e => updateTimeSlotEntry(entry.id, 'start', e.target.value)} className="h-8 flex-1" />
+                    <span className="text-xs text-muted-foreground">–</span>
+                    <Input type="time" value={entry.end} onChange={e => updateTimeSlotEntry(entry.id, 'end', e.target.value)} className="h-8 flex-1" />
+                    {timeSlotEntries.length > 1 && (
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => removeTimeSlotEntry(entry.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={addTimeSlotEntry}>
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Add Time Slot
+                </Button>
               </div>
+
               <div className="bg-primary/5 border border-primary/20 rounded-md px-3 py-2 text-sm">
                 This will create <span className="font-semibold text-primary">{batchSlots.length}</span> available slots
               </div>
@@ -518,6 +561,14 @@ export function UnifiedSlotModal({
             </>
           )}
 
+          {/* Worksheet link info for single lesson */}
+          {slotType === 'lesson' && lessonMode === 'single' && studentId !== 'none' && (
+            <div className="flex items-start gap-2 bg-muted/50 border border-border rounded-md px-3 py-2 text-xs text-muted-foreground">
+              <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+              <span>You can link a worksheet after creating the lesson, from the slot details view.</span>
+            </div>
+          )}
+
           {/* Conflict warning */}
           {conflicts.length > 0 && (
             <div className="bg-destructive/10 border border-destructive/30 rounded-md px-3 py-2 text-sm space-y-1">
@@ -528,6 +579,7 @@ export function UnifiedSlotModal({
               {conflicts.slice(0, 5).map((c, i) => (
                 <div key={i} className="text-xs text-muted-foreground">
                   {c.date} {c.time} {c.hasStudent ? `— Lesson with ${c.studentName || 'student'}` : '— Available slot'}
+                  {c.type === 'replaceable' && ' (will be replaced)'}
                 </div>
               ))}
               {conflicts.length > 5 && <div className="text-xs text-muted-foreground">...and {conflicts.length - 5} more</div>}
@@ -538,7 +590,7 @@ export function UnifiedSlotModal({
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button size="sm" onClick={handleSubmit} disabled={saving || !isValid || conflictBlocked}>
-            {saving ? 'Creating...' : slotType === 'available' && availableMode === 'batch' ? `Create ${batchSlots.length} Slots` : 'Create'}
+            {saving ? 'Creating...' : slotType === 'available' && availableMode === 'batch' ? `Create ${batchSlots.length} Slots` : slotType === 'lesson' ? 'Create Lesson' : 'Create Slot'}
           </Button>
         </DialogFooter>
       </DialogContent>

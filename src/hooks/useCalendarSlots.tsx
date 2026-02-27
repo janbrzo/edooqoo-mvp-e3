@@ -98,6 +98,13 @@ export function useCalendarSlots(teacherId?: string) {
 
   useEffect(() => { fetchSlots(); }, [fetchSlots]);
 
+  // Auto-refetch every 30 seconds for real-time updates
+  useEffect(() => {
+    if (!teacherId) return;
+    const interval = setInterval(fetchSlots, 30000);
+    return () => clearInterval(interval);
+  }, [teacherId, fetchSlots]);
+
   const createSlot = useCallback(async (input: CreateSlotInput) => {
     if (!teacherId) return null;
     try {
@@ -137,7 +144,7 @@ export function useCalendarSlots(teacherId?: string) {
 
       if (error) throw error;
       await fetchSlots();
-      toast({ title: 'Slot created' });
+      toast({ title: input.student_id ? 'Lesson created' : 'Slot created' });
       return data;
     } catch (err: any) {
       toast({ title: 'Error creating slot', description: err.message, variant: 'destructive' });
@@ -171,7 +178,8 @@ export function useCalendarSlots(teacherId?: string) {
 
       if (error) throw error;
       await fetchSlots();
-      toast({ title: `${inputs.length} slots created` });
+      const hasStudents = inputs.some(i => i.student_id);
+      toast({ title: `${inputs.length} ${hasStudents ? 'lessons' : 'slots'} created` });
       return true;
     } catch (err: any) {
       toast({ title: 'Error creating slots', description: err.message, variant: 'destructive' });

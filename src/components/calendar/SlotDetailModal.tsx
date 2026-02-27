@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
-import { format, parseISO, differenceInMinutes } from 'date-fns';
-import { Check, X, Trash2, FileText, ExternalLink, AlertTriangle, Link2, Undo2, UserMinus, UserPlus, Repeat } from 'lucide-react';
+import { format, differenceInMinutes } from 'date-fns';
+import { Check, X, Trash2, FileText, ExternalLink, AlertTriangle, Link2, Undo2, UserMinus, Repeat } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -82,6 +82,21 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     editNotes !== (slot.notes || '') ||
     editStudentId !== (slot.student_id || 'none');
 
+  const resetChanges = () => {
+    setEditDate(slot.slot_date);
+    setEditStartTime(slot.start_time.slice(0, 5));
+    setEditEndTime(slot.end_time.slice(0, 5));
+    setEditTitle(slot.title || '');
+    setEditNotes(slot.notes || '');
+    setEditStudentId(slot.student_id || 'none');
+    setShowStudentSelect(false);
+  };
+
+  const handleCancel = () => {
+    resetChanges();
+    onOpenChange(false);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     const updates: any = {
@@ -148,7 +163,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
 
   const handleEditSeries = async () => {
     if (!slot.recurrence_rule_id) return;
-    // Update all future slots in this series
     const today = format(new Date(), 'yyyy-MM-dd');
     const updates: any = {
       start_time: editStartTime,
@@ -182,9 +196,9 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 flex-wrap">
             {hasStudent ? `Lesson` : 'Available Slot'}
             <Badge variant={isPending ? 'outline' : badge.variant} className={isPending ? 'border-amber-400 text-amber-700 bg-amber-50' : ''}>
               {isPending ? 'Pending' : badge.label}
@@ -200,12 +214,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         <div className="space-y-3">
           {/* Student section */}
           {hasStudent && !showStudentSelect ? (
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
                 <Label className="text-xs text-muted-foreground">Student</Label>
-                <div className="font-medium text-sm">{students.find(s => s.id === editStudentId)?.name || studentName}</div>
+                <div className="font-medium text-sm truncate">{students.find(s => s.id === editStudentId)?.name || studentName}</div>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1 flex-shrink-0">
                 <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowStudentSelect(true)}>
                   Change
                 </Button>
@@ -290,47 +304,47 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
           {/* Status actions */}
           <div className="flex gap-1 flex-wrap w-full">
             {canUndoCancel && (
-              <Button size="sm" variant="outline" onClick={handleUndoCancel}>
-                <Undo2 className="h-3.5 w-3.5 mr-1" /> Undo Cancel
+              <Button size="sm" variant="outline" onClick={handleUndoCancel} className="text-xs h-7">
+                <Undo2 className="h-3 w-3 mr-1" /> Undo Cancel
               </Button>
             )}
             {isPending && (
-              <Button size="sm" onClick={handleConfirm} className="bg-green-600 hover:bg-green-700 text-white">
-                <Check className="h-3.5 w-3.5 mr-1" /> Confirm
+              <Button size="sm" onClick={handleConfirm} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
+                <Check className="h-3 w-3 mr-1" /> Confirm
               </Button>
             )}
             {slot.status === 'booked' && slot.confirmed_at && (
               <>
-                <Button size="sm" variant="outline" onClick={() => handleStatusChange('completed')}>
-                  <Check className="h-3.5 w-3.5 mr-1" /> Complete
+                <Button size="sm" variant="outline" onClick={() => handleStatusChange('completed')} className="text-xs h-7">
+                  <Check className="h-3 w-3 mr-1" /> Complete
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => handleStatusChange('no_show')}>
-                  <AlertTriangle className="h-3.5 w-3.5 mr-1" /> No Show
+                <Button size="sm" variant="outline" onClick={() => handleStatusChange('no_show')} className="text-xs h-7">
+                  <AlertTriangle className="h-3 w-3 mr-1" /> No Show
                 </Button>
               </>
             )}
             {slot.status !== 'cancelled' && slot.status !== 'completed' && hasStudent && (
-              <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleStatusChange('cancelled')}>
-                <X className="h-3.5 w-3.5 mr-1" /> Cancel Lesson
+              <Button size="sm" variant="outline" className="text-destructive text-xs h-7" onClick={() => handleStatusChange('cancelled')}>
+                <X className="h-3 w-3 mr-1" /> Cancel Lesson
               </Button>
             )}
           </div>
 
           {/* Edit Series */}
           {isRecurring && hasChanges && (
-            <Button size="sm" variant="outline" className="w-full" onClick={handleEditSeries}>
-              <Repeat className="h-3.5 w-3.5 mr-1" /> Save for Entire Series
+            <Button size="sm" variant="outline" className="w-full text-xs h-8" onClick={handleEditSeries}>
+              <Repeat className="h-3 w-3 mr-1" /> Save for Entire Series
             </Button>
           )}
 
           {/* Bottom actions */}
           <div className="flex gap-2 w-full justify-end">
-            <Button size="sm" variant="ghost" className="text-destructive" onClick={handleDelete}>
-              <Trash2 className="h-3.5 w-3.5 mr-1" /> {confirming ? 'Confirm Delete?' : 'Delete'}
+            <Button size="sm" variant="ghost" className="text-destructive text-xs h-8" onClick={handleDelete}>
+              <Trash2 className="h-3 w-3 mr-1" /> {confirming ? 'Confirm Delete?' : 'Delete'}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+            <Button size="sm" variant="outline" className="text-xs h-8" onClick={handleCancel}>Cancel</Button>
             {hasChanges && (
-              <Button size="sm" onClick={handleSave} disabled={saving}>
+              <Button size="sm" onClick={handleSave} disabled={saving} className="text-xs h-8">
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             )}
