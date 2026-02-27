@@ -1,15 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { ChevronLeft, ChevronRight, Plus, Settings, Share2, Repeat, Layers, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Settings, Share2 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { ViewMode } from '@/hooks/useCalendarSlots';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 interface CalendarToolbarProps {
   currentDate: Date;
@@ -19,9 +13,6 @@ interface CalendarToolbarProps {
   onAddSlot: () => void;
   onSettings: () => void;
   onShare?: () => void;
-  onAddRecurring?: () => void;
-  onBatchAdd?: () => void;
-  onQuickSetup?: () => void;
 }
 
 function getDateLabel(currentDate: Date, viewMode: ViewMode): string {
@@ -38,11 +29,10 @@ function getDateLabel(currentDate: Date, viewMode: ViewMode): string {
 
 export function CalendarToolbar({
   currentDate, viewMode, onViewModeChange, onNavigate,
-  onAddSlot, onSettings, onShare, onAddRecurring, onBatchAdd, onQuickSetup,
+  onAddSlot, onSettings, onShare,
 }: CalendarToolbarProps) {
   return (
     <div className="flex items-center justify-between gap-2 flex-wrap">
-      {/* Left: Navigation */}
       <div className="flex items-center gap-1.5">
         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => onNavigate('prev')}>
           <ChevronLeft className="h-4 w-4" />
@@ -58,7 +48,6 @@ export function CalendarToolbar({
         </span>
       </div>
 
-      {/* Center: View toggle */}
       <ToggleGroup
         type="single"
         value={viewMode}
@@ -70,7 +59,6 @@ export function CalendarToolbar({
         <ToggleGroupItem value="month" className="text-xs px-3 h-8">Month</ToggleGroupItem>
       </ToggleGroup>
 
-      {/* Right: Actions */}
       <div className="flex items-center gap-1.5">
         {onShare && (
           <Button variant="outline" size="sm" className="h-8" onClick={onShare}>
@@ -80,34 +68,9 @@ export function CalendarToolbar({
         <Button variant="outline" size="sm" className="h-8" onClick={onSettings}>
           <Settings className="h-3.5 w-3.5" />
         </Button>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" className="h-8">
-              <Plus className="h-3.5 w-3.5 mr-1" /> Add
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onAddSlot}>
-              <Plus className="h-4 w-4 mr-2" /> Single Slot
-            </DropdownMenuItem>
-            {onAddRecurring && (
-              <DropdownMenuItem onClick={onAddRecurring}>
-                <Repeat className="h-4 w-4 mr-2" /> Recurring Slot
-              </DropdownMenuItem>
-            )}
-            {onBatchAdd && (
-              <DropdownMenuItem onClick={onBatchAdd}>
-                <Layers className="h-4 w-4 mr-2" /> Batch Add
-              </DropdownMenuItem>
-            )}
-            {onQuickSetup && (
-              <DropdownMenuItem onClick={onQuickSetup}>
-                <Sparkles className="h-4 w-4 mr-2" /> Quick Week Setup
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button size="sm" className="h-8" onClick={onAddSlot}>
+          <Plus className="h-3.5 w-3.5 mr-1" /> Add
+        </Button>
       </div>
     </div>
   );

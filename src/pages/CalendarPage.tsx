@@ -9,12 +9,9 @@ import { CalendarWeekView } from '@/components/calendar/CalendarWeekView';
 import { CalendarDayView } from '@/components/calendar/CalendarDayView';
 import { CalendarMonthView } from '@/components/calendar/CalendarMonthView';
 import { CalendarToolbar } from '@/components/calendar/CalendarToolbar';
-import { AddSlotModal } from '@/components/calendar/AddSlotModal';
-import { AddRecurringSlotModal } from '@/components/calendar/AddRecurringSlotModal';
+import { UnifiedSlotModal } from '@/components/calendar/UnifiedSlotModal';
 import { SlotDetailModal } from '@/components/calendar/SlotDetailModal';
 import { LinkWorksheetModal } from '@/components/calendar/LinkWorksheetModal';
-import { BatchAddSlotsModal } from '@/components/calendar/BatchAddSlotsModal';
-import { QuickWeekSetupModal } from '@/components/calendar/QuickWeekSetupModal';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
@@ -33,15 +30,12 @@ const CalendarPage = () => {
     navigate: calNavigate, getSlotsForDay, refetch,
   } = useCalendarSlots(user?.id);
   const { settings } = useCalendarSettings(user?.id);
-  const { rules, createRule } = useCalendarRecurrence(user?.id);
+  const { createRule } = useCalendarRecurrence(user?.id);
   const { students } = useStudents();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addModalDate, setAddModalDate] = useState<Date | undefined>();
   const [addModalStartTime, setAddModalStartTime] = useState<string | undefined>();
-  const [recurringModalOpen, setRecurringModalOpen] = useState(false);
-  const [batchModalOpen, setBatchModalOpen] = useState(false);
-  const [quickSetupOpen, setQuickSetupOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [linkWorksheetSlot, setLinkWorksheetSlot] = useState<CalendarSlot | null>(null);
 
@@ -59,9 +53,7 @@ const CalendarPage = () => {
     setAddModalOpen(true);
   };
 
-  const handleSlotClick = (slot: CalendarSlot) => {
-    setSelectedSlot(slot);
-  };
+  const handleSlotClick = (slot: CalendarSlot) => setSelectedSlot(slot);
 
   const handleShare = () => {
     if (settings?.public_calendar_token) {
@@ -101,7 +93,6 @@ const CalendarPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Dashboard
@@ -109,7 +100,6 @@ const CalendarPage = () => {
           <h1 className="text-2xl font-bold">Calendar</h1>
         </div>
 
-        {/* Toolbar */}
         <CalendarToolbar
           currentDate={currentDate}
           viewMode={viewMode}
@@ -118,12 +108,8 @@ const CalendarPage = () => {
           onAddSlot={() => handleAddSlot()}
           onSettings={() => navigate('/calendar/settings')}
           onShare={handleShare}
-          onAddRecurring={() => setRecurringModalOpen(true)}
-          onBatchAdd={() => setBatchModalOpen(true)}
-          onQuickSetup={() => setQuickSetupOpen(true)}
         />
 
-        {/* Legend */}
         <div className="flex flex-wrap gap-3 text-xs">
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-200 border border-green-400" /> Available</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-200 border border-blue-400" /> Booked</span>
@@ -132,70 +118,31 @@ const CalendarPage = () => {
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 border border-red-300" /> Cancelled/No Show</span>
         </div>
 
-        {/* Views */}
         {loading ? (
           <div className="flex items-center justify-center h-64 text-muted-foreground">Loading calendar...</div>
         ) : viewMode === 'day' ? (
-          <CalendarDayView
-            date={currentDate}
-            slots={getSlotsForDay(currentDate)}
-            studentMap={studentMap}
-            onSlotClick={handleSlotClick}
-            onAddSlot={handleAddSlot}
-          />
+          <CalendarDayView date={currentDate} slots={getSlotsForDay(currentDate)} studentMap={studentMap} onSlotClick={handleSlotClick} onAddSlot={handleAddSlot} />
         ) : viewMode === 'month' ? (
-          <CalendarMonthView
-            currentDate={currentDate}
-            slots={slots}
-            studentMap={studentMap}
-            onDayClick={handleDayClick}
-            onAddSlot={(date) => handleAddSlot(date)}
-            onSlotClick={handleSlotClick}
-          />
+          <CalendarMonthView currentDate={currentDate} slots={slots} studentMap={studentMap} onDayClick={handleDayClick} onAddSlot={(date) => handleAddSlot(date)} onSlotClick={handleSlotClick} />
         ) : (
-          <CalendarWeekView
-            weekStart={weekStart}
-            getSlotsForDay={getSlotsForDay}
-            studentMap={studentMap}
-            onSlotClick={handleSlotClick}
-            onAddSlot={handleAddSlot}
-          />
+          <CalendarWeekView weekStart={weekStart} getSlotsForDay={getSlotsForDay} studentMap={studentMap} onSlotClick={handleSlotClick} onAddSlot={handleAddSlot} />
         )}
       </div>
 
-      {/* Modals */}
-      <AddSlotModal
+      <UnifiedSlotModal
         open={addModalOpen}
         onOpenChange={setAddModalOpen}
-        onSubmit={createSlot}
+        onCreateSingle={createSlot}
+        onCreateBatch={createSlotsBatch}
+        onCreateRecurring={handleRecurringCreated}
+        onDeleteSlot={deleteSlot}
+        students={studentList}
+        defaultDuration={settings?.default_lesson_duration_minutes || 60}
         defaultDate={addModalDate}
         defaultStartTime={addModalStartTime}
-        students={studentList}
-        defaultDuration={settings?.default_lesson_duration_minutes || 60}
-      />
-
-      <AddRecurringSlotModal
-        open={recurringModalOpen}
-        onOpenChange={setRecurringModalOpen}
-        onSubmit={handleRecurringCreated}
-        defaultDuration={settings?.default_lesson_duration_minutes || 60}
-        students={studentList}
-      />
-
-      <BatchAddSlotsModal
-        open={batchModalOpen}
-        onOpenChange={setBatchModalOpen}
-        onSubmit={createSlotsBatch}
-        students={studentList}
-        defaultDuration={settings?.default_lesson_duration_minutes || 60}
         currentDate={currentDate}
-      />
-
-      <QuickWeekSetupModal
-        open={quickSetupOpen}
-        onOpenChange={setQuickSetupOpen}
-        onSubmit={createSlotsBatch}
-        defaultDuration={settings?.default_lesson_duration_minutes || 60}
+        existingSlots={slots}
+        studentMap={studentMap}
       />
 
       <SlotDetailModal
@@ -203,6 +150,7 @@ const CalendarPage = () => {
         onOpenChange={(open) => { if (!open) setSelectedSlot(null); }}
         slot={selectedSlot}
         studentName={selectedSlot?.student_id ? studentMap[selectedSlot.student_id] : undefined}
+        students={studentList}
         onUpdate={updateSlot}
         onDelete={deleteSlot}
         onLinkWorksheet={handleLinkWorksheet}

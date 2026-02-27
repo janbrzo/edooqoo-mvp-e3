@@ -5,16 +5,14 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Teacher Calendar Module (Faza 1):**
-- **5 new database tables**: `calendar_slots`, `calendar_recurrence_rules`, `calendar_settings`, `calendar_student_settings`, `calendar_payment_records` with full RLS policies
-- **Weekly calendar view**: `/calendar` page with color-coded slot cards (available/booked/pending/completed/cancelled), week navigation, drag-free click-to-add UX
-- **Recurring slots**: `useCalendarRecurrence` hook + `AddRecurringSlotModal` - auto-generates slots for N weeks ahead, deduplication logic
-- **Public booking**: `/book/:token` page lets students book available slots. Teacher controls booking mode (auto-confirm vs requires confirmation) in `/calendar/settings`
-- **Student lessons view**: `/my-lessons/:token` page shows student's upcoming and past lessons
-- **Worksheet linking**: `LinkWorksheetModal` lets teachers attach worksheets to calendar slots, openable from slot details
-- **Calendar tab in StudentPage**: New "Calendar" tab (10th) shows student-specific lesson history
-- **Settings page**: `/calendar/settings` with booking rules, public calendar token, notification preferences, slot limits per student
-- **Welcome Test translations**: 5 new questions (Q3b, Q5b, Q13b, Q17b, Q41b) translated to all 25 languages (125 entries)
+**Latest Update (February 2026) - Teacher Calendar Module (Faza 2 - Konsolidacja):**
+- **UnifiedSlotModal**: Single modal replacing AddSlotModal, AddRecurringSlotModal, BatchAddSlotsModal, QuickWeekSetupModal. Tabs: Available Slot (Single/Batch) and Lesson (Single/Recurring). Conflict detection with 3 scenarios (block/auto-replace/block).
+- **SlotDetailModal rebuilt**: Full inline editing of all fields (date, time, title, notes). Student assign/change/remove. "Save for Entire Series" for recurring slots. "Cancel" = close modal, "Cancel Lesson" = status change, "Delete" = delete slot.
+- **CalendarToolbar simplified**: Single "Add" button instead of dropdown with 4 options. Clean layout: nav + view toggle + actions.
+- **Performance**: React.memo on CalendarWeekView, CalendarDayView, CalendarSlotCard. Grid row height reduced 55% (40→18px week, 48→22px day) for full-day visibility.
+- **Grid lines fixed**: Full-hour lines stronger (border-border/40), half-hour lines lighter (border-border/15).
+- **usePublicBooking fix**: useMemo on weekEnd to prevent infinite fetch loop on /book/ page.
+- **Previous (Faza 1)**: 5 DB tables, day/week/month views, recurring slots, public booking, student lessons view, worksheet linking, calendar settings, attendance stats
 
 **Previous Update (February 2026) - Welcome Test Learning Path Score:**
 - **5 new behavioral questions** (Q3b, Q5b, Q13b, Q17b, Q41b) added to Welcome Test for Learning Path detection

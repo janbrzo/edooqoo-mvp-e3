@@ -6,18 +6,17 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-26) - Moduł Kalendarza v2 (rozbudowa):**
-- ✅ **Fix krytyczny**: useMemo na weekEnd — naprawiona nieskończona pętla requestów (ERR_INSUFFICIENT_RESOURCES)
-- ✅ **3 widoki**: Day (siatka godzinowa 7-22h z "now" line) / Week (GCal-style hourly grid) / Month (siatka z kropkami statusów)
-- ✅ **Toolbar z ToggleGroup**: Day/Week/Month przełącznik + dropdown Add (Single/Recurring/Batch/Quick Setup)
-- ✅ **AddSlotModal z zakładkami**: "Available Slot" vs "Lesson" (z wyborem studenta, auto-fill title)
-- ✅ **AddRecurringSlotModal**: dodano wybór studenta, tytuł, tryb "Until date" vs "X weeks"
-- ✅ **BatchAddSlotsModal**: masowe dodawanie — wybór dni, zakres dat, wiele time slotów, preview count
-- ✅ **QuickWeekSetupModal**: wizard — godziny pracy, dni, duration, weeks ahead → batch create
-- ✅ **Undo cancellation**: 30-min grace period w SlotDetailModal
-- ✅ **Timezone Select**: dropdown z 30 strefami zamiast text input
-- ✅ **Attendance stats**: % frekwencji w StudentCalendarTab (completed/no_show/cancelled)
-- ✅ **Click-to-add**: kliknięcie pustego miejsca w siatce godzinowej otwiera modal z pre-filled godziną
+**Ostatnia naprawa (2026-02-27) - Moduł Kalendarza v3 (konsolidacja modali):**
+- ✅ **UnifiedSlotModal**: Jeden modal zamiast 4 (AddSlot/AddRecurring/BatchAdd/QuickSetup). Zakładki: Available Slot (Single/Batch) + Lesson (Single/Recurring). Lesson duration select, conflict detection z 3 scenariuszami.
+- ✅ **SlotDetailModal przebudowany**: Pełna edycja inline (data, czas, tytuł, notatki). Assign/Change/Remove studenta. "Save for Entire Series" dla slotów recurring. Cancel=zamknij, Cancel Lesson=zmień status, Delete=usuń.
+- ✅ **CalendarToolbar uproszczony**: Jeden przycisk "Add" zamiast dropdown z 4 opcjami.
+- ✅ **Wydajność**: React.memo na CalendarWeekView, CalendarDayView, CalendarSlotCard. Wysokość siatki zmniejszona 55% (week 18px, day 22px).
+- ✅ **Linie siatki**: Pełne godziny mocniejsze (border-border/40), półgodziny lżejsze (border-border/15).
+- ✅ **usePublicBooking fix**: useMemo na weekEnd — naprawione mruganie slotów na /book/
+- ✅ **Usunięte pliki**: AddSlotModal.tsx, AddRecurringSlotModal.tsx, QuickWeekSetupModal.tsx, BatchAddSlotsModal.tsx
+
+**Poprzednia naprawa (2026-02-26) - Moduł Kalendarza v2 (rozbudowa):**
+- ✅ 3 widoki (Day/Week/Month), click-to-add, undo cancellation, timezone select, attendance stats
 
 **Poprzednia naprawa (2026-02-24) - Welcome Test Learning Path Score:**
 - ✅ **5 nowych pytań behawioralnych**: Q3b (usage_context), Q5b (deadline_response), Q13b (persistence_level), Q17b (career_english_importance), Q41b (learning_timeline)
