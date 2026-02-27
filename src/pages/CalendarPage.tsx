@@ -12,6 +12,7 @@ import { CalendarToolbar } from '@/components/calendar/CalendarToolbar';
 import { UnifiedSlotModal } from '@/components/calendar/UnifiedSlotModal';
 import { SlotDetailModal } from '@/components/calendar/SlotDetailModal';
 import { LinkWorksheetModal } from '@/components/calendar/LinkWorksheetModal';
+import { CalendarNotificationBell } from '@/components/calendar/CalendarNotificationBell';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
@@ -98,6 +99,9 @@ const CalendarPage = () => {
             <ArrowLeft className="h-4 w-4 mr-1" /> Dashboard
           </Button>
           <h1 className="text-2xl font-bold">Calendar</h1>
+          <div className="ml-auto">
+            <CalendarNotificationBell teacherId={user?.id} />
+          </div>
         </div>
 
         <CalendarToolbar

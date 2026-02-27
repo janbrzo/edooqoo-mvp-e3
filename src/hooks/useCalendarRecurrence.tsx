@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { addDays, format, startOfWeek, addWeeks, getDay } from 'date-fns';
+import { addDays, format, addWeeks, getDay } from 'date-fns';
 
 export interface RecurrenceRule {
   id: string;
@@ -13,6 +13,8 @@ export interface RecurrenceRule {
   effective_until: string | null;
   is_active: boolean;
   auto_generate_weeks_ahead: number;
+  student_id: string | null;
+  title: string | null;
   created_at: string;
 }
 
@@ -67,6 +69,8 @@ export function useCalendarRecurrence(teacherId?: string) {
           effective_from: input.effective_from || format(new Date(), 'yyyy-MM-dd'),
           effective_until: input.effective_until || null,
           auto_generate_weeks_ahead: input.auto_generate_weeks_ahead || 4,
+          student_id: input.student_id || null,
+          title: input.title || null,
         } as any)
         .select()
         .single();
@@ -77,7 +81,8 @@ export function useCalendarRecurrence(teacherId?: string) {
       const rule = data as unknown as RecurrenceRule;
       await generateSlotsForRule(rule);
       await fetchRules();
-      toast({ title: 'Recurring slot created' });
+      const hasStudent = !!rule.student_id;
+      toast({ title: hasStudent ? 'Recurring lesson created' : 'Recurring slot created' });
       return rule;
     } catch (err: any) {
       toast({ title: 'Error creating recurring slot', description: err.message, variant: 'destructive' });
@@ -120,13 +125,13 @@ export function useCalendarRecurrence(teacherId?: string) {
         slot_date: slotDateStr,
         start_time: rule.start_time,
         end_time: rule.end_time,
-        status: (rule as any).student_id ? 'booked' : 'available',
+        status: rule.student_id ? 'booked' : 'available',
         booking_type: 'recurring_instance',
         recurrence_rule_id: rule.id,
-        student_id: (rule as any).student_id || null,
-        title: (rule as any).title || null,
-        booked_at: (rule as any).student_id ? new Date().toISOString() : null,
-        confirmed_at: (rule as any).student_id ? new Date().toISOString() : null,
+        student_id: rule.student_id || null,
+        title: rule.title || null,
+        booked_at: rule.student_id ? new Date().toISOString() : null,
+        confirmed_at: rule.student_id ? new Date().toISOString() : null,
       });
     }
 

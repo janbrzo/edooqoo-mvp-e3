@@ -41,6 +41,54 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          notification_type: string
+          slot_id: string | null
+          student_name: string | null
+          teacher_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          notification_type: string
+          slot_id?: string | null
+          student_name?: string | null
+          teacher_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          notification_type?: string
+          slot_id?: string | null
+          student_name?: string | null
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_notifications_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_notifications_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_payment_records: {
         Row: {
           amount: number
@@ -122,7 +170,9 @@ export type Database = {
           id: string
           is_active: boolean
           start_time: string
+          student_id: string | null
           teacher_id: string
+          title: string | null
         }
         Insert: {
           auto_generate_weeks_ahead?: number
@@ -134,7 +184,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           start_time: string
+          student_id?: string | null
           teacher_id: string
+          title?: string | null
         }
         Update: {
           auto_generate_weeks_ahead?: number
@@ -146,9 +198,18 @@ export type Database = {
           id?: string
           is_active?: boolean
           start_time?: string
+          student_id?: string | null
           teacher_id?: string
+          title?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "calendar_recurrence_rules_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "calendar_recurrence_rules_teacher_id_fkey"
             columns: ["teacher_id"]

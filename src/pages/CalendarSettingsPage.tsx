@@ -163,6 +163,49 @@ const CalendarSettingsPage = () => {
           </CardContent>
         </Card>
 
+        {/* Payment Tracking */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Payment Tracking</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Enable Payment Tracking</Label>
+              <Switch checked={settings.payment_tracking_enabled} onCheckedChange={v => updateSettings({ payment_tracking_enabled: v })} />
+            </div>
+            {settings.payment_tracking_enabled && (
+              <>
+                <div className="flex items-center justify-between">
+                  <Label>Default Lesson Price</Label>
+                  <Input
+                    type="number"
+                    className="w-24"
+                    value={settings.default_lesson_price ?? ''}
+                    onChange={e => updateSettings({ default_lesson_price: e.target.value ? Number(e.target.value) : null })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Currency</Label>
+                  <Select
+                    value={settings.currency || 'USD'}
+                    onValueChange={v => updateSettings({ currency: v })}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['USD', 'EUR', 'PLN', 'GBP', 'CHF', 'CZK', 'SEK', 'NOK', 'DKK', 'HUF', 'RON', 'BGN', 'HRK', 'TRY', 'BRL', 'MXN', 'ARS', 'JPY', 'KRW', 'CNY', 'INR', 'AED', 'THB', 'SGD', 'AUD', 'NZD', 'ZAR', 'EGP'].map(c => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Notifications */}
         <Card>
           <CardHeader>
