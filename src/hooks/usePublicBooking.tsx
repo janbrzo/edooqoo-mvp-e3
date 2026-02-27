@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
@@ -13,7 +13,7 @@ export function usePublicBooking(token?: string) {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const { toast } = useToast();
 
-  const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+  const weekEnd = useMemo(() => endOfWeek(weekStart, { weekStartsOn: 1 }), [weekStart]);
 
   // Fetch settings by public token
   const fetchSettings = useCallback(async () => {

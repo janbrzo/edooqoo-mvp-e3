@@ -18,7 +18,7 @@ const STATUS_STYLES: Record<string, string> = {
   no_show: 'bg-red-100 border-red-300 text-red-700 dark:bg-red-900/40 dark:border-red-700 dark:text-red-300',
 };
 
-export function CalendarSlotCard({ slot, studentName, onClick, compact }: CalendarSlotCardProps) {
+export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, studentName, onClick, compact }: CalendarSlotCardProps) {
   const isPending = slot.status === 'booked' && !slot.confirmed_at;
   const style = isPending
     ? 'bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-300'
@@ -52,4 +52,4 @@ export function CalendarSlotCard({ slot, studentName, onClick, compact }: Calend
       )}
     </button>
   );
-}
+});

@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
 import { CalendarSlotCard } from './CalendarSlotCard';
 
-const ROW_HEIGHT = 40;
+const ROW_HEIGHT = 18;
 const START_HOUR = 7;
 const END_HOUR = 22;
 const TOTAL_HALF_HOURS = (END_HOUR - START_HOUR) * 2;
@@ -28,7 +28,7 @@ function getSlotPosition(slot: CalendarSlot) {
   };
 }
 
-export function CalendarWeekView({ weekStart, getSlotsForDay, studentMap, onSlotClick, onAddSlot }: CalendarWeekViewProps) {
+export const CalendarWeekView = React.memo(function CalendarWeekView({ weekStart, getSlotsForDay, studentMap, onSlotClick, onAddSlot }: CalendarWeekViewProps) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const [nowMinute, setNowMinute] = useState(() => {
@@ -64,18 +64,9 @@ export function CalendarWeekView({ weekStart, getSlotsForDay, studentMap, onSlot
         {days.map(date => {
           const today = isToday(date);
           return (
-            <div
-              key={date.toISOString()}
-              className={cn(
-                'flex-1 text-center py-2 border-r last:border-r-0 border-border',
-                today && 'bg-primary/5'
-              )}
-            >
+            <div key={date.toISOString()} className={cn('flex-1 text-center py-2 border-r last:border-r-0 border-border', today && 'bg-primary/5')}>
               <div className="text-[10px] text-muted-foreground uppercase">{format(date, 'EEE')}</div>
-              <div className={cn(
-                'text-sm font-semibold mx-auto w-7 h-7 flex items-center justify-center rounded-full',
-                today && 'bg-primary text-primary-foreground'
-              )}>
+              <div className={cn('text-sm font-semibold mx-auto w-7 h-7 flex items-center justify-center rounded-full', today && 'bg-primary text-primary-foreground')}>
                 {format(date, 'd')}
               </div>
             </div>
@@ -85,28 +76,20 @@ export function CalendarWeekView({ weekStart, getSlotsForDay, studentMap, onSlot
 
       {/* Time grid */}
       <div className="flex overflow-y-auto" style={{ maxHeight: 600 }}>
-        {/* Time labels */}
         <div className="w-14 flex-shrink-0 border-r border-border">
           {Array.from({ length: TOTAL_HALF_HOURS }, (_, i) => {
             const hour = START_HOUR + Math.floor(i / 2);
             const isFullHour = i % 2 === 0;
             return (
-              <div
-                key={i}
-                className="border-b border-border/30 flex items-start justify-end pr-1.5 pt-0.5"
-                style={{ height: ROW_HEIGHT }}
-              >
+              <div key={i} className="border-b border-border/20 flex items-start justify-end pr-1.5 pt-0.5" style={{ height: ROW_HEIGHT }}>
                 {isFullHour && (
-                  <span className="text-[10px] text-muted-foreground leading-none">
-                    {String(hour).padStart(2, '0')}:00
-                  </span>
+                  <span className="text-[10px] text-muted-foreground leading-none">{String(hour).padStart(2, '0')}:00</span>
                 )}
               </div>
             );
           })}
         </div>
 
-        {/* Day columns */}
         {days.map(date => {
           const daySlots = getSlotsForDay(date).filter(s => s.status !== 'cancelled');
           const today = isToday(date);
@@ -114,26 +97,18 @@ export function CalendarWeekView({ weekStart, getSlotsForDay, studentMap, onSlot
           return (
             <div
               key={date.toISOString()}
-              className={cn(
-                'flex-1 relative border-r last:border-r-0 border-border cursor-pointer',
-                today && 'bg-primary/[0.02]'
-              )}
+              className={cn('flex-1 relative border-r last:border-r-0 border-border cursor-pointer', today && 'bg-primary/[0.02]')}
               style={{ height: TOTAL_HALF_HOURS * ROW_HEIGHT }}
               onClick={e => handleColumnClick(date, e)}
             >
-              {/* Grid lines */}
               {Array.from({ length: TOTAL_HALF_HOURS }, (_, i) => (
                 <div
                   key={i}
-                  className={cn(
-                    'absolute w-full border-b',
-                    i % 2 === 0 ? 'border-border/50' : 'border-border/20'
-                  )}
+                  className={cn('absolute w-full border-b', i % 2 === 0 ? 'border-border/40' : 'border-border/15')}
                   style={{ top: i * ROW_HEIGHT + ROW_HEIGHT - 1 }}
                 />
               ))}
 
-              {/* Now line */}
               {showNow && today && (
                 <div className="absolute w-full z-20 flex items-center" style={{ top: nowTop }}>
                   <div className="w-2 h-2 rounded-full bg-destructive -ml-0.5" />
@@ -141,22 +116,11 @@ export function CalendarWeekView({ weekStart, getSlotsForDay, studentMap, onSlot
                 </div>
               )}
 
-              {/* Slot blocks */}
               {daySlots.map(slot => {
                 const pos = getSlotPosition(slot);
                 return (
-                  <div
-                    key={slot.id}
-                    className="absolute left-0.5 right-0.5 z-10"
-                    style={{ top: pos.top, height: pos.height }}
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <CalendarSlotCard
-                      slot={slot}
-                      studentName={slot.student_id ? studentMap[slot.student_id] : undefined}
-                      onClick={onSlotClick}
-                      compact={pos.height < ROW_HEIGHT}
-                    />
+                  <div key={slot.id} className="absolute left-0.5 right-0.5 z-10" style={{ top: pos.top, height: pos.height }} onClick={e => e.stopPropagation()}>
+                    <CalendarSlotCard slot={slot} studentName={slot.student_id ? studentMap[slot.student_id] : undefined} onClick={onSlotClick} compact={pos.height < ROW_HEIGHT} />
                   </div>
                 );
               })}
@@ -166,4 +130,4 @@ export function CalendarWeekView({ weekStart, getSlotsForDay, studentMap, onSlot
       </div>
     </div>
   );
-}
+});
