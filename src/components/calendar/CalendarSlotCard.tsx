@@ -1,13 +1,15 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
-import { FileText, Clock, User } from 'lucide-react';
+import { FileText, Clock, User, Check } from 'lucide-react';
 
 interface CalendarSlotCardProps {
   slot: CalendarSlot;
   studentName?: string;
   onClick: (slot: CalendarSlot) => void;
   compact?: boolean;
+  isSelected?: boolean;
+  selectionMode?: boolean;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -18,7 +20,7 @@ const STATUS_STYLES: Record<string, string> = {
   no_show: 'bg-red-100 border-red-300 text-red-700 dark:bg-red-900/40 dark:border-red-700 dark:text-red-300',
 };
 
-export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, studentName, onClick, compact }: CalendarSlotCardProps) {
+export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, studentName, onClick, compact, isSelected, selectionMode }: CalendarSlotCardProps) {
   const isPending = slot.status === 'booked' && !slot.confirmed_at;
   const style = isPending
     ? 'bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-300'
@@ -31,11 +33,22 @@ export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, stu
     <button
       onClick={() => onClick(slot)}
       className={cn(
-        'w-full h-full text-left rounded-md border px-1.5 py-0.5 text-[11px] transition-all cursor-pointer truncate',
+        'w-full h-full text-left rounded-md border px-1.5 py-0.5 text-[11px] transition-all cursor-pointer truncate relative',
         'hover:shadow-md hover:scale-[1.01]',
-        style
+        style,
+        isSelected && 'ring-2 ring-primary bg-primary/20'
       )}
     >
+      {/* Selection checkbox overlay */}
+      {selectionMode && !slot.student_id && (
+        <div className="absolute top-0.5 right-0.5 z-10">
+          <div className={cn('w-4 h-4 rounded border-2 flex items-center justify-center',
+            isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/50 bg-background'
+          )}>
+            {isSelected && <Check className="h-3 w-3" />}
+          </div>
+        </div>
+      )}
       <div className="flex items-center gap-1 font-medium leading-tight">
         <Clock className="h-3 w-3 flex-shrink-0" />
         <span className="truncate">{startHH}–{endHH}</span>

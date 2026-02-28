@@ -31,6 +31,7 @@ export function usePublicBooking(token?: string) {
     } catch (err) { setError('Failed to load calendar.'); console.error(err); }
   }, [token]);
 
+  // Step 9: Fetch available + pending (booked without confirmed_at) slots
   const fetchSlots = useCallback(async () => {
     if (!settings) return;
     try {
@@ -41,10 +42,9 @@ export function usePublicBooking(token?: string) {
         .from('calendar_slots')
         .select('*')
         .eq('teacher_id', settings.teacher_id)
-        .eq('status', 'available')
-        .is('student_id', null)
         .gte('slot_date', from)
         .lte('slot_date', to)
+        .or('status.eq.available,and(status.eq.booked,confirmed_at.is.null)')
         .order('slot_date')
         .order('start_time');
 
@@ -60,7 +60,6 @@ export function usePublicBooking(token?: string) {
   const bookSlot = useCallback(async (slotId: string, studentName: string, studentEmail: string) => {
     if (!settings) return false;
     try {
-      // Find existing student by email — use name from teacher's DB
       const { data: existingStudent } = await supabase
         .from('students')
         .select('id, name')
@@ -72,7 +71,7 @@ export function usePublicBooking(token?: string) {
       const resolvedName = existingStudent?.name || studentName;
       const autoConfirm = settings.default_booking_mode === 'auto_confirm';
 
-      const { error: err, count } = await supabase
+      const { error: err } = await supabase
         .from('calendar_slots')
         .update({
           student_id: studentId,
@@ -88,26 +87,39 @@ export function usePublicBooking(token?: string) {
 
       if (err) throw err;
 
-      // New student notification
+      // Notification for teacher
       if (!existingStudent) {
+        try {
+          await supabase.from('calendar_notifications').insert({
+            teacher_id: settings.teacher_id,
+            notification_type: 'new_student',
+            message: `New student signed up: ${studentName} (${studentEmail})`,
+            student_name: studentName,
+            slot_id: slotId,
+          } as any);
+        } catch (e) { console.error(e); }
+      }
+
+      // Always insert booking notification
+      try {
         await supabase.from('calendar_notifications').insert({
           teacher_id: settings.teacher_id,
-          notification_type: 'new_student',
-          message: `New student signed up: ${studentName} (${studentEmail})`,
-          student_name: studentName,
+          notification_type: autoConfirm ? 'booking_confirmed' : 'booking_pending',
+          message: autoConfirm
+            ? `${resolvedName} booked a lesson (auto-confirmed)`
+            : `${resolvedName} requested a lesson — awaiting confirmation`,
+          student_name: resolvedName,
           slot_id: slotId,
         } as any);
-      }
+      } catch (e) { console.error(e); }
 
       // Send email notifications (fire and forget)
       const slot = slots.find(s => s.id === slotId);
       if (slot) {
         const slotDate = slot.slot_date;
         const slotTime = slot.start_time.slice(0, 5);
-        // Get teacher email
         const { data: teacherProfile } = await supabase.from('profiles').select('email').eq('id', settings.teacher_id).maybeSingle();
         
-        // Email to student
         supabase.functions.invoke('send-calendar-notification-email', {
           body: {
             type: autoConfirm ? 'booking_confirmation' : 'booking_pending',
@@ -115,7 +127,6 @@ export function usePublicBooking(token?: string) {
           },
         }).catch(console.error);
 
-        // Email to teacher
         if (teacherProfile?.email) {
           supabase.functions.invoke('send-calendar-notification-email', {
             body: {
@@ -137,7 +148,7 @@ export function usePublicBooking(token?: string) {
       toast({ title: 'Booking failed', description: err.message, variant: 'destructive' });
       return false;
     }
-  }, [settings, toast, fetchSlots]);
+  }, [settings, toast, fetchSlots, slots]);
 
   const navigateWeek = useCallback((direction: 'prev' | 'next' | 'today') => {
     if (direction === 'today') setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));

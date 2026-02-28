@@ -8,6 +8,7 @@ import { useStudents } from '@/hooks/useStudents';
 import { CalendarWeekView } from '@/components/calendar/CalendarWeekView';
 import { CalendarDayView } from '@/components/calendar/CalendarDayView';
 import { CalendarMonthView } from '@/components/calendar/CalendarMonthView';
+import { CalendarScheduleView } from '@/components/calendar/CalendarScheduleView';
 import { CalendarToolbar } from '@/components/calendar/CalendarToolbar';
 import { UnifiedSlotModal } from '@/components/calendar/UnifiedSlotModal';
 import { SlotDetailModal } from '@/components/calendar/SlotDetailModal';
@@ -54,7 +55,6 @@ const CalendarPage = () => {
 
   const studentList = useMemo(() => students.map(s => ({ id: s.id, name: s.name })), [students]);
 
-  // Filter slots by student
   const filteredSlots = useMemo(() => {
     if (studentFilter === 'all') return slots;
     return slots.filter(s => s.student_id === studentFilter);
@@ -78,8 +78,7 @@ const CalendarPage = () => {
 
   const handleSlotClick = (slot: CalendarSlot) => {
     if (selectionMode) {
-      // In selection mode: only toggle available slots
-      if (slot.student_id) return; // Can't select lessons
+      if (slot.student_id) return;
       setSelectedSlotIds(prev => {
         const next = new Set(prev);
         if (next.has(slot.id)) next.delete(slot.id); else next.add(slot.id);
@@ -102,19 +101,29 @@ const CalendarPage = () => {
   };
 
   const handleLinkWorksheet = (slot: CalendarSlot, studentId?: string | null) => {
-    // Keep selectedSlot open, overlay LinkWorksheet on top
     setLinkWorksheetSlot({ ...slot, student_id: studentId ?? slot.student_id } as CalendarSlot);
   };
 
+  // Step 3: Preserve student when linking worksheet
   const handleWorksheetLinked = async (worksheetId: string | null) => {
     if (linkWorksheetSlot) {
-      await updateSlot(linkWorksheetSlot.id, { worksheet_id: worksheetId } as any);
+      const updates: any = { worksheet_id: worksheetId };
+      const originalSlot = slots.find(s => s.id === linkWorksheetSlot.id);
+      if (originalSlot && linkWorksheetSlot.student_id !== originalSlot.student_id) {
+        updates.student_id = linkWorksheetSlot.student_id;
+        updates.status = linkWorksheetSlot.student_id ? 'booked' : 'available';
+        if (linkWorksheetSlot.student_id) {
+          updates.booked_at = new Date().toISOString();
+          updates.booked_by = 'teacher';
+          updates.confirmed_at = new Date().toISOString();
+        }
+      }
+      await updateSlot(linkWorksheetSlot.id, updates);
     }
   };
 
   const handleLinkWorksheetBack = () => {
     setLinkWorksheetSlot(null);
-    // selectedSlot stays open
   };
 
   const handleRecurringCreated = async (input: any) => {
@@ -142,6 +151,16 @@ const CalendarPage = () => {
     setSelectedSlotIds(new Set());
   };
 
+  // Handle link worksheet from UnifiedSlotModal (for available slots)
+  const handleUnifiedModalLinkWorksheet = (studentId: string | null) => {
+    // Create a temporary slot-like object for the link worksheet modal
+    // This is used when linking from the add modal before the slot exists
+    // For now just open the link worksheet modal
+    if (user) {
+      setLinkWorksheetSlot({ student_id: studentId, worksheet_id: null, id: '__new__' } as any);
+    }
+  };
+
   if (authLoading) return null;
 
   return (
@@ -153,7 +172,6 @@ const CalendarPage = () => {
           </Button>
           <h1 className="text-2xl font-bold">Calendar</h1>
           <div className="ml-auto flex items-center gap-2">
-            {/* Student filter */}
             <Select value={studentFilter} onValueChange={setStudentFilter}>
               <SelectTrigger className="h-8 w-40 text-xs">
                 <Filter className="h-3 w-3 mr-1" />
@@ -208,6 +226,8 @@ const CalendarPage = () => {
           <CalendarDayView date={currentDate} slots={filteredGetSlotsForDay(currentDate)} studentMap={studentMap} onSlotClick={handleSlotClick} onAddSlot={handleAddSlot} selectionMode={selectionMode} selectedIds={selectedSlotIds} startHour={settings?.display_start_hour} endHour={settings?.display_end_hour} />
         ) : viewMode === 'month' ? (
           <CalendarMonthView currentDate={currentDate} slots={filteredSlots} studentMap={studentMap} onDayClick={handleDayClick} onAddSlot={(date) => handleAddSlot(date)} onSlotClick={handleSlotClick} />
+        ) : viewMode === 'schedule' ? (
+          <CalendarScheduleView slots={filteredSlots} studentMap={studentMap} onSlotClick={handleSlotClick} />
         ) : (
           <CalendarWeekView weekStart={weekStart} getSlotsForDay={filteredGetSlotsForDay} studentMap={studentMap} onSlotClick={handleSlotClick} onAddSlot={handleAddSlot} selectionMode={selectionMode} selectedIds={selectedSlotIds} startHour={settings?.display_start_hour} endHour={settings?.display_end_hour} />
         )}
@@ -228,6 +248,7 @@ const CalendarPage = () => {
         existingSlots={slots}
         studentMap={studentMap}
         teacherId={user?.id}
+        onLinkWorksheet={handleUnifiedModalLinkWorksheet}
       />
 
       <SlotDetailModal

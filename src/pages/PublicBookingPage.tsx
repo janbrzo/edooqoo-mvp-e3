@@ -23,28 +23,19 @@ const PublicBookingPage = () => {
   const [bookWeekly, setBookWeekly] = useState(false);
   const [untilDate, setUntilDate] = useState('');
 
-  // Calculate how many weekly slots are available for recurring booking
   const recurringInfo = useMemo(() => {
     if (!selectedSlot || !bookWeekly || !untilDate) return { count: 0, slotIds: [] as string[] };
-    
     const slotDayOfWeek = parseISO(selectedSlot.slot_date).getDay();
     const slotTime = selectedSlot.start_time.slice(0, 5);
     const endDate = parseISO(untilDate);
-    
-    // Find all available slots matching same weekday + time
     const matchingIds: string[] = [];
     for (const slot of slots) {
+      if (slot.status !== 'available') continue; // skip pending
       const slotDate = parseISO(slot.slot_date);
-      if (
-        slotDate.getDay() === slotDayOfWeek &&
-        slot.start_time.slice(0, 5) === slotTime &&
-        !isBefore(endDate, slotDate) &&
-        slot.id !== selectedSlot.id
-      ) {
+      if (slotDate.getDay() === slotDayOfWeek && slot.start_time.slice(0, 5) === slotTime && !isBefore(endDate, slotDate) && slot.id !== selectedSlot.id) {
         matchingIds.push(slot.id);
       }
     }
-    
     return { count: matchingIds.length + 1, slotIds: [selectedSlot.id, ...matchingIds] };
   }, [selectedSlot, bookWeekly, untilDate, slots]);
 
@@ -74,30 +65,18 @@ const PublicBookingPage = () => {
   const handleBook = async () => {
     if (!selectedSlot || !name.trim() || !email.trim()) return;
     setBooking(true);
-
     if (bookWeekly && untilDate && recurringInfo.slotIds.length > 0) {
-      // Book all matching slots
       let successCount = 0;
       for (const slotId of recurringInfo.slotIds) {
         const ok = await bookSlot(slotId, name.trim(), email.trim());
         if (ok) successCount++;
       }
       setBooking(false);
-      setSelectedSlot(null);
-      setName('');
-      setEmail('');
-      setBookWeekly(false);
-      setUntilDate('');
+      setSelectedSlot(null); setName(''); setEmail(''); setBookWeekly(false); setUntilDate('');
     } else {
       const success = await bookSlot(selectedSlot.id, name.trim(), email.trim());
       setBooking(false);
-      if (success) {
-        setSelectedSlot(null);
-        setName('');
-        setEmail('');
-        setBookWeekly(false);
-        setUntilDate('');
-      }
+      if (success) { setSelectedSlot(null); setName(''); setEmail(''); setBookWeekly(false); setUntilDate(''); }
     }
   };
 
@@ -107,13 +86,11 @@ const PublicBookingPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">Book a Lesson</h1>
           <p className="text-muted-foreground">Select an available time slot below</p>
         </div>
 
-        {/* Navigation */}
         <div className="flex items-center justify-center gap-3">
           <Button variant="outline" size="sm" onClick={() => navigateWeek('prev')}>
             <ChevronLeft className="h-4 w-4" />
@@ -127,7 +104,7 @@ const PublicBookingPage = () => {
           </span>
         </div>
 
-        {/* Week grid */}
+        {/* Week grid — Step 9: show pending slots as yellow */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
           {days.map(date => {
             const daySlots = getSlotsForDay(date);
@@ -146,19 +123,41 @@ const PublicBookingPage = () => {
                   {daySlots.length === 0 ? (
                     <p className="text-xs text-muted-foreground text-center py-2">No slots</p>
                   ) : (
-                    daySlots.map(slot => (
-                      <Button
-                        key={slot.id}
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-xs h-auto py-1.5 border-green-300 bg-green-50 hover:bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-950 dark:text-green-300"
-                        onClick={() => !isPast && setSelectedSlot(slot)}
-                        disabled={isPast}
-                      >
-                        <Clock className="h-3 w-3 mr-1" />
-                        {slot.start_time.slice(0, 5)}
-                      </Button>
-                    ))
+                    daySlots.map(slot => {
+                      const isPending = slot.status === 'booked' && !slot.confirmed_at;
+                      const isAvailable = slot.status === 'available';
+
+                      if (isPending) {
+                        return (
+                          <div
+                            key={slot.id}
+                            className="w-full text-xs py-1.5 px-2 rounded-md border border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300 text-center"
+                          >
+                            <div className="flex items-center justify-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {slot.start_time.slice(0, 5)}
+                            </div>
+                            <div className="text-[10px] opacity-80">Awaiting confirmation</div>
+                          </div>
+                        );
+                      }
+
+                      if (!isAvailable) return null;
+
+                      return (
+                        <Button
+                          key={slot.id}
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs h-auto py-1.5 border-green-300 bg-green-50 hover:bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-950 dark:text-green-300"
+                          onClick={() => !isPast && setSelectedSlot(slot)}
+                          disabled={isPast}
+                        >
+                          <Clock className="h-3 w-3 mr-1" />
+                          {slot.start_time.slice(0, 5)}
+                        </Button>
+                      );
+                    })
                   )}
                 </CardContent>
               </Card>
@@ -166,18 +165,16 @@ const PublicBookingPage = () => {
           })}
         </div>
 
-        {/* Student bookings portal */}
         {settings && token && (
           <StudentBookingsSection
             settings={settings}
             token={token}
-            availableSlots={slots.map(s => ({ id: s.id, slot_date: s.slot_date, start_time: s.start_time, end_time: s.end_time }))}
+            availableSlots={slots.filter(s => s.status === 'available').map(s => ({ id: s.id, slot_date: s.slot_date, start_time: s.start_time, end_time: s.end_time }))}
             onBookingChanged={refetchSlots}
           />
         )}
       </div>
 
-      {/* Booking Modal */}
       <Dialog open={!!selectedSlot} onOpenChange={open => { if (!open) { setSelectedSlot(null); setBookWeekly(false); setUntilDate(''); } }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -202,7 +199,6 @@ const PublicBookingPage = () => {
                 <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="john@example.com" />
               </div>
 
-              {/* Recurring booking option */}
               <div className="border rounded-lg p-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="book-weekly" className="text-sm font-medium cursor-pointer">Book weekly</Label>

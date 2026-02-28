@@ -3,14 +3,14 @@ import { DraggableDialog, DraggableDialogContent, DraggableDialogHeader, Draggab
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { format, addDays, getDay, isAfter, eachDayOfInterval, parseISO } from 'date-fns';
-import { CalendarIcon, User, Plus, Trash2, AlertTriangle, Check, ChevronsUpDown, MapPin } from 'lucide-react';
+import { format, addDays, getDay, isAfter } from 'date-fns';
+import { CalendarIcon, User, Plus, Trash2, AlertTriangle, Check, ChevronsUpDown, MapPin, Link2, FileText } from 'lucide-react';
 import { CalendarSlot, CreateSlotInput } from '@/hooks/useCalendarSlots';
 import { CreateRecurrenceInput } from '@/hooks/useCalendarRecurrence';
 import { cn } from '@/lib/utils';
@@ -57,6 +57,7 @@ interface UnifiedSlotModalProps {
   existingSlots: CalendarSlot[];
   studentMap: Record<string, string>;
   teacherId?: string;
+  onLinkWorksheet?: (studentId: string | null) => void;
 }
 
 function computeEndTime(start: string, duration: number): string {
@@ -79,7 +80,7 @@ function generateId(): string {
 export function UnifiedSlotModal({
   open, onOpenChange, onCreateSingle, onCreateBatch, onCreateRecurring,
   onDeleteSlot, students, defaultDuration, defaultDate, defaultStartTime,
-  currentDate, existingSlots, studentMap, teacherId,
+  currentDate, existingSlots, studentMap, teacherId, onLinkWorksheet,
 }: UnifiedSlotModalProps) {
   const [slotType, setSlotType] = useState<SlotType>('available');
   const [availableMode, setAvailableMode] = useState<AvailableMode>('single');
@@ -105,7 +106,7 @@ export function UnifiedSlotModal({
   const [dateTo, setDateTo] = useState('');
   const [timeSlotEntries, setTimeSlotEntries] = useState<TimeSlotEntry[]>([]);
 
-  // Recurring fields — now multi-day + From/To like batch
+  // Recurring fields
   const [recurDays, setRecurDays] = useState([true, false, false, false, false, false, false]);
   const [recurFrom, setRecurFrom] = useState('');
   const [recurTo, setRecurTo] = useState('');
@@ -116,7 +117,7 @@ export function UnifiedSlotModal({
 
   // Fetch worksheets when student changes
   useEffect(() => {
-    if (slotType !== 'lesson' || lessonMode !== 'single' || studentId === 'none' || !teacherId) {
+    if (studentId === 'none' || !teacherId) {
       setStudentWorksheets([]);
       setWorksheetId('none');
       return;
@@ -133,7 +134,7 @@ export function UnifiedSlotModal({
       setStudentWorksheets((data || []) as any);
     };
     fetchWs();
-  }, [studentId, slotType, lessonMode, teacherId]);
+  }, [studentId, teacherId]);
 
   // Reset on open
   useEffect(() => {
@@ -152,7 +153,8 @@ export function UnifiedSlotModal({
       setConflictBlocked(false);
       setDateFrom(format(d, 'yyyy-MM-dd'));
       setDateTo(format(addDays(d, 27), 'yyyy-MM-dd'));
-      setRecurFrom('');
+      // 2A: recurFrom = clicked date or today
+      setRecurFrom(format(d, 'yyyy-MM-dd'));
       setRecurTo('');
       setTimeSlotEntries([{ id: generateId(), start: st, end: computeEndTime(st, dur) }]);
     }
@@ -177,7 +179,6 @@ export function UnifiedSlotModal({
     setEndTime(computeEndTime(val, Number(duration)));
   };
 
-  // Batch time slot management
   const addTimeSlotEntry = () => {
     const last = timeSlotEntries[timeSlotEntries.length - 1];
     const newStart = last ? last.end : '09:00';
@@ -197,17 +198,14 @@ export function UnifiedSlotModal({
     }));
   };
 
-  // JS day (0=Sun) → our day (0=Mon)
   const jsDayToOurDay = (jsDay: number) => jsDay === 0 ? 6 : jsDay - 1;
 
-  // Generate batch slots
   const batchSlots = useMemo(() => {
     if (slotType !== 'available' || availableMode !== 'batch') return [];
     const from = new Date(dateFrom);
     const to = new Date(dateTo);
     if (isNaN(from.getTime()) || isNaN(to.getTime())) return [];
     if (timeSlotEntries.length === 0) return [];
-
     const slots: CreateSlotInput[] = [];
     let d = from;
     while (!isAfter(d, to)) {
@@ -222,32 +220,25 @@ export function UnifiedSlotModal({
     return slots;
   }, [slotType, availableMode, dateFrom, dateTo, selectedDays, timeSlotEntries]);
 
-  // Generate recurring lesson slots (day-by-day iteration)
   const recurringSlots = useMemo(() => {
     if (slotType !== 'lesson' || lessonMode !== 'recurring') return [];
     if (!recurFrom || !recurTo || studentId === 'none') return [];
     const from = new Date(recurFrom);
     const to = new Date(recurTo);
     if (isNaN(from.getTime()) || isNaN(to.getTime()) || isAfter(from, to)) return [];
-
     const slots: CreateSlotInput[] = [];
     let d = from;
     while (!isAfter(d, to)) {
       const ourDay = jsDayToOurDay(getDay(d));
       if (recurDays[ourDay]) {
-        slots.push({
-          slot_date: format(d, 'yyyy-MM-dd'),
-          start_time: startTime,
-          end_time: endTime,
-          student_id: studentId,
-        });
+        slots.push({ slot_date: format(d, 'yyyy-MM-dd'), start_time: startTime, end_time: endTime, student_id: studentId });
       }
       d = addDays(d, 1);
     }
     return slots;
   }, [slotType, lessonMode, recurFrom, recurTo, recurDays, startTime, endTime, studentId]);
 
-  // Check conflicts
+  // Check conflicts — Step 5: don't add replaceable to info[]
   const checkConflicts = (newSlots: CreateSlotInput[]): { blocked: boolean; replaceable: CalendarSlot[]; info: ConflictInfo[] } => {
     const info: ConflictInfo[] = [];
     let blocked = false;
@@ -257,7 +248,6 @@ export function UnifiedSlotModal({
     for (const ns of newSlots) {
       const nsStart = normalizeTime(ns.start_time);
       const nsEnd = normalizeTime(ns.end_time);
-
       const overlapping = existingSlots.filter(ex =>
         ex.slot_date === ns.slot_date &&
         ex.status !== 'cancelled' &&
@@ -273,12 +263,9 @@ export function UnifiedSlotModal({
             hasStudent: true, studentName: ov.student_id ? studentMap[ov.student_id] : undefined, type: 'blocked',
           });
         } else {
+          // Available slot — silent replacement, don't show as conflict
           if (isAddingLesson) {
             replaceable.push(ov);
-            info.push({
-              date: ov.slot_date, time: `${normalizeTime(ov.start_time)}–${normalizeTime(ov.end_time)}`,
-              hasStudent: false, type: 'replaceable',
-            });
           } else {
             replaceable.push(ov);
           }
@@ -295,15 +282,16 @@ export function UnifiedSlotModal({
         const newSlots = [{ slot_date: date, start_time: startTime, end_time: endTime }];
         const { blocked, replaceable, info } = checkConflicts(newSlots);
         if (blocked) { setConflicts(info); setConflictBlocked(true); setSaving(false); return; }
-        // Auto-replace available slots that overlap
         for (const r of replaceable) await onDeleteSlot(r.id);
-        await onCreateSingle({ slot_date: date, start_time: startTime, end_time: endTime, notes: notes || undefined });
+        const result = await onCreateSingle({ slot_date: date, start_time: startTime, end_time: endTime, notes: notes || undefined });
+        if (!result) { setSaving(false); return; } // Server conflict — stay on modal
       } else if (slotType === 'available' && availableMode === 'batch') {
         if (batchSlots.length === 0) { setSaving(false); return; }
         const { blocked, replaceable, info } = checkConflicts(batchSlots);
         if (blocked) { setConflicts(info); setConflictBlocked(true); setSaving(false); return; }
         for (const r of replaceable) await onDeleteSlot(r.id);
-        await onCreateBatch(batchSlots);
+        const result = await onCreateBatch(batchSlots);
+        if (!result) { setSaving(false); return; }
       } else if (slotType === 'lesson' && lessonMode === 'single') {
         if (studentId === 'none') { setSaving(false); return; }
         const newSlots = [{ slot_date: date, start_time: startTime, end_time: endTime, student_id: studentId }];
@@ -311,11 +299,18 @@ export function UnifiedSlotModal({
         if (blocked) { setConflicts(info); setConflictBlocked(true); setSaving(false); return; }
         for (const r of replaceable) await onDeleteSlot(r.id);
         const studentName = students.find(s => s.id === studentId)?.name;
-        await onCreateSingle({
+        const result = await onCreateSingle({
           slot_date: date, start_time: startTime, end_time: endTime,
           student_id: studentId, title: studentName ? `${studentName} — English lesson` : undefined,
           notes: notes || undefined, worksheet_id: worksheetId !== 'none' ? worksheetId : undefined,
         });
+        if (!result) {
+          // Server detected conflict — show on modal
+          setConflicts([{ date, time: `${startTime}–${endTime}`, hasStudent: true, type: 'blocked', studentName: 'existing lesson' }]);
+          setConflictBlocked(true);
+          setSaving(false);
+          return;
+        }
       } else if (slotType === 'lesson' && lessonMode === 'recurring') {
         if (studentId === 'none' || recurringSlots.length === 0) { setSaving(false); return; }
         const { blocked, replaceable, info } = checkConflicts(recurringSlots);
@@ -323,12 +318,16 @@ export function UnifiedSlotModal({
         for (const r of replaceable) await onDeleteSlot(r.id);
         const studentName = students.find(s => s.id === studentId)?.name;
         const slotsWithMeta = recurringSlots.map(s => ({
-          ...s,
-          title: studentName ? `${studentName} — English lesson` : undefined,
-          notes: notes || undefined,
-          booking_type: 'recurring_instance',
+          ...s, title: studentName ? `${studentName} — English lesson` : undefined,
+          notes: notes || undefined, booking_type: 'recurring_instance',
         }));
-        await onCreateBatch(slotsWithMeta);
+        const result = await onCreateBatch(slotsWithMeta);
+        if (!result) {
+          setConflicts([{ date: recurFrom, time: `${startTime}–${endTime}`, hasStudent: true, type: 'blocked', studentName: 'existing lesson' }]);
+          setConflictBlocked(true);
+          setSaving(false);
+          return;
+        }
       }
       onOpenChange(false);
     } finally {
@@ -345,7 +344,6 @@ export function UnifiedSlotModal({
 
   const mode = slotType === 'available' ? availableMode : lessonMode;
   const modalTitle = slotType === 'lesson' ? 'Add Lesson' : (availableMode === 'batch' ? 'Add Slots' : 'Add Slot');
-
   const selectedStudentName = students.find(s => s.id === studentId)?.name || '';
 
   return (
@@ -356,7 +354,7 @@ export function UnifiedSlotModal({
         </DraggableDialogHeader>
 
         <div className="space-y-4">
-          {/* Top tabs: Available / Lesson */}
+          {/* Top tabs */}
           <Tabs value={slotType} onValueChange={v => { setSlotType(v as SlotType); setConflicts([]); setConflictBlocked(false); }}>
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="available" className="text-xs">
@@ -381,7 +379,7 @@ export function UnifiedSlotModal({
             </div>
           )}
 
-          {/* Student selector (lesson only) — Combobox with search */}
+          {/* Student selector (lesson only) — Combobox with search — 2C fix */}
           {slotType === 'lesson' && (
             <div>
               <Label className="text-xs">Student *</Label>
@@ -399,7 +397,7 @@ export function UnifiedSlotModal({
                       <CommandEmpty>No student found.</CommandEmpty>
                       <CommandGroup>
                         {students.map(s => (
-                          <CommandItem key={s.id} value={s.name} onSelect={() => { setStudentId(s.id); setStudentComboOpen(false); }}>
+                          <CommandItem key={s.id} value={`${s.name}__${s.id}`} onSelect={() => { setStudentId(s.id); setStudentComboOpen(false); }}>
                             <Check className={cn("mr-2 h-4 w-4", studentId === s.id ? "opacity-100" : "opacity-0")} />
                             {s.name}
                           </CommandItem>
@@ -529,22 +527,44 @@ export function UnifiedSlotModal({
             </>
           )}
 
-          {/* Worksheet link for single lesson */}
-          {slotType === 'lesson' && lessonMode === 'single' && studentId !== 'none' && studentWorksheets.length > 0 && (
-            <div>
-              <Label className="text-xs">Link Worksheet (optional)</Label>
-              <Select value={worksheetId} onValueChange={setWorksheetId}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="No worksheet" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No worksheet</SelectItem>
-                  {studentWorksheets.map(ws => (
-                    <SelectItem key={ws.id} value={ws.id}>
-                      <span className="truncate">{ws.title || 'Untitled'}</span>
-                      <span className="text-xs text-muted-foreground ml-2">{format(new Date(ws.created_at), 'MMM d')}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* 2B: Worksheet link for single mode (both available + lesson) */}
+          {mode === 'single' && (
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">Worksheet</span>
+              <div className="flex items-center gap-1">
+                {worksheetId !== 'none' ? (
+                  <span className="text-xs font-medium truncate max-w-[200px]">
+                    {studentWorksheets.find(w => w.id === worksheetId)?.title || 'Linked'}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">None</span>
+                )}
+                {/* For lesson: disabled until student is selected. For available slot: always active via onLinkWorksheet */}
+                {slotType === 'lesson' && studentId !== 'none' && studentWorksheets.length > 0 ? (
+                  <Select value={worksheetId} onValueChange={setWorksheetId}>
+                    <SelectTrigger className="h-7 w-7 p-0 border-0">
+                      <Link2 className="h-3 w-3" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No worksheet</SelectItem>
+                      {studentWorksheets.map(ws => (
+                        <SelectItem key={ws.id} value={ws.id}>
+                          <span className="truncate">{ws.title || 'Untitled'}</span>
+                          <span className="text-xs text-muted-foreground ml-2">{format(new Date(ws.created_at), 'MMM d')}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Button
+                    variant="ghost" size="sm" className="h-6 w-6 p-0"
+                    disabled={slotType === 'lesson' && studentId === 'none'}
+                    onClick={() => onLinkWorksheet?.(studentId !== 'none' ? studentId : null)}
+                  >
+                    <Link2 className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
             </div>
           )}
 
@@ -560,7 +580,7 @@ export function UnifiedSlotModal({
               </div>
               <div>
                 <Label className="text-xs">Notes (optional)</Label>
-                <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Visible to student" rows={2} />
+                <AutoResizeTextarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Visible to student" rows={1} />
               </div>
             </>
           )}
@@ -570,18 +590,15 @@ export function UnifiedSlotModal({
             <div className="bg-destructive/10 border border-destructive/30 rounded-md px-3 py-2 text-sm space-y-1">
               <div className="flex items-center gap-1 font-medium text-destructive">
                 <AlertTriangle className="h-4 w-4" />
-                {conflictBlocked ? 'Conflicts detected — cannot proceed' : 'Conflicts detected — overlapping available slots will be replaced'}
+                Conflicts detected — cannot proceed
               </div>
-              {conflictBlocked && (
-                <p className="text-xs text-muted-foreground">Remove existing lessons first, then add new ones or edit existing ones.</p>
-              )}
-              {conflicts.slice(0, 5).map((c, i) => (
+              <p className="text-xs text-muted-foreground">Remove existing lessons first, then add new ones or edit existing ones.</p>
+              {conflicts.filter(c => c.type === 'blocked').slice(0, 5).map((c, i) => (
                 <div key={i} className="text-xs text-muted-foreground">
-                  {c.date} {c.time} {c.hasStudent ? `— Lesson with ${c.studentName || 'student'}` : '— Available slot'}
-                  {c.type === 'replaceable' && ' (will be replaced)'}
+                  {c.date} {c.time} — Lesson with {c.studentName || 'student'}
                 </div>
               ))}
-              {conflicts.length > 5 && <div className="text-xs text-muted-foreground">...and {conflicts.length - 5} more</div>}
+              {conflicts.filter(c => c.type === 'blocked').length > 5 && <div className="text-xs text-muted-foreground">...and {conflicts.filter(c => c.type === 'blocked').length - 5} more</div>}
             </div>
           )}
         </div>

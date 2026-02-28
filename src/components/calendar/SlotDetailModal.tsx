@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
 import { format, differenceInMinutes } from 'date-fns';
-import { Check, X, Trash2, FileText, ExternalLink, AlertTriangle, Link2, Undo2, UserMinus, Repeat, Ban } from 'lucide-react';
+import { Check, X, Trash2, FileText, ExternalLink, AlertTriangle, Link2, Undo2, UserMinus, Repeat, Ban, ChevronsUpDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface Student {
   id: string;
@@ -43,6 +45,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const [editNotes, setEditNotes] = useState('');
   const [editStudentId, setEditStudentId] = useState<string>('none');
   const [showStudentSelect, setShowStudentSelect] = useState(false);
+  const [studentComboOpen, setStudentComboOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -121,6 +124,19 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     onOpenChange(false);
   };
 
+  // Step 4: Cancel Lesson with confirmation
+  const handleCancelLesson = async () => {
+    if (!window.confirm('Cancel this lesson? The slot will be marked as cancelled.')) return;
+    const cancelledStudentName = students.find(s => s.id === slot.student_id)?.name || studentName || 'unknown';
+    await onUpdate(slot.id, {
+      status: 'cancelled',
+      cancelled_at: new Date().toISOString(),
+      cancelled_by: 'teacher',
+      cancellation_reason: `Cancelled by teacher. Student: ${cancelledStudentName}`,
+    } as any);
+    onOpenChange(false);
+  };
+
   const handleStatusChange = async (status: string) => {
     const updates: any = { status };
     if (status === 'cancelled') { updates.cancelled_at = new Date().toISOString(); updates.cancelled_by = 'teacher'; }
@@ -146,6 +162,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     onOpenChange(false);
   };
 
+  const selectedStudentName = students.find(s => s.id === editStudentId)?.name || '';
+
   return (
     <DraggableDialog open={open} onOpenChange={onOpenChange}>
       <DraggableDialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
@@ -160,12 +178,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         </DraggableDialogHeader>
 
         <div className="space-y-3">
-          {/* Student section */}
+          {/* Student section — 2C: Combobox with search */}
           {hasStudent && !showStudentSelect ? (
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <Label className="text-xs text-muted-foreground">Student</Label>
-                <div className="font-medium text-sm truncate">{students.find(s => s.id === editStudentId)?.name || studentName}</div>
+                <div className="font-medium text-sm truncate">{selectedStudentName || studentName}</div>
               </div>
               <div className="flex gap-1 flex-shrink-0">
                 <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setShowStudentSelect(true)}>Change</Button>
@@ -178,13 +196,34 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             <div>
               <Label className="text-xs">{hasStudent ? 'Change Student' : 'Assign Student'}</Label>
               <div className="flex gap-2">
-                <Select value={editStudentId} onValueChange={v => { setEditStudentId(v); setShowStudentSelect(false); }}>
-                  <SelectTrigger className="h-9 flex-1"><SelectValue placeholder="Select a student" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No student (Available)</SelectItem>
-                    {students.map(s => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}
-                  </SelectContent>
-                </Select>
+                <Popover open={studentComboOpen} onOpenChange={setStudentComboOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" aria-expanded={studentComboOpen} className="flex-1 h-9 justify-between text-sm font-normal">
+                      {editStudentId !== 'none' ? selectedStudentName : 'Select a student...'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search students..." />
+                      <CommandList>
+                        <CommandEmpty>No student found.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem value="__none__" onSelect={() => { setEditStudentId('none'); setStudentComboOpen(false); setShowStudentSelect(false); }}>
+                            <Check className={cn("mr-2 h-4 w-4", editStudentId === 'none' ? "opacity-100" : "opacity-0")} />
+                            No student (Available)
+                          </CommandItem>
+                          {students.map(s => (
+                            <CommandItem key={s.id} value={`${s.name}__${s.id}`} onSelect={() => { setEditStudentId(s.id); setStudentComboOpen(false); setShowStudentSelect(false); }}>
+                              <Check className={cn("mr-2 h-4 w-4", editStudentId === s.id ? "opacity-100" : "opacity-0")} />
+                              {s.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {showStudentSelect && (
                   <Button variant="ghost" size="sm" className="h-9" onClick={() => { setEditStudentId(slot.student_id || 'none'); setShowStudentSelect(false); }}>
                     <X className="h-3.5 w-3.5" />
@@ -201,7 +240,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             <div><Label className="text-xs">End</Label><Input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)} className="h-9" /></div>
           </div>
 
-          {/* Worksheet */}
+          {/* Worksheet — disabled linking without student for lesson type */}
           <div className="flex justify-between items-center">
             <span className="text-xs text-muted-foreground">Worksheet</span>
             <div className="flex items-center gap-1">
@@ -213,21 +252,35 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
                 <span className="text-xs text-muted-foreground">None</span>
               )}
               {onLinkWorksheet && (
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-1" onClick={() => onLinkWorksheet(slot, editStudentId !== 'none' ? editStudentId : null)}>
+                <Button
+                  variant="ghost" size="sm" className="h-6 w-6 p-0 ml-1"
+                  disabled={hasStudent ? false : slot.status === 'booked'}
+                  onClick={() => onLinkWorksheet(slot, editStudentId !== 'none' ? editStudentId : null)}
+                >
                   <Link2 className="h-3 w-3" />
                 </Button>
               )}
             </div>
           </div>
 
-          {/* Notes */}
-          <div><Label className="text-xs">Notes</Label><Textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={2} /></div>
+          {/* Notes — AutoResizeTextarea */}
+          <div><Label className="text-xs">Notes</Label><AutoResizeTextarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={1} /></div>
 
           {/* Student notes (from booking) */}
           {slot.student_notes && (
             <div className="bg-muted/50 rounded-md px-3 py-2">
               <Label className="text-xs text-muted-foreground">Student booking info</Label>
               <p className="text-xs mt-0.5">{slot.student_notes}</p>
+            </div>
+          )}
+
+          {/* Step 4: Cancelled slot info */}
+          {slot.status === 'cancelled' && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md px-3 py-2 text-xs space-y-1">
+              <p className="font-medium text-red-700 dark:text-red-400">Cancelled</p>
+              {slot.cancelled_at && <p>When: {format(new Date(slot.cancelled_at), 'MMM d, yyyy HH:mm')}</p>}
+              {slot.cancelled_by && <p>By: {slot.cancelled_by}</p>}
+              {slot.cancellation_reason && <p>{slot.cancellation_reason}</p>}
             </div>
           )}
         </div>
@@ -254,7 +307,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
               </>
             )}
             {slot.status !== 'cancelled' && slot.status !== 'completed' && hasStudent && !isPending && (
-              <Button size="sm" variant="outline" className="text-destructive text-xs h-7" onClick={() => handleStatusChange('cancelled')}>
+              <Button size="sm" variant="outline" className="text-destructive text-xs h-7" onClick={handleCancelLesson}>
                 <X className="h-3 w-3 mr-1" /> Cancel Lesson
               </Button>
             )}
@@ -266,7 +319,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
           )}
           <div className="flex gap-2 w-full justify-end">
             <Button size="sm" variant="ghost" className="text-destructive text-xs h-8" onClick={handleDelete}>
-              <Trash2 className="h-3 w-3 mr-1" /> {confirming ? 'Confirm Delete?' : 'Delete'}
+              <Trash2 className="h-3 w-3 mr-1" /> {confirming ? 'Confirm Delete?' : 'Delete Slot'}
             </Button>
             <Button size="sm" variant="outline" className="text-xs h-8" onClick={handleCancel}>Cancel</Button>
             {hasChanges && (
