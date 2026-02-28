@@ -1,556 +1,434 @@
-# Plan: Naprawy kalendarza — FAZA 1 kontynuacja
 
-## ANALIZA PROBLEMOW Z BAZY DANYCH
 
-Sprawdzilem dane i znalazlem **krytyczne overbookingi** w bazie:
+# Plan naprawy kalendarza — FAZA 2
 
-- `2026-03-02 09:00–10:00` — DWA sloty booked (studenci `8144a198` i `6397b351`) — to sa dwa oddzielne rekordy na ta sama godzine
-- `2026-03-02 11:00–12:00` — slot booked + slot available nakladajace sie
-- `2026-03-02 14:00–15:00` — DWA sloty booked
-- `2026-03-03 10:00–11:00` — booked + available nakladajace sie
-- `2026-03-03 12:30–13:30` — available + booked nakladajace sie
-- `2026-03-03 16:00–17:00` — booked + available nakladajace sie
+## Analiza problemów
 
-**Przyczyna glowna:** `createSlotsBatch` (linia 156 useCalendarSlots) NIE sprawdza konfliktow — komentarz mowi "caller handles conflicts" ale nie wszyscy callers to robia. `generateSlotsForRule` w useCalendarRecurrence sprawdza tylko duplikaty z ta sama `recurrence_rule_id` (linia 142-151), wiec NIE wykrywa konfliktow z innymi slotami. Publiczny booking w `usePublicBooking.bookSlot` sprawdza `.eq('status', 'available')` ale nie blokuje jesli slot zostal juz zarezerwowany przez innego studenta w tym samym momencie (race condition).
+Przeanalizowałem cały kod kalendarza. Oto znalezione problemy i rozwiązania:
 
 ---
 
-## KOLEJNOSC IMPLEMENTACJI (13 krokow)
+## Krok 1: Linie siatki godzin — NADAL ŹLE
 
-### Krok 1: Grid lines — ponowna poprawka
+**Problem:** Logika `isFullHour = i % 2 === 0` jest błędna. Pierwszy wiersz (`i=0`) to `START_HOUR:00` (pełna godzina), DRUGI (`i=1`) to `START_HOUR:30` (pół). Ale wizualnie: wiersz `i=0` KOŃCZY się na dole border-bottom, który odpowiada linii `START_HOUR:30` — bo border-bottom wiersza `i=0` to linia na dole tego wiersza, czyli w punkcie 30 minut. Więc `i % 2 === 0` — border wiersza 0 = linia na `XX:30`, border wiersza 1 = linia na `XX+1:00`. **To jest odwrócone!**
 
-**Problem:** Uzytkownik twierdzi ze linie pol-godzinne sa nadal mocniejsze. Analizujac kod: grid area ma `border-border/60` (full) vs `border-border/10` (half) — wyglada poprawnie. ALE gutter (lewa kolumna z godzinami) ma `border-border/30` dla full hours i `border-border/10` dla half — to jest zbyt slabe. Gutter powinien byc spojny z gridem.
+**Fix:** Zamienić logikę: `i % 2 === 0` → `i % 2 !== 0` dla grid lines (NIE dla gutter).
 
-**Pliki:** `CalendarWeekView.tsx` linia 84, `CalendarDayView.tsx` linia 70
+Dotyczy: `CalendarWeekView.tsx` (linie 87, 111) i `CalendarDayView.tsx` (linie 76, 85).
 
-**Fix:** W gutter zamienic `border-border/30` na `border-border/60` zeby bylo spojne z gridem. Dodatkowo w gridzie podniesc kontrast: full hour `border-border/80`, half hour `border-border/15`.
+**Gutter (lewa kolumna z godzinami):** Tu `isFullHour = i % 2 === 0` jest POPRAWNE bo label `HH:00` ma się pojawiać na początku wiersza `i=0`. Ale styl border musi być odwrócony tak jak grid. Wiersz `i=0` (pełna godzina) ma cienką linię na dole (bo to linia `XX:30`), wiersz `i=1` (pół godziny) ma grubą linię na dole (bo to linia `XX+1:00`).
+
+**Konkretne zmiany:**
+
+W **CalendarWeekView.tsx**:
+- Linia 87 (gutter): `isFullHour ? 'border-border/80' : 'border-border/15'` → `isFullHour ? 'border-border/15' : 'border-border/80'`
+- Linia 111 (grid): `i % 2 === 0 ? 'border-border/80' : 'border-border/15'` → `i % 2 === 0 ? 'border-border/15' : 'border-border/80'`
+
+W **CalendarDayView.tsx**:
+- Linia 76 (gutter): tak samo
+- Linia 85 (grid): tak samo
 
 ---
 
-### Krok 2: Modal — przezroczyste tlo + mozliwosc przesuwania
+## Krok 2: Notes — AutoResizeTextarea
 
-**Problem:** DialogOverlay (z shadcn Dialog) uzywa `bg-black/80` co robi ciemne rozmazane tlo.
+**Problem:** Pole Notes używa `<Textarea>` z `rows={2}`. Ma być jednolinijkowe z auto-resize.
 
-**Fix w `UnifiedSlotModal.tsx`:**
+**Fix:** W `UnifiedSlotModal.tsx` linia 563 i `SlotDetailModal.tsx` linia 224: zamienić `<Textarea ... rows={2} />` na `<AutoResizeTextarea ... rows={1} />`. Import `AutoResizeTextarea` z `@/components/ui/AutoResizeTextarea`.
 
-1. Dodac `className` do DialogContent wylaczajacy overlay blur: uzyc custom Dialog bez overlay lub z `bg-black/20` (przezroczyste).
-2. **Przesuwanie modalu:** Dodac stan `dragPosition: {x, y}`, `onMouseDown` na header modalu zeby robic drag. Uzyc CSS `position: fixed; top: Y; left: X; transform: none;` na DialogContent zamiast default centered.
+---
 
-Konkretnie: zmienic DialogOverlay na `className="bg-black/20 backdrop-blur-none"` w Dialog. Dodac drag handle na DialogHeader:
+## Krok 2A: Recurring Lesson — data From z kalendarza
 
-```typescript
-const [pos, setPos] = useState<{x:number,y:number}|null>(null);
-const dragRef = useRef<{startX:number,startY:number,posX:number,posY:number}|null>(null);
+**Problem:** `recurFrom` jest pusty na start, ale ma być ustawiony na klikniętą datę (lub dzisiejszą jeśli przez +Add).
 
-const onMouseDown = (e) => {
-  dragRef.current = { startX: e.clientX, startY: e.clientY, posX: pos?.x||0, posY: pos?.y||0 };
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup', onMouseUp);
+**Fix:** W `UnifiedSlotModal.tsx` linia 155: zmienić `setRecurFrom('')` na `setRecurFrom(format(d, 'yyyy-MM-dd'))`.
+
+---
+
+## Krok 2B: Link Worksheet na Single Lesson — identyczne jak Available Slot
+
+**Problem:** Worksheet link pojawia się TYLKO gdy `studentId !== 'none' && studentWorksheets.length > 0`. Ma być widoczny ZAWSZE (nawet bez studenta), tak jak w SlotDetailModal — "Worksheet: None [ikona linkowania]".
+
+**Fix:** W `UnifiedSlotModal.tsx`:
+1. Usunąć warunek `slotType === 'lesson' && lessonMode === 'single' && studentId !== 'none' && studentWorksheets.length > 0` (linia 533)
+2. Zamienić na widok identyczny jak w `SlotDetailModal` linia 204-221:
+```tsx
+{mode === 'single' && (
+  <div className="flex justify-between items-center">
+    <span className="text-xs text-muted-foreground">Worksheet</span>
+    <div className="flex items-center gap-1">
+      {worksheetId !== 'none' ? (
+        <span className="text-xs font-medium truncate max-w-[200px]">
+          {studentWorksheets.find(w => w.id === worksheetId)?.title || 'Linked'}
+        </span>
+      ) : (
+        <span className="text-xs text-muted-foreground">None</span>
+      )}
+      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" 
+        disabled={studentId === 'none' && slotType === 'lesson'}
+        onClick={/* open link worksheet */}>
+        <Link2 className="h-3 w-3" />
+      </Button>
+    </div>
+  </div>
+)}
+```
+3. Dla Available Slot: worksheet linking powinno być aktywne bez studenta — w `LinkWorksheetModal` studentId jest null więc pokażą się WSZYSTKIE worksheety nauczyciela.
+4. Dla Lesson: worksheet linking aktywne dopiero po wybraniu studenta.
+
+**Dodatkowa logika:** Potrzebujemy mechanizmu do otwierania `LinkWorksheetModal` z `UnifiedSlotModal`. Dodać stan `showLinkWorksheet: boolean` i renderować `LinkWorksheetModal` wewnątrz modalu (z-index wyższy).
+
+---
+
+## Krok 2C: Student Combobox — kliknięcie nie działa + dodać na innych modalach
+
+**Problem:** `CommandItem onSelect` nie zamyka popovera poprawnie. Prawdopodobny powód: `value={s.name}` w CommandItem koliduje z wyszukiwaniem.
+
+**Fix:** W `UnifiedSlotModal.tsx` linia 402:
+```tsx
+<CommandItem key={s.id} value={s.name} onSelect={() => { 
+  setStudentId(s.id); 
+  setStudentComboOpen(false); 
+}}>
+```
+Problem może być w tym że `onSelect` dostaje lowercase value. Zmienić na:
+```tsx
+<CommandItem key={s.id} value={`${s.name}_${s.id}`} onSelect={() => { 
+  setStudentId(s.id); 
+  setStudentComboOpen(false); 
+}}>
+```
+
+**Dodać Combobox na SlotDetailModal** (linia 181): zamienić `<Select>` na ten sam Combobox pattern.
+
+---
+
+## Krok 2D: Conflicts — pokazywać NA MODALU, nie zamykać
+
+**Problem:** Gdy createSlotsBatch lub createSlot zwraca null (conflict), modal się zamyka bo `handleSubmit` wywołuje `onCreateBatch/onCreateSingle` które pokazują toast i zwracają null. Ale `handleSubmit` nie zamyka modalu (linia 333 `onOpenChange(false)` jest w try na końcu). JEDNAK: conflict check jest PRZED wywołaniem `onCreateBatch` — linia 321-322 ustawia `setConflicts` i `setSaving(false); return;`. Więc modal NIE powinien się zamykać.
+
+**Prawdopodobny problem:** Recurring lesson path (linia 319-332) — `checkConflicts` zwraca `blocked=true`, ustawia `setConflicts(info); setConflictBlocked(true); setSaving(false); return;` — to POWINNO działać i wyświetlać conflicts na modalu.
+
+**ALE:** Sprawdzam: `recurringSlots` jest obliczany przez `useMemo` z zależnością od `recurDays, recurFrom, recurTo, startTime, endTime, studentId`. Jeśli te wartości się zmieniły po pierwszym renderze, `recurringSlots` powinien być aktualny. Conflict check powinien działać.
+
+Możliwy inny problem: jeśli użytkownik używa trybu "single lesson" i klika Create, `handleSubmit` linia 307-318 — to wywołuje `onCreateSingle` (linia 314-318). Jeśli `onCreateSingle` (czyli `createSlot`) pokazuje toast "Time conflict" i zwraca null, modal się nie zamyka (linia 333 `onOpenChange(false)` jest po await, ale null nie rzuca błędu). Ale problem jest taki że toast pokazuje się w prawym dolnym rogu zamiast na modalu.
+
+**Root cause:** `createSlot` w `useCalendarSlots.tsx` (linia 119) sam pokazuje toast. To jest DRUGIE sprawdzenie conflictu. Pierwsze jest w `UnifiedSlotModal.checkConflicts` (client-side, linia 251-288). Ale `checkConflicts` sprawdza `existingSlots` z props — to jest stale dane z momentu otwarcia modalu. Jeśli dane się zmieniły (np. w tle ktoś dodał slot), `existingSlots` jest nieaktualne i `checkConflicts` przepuści, ale `createSlot` (server-side) zablokuje.
+
+**Fix:** W `handleSubmit`: po wywołaniu `onCreateSingle/onCreateBatch`, jeśli zwróci `null`, NIE zamykać modalu i pokazać conflict warning na modalu:
+```tsx
+const result = await onCreateSingle({...});
+if (!result) {
+  // Server detected conflict — show on modal
+  setConflicts([{ date, time: `${startTime}–${endTime}`, hasStudent: true, type: 'blocked', studentName: 'existing lesson' }]);
+  setConflictBlocked(true);
+  setSaving(false);
+  return; // DON'T close modal
+}
+onOpenChange(false);
+```
+
+---
+
+## Krok 3: Linkowanie worksheet — znikający student
+
+**Problem:** W `CalendarPage.handleWorksheetLinked` (linia 109-113) — robi `updateSlot(linkWorksheetSlot.id, { worksheet_id })`. To aktualizuje TYLKO worksheet_id. Ale `linkWorksheetSlot` ma `student_id` z `handleLinkWorksheet` (linia 106). Problem: `updateSlot` nie aktualizuje studenta.
+
+**Prawdziwy problem:** Na modalu `SlotDetailModal` użytkownik edytuje `editStudentId`. Klikając "Link Worksheet", wywołuje `onLinkWorksheet(slot, editStudentId)`. `handleLinkWorksheet` tworzy nowy obiekt `{...slot, student_id: studentId}`. Ale `slot` to oryginalny slot (bez studenta). `LinkWorksheetModal` otwiera się, slot w tle nadal nie ma studenta (bo nie zapisano zmian).
+
+Po podlinkowaniu, `handleWorksheetLinked` robi `updateSlot(id, {worksheet_id})` — nie zapisuje studenta! Następnie modal się zamyka, slot w bazie ma worksheet ale nie ma studenta.
+
+**Fix:** W `handleWorksheetLinked`: jeśli `linkWorksheetSlot.student_id` różni się od oryginalnego slotu, też zaktualizować student_id:
+```tsx
+const handleWorksheetLinked = async (worksheetId: string | null) => {
+  if (linkWorksheetSlot) {
+    const updates: any = { worksheet_id: worksheetId };
+    // Also save student if changed
+    const originalSlot = slots.find(s => s.id === linkWorksheetSlot.id);
+    if (originalSlot && linkWorksheetSlot.student_id !== originalSlot.student_id) {
+      updates.student_id = linkWorksheetSlot.student_id;
+      updates.status = linkWorksheetSlot.student_id ? 'booked' : 'available';
+      if (linkWorksheetSlot.student_id) {
+        updates.booked_at = new Date().toISOString();
+        updates.booked_by = 'teacher';
+        updates.confirmed_at = new Date().toISOString();
+      }
+    }
+    await updateSlot(linkWorksheetSlot.id, updates);
+  }
 };
 ```
 
-DialogContent style: `style={pos ? { position:'fixed', left:`50%`, top:`50%`, transform:`translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px)) `} : undefined}`
-
-**To samo w SlotDetailModal** (tez ma byc przezroczyste + przesuwane).
-
-Aby nie modyfikowac globalnego Dialog z shadcn/ui, zrobimy to przez nadpisanie klas w konkretnych komponentach. Sposob:
-
-- W `src/components/ui/dialog.tsx` — DialogOverlay ma juz klase `bg-black/80`. Nie zmieniamy tego globalnie.
-- W UnifiedSlotModal i SlotDetailModal: uzyc `<Dialog>` z `modal={false}` co wylacza overlay, a nastepnie manualnie dodac wlasny overlay z `bg-black/20`. Albo prostszy sposob: uzyc Radix `Dialog` bezposrednio z customowym overlay.
-
-**Najlepsza opcja:** Dodac nowy wariant do naszego Dialog w ui/dialog.tsx — `DialogOverlay` z opcjonalnym `variant="transparent"`. Ale to zmieni globalny komponent. Lepiej: w UnifiedSlotModal i SlotDetailModal przekazac `overlayClassName` do DialogContent ktore nadpiszemy.
-
-**Najprostsze rozwiazanie:** Dodac do DialogContent `className` ktory nadpisuje overlay: nie mozemy bezposrednio, ale mozemy uzyc portalu. Najlepiej — stworzyc `DraggableDialog.tsx` wrapper:
-
-```typescript
-// src/components/ui/draggable-dialog.tsx
-export function DraggableDialog({ children, open, onOpenChange }) {
-  // Renders Dialog with transparent overlay + draggable content
-}
-```
+**Dodatkowe:** Worksheet linking nieaktywne bez studenta na modalu LESSON — dodać `disabled` prop do przycisku Link na `SlotDetailModal` i `UnifiedSlotModal` jeśli `student_id === 'none'` i to jest lesson.
 
 ---
 
-### Krok 3: UnifiedSlotModal — poprawki A-F
+## Krok 4: Cancel Lesson — potwierdzenie + zachowanie slotu
 
-**3A. Info o ilosci tworzonych lekcji dla Recurring:**
-Dodac `useMemo` ktory liczy ile lekcji bedzie utworzonych w recurring mode. Pod sekcja recurring, analogicznie jak w batch, dodac:
+**Problem:** "Cancel Lesson" (linia 257-259) wywołuje `handleStatusChange('cancelled')` co ustawia `status=cancelled, cancelled_at, cancelled_by='teacher'` ale NIE odłącza studenta. To jest częściowo OK.
 
-```
-This will create X lessons (every [Days] from [From] to [To])
-```
+**Wymagane zmiany:**
 
-Obliczenie: iteruj po dniach od `dateFrom` do `dateTo/recurUntilDate`, policz ile razy wybrany dzien tygodnia wystepuje.
-
-**3B. Usunac pole Title (optional):**
-W UnifiedSlotModal linie 551-556 — usunac pole Title. Zostaje tylko Notes. Dla lesson trybu `title` bedzie auto-generowany z nazwy studenta (`${student.name} — English lesson`). Dla available — title bedzie null.
-
-Ale uwaga: w SlotDetailModal (edycja) title tez jest. Tam też usunąć pole Title.
-
-**3C. Recurring Lesson — data koncowa inclusive + multi-day + From/To:**
-
-C.1: `generateSlotsForRule` linia 117: `slotDate > new Date(rule.effective_until)` — zmiana na `>=` nie wystarczy bo `new Date('2026-03-16')` tworzy date o polnocy UTC, a `slotDate` tez. Problem: `>` nie wlacza dnia koncowego. Fix: zmiana `>` na `> endOfDay(new Date(rule.effective_until))` lub porownanie stringow: `format(slotDate, 'yyyy-MM-dd') > rule.effective_until`.
-
-Lepszy fix: `if (rule.effective_until && format(slotDate, 'yyyy-MM-dd') > rule.effective_until) continue;`
-
-C.1 drugi problem — "zrobilem od 2-24.03 w poniedzialki a utworzylo sie tylko 2 i 9.03": Bug w `generateSlotsForRule` — petla `for (let w = 0; w < weeksAhead; w++)` iteruje `weeksAhead` razy OD `startDate`. Jesli `startDate = today (28.02)` i `weeksAhead = 4`, to sprawdza: tydzien 0 (28.02), tydzien 1 (07.03), tydzien 2 (14.03), tydzien 3 (21.03). Poniedzialki: 02.03 (diff=2), 09.03 (diff=2), 16.03 (diff=2), 23.03 (diff=2). ALE `weeksAhead` jest ustawiane na `auto_generate_weeks_ahead` z CreateRecurrenceInput, a w `handleSubmit` linia 303: `auto_generate_weeks_ahead: recurEndMode === 'weeks' ? Number(recurWeeks) : 52`. Jesli `recurEndMode === 'date'` to daje `52`. Ale data effective_until = '2026-03-24'. Wiec powinno generowac 52 tygodni i filtrowac po `effective_until`. Problem moze byc w `auto_generate_weeks_ahead: 52` w bazie vs `recurEndMode`. Sprawdzmy: jesli user wybral "Until date" to `auto_generate_weeks_ahead = 52`. 52 tygodni od today = rok. Wiec petla powinna generowac daty 02.03, 09.03, 16.03, 23.03 i dalej, ale filtr `effective_until = '2026-03-24'` odetnie >=24.03. Wiec 02, 09, 16, 23.03 powinny przejsc. Ale user mowi ze tylko 02 i 09.
-
-**Root cause znaleziony:** Linia 107-113 w generateSlotsForRule:
-
-```
-for (let w = 0; w < weeksAhead; w++) {
-  const weekDate = addWeeks(startDate, w);
-  const currentJsDay = getDay(weekDate);
-  let diff = targetJsDay - currentJsDay;
-  if (diff < 0) diff += 7;
-  const slotDate = addDays(weekDate, diff);
-```
-
-Jesli `startDate = 2026-02-28` (piatek, jsDay=5) i target = poniedzialek (jsDay=1):
-
-- w=0: weekDate=28.02, diff=1-5=-4+7=3, slotDate=03.03 ✓
-- w=1: weekDate=07.03, diff=1-6=-5+7=2... wait, `getDay(07.03)` — 07.03.2026 jest sobota? Nie, 07.03 to sobota. Wait: `addWeeks(2026-02-28, 1)` = 2026-03-07 (sobota). diff=1-6=-5+7=2, slotDate=09.03 (poniedzialek) ✓
-- w=2: weekDate=14.03 (sobota), diff=1-6=-5+7=2, slotDate=16.03 ✓
-- w=3: weekDate=21.03 (sobota), diff=1-6=-5+7=2, slotDate=23.03 ✓
-
-Wiec algorytm POWINIEN generowac 4 daty. Problem musi byc w filtrze effective_until: linia 117:
-
-```
-if (rule.effective_until && slotDate > new Date(rule.effective_until)) continue;
-```
-
-`new Date('2026-03-24')` = 24.03 00:00:00 UTC. `slotDate` dla 16.03 = addDays(addWeeks(Date(28.02), 2), 2). To zalezy od timezone. Jesli local tz jest +1, to `new Date('2026-03-24')` = 23.03 23:00:00 local, a `slotDate` 16.03 moze byc w local time. Mozliwe ze timezone powoduje off-by-one.
-
-Ale user mowi ze 16 i 23 NIE zostaly utworzone. Wiec albo `weeksAhead` jest za maly (nie 52 a np 4), albo `effective_until` porownanie jest bledne.
-
-Najprawdopodobniejsza przyczyna: user nie wybral "Until date" tylko domyslne "For X weeks" = 4 tygodnie. ALE nawet jesli 4 tygodnie, powinno byc 4 daty. Chyba ze `effective_from` = today i `startDate = today (28.02)`, a `today` jest piątkiem, wiec tydzien 0 = 28.02-03.03 (pon 03.03)... hmm to juz sie nie zgadza bo user mowi ze 02.03 sie utworzylo a nie 03.03. 02.03 to niedziela! Nie poniedzialek. 
-
-Chwila — 02.03.2026: sprawdzam... 2026-03-02 to PONIEDZIALEK. OK wiec:
-
-- startDate = 2026-02-28 (sobota)
-- w=0: weekDate=28.02 (sobota), diff=1-6=-5+7=2, slotDate=02.03 ✓
-- w=1: weekDate=07.03 (sobota), diff=2, slotDate=09.03 ✓  
-- w=2: weekDate=14.03, slotDate=16.03 ✓
-- w=3: weekDate=21.03, slotDate=23.03 ✓
-
-Ale user mowi tylko 2 i 9 sie utworzyly. Mozliwe ze `auto_generate_weeks_ahead` w bazie to nie 52 a 4, ale linia 116: `if (slotDate < effectiveFrom) continue;` — effectiveFrom moze byc ustawione na biezaca date. I linia 119: `if (slotDate < today) continue;` — to nie powinno filtrowac przyszlych dat.
-
-Hmm, moge tez sprawdzic: duplicate check w liniach 141-154. Sprawdza istniejace sloty z ta sama `recurrence_rule_id`. ALE jesli na te daty juz istnieja sloty z INNEGO recurrence_rule_id (bo user wczesniej tworzyl inne), to nie odfiltrowuje. Ale to nie powinno blokowac — `existingSet` zawiera tylko sloty z tym samym rule_id.
-
-Moze problem jest w innym miejscu... Prawdopodobne: petla generuje 4 sloty, ale INSERT dwoch ostatnich failuje silently (linia 161: `if (error) console.error(...)` — nie rzuca bledu). Moze constraint w bazie? Ale nie ma unique constraint na (slot_date, start_time, teacher_id).
-
-Zmienic podejscie: zamiast petli opartej na `weeksAhead`, iterowac dzien po dniu od `effective_from` do `effective_until` i sprawdzac dzien tygodnia. To prostsza i pewniejsza logika.
-
-C.2: Zmienic Recurring Lesson UI:
-
-- Zamiast `Day of Week` (single select), uzyc checkboxow jak w Batch (7 checkboxow Mon-Sun)
-- Zamiast `Repeat until: weeks/date`, uzyc `From/To` date inputs (jak Batch)
-- Domyslnie: From = puste (uzytkownik musi swiadomie wybrac), To = puste
-
-To wymaga zmian w:
-
-- State: zamiast `recurDayOfWeek: string` → `recurDays: boolean[]` (7 elementow, jak selectedDays)
-- State: zamiast `recurEndMode/recurWeeks/recurUntilDate` → `recurFrom: string` (pusty!) i `recurTo: string` (pusty!)
-- `handleSubmit`: zamiast jednego `onCreateRecurring({day_of_week: ...})`, generowac sloty recznie (jak batch) i uzyc `onCreateBatch`. Recurrence rule nadal tworzyc dla kazdego wybranego dnia osobno (lub zmienic architekture na multi-day recurrence — ale to wymaga zmian w bazie).
-
-**Lepsze podejscie:** Zamiast tworzyc recurrence_rule (ktora ma single day_of_week), generowac sloty bezposrednio przez `onCreateBatch`. Recurrence rule tworzyc opcjonalnie tylko jesli uzytkownik chce auto-generowanie w przyszlosci.
-
-**Najlepsze podejscie:** Recurring Lesson generuje batch slotow jak Batch Available, ale z student_id. Logika:
-
-```
-for each day from recurFrom to recurTo:
-  if day_of_week is in recurDays[]:
-    add slot with student_id, status='booked'
-```
-
-Uzyc `onCreateBatch` z tymi slotami. NIE uzywac `onCreateRecurring` (ktora tworzy recurrence_rule).
-
-ALE: recurrence_rule jest potrzebna do "Edit Entire Series". Wiec tworzyc rule nadal, ale generowac sloty recznie w modalu (nie w useCalendarRecurrence). Albo: tworzyc rule per dzien tygodnia (jesli user wybral Mon+Wed, tworzyc 2 rules).
-
-**Decyzja:** Dla uproszczenia — recurring lesson z wieloma dniami tworzy osobna rule per dzien. Generowanie slotow przerobic na iteracje dzien-po-dniu (nie tydzien-po-tygodniu).
-
-**3D. Linkowanie Worksheet na modalu tworzenia:**
-Obecnie info "You can link after creating". Mozna zrobic linkowanie od razu: dodac `worksheetId` state do modalu, przycisk "Link Worksheet" ktory otwiera `LinkWorksheetModal` inline (ale mamy problem ze modal w modalu). Alternatywa: dropdown z lista worksheetow studenta bezposrednio w formularzu.
-
-**Fix:** Dodac `Select` z worksheetami studenta (fetchowac z bazy po wybraniu studenta). Props: `worksheetId`, `setWorksheetId`. Query: `worksheets WHERE teacher_id AND student_id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 20`.
-
-**3E. Student dropdown — wyszukiwanie:**
-Zamiast `<Select>` z shadcn uzyc `<Command>` (cmdk) — combo box z search. Juz mamy cmdk zainstalowane. Uzyc `<Popover>` + `<Command>` pattern (jak w shadcn "Combobox" przykładzie).
-
-**3F. Co jeszcze jak Google Calendar:**
-
-- Kolor slotu per student (opcjonalnie) -to nie
-- Location field - to dodaj 
-- Notification reminder checkbox  -to później
-
----
-
-### Krok 4: Worksheet link — Open in new tab
-
-**Plik:** `SlotDetailModal.tsx` linia 282
-
-Zmiana: `onClick={() => navigate(`/worksheet/${slot.worksheet_id}`)}` → `onClick={() => window.open(`/worksheet/${slot.worksheet_id}`, '_blank')}`.
-
----
-
-### Krok 5: LinkWorksheetModal — poprawki
-
-**5A. Przycisk wstecz do SlotDetailModal:**
-Problem: zamykajac LinkWorksheetModal nie wraca do SlotDetailModal. To dlatego ze w CalendarPage linia 70-73: `handleLinkWorksheet` ustawia `setSelectedSlot(null)` ZANIM otwiera LinkWorksheetModal. Po zamknieciu LinkWorksheet nie ma slotu do wyswietlenia.
-
-Fix: NIE zamykac SlotDetailModal przy otwieraniu LinkWorksheet. Zamiast tego: dodac `linkWorksheetSlot` jako osobny stan BEZ zamykania selectedSlot. W LinkWorksheetModal dodac przycisk "← Back" ktory zamyka LinkWorksheet (selectedSlot pozostaje otwarty).
-
-Zmiana w CalendarPage:
-
-```typescript
-const handleLinkWorksheet = (slot: CalendarSlot) => {
-  // NIE robimy setSelectedSlot(null)
-  setLinkWorksheetSlot(slot);
+1. **Potwierdzenie przed Cancel:** Dodać `AlertDialog` lub `window.confirm()`:
+```tsx
+const handleCancelLesson = async () => {
+  if (!window.confirm('Cancel this lesson? The student will be detached and the slot will be marked as cancelled.')) return;
+  await onUpdate(slot.id, {
+    status: 'cancelled',
+    cancelled_at: new Date().toISOString(),
+    cancelled_by: 'teacher',
+    cancellation_reason: `Cancelled by teacher. Student: ${students.find(s => s.id === slot.student_id)?.name || 'unknown'}`,
+  } as any);
+  onOpenChange(false);
 };
 ```
 
-I w renderowaniu: SlotDetailModal zamykamy visually gdy linkWorksheetSlot jest ustawiony (ale NIE nullujemy selectedSlot). Po zamknieciu LinkWorksheet — SlotDetailModal wraca.
-
-Albo prostszef: renderowac oba modale jednoczesnie. LinkWorksheet na z-index wyzszym. Po zamknieciu LinkWorksheet — SlotDetail nadal jest widoczny.
-
-**5B. Nazwy worksheet — data zawsze widoczna:**
-W LinkWorksheetModal linia 88-91: zmiana layoutu z inline na dwie linie:
-
-```
-<div className="flex flex-col min-w-0">
-  <span className="font-medium truncate text-sm">{ws.title || 'Untitled'}</span>
-  <span className="text-xs text-muted-foreground">{format(...)}</span>
-</div>
+2. **Cancelled slot info na dole:** Gdy `slot.status === 'cancelled'`, dodać sekcję:
+```tsx
+{slot.status === 'cancelled' && (
+  <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2 text-xs space-y-1">
+    <p className="font-medium text-red-700">Cancelled</p>
+    {slot.cancelled_at && <p>When: {format(new Date(slot.cancelled_at), 'MMM d, yyyy HH:mm')}</p>}
+    {slot.cancelled_by && <p>By: {slot.cancelled_by}</p>}
+    {slot.cancellation_reason && <p>{slot.cancellation_reason}</p>}
+  </div>
+)}
 ```
 
-**5C. LinkWorksheet — filtr po studentId z SlotDetailModal:**
-Problem: w CalendarPage linia 163-171, `linkWorksheetSlot.student_id` jest przekazywany do LinkWorksheetModal. ALE jesli uzytkownik WLASNIE przypisal studenta w SlotDetailModal (zmienil `editStudentId` ale jeszcze nie zapisal), to `linkWorksheetSlot.student_id` jest stary (null).
-
-Fix: Przekazac `editStudentId` (z SlotDetailModal state) zamiast `slot.student_id`. To wymaga:
-
-1. SlotDetailModal: onLinkWorksheet przekazuje aktualny editStudentId:
-  `onLinkWorksheet?.(slot, editStudentId !== 'none' ? editStudentId : null)`
-2. CalendarPage: handleLinkWorksheet przyjmuje studentId:
-  `const handleLinkWorksheet = (slot, studentId) => { setLinkWorksheetSlot({...slot, student_id: studentId}); }`
+3. **Rename Delete → Delete Slot** — linia 269: zmienić tekst z `'Delete'` na `'Delete Slot'`.
 
 ---
 
-### Krok 6: Overbooking — KRYTYCZNA NAPRAWA
+## Krok 5: Conflicts info — nie pokazywać "Available slot (will be replaced)"
 
-**6.1 + 6.2 + 6.3 + 6.4: Kompletna ochrona przed overbookingiem**
+**Problem:** Linia 580 w UnifiedSlotModal: `{c.type === 'replaceable' && ' (will be replaced)'}` — te sloty nie powinny wyświetlać się w conflictach w ogóle, bo to nie jest problem. Użytkownik widzi "conflict" a to normalna operacja.
 
-**A. Server-side (SQL trigger) — ostatnia linia obrony:**
-Utworzyc trigger `before_insert_calendar_slot` ktory sprawdza:
+**Fix:** W `checkConflicts` (linia 276-284): gdy `isAddingLesson && !hasStudent` (available slot pod lesson), dodawać do `replaceable` ale NIE do `info[]`:
+```tsx
+if (isAddingLesson) {
+  replaceable.push(ov);
+  // DON'T add to info — silent replacement
+}
+```
 
+---
+
+## Krok 7: Multi-select — wizualne zaznaczenie
+
+**Problem:** Zaznaczone sloty nie mają żadnego wizualnego oznaczenia.
+
+**Fix:** W `CalendarSlotCard.tsx`: dodać props `isSelected?: boolean` i `selectionMode?: boolean`:
+```tsx
+interface CalendarSlotCardProps {
+  slot: CalendarSlot;
+  studentName?: string;
+  onClick: (slot: CalendarSlot) => void;
+  compact?: boolean;
+  isSelected?: boolean;
+  selectionMode?: boolean;
+}
+```
+W renderowaniu: jeśli `isSelected`, dodać styl `ring-2 ring-primary bg-primary/20` i checkbox overlay:
+```tsx
+{selectionMode && !slot.student_id && (
+  <div className="absolute top-0.5 right-0.5">
+    <div className={cn('w-4 h-4 rounded border-2 flex items-center justify-center',
+      isSelected ? 'bg-primary border-primary text-white' : 'border-muted-foreground/50 bg-background'
+    )}>
+      {isSelected && <Check className="h-3 w-3" />}
+    </div>
+  </div>
+)}
+```
+
+**Propagacja props:** W `CalendarWeekView` i `CalendarDayView` przekazać `selectionMode` i `selectedIds` do `CalendarSlotCard`:
+```tsx
+<CalendarSlotCard 
+  slot={slot} 
+  studentName={...} 
+  onClick={onSlotClick} 
+  compact={...}
+  selectionMode={selectionMode}
+  isSelected={selectedIds?.has(slot.id)}
+/>
+```
+
+---
+
+## Krok 8: Powiadomienia przy rezerwacji z /book
+
+**Problem:** Trigger `notify_on_slot_booking` działa na INSERT i UPDATE. Booking z `/book` robi UPDATE (z `available` na `booked`). Trigger sprawdza `TG_OP = 'UPDATE' AND NEW.status = 'booked' AND (OLD.status IS NULL OR OLD.status = 'available')` — to POWINNO wstawić notification.
+
+Sprawdźmy czy RLS nie blokuje INSERT do calendar_notifications. Policy: "Anyone can insert notifications" z `WITH CHECK (true)` — ale to jest `RESTRICTIVE` (nie PERMISSIVE). W PostgreSQL RESTRICTIVE policy oznacza że MUSI spełnić warunek `true` — co zawsze jest true. ALE: trigger działa z SECURITY DEFINER? Nie — trigger jest zwykły, działa w kontekście użytkownika. Jeśli booking jest robiony przez ANONIMOWEGO użytkownika (bez JWT), to `auth.uid()` = NULL. RLS na calendar_slots pozwala anon na UPDATE? Nie — policy "Teachers can manage their own slots" wymaga `auth.uid() = teacher_id`. 
+
+**AHA!** To jest problem. Anon user z `/book` nie ma `auth.uid()`. Ale `bookSlot` w `usePublicBooking` robi `.update().eq('id', slotId).eq('status', 'available')` — to wymaga UPDATE permission. RLS policy wymaga `auth.uid() = teacher_id`. Anon NIE jest teacher. 
+
+**ALE:** Jest `useAnonymousAuth` — sprawdźmy... Użytkownik na `/book` nie jest zalogowany jako teacher, ale Supabase client ma anon key. RLS pozwala na SELECT dla available slotów ("Public can view available slots"), ale NIE na UPDATE.
+
+**Prawdopodobnie booking DZIAŁA** bo jest inna policy lub Supabase ma domyślny anon access. Sprawdzę policies na calendar_slots... Są 3 policies, wszystkie RESTRICTIVE. Anon user spełnia "Public can view available slots" (SELECT) ale nie ma UPDATE policy dla anon. Więc `bookSlot` update powinien FAILOWAĆ.
+
+**ALE** użytkownik mówi że booking działa ale powiadomienia nie pojawiają się. Może booking jest w kontekście `useAnonymousAuth` — sprawdzę. Hook `useAnonymousAuth` robi `signInAnonymously()` co daje anonimowy Supabase user z uid. Ale ten uid ≠ teacher_id, więc RLS "Teachers can manage" nie pasuje.
+
+Hmm, ale jest policy "Students can view their booked slots" (SELECT) z `student_id IS NOT NULL`. A dla UPDATE nie ma policy studenta.
+
+**Root cause:** Booking z `/book` prawdopodobnie nie aktualizuje slotu w bazie bo RLS blokuje UPDATE. Albo działa na poziomie service_role. Sprawdzę supabase client — `@/integrations/supabase/client` — to anon key client. Bez service_role.
+
+**Fix:** Trzeba albo:
+1. Dodać RLS policy na UPDATE dla publicznego bookingu
+2. Albo przenieść booking do edge function (bezpieczniejsze)
+
+**Lepsze rozwiązanie:** Dodać RLS policy:
 ```sql
-CREATE OR REPLACE FUNCTION check_slot_overlap()
-RETURNS trigger AS $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM calendar_slots
-    WHERE teacher_id = NEW.teacher_id
-    AND slot_date = NEW.slot_date
-    AND status NOT IN ('cancelled')
-    AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)
-    AND start_time < NEW.end_time
-    AND end_time > NEW.start_time
-    AND student_id IS NOT NULL
-    AND NEW.student_id IS NOT NULL
-  ) THEN
-    RAISE EXCEPTION 'Overbooking: lesson already exists at this time';
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+CREATE POLICY "Public can book available slots" ON calendar_slots
+FOR UPDATE USING (status = 'available' AND student_id IS NULL)
+WITH CHECK (status = 'booked');
 ```
-
-To blokuje wstawienie dwoch lekcji (z student_id) nakladajacych sie. NIE blokuje available+lesson ani available+available.
-
-**B. Client-side — useCalendarSlots.createSlot (juz ma, ale partial overlap):**
-Linia 111-118: `lt('start_time', input.end_time).gt('end_time', input.start_time)` — to uzywa Supabase filters na time columns. Problem: czas w bazie to `time without time zone` np `"09:00:00"`, a input to `"09:00"`. Supabase comparison dziala na stringach, wiec `"09:00" < "09:00:00"` = true (bo porownanie stringowe). To moze dawac false positives.
-
-Fix: Normalizowac czasy do `HH:MM:SS` w query: `input.end_time + ':00'` i `input.start_time + ':00'`.
-
-**C. createSlotsBatch — DODAC conflict check:**
-Przed insertem sprawdzic KAZDY slot w batch:
-
-```typescript
-for (const input of inputs) {
-  const { data: existing } = await supabase
-    .from('calendar_slots')
-    .select('id, student_id')
-    .eq('teacher_id', teacherId)
-    .eq('slot_date', input.slot_date)
-    .neq('status', 'cancelled')
-    .lt('start_time', input.end_time + ':00')
-    .gt('end_time', input.start_time + ':00');
-  
-  if (existing?.some(e => e.student_id && input.student_id)) {
-    // Lesson na lesson — BLOCK
-    toast({ title: 'Overbooking blocked', ... });
-    return null;
-  }
-  // Lesson na available — auto-delete available
-  for (const e of (existing || []).filter(e => !e.student_id)) {
-    await supabase.from('calendar_slots').delete().eq('id', e.id);
-  }
-}
-```
-
-**D. generateSlotsForRule — DODAC conflict check:**
-W useCalendarRecurrence.generateSlotsForRule, przed insertem sprawdzic kazdego slota:
-
-```typescript
-// Per slot: check if lesson exists at that time
-const { data: conflicts } = await supabase
-  .from('calendar_slots')
-  .select('id, student_id')
-  .eq('teacher_id', teacherId)
-  .eq('slot_date', slotDateStr)
-  .neq('status', 'cancelled')
-  .lt('start_time', rule.end_time)
-  .gt('end_time', rule.start_time);
-
-// Skip if lesson conflict
-if (conflicts?.some(c => c.student_id && rule.student_id)) continue;
-// Auto-replace available slots
-for (const c of (conflicts || []).filter(c => !c.student_id)) {
-  if (rule.student_id) {
-    await supabase.from('calendar_slots').delete().eq('id', c.id);
-  }
-}
-```
-
-**E. bookSlot w usePublicBooking — race condition protection:**
-Dodac optimistic lock: po `update().eq('status', 'available')` sprawdzic `count`. Jesli 0 — slot juz zarezerwowany.
-
-**F. UI — wyswietlanie overbookow side-by-side:**
-W CalendarDayView i CalendarWeekView: przy renderowaniu slotow per dzien, wykryc overlapping sloty i podzielic je na kolumny:
-
-```typescript
-// Detect overlaps
-const processed = detectOverlaps(daySlots);
-// Each slot gets: columnIndex (0 or 1) and columnCount (1 or 2)
-
-// Render: width = 100% / columnCount, left = columnIndex * (100% / columnCount)
-```
-
-Sloty z overbookingiem: dodac czerwona ramke `border-red-500 border-2` i label "⚠️ Overbooking".
-
-**6.5. Reset conflicts on field change:**
-Juz zaimplementowane w useEffect linia 131-136, ale brakuje `recurDays` i `recurFrom/recurTo` w dependencies. Dodac.
+To pozwoli anon na zmianę statusu z `available` na `booked` ale TYLKO dla slotów bez studenta.
 
 ---
 
-### Krok 7: Multi-select i zbiorowe usuwanie pustych slotow
+## Krok 9: Pending booking — żółty kolor na /book
 
-**UI:** Na CalendarDayView i CalendarWeekView:
+**Problem:** Na `/book` sloty pending (status='booked' bez confirmed_at) NIE są widoczne bo `fetchSlots` filtruje `eq('status', 'available')`. Po zarezerwowaniu slot znika.
 
-1. Dodac przycisk "Select" na toolbarze (lub toggle mode).
-2. W select mode: klikniecie slotu (tylko available, bez studenta) toggleuje zaznaczenie (checkbox/overlay z ✓).
-3. Na dole ekranu pojawia sie floating bar: "X slots selected — [Delete All] [Cancel]".
-4. Klikniecie "Delete All" pokazuje potwierdzenie: "Delete X available slots?" → tak → batch delete.
+**Fix na /book:** Po udanej rezerwacji, jeśli booking_mode='requires_confirmation', pokazać info: "Your booking request was sent. Waiting for teacher confirmation."
+
+Na liście slotów: sloty pending pokazywać jako żółte i zablokowane:
+- W `usePublicBooking.fetchSlots`: pobierać też sloty `status = 'booked'` BEZ `confirmed_at`:
+```sql
+.or('status.eq.available,and(status.eq.booked,confirmed_at.is.null)')
+```
+- Na `/book` renderowaniu: sloty pending oznaczać żółto z tekstem "Awaiting confirmation" i `disabled`.
+
+---
+
+## Krok 10: Widok Schedule (harmonogram)
+
+**Opis:** Nowy widok typu "Schedule" — pionowa lista zabookowanych lekcji, dzień po dniu. Jak Google Calendar Schedule view.
 
 **Implementacja:**
-
-- State w CalendarPage: `selectionMode: boolean`, `selectedSlotIds: Set<string>`.
-- Przekazac do view komponentow.
-- Slot card w select mode: dodatkowy checkbox overlay, klikniecie = toggle selection (bez otwierania SlotDetailModal).
-- Floating bar: sticky na dole z przyciskami.
-- Batch delete: `Promise.all(ids.map(id => deleteSlot(id)))` lub lepiej batch DELETE w Supabase.
-
-**Nowa funkcja w useCalendarSlots:**
-
-```typescript
-const deleteSlotsBatch = useCallback(async (slotIds: string[]) => {
-  const { error } = await supabase
-    .from('calendar_slots')
-    .delete()
-    .in('id', slotIds);
-  if (error) throw error;
-  await fetchSlots();
-  toast({ title: `${slotIds.length} slots deleted` });
-}, [fetchSlots, toast]);
-```
-
----
-
-### Krok 8: Powiadomienia przy rezerwacji z /book
-
-**Problem:** Trigger `trg_notify_on_slot_booking` w bazie wstawia powiadomienie, ale `slot_id` jest null w niektorych. Sprawdzmy trigger.
-
-Trigger sprawdza `NEW.status = 'booked' AND (OLD.status IS NULL OR OLD.status = 'available')`. To powinno dzialac. ALE — RLS policy na calendar_notifications: "Anyone can insert notifications" = `WITH CHECK (true)`. OK to jest permissive. Problem moze byc w tym ze trigger nie ma dostep do nazwy studenta.
-
-Sprawdzam powiadomienie: `slot_id: nil` w jednym z nich. Trigger powinien ustawiac `slot_id = NEW.id`. Jesli nie — bug w trigger.
-
-**Fix:** Sprawdzic i naprawic trigger SQL. Upewnic sie ze `slot_id = NEW.id` i `student_name` jest poprawnie pobierane (moze z `student_notes` lub z tabeli students).
-
-**Dodatkowe powiadomienia email:**
-Dodac edge function `send-calendar-notification` wywolywaną przez trigger (database webhook) lub z kodu po bookingu. Wysyla email do nauczyciela z informacja o nowej rezerwacji. Uzyc istniejacego wzorca z `send-homework-email`.
-
----
-
-### Krok 9: Pending status — zolty kolor na /calendar i /book
-
-**Na /calendar:** Juz zaimplementowane w CalendarSlotCard — `isPending` daje amber style.
-
-**Na /book:** Sloty pending NIE powinny byc widoczne jako "available". W usePublicBooking.fetchSlots linia 54: filtruje `eq('status', 'available')` — wiec pending (status=booked) nie sa pokazywane. OK.
-
-ALE: jesli booking_mode = 'requires_confirmation', slot zmienia status na 'booked' ale bez `confirmed_at`. Na /book ten slot znika (bo status != available). Student ktory zabrokowal powinien widziec komunikat "Waiting for teacher confirmation".
-
-**Fix na /book:**
-Po udanej rezerwacji, zamiast po prostu znikac slota, pokazac komunikat: "Your booking request has been sent. The teacher will confirm your booking soon." Jesli auto_confirm: "Your lesson is confirmed!"
-
-**Fix na /calendar nauczyciela:**
-Slot pending (amber) jest juz klikalny. W SlotDetailModal juz jest przycisk "Confirm" (linia 312). I "Cancel Lesson" (linia 327). Dziala OK.
-
-**Dodac przycisk "Reject"** w SlotDetailModal dla pending slotow — zmienia status z powrotem na 'available', nulluje student_id.
-
----
-
-### Krok 10: Calendar Settings — uzupelnienie
-
-Obecne sekcje: General, Booking Rules, Public Calendar, Payment, Notifications.
-
-Brakujace opcje:
-
-1. **Working hours display** — start_hour / end_hour widoczne na siatce kalendarza (zamiast hardcoded 7-22). Dodac do tabeli `calendar_settings`: `display_start_hour integer DEFAULT 7`, `display_end_hour integer DEFAULT 22`.
-2. **Auto-reschedule approval** — dla punktu 14 (student proponuje zmiane godziny): `allow_student_reschedule boolean DEFAULT false`.
-3. **Buffer time between lessons** — `buffer_minutes integer DEFAULT 0` — nie implementujemy teraz, ale dodajemy pole do ustawien.
-
-**Migracja SQL:** Dodac kolumny do `calendar_settings`:
-
-```sql
-ALTER TABLE calendar_settings ADD COLUMN IF NOT EXISTS display_start_hour integer NOT NULL DEFAULT 7;
-ALTER TABLE calendar_settings ADD COLUMN IF NOT EXISTS display_end_hour integer NOT NULL DEFAULT 22;
-ALTER TABLE calendar_settings ADD COLUMN IF NOT EXISTS allow_student_reschedule boolean NOT NULL DEFAULT false;
-ALTER TABLE calendar_settings ADD COLUMN IF NOT EXISTS buffer_minutes integer NOT NULL DEFAULT 0;
-```
-
-**UI w CalendarSettingsPage:** Dodac pola do sekcji General.
-
----
-
-### Krok 11: Email ucznia — uzyc imienia z bazy nauczyciela
-
-**Plik:** `usePublicBooking.tsx` linia 76-83
-
-Obecna logika: `const { data: existingStudents } = await supabase.from('students').select('id').eq('teacher_id', settings.teacher_id).eq('student_email', studentEmail).maybeSingle();`
-
-Zmiana: rowniez pobrac `name` z tabeli students. Jesli znaleziono — uzyc `existingStudents.name` zamiast `studentName` podanego przez studenta w `student_notes`.
-
-```typescript
-const { data: existingStudent } = await supabase
-  .from('students')
-  .select('id, name')
-  .eq('teacher_id', settings.teacher_id)
-  .eq('student_email', studentEmail)
-  .maybeSingle();
-
-const studentId = existingStudent?.id || null;
-const resolvedName = existingStudent?.name || studentName;
-// Use resolvedName in student_notes
-```
-
----
-
-### Krok 12: Nowy uczen — dodatkowe powiadomienie
-
-W `usePublicBooking.bookSlot`: jesli `existingStudent === null` (nowy email), dodac powiadomienie:
-
-```typescript
-if (!existingStudent) {
-  await supabase.from('calendar_notifications').insert({
-    teacher_id: settings.teacher_id,
-    notification_type: 'new_student',
-    message: `New student signed up: ${studentName} (${studentEmail})`,
-    student_name: studentName,
-    slot_id: slotId,
-  });
+1. Dodać nowy `ViewMode = 'day' | 'week' | 'month' | 'schedule'`
+2. Nowy komponent `CalendarScheduleView.tsx`:
+```tsx
+// Grupuje sloty po dniu, filtruje tylko booked/completed, renderuje cards pod sobą
+interface CalendarScheduleViewProps {
+  slots: CalendarSlot[];
+  studentMap: Record<string, string>;
+  onSlotClick: (slot: CalendarSlot) => void;
 }
 ```
+Layout:
+```
+March 3, 2026 (Monday)
+  ┌─────────────────────────┐
+  │ 09:00–10:00  Jan Kowalski│
+  └─────────────────────────┘
+  ┌─────────────────────────┐
+  │ 14:00–15:00  Anna Nowak  │
+  └─────────────────────────┘
+
+March 4, 2026 (Tuesday)
+  ┌─────────────────────────┐
+  │ 10:00–11:00  Piotr Zieliński│
+  └─────────────────────────┘
+```
+
+3. W `CalendarToolbar`: dodać "Schedule" do ToggleGroup.
+4. W `CalendarPage`: obsłużyć `viewMode === 'schedule'`.
 
 ---
 
-### Krok 13: Filtr studenta na /calendar
+## Krok 11: Student portal na /book — rebuild od zera
 
-**UI:** W CalendarToolbar dodac `Select` z lista studentow + opcja "All students". Przekazac `selectedStudentFilter` do view komponentow.
+**Problem:** `StudentBookingsSection` jest brzydki i wolny — `supabase.functions.invoke` za każdym razem.
 
-**Logika:** W CalendarPage: `const filteredSlots = useMemo(() => selectedStudentFilter ? slots.filter(s => s.student_id === selectedStudentFilter) : slots, [slots, selectedStudentFilter]);`
+**Rebuild plan:**
 
-Przekazac `filteredSlots` zamiast `slots` do widokow.
+1. **Nowy komponent `StudentPortal.tsx`** zamiast `StudentBookingsSection`:
+   - Czysty, przyjazny UI z kartami lekcji
+   - Email input + przycisk "Check my schedule"
+   - Po weryfikacji: tabela/lista lekcji z datą, godziną, statusem
+   - Przyciski Cancel / Reschedule z inline UI (nie modal w modalu)
+   
+2. **Cache email w localStorage** — po pierwszym wyszukaniu, zapamiętać email żeby nie wpisywać za każdym razem
 
-**Nowe props CalendarToolbar:** `students: Student[]`, `selectedStudent: string | null`, `onStudentFilterChange: (id: string | null) => void`.
+3. **Szybsze ładowanie:** Zamiast edge function, użyć bezpośredniego query z RLS:
+   - Dodać policy na SELECT: `student_notes LIKE '%email%'` — NIE, to niebezpieczne.
+   - Lepiej: zostać przy edge function ale dodać cache i loading skeleton.
 
----
+4. **UI:**
+```
+┌──────────────────────────────────────┐
+│  📅 My Lessons                       │
+│                                       │
+│  Email: [john@example.com     ] [Go]  │
+│                                       │
+│  ┌─ Upcoming ────────────────────┐   │
+│  │ Mon, Mar 3  09:00–10:00  ✅   │   │
+│  │ [Cancel] [Reschedule]          │   │
+│  │                                │   │
+│  │ Wed, Mar 5  14:00–15:00  ⏳   │   │
+│  │ Awaiting confirmation          │   │
+│  └────────────────────────────────┘   │
+│                                       │
+│  ┌─ Past ─────────────────────────┐  │
+│  │ Mon, Feb 24  09:00–10:00  ✓   │   │
+│  └────────────────────────────────┘   │
+└──────────────────────────────────────┘
+```
 
-### Krok 14: Student portal na /book — sprawdzenie kalendarza + zmiana terminu
-
-**Nowa sekcja na PublicBookingPage:** Pod naglowkiem "Already have a booking?" z:
-
-1. Input email
-2. Przycisk "Check my bookings"
-3. Po weryfikacji: lista zarezerwowanych lekcji studenta z przyciskami:
-  - "Cancel" (jesli min_cancellation_hours pozwala)
-  - "Request reschedule" → lista dostepnych slotow do wyboru → jesli `allow_student_reschedule` = true → automatyczne przesuniecie; jesli false → request wysylany do nauczyciela jako powiadomienie
-
-**Implementacja:**
-Nowy komponent `StudentBookingsSection.tsx` renderowany na dole PublicBookingPage.
-
-Query: `calendar_slots WHERE student_notes LIKE '%studentEmail%' AND status IN ('booked','completed') ORDER BY slot_date`.
-
-ALE: RLS policy na calendar_slots: "Students can view their booked slots" = `student_id IS NOT NULL`. To nie filtruje po email — kazdy zalogowany user moze widziec sloty z student_id. Problem: studenci na /book NIE SA zalogowani (anonimowi). Wiec musmy uzyc innego podejscia.
-
-**Rozwiazanie:** Stworzyc edge function `get-student-bookings` ktora:
-
-1. Przyjmuje `{ token, email }` (token publicznego kalendarza + email studenta)
-2. Weryfikuje ze token jest prawidlowy
-3. Zwraca sloty z `student_notes LIKE '%email%'` lub `student_id` matching student record
-4. Nie wymaga autentykacji (publiczny endpoint)
-
----
-
-### Krok 15-16: E2E test + readiness checklist — po implementacji
-
----
-
-## POWIADOMIENIA EMAIL (Krok dodatkowy)
-
-Potrzebne powiadomienia email:
-
-1. **Nauczyciel:** nowa rezerwacja od studenta
-2. **Nauczyciel:** anulowanie przez studenta
-3. **Student:** potwierdzenie rezerwacji (auto lub reczne)
-4. **Student:** odrzucenie rezerwacji
-5. **Student:** reminder X godzin przed lekcja
-
-**Implementacja:** Edge function `send-calendar-notification-email` + email templates w `_shared/email-templates/`:
-
-- `booking-confirmation.tsx` — do studenta
-- `booking-request.tsx` — do nauczyciela
-- `lesson-reminder.tsx` — do studenta
-
-Trigger: w `usePublicBooking.bookSlot` po udanym update — invoke edge function. Reminder: cron (juz mamy `send-homework-reminders` — podobny wzorzec).
+5. **Reschedule inline:** Zamiast osobnego modalu, rozwijana sekcja z dostępnymi slotami + przycisk Confirm.
 
 ---
 
-## KOLEJNOSC IMPLEMENTACJI
+## Krok 12: Powiadomienia email
 
+Istniejąca edge function `send-calendar-notification-email` jest wywoływana w `usePublicBooking.bookSlot`. Potrzeba:
+1. Sprawdzić czy RESEND_API_KEY jest skonfigurowany
+2. Dodać typy: `booking_confirmation`, `booking_pending`, `new_booking_teacher`, `cancellation_student`, `cancellation_teacher`
+3. Upewnić się że teacher dostaje email przy nowej rezerwacji
 
-| Krok | Co                                                                                                    | Pliki                                                                 |
-| ---- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 1    | Migracja SQL: trigger overbooking + kolumny settings                                                  | migration.sql                                                         |
-| 2    | Grid lines — fix kontrastu gutter+grid                                                                | CalendarWeekView.tsx, CalendarDayView.tsx                             |
-| 3    | Modal przezroczysty + draggable                                                                       | DraggableDialog.tsx (NOWY), UnifiedSlotModal.tsx, SlotDetailModal.tsx |
-| 4    | UnifiedSlotModal: usunac Title, recurring info, multi-day recurring, worksheet link, combobox student | UnifiedSlotModal.tsx                                                  |
-| 5    | generateSlotsForRule — fix date-inclusive + conflict check                                            | useCalendarRecurrence.tsx                                             |
-| 6    | Overbooking protection — createSlotsBatch + side-by-side render                                       | useCalendarSlots.tsx, CalendarDayView.tsx, CalendarWeekView.tsx       |
-| 7    | SlotDetailModal — worksheet new tab, reject button                                                    | SlotDetailModal.tsx                                                   |
-| 8    | LinkWorksheetModal — back button, truncate names, studentId filter                                    | LinkWorksheetModal.tsx, CalendarPage.tsx                              |
-| 9    | Multi-select + batch delete                                                                           | CalendarPage.tsx, views, useCalendarSlots.tsx                         |
-| 10   | Notifications fix + new student notification                                                          | usePublicBooking.tsx, trigger SQL                                     |
-| 11   | Email z bazy ucznia + Calendar Settings uzupelnienie                                                  | usePublicBooking.tsx, CalendarSettingsPage.tsx                        |
-| 12   | Student filter na /calendar                                                                           | CalendarToolbar.tsx, CalendarPage.tsx                                 |
-| 13   | Student portal na /book                                                                               | StudentBookingsSection.tsx (NOWY), edge function                      |
-| 14   | Email notifications                                                                                   | send-calendar-notification-email (NOWY)                               |
-| 15   | Dokumentacja                                                                                          | 4 pliki docs                                                          |
+---
+
+## KOLEJNOŚĆ IMPLEMENTACJI
+
+| Krok | Co | Pliki |
+|---|---|---|
+| 1 | Grid lines — odwrócić logikę full/half hour | CalendarWeekView.tsx, CalendarDayView.tsx |
+| 2 | Notes → AutoResizeTextarea rows=1 | UnifiedSlotModal.tsx, SlotDetailModal.tsx |
+| 2A | Recurring From = clicked date | UnifiedSlotModal.tsx |
+| 2B | Worksheet link na Single (Available + Lesson) | UnifiedSlotModal.tsx |
+| 2C | Student Combobox fix + dodać na SlotDetailModal | UnifiedSlotModal.tsx, SlotDetailModal.tsx |
+| 2D | Conflicts na modalu, nie toast | UnifiedSlotModal.tsx |
+| 3 | Worksheet link — nie tracić studenta | CalendarPage.tsx |
+| 4 | Cancel Lesson — potwierdzenie + zachowanie + info | SlotDetailModal.tsx |
+| 5 | Conflicts — ukryć "will be replaced" | UnifiedSlotModal.tsx |
+| 7 | Multi-select — wizualne zaznaczenie | CalendarSlotCard.tsx, CalendarWeekView.tsx, CalendarDayView.tsx |
+| 8 | RLS policy UPDATE dla bookingu + powiadomienia | migration SQL |
+| 9 | Pending na /book — żółty + info | usePublicBooking.tsx, PublicBookingPage.tsx |
+| 10 | Schedule view | CalendarScheduleView.tsx (NOWY), CalendarToolbar.tsx, CalendarPage.tsx, useCalendarSlots.tsx |
+| 11 | Student portal rebuild | StudentPortal.tsx (NOWY), PublicBookingPage.tsx |
+| 12 | Sprawdzić email notifications | send-calendar-notification-email |
+
+---
+
+## NOWE PLIKI
+
+1. `src/components/calendar/CalendarScheduleView.tsx` — widok harmonogram
+2. `src/components/calendar/StudentPortal.tsx` — nowy portal ucznia na /book
+
+## MODYFIKOWANE PLIKI
+
+1. `src/components/calendar/CalendarWeekView.tsx` — grid lines fix
+2. `src/components/calendar/CalendarDayView.tsx` — grid lines fix  
+3. `src/components/calendar/UnifiedSlotModal.tsx` — Notes, recurFrom, worksheet link, combobox, conflicts
+4. `src/components/calendar/SlotDetailModal.tsx` — Notes, combobox, cancel lesson, delete slot rename, cancelled info
+5. `src/components/calendar/CalendarSlotCard.tsx` — selection mode visual
+6. `src/components/calendar/CalendarToolbar.tsx` — Schedule toggle
+7. `src/pages/CalendarPage.tsx` — worksheet link fix, schedule view
+8. `src/pages/PublicBookingPage.tsx` — pending slots, student portal
+9. `src/hooks/usePublicBooking.tsx` — fetch pending slots
+10. `src/hooks/useCalendarSlots.tsx` — ViewMode + 'schedule'
+11. Migration SQL — RLS policy for public booking UPDATE
+
