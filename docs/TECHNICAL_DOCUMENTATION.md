@@ -5,13 +5,21 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Teacher Calendar Module (Faza 2 - Konsolidacja):**
-- **UnifiedSlotModal**: Single modal replacing AddSlotModal, AddRecurringSlotModal, BatchAddSlotsModal, QuickWeekSetupModal. Tabs: Available Slot (Single/Batch) and Lesson (Single/Recurring). Conflict detection with 3 scenarios (block/auto-replace/block).
-- **SlotDetailModal rebuilt**: Full inline editing of all fields (date, time, title, notes). Student assign/change/remove. "Save for Entire Series" for recurring slots. "Cancel" = close modal, "Cancel Lesson" = status change, "Delete" = delete slot.
-- **CalendarToolbar simplified**: Single "Add" button instead of dropdown with 4 options. Clean layout: nav + view toggle + actions.
-- **Performance**: React.memo on CalendarWeekView, CalendarDayView, CalendarSlotCard. Grid row height reduced 55% (40→18px week, 48→22px day) for full-day visibility.
-- **Grid lines fixed**: Full-hour lines stronger (border-border/40), half-hour lines lighter (border-border/15).
-- **usePublicBooking fix**: useMemo on weekEnd to prevent infinite fetch loop on /book/ page.
+**Latest Update (February 2026) - Teacher Calendar Module (Faza 2.5 - Critical Repairs & Enhancements):**
+- **Overbooking protection**: SQL trigger `check_slot_overlap` prevents double-booked lessons at DB level. Client-side conflict checks in `createSlotsBatch`, `generateSlotsForRule`, and `bookSlot` with time normalization (HH:MM:SS)
+- **DraggableDialog**: New reusable dialog component with transparent overlay (`bg-black/10`) and mouse-drag repositioning for UnifiedSlotModal and SlotDetailModal
+- **UnifiedSlotModal overhaul**: Removed Title field, added Location field. Student search via Combobox (cmdk). Recurring Lesson now uses multi-day checkboxes + From/To date range (like Batch). Direct worksheet linking via Select dropdown. Slot count preview for all creation modes
+- **Recurring lesson fix**: `generateSlotsForRule` rewritten to day-by-day iteration (was week-based with bugs). Inclusive end date. Conflict check per slot with auto-replace of available slots
+- **SlotDetailModal**: Worksheet opens in new tab. "Reject" button for pending bookings (resets to available). Title field removed
+- **LinkWorksheetModal**: "Back" button returns to SlotDetailModal. Worksheet names truncated with date always visible. Student filter uses current edit state
+- **Multi-select batch delete**: Toggle selection mode on toolbar, select multiple available slots, floating bar with "Delete All" + confirmation
+- **Calendar Settings**: Dynamic display hours (start/end), allow_student_reschedule toggle, buffer_minutes field. All used in Day/Week views
+- **Student filter**: CalendarToolbar includes student dropdown to filter calendar view
+- **Student portal on /book**: "Already have a booking?" section with email lookup, cancel/reschedule functionality via `get-student-bookings` edge function
+- **Email notifications**: `send-calendar-notification-email` edge function sends booking confirmation, pending notification, teacher alerts, cancellation emails via Resend
+- **Public booking improvements**: Student name resolved from teacher's DB. New student triggers extra notification. Booking confirmation message differs by auto_confirm vs requires_confirmation
+- **Grid lines**: Full-hour `border-border/80`, half-hour `border-border/15`. Gutter consistent with grid
+- **Previous (Faza 2)**: UnifiedSlotModal consolidation, SlotDetailModal inline editing, CalendarToolbar simplification, performance optimizations
 - **Previous (Faza 1)**: 5 DB tables, day/week/month views, recurring slots, public booking, student lessons view, worksheet linking, calendar settings, attendance stats
 
 **Previous Update (February 2026) - Welcome Test Learning Path Score:**
