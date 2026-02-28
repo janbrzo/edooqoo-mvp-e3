@@ -4,7 +4,7 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **Teacher Calendar Module** — Full weekly calendar view at `/calendar` with color-coded lesson slots. Add single or recurring slots, manage bookings (confirm/complete/cancel/no-show). Public booking page for students via shareable link. Link worksheets to lessons. Calendar tab added to student profile. Settings page for booking rules, notifications, and public calendar token. Also: 125 new Welcome Test translations (5 questions × 25 languages).
+**Latest Update:** **Calendar Consolidation & Enhancements** — All add modals merged into one UnifiedSlotModal with tabs (Available Slot / Lesson) and sub-modes (Single/Batch, Single/Recurring). Conflict detection with 3 scenarios (block or auto-replace). SlotDetailModal now supports inline editing of date/time/student with "Save for Entire Series". Public booking page supports recurring weekly bookings. Notification bell on calendar + badge on Dashboard. Payment tracking section in Calendar Settings. Grid lines fixed (full-hour stronger than half-hour). 30-second auto-refresh for real-time updates.
 
 **Previous Update:** **Welcome Test Learning Path Score** — 5 new behavioral questions detect student's learning timeline, persistence, deadline response, career importance, and usage context. Deterministic algorithm calculates Learning Path Score (0-100) from 15 signals, mapping to 4 paths: Comfort, Guided, Accelerated, Target.
 

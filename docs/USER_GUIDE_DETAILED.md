@@ -16,16 +16,40 @@
 ## Calendar Module
 
 ### Overview
-The Calendar module (`/calendar`) lets teachers manage their lesson schedule with a weekly view.
+The Calendar module (`/calendar`) lets teachers manage their lesson schedule with Day, Week, and Month views.
 
-### Features
-- **Add Slots**: Click "Add Slot" or click empty space in the calendar to create a lesson slot
-- **Recurring Slots**: Click "Recurring" to create weekly repeating slots (auto-generated for N weeks)
-- **Public Booking**: Enable in Settings → share link with students → they book available slots
-- **Slot Management**: Click any slot to confirm, complete, cancel, mark no-show, or delete
-- **Link Worksheets**: Attach worksheets to lessons from slot details
-- **Student Calendar Tab**: View student-specific lessons in their profile (Calendar tab)
-- **Settings** (`/calendar/settings`): Booking mode, lesson duration, public calendar, notifications, slot limits
+### Adding Events (UnifiedSlotModal)
+Click the **+ Add** button to open the unified modal with two main tabs:
+- **Available Slot**: Create open slots for students to book
+  - *Single Slot*: One date + time range
+  - *Batch Slots* (renamed from "Add Slots"): Select days of the week, date range, and a list of editable time entries with + Add / remove
+- **Lesson**: Create lessons assigned to a student
+  - *Single Lesson*: Pick student, date, time. Can link worksheet after creation
+  - *Recurring Lesson*: Pick student, day of week, time, repeat for N weeks or until date
+
+### Conflict Detection
+When creating slots/lessons, the system checks for overlaps:
+- **Available over Lesson** → Blocked (remove lessons first)
+- **Lesson over Available** → Auto-replaces the available slot
+- **Lesson over Lesson** → Blocked (remove or edit existing lessons first)
+
+### Slot Details & Editing
+Click any slot/lesson to open SlotDetailModal:
+- Inline edit date, time, title, notes
+- Assign, change, or remove student
+- Status actions: Confirm, Complete, No Show, Cancel Lesson
+- "Save for Entire Series" for recurring events
+- Link/unlink worksheets
+
+### Public Booking
+Enable in Settings → share link with students → they book available slots. Students can optionally enable **Book weekly** with an end date for recurring bookings.
+
+### Notifications
+- **Calendar page**: Bell icon shows recent booking/cancellation notifications
+- **Dashboard**: Calendar button shows unread notification count badge
+
+### Settings (`/calendar/settings`)
+Booking mode, lesson duration, public calendar, notifications, slot limits, and **Payment Tracking** (enable/disable, default price, currency).
 
 ## Getting Started
 

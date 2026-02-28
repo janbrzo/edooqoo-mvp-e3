@@ -40,6 +40,7 @@ import { MediaBadges } from '@/components/worksheet/MediaBadges';
 import { hasImage, hasAudio } from '@/utils/worksheetUtils';
 import { useAllWorksheetHomework } from "@/hooks/useAllWorksheetHomework";
 import { WorksheetHomeworkList } from "@/components/dashboard/WorksheetHomeworkList";
+import { useCalendarNotifications } from "@/hooks/useCalendarNotifications";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
@@ -54,6 +55,7 @@ const Dashboard = () => {
   const { worksheets, loading: historyLoading, refetch: refetchWorksheets, deleteWorksheet } = useWorksheetHistory(undefined, true, true);
   const { thisMonthCount, loading: statsLoading } = useWorksheetStats();
   const { profile: userProfile } = useProfile();
+  const { unreadCount: calendarUnread } = useCalendarNotifications(user?.id);
   const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
   const navigate = useNavigate();
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("month");
@@ -194,13 +196,17 @@ const Dashboard = () => {
               {subscriptionType}
             </Badge>
             <HomeworkNotificationBadge />
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="relative">
               <Link to="/calendar">
                 <Calendar className="h-4 w-4 mr-2" />
                 Calendar
+                {calendarUnread > 0 && (
+                  <Badge className="absolute -top-1.5 -right-1.5 h-5 min-w-5 flex items-center justify-center p-0 text-[10px] bg-destructive text-destructive-foreground">
+                    {calendarUnread > 9 ? '9+' : calendarUnread}
+                  </Badge>
+                )}
               </Link>
             </Button>
-
             <Button asChild variant="outline" size="sm">
               <Link to="/profile">
                 <User className="h-4 w-4 mr-2" />

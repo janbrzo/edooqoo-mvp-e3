@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePublicBooking } from '@/hooks/usePublicBooking';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ChevronLeft, ChevronRight, Calendar, Clock } from 'lucide-react';
-import { format, addDays, parseISO, isToday, isBefore } from 'date-fns';
+import { Switch } from '@/components/ui/switch';
+import { ChevronLeft, ChevronRight, Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { format, addDays, parseISO, isToday, isBefore, addWeeks, isSameDay } from 'date-fns';
 
 const PublicBookingPage = () => {
   const { token } = useParams<{ token: string }>();
@@ -18,6 +19,33 @@ const PublicBookingPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [booking, setBooking] = useState(false);
+  const [bookWeekly, setBookWeekly] = useState(false);
+  const [untilDate, setUntilDate] = useState('');
+
+  // Calculate how many weekly slots are available for recurring booking
+  const recurringInfo = useMemo(() => {
+    if (!selectedSlot || !bookWeekly || !untilDate) return { count: 0, slotIds: [] as string[] };
+    
+    const slotDayOfWeek = parseISO(selectedSlot.slot_date).getDay();
+    const slotTime = selectedSlot.start_time.slice(0, 5);
+    const endDate = parseISO(untilDate);
+    
+    // Find all available slots matching same weekday + time
+    const matchingIds: string[] = [];
+    for (const slot of slots) {
+      const slotDate = parseISO(slot.slot_date);
+      if (
+        slotDate.getDay() === slotDayOfWeek &&
+        slot.start_time.slice(0, 5) === slotTime &&
+        !isBefore(endDate, slotDate) &&
+        slot.id !== selectedSlot.id
+      ) {
+        matchingIds.push(slot.id);
+      }
+    }
+    
+    return { count: matchingIds.length + 1, slotIds: [selectedSlot.id, ...matchingIds] };
+  }, [selectedSlot, bookWeekly, untilDate, slots]);
 
   if (loading) {
     return (
@@ -45,14 +73,35 @@ const PublicBookingPage = () => {
   const handleBook = async () => {
     if (!selectedSlot || !name.trim() || !email.trim()) return;
     setBooking(true);
-    const success = await bookSlot(selectedSlot.id, name.trim(), email.trim());
-    setBooking(false);
-    if (success) {
+
+    if (bookWeekly && untilDate && recurringInfo.slotIds.length > 0) {
+      // Book all matching slots
+      let successCount = 0;
+      for (const slotId of recurringInfo.slotIds) {
+        const ok = await bookSlot(slotId, name.trim(), email.trim());
+        if (ok) successCount++;
+      }
+      setBooking(false);
       setSelectedSlot(null);
       setName('');
       setEmail('');
+      setBookWeekly(false);
+      setUntilDate('');
+    } else {
+      const success = await bookSlot(selectedSlot.id, name.trim(), email.trim());
+      setBooking(false);
+      if (success) {
+        setSelectedSlot(null);
+        setName('');
+        setEmail('');
+        setBookWeekly(false);
+        setUntilDate('');
+      }
     }
   };
+
+  const selectedDayName = selectedSlot ? format(parseISO(selectedSlot.slot_date), 'EEEE') : '';
+  const selectedTime = selectedSlot ? selectedSlot.start_time.slice(0, 5) : '';
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,7 +167,7 @@ const PublicBookingPage = () => {
       </div>
 
       {/* Booking Modal */}
-      <Dialog open={!!selectedSlot} onOpenChange={open => { if (!open) setSelectedSlot(null); }}>
+      <Dialog open={!!selectedSlot} onOpenChange={open => { if (!open) { setSelectedSlot(null); setBookWeekly(false); setUntilDate(''); } }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -141,13 +190,47 @@ const PublicBookingPage = () => {
                 <Label>Your Email</Label>
                 <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="john@example.com" />
               </div>
+
+              {/* Recurring booking option */}
+              <div className="border rounded-lg p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="book-weekly" className="text-sm font-medium cursor-pointer">Book weekly</Label>
+                  <Switch id="book-weekly" checked={bookWeekly} onCheckedChange={setBookWeekly} />
+                </div>
+
+                {bookWeekly && (
+                  <>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Until date</Label>
+                      <Input
+                        type="date"
+                        value={untilDate}
+                        onChange={e => setUntilDate(e.target.value)}
+                        min={format(addWeeks(parseISO(selectedSlot.slot_date), 1), 'yyyy-MM-dd')}
+                      />
+                    </div>
+
+                    {untilDate && (
+                      <div className="flex items-start gap-2 p-2 rounded bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                        <p className="text-xs text-amber-800 dark:text-amber-300">
+                          You are booking a weekly recurring lesson every <strong>{selectedDayName}</strong> at <strong>{selectedTime}</strong> until <strong>{format(parseISO(untilDate), 'MMM d, yyyy')}</strong>.
+                          {recurringInfo.count > 0 && (
+                            <> This will book <strong>{recurringInfo.count}</strong> lesson{recurringInfo.count !== 1 ? 's' : ''} (only available slots).</>
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedSlot(null)}>Cancel</Button>
-            <Button onClick={handleBook} disabled={booking || !name.trim() || !email.trim()}>
-              {booking ? 'Booking...' : 'Book Lesson'}
+            <Button variant="outline" onClick={() => { setSelectedSlot(null); setBookWeekly(false); setUntilDate(''); }}>Cancel</Button>
+            <Button onClick={handleBook} disabled={booking || !name.trim() || !email.trim() || (bookWeekly && !untilDate)}>
+              {booking ? 'Booking...' : bookWeekly ? `Book ${recurringInfo.count} Lessons` : 'Book Lesson'}
             </Button>
           </DialogFooter>
         </DialogContent>
