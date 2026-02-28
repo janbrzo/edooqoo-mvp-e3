@@ -3,6 +3,7 @@ import { addDays, format, isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
 import { CalendarSlotCard } from './CalendarSlotCard';
+import { detectOverlaps } from '@/utils/calendarOverlapUtils';
 
 const ROW_HEIGHT = 18;
 
@@ -66,7 +67,7 @@ export const CalendarWeekView = React.memo(function CalendarWeekView({ weekStart
         {days.map(date => {
           const today = isToday(date);
           return (
-            <div key={date.toISOString()} className={cn('flex-1 text-center py-2 border-r last:border-r-0 border-border', today && 'bg-primary/5')}>
+            <div key={format(date, 'yyyy-MM-dd')} className={cn('flex-1 text-center py-2 border-r last:border-r-0 border-border', today && 'bg-primary/5')}>
               <div className="text-[10px] text-muted-foreground uppercase">{format(date, 'EEE')}</div>
               <div className={cn('text-sm font-semibold mx-auto w-7 h-7 flex items-center justify-center rounded-full', today && 'bg-primary text-primary-foreground')}>
                 {format(date, 'd')}
@@ -94,11 +95,12 @@ export const CalendarWeekView = React.memo(function CalendarWeekView({ weekStart
 
         {days.map(date => {
           const daySlots = getSlotsForDay(date).filter(s => s.status !== 'cancelled');
+          const positioned = detectOverlaps(daySlots);
           const today = isToday(date);
 
           return (
             <div
-              key={date.toISOString()}
+              key={format(date, 'yyyy-MM-dd')}
               className={cn('flex-1 relative border-r last:border-r-0 border-border cursor-pointer', today && 'bg-primary/[0.02]')}
               style={{ height: TOTAL_HALF_HOURS * ROW_HEIGHT }}
               onClick={e => handleColumnClick(date, e)}
@@ -118,10 +120,22 @@ export const CalendarWeekView = React.memo(function CalendarWeekView({ weekStart
                 </div>
               )}
 
-              {daySlots.map(slot => {
+              {positioned.map(({ slot, columnIndex, columnCount, isOverlapping }) => {
                 const pos = getSlotPosition(slot, START_HOUR);
+                const widthPercent = 100 / columnCount;
+                const leftPercent = columnIndex * widthPercent;
                 return (
-                  <div key={slot.id} className="absolute left-0.5 right-0.5 z-10" style={{ top: pos.top, height: pos.height }} onClick={e => e.stopPropagation()}>
+                  <div
+                    key={slot.id}
+                    className={cn('absolute z-10', isOverlapping && 'ring-2 ring-destructive rounded-md')}
+                    style={{
+                      top: pos.top,
+                      height: pos.height,
+                      left: `calc(${leftPercent}% + 2px)`,
+                      width: `calc(${widthPercent}% - 4px)`,
+                    }}
+                    onClick={e => e.stopPropagation()}
+                  >
                     <CalendarSlotCard slot={slot} studentName={slot.student_id ? studentMap[slot.student_id] : undefined} onClick={onSlotClick} compact={pos.height < ROW_HEIGHT} />
                   </div>
                 );
