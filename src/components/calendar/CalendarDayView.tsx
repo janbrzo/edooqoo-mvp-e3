@@ -3,6 +3,7 @@ import { format, isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
 import { CalendarSlotCard } from './CalendarSlotCard';
+import { detectOverlaps } from '@/utils/calendarOverlapUtils';
 
 const ROW_HEIGHT = 22;
 
@@ -31,6 +32,8 @@ interface CalendarDayViewProps {
 
 export const CalendarDayView = React.memo(function CalendarDayView({ date, slots, studentMap, onSlotClick, onAddSlot, selectionMode, selectedIds, startHour: START_HOUR = 7, endHour: END_HOUR = 22 }: CalendarDayViewProps) {
   const TOTAL_HALF_HOURS = (END_HOUR - START_HOUR) * 2;
+  const activeSlots = slots.filter(s => s.status !== 'cancelled');
+  const positioned = detectOverlaps(activeSlots);
 
   const [nowMinute, setNowMinute] = useState(() => {
     const n = new Date();
@@ -89,10 +92,22 @@ export const CalendarDayView = React.memo(function CalendarDayView({ date, slots
             </div>
           )}
 
-          {slots.filter(s => s.status !== 'cancelled').map(slot => {
+          {positioned.map(({ slot, columnIndex, columnCount, isOverlapping }) => {
             const pos = getSlotPosition(slot, START_HOUR);
+            const widthPercent = 100 / columnCount;
+            const leftPercent = columnIndex * widthPercent;
             return (
-              <div key={slot.id} className="absolute left-1 right-1 z-10" style={{ top: pos.top, height: pos.height }} onClick={e => e.stopPropagation()}>
+              <div
+                key={slot.id}
+                className={cn('absolute z-10', isOverlapping && 'ring-2 ring-destructive rounded-md')}
+                style={{
+                  top: pos.top,
+                  height: pos.height,
+                  left: `calc(${leftPercent}% + 4px)`,
+                  width: `calc(${widthPercent}% - 8px)`,
+                }}
+                onClick={e => e.stopPropagation()}
+              >
                 <CalendarSlotCard slot={slot} studentName={slot.student_id ? studentMap[slot.student_id] : undefined} onClick={onSlotClick} compact={pos.height < ROW_HEIGHT} />
               </div>
             );
