@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePublicBooking } from '@/hooks/usePublicBooking';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
+import { StudentBookingsSection } from '@/components/calendar/StudentBookingsSection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +14,7 @@ import { format, addDays, parseISO, isToday, isBefore, addWeeks, isSameDay } fro
 
 const PublicBookingPage = () => {
   const { token } = useParams<{ token: string }>();
-  const { settings, slots, loading, error, weekStart, weekEnd, bookSlot, navigateWeek, getSlotsForDay } = usePublicBooking(token);
+  const { settings, slots, loading, error, weekStart, weekEnd, bookSlot, navigateWeek, getSlotsForDay, refetchSlots } = usePublicBooking(token);
 
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [name, setName] = useState('');
@@ -164,6 +165,16 @@ const PublicBookingPage = () => {
             );
           })}
         </div>
+
+        {/* Student bookings portal */}
+        {settings && token && (
+          <StudentBookingsSection
+            settings={settings}
+            token={token}
+            availableSlots={slots.map(s => ({ id: s.id, slot_date: s.slot_date, start_time: s.start_time, end_time: s.end_time }))}
+            onBookingChanged={refetchSlots}
+          />
+        )}
       </div>
 
       {/* Booking Modal */}

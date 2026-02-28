@@ -23,6 +23,10 @@ export interface CalendarSettings {
   gcal_default_color: string | null;
   gcal_default_reminder_minutes: number | null;
   timezone: string;
+  display_start_hour: number;
+  display_end_hour: number;
+  allow_student_reschedule: boolean;
+  buffer_minutes: number;
 }
 
 const DEFAULT_SETTINGS: Omit<CalendarSettings, 'id' | 'teacher_id'> = {
@@ -44,6 +48,10 @@ const DEFAULT_SETTINGS: Omit<CalendarSettings, 'id' | 'teacher_id'> = {
   gcal_default_color: '1',
   gcal_default_reminder_minutes: 30,
   timezone: 'Europe/Warsaw',
+  display_start_hour: 7,
+  display_end_hour: 22,
+  allow_student_reschedule: false,
+  buffer_minutes: 0,
 };
 
 export function useCalendarSettings(teacherId?: string) {

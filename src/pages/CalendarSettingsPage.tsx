@@ -54,10 +54,7 @@ const CalendarSettingsPage = () => {
             </div>
             <div className="flex items-center justify-between">
               <Label>Timezone</Label>
-              <Select
-                value={settings.timezone}
-                onValueChange={v => updateSettings({ timezone: v })}
-              >
+              <Select value={settings.timezone} onValueChange={v => updateSettings({ timezone: v })}>
                 <SelectTrigger className="w-56">
                   <SelectValue placeholder="Select timezone" />
                 </SelectTrigger>
@@ -86,6 +83,47 @@ const CalendarSettingsPage = () => {
                 className="w-24"
                 value={settings.min_cancellation_hours || ''}
                 onChange={e => updateSettings({ min_cancellation_hours: e.target.value ? Number(e.target.value) : null })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Display Start Hour</Label>
+                <p className="text-xs text-muted-foreground">First hour visible on calendar grid</p>
+              </div>
+              <Input
+                type="number"
+                className="w-24"
+                min={0}
+                max={23}
+                value={settings.display_start_hour}
+                onChange={e => updateSettings({ display_start_hour: Number(e.target.value) })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Display End Hour</Label>
+                <p className="text-xs text-muted-foreground">Last hour visible on calendar grid</p>
+              </div>
+              <Input
+                type="number"
+                className="w-24"
+                min={1}
+                max={24}
+                value={settings.display_end_hour}
+                onChange={e => updateSettings({ display_end_hour: Number(e.target.value) })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Buffer Between Lessons (minutes)</Label>
+                <p className="text-xs text-muted-foreground">Minimum gap between consecutive lessons</p>
+              </div>
+              <Input
+                type="number"
+                className="w-24"
+                min={0}
+                value={settings.buffer_minutes}
+                onChange={e => updateSettings({ buffer_minutes: Number(e.target.value) })}
               />
             </div>
           </CardContent>
@@ -128,6 +166,13 @@ const CalendarSettingsPage = () => {
                 <p className="text-xs text-muted-foreground">Block vs. warning only</p>
               </div>
               <Switch checked={settings.enforce_slot_limit} onCheckedChange={v => updateSettings({ enforce_slot_limit: v })} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Allow student rescheduling</Label>
+                <p className="text-xs text-muted-foreground">Students can move their lessons to other available slots</p>
+              </div>
+              <Switch checked={settings.allow_student_reschedule} onCheckedChange={v => updateSettings({ allow_student_reschedule: v })} />
             </div>
           </CardContent>
         </Card>
@@ -187,10 +232,7 @@ const CalendarSettingsPage = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>Currency</Label>
-                  <Select
-                    value={settings.currency || 'USD'}
-                    onValueChange={v => updateSettings({ currency: v })}
-                  >
+                  <Select value={settings.currency || 'USD'} onValueChange={v => updateSettings({ currency: v })}>
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
