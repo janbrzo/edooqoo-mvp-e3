@@ -49,25 +49,16 @@ export function useCalendarSlots(teacherId?: string) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const { toast } = useToast();
 
-  // Memoized date range based on viewMode
   const dateRange = useMemo(() => {
-    if (viewMode === 'day') {
-      return { from: currentDate, to: currentDate };
-    } else if (viewMode === 'week') {
-      const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
-      const we = endOfWeek(currentDate, { weekStartsOn: 1 });
-      return { from: ws, to: we };
-    } else {
-      // Month: fetch full calendar grid (start of first week to end of last week)
-      const ms = startOfMonth(currentDate);
-      const me = endOfMonth(currentDate);
-      const gridStart = startOfWeek(ms, { weekStartsOn: 1 });
-      const gridEnd = endOfWeek(me, { weekStartsOn: 1 });
-      return { from: gridStart, to: gridEnd };
+    if (viewMode === 'day') return { from: currentDate, to: currentDate };
+    if (viewMode === 'week') {
+      return { from: startOfWeek(currentDate, { weekStartsOn: 1 }), to: endOfWeek(currentDate, { weekStartsOn: 1 }) };
     }
+    const ms = startOfMonth(currentDate);
+    const me = endOfMonth(currentDate);
+    return { from: startOfWeek(ms, { weekStartsOn: 1 }), to: endOfWeek(me, { weekStartsOn: 1 }) };
   }, [viewMode, currentDate]);
 
-  // Convenience accessors
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
@@ -77,7 +68,6 @@ export function useCalendarSlots(teacherId?: string) {
     try {
       const from = format(dateRange.from, 'yyyy-MM-dd');
       const to = format(dateRange.to, 'yyyy-MM-dd');
-
       const { data, error } = await supabase
         .from('calendar_slots')
         .select('*')
@@ -86,7 +76,6 @@ export function useCalendarSlots(teacherId?: string) {
         .lte('slot_date', to)
         .order('slot_date')
         .order('start_time');
-
       if (error) throw error;
       setSlots((data || []) as unknown as CalendarSlot[]);
     } catch (err) {
@@ -98,28 +87,44 @@ export function useCalendarSlots(teacherId?: string) {
 
   useEffect(() => { fetchSlots(); }, [fetchSlots]);
 
-  // Auto-refetch every 30 seconds for real-time updates
+  // Auto-refetch every 30 seconds
   useEffect(() => {
     if (!teacherId) return;
     const interval = setInterval(fetchSlots, 30000);
     return () => clearInterval(interval);
   }, [teacherId, fetchSlots]);
 
+  const normalizeTimeForQuery = (t: string) => {
+    // Ensure HH:MM:SS format for consistent DB comparison
+    return t.length === 5 ? t + ':00' : t;
+  };
+
   const createSlot = useCallback(async (input: CreateSlotInput) => {
     if (!teacherId) return null;
     try {
+      // Check for overlapping lessons
       const { data: existing } = await supabase
         .from('calendar_slots')
-        .select('id')
+        .select('id, student_id')
         .eq('teacher_id', teacherId)
         .eq('slot_date', input.slot_date)
         .neq('status', 'cancelled')
-        .lt('start_time', input.end_time)
-        .gt('end_time', input.start_time);
+        .lt('start_time', normalizeTimeForQuery(input.end_time))
+        .gt('end_time', normalizeTimeForQuery(input.start_time));
 
       if (existing && existing.length > 0) {
-        toast({ title: 'Time conflict', description: 'This slot overlaps with an existing one.', variant: 'destructive' });
-        return null;
+        const hasLessonConflict = existing.some((e: any) => e.student_id && input.student_id);
+        const hasBlockedByLesson = existing.some((e: any) => e.student_id) && !input.student_id;
+        if (hasLessonConflict || hasBlockedByLesson) {
+          toast({ title: 'Time conflict', description: 'This slot overlaps with an existing lesson.', variant: 'destructive' });
+          return null;
+        }
+        // Auto-replace available slots when adding a lesson
+        if (input.student_id) {
+          for (const e of existing.filter((e: any) => !e.student_id)) {
+            await supabase.from('calendar_slots').delete().eq('id', e.id);
+          }
+        }
       }
 
       const { data, error } = await supabase
@@ -152,10 +157,40 @@ export function useCalendarSlots(teacherId?: string) {
     }
   }, [teacherId, fetchSlots, toast]);
 
-  // Batch create without individual conflict check (caller handles conflicts)
   const createSlotsBatch = useCallback(async (inputs: CreateSlotInput[]) => {
     if (!teacherId || inputs.length === 0) return null;
     try {
+      // Conflict check for each slot in the batch
+      for (const input of inputs) {
+        const { data: existing } = await supabase
+          .from('calendar_slots')
+          .select('id, student_id')
+          .eq('teacher_id', teacherId)
+          .eq('slot_date', input.slot_date)
+          .neq('status', 'cancelled')
+          .lt('start_time', normalizeTimeForQuery(input.end_time))
+          .gt('end_time', normalizeTimeForQuery(input.start_time));
+
+        if (existing && existing.length > 0) {
+          // Block lesson-on-lesson
+          if (existing.some((e: any) => e.student_id && input.student_id)) {
+            toast({ title: 'Overbooking blocked', description: `Lesson conflict on ${input.slot_date} ${input.start_time}`, variant: 'destructive' });
+            return null;
+          }
+          // Block available-on-lesson
+          if (existing.some((e: any) => e.student_id) && !input.student_id) {
+            toast({ title: 'Conflict', description: `Cannot add available slot over existing lesson on ${input.slot_date}`, variant: 'destructive' });
+            return null;
+          }
+          // Auto-replace available slots when adding lesson
+          if (input.student_id) {
+            for (const e of existing.filter((e: any) => !e.student_id)) {
+              await supabase.from('calendar_slots').delete().eq('id', e.id);
+            }
+          }
+        }
+      }
+
       const rows = inputs.map(input => ({
         teacher_id: teacherId,
         slot_date: input.slot_date,
@@ -172,10 +207,7 @@ export function useCalendarSlots(teacherId?: string) {
         booked_by: input.student_id ? 'teacher' : null,
       }));
 
-      const { error } = await supabase
-        .from('calendar_slots')
-        .insert(rows as any);
-
+      const { error } = await supabase.from('calendar_slots').insert(rows as any);
       if (error) throw error;
       await fetchSlots();
       const hasStudents = inputs.some(i => i.student_id);
@@ -189,11 +221,7 @@ export function useCalendarSlots(teacherId?: string) {
 
   const updateSlot = useCallback(async (slotId: string, updates: Partial<CalendarSlot>) => {
     try {
-      const { error } = await supabase
-        .from('calendar_slots')
-        .update(updates as any)
-        .eq('id', slotId);
-
+      const { error } = await supabase.from('calendar_slots').update(updates as any).eq('id', slotId);
       if (error) throw error;
       await fetchSlots();
       toast({ title: 'Slot updated' });
@@ -204,11 +232,7 @@ export function useCalendarSlots(teacherId?: string) {
 
   const deleteSlot = useCallback(async (slotId: string) => {
     try {
-      const { error } = await supabase
-        .from('calendar_slots')
-        .delete()
-        .eq('id', slotId);
-
+      const { error } = await supabase.from('calendar_slots').delete().eq('id', slotId);
       if (error) throw error;
       await fetchSlots();
       toast({ title: 'Slot deleted' });
@@ -217,11 +241,20 @@ export function useCalendarSlots(teacherId?: string) {
     }
   }, [fetchSlots, toast]);
 
-  const navigate = useCallback((direction: 'prev' | 'next' | 'today') => {
-    if (direction === 'today') {
-      setCurrentDate(new Date());
-      return;
+  const deleteSlotsBatch = useCallback(async (slotIds: string[]) => {
+    if (slotIds.length === 0) return;
+    try {
+      const { error } = await supabase.from('calendar_slots').delete().in('id', slotIds);
+      if (error) throw error;
+      await fetchSlots();
+      toast({ title: `${slotIds.length} slots deleted` });
+    } catch (err: any) {
+      toast({ title: 'Error deleting slots', description: err.message, variant: 'destructive' });
     }
+  }, [fetchSlots, toast]);
+
+  const navigate = useCallback((direction: 'prev' | 'next' | 'today') => {
+    if (direction === 'today') { setCurrentDate(new Date()); return; }
     setCurrentDate(prev => {
       if (viewMode === 'day') return addDays(prev, direction === 'next' ? 1 : -1);
       if (viewMode === 'week') return addDays(prev, direction === 'next' ? 7 : -7);
@@ -235,21 +268,9 @@ export function useCalendarSlots(teacherId?: string) {
   }, [slots]);
 
   return {
-    slots,
-    loading,
-    viewMode,
-    setViewMode,
-    currentDate,
-    setCurrentDate,
-    weekStart,
-    weekEnd,
-    dateRange,
-    createSlot,
-    createSlotsBatch,
-    updateSlot,
-    deleteSlot,
-    navigate,
-    getSlotsForDay,
-    refetch: fetchSlots,
+    slots, loading, viewMode, setViewMode, currentDate, setCurrentDate,
+    weekStart, weekEnd, dateRange,
+    createSlot, createSlotsBatch, updateSlot, deleteSlot, deleteSlotsBatch,
+    navigate, getSlotsForDay, refetch: fetchSlots,
   };
 }

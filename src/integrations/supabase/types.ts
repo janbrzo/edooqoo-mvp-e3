@@ -221,11 +221,15 @@ export type Database = {
       }
       calendar_settings: {
         Row: {
+          allow_student_reschedule: boolean
+          buffer_minutes: number
           created_at: string
           currency: string | null
           default_booking_mode: string
           default_lesson_duration_minutes: number
           default_lesson_price: number | null
+          display_end_hour: number
+          display_start_hour: number
           enforce_slot_limit: boolean
           gcal_default_color: string | null
           gcal_default_reminder_minutes: number | null
@@ -245,11 +249,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_student_reschedule?: boolean
+          buffer_minutes?: number
           created_at?: string
           currency?: string | null
           default_booking_mode?: string
           default_lesson_duration_minutes?: number
           default_lesson_price?: number | null
+          display_end_hour?: number
+          display_start_hour?: number
           enforce_slot_limit?: boolean
           gcal_default_color?: string | null
           gcal_default_reminder_minutes?: number | null
@@ -269,11 +277,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_student_reschedule?: boolean
+          buffer_minutes?: number
           created_at?: string
           currency?: string | null
           default_booking_mode?: string
           default_lesson_duration_minutes?: number
           default_lesson_price?: number | null
+          display_end_hour?: number
+          display_start_hour?: number
           enforce_slot_limit?: boolean
           gcal_default_color?: string | null
           gcal_default_reminder_minutes?: number | null
