@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { FileText, Check, X } from 'lucide-react';
+import { FileText, Check, X, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Worksheet {
@@ -14,13 +14,14 @@ interface Worksheet {
 interface LinkWorksheetModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onBack?: () => void;
   teacherId: string;
   studentId?: string | null;
   currentWorksheetId?: string | null;
   onLink: (worksheetId: string | null) => Promise<void>;
 }
 
-export function LinkWorksheetModal({ open, onOpenChange, teacherId, studentId, currentWorksheetId, onLink }: LinkWorksheetModalProps) {
+export function LinkWorksheetModal({ open, onOpenChange, onBack, teacherId, studentId, currentWorksheetId, onLink }: LinkWorksheetModalProps) {
   const [worksheets, setWorksheets] = useState<Worksheet[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -54,14 +55,27 @@ export function LinkWorksheetModal({ open, onOpenChange, teacherId, studentId, c
     setSaving(true);
     await onLink(worksheetId);
     setSaving(false);
-    onOpenChange(false);
+    if (onBack) onBack();
+    else onOpenChange(false);
+  };
+
+  const handleClose = () => {
+    if (onBack) onBack();
+    else onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[70vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Link Worksheet</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {onBack && (
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onBack}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            Link Worksheet
+          </DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
@@ -85,9 +99,9 @@ export function LinkWorksheetModal({ open, onOpenChange, teacherId, studentId, c
                 disabled={saving}
               >
                 <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
-                <div className="truncate">
-                  <span className="font-medium">{ws.title || 'Untitled'}</span>
-                  <span className="text-xs text-muted-foreground ml-2">{format(new Date(ws.created_at), 'MMM d, yyyy')}</span>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="font-medium truncate text-sm">{ws.title || 'Untitled'}</span>
+                  <span className="text-xs text-muted-foreground">{format(new Date(ws.created_at), 'MMM d, yyyy')}</span>
                 </div>
                 {ws.id === currentWorksheetId && <Check className="h-4 w-4 ml-auto flex-shrink-0 text-primary" />}
               </Button>
@@ -96,7 +110,7 @@ export function LinkWorksheetModal({ open, onOpenChange, teacherId, studentId, c
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button variant="outline" onClick={handleClose}>{onBack ? 'Back' : 'Close'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

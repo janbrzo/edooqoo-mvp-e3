@@ -15,6 +15,8 @@ interface CalendarDayViewProps {
   studentMap: Record<string, string>;
   onSlotClick: (slot: CalendarSlot) => void;
   onAddSlot: (date: Date, startTime?: string) => void;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
 }
 
 function getSlotPosition(slot: CalendarSlot) {
@@ -28,7 +30,7 @@ function getSlotPosition(slot: CalendarSlot) {
   };
 }
 
-export const CalendarDayView = React.memo(function CalendarDayView({ date, slots, studentMap, onSlotClick, onAddSlot }: CalendarDayViewProps) {
+export const CalendarDayView = React.memo(function CalendarDayView({ date, slots, studentMap, onSlotClick, onAddSlot, selectionMode, selectedIds }: CalendarDayViewProps) {
   const [nowMinute, setNowMinute] = useState(() => {
     const n = new Date();
     return (n.getHours() - START_HOUR) * 60 + n.getMinutes();
@@ -67,7 +69,7 @@ export const CalendarDayView = React.memo(function CalendarDayView({ date, slots
             const hour = START_HOUR + Math.floor(i / 2);
             const isFullHour = i % 2 === 0;
             return (
-              <div key={i} className={cn('border-b flex items-start justify-end pr-2 pt-0.5', isFullHour ? 'border-border/60' : 'border-border/10')} style={{ height: ROW_HEIGHT }}>
+              <div key={i} className={cn('border-b flex items-start justify-end pr-2 pt-0.5', isFullHour ? 'border-border/80' : 'border-border/15')} style={{ height: ROW_HEIGHT }}>
                 {isFullHour && <span className="text-[10px] text-muted-foreground leading-none">{String(hour).padStart(2, '0')}:00</span>}
               </div>
             );
@@ -76,7 +78,7 @@ export const CalendarDayView = React.memo(function CalendarDayView({ date, slots
 
         <div className="flex-1 relative cursor-pointer" onClick={handleGridClick} style={{ height: TOTAL_HALF_HOURS * ROW_HEIGHT }}>
           {Array.from({ length: TOTAL_HALF_HOURS }, (_, i) => (
-            <div key={i} className={cn('absolute w-full border-b', i % 2 === 0 ? 'border-border/60' : 'border-border/10')} style={{ top: i * ROW_HEIGHT + ROW_HEIGHT - 1 }} />
+            <div key={i} className={cn('absolute w-full border-b', i % 2 === 0 ? 'border-border/80' : 'border-border/15')} style={{ top: i * ROW_HEIGHT + ROW_HEIGHT - 1 }} />
           ))}
 
           {showNowLine && (

@@ -15,7 +15,6 @@ export function usePublicBooking(token?: string) {
 
   const weekEnd = useMemo(() => endOfWeek(weekStart, { weekStartsOn: 1 }), [weekStart]);
 
-  // Fetch settings by public token
   const fetchSettings = useCallback(async () => {
     if (!token) return;
     try {
@@ -27,19 +26,11 @@ export function usePublicBooking(token?: string) {
         .maybeSingle();
 
       if (err) throw err;
-      if (!data) {
-        setError('Calendar not found or not public.');
-        setLoading(false);
-        return;
-      }
+      if (!data) { setError('Calendar not found or not public.'); setLoading(false); return; }
       setSettings(data as unknown as CalendarSettings);
-    } catch (err) {
-      setError('Failed to load calendar.');
-      console.error(err);
-    }
+    } catch (err) { setError('Failed to load calendar.'); console.error(err); }
   }, [token]);
 
-  // Fetch available slots for the teacher
   const fetchSlots = useCallback(async () => {
     if (!settings) return;
     try {
@@ -59,11 +50,8 @@ export function usePublicBooking(token?: string) {
 
       if (err) throw err;
       setSlots((data || []) as unknown as CalendarSlot[]);
-    } catch (err) {
-      console.error('Error fetching public slots:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error('Error fetching public slots:', err); }
+    finally { setLoading(false); }
   }, [settings, weekStart, weekEnd]);
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
@@ -72,19 +60,19 @@ export function usePublicBooking(token?: string) {
   const bookSlot = useCallback(async (slotId: string, studentName: string, studentEmail: string) => {
     if (!settings) return false;
     try {
-      // Find or match student by email
-      const { data: existingStudents } = await supabase
+      // Find existing student by email — use name from teacher's DB
+      const { data: existingStudent } = await supabase
         .from('students')
-        .select('id')
+        .select('id, name')
         .eq('teacher_id', settings.teacher_id)
         .eq('student_email', studentEmail)
         .maybeSingle();
 
-      const studentId = existingStudents?.id || null;
-
+      const studentId = existingStudent?.id || null;
+      const resolvedName = existingStudent?.name || studentName;
       const autoConfirm = settings.default_booking_mode === 'auto_confirm';
 
-      const { error: err } = await supabase
+      const { error: err, count } = await supabase
         .from('calendar_slots')
         .update({
           student_id: studentId,
@@ -93,14 +81,28 @@ export function usePublicBooking(token?: string) {
           booked_at: new Date().toISOString(),
           booked_by: 'student',
           confirmed_at: autoConfirm ? new Date().toISOString() : null,
-          student_notes: `Booked by: ${studentName} (${studentEmail})`,
+          student_notes: `Booked by: ${resolvedName} (${studentEmail})`,
         } as any)
         .eq('id', slotId)
         .eq('status', 'available');
 
       if (err) throw err;
 
-      toast({ title: autoConfirm ? 'Lesson booked!' : 'Booking request sent!', description: autoConfirm ? 'Your lesson is confirmed.' : 'The teacher will confirm your booking soon.' });
+      // New student notification
+      if (!existingStudent) {
+        await supabase.from('calendar_notifications').insert({
+          teacher_id: settings.teacher_id,
+          notification_type: 'new_student',
+          message: `New student signed up: ${studentName} (${studentEmail})`,
+          student_name: studentName,
+          slot_id: slotId,
+        } as any);
+      }
+
+      toast({
+        title: autoConfirm ? 'Lesson booked!' : 'Booking request sent!',
+        description: autoConfirm ? 'Your lesson is confirmed.' : 'The teacher will confirm your booking soon.',
+      });
       await fetchSlots();
       return true;
     } catch (err: any) {
@@ -110,11 +112,8 @@ export function usePublicBooking(token?: string) {
   }, [settings, toast, fetchSlots]);
 
   const navigateWeek = useCallback((direction: 'prev' | 'next' | 'today') => {
-    if (direction === 'today') {
-      setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
-    } else {
-      setWeekStart(prev => addDays(prev, direction === 'next' ? 7 : -7));
-    }
+    if (direction === 'today') setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+    else setWeekStart(prev => addDays(prev, direction === 'next' ? 7 : -7));
   }, []);
 
   const getSlotsForDay = useCallback((date: Date) => {

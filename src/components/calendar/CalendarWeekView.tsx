@@ -15,6 +15,8 @@ interface CalendarWeekViewProps {
   studentMap: Record<string, string>;
   onSlotClick: (slot: CalendarSlot) => void;
   onAddSlot: (date: Date, startTime?: string) => void;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
 }
 
 function getSlotPosition(slot: CalendarSlot) {
@@ -28,7 +30,7 @@ function getSlotPosition(slot: CalendarSlot) {
   };
 }
 
-export const CalendarWeekView = React.memo(function CalendarWeekView({ weekStart, getSlotsForDay, studentMap, onSlotClick, onAddSlot }: CalendarWeekViewProps) {
+export const CalendarWeekView = React.memo(function CalendarWeekView({ weekStart, getSlotsForDay, studentMap, onSlotClick, onAddSlot, selectionMode, selectedIds }: CalendarWeekViewProps) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const [nowMinute, setNowMinute] = useState(() => {
@@ -81,7 +83,7 @@ export const CalendarWeekView = React.memo(function CalendarWeekView({ weekStart
             const hour = START_HOUR + Math.floor(i / 2);
             const isFullHour = i % 2 === 0;
             return (
-              <div key={i} className={cn('border-b flex items-start justify-end pr-1.5 pt-0.5', isFullHour ? 'border-border/30' : 'border-border/10')} style={{ height: ROW_HEIGHT }}>
+              <div key={i} className={cn('border-b flex items-start justify-end pr-1.5 pt-0.5', isFullHour ? 'border-border/60' : 'border-border/15')} style={{ height: ROW_HEIGHT }}>
                 {isFullHour && (
                   <span className="text-[10px] text-muted-foreground leading-none">{String(hour).padStart(2, '0')}:00</span>
                 )}
@@ -104,7 +106,7 @@ export const CalendarWeekView = React.memo(function CalendarWeekView({ weekStart
               {Array.from({ length: TOTAL_HALF_HOURS }, (_, i) => (
                 <div
                   key={i}
-                  className={cn('absolute w-full border-b', i % 2 === 0 ? 'border-border/60' : 'border-border/10')}
+                  className={cn('absolute w-full border-b', i % 2 === 0 ? 'border-border/80' : 'border-border/15')}
                   style={{ top: i * ROW_HEIGHT + ROW_HEIGHT - 1 }}
                 />
               ))}

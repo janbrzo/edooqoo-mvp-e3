@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { DraggableDialog, DraggableDialogContent, DraggableDialogHeader, DraggableDialogTitle, DraggableDialogFooter } from '@/components/ui/draggable-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,11 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { format, addDays, getDay, isAfter } from 'date-fns';
-import { CalendarIcon, User, Plus, Trash2, AlertTriangle, Info } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { format, addDays, getDay, isAfter, eachDayOfInterval, parseISO } from 'date-fns';
+import { CalendarIcon, User, Plus, Trash2, AlertTriangle, Check, ChevronsUpDown, MapPin } from 'lucide-react';
 import { CalendarSlot, CreateSlotInput } from '@/hooks/useCalendarSlots';
 import { CreateRecurrenceInput } from '@/hooks/useCalendarRecurrence';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const DAYS_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DURATIONS = [30, 45, 60, 90, 120];
@@ -53,6 +56,7 @@ interface UnifiedSlotModalProps {
   currentDate: Date;
   existingSlots: CalendarSlot[];
   studentMap: Record<string, string>;
+  teacherId?: string;
 }
 
 function computeEndTime(start: string, duration: number): string {
@@ -75,7 +79,7 @@ function generateId(): string {
 export function UnifiedSlotModal({
   open, onOpenChange, onCreateSingle, onCreateBatch, onCreateRecurring,
   onDeleteSlot, students, defaultDuration, defaultDate, defaultStartTime,
-  currentDate, existingSlots, studentMap,
+  currentDate, existingSlots, studentMap, teacherId,
 }: UnifiedSlotModalProps) {
   const [slotType, setSlotType] = useState<SlotType>('available');
   const [availableMode, setAvailableMode] = useState<AvailableMode>('single');
@@ -86,25 +90,50 @@ export function UnifiedSlotModal({
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [duration, setDuration] = useState(String(defaultDuration));
-  const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
+  const [location, setLocation] = useState('');
   const [studentId, setStudentId] = useState<string>('none');
+  const [studentComboOpen, setStudentComboOpen] = useState(false);
 
-  // Batch fields — time slot entries instead of working hours
+  // Worksheet linking for single lesson
+  const [worksheetId, setWorksheetId] = useState<string>('none');
+  const [studentWorksheets, setStudentWorksheets] = useState<{ id: string; title: string; created_at: string }[]>([]);
+
+  // Batch fields
   const [selectedDays, setSelectedDays] = useState([true, true, true, true, true, false, false]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [timeSlotEntries, setTimeSlotEntries] = useState<TimeSlotEntry[]>([]);
 
-  // Recurring fields
-  const [recurDayOfWeek, setRecurDayOfWeek] = useState('0');
-  const [recurEndMode, setRecurEndMode] = useState<'weeks' | 'date'>('weeks');
-  const [recurWeeks, setRecurWeeks] = useState('4');
-  const [recurUntilDate, setRecurUntilDate] = useState('');
+  // Recurring fields — now multi-day + From/To like batch
+  const [recurDays, setRecurDays] = useState([true, false, false, false, false, false, false]);
+  const [recurFrom, setRecurFrom] = useState('');
+  const [recurTo, setRecurTo] = useState('');
 
   const [saving, setSaving] = useState(false);
   const [conflicts, setConflicts] = useState<ConflictInfo[]>([]);
   const [conflictBlocked, setConflictBlocked] = useState(false);
+
+  // Fetch worksheets when student changes
+  useEffect(() => {
+    if (slotType !== 'lesson' || lessonMode !== 'single' || studentId === 'none' || !teacherId) {
+      setStudentWorksheets([]);
+      setWorksheetId('none');
+      return;
+    }
+    const fetchWs = async () => {
+      const { data } = await supabase
+        .from('worksheets')
+        .select('id, title, created_at')
+        .eq('teacher_id', teacherId)
+        .eq('student_id', studentId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      setStudentWorksheets((data || []) as any);
+    };
+    fetchWs();
+  }, [studentId, slotType, lessonMode, teacherId]);
 
   // Reset on open
   useEffect(() => {
@@ -115,14 +144,16 @@ export function UnifiedSlotModal({
       setStartTime(st);
       const dur = Number(duration);
       setEndTime(computeEndTime(st, dur));
-      setTitle('');
       setNotes('');
+      setLocation('');
       setStudentId('none');
+      setWorksheetId('none');
       setConflicts([]);
       setConflictBlocked(false);
       setDateFrom(format(d, 'yyyy-MM-dd'));
       setDateTo(format(addDays(d, 27), 'yyyy-MM-dd'));
-      // Initialize batch time slots
+      setRecurFrom('');
+      setRecurTo('');
       setTimeSlotEntries([{ id: generateId(), start: st, end: computeEndTime(st, dur) }]);
     }
   }, [open, defaultDate, defaultStartTime]);
@@ -133,13 +164,11 @@ export function UnifiedSlotModal({
       setConflicts([]);
       setConflictBlocked(false);
     }
-  }, [date, startTime, endTime, dateFrom, dateTo, selectedDays, studentId, slotType]);
+  }, [date, startTime, endTime, dateFrom, dateTo, selectedDays, studentId, slotType, recurDays, recurFrom, recurTo]);
 
-  // Auto-compute end time from duration
   const handleDurationChange = (val: string) => {
     setDuration(val);
     setEndTime(computeEndTime(startTime, Number(val)));
-    // Update batch entries too
     setTimeSlotEntries(prev => prev.map(e => ({ ...e, end: computeEndTime(e.start, Number(val)) })));
   };
 
@@ -147,14 +176,6 @@ export function UnifiedSlotModal({
     setStartTime(val);
     setEndTime(computeEndTime(val, Number(duration)));
   };
-
-  // Auto-fill title for lessons
-  useEffect(() => {
-    if (slotType === 'lesson' && studentId !== 'none' && !title) {
-      const student = students.find(s => s.id === studentId);
-      if (student) setTitle(`${student.name} — English lesson`);
-    }
-  }, [slotType, studentId]);
 
   // Batch time slot management
   const addTimeSlotEntry = () => {
@@ -176,7 +197,10 @@ export function UnifiedSlotModal({
     }));
   };
 
-  // Generate batch slots from time entries × days × date range
+  // JS day (0=Sun) → our day (0=Mon)
+  const jsDayToOurDay = (jsDay: number) => jsDay === 0 ? 6 : jsDay - 1;
+
+  // Generate batch slots
   const batchSlots = useMemo(() => {
     if (slotType !== 'available' || availableMode !== 'batch') return [];
     const from = new Date(dateFrom);
@@ -184,19 +208,13 @@ export function UnifiedSlotModal({
     if (isNaN(from.getTime()) || isNaN(to.getTime())) return [];
     if (timeSlotEntries.length === 0) return [];
 
-    const jsDayToOurDay = (jsDay: number) => jsDay === 0 ? 6 : jsDay - 1;
     const slots: CreateSlotInput[] = [];
-
     let d = from;
     while (!isAfter(d, to)) {
       const ourDay = jsDayToOurDay(getDay(d));
       if (selectedDays[ourDay]) {
         for (const entry of timeSlotEntries) {
-          slots.push({
-            slot_date: format(d, 'yyyy-MM-dd'),
-            start_time: entry.start,
-            end_time: entry.end,
-          });
+          slots.push({ slot_date: format(d, 'yyyy-MM-dd'), start_time: entry.start, end_time: entry.end });
         }
       }
       d = addDays(d, 1);
@@ -204,7 +222,32 @@ export function UnifiedSlotModal({
     return slots;
   }, [slotType, availableMode, dateFrom, dateTo, selectedDays, timeSlotEntries]);
 
-  // Check conflicts with proper time normalization and 3-scenario logic
+  // Generate recurring lesson slots (day-by-day iteration)
+  const recurringSlots = useMemo(() => {
+    if (slotType !== 'lesson' || lessonMode !== 'recurring') return [];
+    if (!recurFrom || !recurTo || studentId === 'none') return [];
+    const from = new Date(recurFrom);
+    const to = new Date(recurTo);
+    if (isNaN(from.getTime()) || isNaN(to.getTime()) || isAfter(from, to)) return [];
+
+    const slots: CreateSlotInput[] = [];
+    let d = from;
+    while (!isAfter(d, to)) {
+      const ourDay = jsDayToOurDay(getDay(d));
+      if (recurDays[ourDay]) {
+        slots.push({
+          slot_date: format(d, 'yyyy-MM-dd'),
+          start_time: startTime,
+          end_time: endTime,
+          student_id: studentId,
+        });
+      }
+      d = addDays(d, 1);
+    }
+    return slots;
+  }, [slotType, lessonMode, recurFrom, recurTo, recurDays, startTime, endTime, studentId]);
+
+  // Check conflicts
   const checkConflicts = (newSlots: CreateSlotInput[]): { blocked: boolean; replaceable: CalendarSlot[]; info: ConflictInfo[] } => {
     const info: ConflictInfo[] = [];
     let blocked = false;
@@ -223,30 +266,20 @@ export function UnifiedSlotModal({
       );
       for (const ov of overlapping) {
         const hasStudent = ov.student_id !== null;
-
         if (hasStudent) {
-          // Any overlap with a lesson → BLOCK
           blocked = true;
           info.push({
-            date: ov.slot_date,
-            time: `${normalizeTime(ov.start_time)}–${normalizeTime(ov.end_time)}`,
-            hasStudent: true,
-            studentName: ov.student_id ? studentMap[ov.student_id] : undefined,
-            type: 'blocked',
+            date: ov.slot_date, time: `${normalizeTime(ov.start_time)}–${normalizeTime(ov.end_time)}`,
+            hasStudent: true, studentName: ov.student_id ? studentMap[ov.student_id] : undefined, type: 'blocked',
           });
         } else {
-          // Overlap with available slot
           if (isAddingLesson) {
-            // Lesson over available → REPLACEABLE (auto-replace)
             replaceable.push(ov);
             info.push({
-              date: ov.slot_date,
-              time: `${normalizeTime(ov.start_time)}–${normalizeTime(ov.end_time)}`,
-              hasStudent: false,
-              type: 'replaceable',
+              date: ov.slot_date, time: `${normalizeTime(ov.start_time)}–${normalizeTime(ov.end_time)}`,
+              hasStudent: false, type: 'replaceable',
             });
           } else {
-            // Available over available → just skip/replace silently
             replaceable.push(ov);
           }
         }
@@ -260,51 +293,42 @@ export function UnifiedSlotModal({
     try {
       if (slotType === 'available' && availableMode === 'single') {
         const newSlots = [{ slot_date: date, start_time: startTime, end_time: endTime }];
-        const { blocked, info } = checkConflicts(newSlots);
-        if (blocked) {
-          setConflicts(info);
-          setConflictBlocked(true);
-          setSaving(false);
-          return;
-        }
-        await onCreateSingle({ slot_date: date, start_time: startTime, end_time: endTime, title: title || undefined, notes: notes || undefined });
+        const { blocked, replaceable, info } = checkConflicts(newSlots);
+        if (blocked) { setConflicts(info); setConflictBlocked(true); setSaving(false); return; }
+        // Auto-replace available slots that overlap
+        for (const r of replaceable) await onDeleteSlot(r.id);
+        await onCreateSingle({ slot_date: date, start_time: startTime, end_time: endTime, notes: notes || undefined });
       } else if (slotType === 'available' && availableMode === 'batch') {
         if (batchSlots.length === 0) { setSaving(false); return; }
-        const { blocked, info } = checkConflicts(batchSlots);
-        if (blocked) {
-          setConflicts(info);
-          setConflictBlocked(true);
-          setSaving(false);
-          return;
-        }
+        const { blocked, replaceable, info } = checkConflicts(batchSlots);
+        if (blocked) { setConflicts(info); setConflictBlocked(true); setSaving(false); return; }
+        for (const r of replaceable) await onDeleteSlot(r.id);
         await onCreateBatch(batchSlots);
       } else if (slotType === 'lesson' && lessonMode === 'single') {
         if (studentId === 'none') { setSaving(false); return; }
         const newSlots = [{ slot_date: date, start_time: startTime, end_time: endTime, student_id: studentId }];
         const { blocked, replaceable, info } = checkConflicts(newSlots);
-        if (blocked) {
-          setConflicts(info);
-          setConflictBlocked(true);
-          setSaving(false);
-          return;
-        }
-        // Auto-replace available slots
+        if (blocked) { setConflicts(info); setConflictBlocked(true); setSaving(false); return; }
         for (const r of replaceable) await onDeleteSlot(r.id);
+        const studentName = students.find(s => s.id === studentId)?.name;
         await onCreateSingle({
           slot_date: date, start_time: startTime, end_time: endTime,
-          student_id: studentId, title: title || undefined, notes: notes || undefined,
+          student_id: studentId, title: studentName ? `${studentName} — English lesson` : undefined,
+          notes: notes || undefined, worksheet_id: worksheetId !== 'none' ? worksheetId : undefined,
         });
       } else if (slotType === 'lesson' && lessonMode === 'recurring') {
-        if (studentId === 'none') { setSaving(false); return; }
-        await onCreateRecurring({
-          day_of_week: Number(recurDayOfWeek),
-          start_time: startTime,
-          end_time: endTime,
-          auto_generate_weeks_ahead: recurEndMode === 'weeks' ? Number(recurWeeks) : 52,
-          effective_until: recurEndMode === 'date' && recurUntilDate ? recurUntilDate : null,
-          student_id: studentId,
-          title: title || undefined,
-        });
+        if (studentId === 'none' || recurringSlots.length === 0) { setSaving(false); return; }
+        const { blocked, replaceable, info } = checkConflicts(recurringSlots);
+        if (blocked) { setConflicts(info); setConflictBlocked(true); setSaving(false); return; }
+        for (const r of replaceable) await onDeleteSlot(r.id);
+        const studentName = students.find(s => s.id === studentId)?.name;
+        const slotsWithMeta = recurringSlots.map(s => ({
+          ...s,
+          title: studentName ? `${studentName} — English lesson` : undefined,
+          notes: notes || undefined,
+          booking_type: 'recurring_instance',
+        }));
+        await onCreateBatch(slotsWithMeta);
       }
       onOpenChange(false);
     } finally {
@@ -315,18 +339,21 @@ export function UnifiedSlotModal({
   const isValid = (() => {
     if (slotType === 'lesson' && studentId === 'none') return false;
     if (slotType === 'available' && availableMode === 'batch' && batchSlots.length === 0) return false;
+    if (slotType === 'lesson' && lessonMode === 'recurring' && recurringSlots.length === 0) return false;
     return true;
   })();
 
   const mode = slotType === 'available' ? availableMode : lessonMode;
   const modalTitle = slotType === 'lesson' ? 'Add Lesson' : (availableMode === 'batch' ? 'Add Slots' : 'Add Slot');
 
+  const selectedStudentName = students.find(s => s.id === studentId)?.name || '';
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{modalTitle}</DialogTitle>
-        </DialogHeader>
+    <DraggableDialog open={open} onOpenChange={onOpenChange}>
+      <DraggableDialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DraggableDialogHeader>
+          <DraggableDialogTitle className="text-lg font-semibold leading-none tracking-tight">{modalTitle}</DraggableDialogTitle>
+        </DraggableDialogHeader>
 
         <div className="space-y-4">
           {/* Top tabs: Available / Lesson */}
@@ -344,43 +371,44 @@ export function UnifiedSlotModal({
           {/* Sub-mode toggle */}
           {slotType === 'available' ? (
             <div className="flex gap-1 p-0.5 bg-muted rounded-md">
-              <button
-                className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${availableMode === 'single' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-                onClick={() => setAvailableMode('single')}
-              >Single Slot</button>
-              <button
-                className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${availableMode === 'batch' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-                onClick={() => setAvailableMode('batch')}
-              >Batch Slots</button>
+              <button className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${availableMode === 'single' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => setAvailableMode('single')}>Single Slot</button>
+              <button className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${availableMode === 'batch' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => setAvailableMode('batch')}>Batch Slots</button>
             </div>
           ) : (
             <div className="flex gap-1 p-0.5 bg-muted rounded-md">
-              <button
-                className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${lessonMode === 'single' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-                onClick={() => setLessonMode('single')}
-              >Single Lesson</button>
-              <button
-                className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${lessonMode === 'recurring' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-                onClick={() => setLessonMode('recurring')}
-              >Recurring Lesson</button>
+              <button className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${lessonMode === 'single' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => setLessonMode('single')}>Single Lesson</button>
+              <button className={`flex-1 text-xs py-1.5 rounded-sm transition-colors ${lessonMode === 'recurring' ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`} onClick={() => setLessonMode('recurring')}>Recurring Lesson</button>
             </div>
           )}
 
-          {/* Student selector (lesson only) */}
+          {/* Student selector (lesson only) — Combobox with search */}
           {slotType === 'lesson' && (
             <div>
               <Label className="text-xs">Student *</Label>
-              <Select value={studentId} onValueChange={setStudentId}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Select a student" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none" disabled>Select a student</SelectItem>
-                  {students.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={studentComboOpen} onOpenChange={setStudentComboOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" aria-expanded={studentComboOpen} className="w-full h-9 justify-between text-sm font-normal">
+                    {studentId !== 'none' ? selectedStudentName : 'Select a student (type to search)...'}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search students..." />
+                    <CommandList>
+                      <CommandEmpty>No student found.</CommandEmpty>
+                      <CommandGroup>
+                        {students.map(s => (
+                          <CommandItem key={s.id} value={s.name} onSelect={() => { setStudentId(s.id); setStudentComboOpen(false); }}>
+                            <Check className={cn("mr-2 h-4 w-4", studentId === s.id ? "opacity-100" : "opacity-0")} />
+                            {s.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 
@@ -423,45 +451,26 @@ export function UnifiedSlotModal({
                 <div className="flex gap-3 flex-wrap">
                   {DAYS_LABELS.map((day, i) => (
                     <label key={i} className="flex items-center gap-1.5 cursor-pointer">
-                      <Checkbox
-                        checked={selectedDays[i]}
-                        onCheckedChange={v => {
-                          const next = [...selectedDays];
-                          next[i] = !!v;
-                          setSelectedDays(next);
-                        }}
-                      />
+                      <Checkbox checked={selectedDays[i]} onCheckedChange={v => { const next = [...selectedDays]; next[i] = !!v; setSelectedDays(next); }} />
                       <span className="text-xs">{day}</span>
                     </label>
                   ))}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">From</Label>
-                  <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-9" />
-                </div>
-                <div>
-                  <Label className="text-xs">To</Label>
-                  <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-9" />
-                </div>
+                <div><Label className="text-xs">From</Label><Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="h-9" /></div>
+                <div><Label className="text-xs">To</Label><Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="h-9" /></div>
               </div>
               <div>
                 <Label className="text-xs">Lesson Duration</Label>
                 <Select value={duration} onValueChange={handleDurationChange}>
                   <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {DURATIONS.map(d => (
-                      <SelectItem key={d} value={String(d)}>{d} min</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectContent>{DURATIONS.map(d => (<SelectItem key={d} value={String(d)}>{d} min</SelectItem>))}</SelectContent>
                 </Select>
               </div>
-
-              {/* Time slot entries list */}
               <div className="space-y-2">
                 <Label className="text-xs">Time slots</Label>
-                {timeSlotEntries.map((entry, idx) => (
+                {timeSlotEntries.map((entry) => (
                   <div key={entry.id} className="flex items-center gap-2">
                     <Input type="time" value={entry.start} onChange={e => updateTimeSlotEntry(entry.id, 'start', e.target.value)} className="h-8 flex-1" />
                     <span className="text-xs text-muted-foreground">–</span>
@@ -477,7 +486,6 @@ export function UnifiedSlotModal({
                   <Plus className="h-3.5 w-3.5 mr-1" /> Add Time Slot
                 </Button>
               </div>
-
               <div className="bg-primary/5 border border-primary/20 rounded-md px-3 py-2 text-sm">
                 This will create <span className="font-semibold text-primary">{batchSlots.length}</span> available slots
               </div>
@@ -488,85 +496,73 @@ export function UnifiedSlotModal({
           {slotType === 'lesson' && lessonMode === 'recurring' && (
             <>
               <div>
-                <Label className="text-xs">Day of Week</Label>
-                <Select value={recurDayOfWeek} onValueChange={setRecurDayOfWeek}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map((day, i) => (
-                      <SelectItem key={i} value={String(i)}>{day}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs mb-2 block">Days of the week</Label>
+                <div className="flex gap-3 flex-wrap">
+                  {DAYS_LABELS.map((day, i) => (
+                    <label key={i} className="flex items-center gap-1.5 cursor-pointer">
+                      <Checkbox checked={recurDays[i]} onCheckedChange={v => { const next = [...recurDays]; next[i] = !!v; setRecurDays(next); }} />
+                      <span className="text-xs">{day}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <Label className="text-xs">Start</Label>
-                  <Input type="time" value={startTime} onChange={e => handleStartTimeChange(e.target.value)} className="h-9" />
-                </div>
-                <div>
-                  <Label className="text-xs">End</Label>
-                  <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="h-9" />
-                </div>
+                <div><Label className="text-xs">Start</Label><Input type="time" value={startTime} onChange={e => handleStartTimeChange(e.target.value)} className="h-9" /></div>
+                <div><Label className="text-xs">End</Label><Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="h-9" /></div>
                 <div>
                   <Label className="text-xs">Duration</Label>
                   <Select value={duration} onValueChange={handleDurationChange}>
                     <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {DURATIONS.map(d => (
-                        <SelectItem key={d} value={String(d)}>{d} min</SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectContent>{DURATIONS.map(d => (<SelectItem key={d} value={String(d)}>{d} min</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs">Repeat until</Label>
-                <RadioGroup value={recurEndMode} onValueChange={v => setRecurEndMode(v as any)} className="flex gap-4">
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="weeks" id="u-weeks" />
-                    <Label htmlFor="u-weeks" className="text-xs font-normal">For X weeks</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem value="date" id="u-date" />
-                    <Label htmlFor="u-date" className="text-xs font-normal">Until date</Label>
-                  </div>
-                </RadioGroup>
-                {recurEndMode === 'weeks' ? (
-                  <Select value={recurWeeks} onValueChange={setRecurWeeks}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {[2, 4, 6, 8, 12, 16].map(w => (
-                        <SelectItem key={w} value={String(w)}>{w} weeks</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input type="date" value={recurUntilDate} onChange={e => setRecurUntilDate(e.target.value)} className="h-9" />
-                )}
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">From</Label><Input type="date" value={recurFrom} onChange={e => setRecurFrom(e.target.value)} className="h-9" /></div>
+                <div><Label className="text-xs">To</Label><Input type="date" value={recurTo} onChange={e => setRecurTo(e.target.value)} className="h-9" /></div>
               </div>
+              {recurringSlots.length > 0 && (
+                <div className="bg-primary/5 border border-primary/20 rounded-md px-3 py-2 text-sm">
+                  This will create <span className="font-semibold text-primary">{recurringSlots.length}</span> lessons
+                </div>
+              )}
             </>
           )}
 
-          {/* Shared: Title + Notes (all modes except batch) */}
+          {/* Worksheet link for single lesson */}
+          {slotType === 'lesson' && lessonMode === 'single' && studentId !== 'none' && studentWorksheets.length > 0 && (
+            <div>
+              <Label className="text-xs">Link Worksheet (optional)</Label>
+              <Select value={worksheetId} onValueChange={setWorksheetId}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="No worksheet" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No worksheet</SelectItem>
+                  {studentWorksheets.map(ws => (
+                    <SelectItem key={ws.id} value={ws.id}>
+                      <span className="truncate">{ws.title || 'Untitled'}</span>
+                      <span className="text-xs text-muted-foreground ml-2">{format(new Date(ws.created_at), 'MMM d')}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Location + Notes (all modes except batch) */}
           {mode !== 'batch' && (
             <>
               <div>
-                <Label className="text-xs">Title (optional)</Label>
-                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Business English" className="h-9" />
+                <Label className="text-xs">Location (optional)</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Room 5, Zoom link..." className="h-9 pl-8" />
+                </div>
               </div>
               <div>
                 <Label className="text-xs">Notes (optional)</Label>
                 <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Visible to student" rows={2} />
               </div>
             </>
-          )}
-
-          {/* Worksheet link info for single lesson */}
-          {slotType === 'lesson' && lessonMode === 'single' && studentId !== 'none' && (
-            <div className="flex items-start gap-2 bg-muted/50 border border-border rounded-md px-3 py-2 text-xs text-muted-foreground">
-              <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-              <span>You can link a worksheet after creating the lesson, from the slot details view.</span>
-            </div>
           )}
 
           {/* Conflict warning */}
@@ -576,6 +572,9 @@ export function UnifiedSlotModal({
                 <AlertTriangle className="h-4 w-4" />
                 {conflictBlocked ? 'Conflicts detected — cannot proceed' : 'Conflicts detected — overlapping available slots will be replaced'}
               </div>
+              {conflictBlocked && (
+                <p className="text-xs text-muted-foreground">Remove existing lessons first, then add new ones or edit existing ones.</p>
+              )}
               {conflicts.slice(0, 5).map((c, i) => (
                 <div key={i} className="text-xs text-muted-foreground">
                   {c.date} {c.time} {c.hasStudent ? `— Lesson with ${c.studentName || 'student'}` : '— Available slot'}
@@ -587,13 +586,13 @@ export function UnifiedSlotModal({
           )}
         </div>
 
-        <DialogFooter>
+        <DraggableDialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button size="sm" onClick={handleSubmit} disabled={saving || !isValid || conflictBlocked}>
-            {saving ? 'Creating...' : slotType === 'available' && availableMode === 'batch' ? `Create ${batchSlots.length} Slots` : slotType === 'lesson' ? 'Create Lesson' : 'Create Slot'}
+            {saving ? 'Creating...' : slotType === 'available' && availableMode === 'batch' ? `Create ${batchSlots.length} Slots` : slotType === 'lesson' && lessonMode === 'recurring' ? `Create ${recurringSlots.length} Lessons` : slotType === 'lesson' ? 'Create Lesson' : 'Create Slot'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DraggableDialogFooter>
+      </DraggableDialogContent>
+    </DraggableDialog>
   );
 }

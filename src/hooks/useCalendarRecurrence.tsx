@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { addDays, format, addWeeks, getDay } from 'date-fns';
+import { addDays, format } from 'date-fns';
 
 export interface RecurrenceRule {
   id: string;
   teacher_id: string;
-  day_of_week: number; // 0=Mon ... 6=Sun
+  day_of_week: number;
   start_time: string;
   end_time: string;
   effective_from: string;
@@ -77,7 +77,6 @@ export function useCalendarRecurrence(teacherId?: string) {
 
       if (error) throw error;
 
-      // Generate slots immediately
       const rule = data as unknown as RecurrenceRule;
       await generateSlotsForRule(rule);
       await fetchRules();
@@ -90,49 +89,49 @@ export function useCalendarRecurrence(teacherId?: string) {
     }
   }, [teacherId, toast, fetchRules]);
 
+  // Day-by-day iteration instead of week-based
   const generateSlotsForRule = useCallback(async (rule: RecurrenceRule) => {
     if (!teacherId) return;
     
-    const weeksAhead = rule.auto_generate_weeks_ahead || 4;
     const today = new Date();
-    const effectiveFrom = new Date(rule.effective_from);
+    today.setHours(0, 0, 0, 0);
+    const effectiveFrom = new Date(rule.effective_from + 'T00:00:00');
     const startDate = effectiveFrom > today ? effectiveFrom : today;
     
+    // Determine end date
+    let endDate: Date;
+    if (rule.effective_until) {
+      endDate = new Date(rule.effective_until + 'T00:00:00');
+    } else {
+      endDate = addDays(startDate, (rule.auto_generate_weeks_ahead || 4) * 7);
+    }
+
     // Map our day_of_week (0=Mon) to JS getDay() (0=Sun)
     const jsDayMap = [1, 2, 3, 4, 5, 6, 0]; // Mon=1, Tue=2, ..., Sun=0
     const targetJsDay = jsDayMap[rule.day_of_week];
 
     const slotsToCreate: any[] = [];
 
-    for (let w = 0; w < weeksAhead; w++) {
-      const weekDate = addWeeks(startDate, w);
-      // Find the target day in this week
-      const currentJsDay = getDay(weekDate);
-      let diff = targetJsDay - currentJsDay;
-      if (diff < 0) diff += 7;
-      const slotDate = addDays(weekDate, diff);
-      
-      // Skip if before effective_from or after effective_until
-      if (slotDate < effectiveFrom) continue;
-      if (rule.effective_until && slotDate > new Date(rule.effective_until)) continue;
-      // Skip past dates
-      if (slotDate < today) continue;
-
-      const slotDateStr = format(slotDate, 'yyyy-MM-dd');
-
-      slotsToCreate.push({
-        teacher_id: teacherId,
-        slot_date: slotDateStr,
-        start_time: rule.start_time,
-        end_time: rule.end_time,
-        status: rule.student_id ? 'booked' : 'available',
-        booking_type: 'recurring_instance',
-        recurrence_rule_id: rule.id,
-        student_id: rule.student_id || null,
-        title: rule.title || null,
-        booked_at: rule.student_id ? new Date().toISOString() : null,
-        confirmed_at: rule.student_id ? new Date().toISOString() : null,
-      });
+    // Iterate day by day
+    let d = new Date(startDate);
+    while (d <= endDate) {
+      if (d.getDay() === targetJsDay) {
+        const slotDateStr = format(d, 'yyyy-MM-dd');
+        slotsToCreate.push({
+          teacher_id: teacherId,
+          slot_date: slotDateStr,
+          start_time: rule.start_time,
+          end_time: rule.end_time,
+          status: rule.student_id ? 'booked' : 'available',
+          booking_type: 'recurring_instance',
+          recurrence_rule_id: rule.id,
+          student_id: rule.student_id || null,
+          title: rule.title || null,
+          booked_at: rule.student_id ? new Date().toISOString() : null,
+          confirmed_at: rule.student_id ? new Date().toISOString() : null,
+        });
+      }
+      d = addDays(d, 1);
     }
 
     if (slotsToCreate.length === 0) return;
@@ -141,34 +140,53 @@ export function useCalendarRecurrence(teacherId?: string) {
     const dates = slotsToCreate.map(s => s.slot_date);
     const { data: existing } = await supabase
       .from('calendar_slots')
-      .select('slot_date, start_time')
+      .select('slot_date, start_time, student_id, id')
       .eq('teacher_id', teacherId)
-      .eq('recurrence_rule_id', rule.id)
-      .in('slot_date', dates);
+      .in('slot_date', dates)
+      .neq('status', 'cancelled');
 
-    const existingSet = new Set(
-      (existing || []).map((e: any) => `${e.slot_date}_${e.start_time}`)
-    );
+    const existingByKey = new Map<string, { student_id: string | null; id: string }>();
+    for (const e of (existing || []) as any[]) {
+      const key = `${e.slot_date}_${(e.start_time as string).slice(0, 5)}`;
+      existingByKey.set(key, { student_id: e.student_id, id: e.id });
+    }
 
-    const newSlots = slotsToCreate.filter(
-      s => !existingSet.has(`${s.slot_date}_${s.start_time}`)
-    );
+    const newSlots: any[] = [];
+    const toDelete: string[] = [];
+
+    for (const s of slotsToCreate) {
+      const key = `${s.slot_date}_${(s.start_time as string).slice(0, 5)}`;
+      const ex = existingByKey.get(key);
+      if (ex) {
+        if (ex.student_id && s.student_id) {
+          // Lesson vs lesson overlap — skip (overbooking protection)
+          continue;
+        }
+        if (!ex.student_id && s.student_id) {
+          // Available slot → replace with lesson
+          toDelete.push(ex.id);
+        } else {
+          // Same type exists — skip
+          continue;
+        }
+      }
+      newSlots.push(s);
+    }
+
+    // Delete replaceable available slots
+    if (toDelete.length > 0) {
+      await supabase.from('calendar_slots').delete().in('id', toDelete);
+    }
 
     if (newSlots.length > 0) {
-      const { error } = await supabase
-        .from('calendar_slots')
-        .insert(newSlots);
+      const { error } = await supabase.from('calendar_slots').insert(newSlots);
       if (error) console.error('Error generating recurring slots:', error);
     }
   }, [teacherId]);
 
   const deleteRule = useCallback(async (ruleId: string) => {
     try {
-      const { error } = await supabase
-        .from('calendar_recurrence_rules')
-        .delete()
-        .eq('id', ruleId);
-
+      const { error } = await supabase.from('calendar_recurrence_rules').delete().eq('id', ruleId);
       if (error) throw error;
       await fetchRules();
       toast({ title: 'Recurring rule deleted' });
@@ -179,11 +197,7 @@ export function useCalendarRecurrence(teacherId?: string) {
 
   const toggleRule = useCallback(async (ruleId: string, isActive: boolean) => {
     try {
-      const { error } = await supabase
-        .from('calendar_recurrence_rules')
-        .update({ is_active: isActive } as any)
-        .eq('id', ruleId);
-
+      const { error } = await supabase.from('calendar_recurrence_rules').update({ is_active: isActive } as any).eq('id', ruleId);
       if (error) throw error;
       await fetchRules();
     } catch (err: any) {
