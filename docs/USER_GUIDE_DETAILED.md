@@ -19,33 +19,51 @@
 The Calendar module (`/calendar`) lets teachers manage their lesson schedule with Day, Week, and Month views.
 
 ### Adding Events (UnifiedSlotModal)
-Click the **+ Add** button to open the unified modal with two main tabs:
+Click the **+ Add** button to open the draggable, transparent modal with two main tabs:
 - **Available Slot**: Create open slots for students to book
-  - *Single Slot*: One date + time range
-  - *Batch Slots* (renamed from "Add Slots"): Select days of the week, date range, and a list of editable time entries with + Add / remove
+  - *Single Slot*: One date + time range + optional location
+  - *Batch Slots*: Select days of the week, date range, and a list of editable time entries with + Add / remove
 - **Lesson**: Create lessons assigned to a student
-  - *Single Lesson*: Pick student, date, time. Can link worksheet after creation
-  - *Recurring Lesson*: Pick student, day of week, time, repeat for N weeks or until date
+  - *Single Lesson*: Pick student (searchable combobox), date, time. Link worksheet directly from dropdown
+  - *Recurring Lesson*: Pick student, select multiple days (Mon-Sun checkboxes), From/To date range, time. Creates one recurrence rule per selected day
 
-### Conflict Detection
-When creating slots/lessons, the system checks for overlaps:
-- **Available over Lesson** → Blocked (remove lessons first)
-- **Lesson over Available** → Auto-replaces the available slot
-- **Lesson over Lesson** → Blocked (remove or edit existing lessons first)
+**Note:** Title field removed — lessons auto-titled from student name. Slot count preview shown for all batch/recurring modes.
+
+### Conflict Detection & Overbooking Protection
+The system prevents double-bookings at multiple levels:
+- **SQL trigger** (`check_slot_overlap`): Database-level block on overlapping lessons
+- **Client-side checks**: Every create/batch/recurring operation checks for time overlaps
+- **Rules**: Available over Lesson → Blocked | Lesson over Available → Auto-replaces | Lesson over Lesson → Blocked
+- **Public booking**: Race condition protection via optimistic lock on slot status
 
 ### Slot Details & Editing
-Click any slot/lesson to open SlotDetailModal:
-- Inline edit date, time, title, notes
+Click any slot/lesson to open the draggable SlotDetailModal:
+- Inline edit date, time, notes, location
 - Assign, change, or remove student
-- Status actions: Confirm, Complete, No Show, Cancel Lesson
+- Status actions: Confirm, Complete, No Show, Cancel Lesson, **Reject** (for pending bookings)
 - "Save for Entire Series" for recurring events
-- Link/unlink worksheets
+- Link/unlink worksheets (opens in new tab)
 
-### Public Booking
-Enable in Settings → share link with students → they book available slots. Students can optionally enable **Book weekly** with an end date for recurring bookings.
+### Multi-Select & Batch Delete
+Toggle selection mode from toolbar → click available slots to select → floating bar shows count with "Delete All" button → confirmation dialog → batch delete.
+
+### Student Filter
+CalendarToolbar includes a student dropdown — filter the entire calendar view to show only one student's lessons.
+
+### Public Booking (/book)
+Enable in Settings → share link with students → they book available slots.
+- **Student portal**: "Already have a booking?" section — enter email to view bookings, cancel (respecting min_cancellation_hours), or request reschedule
+- **Email notifications**: Students receive confirmation/pending emails. Teachers receive alerts for new bookings, cancellations, and new students
+- **Name resolution**: If student email matches teacher's database, the stored name is used
+
+### Calendar Settings
+- **Display hours**: Configure start/end hours for the grid (default 7-22)
+- **Student reschedule**: Allow students to reschedule automatically or require teacher approval
+- **Buffer minutes**: Set minimum gap between lessons
+- **All existing**: Booking mode, confirmation type, cancellation policy, notification preferences
 
 ### Notifications
-- **Calendar page**: Bell icon shows recent booking/cancellation notifications
+- **Calendar page**: Bell icon shows recent booking/cancellation/new student notifications
 - **Dashboard**: Calendar button shows unread notification count badge
 
 ### Settings (`/calendar/settings`)

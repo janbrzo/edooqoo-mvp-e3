@@ -6,14 +6,23 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-27) - Moduł Kalendarza v3 (konsolidacja modali):**
-- ✅ **UnifiedSlotModal**: Jeden modal zamiast 4 (AddSlot/AddRecurring/BatchAdd/QuickSetup). Zakładki: Available Slot (Single/Batch) + Lesson (Single/Recurring). Lesson duration select, conflict detection z 3 scenariuszami.
-- ✅ **SlotDetailModal przebudowany**: Pełna edycja inline (data, czas, tytuł, notatki). Assign/Change/Remove studenta. "Save for Entire Series" dla slotów recurring. Cancel=zamknij, Cancel Lesson=zmień status, Delete=usuń.
-- ✅ **CalendarToolbar uproszczony**: Jeden przycisk "Add" zamiast dropdown z 4 opcjami.
-- ✅ **Wydajność**: React.memo na CalendarWeekView, CalendarDayView, CalendarSlotCard. Wysokość siatki zmniejszona 55% (week 18px, day 22px).
-- ✅ **Linie siatki**: Pełne godziny mocniejsze (border-border/40), półgodziny lżejsze (border-border/15).
-- ✅ **usePublicBooking fix**: useMemo na weekEnd — naprawione mruganie slotów na /book/
-- ✅ **Usunięte pliki**: AddSlotModal.tsx, AddRecurringSlotModal.tsx, QuickWeekSetupModal.tsx, BatchAddSlotsModal.tsx
+**Ostatnia naprawa (2026-02-28) - Moduł Kalendarza v3.5 (krytyczne naprawy + portal ucznia):**
+- ✅ **Overbooking protection**: SQL trigger `check_slot_overlap` blokuje podwójne rezerwacje na poziomie DB. Klient sprawdza konflikty w createSlotsBatch, generateSlotsForRule, bookSlot z normalizacją czasu HH:MM:SS
+- ✅ **DraggableDialog**: Nowy komponent z przezroczystym overlay (bg-black/10) i przesuwaniem myszką dla UnifiedSlotModal i SlotDetailModal
+- ✅ **UnifiedSlotModal overhaul**: Usunięto Title, dodano Location. Wyszukiwanie studentów przez Combobox (cmdk). Recurring Lesson z checkboxami dni + From/To. Linkowanie worksheet bezpośrednio z Select. Podgląd ilości slotów
+- ✅ **Recurring lesson fix**: generateSlotsForRule przepisany na iterację dzień-po-dniu (były bugi z tygodniami). Data końcowa inclusive. Sprawdzanie konfliktów per slot z auto-replace available
+- ✅ **SlotDetailModal**: Worksheet w nowej karcie. Przycisk "Reject" dla pending. Usunięto Title
+- ✅ **LinkWorksheetModal**: Przycisk "Back" wraca do SlotDetail. Nazwy skrócone z widoczną datą. Filtr studenta z aktualnego edit state
+- ✅ **Multi-select batch delete**: Tryb zaznaczania na toolbarze, floating bar z "Delete All"
+- ✅ **Calendar Settings**: Dynamiczne godziny wyświetlania (start/end), allow_student_reschedule, buffer_minutes
+- ✅ **Student filter**: Dropdown studenta w CalendarToolbar filtruje widok
+- ✅ **Student portal /book**: Sekcja "Already have a booking?" z lookup email, cancel/reschedule przez edge function get-student-bookings
+- ✅ **Email notifications**: send-calendar-notification-email wysyła potwierdzenia, alerty, cancellation emails przez Resend
+- ✅ **Public booking ulepszenia**: Nazwa studenta z bazy nauczyciela. Nowy student → dodatkowe powiadomienie
+- ✅ **Grid lines**: Pełne godziny border-border/80, półgodziny /15
+
+**Poprzednia naprawa (2026-02-27) - Moduł Kalendarza v3 (konsolidacja modali):**
+- ✅ Jeden UnifiedSlotModal zamiast 4 modali. SlotDetailModal z edycją inline. CalendarToolbar uproszczony. React.memo + zmniejszona siatka
 
 **Poprzednia naprawa (2026-02-26) - Moduł Kalendarza v2 (rozbudowa):**
 - ✅ 3 widoki (Day/Week/Month), click-to-add, undo cancellation, timezone select, attendance stats
