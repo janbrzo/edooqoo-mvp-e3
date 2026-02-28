@@ -99,6 +99,34 @@ export function usePublicBooking(token?: string) {
         } as any);
       }
 
+      // Send email notifications (fire and forget)
+      const slot = slots.find(s => s.id === slotId);
+      if (slot) {
+        const slotDate = slot.slot_date;
+        const slotTime = slot.start_time.slice(0, 5);
+        // Get teacher email
+        const { data: teacherProfile } = await supabase.from('profiles').select('email').eq('id', settings.teacher_id).maybeSingle();
+        
+        // Email to student
+        supabase.functions.invoke('send-calendar-notification-email', {
+          body: {
+            type: autoConfirm ? 'booking_confirmation' : 'booking_pending',
+            studentEmail, studentName: resolvedName, slotDate, slotTime,
+          },
+        }).catch(console.error);
+
+        // Email to teacher
+        if (teacherProfile?.email) {
+          supabase.functions.invoke('send-calendar-notification-email', {
+            body: {
+              type: 'new_booking_teacher',
+              teacherEmail: teacherProfile.email, studentEmail,
+              studentName: resolvedName, slotDate, slotTime,
+            },
+          }).catch(console.error);
+        }
+      }
+
       toast({
         title: autoConfirm ? 'Lesson booked!' : 'Booking request sent!',
         description: autoConfirm ? 'Your lesson is confirmed.' : 'The teacher will confirm your booking soon.',
@@ -121,5 +149,5 @@ export function usePublicBooking(token?: string) {
     return slots.filter(s => s.slot_date === dateStr);
   }, [slots]);
 
-  return { settings, slots, loading, error, weekStart, weekEnd, bookSlot, navigateWeek, getSlotsForDay };
+  return { settings, slots, loading, error, weekStart, weekEnd, bookSlot, navigateWeek, getSlotsForDay, refetchSlots: fetchSlots };
 }

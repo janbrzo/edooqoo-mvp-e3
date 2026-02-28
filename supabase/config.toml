@@ -100,3 +100,9 @@ verify_jwt = false
 
 [functions.cleanup-anonymous-users]
 verify_jwt = false
+
+[functions.get-student-bookings]
+verify_jwt = false
+
+[functions.send-calendar-notification-email]
+verify_jwt = false

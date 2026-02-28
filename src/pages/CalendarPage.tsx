@@ -202,11 +202,11 @@ const CalendarPage = () => {
         {loading ? (
           <div className="flex items-center justify-center h-64 text-muted-foreground">Loading calendar...</div>
         ) : viewMode === 'day' ? (
-          <CalendarDayView date={currentDate} slots={filteredGetSlotsForDay(currentDate)} studentMap={studentMap} onSlotClick={handleSlotClick} onAddSlot={handleAddSlot} selectionMode={selectionMode} selectedIds={selectedSlotIds} />
+          <CalendarDayView date={currentDate} slots={filteredGetSlotsForDay(currentDate)} studentMap={studentMap} onSlotClick={handleSlotClick} onAddSlot={handleAddSlot} selectionMode={selectionMode} selectedIds={selectedSlotIds} startHour={settings?.display_start_hour} endHour={settings?.display_end_hour} />
         ) : viewMode === 'month' ? (
           <CalendarMonthView currentDate={currentDate} slots={filteredSlots} studentMap={studentMap} onDayClick={handleDayClick} onAddSlot={(date) => handleAddSlot(date)} onSlotClick={handleSlotClick} />
         ) : (
-          <CalendarWeekView weekStart={weekStart} getSlotsForDay={filteredGetSlotsForDay} studentMap={studentMap} onSlotClick={handleSlotClick} onAddSlot={handleAddSlot} selectionMode={selectionMode} selectedIds={selectedSlotIds} />
+          <CalendarWeekView weekStart={weekStart} getSlotsForDay={filteredGetSlotsForDay} studentMap={studentMap} onSlotClick={handleSlotClick} onAddSlot={handleAddSlot} selectionMode={selectionMode} selectedIds={selectedSlotIds} startHour={settings?.display_start_hour} endHour={settings?.display_end_hour} />
         )}
       </div>
 

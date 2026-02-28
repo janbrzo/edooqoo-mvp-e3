@@ -5,9 +5,17 @@ import { CalendarSlot } from '@/hooks/useCalendarSlots';
 import { CalendarSlotCard } from './CalendarSlotCard';
 
 const ROW_HEIGHT = 22;
-const START_HOUR = 7;
-const END_HOUR = 22;
-const TOTAL_HALF_HOURS = (END_HOUR - START_HOUR) * 2;
+
+function getSlotPosition(slot: CalendarSlot, startHour: number) {
+  const [sh, sm] = slot.start_time.split(':').map(Number);
+  const [eh, em] = slot.end_time.split(':').map(Number);
+  const startMin = (sh - startHour) * 60 + sm;
+  const endMin = (eh - startHour) * 60 + em;
+  return {
+    top: (startMin / 30) * ROW_HEIGHT,
+    height: Math.max(((endMin - startMin) / 30) * ROW_HEIGHT, ROW_HEIGHT / 2),
+  };
+}
 
 interface CalendarDayViewProps {
   date: Date;
@@ -17,20 +25,13 @@ interface CalendarDayViewProps {
   onAddSlot: (date: Date, startTime?: string) => void;
   selectionMode?: boolean;
   selectedIds?: Set<string>;
+  startHour?: number;
+  endHour?: number;
 }
 
-function getSlotPosition(slot: CalendarSlot) {
-  const [sh, sm] = slot.start_time.split(':').map(Number);
-  const [eh, em] = slot.end_time.split(':').map(Number);
-  const startMin = (sh - START_HOUR) * 60 + sm;
-  const endMin = (eh - START_HOUR) * 60 + em;
-  return {
-    top: (startMin / 30) * ROW_HEIGHT,
-    height: Math.max(((endMin - startMin) / 30) * ROW_HEIGHT, ROW_HEIGHT / 2),
-  };
-}
+export const CalendarDayView = React.memo(function CalendarDayView({ date, slots, studentMap, onSlotClick, onAddSlot, selectionMode, selectedIds, startHour: START_HOUR = 7, endHour: END_HOUR = 22 }: CalendarDayViewProps) {
+  const TOTAL_HALF_HOURS = (END_HOUR - START_HOUR) * 2;
 
-export const CalendarDayView = React.memo(function CalendarDayView({ date, slots, studentMap, onSlotClick, onAddSlot, selectionMode, selectedIds }: CalendarDayViewProps) {
   const [nowMinute, setNowMinute] = useState(() => {
     const n = new Date();
     return (n.getHours() - START_HOUR) * 60 + n.getMinutes();
@@ -42,7 +43,7 @@ export const CalendarDayView = React.memo(function CalendarDayView({ date, slots
       setNowMinute((n.getHours() - START_HOUR) * 60 + n.getMinutes());
     }, 60000);
     return () => clearInterval(timer);
-  }, []);
+  }, [START_HOUR]);
 
   const nowTop = (nowMinute / 30) * ROW_HEIGHT;
   const showNowLine = isToday(date) && nowMinute >= 0 && nowMinute <= (END_HOUR - START_HOUR) * 60;
@@ -89,7 +90,7 @@ export const CalendarDayView = React.memo(function CalendarDayView({ date, slots
           )}
 
           {slots.filter(s => s.status !== 'cancelled').map(slot => {
-            const pos = getSlotPosition(slot);
+            const pos = getSlotPosition(slot, START_HOUR);
             return (
               <div key={slot.id} className="absolute left-1 right-1 z-10" style={{ top: pos.top, height: pos.height }} onClick={e => e.stopPropagation()}>
                 <CalendarSlotCard slot={slot} studentName={slot.student_id ? studentMap[slot.student_id] : undefined} onClick={onSlotClick} compact={pos.height < ROW_HEIGHT} />
