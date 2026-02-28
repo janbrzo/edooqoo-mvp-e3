@@ -84,7 +84,7 @@ export const CalendarWeekView = React.memo(function CalendarWeekView({ weekStart
             const hour = START_HOUR + Math.floor(i / 2);
             const isFullHour = i % 2 === 0;
             return (
-              <div key={i} className={cn('border-b flex items-start justify-end pr-1.5 pt-0.5', isFullHour ? 'border-border/80' : 'border-border/15')} style={{ height: ROW_HEIGHT }}>
+              <div key={i} className={cn('border-b flex items-start justify-end pr-1.5 pt-0.5', isFullHour ? 'border-border/15' : 'border-border/80')} style={{ height: ROW_HEIGHT }}>
                 {isFullHour && (
                   <span className="text-[10px] text-muted-foreground leading-none">{String(hour).padStart(2, '0')}:00</span>
                 )}
@@ -108,7 +108,7 @@ export const CalendarWeekView = React.memo(function CalendarWeekView({ weekStart
               {Array.from({ length: TOTAL_HALF_HOURS }, (_, i) => (
                 <div
                   key={i}
-                  className={cn('absolute w-full border-b', i % 2 === 0 ? 'border-border/80' : 'border-border/15')}
+                  className={cn('absolute w-full border-b', i % 2 === 0 ? 'border-border/15' : 'border-border/80')}
                   style={{ top: i * ROW_HEIGHT + ROW_HEIGHT - 1 }}
                 />
               ))}
@@ -136,7 +136,7 @@ export const CalendarWeekView = React.memo(function CalendarWeekView({ weekStart
                     }}
                     onClick={e => e.stopPropagation()}
                   >
-                    <CalendarSlotCard slot={slot} studentName={slot.student_id ? studentMap[slot.student_id] : undefined} onClick={onSlotClick} compact={pos.height < ROW_HEIGHT} />
+                    <CalendarSlotCard slot={slot} studentName={slot.student_id ? studentMap[slot.student_id] : undefined} onClick={onSlotClick} compact={pos.height < ROW_HEIGHT} selectionMode={selectionMode} isSelected={selectedIds?.has(slot.id)} />
                   </div>
                 );
               })}

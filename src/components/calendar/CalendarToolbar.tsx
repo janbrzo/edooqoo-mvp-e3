@@ -22,6 +22,8 @@ function getDateLabel(currentDate: Date, viewMode: ViewMode): string {
     const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
     const we = endOfWeek(currentDate, { weekStartsOn: 1 });
     return `${format(ws, 'MMM d')} – ${format(we, 'MMM d, yyyy')}`;
+  } else if (viewMode === 'schedule') {
+    return `Schedule from ${format(currentDate, 'MMM d, yyyy')}`;
   } else {
     return format(currentDate, 'MMMM yyyy');
   }
@@ -57,6 +59,7 @@ export function CalendarToolbar({
         <ToggleGroupItem value="day" className="text-xs px-3 h-8">Day</ToggleGroupItem>
         <ToggleGroupItem value="week" className="text-xs px-3 h-8">Week</ToggleGroupItem>
         <ToggleGroupItem value="month" className="text-xs px-3 h-8">Month</ToggleGroupItem>
+        <ToggleGroupItem value="schedule" className="text-xs px-3 h-8">Schedule</ToggleGroupItem>
       </ToggleGroup>
 
       <div className="flex items-center gap-1.5">

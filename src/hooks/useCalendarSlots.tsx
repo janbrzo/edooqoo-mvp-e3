@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, addDays, addMonths } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, addDays, addMonths, addWeeks } from 'date-fns';
 
-export type ViewMode = 'day' | 'week' | 'month';
+export type ViewMode = 'day' | 'week' | 'month' | 'schedule';
 
 export interface CalendarSlot {
   id: string;
@@ -54,6 +54,10 @@ export function useCalendarSlots(teacherId?: string) {
     if (viewMode === 'week') {
       return { from: startOfWeek(currentDate, { weekStartsOn: 1 }), to: endOfWeek(currentDate, { weekStartsOn: 1 }) };
     }
+    if (viewMode === 'schedule') {
+      // Schedule view: show 2 weeks from current date
+      return { from: currentDate, to: addWeeks(currentDate, 2) };
+    }
     const ms = startOfMonth(currentDate);
     const me = endOfMonth(currentDate);
     return { from: startOfWeek(ms, { weekStartsOn: 1 }), to: endOfWeek(me, { weekStartsOn: 1 }) };
@@ -87,7 +91,6 @@ export function useCalendarSlots(teacherId?: string) {
 
   useEffect(() => { fetchSlots(); }, [fetchSlots]);
 
-  // Auto-refetch every 30 seconds
   useEffect(() => {
     if (!teacherId) return;
     const interval = setInterval(fetchSlots, 30000);
@@ -95,14 +98,12 @@ export function useCalendarSlots(teacherId?: string) {
   }, [teacherId, fetchSlots]);
 
   const normalizeTimeForQuery = (t: string) => {
-    // Ensure HH:MM:SS format for consistent DB comparison
     return t.length === 5 ? t + ':00' : t;
   };
 
   const createSlot = useCallback(async (input: CreateSlotInput) => {
     if (!teacherId) return null;
     try {
-      // Check for overlapping lessons
       const { data: existing } = await supabase
         .from('calendar_slots')
         .select('id, student_id')
@@ -119,7 +120,6 @@ export function useCalendarSlots(teacherId?: string) {
           toast({ title: 'Time conflict', description: 'This slot overlaps with an existing lesson.', variant: 'destructive' });
           return null;
         }
-        // Auto-replace available slots when adding a lesson
         if (input.student_id) {
           for (const e of existing.filter((e: any) => !e.student_id)) {
             await supabase.from('calendar_slots').delete().eq('id', e.id);
@@ -160,7 +160,6 @@ export function useCalendarSlots(teacherId?: string) {
   const createSlotsBatch = useCallback(async (inputs: CreateSlotInput[]) => {
     if (!teacherId || inputs.length === 0) return null;
     try {
-      // Conflict check for each slot in the batch
       for (const input of inputs) {
         const { data: existing } = await supabase
           .from('calendar_slots')
@@ -172,17 +171,14 @@ export function useCalendarSlots(teacherId?: string) {
           .gt('end_time', normalizeTimeForQuery(input.start_time));
 
         if (existing && existing.length > 0) {
-          // Block lesson-on-lesson
           if (existing.some((e: any) => e.student_id && input.student_id)) {
             toast({ title: 'Overbooking blocked', description: `Lesson conflict on ${input.slot_date} ${input.start_time}`, variant: 'destructive' });
             return null;
           }
-          // Block available-on-lesson
           if (existing.some((e: any) => e.student_id) && !input.student_id) {
             toast({ title: 'Conflict', description: `Cannot add available slot over existing lesson on ${input.slot_date}`, variant: 'destructive' });
             return null;
           }
-          // Auto-replace available slots when adding lesson
           if (input.student_id) {
             for (const e of existing.filter((e: any) => !e.student_id)) {
               await supabase.from('calendar_slots').delete().eq('id', e.id);
@@ -258,6 +254,7 @@ export function useCalendarSlots(teacherId?: string) {
     setCurrentDate(prev => {
       if (viewMode === 'day') return addDays(prev, direction === 'next' ? 1 : -1);
       if (viewMode === 'week') return addDays(prev, direction === 'next' ? 7 : -7);
+      if (viewMode === 'schedule') return addDays(prev, direction === 'next' ? 14 : -14);
       return addMonths(prev, direction === 'next' ? 1 : -1);
     });
   }, [viewMode]);
