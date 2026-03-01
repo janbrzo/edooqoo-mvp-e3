@@ -112,9 +112,11 @@ export function useCalendarSlots(teacherId?: string) {
 
   const logAction = async (slotId: string, action: string, actor: string = 'teacher', details: any = {}) => {
     if (!teacherId) return;
-    await supabase.from('calendar_slot_logs').insert({
-      slot_id: slotId, teacher_id: teacherId, action, actor, details,
-    } as any).catch(() => {});
+    try {
+      await supabase.from('calendar_slot_logs').insert({
+        slot_id: slotId, teacher_id: teacherId, action, actor, details,
+      } as any);
+    } catch (_) {}
   };
 
   const createSlot = useCallback(async (input: CreateSlotInput) => {

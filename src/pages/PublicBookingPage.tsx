@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePublicBooking } from '@/hooks/usePublicBooking';
+import { useCalendarVacations } from '@/hooks/useCalendarVacations';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
 import { StudentBookingsSection } from '@/components/calendar/StudentBookingsSection';
 import { Button } from '@/components/ui/button';
@@ -9,8 +10,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { ChevronLeft, ChevronRight, Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Clock, AlertTriangle, Palmtree } from 'lucide-react';
 import { format, addDays, parseISO, isToday, isBefore, addWeeks, isSameDay } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const PublicBookingPage = () => {
   const { token } = useParams<{ token: string }>();
@@ -23,6 +26,22 @@ const PublicBookingPage = () => {
   const [bookWeekly, setBookWeekly] = useState(false);
   const [untilDate, setUntilDate] = useState('');
 
+  // Step 14: Reschedule via calendar
+  const [rescheduleBookingId, setRescheduleBookingId] = useState<string | null>(null);
+
+  // Step 5: Vacations
+  const { vacations } = useCalendarVacations(settings?.teacher_id);
+
+  const isVacationDay = (date: Date): string | null => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    for (const v of vacations) {
+      if (dateStr >= v.start_date && dateStr <= v.end_date) {
+        return v.label || 'Vacation';
+      }
+    }
+    return null;
+  };
+
   const recurringInfo = useMemo(() => {
     if (!selectedSlot || !bookWeekly || !untilDate) return { count: 0, slotIds: [] as string[] };
     const slotDayOfWeek = parseISO(selectedSlot.slot_date).getDay();
@@ -30,7 +49,7 @@ const PublicBookingPage = () => {
     const endDate = parseISO(untilDate);
     const matchingIds: string[] = [];
     for (const slot of slots) {
-      if (slot.status !== 'available') continue; // skip pending
+      if (slot.status !== 'available') continue;
       const slotDate = parseISO(slot.slot_date);
       if (slotDate.getDay() === slotDayOfWeek && slot.start_time.slice(0, 5) === slotTime && !isBefore(endDate, slotDate) && slot.id !== selectedSlot.id) {
         matchingIds.push(slot.id);
@@ -62,9 +81,38 @@ const PublicBookingPage = () => {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = new Date();
 
+  const handleSlotClick = async (slot: CalendarSlot) => {
+    // Step 14: If in reschedule mode, trigger reschedule instead of booking
+    if (rescheduleBookingId && slot.status === 'available') {
+      const confirmMsg = settings.allow_student_reschedule
+        ? 'Reschedule your lesson to this time?'
+        : 'Request reschedule to this time? Teacher will need to confirm.';
+      if (!window.confirm(confirmMsg)) return;
+
+      try {
+        const { data, error: err } = await supabase.functions.invoke('get-student-bookings', {
+          body: { token, email: email || localStorage.getItem('booking_email') || '', action: 'reschedule', slotId: rescheduleBookingId, newSlotId: slot.id },
+        });
+        if (err) throw err;
+        const autoRescheduled = data?.autoRescheduled;
+        toast.success(autoRescheduled ? 'Lesson rescheduled successfully!' : 'Reschedule request sent to teacher');
+        setRescheduleBookingId(null);
+        refetchSlots();
+      } catch (err: any) {
+        toast.error(err.message || 'Failed to reschedule');
+      }
+      return;
+    }
+
+    setSelectedSlot(slot);
+  };
+
   const handleBook = async () => {
     if (!selectedSlot || !name.trim() || !email.trim()) return;
     setBooking(true);
+    // Save email for reschedule usage
+    localStorage.setItem('booking_email', email.trim());
+
     if (bookWeekly && untilDate && recurringInfo.slotIds.length > 0) {
       let successCount = 0;
       for (const slotId of recurringInfo.slotIds) {
@@ -80,6 +128,14 @@ const PublicBookingPage = () => {
     }
   };
 
+  const handleRescheduleStart = (bookingId: string) => {
+    if (rescheduleBookingId === bookingId) {
+      setRescheduleBookingId(null);
+    } else {
+      setRescheduleBookingId(bookingId);
+    }
+  };
+
   const selectedDayName = selectedSlot ? format(parseISO(selectedSlot.slot_date), 'EEEE') : '';
   const selectedTime = selectedSlot ? selectedSlot.start_time.slice(0, 5) : '';
 
@@ -90,6 +146,15 @@ const PublicBookingPage = () => {
           <h1 className="text-3xl font-bold">Book a Lesson</h1>
           <p className="text-muted-foreground">Select an available time slot below</p>
         </div>
+
+        {/* Reschedule mode banner */}
+        {rescheduleBookingId && (
+          <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/30 rounded-lg text-sm">
+            <AlertTriangle className="h-4 w-4 text-primary shrink-0" />
+            <p>Select a new slot from the calendar to reschedule your lesson.</p>
+            <Button variant="outline" size="sm" className="ml-auto text-xs h-7" onClick={() => setRescheduleBookingId(null)}>Cancel</Button>
+          </div>
+        )}
 
         <div className="flex items-center justify-center gap-3">
           <Button variant="outline" size="sm" onClick={() => navigateWeek('prev')}>
@@ -104,14 +169,15 @@ const PublicBookingPage = () => {
           </span>
         </div>
 
-        {/* Week grid — Step 9: show pending slots as yellow */}
+        {/* Week grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
           {days.map(date => {
             const daySlots = getSlotsForDay(date);
             const isPast = isBefore(date, today) && !isToday(date);
+            const vacLabel = isVacationDay(date);
 
             return (
-              <Card key={date.toISOString()} className={`${isPast ? 'opacity-50' : ''} ${isToday(date) ? 'ring-2 ring-primary' : ''}`}>
+              <Card key={date.toISOString()} className={`${isPast ? 'opacity-50' : ''} ${isToday(date) ? 'ring-2 ring-primary' : ''} ${vacLabel ? 'bg-orange-50 dark:bg-orange-950/20' : ''}`}>
                 <CardHeader className="p-3 pb-1">
                   <CardTitle className="text-xs font-medium text-center">
                     {format(date, 'EEE')}
@@ -120,7 +186,15 @@ const PublicBookingPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 space-y-1">
-                  {daySlots.length === 0 ? (
+                  {/* Vacation indicator */}
+                  {vacLabel && daySlots.length === 0 && (
+                    <div className="flex flex-col items-center gap-1 py-2 text-orange-600 dark:text-orange-400">
+                      <Palmtree className="h-4 w-4" />
+                      <span className="text-[10px] text-center">{vacLabel}</span>
+                    </div>
+                  )}
+
+                  {daySlots.length === 0 && !vacLabel ? (
                     <p className="text-xs text-muted-foreground text-center py-2">No slots</p>
                   ) : (
                     daySlots.map(slot => {
@@ -149,8 +223,12 @@ const PublicBookingPage = () => {
                           key={slot.id}
                           variant="outline"
                           size="sm"
-                          className="w-full text-xs h-auto py-1.5 border-green-300 bg-green-50 hover:bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-950 dark:text-green-300"
-                          onClick={() => !isPast && setSelectedSlot(slot)}
+                          className={`w-full text-xs h-auto py-1.5 ${
+                            rescheduleBookingId
+                              ? 'border-primary bg-primary/10 hover:bg-primary/20 text-primary'
+                              : 'border-green-300 bg-green-50 hover:bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-950 dark:text-green-300'
+                          }`}
+                          onClick={() => !isPast && handleSlotClick(slot)}
                           disabled={isPast}
                         >
                           <Clock className="h-3 w-3 mr-1" />
@@ -171,6 +249,8 @@ const PublicBookingPage = () => {
             token={token}
             availableSlots={slots.filter(s => s.status === 'available').map(s => ({ id: s.id, slot_date: s.slot_date, start_time: s.start_time, end_time: s.end_time }))}
             onBookingChanged={refetchSlots}
+            onRescheduleStart={handleRescheduleStart}
+            rescheduleBookingId={rescheduleBookingId}
           />
         )}
       </div>

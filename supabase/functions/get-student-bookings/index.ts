@@ -49,9 +49,21 @@ Deno.serve(async (req) => {
       .eq('student_email', email)
       .maybeSingle();
 
-    // Handle actions
+    // Helper: log an action
+    const logAction = async (logSlotId: string, logAction: string, details: Record<string, unknown> = {}) => {
+      try {
+        await supabase.from('calendar_slot_logs').insert({
+          slot_id: logSlotId,
+          teacher_id: teacherId,
+          action: logAction,
+          actor: 'student',
+          details: { student_email: email, ...details },
+        });
+      } catch (_) {}
+    };
+
+    // Handle CANCEL
     if (action === 'cancel' && slotId) {
-      // Check cancellation window
       const { data: slot } = await supabase
         .from('calendar_slots')
         .select('*')
@@ -66,7 +78,9 @@ Deno.serve(async (req) => {
         });
       }
 
-      if (settingsData.min_cancellation_hours) {
+      // Step 13: If pending (no confirmed_at), skip cancellation hours check
+      const isPending = slot.status === 'booked' && !slot.confirmed_at;
+      if (!isPending && settingsData.min_cancellation_hours) {
         const lessonTime = new Date(`${slot.slot_date}T${slot.start_time}`);
         const hoursUntil = (lessonTime.getTime() - Date.now()) / (1000 * 60 * 60);
         if (hoursUntil < settingsData.min_cancellation_hours) {
@@ -94,6 +108,9 @@ Deno.serve(async (req) => {
         })
         .eq('id', slotId);
 
+      // Log
+      await logAction(slotId, 'cancelled_by_student', { slot_date: slot.slot_date, start_time: slot.start_time });
+
       // Notify teacher
       await supabase.from('calendar_notifications').insert({
         teacher_id: teacherId,
@@ -101,6 +118,7 @@ Deno.serve(async (req) => {
         message: `Student cancelled: ${email} on ${slot.slot_date} at ${slot.start_time.slice(0, 5)}`,
         student_name: email,
         slot_id: slotId,
+        metadata: { student_email: email },
       });
 
       return new Response(JSON.stringify({ success: true }), {
@@ -108,32 +126,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Handle RESCHEDULE
     if (action === 'reschedule' && slotId && newSlotId) {
+      const { data: oldSlot } = await supabase
+        .from('calendar_slots')
+        .select('*')
+        .eq('id', slotId)
+        .single();
+
+      if (!oldSlot) {
+        return new Response(JSON.stringify({ error: 'Original slot not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       if (settingsData.allow_student_reschedule) {
-        // Auto-reschedule: move booking to new slot
-        const { data: oldSlot } = await supabase
-          .from('calendar_slots')
-          .select('*')
-          .eq('id', slotId)
-          .single();
-
-        if (!oldSlot) {
-          return new Response(JSON.stringify({ error: 'Original slot not found' }), {
-            status: 404,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-
+        // Auto-reschedule: move booking to new slot immediately
         // Revert old slot
         await supabase
           .from('calendar_slots')
           .update({
             student_id: null, status: 'available', booking_type: 'manual',
             booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
+            cancelled_at: new Date().toISOString(), cancelled_by: 'student',
+            cancellation_reason: `Rescheduled by student (${email}) to new slot`,
           })
           .eq('id', slotId);
 
-        // Book new slot
+        // Book new slot (confirmed since auto-reschedule)
         await supabase
           .from('calendar_slots')
           .update({
@@ -142,11 +163,15 @@ Deno.serve(async (req) => {
             booking_type: 'student_booked',
             booked_at: new Date().toISOString(),
             booked_by: 'student',
-            confirmed_at: oldSlot.confirmed_at ? new Date().toISOString() : null,
+            confirmed_at: new Date().toISOString(),
             student_notes: oldSlot.student_notes,
           })
           .eq('id', newSlotId)
           .eq('status', 'available');
+
+        // Log both
+        await logAction(slotId, 'rescheduled', { new_slot_id: newSlotId });
+        await logAction(newSlotId, 'booked', { rescheduled_from: slotId, student_email: email });
 
         // Notify teacher
         await supabase.from('calendar_notifications').insert({
@@ -155,21 +180,50 @@ Deno.serve(async (req) => {
           message: `Student rescheduled: ${email}`,
           student_name: email,
           slot_id: newSlotId,
+          metadata: { old_slot_id: slotId, new_slot_id: newSlotId, student_email: email },
+        });
+
+        return new Response(JSON.stringify({ success: true, autoRescheduled: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } else {
-        // Send reschedule request as notification
+        // Step 12C: Reschedule requires confirmation — book new slot as PENDING
+        await supabase
+          .from('calendar_slots')
+          .update({
+            student_id: oldSlot.student_id,
+            status: 'booked',
+            booking_type: 'student_booked',
+            booked_at: new Date().toISOString(),
+            booked_by: 'student',
+            confirmed_at: null, // PENDING
+            student_notes: `Reschedule request from ${oldSlot.slot_date} ${oldSlot.start_time.slice(0, 5)}. ${oldSlot.student_notes || ''}`.trim(),
+          })
+          .eq('id', newSlotId)
+          .eq('status', 'available');
+
+        // Log
+        await logAction(newSlotId, 'reschedule_requested', {
+          old_slot_id: slotId,
+          old_date: oldSlot.slot_date,
+          old_time: oldSlot.start_time,
+          student_email: email,
+        });
+
+        // Notify teacher — with metadata for clickable confirmation
         await supabase.from('calendar_notifications').insert({
           teacher_id: teacherId,
           notification_type: 'reschedule_request',
-          message: `Student ${email} requests to reschedule their lesson`,
+          message: `Student ${email} requests to reschedule from ${oldSlot.slot_date} ${oldSlot.start_time.slice(0, 5)}`,
           student_name: email,
-          slot_id: slotId,
+          slot_id: newSlotId,
+          metadata: { old_slot_id: slotId, new_slot_id: newSlotId, student_email: email },
+        });
+
+        return new Response(JSON.stringify({ success: true, autoRescheduled: false }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
     // Default: fetch bookings

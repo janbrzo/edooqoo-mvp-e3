@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, teacherEmail } = await req.json();
+    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, teacherEmail, oldSlotDate, oldSlotTime } = await req.json();
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) {
@@ -83,6 +83,65 @@ Deno.serve(async (req) => {
             <h2 style="color: #1a1a1a;">Lesson Cancelled ❌</h2>
             <p>${studentName} (${studentEmail}) has cancelled their lesson on ${lessonInfo}.</p>
             <p>The time slot is now available again.</p>
+          </div>
+        `;
+        break;
+
+      case 'cancellation_student':
+        to = studentEmail;
+        subject = `Lesson cancelled: ${lessonInfo}`;
+        html = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1a1a1a;">Lesson Cancelled ❌</h2>
+            <p>Hi ${studentName},</p>
+            <p>Your lesson on ${lessonInfo} has been cancelled by the teacher.</p>
+            <p>Please check the booking page for available alternative times.</p>
+          </div>
+        `;
+        break;
+
+      case 'reschedule_confirmation':
+        to = studentEmail;
+        subject = `Lesson rescheduled to ${lessonInfo}`;
+        html = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1a1a1a;">Lesson Rescheduled ✓</h2>
+            <p>Hi ${studentName},</p>
+            <p>Your lesson has been rescheduled to:</p>
+            <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <p style="margin: 4px 0;"><strong>Date:</strong> ${slotDate}</p>
+              <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
+            </div>
+            <p>See you there!</p>
+          </div>
+        `;
+        break;
+
+      case 'reschedule_pending':
+        to = studentEmail;
+        subject = 'Reschedule request received';
+        html = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1a1a1a;">Reschedule Request Sent ⏳</h2>
+            <p>Hi ${studentName},</p>
+            <p>Your reschedule request to ${lessonInfo} has been sent to the teacher.</p>
+            <p>You will receive a confirmation once approved.</p>
+          </div>
+        `;
+        break;
+
+      case 'reschedule_request_teacher':
+        to = teacherEmail;
+        subject = `Reschedule request: ${studentName}`;
+        html = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1a1a1a;">Reschedule Request 🔄</h2>
+            <p>${studentName} (${studentEmail}) requests to reschedule:</p>
+            <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <p style="margin: 4px 0;"><strong>From:</strong> ${oldSlotDate || 'N/A'} at ${oldSlotTime || 'N/A'}</p>
+              <p style="margin: 4px 0;"><strong>To:</strong> ${slotDate} at ${slotTime}</p>
+            </div>
+            <p>Check your calendar to confirm or reject.</p>
           </div>
         `;
         break;

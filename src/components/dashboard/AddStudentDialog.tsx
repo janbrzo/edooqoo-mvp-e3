@@ -17,11 +17,13 @@ const ADD_STUDENT_DRAFT_KEY = 'add-student-dialog-draft';
 
 interface AddStudentDialogProps {
   onStudentAdded?: () => void;
-  triggerButton?: boolean;  // New: controls if trigger button should be rendered
-  open?: boolean;            // New: for external control of dialog state
-  onOpenChange?: (open: boolean) => void; // New: callback for external state changes
-  size?: 'sm' | 'default';   // For trigger button size
-  variant?: 'default' | 'outline'; // For trigger button variant
+  triggerButton?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  size?: 'sm' | 'default';
+  variant?: 'default' | 'outline';
+  prefillName?: string;
+  prefillEmail?: string;
 }
 
 export const AddStudentDialog = ({ 
@@ -30,7 +32,9 @@ export const AddStudentDialog = ({
   open: externalOpen,
   onOpenChange: externalOnOpenChange,
   size = 'default',
-  variant = 'default'
+  variant = 'default',
+  prefillName,
+  prefillEmail,
 }: AddStudentDialogProps) => {
   const [internalOpen, setInternalOpen] = useState(false);
   const navigate = useNavigate();
@@ -48,6 +52,12 @@ export const AddStudentDialog = ({
   const [loading, setLoading] = useState(false);
   const { addStudent, refetch } = useStudents();
   const { refreshProgress } = useOnboardingProgress();
+
+  // Prefill from props (e.g. from calendar notification)
+  useEffect(() => {
+    if (prefillName && open) setName(prefillName);
+    if (prefillEmail && open) setStudentEmail(prefillEmail);
+  }, [prefillName, prefillEmail, open]);
 
   // Load draft from sessionStorage on mount so data survives tab switches / remounts
   useEffect(() => {
