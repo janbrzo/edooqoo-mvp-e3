@@ -1,523 +1,498 @@
 
 
-# Plan naprawy i rozbudowy kalendarza — FAZA 3
+# Plan naprawy kalendarza — FAZA 4
 
-Przeanalizowałem cały kod. Oto szczegółowy plan dla każdego problemu.
+Przeanalizowałem cały kod. Poniżej kompletny plan z dokładnymi rozwiązaniami.
 
 ---
 
-## NOWE TABELE / MIGRACJE SQL
+## KRYTYCZNY BUG: CHECK CONSTRAINT na `calendar_slots.status`
 
-### Tabela `calendar_slot_logs` — historia logów dla slotów (punkty 7, 8)
+**Root cause punktu 12A** (nie da się usunąć slota): W bazie jest constraint `valid_slot_status CHECK (status IN ('available','booked','completed','cancelled','no_show'))`. Kod próbuje ustawić `status = 'deleted'` — co łamie constraint. 
+
+**Fix:** Migracja SQL — dodać `'deleted'` do constraintu:
 ```sql
-CREATE TABLE calendar_slot_logs (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  slot_id uuid NOT NULL,
-  teacher_id uuid NOT NULL,
-  action text NOT NULL, -- 'created', 'booked', 'confirmed', 'cancelled_by_teacher', 'cancelled_by_student', 'rescheduled', 'student_changed', 'worksheet_linked', 'status_changed', 'deleted', 'updated', 'rejected'
-  actor text NOT NULL, -- 'teacher', 'student', 'system'
-  details jsonb DEFAULT '{}'::jsonb, -- {old_status, new_status, student_name, student_email, from_date, to_date, ...}
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
--- Index for fast slot-level queries
-CREATE INDEX idx_slot_logs_slot_id ON calendar_slot_logs(slot_id);
-CREATE INDEX idx_slot_logs_teacher_id ON calendar_slot_logs(teacher_id, created_at DESC);
-
--- RLS
-ALTER TABLE calendar_slot_logs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Teachers can view their logs" ON calendar_slot_logs FOR SELECT USING (auth.uid() = teacher_id);
-CREATE POLICY "Anyone can insert logs" ON calendar_slot_logs FOR INSERT WITH CHECK (true);
-```
-
-### Tabela `calendar_teacher_vacations` — wakacje nauczyciela (punkt 5)
-```sql
-CREATE TABLE calendar_teacher_vacations (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  teacher_id uuid NOT NULL,
-  start_date date NOT NULL,
-  end_date date NOT NULL,
-  label text DEFAULT 'Vacation',
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE calendar_teacher_vacations ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Teachers manage vacations" ON calendar_teacher_vacations FOR ALL USING (auth.uid() = teacher_id) WITH CHECK (auth.uid() = teacher_id);
-CREATE POLICY "Public can view vacations" ON calendar_teacher_vacations FOR SELECT USING (true);
-```
-
-### Nowe pole na `calendar_slots` — blokada prywatna (punkt 4)
-```sql
-ALTER TABLE calendar_slots ADD COLUMN slot_type text NOT NULL DEFAULT 'slot'; 
--- wartości: 'slot' (domyślny), 'block' (prywatna blokada nauczyciela)
-```
-
-### Nowe pole na `calendar_slots` — info o anulowaniu (punkt 11)
-Pola `cancelled_by` i `cancellation_reason` już istnieją — wystarczą do wyświetlenia badge C.
-
-### Nowe pole na `calendar_notifications` — metadane dla klikalności (punkt 6)
-```sql
-ALTER TABLE calendar_notifications ADD COLUMN metadata jsonb DEFAULT '{}'::jsonb;
--- metadata: {student_email, student_name_raw, slot_date, slot_time, reschedule_new_slot_id, ...}
+ALTER TABLE calendar_slots DROP CONSTRAINT valid_slot_status;
+ALTER TABLE calendar_slots ADD CONSTRAINT valid_slot_status 
+  CHECK (status IN ('available','booked','completed','cancelled','no_show','deleted'));
 ```
 
 ---
 
-## KROK 1: Powiadomienia email — plan kompletny
+## 1. Powiadomienia email — nadawca + reply-to + linki
 
-Obecna edge function `send-calendar-notification-email` obsługuje: `booking_confirmation`, `booking_pending`, `new_booking_teacher`, `cancellation_teacher`, `lesson_reminder`.
+### 1A: Nadawca i Reply-To
+**Plik:** `send-calendar-notification-email/index.ts`
 
-**Brakujące typy do dodania:**
-- `cancellation_student` — email do ucznia że jego lekcja została odwołana przez nauczyciela
-- `reschedule_confirmation` — email do ucznia po zatwierdzeniu reschedule
-- `reschedule_pending` — email do ucznia że reschedule czeka na potwierdzenie
-- `reschedule_request_teacher` — email do nauczyciela że uczeń prosi o reschedule
+Logika: potrzebujemy imienia nauczyciela. Dodać do body `teacherName`. 
 
-**Implementacja:** Dodać nowe `case` w `send-calendar-notification-email/index.ts` z HTML dla każdego typu. Wywołania dodajemy w odpowiednich miejscach: `get-student-bookings` (cancel/reschedule), `SlotDetailModal` (teacher cancellation), `usePublicBooking` (booking).
+- **Dla nauczyciela:** `from: 'EDOQOO <notifications@edooqoo.com>'` (bez zmian)
+- **Dla ucznia:** `from: '[teacherName] via EDOQOO <notifications@edooqoo.com>'`, `reply_to: teacherEmail`
+
+Zmiana w edge function:
+```ts
+const fromName = ['booking_confirmation','booking_pending','cancellation_student','reschedule_confirmation','reschedule_pending','lesson_reminder']
+  .includes(type) 
+  ? `${teacherName || 'Your Teacher'} via EDOQOO` 
+  : 'EDOQOO';
+
+body: JSON.stringify({
+  from: `${fromName} <notifications@edooqoo.com>`,
+  reply_to: type.includes('teacher') ? undefined : teacherEmail,
+  to: [to], subject, html,
+}),
+```
+
+### 1B: Linki w emailach
+Do każdego HTML dodać przycisk:
+- Dla nauczyciela: `<a href="${calendarUrl}">Open Calendar</a>` — calendarUrl to `https://edooqoo-mvp-e3.lovable.app/calendar`
+- Dla ucznia: `<a href="${bookUrl}">View Bookings</a>` — bookUrl z tokenu
+
+Dodać parametry `calendarUrl` i `bookUrl` do body wywołań.
+
+**Pliki do zmiany:**
+- `send-calendar-notification-email/index.ts` — dodać `teacherName`, `calendarUrl`, `bookUrl`, `reply_to`
+- `usePublicBooking.tsx` — dodać `teacherName` do invoke body (pobrać z profiles)
+- `useCalendarSlots.tsx` — dodać `teacherName` do invoke (jeśli wysyłamy email przy teacher cancellation)
+- `SlotDetailModal.tsx` — dodać `teacherName` do invoke przy cancellation email
+- `get-student-bookings/index.ts` — dodać `teacherName` do invoke (pobrać z profiles)
 
 ---
 
-## KROK 2: Modal Add Slot — poprawki
+## 2. Timezone
 
-### 2A: Notes — AutoResizeTextarea rows=1
-Już jest zaimplementowane (linia 583 UnifiedSlotModal). **Status: OK, brak zmian.**
+**Obecny stan:** Timezone jest zapisywany w `calendar_settings.timezone` ale NIGDZIE nie jest używany do konwersji. Godziny są przechowywane jako `time without time zone`. Sloty widoczne na `/book` pokazują godziny dokładnie jak w bazie — bez konwersji.
 
-### 2B: Usuń Link Worksheet z Single Slot (Available)
-**Plik:** `UnifiedSlotModal.tsx` linia 530-568.
-Warunek `mode === 'single'` renderuje worksheet link zarówno dla Available Slot jak i Lesson. Zmienić na:
-```tsx
-{mode === 'single' && slotType === 'lesson' && (
-  // ... worksheet section ...
-)}
-```
-Czyli worksheet link widoczny TYLKO na trybie Lesson, nie Available Slot.
+**Wniosek:** System jest "naive timezone" — godziny oznaczają czas nauczyciela. Uczeń w innej strefie widzi godziny nauczyciela, nie swoje. To jest OK dla 1:1 lekcji online — uczeń widzi kiedy nauczyciel jest dostępny w jego lokalnym czasie.
 
-### 2C: Student Combobox — kliknięcie nie działa
-**Analiza:** Linia 400 — `onSelect` callback wygląda OK. Problem prawdopodobnie w `cmdk` — `CommandItem value` jest porównywany lowercase. Gdy `value={s.name__s.id}` i wyszukiwanie zwraca item, `onSelect` dostaje lowercase string. Ale nasz callback ignoruje argument — bezpośrednio robi `setStudentId(s.id)`.
-
-**Prawdopodobna przyczyna:** `Popover` zamyka się i fokus przeskakuje zanim `onSelect` się odpali. Fix: dodać `onPointerDown={e => e.preventDefault()}` na `CommandItem`:
-```tsx
-<CommandItem 
-  key={s.id} 
-  value={`${s.name}__${s.id}`} 
-  onSelect={() => { setStudentId(s.id); setStudentComboOpen(false); }}
-  onPointerDown={(e) => e.preventDefault()}
->
-```
+**Ale** jeśli chcemy aby uczeń widział godziny w SWOJEJ strefie — trzeba dodać konwersję. Proponuję na razie wyświetlić info na `/book`: "Times shown in teacher's timezone: Europe/Warsaw" i dać opcjonalnie przelicznik. To jest osobny feature, nie implementujemy teraz.
 
 ---
 
-## KROK 3: Linkowanie worksheet na SlotDetailModal
+## 3. Realtime + miganie + przycisk Add Student
 
-### 3A: Znikający uczeń po podlinkowaniu worksheet
-**Root cause:** `CalendarPage.handleWorksheetLinked` linia 108-122 — kod JUŻ powinien zachowywać studenta (warunek `originalSlot && linkWorksheetSlot.student_id !== originalSlot.student_id`). Ale problem jest w tym że `SlotDetailModal` ZAMYKA się gdy klika się Link Worksheet (`onLinkWorksheet` wywołuje się w momencie gdy modal jest otwarty). Po powrocie z `LinkWorksheetModal`, `SlotDetailModal` jest zamknięty (bo `selectedSlot` był nullowany).
+### 3A: Supabase Realtime
+**Problem:** Polling co 30s powoduje opóźnienia i miganie.
 
-**Fix:** W `SlotDetailModal` — przed wywołaniem `onLinkWorksheet`, najpierw zapisać zmianę studenta:
+**Fix:** Użyć Supabase Realtime (channel subscription) zamiast `setInterval`.
+
+W `useCalendarSlots.tsx`: 
 ```tsx
-const handleLinkWorksheetClick = async () => {
-  // Save student change FIRST before opening link modal
-  if (editStudentId !== (slot.student_id || 'none')) {
-    const updates: any = {};
-    if (editStudentId === 'none') {
-      updates.student_id = null; updates.status = 'available';
-    } else {
-      updates.student_id = editStudentId; updates.status = 'booked';
-      updates.booked_at = new Date().toISOString();
-      updates.booked_by = 'teacher';
-      updates.confirmed_at = new Date().toISOString();
-    }
-    await onUpdate(slot.id, updates);
-  }
-  onLinkWorksheet?.(slot, editStudentId !== 'none' ? editStudentId : null);
-};
+useEffect(() => {
+  if (!teacherId) return;
+  const channel = supabase
+    .channel('calendar-slots-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_slots', filter: `teacher_id=eq.${teacherId}` },
+      () => { fetchSlots(); }
+    )
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}, [teacherId, fetchSlots]);
+```
+Usunąć `setInterval(fetchSlots, 30000)`.
+
+W `usePublicBooking.tsx`:
+```tsx
+useEffect(() => {
+  if (!settings) return;
+  const channel = supabase
+    .channel('public-slots-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_slots', filter: `teacher_id=eq.${settings.teacher_id}` },
+      () => { fetchSlots(); }
+    )
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}, [settings, fetchSlots]);
 ```
 
-### 3B: Worksheet linking nieaktywne bez studenta
-**Plik:** `SlotDetailModal.tsx` linia 257. Zmienić `disabled`:
+W `useCalendarNotifications.tsx` — analogicznie dla tabeli `calendar_notifications`.
+
+### 3B: Weryfikacja przy rezerwacji (optimistic locking)
+W `usePublicBooking.bookSlot`: Przed UPDATE dodać SELECT sprawdzający czy slot nadal `available`:
 ```tsx
-disabled={!hasStudent}
-```
-Tzn. przycisk Link2 jest `disabled` gdy `editStudentId === 'none'`.
-
-### 3C: Treść nie mieści się na modalu po wybraniu ucznia
-**Fix:** Dodać `max-h-[85vh] overflow-y-auto` na `DraggableDialogContent`. Już jest na linii 169: `max-h-[85vh] overflow-y-auto`. Jeśli problem jest w wewnętrznej sekcji, dodać `overflow-hidden` na tekst i `truncate` na dłuższe elementy. Sprawdzić czy student info + date + time + worksheet + notes nie wychodzą poza 85vh — na małych ekranach zmienić na `max-h-[90vh]`.
-
----
-
-## KROK 4: Blokada prywatna (Private Block)
-
-### Nowy slot_type='block'
-**W UnifiedSlotModal:** Dodać trzeci tab: `Available Slot | Lesson | Block`
-```tsx
-<Tabs value={slotType} onValueChange={...}>
-  <TabsList className="grid grid-cols-3 w-full">
-    <TabsTrigger value="available">Available Slot</TabsTrigger>
-    <TabsTrigger value="lesson">Lesson</TabsTrigger>
-    <TabsTrigger value="block">Block</TabsTrigger>
-  </TabsList>
-</Tabs>
-```
-
-**Block UI:** Tylko data, start/end, notes. Bez studenta, bez worksheet. Wyświetla się w kalendarzu jako szary blok z ikoną kłódki. Na `/book` jest NIEWIDOCZNY (query już filtruje `status='available'`).
-
-**Typ SlotType** zmienić z `'available' | 'lesson'` na `'available' | 'lesson' | 'block'`.
-
-**handleSubmit dla block:**
-```tsx
-if (slotType === 'block') {
-  await onCreateSingle({
-    slot_date: date, start_time: startTime, end_time: endTime,
-    notes: notes || undefined, status: 'available',
-    // slot_type: 'block' — nowe pole
-  });
+const { data: check } = await supabase
+  .from('calendar_slots').select('status').eq('id', slotId).single();
+if (check?.status !== 'available') {
+  toast({ title: 'Slot no longer available', variant: 'destructive' });
+  await fetchSlots(); return false;
 }
 ```
 
-**CalendarSlotCard:** Gdy `slot.slot_type === 'block'`:
-- Style: `bg-gray-200 border-gray-400 text-gray-600`
-- Ikona: 🔒 zamiast Clock
-- Nie pokazywać na `/book` (query `eq('slot_type', 'slot')`)
+### 3C: Miganie i przycisk Add Student
+**Problem:** `CalendarPage.tsx` nie ma żadnego przycisku "Add Student" pod kalendarzem. Miganie wynika z `setInterval` odświeżania, które powoduje re-render całego komponentu (nowe referencje `slots`).
 
-**useCalendarSlots.createSlot:** Dodać `slot_type` do insert.
+**Fix:** Realtime zamiast polling (3A) rozwiąże miganie. Jeśli `AddStudentDialog` z `triggerButton={true}` jest renderowany gdzieś — sprawdzę CalendarPage linia 341-346 — tam jest `<AddStudentDialog>` z `open={addStudentOpen}`. Ma `triggerButton` domyślnie `true`. Ale `open` jest kontrolowane zewnętrznie.
 
-**Conflict check:** Block blokuje dodawanie slotów i lekcji (jak lesson z studentem).
-
-**Legenda kalendarza:** Dodać `<span>🔒 Block</span>` obok Available/Booked/etc.
+**Problem:** `triggerButton={true}` renderuje przycisk nawet gdy `open` jest zewnętrznie kontrolowane. Fix: dodać `triggerButton={false}` do tego AddStudentDialog na CalendarPage.
 
 ---
 
-## KROK 5: Wakacje nauczyciela
+## 4. Notes — AutoResizeTextarea jednolinijkowe
 
-### Nowa tabela `calendar_teacher_vacations`
-Hook `useCalendarVacations(teacherId)`:
-- `vacations: {id, start_date, end_date, label}[]`
-- `addVacation(start, end, label)`
-- `removeVacation(id)`
+**Problem:** `AutoResizeTextarea` z `rows={1}` nadal wygląda jak wieloliniowe bo Textarea ma domyślny `min-height`. 
 
-### Na /calendar:
-- W `CalendarSettings` → nowa sekcja "Vacations" z listą wakacji + dodawanie (date range picker)
-- Na widokach Day/Week/Month: dni wakacyjne mają delikatne tło (np. `bg-orange-50`)
-- Nauczyciel MOŻE dodawać sloty/lekcje na dni wakacyjne — nic się nie zmienia w logice
-
-### Na /book:
-- `usePublicBooking.fetchSlots` — osobny query na `calendar_teacher_vacations` dla teachera
-- Na dniach wakacyjnych zamiast "No slots" pokaże się: `"Teacher on vacation"` z ikoną 🏖️
-- Slot'y tego dnia się pokazują normalnie jeśli istnieją (nauczyciel może dodać mimo wakacji)
-
-### Pliki:
-- NOWY: `src/hooks/useCalendarVacations.tsx`
-- EDIT: `CalendarSettingsPage.tsx` — sekcja Vacations
-- EDIT: `CalendarDayView.tsx`, `CalendarWeekView.tsx`, `CalendarMonthView.tsx` — tło wakacyjne
-- EDIT: `PublicBookingPage.tsx` — info "Teacher on vacation"
-- EDIT: `usePublicBooking.tsx` — fetch vacations
-
----
-
-## KROK 6: Calendar Notifications — klikalne + treść
-
-### 6A: Kliknięcie powiadomienia otwiera modal slotu
-**Plik:** `CalendarNotificationBell.tsx` + `CalendarPage.tsx`
-
-Powiadomienie przechowuje `slot_id`. Po kliknięciu:
-1. `CalendarNotificationBell` emituje callback `onNotificationClick(notification)`
-2. `CalendarPage` pobiera slot z `slots.find(s => s.id === notification.slot_id)` lub fetchuje z bazy
-3. Otwiera `SlotDetailModal` z tym slotem
-
-**Props:** Dodać `onNotificationClick?: (n: CalendarNotification) => void` do `CalendarNotificationBell`.
-
-### 6B: Nowy student — dodaj "Add Student" button
-Gdy `notification_type === 'new_student'`:
-- W `metadata` przechowujemy `{student_email, student_name_raw}`
-- Na powiadomieniu wyświetlamy dodatkowy tekst: "This student is not in your list yet."
-- Przycisk "Add Student" — otwiera `AddStudentDialog` z pre-fill name + email
-
-**Implementacja:** 
-- W `CalendarNotificationBell`: renderować przycisk "Add Student" dla `new_student` type
-- `CalendarPage`: stan `addStudentPrefill: {name, email} | null` + `AddStudentDialog` z `open`/`onOpenChange` + pre-fill
-- W `usePublicBooking.bookSlot`: dodać `metadata: { student_email: studentEmail, student_name_raw: studentName }` do INSERT calendar_notifications
-
-### 6C: Powiadomienie nauczyciela o własnej lekcji
-Gdy nauczyciel sam dodaje lekcję (w `useCalendarSlots.createSlot`), zmienić notification message z "New lesson booked..." na "You added new lesson on {date} at {time}":
+**Fix:** Dodać `className="min-h-[36px]"` żeby textarea startowała z jedną linijką:
 ```tsx
-await supabase.from('calendar_notifications').insert({
-  teacher_id: teacherId,
-  notification_type: 'lesson_created_by_teacher',
-  message: `You added a new lesson on ${input.slot_date} at ${input.start_time.slice(0, 5)}`,
-  student_name: studentName,
-  slot_id: data.id,
+<AutoResizeTextarea value={notes} onChange={...} rows={1} className="min-h-[36px]" />
+```
+Dotyczy: `UnifiedSlotModal.tsx` linia 605 i `SlotDetailModal.tsx` linia 364.
+
+---
+
+## 5. Student Combobox — nie da się kliknąć
+
+**Problem:** `cmdk` CommandItem z `onPointerDown={e => e.preventDefault()}` może powodować problem na mobilnych. Prawdopodobny root cause: `PopoverContent` ma `onOpenAutoFocus` który kradnie focus.
+
+**Fix:** Na `PopoverContent` dodać `onOpenAutoFocus={e => e.preventDefault()}`:
+```tsx
+<PopoverContent className="w-full p-0" align="start" onOpenAutoFocus={e => e.preventDefault()}>
+```
+Dotyczy: `UnifiedSlotModal.tsx` linia 401 i `SlotDetailModal.tsx` linia 299.
+
+---
+
+## 6. Linkowanie worksheet — znikający student
+
+### 6A+6B: Student znika po podlinkowaniu worksheet
+**Root cause:** `handleLinkWorksheetClick` w SlotDetailModal zapisuje studenta PRZED otwarciem LinkWorksheetModal. ALE po `onUpdate` jest wywoływany `refetch` w `useCalendarSlots` co ustawia nowe `slots`. `CalendarPage` re-renderuje i `selectedSlot` wskazuje na STARY obiekt slotu. `SlotDetailModal` dostaje `slot` z nowym stanem (po refetch) ale `open` jest nadal `true` bo `selectedSlot !== null`.
+
+**Prawdziwy problem:** Po `onUpdate` → `refetch` → `slots` się zmieniają → `selectedSlot` jest stary obiekt. `SlotDetailModal` dostaje `open={!!selectedSlot && !linkWorksheetSlot}`. Gdy `linkWorksheetSlot` jest ustawiony, modal szczegółów się zamyka (to OK). Ale po zamknięciu LinkWorksheetModal → `linkWorksheetSlot = null` → `selectedSlot` nadal stary (nie ma w nowych `slots`) → modal otwiera się ze starym stanem.
+
+**Fix:** Po `handleWorksheetLinked` → `refetch` → zaktualizować `selectedSlot`:
+```tsx
+const handleWorksheetLinked = async (worksheetId: string | null) => {
+  if (linkWorksheetSlot) {
+    const updates: any = { worksheet_id: worksheetId };
+    // ... existing logic ...
+    await updateSlot(linkWorksheetSlot.id, updates);
+    // Re-select the slot to show updated data
+    await refetch();
+    // Find updated slot and set as selected
+    const updatedSlot = slots.find(s => s.id === linkWorksheetSlot.id);
+    if (updatedSlot) setSelectedSlot(updatedSlot);
+  }
+};
+```
+
+Ale `slots` nie jest jeszcze zaktualizowany w tym samym render cycle. Lepsze rozwiązanie: po zamknięciu LinkWorksheetModal, NIE otwierać od razu SlotDetailModal — tylko refetchować. Albo: zapisać ID i po refetch znaleźć slot.
+
+**Najlepsze rozwiązanie:** Dodać `useEffect` w CalendarPage:
+```tsx
+// Sync selectedSlot with fresh slots data
+useEffect(() => {
+  if (selectedSlot) {
+    const fresh = slots.find(s => s.id === selectedSlot.id);
+    if (fresh && JSON.stringify(fresh) !== JSON.stringify(selectedSlot)) {
+      setSelectedSlot(fresh);
+    }
+  }
+}, [slots]);
+```
+
+---
+
+## 7. Calendar Notifications
+
+### 7A: "Add Student" znika po dodaniu
+**Plik:** `CalendarNotificationBell.tsx`
+
+Potrzeba sprawdzić czy email z metadata już istnieje w liście studentów. Dodać prop `students` do `CalendarNotificationBell`:
+```tsx
+interface CalendarNotificationBellProps {
+  teacherId?: string;
+  students?: Array<{ email?: string }>;
+  onNotificationClick?: ...;
+  onAddStudentClick?: ...;
+}
+```
+
+W renderowaniu:
+```tsx
+const isNewStudent = n.notification_type === 'new_student';
+const studentAlreadyAdded = isNewStudent && students?.some(s => 
+  s.email && metadata.student_email && s.email.toLowerCase() === metadata.student_email.toLowerCase()
+);
+```
+
+Jeśli `studentAlreadyAdded`:
+- Zamiast "This student is not in your list yet." → "✓ Student added"
+- Nie pokazywać przycisku "Add Student"
+
+### 7B: Nauczyciel dodaje lekcję — treść powiadomienia
+**Plik:** `useCalendarSlots.tsx` — w `createSlot`, linia z `calendar_notifications.insert`.
+
+Sprawdzę czy notification jest wstawiane przy `createSlot`. Szukam w kodzie...
+
+W `useCalendarSlots.tsx` linia ~logAction po createSlot — logujemy 'created'. Ale notification do `calendar_notifications` NIE jest wstawiane w createSlot. Jest wstawiane TYLKO w `usePublicBooking.bookSlot` (student booking) i w `get-student-bookings` (cancel/reschedule).
+
+Więc skąd pochodzi powiadomienie "New lesson booked on..."? Prawdopodobnie z triggera `notify_on_slot_booking` w bazie.
+
+Sprawdzę trigger:
+Trigger `notify_on_slot_booking` na INSERT/UPDATE — jeśli `NEW.status = 'booked'` i `OLD IS NULL OR OLD.status = 'available'`, wstawia notification. Treść: `'New lesson booked on ' || NEW.slot_date || ' at ' || substring(NEW.start_time::text from 1 for 5)`.
+
+**Fix:** Zmienić trigger żeby rozróżniał kto zrobił booking. Jeśli `NEW.booked_by = 'teacher'` → treść "You added a new lesson..." zamiast "New lesson booked...":
+```sql
+CREATE OR REPLACE FUNCTION notify_on_slot_booking() RETURNS TRIGGER AS $$
+BEGIN
+  IF (TG_OP = 'INSERT' AND NEW.status = 'booked') OR 
+     (TG_OP = 'UPDATE' AND NEW.status = 'booked' AND (OLD.status IS NULL OR OLD.status = 'available')) THEN
+    
+    IF NEW.booked_by = 'teacher' THEN
+      INSERT INTO calendar_notifications (teacher_id, notification_type, message, student_name, slot_id)
+      VALUES (NEW.teacher_id, 'lesson_created_by_teacher', 
+        'You added a new lesson on ' || NEW.slot_date || ' at ' || substring(NEW.start_time::text from 1 for 5),
+        COALESCE(NEW.student_notes, ''), NEW.id);
+    ELSE
+      INSERT INTO calendar_notifications (teacher_id, notification_type, message, student_name, slot_id)
+      VALUES (NEW.teacher_id, 'booking_pending', 
+        COALESCE(split_part(NEW.student_notes, '(', 1), '') || ' requested a lesson — awaiting confirmation',
+        COALESCE(split_part(NEW.student_notes, '(', 1), ''), NEW.id);
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+**ALE UWAGA:** Jest problem duplikacji (punkt 7C) — trigger wstawia notification I `usePublicBooking.bookSlot` TEŻ wstawia notification. Dwukrotne powiadomienie.
+
+### 7C: Duplikacja powiadomień
+**Root cause:** Booking wstawia notification W KODZIE (usePublicBooking linia 106-115) PLUS trigger bazodanowy `notify_on_slot_booking` RÓWNIEŻ wstawia notification.
+
+**Fix:** Usunąć INSERT do `calendar_notifications` z `usePublicBooking.bookSlot` (linia 104-115 — "Always insert booking notification"). Zostawić TYLKO trigger bazodanowy. Trigger jest lepszy bo jest atomowy z UPDATE.
+
+Ale trigger nie ma kontekstu o `student_name` — zna tylko `student_notes`. Więc modyfikujemy trigger żeby wyciągnąć imię z `student_notes` (format: "Booked by: Name (email)").
+
+Alternatywnie: usunąć trigger i zostawić TYLKO insert z kodu. To prostsze — usuwamy trigger.
+
+**Decyzja:** Usunąć trigger `notify_on_slot_booking`. Powiadomienia zarządzamy WYŁĄCZNIE z kodu (usePublicBooking, useCalendarSlots, get-student-bookings). To daje pełną kontrolę nad treścią i eliminuje duplikację.
+
+### 7D: "New student" mimo że już dodany
+**Problem:** `usePublicBooking.bookSlot` sprawdza `existingStudent` przez `student_email`. Jeśli email jest inny niż w bazie (np. case sensitivity lub uczeń wpisał inny email), wstawia `new_student` notification nawet jeśli student istnieje.
+
+**Fix:** Normalizować email do lowercase: `.eq('student_email', studentEmail.toLowerCase())`. I przy dodawaniu studenta zapisywać email lowercase.
+
+### 7E: Powiadomienie "done" po wykonaniu akcji
+Dodać pole `is_resolved` do `calendar_notifications`. Po potwierdzeniu/odrzuceniu bookingu — oznaczyć notification jako resolved. Resolved notifications mają szary styl i badge "✓ Done".
+
+---
+
+## 8. Block na /book — nie pokazywać
+
+**Problem:** Na `/book` query filtruje `or('status.eq.available,and(status.eq.booked,confirmed_at.is.null)')`. Bloki mają `status='available'` i `slot_type='block'` — więc przechodzą filtr.
+
+**Fix:** W `usePublicBooking.fetchSlots` dodać `.eq('slot_type', 'slot')` lub `.neq('slot_type', 'block')`:
+```tsx
+const { data } = await supabase
+  .from('calendar_slots')
+  .select('*')
+  .eq('teacher_id', settings.teacher_id)
+  .neq('slot_type', 'block')  // ← DODAĆ
+  .gte('slot_date', from)
+  ...
+```
+
+---
+
+## 9+10. Logi — więcej informacji
+
+### 9: CalendarLogHistoryPage — rozbudowa
+**Plik:** `CalendarLogHistoryPage.tsx`
+
+Zmienić renderowanie logów — zamiast 2-3 pól, pełny opis:
+```tsx
+{filteredLogs.map(log => (
+  <div key={log.id} className="...">
+    <div>{format(new Date(log.created_at), 'MMM d, yyyy HH:mm')}</div>
+    <div>
+      <span className="font-medium">{humanizeAction(log.action)}</span>
+      <span> by {log.actor}</span>
+      {log.details?.student_name && <span> — Student: {log.details.student_name}</span>}
+      {log.details?.slot_date && <span> — Date: {log.details.slot_date}</span>}
+      {log.details?.start_time && <span> at {log.details.start_time.slice(0,5)}</span>}
+      {log.details?.old_status && <span> — {log.details.old_status} → {log.details.new_status}</span>}
+      {log.details?.student_email && <span> ({log.details.student_email})</span>}
+      {log.details?.changes && <pre className="text-[10px] mt-1">{JSON.stringify(log.details.changes, null, 2)}</pre>}
+    </div>
+  </div>
+))}
+```
+
+Dodać filtry: student selector (dropdown z uczniami), date range (od-do).
+
+### 10: Historia na slocie — więcej info
+**Plik:** `SlotDetailModal.tsx` linie 404-411 — ten sam format co powyżej.
+
+Dodatkowo: upsertować bogatsze `details` w logach — we WSZYSTKICH miejscach gdzie robimy `calendar_slot_logs.insert`, dodawać pełne info:
+```tsx
+details: { 
+  student_name, student_id: slot.student_id, student_email,
+  slot_date: slot.slot_date, start_time: slot.start_time, 
+  old_status: slot.status, new_status: 'available',
+  ...
+}
+```
+
+---
+
+## 11. Cancellation — czyszczenie tytułu, notatek, worksheet
+
+### 11A+11B: Po Teacher/Student Cancellation
+W `handleTeacherCancellation` i `handleStudentCancellation` — dodać czyszczenie:
+```tsx
+await onUpdate(slot.id, {
+  status: 'available', student_id: null,
+  title: null,           // ← DODAĆ
+  worksheet_id: null,     // ← DODAĆ — odpinanie worksheet
+  cancelled_at: new Date().toISOString(), cancelled_by: 'teacher',
+  cancellation_reason: `Teacher cancellation. Student was: ${cancelledStudentName}`,
+  booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
 });
 ```
 
 ---
 
-## KROK 7: Historia logów — podstrona /calendar/logs
+## 12. Usuwanie slotów — constraint fix + logika
 
-### Nowy komponent `CalendarLogHistory.tsx`
-- Pobiera z `calendar_slot_logs` WHERE `teacher_id = auth.uid()` ORDER BY `created_at DESC`
-- Renderuje listę logów z: data, czas, akcja, student name, slot date, opis
-- Filtry: typ akcji, data range, student
-- Paginacja (LIMIT 50 per page)
+### 12A: Constraint fix
+Migracja SQL (opisana na początku) — dodać 'deleted' do CHECK constraint.
 
-### Route
-- Dodać w `App.tsx`: `/calendar/logs` → `CalendarLogHistoryPage`
-- Na `CalendarPage`: przycisk "Logs" obok Settings
+### 12B: Logika usuwania
+- **Available bez historii rezerwacji** (`cancelled_at IS NULL`): hard delete (fizycznie usunąć z bazy)
+- **Available z historią** (`cancelled_at IS NOT NULL`): soft delete (`status = 'deleted'`)
 
-### Logowanie zdarzeń
-Wszędzie gdzie robimy `updateSlot`, `createSlot`, `deleteSlot` — dodać INSERT do `calendar_slot_logs`:
-- `createSlot` → log 'created'
-- `updateSlot` z `status: 'booked'` → log 'booked'
-- `updateSlot` z `status: 'cancelled'` → log 'cancelled_by_teacher' / 'cancelled_by_student'
-- `deleteSlot` → log 'deleted'
-- `onUpdate` z student change → log 'student_changed'
-- `handleWorksheetLinked` → log 'worksheet_linked'
-- Booking z `/book` → log 'booked' (w `get-student-bookings`)
-- Cancel z `/book` → log 'cancelled_by_student' (w `get-student-bookings`)
-
-**W edge function `get-student-bookings`:** Po każdej akcji (cancel, reschedule) — INSERT do `calendar_slot_logs`.
-
-**W `useCalendarSlots`:** Wrapper functions `createSlotWithLog`, `updateSlotWithLog`, `deleteSlotWithLog`.
-
----
-
-## KROK 8: Historia logów na każdym slocie + show deleted
-
-### Na SlotDetailModal — sekcja "History"
-Na dole modalu dodać rozwijalną sekcję (Collapsible):
+W `SlotDetailModal.handleDelete`:
 ```tsx
-<Collapsible>
-  <CollapsibleTrigger className="text-xs flex items-center gap-1">
-    <History className="h-3 w-3" /> History
-  </CollapsibleTrigger>
-  <CollapsibleContent>
-    {slotLogs.map(log => (
-      <div className="text-xs border-l-2 pl-2 py-1">
-        <span className="font-medium">{log.action}</span>
-        <span className="text-muted-foreground ml-1">{format(log.created_at, 'MMM d HH:mm')}</span>
-        <span className="text-muted-foreground ml-1">by {log.actor}</span>
-        {log.details.student_name && <span> — {log.details.student_name}</span>}
-      </div>
-    ))}
-  </CollapsibleContent>
-</Collapsible>
-```
-
-### Show Deleted
-Na `CalendarPage`: przycisk "Show Deleted" toggle.
-- Gdy aktywny: `useCalendarSlots.fetchSlots` zmienia query — nie filtruje cancelled (albo fetchuje soft-deleted).
-- ALE: Usunięte sloty (`deleteSlot`) są fizycznie usunięte z `calendar_slots`. Więc nie da się ich pokazać.
-
-**Zmiana:** Zamiast fizycznego DELETE, robimy soft delete — `status = 'deleted'`. Zmieniamy `deleteSlot`:
-```tsx
-// Zamiast:
-await supabase.from('calendar_slots').delete().eq('id', slotId);
-// Robimy:
-await supabase.from('calendar_slots').update({ status: 'deleted' }).eq('id', slotId);
-```
-Domyślny fetch wyklucza `status = 'deleted'`. "Show Deleted" je dołącza.
-
-**Na CalendarSlotCard:** `status === 'deleted'` → styl: szare, przekreślone, z ikoną kosza.
-
-**ViewMode update:** Dodać `'deleted'` do CalendarSlot status type.
-
----
-
-## KROK 9: Pole Search na /calendar
-
-Na `CalendarPage` — nad toolbarem dodać Input search:
-```tsx
-<Input placeholder="Search students, notes..." value={searchQuery} onChange={...} className="h-8 w-60" />
-```
-Filtruje `filteredSlots` po: `studentMap[slot.student_id]?.includes(query)` || `slot.notes?.includes(query)` || `slot.title?.includes(query)`.
-
----
-
-## KROK 10: Modal Lesson Booked — przebudowa przycisków
-
-### 10A: Usunąć Cancel Lesson (obecny przycisk)
-### 10B: Usunąć Delete Slot (ma być TYLKO na Available Slot)
-### 10C: Dodać "Teacher Cancellation" i "Student Cancellation"
-
-**Plik:** `SlotDetailModal.tsx` linia 288-328.
-
-**Nowa logika przycisków:**
-
-```
-JEŚLI slot jest Available (brak studenta, status available):
-  - [Delete Slot] — fizycznie usuwa (soft delete)
-  - [Save Changes] — edycja
-
-JEŚLI slot jest Booked (ma studenta):
-  - [Teacher Cancellation] — potwierdza → status='available', cancelled_by='teacher', log
-  - [Student Cancellation] — potwierdza → status='available', cancelled_by='student', log  
-  - [Complete] / [No Show] — zmienia status
-  - [Save Changes] — edycja
-  - NIE MA Delete Slot
-  - NIE MA Cancel Lesson (zastąpiony dwoma nowymi)
-```
-
-**handleTeacherCancellation:**
-```tsx
-const handleTeacherCancellation = async () => {
-  if (!window.confirm('Cancel this lesson as teacher cancellation? The slot will become available again.')) return;
-  const studentName = students.find(s => s.id === slot.student_id)?.name || 'unknown';
-  await onUpdate(slot.id, {
-    status: 'available',
-    student_id: null,
-    cancelled_at: new Date().toISOString(),
-    cancelled_by: 'teacher',
-    cancellation_reason: `Teacher cancellation. Student was: ${studentName}`,
-    booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
-  });
-  // Log to calendar_slot_logs
-  await supabase.from('calendar_slot_logs').insert({
-    slot_id: slot.id, teacher_id: slot.teacher_id,
-    action: 'cancelled_by_teacher', actor: 'teacher',
-    details: { student_name: studentName, student_id: slot.student_id },
-  });
-  onOpenChange(false);
+const handleDelete = async () => {
+  if (confirming) {
+    const hasHistory = slot.cancelled_at !== null;
+    if (hasHistory) {
+      // Soft delete
+      await onUpdate(slot.id, { status: 'deleted' } as any);
+    } else {
+      // Hard delete
+      await onDelete(slot.id);
+    }
+    // Log...
+    onOpenChange(false);
+  } else setConfirming(true);
 };
 ```
 
-**handleStudentCancellation:** Analogicznie z `cancelled_by: 'student'`.
+Batch delete w CalendarPage: analogicznie — sprawdzić `cancelled_at` każdego slotu.
+
+Deleted slots: kliknięcie otwiera modal z opcją "Restore" i historią.
 
 ---
 
-## KROK 11: Badge C na slotach po cancellation
+## 13. Legenda kolorów z badge'ami i filtrowanie
 
-Na `CalendarSlotCard.tsx`:
-- Jeśli `slot.status === 'available'` ALE `slot.cancelled_at` i `slot.cancelled_by`:
-  - Badge "C" w rogu:
-    - Żółty jeśli `cancelled_by === 'student'`
-    - Niebieski jeśli `cancelled_by === 'teacher'`
+**Plik:** `CalendarPage.tsx` linie 277-284.
 
+Nowa legenda z badge literami:
 ```tsx
-{slot.status === 'available' && slot.cancelled_at && slot.cancelled_by && (
-  <div className={cn(
-    'absolute top-0 left-0 w-4 h-4 rounded-br text-[9px] font-bold flex items-center justify-center',
-    slot.cancelled_by === 'student' ? 'bg-amber-400 text-amber-900' : 'bg-blue-400 text-blue-900'
-  )}>
-    C
+const LEGEND_ITEMS = [
+  { key: 'available', label: 'Available', badge: 'A', color: 'bg-green-200 border-green-400' },
+  { key: 'booked', label: 'Booked', badge: 'B', color: 'bg-blue-200 border-blue-400' },
+  { key: 'pending', label: 'Pending', badge: 'P', color: 'bg-amber-200 border-amber-400' },
+  { key: 'completed', label: 'Completed', badge: '✓', color: 'bg-emerald-200 border-emerald-400' },
+  { key: 'no_show', label: 'No Show', badge: 'NS', color: 'bg-red-200 border-red-400' },
+  { key: 'block', label: 'Block', badge: 'B', color: 'bg-gray-200 border-gray-400' },
+  { key: 'deleted', label: 'Deleted', badge: 'D', color: 'bg-muted/50 border-border/50' },
+];
+```
+
+Stan `legendFilter: string | null`. Kliknięcie na legendzie ustawia filtr. Przycisk "Clear filter" resetuje.
+
+Na `CalendarSlotCard.tsx` — dodać badge literkę w lewym górnym rogu (jeśli nie ma badge C):
+```tsx
+{!showBadgeC && (
+  <div className="absolute top-0 left-0 ...">
+    {statusBadgeLetter}
   </div>
 )}
 ```
 
----
-
-## KROK 12: Calendar Settings — zmiany
-
-### 12A: Rename
-`"Allow student rescheduling"` → `"Allow student rescheduling without your confirmation"`
-
-### 12B: Gdy `allow_student_reschedule=true` — toast na /book
-W `StudentBookingsSection.handleReschedule` linia 78:
-```tsx
-toast.success(settings.allow_student_reschedule ? 'Lesson rescheduled successfully!' : 'Reschedule request sent to teacher');
-```
-Już jest OK. Problem w tym że `get-student-bookings` edge function linia 143-146 robi `confirmed_at: oldSlot.confirmed_at ? new Date().toISOString() : null`. Jeśli previous booking miał confirmed_at, nowy też dostaje — więc od razu widoczny jako confirmed. **Toast powinien być "Lesson rescheduled successfully!"** — to jest ok. Sprawdzić frontend.
-
-### 12C: Gdy `allow_student_reschedule=false` — reschedule pending
-W `get-student-bookings` linia 159-167: Obecnie tylko wstawia notification, nie zmienia slotu.
-
-**Fix:** 
-1. Na OLD slocie: zmienić status na "pending" (booked, confirmed_at=null) — ale to zmieni oryginalny slot
-2. **Lepsza opcja:** Na NEW slocie: zarezerwować go jako pending:
-```tsx
-// Book new slot as pending
-await supabase.from('calendar_slots').update({
-  student_id: oldSlot.student_id,
-  status: 'booked',
-  booking_type: 'student_booked',
-  booked_at: new Date().toISOString(),
-  booked_by: 'student',
-  confirmed_at: null, // PENDING
-  student_notes: `Reschedule request from ${oldSlot.slot_date} ${oldSlot.start_time.slice(0,5)}. Original booking: ${oldSlot.student_notes || ''}`,
-}).eq('id', newSlotId).eq('status', 'available');
-```
-3. Old slot: oznaczamy jako "reschedule_pending" w notatkach ale NIE zwalniamy — dopiero po potwierdzeniu przez nauczyciela stary slot staje się available
-4. Na `/calendar` nauczyciela: notification klikalne → otwiera modal nowego slotu z Confirm/Reject
-5. Na `/book`: nowy slot jest żółty (pending), stary nadal booked
-
-**W powiadomieniu:** metadata z `oldSlotId` i `newSlotId` żeby nauczyciel mógł zatwierdzić:
-```tsx
-await supabase.from('calendar_notifications').insert({
-  teacher_id: teacherId,
-  notification_type: 'reschedule_request',
-  message: `Student ${email} requests to reschedule from ${oldSlot.slot_date} ${oldSlot.start_time.slice(0,5)} to new slot`,
-  student_name: email,
-  slot_id: newSlotId,
-  metadata: { old_slot_id: slotId, new_slot_id: newSlotId, student_email: email },
-});
-```
+Zmiana `completed` z `bg-muted` na `bg-emerald-100 border-emerald-300` żeby różnił się od deleted.
 
 ---
 
-## KROK 13: Pending bookings/reschedules — edytowalne
+## 12 (Settings). Reschedule bez potwierdzenia — stary slot nadal Pending
 
-Jeśli booking/reschedule jest pending (nie potwierdzony), uczeń POWINIEN móc go zmienić/anulować niezależnie od ustawień. 
+**Problem:** W `get-student-bookings` linia 144-187: Gdy `allow_student_reschedule=false` (wymaga potwierdzenia), nowy slot jest `confirmed_at: null` (pending). ALE stary slot NIE jest zmieniany — nadal jest `booked` z `confirmed_at`. Powinien być pending.
 
-**W `StudentBookingsSection`:** Dla bookingów `isPending` — przyciski Cancel i Reschedule są zawsze aktywne (ignorujemy `canCancel` check).
+Nie — stary slot powinien nadal być aktywny dopóki nauczyciel nie potwierdzi reschedule. Po potwierdzeniu stary slot staje się available.
 
-**W `get-student-bookings`:** Przy cancel — jeśli slot jest pending (no confirmed_at), pozwalamy cancel bez sprawdzenia `min_cancellation_hours`.
+**Ale** user mówi że nawet gdy `allow_student_reschedule=true` (automatycznie), stary slot jest Pending. Sprawdzam linia 147-155: stary slot dostaje `status: 'available'`, `cancelled_at`, `cancelled_by: 'student'`. To jest poprawne — powinien być available nie pending.
+
+**Problem może być w UI:** Po reschedule, `refetchSlots` na `/book` pobiera sloty `or('status.eq.available,and(status.eq.booked,confirmed_at.is.null)')`. Stary slot ma status `available` z `cancelled_at` — więc jest widoczny jako available. Ale nowy slot ma `confirmed_at` (auto-reschedule) — więc NIE jest pending. UI powinien pokazywać nowy slot jako `booked` z zielonym badge.
+
+Ale query nie pobiera `booked` z `confirmed_at` — tylko `available` i pending. Więc nowy slot (booked + confirmed) jest NIEWIDOCZNY na `/book`. To jest bug — student nie widzi swojej rezerwacji po reschedule.
+
+**Fix:** Dodać do query na `/book` również sloty booked z confirmed_at (ale tylko studenta). ALE bieżący query jest client-side z anon key — nie wie kto jest studentem. Rozwiązanie: zostawić jak jest, student zobaczy swoje booking w sekcji "Already have a booking?" (StudentBookingsSection).
 
 ---
 
-## KROK 14: Reschedule na /book — wybór z kalendarza
+## 13. Pending edytowalne
+Już zaimplementowane w `get-student-bookings` (linia 82-92) i `StudentBookingsSection` (linia 80-86). Nie wymaga zmian.
 
-**Problem:** Po kliknięciu "Reschedule" w StudentBookingsSection pojawiają się mini-buttony slotów pod spodem. Ma być inaczej — informacja "Select a new time from the calendar above" i wybór bezpośredni z siatki kalendarza na górze strony.
+---
 
-**Fix:**
-1. W `StudentBookingsSection`: Zamiast listy slotów, pokazać info: `"Click on an available slot in the calendar above to reschedule"`
-2. W `PublicBookingPage`: Stan `rescheduleBookingId: string | null`. Gdy ustawiony:
-   - Na górnym kalendarzu wyświetlić banner "Select a new slot to reschedule your lesson"
-   - Kliknięcie available slot → zamiast otwierać dialog bookingu, wywołać `handleReschedule(rescheduleBookingId, slot.id)`
-   - Po udanym reschedule → reset `rescheduleBookingId`
+## 14. Duplikacja emaili studentów
 
-**Komunikacja między komponentami:**
-- `StudentBookingsSection` props: `onRescheduleStart?: (bookingId: string) => void`
-- `PublicBookingPage`: `rescheduleMode` state + banner + modyfikacja onClick logiki na slotach
+**Plik:** `useStudents.tsx` — w `addStudent` dodać sprawdzenie:
+```tsx
+const { data: existing } = await supabase
+  .from('students')
+  .select('id')
+  .eq('teacher_id', user.id)
+  .eq('student_email', email.toLowerCase())
+  .maybeSingle();
+if (existing) {
+  toast.error('Student with this email already exists');
+  return null;
+}
+```
+
+Plus: migracja SQL dodająca UNIQUE constraint:
+```sql
+CREATE UNIQUE INDEX idx_students_teacher_email ON students(teacher_id, lower(student_email)) 
+WHERE student_email IS NOT NULL AND deleted_at IS NULL;
+```
 
 ---
 
 ## PODSUMOWANIE PLIKÓW
 
-### NOWE PLIKI:
-1. `src/hooks/useCalendarVacations.tsx` — hook wakacji
-2. `src/hooks/useCalendarSlotLogs.tsx` — hook logów slotów
-3. `src/components/calendar/CalendarLogHistoryPage.tsx` — pełna historia logów
-4. `src/components/calendar/SlotLogHistory.tsx` — logi na modalu slotu (Collapsible)
-5. Migration SQL — calendar_slot_logs, calendar_teacher_vacations, calendar_slots.slot_type, calendar_notifications.metadata
+### Migracja SQL:
+1. Dodać 'deleted' do CHECK constraint `valid_slot_status`
+2. Dodać `is_resolved boolean DEFAULT false` do `calendar_notifications`
+3. Usunąć trigger `notify_on_slot_booking`
+4. Dodać UNIQUE index na `students(teacher_id, lower(student_email))`
 
-### MODYFIKOWANE PLIKI:
-1. `UnifiedSlotModal.tsx` — usunąć worksheet z Available Slot, dodać tab Block, fix combobox
-2. `SlotDetailModal.tsx` — nowe przyciski cancellation, save student before link, historia logów, disabled link bez studenta
-3. `CalendarSlotCard.tsx` — badge C, block style, deleted style
-4. `CalendarPage.tsx` — search, show deleted, notification click handler, add student prefill
-5. `CalendarNotificationBell.tsx` — klikalne notyfikacje, Add Student button, callback
-6. `CalendarSettingsPage.tsx` — rename rescheduling, sekcja Vacations
-7. `CalendarToolbar.tsx` — przycisk Logs
-8. `PublicBookingPage.tsx` — reschedule z kalendarza, wakacje info
-9. `StudentBookingsSection.tsx` — reschedule via calendar, pending editable
-10. `useCalendarSlots.tsx` — soft delete, slot_type='block', logowanie
-11. `usePublicBooking.tsx` — fetch vacations
-12. `useCalendarNotifications.tsx` — metadata support
-13. `get-student-bookings/index.ts` — reschedule pending, logs, cancel hours bypass for pending
-14. `send-calendar-notification-email/index.ts` — nowe typy email
-15. `App.tsx` — route /calendar/logs
-16. Dokumentacja — TECHNICAL_DOCUMENTATION.md, USER_GUIDE_SHORT.md, USER_GUIDE_DETAILED.md, CURRENT_STATE_ANALYSIS.md
+### Modyfikowane pliki:
+1. `useCalendarSlots.tsx` — Realtime zamiast polling, usunąć setInterval
+2. `usePublicBooking.tsx` — Realtime, filtr `slot_type != block`, weryfikacja przy booking, usunąć duplikat notification
+3. `useCalendarNotifications.tsx` — Realtime
+4. `UnifiedSlotModal.tsx` — Notes min-h, PopoverContent onOpenAutoFocus fix
+5. `SlotDetailModal.tsx` — Notes min-h, combobox fix, cancellation czyści title/worksheet, delete logika (hard vs soft), bogatsze logi
+6. `CalendarSlotCard.tsx` — badge literki, nowy kolor completed
+7. `CalendarPage.tsx` — useEffect sync selectedSlot, legenda z filtrami, AddStudentDialog triggerButton=false
+8. `CalendarNotificationBell.tsx` — sprawdzanie czy student dodany, is_resolved style
+9. `CalendarLogHistoryPage.tsx` — bogatsze logi, filtr student/date range
+10. `send-calendar-notification-email/index.ts` — nadawca, reply_to, linki
+11. `get-student-bookings/index.ts` — dodać teacherName do email invoke, bogatsze logi
+12. `useStudents.tsx` — sprawdzanie duplikatów emaili
 
-### KOLEJNOŚĆ IMPLEMENTACJI:
-1. **Migration SQL** — nowe tabele i kolumny
-2. **Krok 2** — Modal fixes (worksheet, combobox, block)
-3. **Krok 3** — Worksheet linking fix
-4. **Krok 10** — Lesson Booked modal buttons
-5. **Krok 11** — Badge C
-6. **Krok 4** — Block feature
-7. **Krok 5** — Vacations
-8. **Krok 6** — Notifications clickable + Add Student
-9. **Krok 7+8** — Logging system + history
-10. **Krok 9** — Search
-11. **Krok 12+13** — Settings + pending editable
-12. **Krok 14** — Reschedule z kalendarza
-13. **Krok 1** — Email notifications types
-14. **Dokumentacja**
+### KOLEJNOŚĆ:
+1. Migracja SQL (constraint + trigger + unique index)
+2. Realtime (useCalendarSlots, usePublicBooking, useCalendarNotifications)
+3. Bug fixy (combobox, notes, blocks na /book, cancellation cleanup)
+4. Worksheet linking fix (selectedSlot sync)
+5. Notifications (duplikacja, treść, is_resolved)
+6. Delete logika (hard vs soft)
+7. Legenda z badge'ami i filtrami
+8. Logi rozbudowa
+9. Email nadawca + linki
+10. Duplikacja studentów
 
