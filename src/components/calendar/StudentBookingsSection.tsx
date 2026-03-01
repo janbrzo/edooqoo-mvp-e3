@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Search, X, ArrowRightLeft } from 'lucide-react';
+import { Calendar, Clock, Search, X, ArrowRightLeft, Info } from 'lucide-react';
 import { format, parseISO, differenceInHours } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -25,15 +25,15 @@ interface StudentBookingsSectionProps {
   token: string;
   availableSlots: Array<{ id: string; slot_date: string; start_time: string; end_time: string }>;
   onBookingChanged: () => void;
+  onRescheduleStart?: (bookingId: string) => void;
+  rescheduleBookingId?: string | null;
 }
 
-export function StudentBookingsSection({ settings, token, availableSlots, onBookingChanged }: StudentBookingsSectionProps) {
+export function StudentBookingsSection({ settings, token, availableSlots, onBookingChanged, onRescheduleStart, rescheduleBookingId }: StudentBookingsSectionProps) {
   const [email, setEmail] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
-  const [rescheduleSlotId, setRescheduleSlotId] = useState<string | null>(null);
-  const [selectedNewSlotId, setSelectedNewSlotId] = useState<string | null>(null);
 
   const fetchBookings = useCallback(async () => {
     if (!email.trim()) return;
@@ -69,23 +69,17 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
     }
   };
 
-  const handleReschedule = async (oldSlotId: string, newSlotId: string) => {
-    try {
-      const { error } = await supabase.functions.invoke('get-student-bookings', {
-        body: { token, email: email.trim(), action: 'reschedule', slotId: oldSlotId, newSlotId },
-      });
-      if (error) throw error;
-      toast.success(settings.allow_student_reschedule ? 'Lesson rescheduled!' : 'Reschedule request sent to teacher');
-      setRescheduleSlotId(null);
-      setSelectedNewSlotId(null);
-      await fetchBookings();
-      onBookingChanged();
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to reschedule');
+  const handleRescheduleClick = (bookingId: string) => {
+    // Step 14: Use calendar-based reschedule instead of inline slot list
+    if (onRescheduleStart) {
+      onRescheduleStart(bookingId);
     }
   };
 
+  // Step 13: Pending bookings can always be cancelled/rescheduled
   const canCancel = (booking: Booking) => {
+    const isPending = booking.status === 'booked' && !booking.confirmed_at;
+    if (isPending) return true; // Always allow cancel for pending
     if (!settings.min_cancellation_hours) return true;
     const lessonTime = parseISO(`${booking.slot_date}T${booking.start_time}`);
     return differenceInHours(lessonTime, new Date()) >= settings.min_cancellation_hours;
@@ -123,10 +117,10 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
           <div className="space-y-2">
             {bookings.map(booking => {
               const isPending = booking.status === 'booked' && !booking.confirmed_at;
-              const isRescheduling = rescheduleSlotId === booking.id;
+              const isActiveReschedule = rescheduleBookingId === booking.id;
 
               return (
-                <div key={booking.id} className="border rounded-lg p-3 space-y-2">
+                <div key={booking.id} className={`border rounded-lg p-3 space-y-2 ${isActiveReschedule ? 'ring-2 ring-primary bg-primary/5' : ''}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -147,35 +141,21 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
                         <X className="h-3 w-3 mr-1" /> Cancel
                       </Button>
                     )}
-                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setRescheduleSlotId(isRescheduling ? null : booking.id)}>
+                    <Button
+                      variant={isActiveReschedule ? 'default' : 'outline'}
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => handleRescheduleClick(booking.id)}
+                    >
                       <ArrowRightLeft className="h-3 w-3 mr-1" /> Reschedule
                     </Button>
                   </div>
 
-                  {isRescheduling && (
-                    <div className="border-t pt-2 space-y-2">
-                      <p className="text-xs text-muted-foreground">Select a new time slot:</p>
-                      <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-                        {availableSlots.filter(s => s.id !== booking.id).map(slot => (
-                          <Button
-                            key={slot.id}
-                            variant={selectedNewSlotId === slot.id ? 'default' : 'outline'}
-                            size="sm"
-                            className="text-xs h-7"
-                            onClick={() => setSelectedNewSlotId(slot.id)}
-                          >
-                            {format(parseISO(slot.slot_date), 'MMM d')} {slot.start_time.slice(0, 5)}
-                          </Button>
-                        ))}
-                        {availableSlots.filter(s => s.id !== booking.id).length === 0 && (
-                          <p className="text-xs text-muted-foreground">No available slots to reschedule to.</p>
-                        )}
-                      </div>
-                      {selectedNewSlotId && (
-                        <Button size="sm" className="text-xs" onClick={() => handleReschedule(booking.id, selectedNewSlotId)}>
-                          {settings.allow_student_reschedule ? 'Confirm Reschedule' : 'Request Reschedule'}
-                        </Button>
-                      )}
+                  {/* Step 14: Show info to select from calendar */}
+                  {isActiveReschedule && (
+                    <div className="border-t pt-2 flex items-start gap-2 text-xs text-muted-foreground">
+                      <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                      <p>Click on an available slot in the calendar above to reschedule this lesson.</p>
                     </div>
                   )}
                 </div>

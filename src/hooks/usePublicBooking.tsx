@@ -96,6 +96,7 @@ export function usePublicBooking(token?: string) {
             message: `New student signed up: ${studentName} (${studentEmail})`,
             student_name: studentName,
             slot_id: slotId,
+            metadata: { student_email: studentEmail, student_name_raw: studentName },
           } as any);
         } catch (e) { console.error(e); }
       }

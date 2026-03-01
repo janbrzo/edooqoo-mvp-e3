@@ -119,20 +119,24 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     }
     await onUpdate(slot.id, updates);
     // Log update
-    await supabase.from('calendar_slot_logs').insert({
-      slot_id: slot.id, teacher_id: slot.teacher_id, action: 'updated', actor: 'teacher',
-      details: { changes: updates },
-    } as any).catch(() => {});
+    try {
+      await supabase.from('calendar_slot_logs').insert({
+        slot_id: slot.id, teacher_id: slot.teacher_id, action: 'updated', actor: 'teacher',
+        details: { changes: updates },
+      } as any);
+    } catch (_) {}
     setSaving(false);
     onOpenChange(false);
   };
 
   const handleConfirm = async () => {
     await onUpdate(slot.id, { confirmed_at: new Date().toISOString() } as any);
-    await supabase.from('calendar_slot_logs').insert({
-      slot_id: slot.id, teacher_id: slot.teacher_id, action: 'confirmed', actor: 'teacher',
-      details: { student_name: studentName },
-    } as any).catch(() => {});
+    try {
+      await supabase.from('calendar_slot_logs').insert({
+        slot_id: slot.id, teacher_id: slot.teacher_id, action: 'confirmed', actor: 'teacher',
+        details: { student_name: studentName },
+      } as any);
+    } catch (_) {}
     onOpenChange(false);
   };
 
@@ -140,10 +144,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     await onUpdate(slot.id, {
       status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
     } as any);
-    await supabase.from('calendar_slot_logs').insert({
-      slot_id: slot.id, teacher_id: slot.teacher_id, action: 'rejected', actor: 'teacher',
-      details: { student_name: studentName },
-    } as any).catch(() => {});
+    try {
+      await supabase.from('calendar_slot_logs').insert({
+        slot_id: slot.id, teacher_id: slot.teacher_id, action: 'rejected', actor: 'teacher',
+        details: { student_name: studentName },
+      } as any);
+    } catch (_) {}
     toast.success('Booking rejected, slot is available again');
     onOpenChange(false);
   };
@@ -163,10 +169,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       cancellation_reason: `Teacher cancellation. Student was: ${cancelledStudentName}`,
       booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
     } as any);
-    await supabase.from('calendar_slot_logs').insert({
-      slot_id: slot.id, teacher_id: slot.teacher_id, action: 'cancelled_by_teacher', actor: 'teacher',
-      details: { student_name: cancelledStudentName, student_id: slot.student_id },
-    } as any).catch(() => {});
+    try {
+      await supabase.from('calendar_slot_logs').insert({
+        slot_id: slot.id, teacher_id: slot.teacher_id, action: 'cancelled_by_teacher', actor: 'teacher',
+        details: { student_name: cancelledStudentName, student_id: slot.student_id },
+      } as any);
+    } catch (_) {}
     onOpenChange(false);
   };
 
@@ -180,10 +188,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       cancellation_reason: `Student cancellation. Student was: ${cancelledStudentName}`,
       booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
     } as any);
-    await supabase.from('calendar_slot_logs').insert({
-      slot_id: slot.id, teacher_id: slot.teacher_id, action: 'cancelled_by_student', actor: 'teacher',
-      details: { student_name: cancelledStudentName, student_id: slot.student_id },
-    } as any).catch(() => {});
+    try {
+      await supabase.from('calendar_slot_logs').insert({
+        slot_id: slot.id, teacher_id: slot.teacher_id, action: 'cancelled_by_student', actor: 'teacher',
+        details: { student_name: cancelledStudentName, student_id: slot.student_id },
+      } as any);
+    } catch (_) {}
     onOpenChange(false);
   };
 
@@ -191,10 +201,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     const updates: any = { status };
     if (status === 'cancelled') { updates.cancelled_at = new Date().toISOString(); updates.cancelled_by = 'teacher'; }
     await onUpdate(slot.id, updates);
-    await supabase.from('calendar_slot_logs').insert({
-      slot_id: slot.id, teacher_id: slot.teacher_id, action: 'status_changed', actor: 'teacher',
-      details: { new_status: status },
-    } as any).catch(() => {});
+    try {
+      await supabase.from('calendar_slot_logs').insert({
+        slot_id: slot.id, teacher_id: slot.teacher_id, action: 'status_changed', actor: 'teacher',
+        details: { new_status: status },
+      } as any);
+    } catch (_) {}
     onOpenChange(false);
   };
 
@@ -202,9 +214,11 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const handleDelete = async () => {
     if (confirming) {
       await onUpdate(slot.id, { status: 'deleted' } as any);
-      await supabase.from('calendar_slot_logs').insert({
-        slot_id: slot.id, teacher_id: slot.teacher_id, action: 'deleted', actor: 'teacher', details: {},
-      } as any).catch(() => {});
+      try {
+        await supabase.from('calendar_slot_logs').insert({
+          slot_id: slot.id, teacher_id: slot.teacher_id, action: 'deleted', actor: 'teacher', details: {},
+        } as any);
+      } catch (_) {}
       onOpenChange(false);
     } else setConfirming(true);
   };
