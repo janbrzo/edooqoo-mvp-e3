@@ -46,6 +46,7 @@ export type Database = {
           created_at: string
           id: string
           is_read: boolean
+          is_resolved: boolean
           message: string
           metadata: Json | null
           notification_type: string
@@ -57,6 +58,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean
+          is_resolved?: boolean
           message: string
           metadata?: Json | null
           notification_type: string
@@ -68,6 +70,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean
+          is_resolved?: boolean
           message?: string
           metadata?: Json | null
           notification_type?: string

@@ -9,7 +9,9 @@ export interface CalendarNotification {
   slot_id: string | null;
   student_name: string | null;
   is_read: boolean;
+  is_resolved: boolean;
   created_at: string;
+  metadata: any;
 }
 
 export function useCalendarNotifications(teacherId?: string) {
@@ -40,11 +42,16 @@ export function useCalendarNotifications(teacherId?: string) {
 
   useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
-  // Auto-refresh every 30 seconds
+  // Supabase Realtime instead of polling
   useEffect(() => {
     if (!teacherId) return;
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    const channel = supabase
+      .channel(`calendar-notifications-${teacherId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_notifications', filter: `teacher_id=eq.${teacherId}` },
+        () => { fetchNotifications(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [teacherId, fetchNotifications]);
 
   const markAllRead = useCallback(async () => {

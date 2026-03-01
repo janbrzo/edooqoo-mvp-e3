@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, teacherEmail, oldSlotDate, oldSlotTime } = await req.json();
+    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, teacherEmail, teacherName, oldSlotDate, oldSlotTime, calendarUrl, bookUrl } = await req.json();
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) {
@@ -26,6 +26,20 @@ Deno.serve(async (req) => {
     let html: string;
 
     const lessonInfo = `${slotDate} at ${slotTime}`;
+    
+    // Determine sender name: for student emails use teacher name, for teacher emails use EDOQOO
+    const isStudentEmail = ['booking_confirmation', 'booking_pending', 'cancellation_student', 'reschedule_confirmation', 'reschedule_pending', 'lesson_reminder'].includes(type);
+    const fromName = isStudentEmail
+      ? `${teacherName || 'Your Teacher'} via EDOQOO`
+      : 'EDOQOO';
+    
+    // Button HTML helper
+    const teacherButton = calendarUrl 
+      ? `<div style="margin-top: 20px;"><a href="${calendarUrl}" style="display: inline-block; padding: 10px 24px; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">Open Calendar</a></div>` 
+      : '';
+    const studentButton = bookUrl 
+      ? `<div style="margin-top: 20px;"><a href="${bookUrl}" style="display: inline-block; padding: 10px 24px; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">View Bookings</a></div>` 
+      : '';
 
     switch (type) {
       case 'booking_confirmation':
@@ -41,6 +55,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
             </div>
             <p>See you there!</p>
+            ${studentButton}
           </div>
         `;
         break;
@@ -54,6 +69,7 @@ Deno.serve(async (req) => {
             <p>Hi ${studentName},</p>
             <p>Your booking request for ${lessonInfo} has been sent to the teacher.</p>
             <p>You will receive a confirmation once the teacher approves your booking.</p>
+            ${studentButton}
           </div>
         `;
         break;
@@ -71,6 +87,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
             </div>
             <p>Check your calendar for details.</p>
+            ${teacherButton}
           </div>
         `;
         break;
@@ -83,6 +100,7 @@ Deno.serve(async (req) => {
             <h2 style="color: #1a1a1a;">Lesson Cancelled ❌</h2>
             <p>${studentName} (${studentEmail}) has cancelled their lesson on ${lessonInfo}.</p>
             <p>The time slot is now available again.</p>
+            ${teacherButton}
           </div>
         `;
         break;
@@ -96,6 +114,7 @@ Deno.serve(async (req) => {
             <p>Hi ${studentName},</p>
             <p>Your lesson on ${lessonInfo} has been cancelled by the teacher.</p>
             <p>Please check the booking page for available alternative times.</p>
+            ${studentButton}
           </div>
         `;
         break;
@@ -113,6 +132,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
             </div>
             <p>See you there!</p>
+            ${studentButton}
           </div>
         `;
         break;
@@ -126,6 +146,7 @@ Deno.serve(async (req) => {
             <p>Hi ${studentName},</p>
             <p>Your reschedule request to ${lessonInfo} has been sent to the teacher.</p>
             <p>You will receive a confirmation once approved.</p>
+            ${studentButton}
           </div>
         `;
         break;
@@ -142,6 +163,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>To:</strong> ${slotDate} at ${slotTime}</p>
             </div>
             <p>Check your calendar to confirm or reject.</p>
+            ${teacherButton}
           </div>
         `;
         break;
@@ -159,6 +181,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
             </div>
             <p>See you soon!</p>
+            ${studentButton}
           </div>
         `;
         break;
@@ -170,15 +193,22 @@ Deno.serve(async (req) => {
         });
     }
 
+    const emailPayload: any = {
+      from: `${fromName} <notifications@edooqoo.com>`,
+      to: [to],
+      subject,
+      html,
+    };
+
+    // Reply-to teacher email for student emails
+    if (isStudentEmail && teacherEmail) {
+      emailPayload.reply_to = teacherEmail;
+    }
+
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        from: 'EdooQoo <notifications@edooqoo.com>',
-        to: [to],
-        subject,
-        html,
-      }),
+      body: JSON.stringify(emailPayload),
     });
 
     const result = await res.json();

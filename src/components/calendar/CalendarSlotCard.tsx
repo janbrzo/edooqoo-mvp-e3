@@ -15,16 +15,26 @@ interface CalendarSlotCardProps {
 const STATUS_STYLES: Record<string, string> = {
   available: 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200 dark:bg-green-900/40 dark:border-green-700 dark:text-green-300',
   booked: 'bg-blue-100 border-blue-300 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/40 dark:border-blue-700 dark:text-blue-300',
-  completed: 'bg-muted border-border text-muted-foreground',
+  completed: 'bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-900/40 dark:border-emerald-700 dark:text-emerald-300',
   cancelled: 'bg-red-50 border-red-200 text-red-400 line-through opacity-60 dark:bg-red-900/20 dark:border-red-800',
   no_show: 'bg-red-100 border-red-300 text-red-700 dark:bg-red-900/40 dark:border-red-700 dark:text-red-300',
   deleted: 'bg-muted/50 border-border/50 text-muted-foreground/50 line-through opacity-40',
 };
 
+const STATUS_BADGES: Record<string, { letter: string; color: string }> = {
+  available: { letter: 'A', color: 'bg-green-500 text-white' },
+  booked: { letter: 'B', color: 'bg-blue-500 text-white' },
+  pending: { letter: 'P', color: 'bg-amber-500 text-white' },
+  completed: { letter: '✓', color: 'bg-emerald-500 text-white' },
+  no_show: { letter: 'NS', color: 'bg-red-500 text-white' },
+  block: { letter: 'B', color: 'bg-gray-500 text-white' },
+  deleted: { letter: 'D', color: 'bg-muted-foreground/50 text-white' },
+};
+
 export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, studentName, onClick, compact, isSelected, selectionMode }: CalendarSlotCardProps) {
   const isBlock = (slot as any).slot_type === 'block';
   const isPending = slot.status === 'booked' && !slot.confirmed_at;
-  const isDeleted = slot.status === 'deleted' as any;
+  const isDeleted = slot.status === ('deleted' as any);
   
   let style: string;
   if (isBlock) {
@@ -43,6 +53,10 @@ export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, stu
   // Badge C: available slot with cancellation history
   const showBadgeC = slot.status === 'available' && slot.cancelled_at && slot.cancelled_by;
 
+  // Status badge letter
+  const badgeKey = isBlock ? 'block' : isDeleted ? 'deleted' : isPending ? 'pending' : slot.status;
+  const statusBadge = STATUS_BADGES[badgeKey] || STATUS_BADGES.available;
+
   return (
     <button
       onClick={() => onClick(slot)}
@@ -53,13 +67,20 @@ export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, stu
         isSelected && 'ring-2 ring-primary bg-primary/20'
       )}
     >
-      {/* Badge C — cancellation history */}
-      {showBadgeC && (
+      {/* Badge C — cancellation history (priority over status badge) */}
+      {showBadgeC ? (
         <div className={cn(
           'absolute top-0 left-0 w-4 h-4 rounded-br text-[9px] font-bold flex items-center justify-center z-10',
           slot.cancelled_by === 'student' ? 'bg-amber-400 text-amber-900' : 'bg-blue-400 text-blue-900'
         )}>
           C
+        </div>
+      ) : (
+        <div className={cn(
+          'absolute top-0 left-0 min-w-[14px] h-[14px] rounded-br text-[8px] font-bold flex items-center justify-center z-10 px-0.5',
+          statusBadge.color
+        )}>
+          {statusBadge.letter}
         </div>
       )}
 
@@ -74,22 +95,22 @@ export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, stu
         </div>
       )}
 
-      <div className="flex items-center gap-1 font-medium leading-tight">
+      <div className="flex items-center gap-1 font-medium leading-tight pl-3">
         {isBlock ? <Lock className="h-3 w-3 flex-shrink-0" /> : isDeleted ? <Trash2 className="h-3 w-3 flex-shrink-0" /> : <Clock className="h-3 w-3 flex-shrink-0" />}
         <span className="truncate">{startHH}–{endHH}</span>
         {slot.worksheet_id && <FileText className="h-3 w-3 flex-shrink-0 ml-auto" />}
       </div>
       {!compact && isBlock && slot.notes && (
-        <div className="truncate mt-0.5 text-[10px] opacity-80">{slot.notes}</div>
+        <div className="truncate mt-0.5 text-[10px] opacity-80 pl-3">{slot.notes}</div>
       )}
       {!compact && !isBlock && studentName && (
-        <div className="flex items-center gap-0.5 truncate mt-0.5 text-[10px] opacity-80">
+        <div className="flex items-center gap-0.5 truncate mt-0.5 text-[10px] opacity-80 pl-3">
           <User className="h-2.5 w-2.5 flex-shrink-0" />
           <span className="truncate">{studentName}</span>
         </div>
       )}
       {!compact && !isBlock && !studentName && slot.title && (
-        <div className="truncate mt-0.5 text-[10px] opacity-80">{slot.title}</div>
+        <div className="truncate mt-0.5 text-[10px] opacity-80 pl-3">{slot.title}</div>
       )}
     </button>
   );

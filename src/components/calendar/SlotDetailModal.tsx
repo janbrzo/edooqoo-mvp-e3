@@ -165,6 +165,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     const cancelledStudentName = students.find(s => s.id === slot.student_id)?.name || studentName || 'unknown';
     await onUpdate(slot.id, {
       status: 'available', student_id: null,
+      title: null, worksheet_id: null, notes: null,
       cancelled_at: new Date().toISOString(), cancelled_by: 'teacher',
       cancellation_reason: `Teacher cancellation. Student was: ${cancelledStudentName}`,
       booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
@@ -184,6 +185,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     const cancelledStudentName = students.find(s => s.id === slot.student_id)?.name || studentName || 'unknown';
     await onUpdate(slot.id, {
       status: 'available', student_id: null,
+      title: null, worksheet_id: null, notes: null,
       cancelled_at: new Date().toISOString(), cancelled_by: 'student',
       cancellation_reason: `Student cancellation. Student was: ${cancelledStudentName}`,
       booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
@@ -210,13 +212,19 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     onOpenChange(false);
   };
 
-  // Soft delete
+  // Delete: hard delete if no history, soft delete if has cancellation history
   const handleDelete = async () => {
     if (confirming) {
-      await onUpdate(slot.id, { status: 'deleted' } as any);
+      const hasHistory = !!slot.cancelled_at;
+      if (hasHistory) {
+        await onUpdate(slot.id, { status: 'deleted' } as any);
+      } else {
+        await onDelete(slot.id);
+      }
       try {
         await supabase.from('calendar_slot_logs').insert({
-          slot_id: slot.id, teacher_id: slot.teacher_id, action: 'deleted', actor: 'teacher', details: {},
+          slot_id: slot.id, teacher_id: slot.teacher_id, action: 'deleted', actor: 'teacher',
+          details: { slot_date: slot.slot_date, start_time: slot.start_time, had_history: hasHistory },
         } as any);
       } catch (_) {}
       onOpenChange(false);
@@ -296,7 +304,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-full p-0" align="start">
+                      <PopoverContent className="w-full p-0" align="start" onOpenAutoFocus={e => e.preventDefault()}>
                         <Command>
                           <CommandInput placeholder="Search students..." />
                           <CommandList>
@@ -361,7 +369,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
           )}
 
           {/* Notes — AutoResizeTextarea */}
-          <div><Label className="text-xs">Notes</Label><AutoResizeTextarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={1} /></div>
+          <div><Label className="text-xs">Notes</Label><AutoResizeTextarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={1} className="min-h-[36px]" /></div>
 
           {/* Student notes (from booking) */}
           {slot.student_notes && (
@@ -394,7 +402,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </div>
           )}
 
-          {/* History — Collapsible log */}
+          {/* History — Collapsible log with rich details */}
           {slotLogs.length > 0 && (
             <Collapsible>
               <CollapsibleTrigger className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors w-full">
@@ -403,10 +411,14 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
               <CollapsibleContent className="mt-2 space-y-1 max-h-40 overflow-y-auto">
                 {slotLogs.map(log => (
                   <div key={log.id} className="text-xs border-l-2 border-border pl-2 py-1">
-                    <span className="font-medium">{log.action}</span>
+                    <span className="font-medium">{log.action.replace(/_/g, ' ')}</span>
                     <span className="text-muted-foreground ml-1">by {log.actor}</span>
                     <span className="text-muted-foreground ml-1">{format(new Date(log.created_at), 'MMM d HH:mm')}</span>
                     {log.details?.student_name && <span className="text-muted-foreground"> — {log.details.student_name}</span>}
+                    {log.details?.slot_date && <span className="text-muted-foreground"> — {log.details.slot_date}</span>}
+                    {log.details?.start_time && <span className="text-muted-foreground"> at {String(log.details.start_time).slice(0, 5)}</span>}
+                    {log.details?.old_status && <span className="text-muted-foreground"> ({log.details.old_status} → {log.details.new_status})</span>}
+                    {log.details?.student_email && <span className="text-muted-foreground"> ({log.details.student_email})</span>}
                   </div>
                 ))}
               </CollapsibleContent>
