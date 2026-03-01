@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { ChevronLeft, ChevronRight, Plus, Settings, Share2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Settings, Share2, History } from 'lucide-react';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { ViewMode } from '@/hooks/useCalendarSlots';
 
@@ -13,6 +13,7 @@ interface CalendarToolbarProps {
   onAddSlot: () => void;
   onSettings: () => void;
   onShare?: () => void;
+  onLogs?: () => void;
 }
 
 function getDateLabel(currentDate: Date, viewMode: ViewMode): string {
@@ -31,7 +32,7 @@ function getDateLabel(currentDate: Date, viewMode: ViewMode): string {
 
 export function CalendarToolbar({
   currentDate, viewMode, onViewModeChange, onNavigate,
-  onAddSlot, onSettings, onShare,
+  onAddSlot, onSettings, onShare, onLogs,
 }: CalendarToolbarProps) {
   return (
     <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -63,6 +64,11 @@ export function CalendarToolbar({
       </ToggleGroup>
 
       <div className="flex items-center gap-1.5">
+        {onLogs && (
+          <Button variant="outline" size="sm" className="h-8" onClick={onLogs}>
+            <History className="h-3.5 w-3.5 mr-1" /> Logs
+          </Button>
+        )}
         {onShare && (
           <Button variant="outline" size="sm" className="h-8" onClick={onShare}>
             <Share2 className="h-3.5 w-3.5 mr-1" /> Share

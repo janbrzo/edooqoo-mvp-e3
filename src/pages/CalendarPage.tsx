@@ -5,6 +5,7 @@ import { useCalendarSlots, CalendarSlot, ViewMode } from '@/hooks/useCalendarSlo
 import { useCalendarSettings } from '@/hooks/useCalendarSettings';
 import { useCalendarRecurrence } from '@/hooks/useCalendarRecurrence';
 import { useStudents } from '@/hooks/useStudents';
+import { useCalendarVacations } from '@/hooks/useCalendarVacations';
 import { CalendarWeekView } from '@/components/calendar/CalendarWeekView';
 import { CalendarDayView } from '@/components/calendar/CalendarDayView';
 import { CalendarMonthView } from '@/components/calendar/CalendarMonthView';
@@ -14,9 +15,14 @@ import { UnifiedSlotModal } from '@/components/calendar/UnifiedSlotModal';
 import { SlotDetailModal } from '@/components/calendar/SlotDetailModal';
 import { LinkWorksheetModal } from '@/components/calendar/LinkWorksheetModal';
 import { CalendarNotificationBell } from '@/components/calendar/CalendarNotificationBell';
+import { CalendarNotification } from '@/hooks/useCalendarNotifications';
+import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Filter } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Filter, Search, Eye, EyeOff, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CalendarPage = () => {
@@ -29,12 +35,14 @@ const CalendarPage = () => {
 
   const {
     slots, loading, viewMode, setViewMode, currentDate, setCurrentDate,
-    weekStart, weekEnd, createSlot, createSlotsBatch, updateSlot, deleteSlot, deleteSlotsBatch,
+    weekStart, weekEnd, showDeleted, setShowDeleted,
+    createSlot, createSlotsBatch, updateSlot, deleteSlot, deleteSlotsBatch,
     navigate: calNavigate, getSlotsForDay, refetch,
   } = useCalendarSlots(user?.id);
   const { settings } = useCalendarSettings(user?.id);
   const { createRule } = useCalendarRecurrence(user?.id);
   const { students } = useStudents();
+  const { vacations } = useCalendarVacations(user?.id);
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addModalDate, setAddModalDate] = useState<Date | undefined>();
@@ -42,10 +50,15 @@ const CalendarPage = () => {
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [linkWorksheetSlot, setLinkWorksheetSlot] = useState<CalendarSlot | null>(null);
   const [studentFilter, setStudentFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Multi-select for batch delete
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedSlotIds, setSelectedSlotIds] = useState<Set<string>>(new Set());
+
+  // Add student dialog (from notification)
+  const [addStudentOpen, setAddStudentOpen] = useState(false);
+  const [addStudentPrefill, setAddStudentPrefill] = useState<{ name: string; email: string } | null>(null);
 
   const studentMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -56,9 +69,20 @@ const CalendarPage = () => {
   const studentList = useMemo(() => students.map(s => ({ id: s.id, name: s.name })), [students]);
 
   const filteredSlots = useMemo(() => {
-    if (studentFilter === 'all') return slots;
-    return slots.filter(s => s.student_id === studentFilter);
-  }, [slots, studentFilter]);
+    let result = slots;
+    if (studentFilter !== 'all') {
+      result = result.filter(s => s.student_id === studentFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(s =>
+        (s.student_id && studentMap[s.student_id]?.toLowerCase().includes(q)) ||
+        s.notes?.toLowerCase().includes(q) ||
+        s.title?.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [slots, studentFilter, searchQuery, studentMap]);
 
   const filteredGetSlotsForDay = useMemo(() => {
     return (date: Date) => {
@@ -104,7 +128,6 @@ const CalendarPage = () => {
     setLinkWorksheetSlot({ ...slot, student_id: studentId ?? slot.student_id } as CalendarSlot);
   };
 
-  // Step 3: Preserve student when linking worksheet
   const handleWorksheetLinked = async (worksheetId: string | null) => {
     if (linkWorksheetSlot) {
       const updates: any = { worksheet_id: worksheetId };
@@ -151,14 +174,26 @@ const CalendarPage = () => {
     setSelectedSlotIds(new Set());
   };
 
-  // Handle link worksheet from UnifiedSlotModal (for available slots)
   const handleUnifiedModalLinkWorksheet = (studentId: string | null) => {
-    // Create a temporary slot-like object for the link worksheet modal
-    // This is used when linking from the add modal before the slot exists
-    // For now just open the link worksheet modal
     if (user) {
       setLinkWorksheetSlot({ student_id: studentId, worksheet_id: null, id: '__new__' } as any);
     }
+  };
+
+  // 6A: Notification click → open slot modal
+  const handleNotificationClick = (n: CalendarNotification) => {
+    if (n.slot_id) {
+      const slot = slots.find(s => s.id === n.slot_id);
+      if (slot) {
+        setSelectedSlot(slot);
+      }
+    }
+  };
+
+  // 6B: Add Student from notification
+  const handleAddStudentFromNotification = (name: string, email: string) => {
+    setAddStudentPrefill({ name, email });
+    setAddStudentOpen(true);
   };
 
   if (authLoading) return null;
@@ -172,6 +207,16 @@ const CalendarPage = () => {
           </Button>
           <h1 className="text-2xl font-bold">Calendar</h1>
           <div className="ml-auto flex items-center gap-2">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="h-8 w-40 pl-7 text-xs"
+              />
+            </div>
             <Select value={studentFilter} onValueChange={setStudentFilter}>
               <SelectTrigger className="h-8 w-40 text-xs">
                 <Filter className="h-3 w-3 mr-1" />
@@ -184,6 +229,18 @@ const CalendarPage = () => {
                 ))}
               </SelectContent>
             </Select>
+            {/* Show Deleted toggle */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant={showDeleted ? 'default' : 'outline'}
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => setShowDeleted(!showDeleted)}
+              >
+                {showDeleted ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
+                {showDeleted ? 'Hide Deleted' : 'Show Deleted'}
+              </Button>
+            </div>
             {!selectionMode ? (
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSelectionMode(true)}>
                 Select
@@ -198,7 +255,11 @@ const CalendarPage = () => {
                 </Button>
               </div>
             )}
-            <CalendarNotificationBell teacherId={user?.id} />
+            <CalendarNotificationBell
+              teacherId={user?.id}
+              onNotificationClick={handleNotificationClick}
+              onAddStudentClick={handleAddStudentFromNotification}
+            />
           </div>
         </div>
 
@@ -210,6 +271,7 @@ const CalendarPage = () => {
           onAddSlot={() => handleAddSlot()}
           onSettings={() => navigate('/calendar/settings')}
           onShare={handleShare}
+          onLogs={() => navigate('/calendar/logs')}
         />
 
         <div className="flex flex-wrap gap-3 text-xs">
@@ -218,6 +280,7 @@ const CalendarPage = () => {
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-200 border border-amber-400" /> Pending</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-muted border border-border" /> Completed</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 border border-red-300" /> Cancelled/No Show</span>
+          <span className="flex items-center gap-1"><Lock className="h-3 w-3 text-gray-500" /> Block</span>
         </div>
 
         {loading ? (
@@ -273,6 +336,14 @@ const CalendarPage = () => {
           onLink={handleWorksheetLinked}
         />
       )}
+
+      {/* Add Student Dialog (from notification) */}
+      <AddStudentDialog
+        open={addStudentOpen}
+        onOpenChange={setAddStudentOpen}
+        prefillName={addStudentPrefill?.name}
+        prefillEmail={addStudentPrefill?.email}
+      />
     </div>
   );
 };
