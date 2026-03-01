@@ -30,6 +30,32 @@ const corsHeaders = {
 const rateLimiter = new RateLimiter();
 
 // ============================================================
+// FAILURE NOTIFICATION HELPER
+// Sends email alert on any failed worksheet generation
+// ============================================================
+async function notifyGenerationFailure(errorType: string, errorMessage: string, context: Record<string, any>) {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    await fetch(`${supabaseUrl}/functions/v1/notify-generation-failure`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ errorType, errorMessage, timestamp: new Date().toISOString(), ...context }),
+    });
+    console.log(`📧 Failure notification sent: ${errorType}`);
+  } catch (e) {
+    console.error("Failed to send failure notification email:", e);
+  }
+}
+
+function classifyErrorType(error: Error | unknown): string {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (msg.includes('quota') || msg.includes('429') || msg.includes('Too Many Requests')) return 'quota';
+  if (msg.includes('timeout') || msg.includes('ETIMEDOUT') || msg.includes('deadline')) return 'timeout';
+  if (msg.includes('JSON') || msg.includes('parse') || msg.includes('Unexpected token')) return 'parse';
+  return 'network';
+}
+// ============================================================
 // GEMINI HELPER FUNCTIONS
 // ============================================================
 
@@ -135,6 +161,18 @@ serve(async (req) => {
     // Input validation
     const promptValidation = validatePrompt(prompt);
     if (!promptValidation.isValid) {
+      console.error("❌ Prompt validation FAILED:", {
+        error: promptValidation.error,
+        promptType: typeof prompt,
+        promptLength: prompt?.length || 0,
+        promptPreview: typeof prompt === 'string' ? prompt.substring(0, 200) : String(prompt),
+        userId: userId || 'anonymous',
+        hasFormData: !!formData,
+        formDataKeys: formData ? Object.keys(formData) : [],
+      });
+      notifyGenerationFailure('validation', promptValidation.error || 'Unknown validation error', {
+        userId, promptPreview: typeof prompt === 'string' ? prompt?.substring(0, 300) : String(prompt),
+      });
       return new Response(JSON.stringify({ error: promptValidation.error }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -281,6 +319,10 @@ serve(async (req) => {
         );
       } catch (error) {
         console.error(`❌ [BATCH-MODE] Failed to parse batch response:`, error);
+        const errType = classifyErrorType(error);
+        notifyGenerationFailure(errType, error instanceof Error ? error.message : String(error), {
+          userId, teacherEmail, model: usedModel, mode: 'batch',
+        });
         throw error;
       }
     }
@@ -587,7 +629,16 @@ serve(async (req) => {
             worksheet: worksheetData,
           });
         } catch (error) {
-          console.error("❌ Streaming error:", error);
+          console.error("❌ Streaming generation FAILED:", {
+            errorMessage: error instanceof Error ? error.message : String(error),
+            errorStack: error instanceof Error ? error.stack : undefined,
+            userId, model: streamUsedModel, exerciseCount: expectedTotal,
+          });
+          const errType = classifyErrorType(error);
+          notifyGenerationFailure(errType, error instanceof Error ? error.message : String(error), {
+            userId, teacherEmail, model: streamUsedModel,
+            promptPreview: sanitizedPrompt?.substring(0, 300),
+          });
           send("error", { message: error instanceof Error ? error.message : "Unknown error" });
         } finally {
           close();
@@ -696,12 +747,11 @@ serve(async (req) => {
       const sourceCount = Math.floor(Math.random() * (90 - 65) + 65);
       worksheetData.sourceCount = sourceCount;
     } catch (parseError) {
-      console.error(
-        "Failed to parse AI response as JSON:",
-        parseError,
-        "Response content:",
-        jsonContent?.substring(0, 500),
-      );
+      console.error("Failed to parse AI response as JSON:", parseError, "Response content:", jsonContent?.substring(0, 500));
+      notifyGenerationFailure('parse', parseError instanceof Error ? parseError.message : String(parseError), {
+        userId, teacherEmail, model: usedModel,
+        promptPreview: sanitizedPrompt?.substring(0, 300),
+      });
       return new Response(
         JSON.stringify({ error: "Failed to generate a valid worksheet structure. Please try again." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -786,6 +836,7 @@ serve(async (req) => {
 
         if (worksheetError) {
           console.error("Error saving worksheet to database:", worksheetError);
+          notifyGenerationFailure('database', worksheetError.message, { userId, teacherEmail });
         }
 
         if (worksheet && worksheet.length > 0 && worksheet[0].id) {
@@ -888,6 +939,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("❌ CRITICAL ERROR in generateWorksheet:", error);
+    const mainErrorType = classifyErrorType(error);
+    notifyGenerationFailure(mainErrorType, error instanceof Error ? error.message : String(error), {
+      userId: 'unknown',
+    });
 
     // ENHANCED LOGGING: Log detailed error information
     if (error instanceof Error) {

@@ -106,3 +106,6 @@ verify_jwt = false
 
 [functions.send-calendar-notification-email]
 verify_jwt = false
+
+[functions.notify-generation-failure]
+verify_jwt = false

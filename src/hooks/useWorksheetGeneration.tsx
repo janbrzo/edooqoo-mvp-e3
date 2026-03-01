@@ -32,6 +32,11 @@ export const useWorksheetGeneration = (
   const { tokenLeft, hasTokens, isDemo, consumeToken } = useTokenSystem(userId);
 
   const generateWorksheetHandler = async (data: FormData) => {
+    // Guard against double-click / duplicate requests
+    if (isGenerating) {
+      console.warn('⚠️ Generation already in progress, ignoring duplicate click');
+      return;
+    }
     console.log('🚀 Starting worksheet generation for:', data.lessonTime);
     console.log('🔧 Form data received:', { 
       lessonTime: data.lessonTime, 
