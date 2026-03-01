@@ -28,6 +28,7 @@ export interface CalendarSlot {
   is_paid: boolean;
   created_at: string;
   updated_at: string;
+  slot_type?: string; // 'slot' | 'block'
 }
 
 export interface CreateSlotInput {
@@ -40,6 +41,7 @@ export interface CreateSlotInput {
   booking_type?: string;
   status?: string;
   worksheet_id?: string | null;
+  slot_type?: string;
 }
 
 export function useCalendarSlots(teacherId?: string) {
@@ -47,6 +49,7 @@ export function useCalendarSlots(teacherId?: string) {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [showDeleted, setShowDeleted] = useState(false);
   const { toast } = useToast();
 
   const dateRange = useMemo(() => {
@@ -55,7 +58,6 @@ export function useCalendarSlots(teacherId?: string) {
       return { from: startOfWeek(currentDate, { weekStartsOn: 1 }), to: endOfWeek(currentDate, { weekStartsOn: 1 }) };
     }
     if (viewMode === 'schedule') {
-      // Schedule view: show 2 weeks from current date
       return { from: currentDate, to: addWeeks(currentDate, 2) };
     }
     const ms = startOfMonth(currentDate);
@@ -72,7 +74,7 @@ export function useCalendarSlots(teacherId?: string) {
     try {
       const from = format(dateRange.from, 'yyyy-MM-dd');
       const to = format(dateRange.to, 'yyyy-MM-dd');
-      const { data, error } = await supabase
+      let query = supabase
         .from('calendar_slots')
         .select('*')
         .eq('teacher_id', teacherId)
@@ -80,6 +82,13 @@ export function useCalendarSlots(teacherId?: string) {
         .lte('slot_date', to)
         .order('slot_date')
         .order('start_time');
+      
+      // Exclude deleted unless showDeleted is on
+      if (!showDeleted) {
+        query = query.neq('status', 'deleted');
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       setSlots((data || []) as unknown as CalendarSlot[]);
     } catch (err) {
@@ -87,7 +96,7 @@ export function useCalendarSlots(teacherId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [teacherId, dateRange]);
+  }, [teacherId, dateRange, showDeleted]);
 
   useEffect(() => { fetchSlots(); }, [fetchSlots]);
 
@@ -101,6 +110,13 @@ export function useCalendarSlots(teacherId?: string) {
     return t.length === 5 ? t + ':00' : t;
   };
 
+  const logAction = async (slotId: string, action: string, actor: string = 'teacher', details: any = {}) => {
+    if (!teacherId) return;
+    await supabase.from('calendar_slot_logs').insert({
+      slot_id: slotId, teacher_id: teacherId, action, actor, details,
+    } as any).catch(() => {});
+  };
+
   const createSlot = useCallback(async (input: CreateSlotInput) => {
     if (!teacherId) return null;
     try {
@@ -110,6 +126,7 @@ export function useCalendarSlots(teacherId?: string) {
         .eq('teacher_id', teacherId)
         .eq('slot_date', input.slot_date)
         .neq('status', 'cancelled')
+        .neq('status', 'deleted')
         .lt('start_time', normalizeTimeForQuery(input.end_time))
         .gt('end_time', normalizeTimeForQuery(input.start_time));
 
@@ -143,13 +160,21 @@ export function useCalendarSlots(teacherId?: string) {
           confirmed_at: input.student_id ? new Date().toISOString() : null,
           booked_at: input.student_id ? new Date().toISOString() : null,
           booked_by: input.student_id ? 'teacher' : null,
+          slot_type: input.slot_type || 'slot',
         } as any)
         .select()
         .single();
 
       if (error) throw error;
+      
+      // Log creation
+      await logAction(data.id, 'created', 'teacher', {
+        slot_type: input.slot_type || 'slot',
+        student_id: input.student_id,
+      });
+
       await fetchSlots();
-      toast({ title: input.student_id ? 'Lesson created' : 'Slot created' });
+      toast({ title: input.slot_type === 'block' ? 'Block created' : input.student_id ? 'Lesson created' : 'Slot created' });
       return data;
     } catch (err: any) {
       toast({ title: 'Error creating slot', description: err.message, variant: 'destructive' });
@@ -167,6 +192,7 @@ export function useCalendarSlots(teacherId?: string) {
           .eq('teacher_id', teacherId)
           .eq('slot_date', input.slot_date)
           .neq('status', 'cancelled')
+          .neq('status', 'deleted')
           .lt('start_time', normalizeTimeForQuery(input.end_time))
           .gt('end_time', normalizeTimeForQuery(input.start_time));
 
@@ -201,6 +227,7 @@ export function useCalendarSlots(teacherId?: string) {
         confirmed_at: input.student_id ? new Date().toISOString() : null,
         booked_at: input.student_id ? new Date().toISOString() : null,
         booked_by: input.student_id ? 'teacher' : null,
+        slot_type: input.slot_type || 'slot',
       }));
 
       const { error } = await supabase.from('calendar_slots').insert(rows as any);
@@ -226,10 +253,12 @@ export function useCalendarSlots(teacherId?: string) {
     }
   }, [fetchSlots, toast]);
 
+  // Soft delete instead of hard delete
   const deleteSlot = useCallback(async (slotId: string) => {
     try {
-      const { error } = await supabase.from('calendar_slots').delete().eq('id', slotId);
+      const { error } = await supabase.from('calendar_slots').update({ status: 'deleted' } as any).eq('id', slotId);
       if (error) throw error;
+      await logAction(slotId, 'deleted', 'teacher', {});
       await fetchSlots();
       toast({ title: 'Slot deleted' });
     } catch (err: any) {
@@ -240,7 +269,7 @@ export function useCalendarSlots(teacherId?: string) {
   const deleteSlotsBatch = useCallback(async (slotIds: string[]) => {
     if (slotIds.length === 0) return;
     try {
-      const { error } = await supabase.from('calendar_slots').delete().in('id', slotIds);
+      const { error } = await supabase.from('calendar_slots').update({ status: 'deleted' } as any).in('id', slotIds);
       if (error) throw error;
       await fetchSlots();
       toast({ title: `${slotIds.length} slots deleted` });
@@ -266,7 +295,7 @@ export function useCalendarSlots(teacherId?: string) {
 
   return {
     slots, loading, viewMode, setViewMode, currentDate, setCurrentDate,
-    weekStart, weekEnd, dateRange,
+    weekStart, weekEnd, dateRange, showDeleted, setShowDeleted,
     createSlot, createSlotsBatch, updateSlot, deleteSlot, deleteSlotsBatch,
     navigate, getSlotsForDay, refetch: fetchSlots,
   };

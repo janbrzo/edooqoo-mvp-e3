@@ -47,6 +47,7 @@ export type Database = {
           id: string
           is_read: boolean
           message: string
+          metadata: Json | null
           notification_type: string
           slot_id: string | null
           student_name: string | null
@@ -57,6 +58,7 @@ export type Database = {
           id?: string
           is_read?: boolean
           message: string
+          metadata?: Json | null
           notification_type: string
           slot_id?: string | null
           student_name?: string | null
@@ -67,6 +69,7 @@ export type Database = {
           id?: string
           is_read?: boolean
           message?: string
+          metadata?: Json | null
           notification_type?: string
           slot_id?: string | null
           student_name?: string | null
@@ -314,6 +317,36 @@ export type Database = {
           },
         ]
       }
+      calendar_slot_logs: {
+        Row: {
+          action: string
+          actor: string
+          created_at: string
+          details: Json | null
+          id: string
+          slot_id: string
+          teacher_id: string
+        }
+        Insert: {
+          action: string
+          actor: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          slot_id: string
+          teacher_id: string
+        }
+        Update: {
+          action?: string
+          actor?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          slot_id?: string
+          teacher_id?: string
+        }
+        Relationships: []
+      }
       calendar_slots: {
         Row: {
           booked_at: string | null
@@ -330,6 +363,7 @@ export type Database = {
           notes: string | null
           recurrence_rule_id: string | null
           slot_date: string
+          slot_type: string
           start_time: string
           status: string
           student_id: string | null
@@ -354,6 +388,7 @@ export type Database = {
           notes?: string | null
           recurrence_rule_id?: string | null
           slot_date: string
+          slot_type?: string
           start_time: string
           status?: string
           student_id?: string | null
@@ -378,6 +413,7 @@ export type Database = {
           notes?: string | null
           recurrence_rule_id?: string | null
           slot_date?: string
+          slot_type?: string
           start_time?: string
           status?: string
           student_id?: string | null
@@ -465,6 +501,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      calendar_teacher_vacations: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          label: string | null
+          start_date: string
+          teacher_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          label?: string | null
+          start_date: string
+          teacher_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          label?: string | null
+          start_date?: string
+          teacher_id?: string
+        }
+        Relationships: []
       }
       download_sessions: {
         Row: {

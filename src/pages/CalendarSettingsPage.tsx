@@ -1,15 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { useCalendarSettings } from '@/hooks/useCalendarSettings';
+import { useCalendarVacations } from '@/hooks/useCalendarVacations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Copy } from 'lucide-react';
+import { ArrowLeft, Copy, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 const CalendarSettingsPage = () => {
   const { user, loading: authLoading, isRegisteredUser } = useAuthFlow();
@@ -20,12 +22,23 @@ const CalendarSettingsPage = () => {
   }, [authLoading, isRegisteredUser, navigate]);
 
   const { settings, loading, updateSettings, generatePublicToken } = useCalendarSettings(user?.id);
+  const { vacations, addVacation, removeVacation } = useCalendarVacations(user?.id);
+
+  const [vacStart, setVacStart] = useState('');
+  const [vacEnd, setVacEnd] = useState('');
+  const [vacLabel, setVacLabel] = useState('Vacation');
 
   if (authLoading || loading || !settings) return null;
 
   const publicUrl = settings.public_calendar_token
     ? `${window.location.origin}/book/${settings.public_calendar_token}`
     : null;
+
+  const handleAddVacation = async () => {
+    if (!vacStart || !vacEnd) return;
+    await addVacation(vacStart, vacEnd, vacLabel || 'Vacation');
+    setVacStart(''); setVacEnd(''); setVacLabel('Vacation');
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -169,8 +182,8 @@ const CalendarSettingsPage = () => {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label>Allow student rescheduling</Label>
-                <p className="text-xs text-muted-foreground">Students can move their lessons to other available slots</p>
+                <Label>Allow student rescheduling without your confirmation</Label>
+                <p className="text-xs text-muted-foreground">Students can move their lessons to other available slots automatically</p>
               </div>
               <Switch checked={settings.allow_student_reschedule} onCheckedChange={v => updateSettings({ allow_student_reschedule: v })} />
             </div>
@@ -203,6 +216,50 @@ const CalendarSettingsPage = () => {
                 <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(publicUrl); toast.success('Link copied!'); }}>
                   <Copy className="h-4 w-4" />
                 </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Vacations */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Vacations</CardTitle>
+            <CardDescription>Mark days when you're unavailable. Students will see this on your booking page.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2 flex-wrap items-end">
+              <div>
+                <Label className="text-xs">Start</Label>
+                <Input type="date" value={vacStart} onChange={e => setVacStart(e.target.value)} className="h-9 w-40" />
+              </div>
+              <div>
+                <Label className="text-xs">End</Label>
+                <Input type="date" value={vacEnd} onChange={e => setVacEnd(e.target.value)} className="h-9 w-40" />
+              </div>
+              <div>
+                <Label className="text-xs">Label</Label>
+                <Input value={vacLabel} onChange={e => setVacLabel(e.target.value)} className="h-9 w-40" placeholder="Vacation" />
+              </div>
+              <Button size="sm" className="h-9" onClick={handleAddVacation} disabled={!vacStart || !vacEnd}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add
+              </Button>
+            </div>
+            {vacations.length > 0 && (
+              <div className="space-y-2">
+                {vacations.map(v => (
+                  <div key={v.id} className="flex items-center justify-between border rounded-md px-3 py-2 text-sm">
+                    <div>
+                      <span className="font-medium">{v.label}</span>
+                      <span className="text-muted-foreground ml-2">
+                        {format(new Date(v.start_date), 'MMM d')} – {format(new Date(v.end_date), 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-destructive h-7" onClick={() => removeVacation(v.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
