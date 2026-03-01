@@ -20,10 +20,19 @@ import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, Filter, Search, Eye, EyeOff, Lock } from 'lucide-react';
+import { ArrowLeft, Filter, Search, Eye, EyeOff, Lock, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+const LEGEND_ITEMS = [
+  { key: 'available', label: 'Available', badge: 'A', color: 'bg-green-200 border-green-400' },
+  { key: 'booked', label: 'Booked', badge: 'B', color: 'bg-blue-200 border-blue-400' },
+  { key: 'pending', label: 'Pending', badge: 'P', color: 'bg-amber-200 border-amber-400' },
+  { key: 'completed', label: 'Completed', badge: '✓', color: 'bg-emerald-200 border-emerald-400' },
+  { key: 'no_show', label: 'No Show', badge: 'NS', color: 'bg-red-200 border-red-400' },
+  { key: 'block', label: 'Block', badge: 'B', color: 'bg-gray-200 border-gray-400', icon: Lock },
+  { key: 'deleted', label: 'Deleted', badge: 'D', color: 'bg-muted/50 border-border/50' },
+];
 
 const CalendarPage = () => {
   const { user, loading: authLoading, isRegisteredUser } = useAuthFlow();
@@ -36,7 +45,7 @@ const CalendarPage = () => {
   const {
     slots, loading, viewMode, setViewMode, currentDate, setCurrentDate,
     weekStart, weekEnd, showDeleted, setShowDeleted,
-    createSlot, createSlotsBatch, updateSlot, deleteSlot, deleteSlotsBatch,
+    createSlot, createSlotsBatch, updateSlot, deleteSlot, hardDeleteSlot, deleteSlotsBatch,
     navigate: calNavigate, getSlotsForDay, refetch,
   } = useCalendarSlots(user?.id);
   const { settings } = useCalendarSettings(user?.id);
@@ -51,6 +60,7 @@ const CalendarPage = () => {
   const [linkWorksheetSlot, setLinkWorksheetSlot] = useState<CalendarSlot | null>(null);
   const [studentFilter, setStudentFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [legendFilter, setLegendFilter] = useState<string | null>(null);
 
   // Multi-select for batch delete
   const [selectionMode, setSelectionMode] = useState(false);
@@ -60,6 +70,16 @@ const CalendarPage = () => {
   const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [addStudentPrefill, setAddStudentPrefill] = useState<{ name: string; email: string } | null>(null);
 
+  // Sync selectedSlot with fresh slots data
+  useEffect(() => {
+    if (selectedSlot) {
+      const fresh = slots.find(s => s.id === selectedSlot.id);
+      if (fresh && JSON.stringify(fresh) !== JSON.stringify(selectedSlot)) {
+        setSelectedSlot(fresh);
+      }
+    }
+  }, [slots]);
+
   const studentMap = useMemo(() => {
     const map: Record<string, string> = {};
     students.forEach(s => { map[s.id] = s.name; });
@@ -67,6 +87,9 @@ const CalendarPage = () => {
   }, [students]);
 
   const studentList = useMemo(() => students.map(s => ({ id: s.id, name: s.name })), [students]);
+
+  // Students with email for notification bell
+  const studentsWithEmail = useMemo(() => students.map(s => ({ id: s.id, name: s.name, student_email: (s as any).student_email })), [students]);
 
   const filteredSlots = useMemo(() => {
     let result = slots;
@@ -81,8 +104,18 @@ const CalendarPage = () => {
         s.title?.toLowerCase().includes(q)
       );
     }
+    // Legend filter
+    if (legendFilter) {
+      result = result.filter(s => {
+        if (legendFilter === 'block') return (s as any).slot_type === 'block';
+        if (legendFilter === 'pending') return s.status === 'booked' && !s.confirmed_at;
+        if (legendFilter === 'booked') return s.status === 'booked' && !!s.confirmed_at;
+        if (legendFilter === 'deleted') return (s.status as any) === 'deleted';
+        return s.status === legendFilter;
+      });
+    }
     return result;
-  }, [slots, studentFilter, searchQuery, studentMap]);
+  }, [slots, studentFilter, searchQuery, studentMap, legendFilter]);
 
   const filteredGetSlotsForDay = useMemo(() => {
     return (date: Date) => {
@@ -180,7 +213,6 @@ const CalendarPage = () => {
     }
   };
 
-  // 6A: Notification click → open slot modal
   const handleNotificationClick = (n: CalendarNotification) => {
     if (n.slot_id) {
       const slot = slots.find(s => s.id === n.slot_id);
@@ -190,7 +222,6 @@ const CalendarPage = () => {
     }
   };
 
-  // 6B: Add Student from notification
   const handleAddStudentFromNotification = (name: string, email: string) => {
     setAddStudentPrefill({ name, email });
     setAddStudentOpen(true);
@@ -207,7 +238,6 @@ const CalendarPage = () => {
           </Button>
           <h1 className="text-2xl font-bold">Calendar</h1>
           <div className="ml-auto flex items-center gap-2">
-            {/* Search */}
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
               <Input
@@ -229,18 +259,15 @@ const CalendarPage = () => {
                 ))}
               </SelectContent>
             </Select>
-            {/* Show Deleted toggle */}
-            <div className="flex items-center gap-1">
-              <Button
-                variant={showDeleted ? 'default' : 'outline'}
-                size="sm"
-                className="h-8 text-xs"
-                onClick={() => setShowDeleted(!showDeleted)}
-              >
-                {showDeleted ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
-                {showDeleted ? 'Hide Deleted' : 'Show Deleted'}
-              </Button>
-            </div>
+            <Button
+              variant={showDeleted ? 'default' : 'outline'}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setShowDeleted(!showDeleted)}
+            >
+              {showDeleted ? <EyeOff className="h-3 w-3 mr-1" /> : <Eye className="h-3 w-3 mr-1" />}
+              {showDeleted ? 'Hide Deleted' : 'Show Deleted'}
+            </Button>
             {!selectionMode ? (
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSelectionMode(true)}>
                 Select
@@ -257,6 +284,7 @@ const CalendarPage = () => {
             )}
             <CalendarNotificationBell
               teacherId={user?.id}
+              students={studentsWithEmail}
               onNotificationClick={handleNotificationClick}
               onAddStudentClick={handleAddStudentFromNotification}
             />
@@ -274,13 +302,28 @@ const CalendarPage = () => {
           onLogs={() => navigate('/calendar/logs')}
         />
 
-        <div className="flex flex-wrap gap-3 text-xs">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-200 border border-green-400" /> Available</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-200 border border-blue-400" /> Booked</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-amber-200 border border-amber-400" /> Pending</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-muted border border-border" /> Completed</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 border border-red-300" /> Cancelled/No Show</span>
-          <span className="flex items-center gap-1"><Lock className="h-3 w-3 text-gray-500" /> Block</span>
+        {/* Legend with clickable filters */}
+        <div className="flex flex-wrap gap-3 text-xs items-center">
+          {LEGEND_ITEMS.map(item => (
+            <button
+              key={item.key}
+              className={cn(
+                'flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors',
+                legendFilter === item.key ? 'ring-2 ring-primary bg-primary/10' : 'hover:bg-muted/50'
+              )}
+              onClick={() => setLegendFilter(legendFilter === item.key ? null : item.key)}
+            >
+              <span className={cn('w-3 h-3 rounded border text-[8px] font-bold flex items-center justify-center', item.color)}>
+                {item.badge}
+              </span>
+              {item.label}
+            </button>
+          ))}
+          {legendFilter && (
+            <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={() => setLegendFilter(null)}>
+              <X className="h-3 w-3 mr-1" /> Clear filter
+            </Button>
+          )}
         </div>
 
         {loading ? (
@@ -321,7 +364,7 @@ const CalendarPage = () => {
         studentName={selectedSlot?.student_id ? studentMap[selectedSlot.student_id] : undefined}
         students={studentList}
         onUpdate={updateSlot}
-        onDelete={deleteSlot}
+        onDelete={hardDeleteSlot}
         onLinkWorksheet={handleLinkWorksheet}
       />
 
@@ -337,10 +380,11 @@ const CalendarPage = () => {
         />
       )}
 
-      {/* Add Student Dialog (from notification) */}
+      {/* Add Student Dialog (from notification) — no trigger button */}
       <AddStudentDialog
         open={addStudentOpen}
         onOpenChange={setAddStudentOpen}
+        triggerButton={false}
         prefillName={addStudentPrefill?.name}
         prefillEmail={addStudentPrefill?.email}
       />

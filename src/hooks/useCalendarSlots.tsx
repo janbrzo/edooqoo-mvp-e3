@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, addDays, addMonths, addWeeks } from 'date-fns';
@@ -13,7 +13,7 @@ export interface CalendarSlot {
   slot_date: string;
   start_time: string;
   end_time: string;
-  status: 'available' | 'booked' | 'completed' | 'cancelled' | 'no_show';
+  status: 'available' | 'booked' | 'completed' | 'cancelled' | 'no_show' | 'deleted';
   booking_type: 'manual' | 'student_booked' | 'recurring_instance';
   recurrence_rule_id: string | null;
   worksheet_id: string | null;
@@ -51,6 +51,7 @@ export function useCalendarSlots(teacherId?: string) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showDeleted, setShowDeleted] = useState(false);
   const { toast } = useToast();
+  const fetchingRef = useRef(false);
 
   const dateRange = useMemo(() => {
     if (viewMode === 'day') return { from: currentDate, to: currentDate };
@@ -69,7 +70,8 @@ export function useCalendarSlots(teacherId?: string) {
   const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
   const fetchSlots = useCallback(async () => {
-    if (!teacherId) return;
+    if (!teacherId || fetchingRef.current) return;
+    fetchingRef.current = true;
     setLoading(true);
     try {
       const from = format(dateRange.from, 'yyyy-MM-dd');
@@ -83,7 +85,6 @@ export function useCalendarSlots(teacherId?: string) {
         .order('slot_date')
         .order('start_time');
       
-      // Exclude deleted unless showDeleted is on
       if (!showDeleted) {
         query = query.neq('status', 'deleted');
       }
@@ -95,15 +96,22 @@ export function useCalendarSlots(teacherId?: string) {
       console.error('Error fetching slots:', err);
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   }, [teacherId, dateRange, showDeleted]);
 
   useEffect(() => { fetchSlots(); }, [fetchSlots]);
 
+  // Supabase Realtime instead of polling
   useEffect(() => {
     if (!teacherId) return;
-    const interval = setInterval(fetchSlots, 30000);
-    return () => clearInterval(interval);
+    const channel = supabase
+      .channel(`calendar-slots-${teacherId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_slots', filter: `teacher_id=eq.${teacherId}` },
+        () => { fetchSlots(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [teacherId, fetchSlots]);
 
   const normalizeTimeForQuery = (t: string) => {
@@ -169,11 +177,27 @@ export function useCalendarSlots(teacherId?: string) {
 
       if (error) throw error;
       
-      // Log creation
+      // Log creation with rich details
       await logAction(data.id, 'created', 'teacher', {
         slot_type: input.slot_type || 'slot',
         student_id: input.student_id,
+        slot_date: input.slot_date,
+        start_time: input.start_time,
+        end_time: input.end_time,
       });
+
+      // Teacher notification for lesson (replaces removed trigger)
+      if (input.student_id) {
+        try {
+          await supabase.from('calendar_notifications').insert({
+            teacher_id: teacherId,
+            notification_type: 'lesson_created_by_teacher',
+            message: `You added a new lesson on ${input.slot_date} at ${input.start_time.slice(0, 5)}`,
+            student_name: input.title?.split(' — ')[0] || '',
+            slot_id: data.id,
+          } as any);
+        } catch (_) {}
+      }
 
       await fetchSlots();
       toast({ title: input.slot_type === 'block' ? 'Block created' : input.student_id ? 'Lesson created' : 'Slot created' });
@@ -255,7 +279,20 @@ export function useCalendarSlots(teacherId?: string) {
     }
   }, [fetchSlots, toast]);
 
-  // Soft delete instead of hard delete
+  // Hard delete (for slots without history)
+  const hardDeleteSlot = useCallback(async (slotId: string) => {
+    try {
+      const { error } = await supabase.from('calendar_slots').delete().eq('id', slotId);
+      if (error) throw error;
+      await logAction(slotId, 'hard_deleted', 'teacher', {});
+      await fetchSlots();
+      toast({ title: 'Slot deleted' });
+    } catch (err: any) {
+      toast({ title: 'Error deleting slot', description: err.message, variant: 'destructive' });
+    }
+  }, [fetchSlots, toast]);
+
+  // Soft delete (for slots with history)
   const deleteSlot = useCallback(async (slotId: string) => {
     try {
       const { error } = await supabase.from('calendar_slots').update({ status: 'deleted' } as any).eq('id', slotId);
@@ -271,14 +308,25 @@ export function useCalendarSlots(teacherId?: string) {
   const deleteSlotsBatch = useCallback(async (slotIds: string[]) => {
     if (slotIds.length === 0) return;
     try {
-      const { error } = await supabase.from('calendar_slots').update({ status: 'deleted' } as any).in('id', slotIds);
-      if (error) throw error;
+      // Check which ones have history
+      const slotsToCheck = slots.filter(s => slotIds.includes(s.id));
+      const hardDeleteIds = slotsToCheck.filter(s => !s.cancelled_at).map(s => s.id);
+      const softDeleteIds = slotsToCheck.filter(s => !!s.cancelled_at).map(s => s.id);
+
+      if (hardDeleteIds.length > 0) {
+        const { error } = await supabase.from('calendar_slots').delete().in('id', hardDeleteIds);
+        if (error) throw error;
+      }
+      if (softDeleteIds.length > 0) {
+        const { error } = await supabase.from('calendar_slots').update({ status: 'deleted' } as any).in('id', softDeleteIds);
+        if (error) throw error;
+      }
       await fetchSlots();
       toast({ title: `${slotIds.length} slots deleted` });
     } catch (err: any) {
       toast({ title: 'Error deleting slots', description: err.message, variant: 'destructive' });
     }
-  }, [fetchSlots, toast]);
+  }, [fetchSlots, toast, slots]);
 
   const navigate = useCallback((direction: 'prev' | 'next' | 'today') => {
     if (direction === 'today') { setCurrentDate(new Date()); return; }
@@ -298,7 +346,7 @@ export function useCalendarSlots(teacherId?: string) {
   return {
     slots, loading, viewMode, setViewMode, currentDate, setCurrentDate,
     weekStart, weekEnd, dateRange, showDeleted, setShowDeleted,
-    createSlot, createSlotsBatch, updateSlot, deleteSlot, deleteSlotsBatch,
+    createSlot, createSlotsBatch, updateSlot, deleteSlot, hardDeleteSlot, deleteSlotsBatch,
     navigate, getSlotsForDay, refetch: fetchSlots,
   };
 }

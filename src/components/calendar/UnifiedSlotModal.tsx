@@ -398,7 +398,7 @@ export function UnifiedSlotModal({
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
+                <PopoverContent className="w-full p-0" align="start" onOpenAutoFocus={e => e.preventDefault()}>
                   <Command>
                     <CommandInput placeholder="Search students..." />
                     <CommandList>
@@ -602,7 +602,7 @@ export function UnifiedSlotModal({
               )}
               <div>
                 <Label className="text-xs">Notes (optional)</Label>
-                <AutoResizeTextarea value={notes} onChange={e => setNotes(e.target.value)} placeholder={slotType === 'block' ? 'e.g. Doctor appointment' : 'Visible to student'} rows={1} />
+                <AutoResizeTextarea value={notes} onChange={e => setNotes(e.target.value)} placeholder={slotType === 'block' ? 'e.g. Doctor appointment' : 'Visible to student'} rows={1} className="min-h-[36px]" />
               </div>
             </>
           )}

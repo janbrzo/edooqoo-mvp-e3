@@ -49,7 +49,22 @@ export const useStudents = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Get user email from user object
+      // Check for duplicate email
+      if (studentEmail) {
+        const normalizedEmail = studentEmail.toLowerCase().trim();
+        const { data: existing } = await supabase
+          .from('students')
+          .select('id')
+          .eq('teacher_id', user.id)
+          .ilike('student_email', normalizedEmail)
+          .is('deleted_at', null)
+          .maybeSingle();
+        if (existing) {
+          toast({ title: 'Error', description: 'A student with this email already exists.', variant: 'destructive' });
+          throw new Error('Student with this email already exists');
+        }
+      }
+
       const userEmail = user.email;
 
       const { data, error } = await supabase
@@ -60,7 +75,7 @@ export const useStudents = () => {
           main_goal: mainGoal,
           teacher_id: user.id,
           teacher_email: userEmail,
-          student_email: studentEmail || null,
+          student_email: studentEmail?.toLowerCase().trim() || null,
           send_overdue_emails: sendOverdueEmails,
           native_language: nativeLanguage
         }])
