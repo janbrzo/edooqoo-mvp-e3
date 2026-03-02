@@ -1,7 +1,9 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Feb 2026):** Teacher Calendar Module (Faza 1) — Full weekly calendar at `/calendar` with color-coded slots (available/booked/pending/completed/cancelled). Recurring slots auto-generation. Public booking page (`/book/:token`) for students. Worksheet linking to lessons. Calendar tab in student profile. Settings for booking rules, notifications, public calendar token. Also: 125 Welcome Test translations (5 questions × 25 languages).
+**Latest Update (Mar 2026):** Calendar & Booking Overhaul — Reschedule with confirmation prevents double-bookings (atomic edge function `calendar-handle-reschedule-decision`). Dual timezone display for students. Email-first /book flow (7-day email persistence). New /book landing page with teacher selector. Complete email notification coverage (rejected, confirmed, cancelled). Student combobox fix. Book weekly fix. Deleted slots visible by default with restore.
+
+**Previous Update (Feb 2026):** Teacher Calendar Module (Faza 2.5) — Overbooking protection (SQL trigger + client checks). DraggableDialog. UnifiedSlotModal overhaul. Multi-select batch delete. Student portal on /book. Email notifications via Resend.
 
 **Previous Update (Feb 2026):** Welcome Test Learning Path Score — 5 new behavioral questions (Q3b, Q5b, Q13b, Q17b, Q41b) detect student's learning path preference via scenarios (not direct questions). Deterministic algorithm with 15 weighted signals calculates 0-100 score → 4 paths (Comfort/Guided/Accelerated/Target). 5 override rules handle edge cases. Score saved to raw_answers.learning_path. Future: will influence worksheet generation order and difficulty.
 

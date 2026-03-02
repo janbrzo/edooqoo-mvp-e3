@@ -5,20 +5,23 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (February 2026) - Teacher Calendar Module (Faza 2.5 - Critical Repairs & Enhancements):**
-- **Overbooking protection**: SQL trigger `check_slot_overlap` prevents double-booked lessons at DB level. Client-side conflict checks in `createSlotsBatch`, `generateSlotsForRule`, and `bookSlot` with time normalization (HH:MM:SS)
-- **DraggableDialog**: New reusable dialog component with transparent overlay (`bg-black/10`) and mouse-drag repositioning for UnifiedSlotModal and SlotDetailModal
-- **UnifiedSlotModal overhaul**: Removed Title field, added Location field. Student search via Combobox (cmdk). Recurring Lesson now uses multi-day checkboxes + From/To date range (like Batch). Direct worksheet linking via Select dropdown. Slot count preview for all creation modes
-- **Recurring lesson fix**: `generateSlotsForRule` rewritten to day-by-day iteration (was week-based with bugs). Inclusive end date. Conflict check per slot with auto-replace of available slots
-- **SlotDetailModal**: Worksheet opens in new tab. "Reject" button for pending bookings (resets to available). Title field removed
-- **LinkWorksheetModal**: "Back" button returns to SlotDetailModal. Worksheet names truncated with date always visible. Student filter uses current edit state
-- **Multi-select batch delete**: Toggle selection mode on toolbar, select multiple available slots, floating bar with "Delete All" + confirmation
-- **Calendar Settings**: Dynamic display hours (start/end), allow_student_reschedule toggle, buffer_minutes field. All used in Day/Week views
-- **Student filter**: CalendarToolbar includes student dropdown to filter calendar view
-- **Student portal on /book**: "Already have a booking?" section with email lookup, cancel/reschedule functionality via `get-student-bookings` edge function
-- **Email notifications**: `send-calendar-notification-email` edge function sends booking confirmation, pending notification, teacher alerts, cancellation emails via Resend
-- **Public booking improvements**: Student name resolved from teacher's DB. New student triggers extra notification. Booking confirmation message differs by auto_confirm vs requires_confirmation
-- **Grid lines**: Full-hour `border-border/80`, half-hour `border-border/15`. Gutter consistent with grid
+**Latest Update (March 2026) - Teacher Calendar Module (Faza 3.0 - Comprehensive Calendar & Booking Overhaul):**
+- **Reschedule with confirmation fix**: New `reschedule_request_from_slot_id` and `reschedule_request_to_slot_id` columns on `calendar_slots` link old↔new slots during reschedule flow. New edge function `calendar-handle-reschedule-decision` atomically confirms/rejects reschedule requests, preventing double-bookings
+- **Scenario A (pending→reschedule)**: Old pending slot immediately freed to available; new slot becomes pending
+- **Scenario B (confirmed→reschedule)**: Old slot stays booked with CR indicator; new slot pending until teacher confirms
+- **Timezone dual display**: `date-fns-tz` integration. Student sees local time as primary, teacher time as secondary label. `src/utils/timezoneUtils.ts` provides `toStudentLocalTimeRange()`, `toUtcInstant()`, `getStudentTimeZone()`
+- **Cancellation window**: Edge function `get-student-bookings` calculates `min_cancellation_hours` using UTC instants (DST-safe)
+- **Email notifications complete**: New types `booking_rejected`, `reschedule_rejected`, `cancellation_confirmed_by_student` in `send-calendar-notification-email`. All emails have CTA buttons (Teacher→/calendar, Student→/book). Reply-To set to teacher email for student emails
+- **Notification resolution**: `is_resolved=true` set on `calendar_notifications` after teacher confirm/reject actions. Reschedule notifications include From→To dates
+- **/book email-first flow**: Student enters email once (persisted 7 days in localStorage). Auto-loads existing bookings. Name auto-filled from teacher's student DB
+- **/book landing page**: New `/book` route with email input → `find-teachers-by-student-email` edge function returns teacher list → student selects teacher → redirects to `/book/:token`
+- **Student combobox fix**: Removed `preventDefault` on `PopoverContent.onOpenAutoFocus` and `CommandItem.onPointerDown` in SlotDetailModal and UnifiedSlotModal. Added `autoFocus` to `CommandInput`
+- **Book weekly fix**: Recurring booking now queries full date range from Supabase instead of relying on single-week slot cache
+- **Slot overlap fix**: Available slots without booking history are hard-deleted when replaced; soft-delete only for slots with history
+- **Deleted slots default visible**: `showDeleted` defaults to `true`. "Restore (Turn Available)" button on deleted slot modal
+- **Log completeness**: `buildSlotLogDetails()` helper ensures all logs include slot_date, start_time, end_time, student_name, student_email, source
+- **Slot title on /book**: `title` set to `"{StudentName} — English lesson"` during booking so /calendar shows name even without `student_id`
+- **Previous (Faza 2.5)**: Overbooking protection, DraggableDialog, UnifiedSlotModal overhaul, recurring lesson fix, multi-select batch delete, student portal on /book, email notifications
 - **Previous (Faza 2)**: UnifiedSlotModal consolidation, SlotDetailModal inline editing, CalendarToolbar simplification, performance optimizations
 - **Previous (Faza 1)**: 5 DB tables, day/week/month views, recurring slots, public booking, student lessons view, worksheet linking, calendar settings, attendance stats
 
