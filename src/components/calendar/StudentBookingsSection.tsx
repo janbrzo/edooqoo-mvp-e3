@@ -2,11 +2,9 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CalendarSettings } from '@/hooks/useCalendarSettings';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Search, X, ArrowRightLeft, Info } from 'lucide-react';
+import { Calendar, Clock, X, ArrowRightLeft, Info } from 'lucide-react';
 import { format, parseISO, differenceInHours } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -31,27 +29,26 @@ interface StudentBookingsSectionProps {
 }
 
 export function StudentBookingsSection({ settings, token, availableSlots, onBookingChanged, onRescheduleStart, rescheduleBookingId, defaultEmail }: StudentBookingsSectionProps) {
-  const [email, setEmail] = useState(defaultEmail || '');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  // Auto-fetch if defaultEmail provided
-  useEffect(() => {
-    if (defaultEmail && defaultEmail.trim()) {
-      setEmail(defaultEmail);
-      fetchBookingsWithEmail(defaultEmail);
-    }
-  }, [defaultEmail, token]);
+  const email = defaultEmail || '';
 
-  const fetchBookingsWithEmail = useCallback(async (emailToFetch?: string) => {
-    const e = (emailToFetch || email).trim();
-    if (!e) return;
+  // Auto-fetch when email available
+  useEffect(() => {
+    if (email.trim()) {
+      fetchBookings();
+    }
+  }, [email, token]);
+
+  const fetchBookings = useCallback(async () => {
+    if (!email.trim()) return;
     setLoading(true);
     setSearched(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-student-bookings', {
-        body: { token, email: e },
+        body: { token, email: email.trim() },
       });
       if (error) throw error;
       setBookings(data?.bookings || []);
@@ -63,8 +60,6 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
       setLoading(false);
     }
   }, [email, token]);
-
-  const fetchBookings = useCallback(() => fetchBookingsWithEmail(), [fetchBookingsWithEmail]);
 
   const handleCancel = async (bookingId: string) => {
     if (!window.confirm('Are you sure you want to cancel this lesson?')) return;
@@ -82,47 +77,33 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
   };
 
   const handleRescheduleClick = (bookingId: string) => {
-    // Step 14: Use calendar-based reschedule instead of inline slot list
     if (onRescheduleStart) {
       onRescheduleStart(bookingId);
     }
   };
 
-  // Step 13: Pending bookings can always be cancelled/rescheduled
   const canCancel = (booking: Booking) => {
     const isPending = booking.status === 'booked' && !booking.confirmed_at;
-    if (isPending) return true; // Always allow cancel for pending
+    if (isPending) return true;
     if (!settings.min_cancellation_hours) return true;
     const lessonTime = parseISO(`${booking.slot_date}T${booking.start_time}`);
     return differenceInHours(lessonTime, new Date()) >= settings.min_cancellation_hours;
   };
 
+  if (!email || bookings.length === 0 && !loading && !searched) return null;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          <Search className="h-4 w-4" /> Already have a booking?
+          <Calendar className="h-4 w-4" /> Your Lessons
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <Label className="text-xs text-muted-foreground">Enter your email to check bookings</Label>
-            <Input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              onKeyDown={e => e.key === 'Enter' && fetchBookings()}
-            />
-          </div>
-          <Button onClick={fetchBookings} disabled={loading || !email.trim()} className="self-end">
-            {loading ? 'Checking...' : 'Check'}
-          </Button>
-        </div>
+        {loading && <p className="text-sm text-muted-foreground text-center py-4">Loading your lessons...</p>}
 
         {searched && bookings.length === 0 && !loading && (
-          <p className="text-sm text-muted-foreground text-center py-4">No bookings found for this email.</p>
+          <p className="text-sm text-muted-foreground text-center py-4">No upcoming lessons found.</p>
         )}
 
         {bookings.length > 0 && (
@@ -163,7 +144,6 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
                     </Button>
                   </div>
 
-                  {/* Step 14: Show info to select from calendar */}
                   {isActiveReschedule && (
                     <div className="border-t pt-2 flex items-start gap-2 text-xs text-muted-foreground">
                       <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />

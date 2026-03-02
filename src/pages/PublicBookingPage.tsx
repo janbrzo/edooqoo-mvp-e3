@@ -241,6 +241,7 @@ const PublicBookingPage = () => {
       const success = await bookSlot(selectedSlot.id, name.trim(), email.trim());
       setBooking(false);
       if (success) { setSelectedSlot(null); setBookWeekly(false); setUntilDate(''); }
+      else { setSelectedSlot(null); }
     }
   };
 
@@ -256,6 +257,20 @@ const PublicBookingPage = () => {
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">Book a Lesson</h1>
           <p className="text-muted-foreground">Select an available time slot below</p>
+          {emailVerified && (
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xs text-muted-foreground">{email}</span>
+              <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={() => {
+                localStorage.removeItem(EMAIL_STORAGE_KEY);
+                localStorage.removeItem(NAME_STORAGE_KEY);
+                setEmailVerified(false);
+                setEmail('');
+                setName('');
+              }}>
+                Log out
+              </Button>
+            </div>
+          )}
           {showTzInfo && (
             <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
               <Globe className="h-3 w-3" />
@@ -409,7 +424,7 @@ const PublicBookingPage = () => {
               </div>
               <div>
                 <Label>Your Email</Label>
-                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="john@example.com" />
+                <Input type="email" value={email} readOnly className="bg-muted/50 cursor-not-allowed" />
               </div>
 
               <div className="border rounded-lg p-3 space-y-3">

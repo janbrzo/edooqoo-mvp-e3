@@ -40,17 +40,32 @@ export function CalendarNotificationBell({ teacherId, students, onNotificationCl
             notifications.map(n => {
               const metadata = n.metadata || {};
               const isNewStudent = n.notification_type === 'new_student';
-              const isResolved = (n as any).is_resolved;
+              const isResolved = n.is_resolved;
               
               const studentAlreadyAdded = isNewStudent && students?.some(s => 
                 s.student_email && metadata.student_email && 
                 s.student_email.toLowerCase() === metadata.student_email.toLowerCase()
               );
 
-              // Display name vs email: prefer student_name, show email separately from metadata
               const displayName = n.student_name || '';
               const displayEmail = metadata.student_email || '';
               const showEmailSeparately = displayName && displayEmail && displayName !== displayEmail;
+
+              // Resolved action label
+              const resolvedLabel = (() => {
+                if (!isResolved) return null;
+                const action = n.resolved_action;
+                if (action === 'approved') return 'Done — Approved';
+                if (action === 'rejected') return 'Done — Rejected';
+                if (action === 'cancelled') return 'Done — Cancelled';
+                if (action === 'rescheduled') return 'Done — Rescheduled';
+                if (action === 'added') return 'Done — Added';
+                if (action === 'noted') return 'Done — Noted';
+                // Fallback based on notification_type
+                if (n.notification_type === 'booking_pending') return 'Done — Resolved';
+                if (n.notification_type === 'new_student') return 'Done — Added';
+                return 'Done';
+              })();
 
               return (
                 <div
@@ -68,11 +83,20 @@ export function CalendarNotificationBell({ teacherId, students, onNotificationCl
                       <p className="text-xs">{n.message}</p>
                       {displayName && <p className="text-xs text-muted-foreground">Student: {displayName}</p>}
                       {showEmailSeparately && <p className="text-[10px] text-muted-foreground">{displayEmail}</p>}
+                      {/* Date/time/email from metadata */}
+                      {metadata.slot_date && (
+                        <p className="text-[10px] text-muted-foreground">
+                          {metadata.slot_date} at {metadata.start_time || ''}–{metadata.end_time || ''}
+                        </p>
+                      )}
+                      {metadata.student_email && !showEmailSeparately && (
+                        <p className="text-[10px] text-muted-foreground">{metadata.student_email}</p>
+                      )}
                       <p className="text-[10px] text-muted-foreground mt-0.5">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}</p>
                       
-                      {isResolved && (
+                      {isResolved && resolvedLabel && (
                         <div className="flex items-center gap-1 mt-1 text-[10px] text-green-600 dark:text-green-400">
-                          <CheckCircle2 className="h-3 w-3" /> Done
+                          <CheckCircle2 className="h-3 w-3" /> {resolvedLabel}
                         </div>
                       )}
 

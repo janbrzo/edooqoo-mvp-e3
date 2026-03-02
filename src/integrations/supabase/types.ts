@@ -50,6 +50,7 @@ export type Database = {
           message: string
           metadata: Json | null
           notification_type: string
+          resolved_action: string | null
           slot_id: string | null
           student_name: string | null
           teacher_id: string
@@ -62,6 +63,7 @@ export type Database = {
           message: string
           metadata?: Json | null
           notification_type: string
+          resolved_action?: string | null
           slot_id?: string | null
           student_name?: string | null
           teacher_id: string
@@ -74,6 +76,7 @@ export type Database = {
           message?: string
           metadata?: Json | null
           notification_type?: string
+          resolved_action?: string | null
           slot_id?: string | null
           student_name?: string | null
           teacher_id?: string
@@ -243,6 +246,11 @@ export type Database = {
           id: string
           max_slots_per_student_per_week: number | null
           min_cancellation_hours: number | null
+          notify_email_on_booking: boolean
+          notify_email_on_cancellation: boolean
+          notify_email_on_confirmation: boolean
+          notify_email_on_rejection: boolean
+          notify_email_on_reschedule: boolean
           notify_on_booking: boolean
           notify_on_cancellation: boolean
           notify_payment_reminder: boolean
@@ -271,6 +279,11 @@ export type Database = {
           id?: string
           max_slots_per_student_per_week?: number | null
           min_cancellation_hours?: number | null
+          notify_email_on_booking?: boolean
+          notify_email_on_cancellation?: boolean
+          notify_email_on_confirmation?: boolean
+          notify_email_on_rejection?: boolean
+          notify_email_on_reschedule?: boolean
           notify_on_booking?: boolean
           notify_on_cancellation?: boolean
           notify_payment_reminder?: boolean
@@ -299,6 +312,11 @@ export type Database = {
           id?: string
           max_slots_per_student_per_week?: number | null
           min_cancellation_hours?: number | null
+          notify_email_on_booking?: boolean
+          notify_email_on_cancellation?: boolean
+          notify_email_on_confirmation?: boolean
+          notify_email_on_rejection?: boolean
+          notify_email_on_reschedule?: boolean
           notify_on_booking?: boolean
           notify_on_cancellation?: boolean
           notify_payment_reminder?: boolean

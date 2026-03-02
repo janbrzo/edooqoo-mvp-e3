@@ -27,6 +27,12 @@ export interface CalendarSettings {
   display_end_hour: number;
   allow_student_reschedule: boolean;
   buffer_minutes: number;
+  // Email notification toggles
+  notify_email_on_booking: boolean;
+  notify_email_on_cancellation: boolean;
+  notify_email_on_reschedule: boolean;
+  notify_email_on_confirmation: boolean;
+  notify_email_on_rejection: boolean;
 }
 
 const DEFAULT_SETTINGS: Omit<CalendarSettings, 'id' | 'teacher_id'> = {
@@ -52,6 +58,11 @@ const DEFAULT_SETTINGS: Omit<CalendarSettings, 'id' | 'teacher_id'> = {
   display_end_hour: 22,
   allow_student_reschedule: false,
   buffer_minutes: 0,
+  notify_email_on_booking: true,
+  notify_email_on_cancellation: true,
+  notify_email_on_reschedule: true,
+  notify_email_on_confirmation: true,
+  notify_email_on_rejection: true,
 };
 
 export function useCalendarSettings(teacherId?: string) {
@@ -74,7 +85,6 @@ export function useCalendarSettings(teacherId?: string) {
       if (data) {
         setSettings(data as unknown as CalendarSettings);
       } else {
-        // Auto-create default settings
         const { data: newData, error: insertError } = await supabase
           .from('calendar_settings')
           .insert({ teacher_id: teacherId, ...DEFAULT_SETTINGS })

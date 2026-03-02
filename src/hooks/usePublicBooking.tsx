@@ -41,7 +41,7 @@ export function usePublicBooking(token?: string) {
         .from('calendar_slots')
         .select('*')
         .eq('teacher_id', settings.teacher_id)
-        .neq('slot_type', 'block')  // Filter out private blocks
+        .neq('slot_type', 'block')
         .gte('slot_date', from)
         .lte('slot_date', to)
         .or('status.eq.available,and(status.eq.booked,confirmed_at.is.null)')
@@ -69,6 +69,13 @@ export function usePublicBooking(token?: string) {
     return () => { supabase.removeChannel(channel); };
   }, [settings, fetchSlots]);
 
+  // Polling fallback every 5s for /book (public, no auth — Realtime may not work with RLS)
+  useEffect(() => {
+    if (!settings) return;
+    const interval = setInterval(() => { fetchSlots(); }, 5000);
+    return () => clearInterval(interval);
+  }, [settings, fetchSlots]);
+
   const bookSlot = useCallback(async (slotId: string, studentName: string, studentEmail: string) => {
     if (!settings) return false;
     try {
@@ -76,7 +83,7 @@ export function usePublicBooking(token?: string) {
       const { data: check } = await supabase
         .from('calendar_slots').select('status, slot_type').eq('id', slotId).single();
       if (!check || check.status !== 'available' || check.slot_type === 'block') {
-        toast({ title: 'Slot no longer available', description: 'Please select another time.', variant: 'destructive' });
+        toast({ title: 'Slot no longer available', description: 'Please select another time.', variant: 'destructive', duration: 6000 });
         await fetchSlots();
         return false;
       }
@@ -93,6 +100,8 @@ export function usePublicBooking(token?: string) {
       const studentId = existingStudent?.id || null;
       const resolvedName = existingStudent?.name || studentName;
       const autoConfirm = settings.default_booking_mode === 'auto_confirm';
+
+      const slot = slots.find(s => s.id === slotId);
 
       const { error: err } = await supabase
         .from('calendar_slots')
@@ -120,12 +129,18 @@ export function usePublicBooking(token?: string) {
             message: `New student signed up: ${studentName} (${normalizedEmail})`,
             student_name: studentName,
             slot_id: slotId,
-            metadata: { student_email: normalizedEmail, student_name_raw: studentName },
+            metadata: {
+              student_email: normalizedEmail,
+              student_name_raw: studentName,
+              slot_date: slot?.slot_date,
+              start_time: slot?.start_time?.slice(0, 5),
+              end_time: slot?.end_time?.slice(0, 5),
+            },
           } as any);
         } catch (e) { console.error(e); }
       }
 
-      // Booking notification (replaces removed trigger)
+      // Booking notification
       try {
         await supabase.from('calendar_notifications').insert({
           teacher_id: settings.teacher_id,
@@ -135,12 +150,17 @@ export function usePublicBooking(token?: string) {
             : `${resolvedName} requested a lesson — awaiting confirmation`,
           student_name: resolvedName,
           slot_id: slotId,
+          metadata: {
+            student_email: normalizedEmail,
+            slot_date: slot?.slot_date,
+            start_time: slot?.start_time?.slice(0, 5),
+            end_time: slot?.end_time?.slice(0, 5),
+          },
         } as any);
       } catch (e) { console.error(e); }
 
-      // Send email notifications
-      const slot = slots.find(s => s.id === slotId);
-      if (slot) {
+      // Send email notifications (check settings)
+      if (slot && settings.notify_email_on_booking) {
         const slotDate = slot.slot_date;
         const slotTime = slot.start_time.slice(0, 5);
         const { data: teacherProfile } = await supabase.from('profiles').select('email, first_name, last_name').eq('id', settings.teacher_id).maybeSingle();

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, History, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 
-const ACTIONS = ['all', 'created', 'booked', 'confirmed', 'cancelled_by_teacher', 'cancelled_by_student', 'rescheduled', 'reschedule_requested', 'student_changed', 'worksheet_linked', 'status_changed', 'deleted', 'hard_deleted', 'updated', 'rejected'];
+const ACTIONS = ['all', 'created', 'booked', 'confirmed', 'cancelled_by_teacher', 'cancelled_by_student', 'rescheduled', 'reschedule_requested', 'student_assigned', 'student_removed', 'student_changed', 'time_changed', 'notes_updated', 'worksheet_linked', 'status_changed', 'deleted', 'hard_deleted', 'restored', 'rejected'];
 
 function humanizeAction(action: string): string {
   return action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
