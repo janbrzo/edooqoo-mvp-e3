@@ -391,14 +391,14 @@ export function UnifiedSlotModal({
           {slotType === 'lesson' && (
             <div>
               <Label className="text-xs">Student *</Label>
-              <Popover open={studentComboOpen} onOpenChange={setStudentComboOpen}>
+              <Popover open={studentComboOpen} onOpenChange={setStudentComboOpen} modal={false}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" role="combobox" aria-expanded={studentComboOpen} className="w-full h-9 justify-between text-sm font-normal">
                     {studentId !== 'none' ? selectedStudentName : 'Select a student (type to search)...'}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
+                <PopoverContent className="w-full p-0" align="start" onPointerDownOutside={e => e.preventDefault()}>
                   <Command>
                     <CommandInput placeholder="Search students..." autoFocus />
                     <CommandList>

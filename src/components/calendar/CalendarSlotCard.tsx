@@ -19,6 +19,7 @@ const STATUS_STYLES: Record<string, string> = {
   cancelled: 'bg-red-50 border-red-200 text-red-400 line-through opacity-60 dark:bg-red-900/20 dark:border-red-800',
   no_show: 'bg-red-100 border-red-300 text-red-700 dark:bg-red-900/40 dark:border-red-700 dark:text-red-300',
   deleted: 'bg-muted/50 border-border/50 text-muted-foreground/50 line-through opacity-40',
+  needs_review: 'bg-purple-100 border-purple-300 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/40 dark:border-purple-700 dark:text-purple-300',
 };
 
 const STATUS_BADGES: Record<string, { letter: string; color: string }> = {
@@ -29,18 +30,22 @@ const STATUS_BADGES: Record<string, { letter: string; color: string }> = {
   no_show: { letter: 'NS', color: 'bg-red-500 text-white' },
   block: { letter: 'B', color: 'bg-gray-500 text-white' },
   deleted: { letter: 'D', color: 'bg-muted-foreground/50 text-white' },
+  needs_review: { letter: '?', color: 'bg-purple-500 text-white' },
 };
 
 export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, studentName, onClick, compact, isSelected, selectionMode }: CalendarSlotCardProps) {
   const isBlock = (slot as any).slot_type === 'block';
   const isPending = slot.status === 'booked' && !slot.confirmed_at;
   const isDeleted = slot.status === ('deleted' as any);
+  const isNeedsReview = (slot.status as string) === 'needs_review';
   
   let style: string;
   if (isBlock) {
     style = 'bg-gray-200 border-gray-400 text-gray-600 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400';
   } else if (isDeleted) {
     style = STATUS_STYLES.deleted;
+  } else if (isNeedsReview) {
+    style = STATUS_STYLES.needs_review;
   } else if (isPending) {
     style = 'bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-300';
   } else {
@@ -54,7 +59,7 @@ export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, stu
   const showBadgeC = slot.status === 'available' && slot.cancelled_at && slot.cancelled_by;
 
   // Status badge letter
-  const badgeKey = isBlock ? 'block' : isDeleted ? 'deleted' : isPending ? 'pending' : slot.status;
+  const badgeKey = isBlock ? 'block' : isDeleted ? 'deleted' : isNeedsReview ? 'needs_review' : isPending ? 'pending' : slot.status;
   const statusBadge = STATUS_BADGES[badgeKey] || STATUS_BADGES.available;
 
   return (

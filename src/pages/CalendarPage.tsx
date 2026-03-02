@@ -22,12 +22,14 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Filter, Search, Eye, EyeOff, Lock, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 const LEGEND_ITEMS = [
   { key: 'available', label: 'Available', badge: 'A', color: 'bg-green-200 border-green-400' },
   { key: 'booked', label: 'Booked', badge: 'B', color: 'bg-blue-200 border-blue-400' },
   { key: 'pending', label: 'Pending', badge: 'P', color: 'bg-amber-200 border-amber-400' },
+  { key: 'needs_review', label: 'Needs Review', badge: '?', color: 'bg-purple-200 border-purple-400' },
   { key: 'completed', label: 'Completed', badge: '✓', color: 'bg-emerald-200 border-emerald-400' },
   { key: 'no_show', label: 'No Show', badge: 'NS', color: 'bg-red-200 border-red-400' },
   { key: 'block', label: 'Block', badge: 'B', color: 'bg-gray-200 border-gray-400', icon: Lock },
@@ -111,6 +113,7 @@ const CalendarPage = () => {
         if (legendFilter === 'pending') return s.status === 'booked' && !s.confirmed_at;
         if (legendFilter === 'booked') return s.status === 'booked' && !!s.confirmed_at;
         if (legendFilter === 'deleted') return (s.status as any) === 'deleted';
+        if (legendFilter === 'needs_review') return (s.status as any) === 'needs_review';
         return s.status === legendFilter;
       });
     }
@@ -213,11 +216,18 @@ const CalendarPage = () => {
     }
   };
 
-  const handleNotificationClick = (n: CalendarNotification) => {
+  const handleNotificationClick = async (n: CalendarNotification) => {
     if (n.slot_id) {
       const slot = slots.find(s => s.id === n.slot_id);
       if (slot) {
         setSelectedSlot(slot);
+      } else {
+        // Slot not in current view — fetch it and navigate to its date
+        const { data } = await supabase.from('calendar_slots').select('*').eq('id', n.slot_id).single();
+        if (data) {
+          setCurrentDate(new Date(data.slot_date));
+          setTimeout(() => { setSelectedSlot(data as any); }, 500);
+        }
       }
     }
   };

@@ -46,6 +46,7 @@ const STATUS_BADGES: Record<string, { label: string; variant: 'default' | 'secon
   cancelled: { label: 'Cancelled', variant: 'destructive' },
   no_show: { label: 'No Show', variant: 'destructive' },
   deleted: { label: 'Deleted', variant: 'destructive' },
+  needs_review: { label: 'Needs Review', variant: 'secondary' },
 };
 
 export function SlotDetailModal({ open, onOpenChange, slot, studentName, students, onUpdate, onDelete, onLinkWorksheet }: SlotDetailModalProps) {
@@ -69,7 +70,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       setEditStudentId(slot.student_id || 'none');
       setShowStudentSelect(false);
       setConfirming(false);
-      // Fetch logs for this slot
       supabase.from('calendar_slot_logs').select('*').eq('slot_id', slot.id).order('created_at', { ascending: false }).limit(20)
         .then(({ data }) => setSlotLogs((data || []) as SlotLog[]));
     }
@@ -79,10 +79,11 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
 
   const isBlock = (slot as any).slot_type === 'block';
   const isPending = slot.status === 'booked' && !slot.confirmed_at;
+  const isNeedsReview = (slot.status as string) === 'needs_review';
   const badge = STATUS_BADGES[slot.status] || STATUS_BADGES.available;
   const hasStudent = editStudentId !== 'none';
   const isRecurring = !!slot.recurrence_rule_id;
-  const isBooked = !!slot.student_id && slot.status === 'booked';
+  const isBooked = !!slot.student_id && (slot.status === 'booked' || isNeedsReview);
 
   const canUndoCancel = slot.status === 'cancelled' && slot.cancelled_at &&
     differenceInMinutes(new Date(), new Date(slot.cancelled_at)) < 30;
@@ -109,20 +110,86 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     const updates: any = {
       slot_date: editDate, start_time: editStartTime, end_time: editEndTime, notes: editNotes || null,
     };
-    if (editStudentId !== (slot.student_id || 'none')) {
+
+    // Determine specific log action
+    let logActionName = 'updated';
+    const logDetails: any = { slot_date: editDate, start_time: editStartTime, end_time: editEndTime };
+
+    const studentChanged = editStudentId !== (slot.student_id || 'none');
+    const timeChanged = editDate !== slot.slot_date || editStartTime !== slot.start_time.slice(0, 5) || editEndTime !== slot.end_time.slice(0, 5);
+
+    if (studentChanged) {
       if (editStudentId === 'none') {
         updates.student_id = null; updates.status = 'available'; updates.booked_at = null; updates.booked_by = null; updates.confirmed_at = null;
+        logActionName = 'student_removed';
+        logDetails.previous_student = studentName;
+      } else if (slot.student_id) {
+        logActionName = 'student_changed';
+        logDetails.previous_student = studentName;
+        logDetails.student_name = students.find(s => s.id === editStudentId)?.name;
       } else {
+        logActionName = 'student_assigned';
+        logDetails.student_name = students.find(s => s.id === editStudentId)?.name;
+      }
+      if (editStudentId !== 'none') {
         updates.student_id = editStudentId; updates.status = 'booked';
         updates.booked_at = new Date().toISOString(); updates.booked_by = 'teacher'; updates.confirmed_at = new Date().toISOString();
       }
     }
+
+    // Time change: check for conflicts and handle them
+    if (timeChanged) {
+      if (logActionName === 'updated') logActionName = 'time_changed';
+      logDetails.previous_date = slot.slot_date;
+      logDetails.previous_time = `${slot.start_time.slice(0, 5)}-${slot.end_time.slice(0, 5)}`;
+
+      // Check for conflicts
+      const { data: conflicts } = await supabase
+        .from('calendar_slots')
+        .select('id, student_id, status')
+        .eq('teacher_id', slot.teacher_id)
+        .eq('slot_date', editDate)
+        .neq('id', slot.id)
+        .neq('status', 'cancelled')
+        .neq('status', 'deleted')
+        .lt('start_time', editEndTime + ':00')
+        .gt('end_time', editStartTime + ':00');
+
+      if (conflicts && conflicts.length > 0) {
+        const hasLesson = conflicts.some(c => c.student_id);
+        if (hasLesson) {
+          toast.error('Cannot change time — conflicts with an existing lesson.');
+          setSaving(false);
+          return;
+        }
+        // Delete available slots that conflict
+        for (const c of conflicts) {
+          await supabase.from('calendar_slots').delete().eq('id', c.id);
+        }
+      }
+
+      // If slot has student and time changed, send email notification
+      if (slot.student_id && slot.status === 'booked') {
+        const studentEmail = extractStudentEmail(slot.student_notes);
+        if (studentEmail) {
+          sendCalendarEmail('lesson_time_changed', {
+            oldSlotDate: slot.slot_date, oldSlotTime: slot.start_time.slice(0, 5),
+            slotDate: editDate, slotTime: editStartTime,
+          });
+        }
+      }
+    }
+
+    if (!studentChanged && !timeChanged && editNotes !== (slot.notes || '')) {
+      logActionName = 'notes_updated';
+    }
+
     await onUpdate(slot.id, updates);
-    // Log update
+    // Log with specific action
     try {
       await supabase.from('calendar_slot_logs').insert({
-        slot_id: slot.id, teacher_id: slot.teacher_id, action: 'updated', actor: 'teacher',
-        details: { changes: updates },
+        slot_id: slot.id, teacher_id: slot.teacher_id, action: logActionName, actor: 'teacher',
+        details: logDetails,
       } as any);
     } catch (_) {}
     setSaving(false);
@@ -136,12 +203,14 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     return match ? match[1] : '';
   };
 
-  // Helper: resolve notifications for this slot
-  const resolveNotifications = async (slotId: string, types: string[]) => {
+  // Helper: resolve notifications for this slot with resolved_action
+  const resolveNotifications = async (slotId: string, types: string[], resolvedAction?: string) => {
     try {
+      const updatePayload: any = { is_resolved: true };
+      if (resolvedAction) updatePayload.resolved_action = resolvedAction;
       await supabase
         .from('calendar_notifications')
-        .update({ is_resolved: true } as any)
+        .update(updatePayload)
         .eq('teacher_id', slot.teacher_id)
         .eq('slot_id', slotId)
         .in('notification_type', types);
@@ -160,23 +229,36 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       const bookUrl = calSettings?.public_calendar_token ? `${window.location.origin}/book/${calSettings.public_calendar_token}` : '';
       const calendarUrl = `${window.location.origin}/calendar`;
 
+      // Build worksheet URLs if available
+      let worksheetUrl: string | undefined;
+      if (slot.worksheet_id) {
+        worksheetUrl = `${window.location.origin}/worksheet/${slot.worksheet_id}`;
+      }
+
       supabase.functions.invoke('send-calendar-notification-email', {
         body: {
           type, studentEmail, studentName: studentName || 'Student',
-          slotDate: slot.slot_date, slotTime: slot.start_time.slice(0, 5),
+          slotDate: extraParams.slotDate || slot.slot_date, slotTime: extraParams.slotTime || slot.start_time.slice(0, 5),
           teacherName, teacherEmail, bookUrl, calendarUrl,
+          worksheetUrl,
           ...extraParams,
         },
       }).catch(console.error);
     } catch (_) {}
   };
 
+  // Check email settings before sending
+  const shouldSendEmail = async (settingKey: string): Promise<boolean> => {
+    try {
+      const { data } = await supabase.from('calendar_settings').select(settingKey).eq('teacher_id', slot.teacher_id).maybeSingle();
+      return data ? (data as any)[settingKey] !== false : true;
+    } catch { return true; }
+  };
+
   const handleConfirm = async () => {
-    // Check if this is a reschedule confirmation
     const isReschedule = !!(slot as any).reschedule_request_from_slot_id;
     
     if (isReschedule) {
-      // Use edge function for atomic reschedule confirmation
       try {
         const { data: session } = await supabase.auth.getSession();
         const token = session?.session?.access_token;
@@ -192,8 +274,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       }
     } else {
       await onUpdate(slot.id, { confirmed_at: new Date().toISOString() } as any);
-      // Send booking_confirmation email to student
-      await sendCalendarEmail('booking_confirmation');
+      const canSend = await shouldSendEmail('notify_email_on_confirmation');
+      if (canSend) await sendCalendarEmail('booking_confirmation');
     }
 
     try {
@@ -203,8 +285,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       } as any);
     } catch (_) {}
 
-    // Resolve notifications
-    await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule']);
+    await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
     
     onOpenChange(false);
   };
@@ -226,8 +307,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       await onUpdate(slot.id, {
         status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
       } as any);
-      // Send booking_rejected email to student
-      await sendCalendarEmail('booking_rejected');
+      const canSend = await shouldSendEmail('notify_email_on_rejection');
+      if (canSend) await sendCalendarEmail('booking_rejected');
       toast.success('Booking rejected, slot is available again');
     }
 
@@ -238,8 +319,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       } as any);
     } catch (_) {}
 
-    // Resolve notifications
-    await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule']);
+    await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
 
     onOpenChange(false);
   };
@@ -249,7 +329,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     onOpenChange(false);
   };
 
-  // Step 10: Teacher Cancellation
   const handleTeacherCancellation = async () => {
     if (!window.confirm('Cancel this lesson as teacher cancellation? The slot will become available again.')) return;
     const cancelledStudentName = students.find(s => s.id === slot.student_id)?.name || studentName || 'unknown';
@@ -266,14 +345,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         details: { student_name: cancelledStudentName, student_id: slot.student_id, slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time },
       } as any);
     } catch (_) {}
-    // Send cancellation email to student
-    await sendCalendarEmail('cancellation_student');
-    // Resolve related notifications
-    await resolveNotifications(slot.id, ['booking_pending', 'booking_confirmed']);
+    const canSend = await shouldSendEmail('notify_email_on_cancellation');
+    if (canSend) await sendCalendarEmail('cancellation_student');
+    await resolveNotifications(slot.id, ['booking_pending', 'booking_confirmed'], 'cancelled');
     onOpenChange(false);
   };
 
-  // Step 10: Student Cancellation
   const handleStudentCancellation = async () => {
     if (!window.confirm('Cancel this lesson as student cancellation? The slot will become available again.')) return;
     const cancelledStudentName = students.find(s => s.id === slot.student_id)?.name || studentName || 'unknown';
@@ -287,9 +364,10 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     try {
       await supabase.from('calendar_slot_logs').insert({
         slot_id: slot.id, teacher_id: slot.teacher_id, action: 'cancelled_by_student', actor: 'teacher',
-        details: { student_name: cancelledStudentName, student_id: slot.student_id },
+        details: { student_name: cancelledStudentName, student_id: slot.student_id, slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time },
       } as any);
     } catch (_) {}
+    await resolveNotifications(slot.id, ['booking_pending', 'booking_confirmed'], 'cancelled');
     onOpenChange(false);
   };
 
@@ -300,13 +378,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     try {
       await supabase.from('calendar_slot_logs').insert({
         slot_id: slot.id, teacher_id: slot.teacher_id, action: 'status_changed', actor: 'teacher',
-        details: { new_status: status },
+        details: { old_status: slot.status, new_status: status, student_name: studentName, slot_date: slot.slot_date, start_time: slot.start_time },
       } as any);
     } catch (_) {}
     onOpenChange(false);
   };
 
-  // Delete: hard delete if no history, soft delete if has cancellation history
   const handleDelete = async () => {
     if (confirming) {
       const hasHistory = !!slot.cancelled_at;
@@ -338,7 +415,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     onOpenChange(false);
   };
 
-  // 3A: Save student FIRST before opening link worksheet
   const handleLinkWorksheetClick = async () => {
     if (editStudentId !== (slot.student_id || 'none')) {
       const updates: any = {};
@@ -391,14 +467,14 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
                 <div>
                   <Label className="text-xs">{hasStudent ? 'Change Student' : 'Assign Student'}</Label>
                   <div className="flex gap-2">
-                    <Popover open={studentComboOpen} onOpenChange={setStudentComboOpen}>
+                    <Popover open={studentComboOpen} onOpenChange={setStudentComboOpen} modal={false}>
                       <PopoverTrigger asChild>
                         <Button variant="outline" role="combobox" aria-expanded={studentComboOpen} className="flex-1 h-9 justify-between text-sm font-normal">
                           {editStudentId !== 'none' ? selectedStudentName : 'Select a student...'}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-full p-0" align="start">
+                      <PopoverContent className="w-full p-0" align="start" onPointerDownOutside={e => e.preventDefault()}>
                         <Command>
                           <CommandInput placeholder="Search students..." autoFocus />
                           <CommandList>
@@ -437,7 +513,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             <div><Label className="text-xs">End</Label><Input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)} className="h-9" /></div>
           </div>
 
-          {/* Worksheet — 3B: disabled linking without student */}
+          {/* Worksheet */}
           {!isBlock && (
             <div className="flex justify-between items-center">
               <span className="text-xs text-muted-foreground">Worksheet</span>
@@ -450,11 +526,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
                   <span className="text-xs text-muted-foreground">None</span>
                 )}
                 {onLinkWorksheet && (
-                  <Button
-                    variant="ghost" size="sm" className="h-6 w-6 p-0 ml-1"
-                    disabled={!hasStudent}
-                    onClick={handleLinkWorksheetClick}
-                  >
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-1" disabled={!hasStudent} onClick={handleLinkWorksheetClick}>
                     <Link2 className="h-3 w-3" />
                   </Button>
                 )}
@@ -462,7 +534,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </div>
           )}
 
-          {/* Notes — AutoResizeTextarea */}
+          {/* Notes */}
           <div><Label className="text-xs">Notes</Label><AutoResizeTextarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={1} className="min-h-[36px]" /></div>
 
           {/* Student notes (from booking) */}
@@ -483,7 +555,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </div>
           )}
 
-          {/* Badge C info — available slot with cancellation history */}
+          {/* Badge C info */}
           {slot.status === 'available' && slot.cancelled_at && slot.cancelled_by && (
             <div className={cn(
               "border rounded-md px-3 py-2 text-xs space-y-1",
@@ -496,7 +568,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </div>
           )}
 
-          {/* History — Collapsible log with rich details */}
+          {/* History */}
           {slotLogs.length > 0 && (
             <Collapsible>
               <CollapsibleTrigger className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors w-full">
@@ -512,6 +584,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
                     {log.details?.slot_date && <span className="text-muted-foreground"> — {log.details.slot_date}</span>}
                     {log.details?.start_time && <span className="text-muted-foreground"> at {String(log.details.start_time).slice(0, 5)}</span>}
                     {log.details?.old_status && <span className="text-muted-foreground"> ({log.details.old_status} → {log.details.new_status})</span>}
+                    {log.details?.previous_student && <span className="text-muted-foreground"> (was: {log.details.previous_student})</span>}
+                    {log.details?.previous_time && <span className="text-muted-foreground"> (was: {log.details.previous_time})</span>}
                     {log.details?.student_email && <span className="text-muted-foreground"> ({log.details.student_email})</span>}
                   </div>
                 ))}
@@ -535,13 +609,14 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
                 </Button>
               </>
             )}
-            {slot.status === 'booked' && slot.confirmed_at && (
+            {/* Complete / No Show for booked+confirmed OR needs_review */}
+            {((slot.status === 'booked' && slot.confirmed_at) || isNeedsReview) && (
               <>
                 <Button size="sm" variant="outline" onClick={() => handleStatusChange('completed')} className="text-xs h-7"><Check className="h-3 w-3 mr-1" /> Complete</Button>
                 <Button size="sm" variant="outline" onClick={() => handleStatusChange('no_show')} className="text-xs h-7"><AlertTriangle className="h-3 w-3 mr-1" /> No Show</Button>
               </>
             )}
-            {/* Step 10: Teacher/Student Cancellation buttons — only for booked lessons */}
+            {/* Teacher/Student Cancellation buttons */}
             {isBooked && !isPending && slot.status !== 'cancelled' && (
               <>
                 <Button size="sm" variant="outline" className="text-blue-600 text-xs h-7" onClick={handleTeacherCancellation}>
@@ -559,28 +634,26 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </Button>
           )}
           <div className="flex gap-2 w-full justify-end">
-          {/* Restore button for deleted slots */}
-              {slot.status === 'deleted' && (
-                <Button size="sm" variant="outline" className="text-xs h-8" onClick={async () => {
-                  await onUpdate(slot.id, { status: 'available' } as any);
-                  try {
-                    await supabase.from('calendar_slot_logs').insert({
-                      slot_id: slot.id, teacher_id: slot.teacher_id, action: 'restored', actor: 'teacher',
-                      details: { slot_date: slot.slot_date, start_time: slot.start_time },
-                    } as any);
-                  } catch (_) {}
-                  toast.success('Slot restored to available');
-                  onOpenChange(false);
-                }}>
-                  <Undo2 className="h-3 w-3 mr-1" /> Turn Available
-                </Button>
-              )}
-              {/* Delete Slot — ONLY for available slots (no student), not for booked lessons */}
-              {!isBooked && slot.status !== 'completed' && slot.status !== 'deleted' && (
-                <Button size="sm" variant="ghost" className="text-destructive text-xs h-8" onClick={handleDelete}>
-                  <Trash2 className="h-3 w-3 mr-1" /> {confirming ? 'Confirm Delete?' : 'Delete Slot'}
-                </Button>
-              )}
+            {slot.status === 'deleted' && (
+              <Button size="sm" variant="outline" className="text-xs h-8" onClick={async () => {
+                await onUpdate(slot.id, { status: 'available' } as any);
+                try {
+                  await supabase.from('calendar_slot_logs').insert({
+                    slot_id: slot.id, teacher_id: slot.teacher_id, action: 'restored', actor: 'teacher',
+                    details: { slot_date: slot.slot_date, start_time: slot.start_time },
+                  } as any);
+                } catch (_) {}
+                toast.success('Slot restored to available');
+                onOpenChange(false);
+              }}>
+                <Undo2 className="h-3 w-3 mr-1" /> Turn Available
+              </Button>
+            )}
+            {!isBooked && slot.status !== 'completed' && slot.status !== 'deleted' && (
+              <Button size="sm" variant="ghost" className="text-destructive text-xs h-8" onClick={handleDelete}>
+                <Trash2 className="h-3 w-3 mr-1" /> {confirming ? 'Confirm Delete?' : 'Delete Slot'}
+              </Button>
+            )}
             <Button size="sm" variant="outline" className="text-xs h-8" onClick={handleCancel}>Cancel</Button>
             {hasChanges && (
               <Button size="sm" onClick={handleSave} disabled={saving} className="text-xs h-8">{saving ? 'Saving...' : 'Save Changes'}</Button>

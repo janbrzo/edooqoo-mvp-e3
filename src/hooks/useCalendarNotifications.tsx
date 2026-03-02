@@ -10,6 +10,7 @@ export interface CalendarNotification {
   student_name: string | null;
   is_read: boolean;
   is_resolved: boolean;
+  resolved_action: string | null;
   created_at: string;
   metadata: any;
 }
@@ -42,7 +43,7 @@ export function useCalendarNotifications(teacherId?: string) {
 
   useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
-  // Supabase Realtime instead of polling
+  // Supabase Realtime
   useEffect(() => {
     if (!teacherId) return;
     const channel = supabase
