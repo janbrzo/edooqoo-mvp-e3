@@ -49,7 +49,7 @@ export function useCalendarSlots(teacherId?: string) {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [showDeleted, setShowDeleted] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(true);
   const { toast } = useToast();
   const fetchingRef = useRef(false);
 

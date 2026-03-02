@@ -42,11 +42,15 @@ export function CalendarNotificationBell({ teacherId, students, onNotificationCl
               const isNewStudent = n.notification_type === 'new_student';
               const isResolved = (n as any).is_resolved;
               
-              // Check if student email from metadata already exists in students list
               const studentAlreadyAdded = isNewStudent && students?.some(s => 
                 s.student_email && metadata.student_email && 
                 s.student_email.toLowerCase() === metadata.student_email.toLowerCase()
               );
+
+              // Display name vs email: prefer student_name, show email separately from metadata
+              const displayName = n.student_name || '';
+              const displayEmail = metadata.student_email || '';
+              const showEmailSeparately = displayName && displayEmail && displayName !== displayEmail;
 
               return (
                 <div
@@ -62,17 +66,16 @@ export function CalendarNotificationBell({ teacherId, students, onNotificationCl
                     <Calendar className="h-3.5 w-3.5 mt-0.5 text-muted-foreground flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs">{n.message}</p>
-                      {n.student_name && <p className="text-xs text-muted-foreground">Student: {n.student_name}</p>}
+                      {displayName && <p className="text-xs text-muted-foreground">Student: {displayName}</p>}
+                      {showEmailSeparately && <p className="text-[10px] text-muted-foreground">{displayEmail}</p>}
                       <p className="text-[10px] text-muted-foreground mt-0.5">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}</p>
                       
-                      {/* Resolved badge */}
                       {isResolved && (
                         <div className="flex items-center gap-1 mt-1 text-[10px] text-green-600 dark:text-green-400">
                           <CheckCircle2 className="h-3 w-3" /> Done
                         </div>
                       )}
 
-                      {/* New student — Add Student or "Already added" */}
                       {isNewStudent && !isResolved && (
                         <div className="mt-1.5">
                           {studentAlreadyAdded ? (
@@ -88,9 +91,9 @@ export function CalendarNotificationBell({ teacherId, students, onNotificationCl
                                 className="h-6 text-[10px] mt-1"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  const email = metadata.student_email || '';
-                                  const name = metadata.student_name_raw || n.student_name || '';
-                                  onAddStudentClick?.(name, email);
+                                  const emailVal = metadata.student_email || '';
+                                  const nameVal = metadata.student_name_raw || n.student_name || '';
+                                  onAddStudentClick?.(nameVal, emailVal);
                                 }}
                               >
                                 <UserPlus className="h-3 w-3 mr-1" /> Add Student

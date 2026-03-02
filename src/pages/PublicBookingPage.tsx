@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePublicBooking } from '@/hooks/usePublicBooking';
 import { useCalendarVacations } from '@/hooks/useCalendarVacations';
@@ -10,10 +10,30 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { ChevronLeft, ChevronRight, Calendar, Clock, AlertTriangle, Palmtree } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Clock, AlertTriangle, Palmtree, Globe } from 'lucide-react';
 import { format, addDays, parseISO, isToday, isBefore, addWeeks, isSameDay } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { toStudentLocalTimeRange, getStudentTimeZone } from '@/utils/timezoneUtils';
+
+const EMAIL_STORAGE_KEY = 'book_student_email';
+const NAME_STORAGE_KEY = 'book_student_name';
+const TTL_DAYS = 7;
+
+function getSavedValue(key: string): string | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { value, expiresAt } = JSON.parse(raw);
+    if (new Date(expiresAt) < new Date()) { localStorage.removeItem(key); return null; }
+    return value;
+  } catch { return null; }
+}
+
+function saveValue(key: string, value: string) {
+  const expiresAt = new Date(Date.now() + TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  localStorage.setItem(key, JSON.stringify({ value, expiresAt }));
+}
 
 const PublicBookingPage = () => {
   const { token } = useParams<{ token: string }>();
@@ -22,41 +42,124 @@ const PublicBookingPage = () => {
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
   const [booking, setBooking] = useState(false);
   const [bookWeekly, setBookWeekly] = useState(false);
   const [untilDate, setUntilDate] = useState('');
-
-  // Step 14: Reschedule via calendar
   const [rescheduleBookingId, setRescheduleBookingId] = useState<string | null>(null);
 
-  // Step 5: Vacations
   const { vacations } = useCalendarVacations(settings?.teacher_id);
+  
+  const studentTz = useMemo(() => getStudentTimeZone(), []);
+  const teacherTz = settings?.timezone || 'Europe/Warsaw';
+  const showTzInfo = studentTz !== teacherTz;
+
+  // Email-first: load saved email
+  useEffect(() => {
+    const savedEmail = getSavedValue(EMAIL_STORAGE_KEY);
+    const savedName = getSavedValue(NAME_STORAGE_KEY);
+    if (savedEmail) { setEmail(savedEmail); setEmailVerified(true); }
+    if (savedName) setName(savedName);
+  }, []);
+
+  const handleEmailSubmit = () => {
+    if (!email.trim()) return;
+    saveValue(EMAIL_STORAGE_KEY, email.trim());
+    setEmailVerified(true);
+  };
+
+  // Helper: convert slot time for display
+  const formatSlotTime = useCallback((slot: { slot_date: string; start_time: string; end_time: string }) => {
+    if (!showTzInfo) {
+      return { primary: `${slot.start_time.slice(0, 5)}–${slot.end_time.slice(0, 5)}`, secondary: null };
+    }
+    const conv = toStudentLocalTimeRange(slot.slot_date, slot.start_time, slot.end_time, teacherTz, studentTz);
+    return {
+      primary: `${conv.studentStartHHMM}–${conv.studentEndHHMM}`,
+      secondary: `Teacher: ${conv.teacherStartHHMM}–${conv.teacherEndHHMM}`,
+    };
+  }, [showTzInfo, teacherTz, studentTz]);
+
+  // Book weekly: fetch full range of available slots
+  const [weeklySlotIds, setWeeklySlotIds] = useState<string[]>([]);
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedSlot || !bookWeekly || !untilDate || !settings) {
+      setWeeklySlotIds([]);
+      return;
+    }
+    const fetchWeeklySlots = async () => {
+      setWeeklyLoading(true);
+      try {
+        const slotDayOfWeek = parseISO(selectedSlot.slot_date).getDay();
+        const slotTime = selectedSlot.start_time.slice(0, 5);
+        
+        const { data } = await supabase
+          .from('calendar_slots')
+          .select('id, slot_date, start_time')
+          .eq('teacher_id', settings.teacher_id)
+          .eq('status', 'available')
+          .neq('slot_type', 'block')
+          .gte('slot_date', selectedSlot.slot_date)
+          .lte('slot_date', untilDate)
+          .order('slot_date');
+
+        if (data) {
+          const matching = data.filter(s => {
+            const d = parseISO(s.slot_date);
+            return d.getDay() === slotDayOfWeek && s.start_time.slice(0, 5) === slotTime;
+          });
+          setWeeklySlotIds(matching.map(s => s.id));
+        }
+      } catch (err) {
+        console.error('Error fetching weekly slots:', err);
+      } finally {
+        setWeeklyLoading(false);
+      }
+    };
+    fetchWeeklySlots();
+  }, [selectedSlot, bookWeekly, untilDate, settings]);
+
+  const recurringCount = weeklySlotIds.length;
 
   const isVacationDay = (date: Date): string | null => {
     const dateStr = format(date, 'yyyy-MM-dd');
     for (const v of vacations) {
-      if (dateStr >= v.start_date && dateStr <= v.end_date) {
-        return v.label || 'Vacation';
-      }
+      if (dateStr >= v.start_date && dateStr <= v.end_date) return v.label || 'Vacation';
     }
     return null;
   };
 
-  const recurringInfo = useMemo(() => {
-    if (!selectedSlot || !bookWeekly || !untilDate) return { count: 0, slotIds: [] as string[] };
-    const slotDayOfWeek = parseISO(selectedSlot.slot_date).getDay();
-    const slotTime = selectedSlot.start_time.slice(0, 5);
-    const endDate = parseISO(untilDate);
-    const matchingIds: string[] = [];
-    for (const slot of slots) {
-      if (slot.status !== 'available') continue;
-      const slotDate = parseISO(slot.slot_date);
-      if (slotDate.getDay() === slotDayOfWeek && slot.start_time.slice(0, 5) === slotTime && !isBefore(endDate, slotDate) && slot.id !== selectedSlot.id) {
-        matchingIds.push(slot.id);
-      }
-    }
-    return { count: matchingIds.length + 1, slotIds: [selectedSlot.id, ...matchingIds] };
-  }, [selectedSlot, bookWeekly, untilDate, slots]);
+  // Email-first screen
+  if (!emailVerified && !loading && !error && settings) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <Calendar className="h-10 w-10 mx-auto text-primary mb-2" />
+            <CardTitle className="text-2xl">Book a Lesson</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">Enter your email to get started</p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <Label>Your Email</Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                onKeyDown={e => e.key === 'Enter' && handleEmailSubmit()}
+              />
+            </div>
+            <Button className="w-full" onClick={handleEmailSubmit} disabled={!email.trim()}>
+              Continue
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -82,7 +185,6 @@ const PublicBookingPage = () => {
   const today = new Date();
 
   const handleSlotClick = async (slot: CalendarSlot) => {
-    // Step 14: If in reschedule mode, trigger reschedule instead of booking
     if (rescheduleBookingId && slot.status === 'available') {
       const confirmMsg = settings.allow_student_reschedule
         ? 'Reschedule your lesson to this time?'
@@ -91,9 +193,15 @@ const PublicBookingPage = () => {
 
       try {
         const { data, error: err } = await supabase.functions.invoke('get-student-bookings', {
-          body: { token, email: email || localStorage.getItem('booking_email') || '', action: 'reschedule', slotId: rescheduleBookingId, newSlotId: slot.id },
+          body: { token, email: email.trim(), action: 'reschedule', slotId: rescheduleBookingId, newSlotId: slot.id },
         });
         if (err) throw err;
+        if (data?.success === false) {
+          toast.error(data?.error || 'Slot no longer available');
+          refetchSlots();
+          setRescheduleBookingId(null);
+          return;
+        }
         const autoRescheduled = data?.autoRescheduled;
         toast.success(autoRescheduled ? 'Lesson rescheduled successfully!' : 'Reschedule request sent to teacher');
         setRescheduleBookingId(null);
@@ -110,34 +218,37 @@ const PublicBookingPage = () => {
   const handleBook = async () => {
     if (!selectedSlot || !name.trim() || !email.trim()) return;
     setBooking(true);
-    // Save email for reschedule usage
-    localStorage.setItem('booking_email', email.trim());
+    saveValue(EMAIL_STORAGE_KEY, email.trim());
+    saveValue(NAME_STORAGE_KEY, name.trim());
 
-    if (bookWeekly && untilDate && recurringInfo.slotIds.length > 0) {
+    if (bookWeekly && untilDate && weeklySlotIds.length > 0) {
       let successCount = 0;
-      for (const slotId of recurringInfo.slotIds) {
+      let failedDates: string[] = [];
+      for (const slotId of weeklySlotIds) {
         const ok = await bookSlot(slotId, name.trim(), email.trim());
         if (ok) successCount++;
+        else {
+          const s = slots.find(sl => sl.id === slotId);
+          if (s) failedDates.push(s.slot_date);
+        }
+      }
+      if (failedDates.length > 0) {
+        toast.info(`Booked ${successCount}/${weeklySlotIds.length} lessons. Some slots were no longer available.`);
       }
       setBooking(false);
-      setSelectedSlot(null); setName(''); setEmail(''); setBookWeekly(false); setUntilDate('');
+      setSelectedSlot(null); setName(getSavedValue(NAME_STORAGE_KEY) || ''); setBookWeekly(false); setUntilDate('');
     } else {
       const success = await bookSlot(selectedSlot.id, name.trim(), email.trim());
       setBooking(false);
-      if (success) { setSelectedSlot(null); setName(''); setEmail(''); setBookWeekly(false); setUntilDate(''); }
+      if (success) { setSelectedSlot(null); setBookWeekly(false); setUntilDate(''); }
     }
   };
 
   const handleRescheduleStart = (bookingId: string) => {
-    if (rescheduleBookingId === bookingId) {
-      setRescheduleBookingId(null);
-    } else {
-      setRescheduleBookingId(bookingId);
-    }
+    setRescheduleBookingId(rescheduleBookingId === bookingId ? null : bookingId);
   };
 
   const selectedDayName = selectedSlot ? format(parseISO(selectedSlot.slot_date), 'EEEE') : '';
-  const selectedTime = selectedSlot ? selectedSlot.start_time.slice(0, 5) : '';
 
   return (
     <div className="min-h-screen bg-background">
@@ -145,9 +256,14 @@ const PublicBookingPage = () => {
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">Book a Lesson</h1>
           <p className="text-muted-foreground">Select an available time slot below</p>
+          {showTzInfo && (
+            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+              <Globe className="h-3 w-3" />
+              <span>Times shown in: {studentTz} (your time)</span>
+            </div>
+          )}
         </div>
 
-        {/* Reschedule mode banner */}
         {rescheduleBookingId && (
           <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/30 rounded-lg text-sm">
             <AlertTriangle className="h-4 w-4 text-primary shrink-0" />
@@ -186,7 +302,6 @@ const PublicBookingPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 space-y-1">
-                  {/* Vacation indicator */}
                   {vacLabel && daySlots.length === 0 && (
                     <div className="flex flex-col items-center gap-1 py-2 text-orange-600 dark:text-orange-400">
                       <Palmtree className="h-4 w-4" />
@@ -200,6 +315,7 @@ const PublicBookingPage = () => {
                     daySlots.map(slot => {
                       const isPending = slot.status === 'booked' && !slot.confirmed_at;
                       const isAvailable = slot.status === 'available';
+                      const timeDisplay = formatSlotTime(slot);
 
                       if (isPending) {
                         return (
@@ -209,9 +325,12 @@ const PublicBookingPage = () => {
                           >
                             <div className="flex items-center justify-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {slot.start_time.slice(0, 5)}
+                              {timeDisplay.primary}
                             </div>
                             <div className="text-[10px] opacity-80">Awaiting confirmation</div>
+                            {timeDisplay.secondary && (
+                              <div className="text-[9px] opacity-60">{timeDisplay.secondary}</div>
+                            )}
                           </div>
                         );
                       }
@@ -223,7 +342,7 @@ const PublicBookingPage = () => {
                           key={slot.id}
                           variant="outline"
                           size="sm"
-                          className={`w-full text-xs h-auto py-1.5 ${
+                          className={`w-full text-xs h-auto py-1.5 flex-col ${
                             rescheduleBookingId
                               ? 'border-primary bg-primary/10 hover:bg-primary/20 text-primary'
                               : 'border-green-300 bg-green-50 hover:bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-950 dark:text-green-300'
@@ -231,8 +350,13 @@ const PublicBookingPage = () => {
                           onClick={() => !isPast && handleSlotClick(slot)}
                           disabled={isPast}
                         >
-                          <Clock className="h-3 w-3 mr-1" />
-                          {slot.start_time.slice(0, 5)}
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {timeDisplay.primary}
+                          </span>
+                          {timeDisplay.secondary && (
+                            <span className="text-[9px] opacity-60 font-normal">{timeDisplay.secondary}</span>
+                          )}
                         </Button>
                       );
                     })
@@ -243,7 +367,7 @@ const PublicBookingPage = () => {
           })}
         </div>
 
-        {settings && token && (
+        {settings && token && emailVerified && (
           <StudentBookingsSection
             settings={settings}
             token={token}
@@ -251,6 +375,7 @@ const PublicBookingPage = () => {
             onBookingChanged={refetchSlots}
             onRescheduleStart={handleRescheduleStart}
             rescheduleBookingId={rescheduleBookingId}
+            defaultEmail={email}
           />
         )}
       </div>
@@ -267,7 +392,15 @@ const PublicBookingPage = () => {
             <div className="space-y-4">
               <div className="text-center p-3 rounded-lg bg-muted">
                 <p className="font-medium">{format(parseISO(selectedSlot.slot_date), 'EEEE, MMMM d, yyyy')}</p>
-                <p className="text-lg font-bold">{selectedSlot.start_time.slice(0, 5)} – {selectedSlot.end_time.slice(0, 5)}</p>
+                {(() => {
+                  const t = formatSlotTime(selectedSlot);
+                  return (
+                    <>
+                      <p className="text-lg font-bold">{t.primary}</p>
+                      {t.secondary && <p className="text-xs text-muted-foreground">{t.secondary} ({teacherTz})</p>}
+                    </>
+                  );
+                })()}
               </div>
 
               <div>
@@ -301,9 +434,13 @@ const PublicBookingPage = () => {
                       <div className="flex items-start gap-2 p-2 rounded bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
                         <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
                         <p className="text-xs text-amber-800 dark:text-amber-300">
-                          You are booking a weekly recurring lesson every <strong>{selectedDayName}</strong> at <strong>{selectedTime}</strong> until <strong>{format(parseISO(untilDate), 'MMM d, yyyy')}</strong>.
-                          {recurringInfo.count > 0 && (
-                            <> This will book <strong>{recurringInfo.count}</strong> lesson{recurringInfo.count !== 1 ? 's' : ''} (only available slots).</>
+                          {weeklyLoading ? 'Checking available slots...' : (
+                            <>
+                              You are booking a weekly recurring lesson every <strong>{selectedDayName}</strong> at <strong>{formatSlotTime(selectedSlot).primary}</strong> until <strong>{format(parseISO(untilDate), 'MMM d, yyyy')}</strong>.
+                              {recurringCount > 0 && (
+                                <> This will book <strong>{recurringCount}</strong> lesson{recurringCount !== 1 ? 's' : ''} (only available slots).</>
+                              )}
+                            </>
                           )}
                         </p>
                       </div>
@@ -316,8 +453,8 @@ const PublicBookingPage = () => {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => { setSelectedSlot(null); setBookWeekly(false); setUntilDate(''); }}>Cancel</Button>
-            <Button onClick={handleBook} disabled={booking || !name.trim() || !email.trim() || (bookWeekly && !untilDate)}>
-              {booking ? 'Booking...' : bookWeekly ? `Book ${recurringInfo.count} Lessons` : 'Book Lesson'}
+            <Button onClick={handleBook} disabled={booking || !name.trim() || !email.trim() || (bookWeekly && (!untilDate || weeklyLoading))}>
+              {booking ? 'Booking...' : bookWeekly ? `Book ${recurringCount} Lessons` : 'Book Lesson'}
             </Button>
           </DialogFooter>
         </DialogContent>

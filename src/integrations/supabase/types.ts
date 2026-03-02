@@ -365,6 +365,8 @@ export type Database = {
           is_paid: boolean
           notes: string | null
           recurrence_rule_id: string | null
+          reschedule_request_from_slot_id: string | null
+          reschedule_request_to_slot_id: string | null
           slot_date: string
           slot_type: string
           start_time: string
@@ -390,6 +392,8 @@ export type Database = {
           is_paid?: boolean
           notes?: string | null
           recurrence_rule_id?: string | null
+          reschedule_request_from_slot_id?: string | null
+          reschedule_request_to_slot_id?: string | null
           slot_date: string
           slot_type?: string
           start_time: string
@@ -415,6 +419,8 @@ export type Database = {
           is_paid?: boolean
           notes?: string | null
           recurrence_rule_id?: string | null
+          reschedule_request_from_slot_id?: string | null
+          reschedule_request_to_slot_id?: string | null
           slot_date?: string
           slot_type?: string
           start_time?: string

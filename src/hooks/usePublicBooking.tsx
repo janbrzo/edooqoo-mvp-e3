@@ -104,6 +104,7 @@ export function usePublicBooking(token?: string) {
           booked_by: 'student',
           confirmed_at: autoConfirm ? new Date().toISOString() : null,
           student_notes: `Booked by: ${resolvedName} (${normalizedEmail})`,
+          title: `${resolvedName} — English lesson`,
         } as any)
         .eq('id', slotId)
         .eq('status', 'available');
