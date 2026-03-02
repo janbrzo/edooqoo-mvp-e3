@@ -4,7 +4,7 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **Calendar Critical Repairs & Student Portal** — Overbooking protection (SQL trigger + client checks). Draggable transparent modals. Recurring lessons with multi-day checkboxes & From/To dates. Student search combobox. Direct worksheet linking on creation. Multi-select batch delete for available slots. Student portal on /book page (check bookings, cancel, reschedule). Email notifications (Resend). Dynamic display hours in settings. Student filter on calendar.
+**Latest Update:** **Calendar & Booking Overhaul (March 2026)** — Reschedule with confirmation now prevents double-bookings (atomic edge function). Dual timezone display (student local + teacher time). Email-first /book flow (email saved 7 days). New /book landing page (enter email → select teacher). Complete email notifications (booking rejected, reschedule rejected, cancellation confirmed). Student combobox fix. Book weekly fix (full date range query). Deleted slots visible by default with restore button. Complete slot logs.
 
 **Previous Update:** **Welcome Test Learning Path Score** — 5 new behavioral questions detect student's learning timeline, persistence, deadline response, career importance, and usage context. Deterministic algorithm calculates Learning Path Score (0-100) from 15 signals, mapping to 4 paths: Comfort, Guided, Accelerated, Target.
 

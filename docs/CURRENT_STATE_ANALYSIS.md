@@ -6,20 +6,28 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-02-28) - Moduł Kalendarza v3.5 (krytyczne naprawy + portal ucznia):**
-- ✅ **Overbooking protection**: SQL trigger `check_slot_overlap` blokuje podwójne rezerwacje na poziomie DB. Klient sprawdza konflikty w createSlotsBatch, generateSlotsForRule, bookSlot z normalizacją czasu HH:MM:SS
-- ✅ **DraggableDialog**: Nowy komponent z przezroczystym overlay (bg-black/10) i przesuwaniem myszką dla UnifiedSlotModal i SlotDetailModal
-- ✅ **UnifiedSlotModal overhaul**: Usunięto Title, dodano Location. Wyszukiwanie studentów przez Combobox (cmdk). Recurring Lesson z checkboxami dni + From/To. Linkowanie worksheet bezpośrednio z Select. Podgląd ilości slotów
-- ✅ **Recurring lesson fix**: generateSlotsForRule przepisany na iterację dzień-po-dniu (były bugi z tygodniami). Data końcowa inclusive. Sprawdzanie konfliktów per slot z auto-replace available
-- ✅ **SlotDetailModal**: Worksheet w nowej karcie. Przycisk "Reject" dla pending. Usunięto Title
-- ✅ **LinkWorksheetModal**: Przycisk "Back" wraca do SlotDetail. Nazwy skrócone z widoczną datą. Filtr studenta z aktualnego edit state
-- ✅ **Multi-select batch delete**: Tryb zaznaczania na toolbarze, floating bar z "Delete All"
-- ✅ **Calendar Settings**: Dynamiczne godziny wyświetlania (start/end), allow_student_reschedule, buffer_minutes
-- ✅ **Student filter**: Dropdown studenta w CalendarToolbar filtruje widok
-- ✅ **Student portal /book**: Sekcja "Already have a booking?" z lookup email, cancel/reschedule przez edge function get-student-bookings
-- ✅ **Email notifications**: send-calendar-notification-email wysyła potwierdzenia, alerty, cancellation emails przez Resend
-- ✅ **Public booking ulepszenia**: Nazwa studenta z bazy nauczyciela. Nowy student → dodatkowe powiadomienie
-- ✅ **Grid lines**: Pełne godziny border-border/80, półgodziny /15
+**Ostatnia naprawa (2026-03-02) - Moduł Kalendarza v4.0 (kompleksowa przebudowa kalendarza i bookingu):**
+- ✅ **Reschedule z potwierdzeniem**: Nowe kolumny `reschedule_request_from_slot_id` / `reschedule_request_to_slot_id` na `calendar_slots`. Nowa edge function `calendar-handle-reschedule-decision` atomowo potwierdza/odrzuca reschedule — eliminuje podwójne rezerwacje
+- ✅ **Scenariusz A (pending→reschedule)**: Stary pending slot natychmiast zwalniany do available; nowy slot pending
+- ✅ **Scenariusz B (confirmed→reschedule)**: Stary slot booked z wskaźnikiem CR; nowy pending do decyzji nauczyciela
+- ✅ **Dual timezone display**: Integracja `date-fns-tz`. Student widzi swój czas lokalny (główny), czas nauczyciela (etykieta). `timezoneUtils.ts` z `toStudentLocalTimeRange()`, `toUtcInstant()`, `getStudentTimeZone()`
+- ✅ **Cancellation window DST-safe**: Edge function `get-student-bookings` liczy `min_cancellation_hours` na UTC instantach
+- ✅ **Kompletne email notifications**: Nowe typy `booking_rejected`, `reschedule_rejected`, `cancellation_confirmed_by_student`. Przyciski CTA (Teacher→/calendar, Student→/book). Reply-To = email nauczyciela
+- ✅ **Notification resolution**: `is_resolved=true` po akcji nauczyciela. Powiadomienia reschedule zawierają From→To
+- ✅ **/book email-first flow**: Student wpisuje email raz (localStorage 7 dni). Auto-ładowanie bookingów. Imię auto-fill z bazy nauczyciela
+- ✅ **/book landing page**: Nowa trasa `/book` z email input → `find-teachers-by-student-email` edge function → lista nauczycieli → redirect do `/book/:token`
+- ✅ **Student combobox fix**: Usunięto `preventDefault` na `PopoverContent.onOpenAutoFocus` i `CommandItem.onPointerDown`. Dodano `autoFocus` do `CommandInput`
+- ✅ **Book weekly fix**: Zapytanie o pełny zakres dat z Supabase zamiast cache jednego tygodnia
+- ✅ **Overlap fix**: Hard-delete available slotów bez historii; soft-delete tylko ze śladem bookingu
+- ✅ **Deleted slots domyślnie widoczne**: `showDeleted=true`. Przycisk "Restore (Turn Available)" na modalu deleted slota
+- ✅ **Kompletność logów**: Helper `buildSlotLogDetails()` — każdy log zawiera slot_date, start_time, end_time, student_name, student_email, source
+- ✅ **Tytuł slota z /book**: `title = "{StudentName} — English lesson"` podczas bookingu → /calendar pokazuje imię nawet bez `student_id`
+
+**Poprzednia naprawa (2026-02-28) - Moduł Kalendarza v3.5 (krytyczne naprawy + portal ucznia):**
+- ✅ **Overbooking protection**: SQL trigger `check_slot_overlap` blokuje podwójne rezerwacje na poziomie DB
+- ✅ **DraggableDialog**: Nowy komponent z przezroczystym overlay i przesuwaniem myszką
+- ✅ **UnifiedSlotModal overhaul**: Usunięto Title, dodano Location, Combobox, Recurring multi-day, worksheet linking
+- ✅ **Multi-select batch delete**, **Calendar Settings** (godziny, reschedule, buffer), **Student filter**, **Student portal /book**, **Email notifications**
 
 **Poprzednia naprawa (2026-02-27) - Moduł Kalendarza v3 (konsolidacja modali):**
 - ✅ Jeden UnifiedSlotModal zamiast 4 modali. SlotDetailModal z edycją inline. CalendarToolbar uproszczony. React.memo + zmniejszona siatka

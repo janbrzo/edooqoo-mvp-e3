@@ -3,11 +3,13 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: Teacher Calendar Module
-- Weekly calendar view with color-coded lesson slots (available/booked/pending/completed/cancelled)
-- Single and recurring slot creation, public booking page for students
-- Worksheet linking, Calendar tab in student profile, settings page
-- 5 DB tables: `calendar_slots`, `calendar_recurrence_rules`, `calendar_settings`, `calendar_student_settings`, `calendar_payment_records`
+## Latest: Calendar & Booking Overhaul (March 2026)
+- Reschedule with confirmation prevents double-bookings (atomic edge function)
+- Dual timezone display (student local time + teacher time label)
+- Email-first /book flow (email saved 7 days, auto-loads bookings)
+- New /book landing page (enter email → select teacher from list)
+- Complete email notifications (rejected, confirmed, cancelled, reschedule)
+- Student combobox fix, Book weekly fix, deleted slots visible by default
 
 ## 🎯 What This Is
 

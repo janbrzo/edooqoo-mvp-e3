@@ -51,23 +51,44 @@ Toggle selection mode from toolbar → click available slots to select → float
 CalendarToolbar includes a student dropdown — filter the entire calendar view to show only one student's lessons.
 
 ### Public Booking (/book)
-Enable in Settings → share link with students → they book available slots.
-- **Student portal**: "Already have a booking?" section — enter email to view bookings, cancel (respecting min_cancellation_hours), or request reschedule
-- **Email notifications**: Students receive confirmation/pending emails. Teachers receive alerts for new bookings, cancellations, and new students
-- **Name resolution**: If student email matches teacher's database, the stored name is used
+
+#### Email-First Flow (New)
+When visiting `/book/:token`, students enter their email first (saved for 7 days). The system automatically loads their existing bookings and auto-fills their name if found in the teacher's student database. No need for the "Already have a booking?" section.
+
+#### /book Landing Page (New)
+Students can visit `/book` without a teacher token:
+1. Enter email address (saved 7 days)
+2. System finds all teachers associated with that email
+3. Student selects their teacher from the list
+4. Redirected to the teacher's booking page
+
+#### Booking Features
+- **Time range display**: Shows start–end time (e.g., 15:00–16:00) instead of just start time
+- **Dual timezone**: Student sees their local time as primary, teacher's timezone shown as secondary label
+- **Book weekly**: Select a recurring day and end date — system finds all available matching slots across weeks
+- **Email notifications**: Students receive emails for booking confirmation, pending, rejected, reschedule confirmation/rejection, and cancellation
+
+### Reschedule (Requires Confirmation)
+When "Allow student rescheduling without confirmation" is OFF:
+- **Pending slot reschedule**: Old pending slot immediately freed; new slot becomes pending
+- **Confirmed slot reschedule**: Old slot stays booked with "CR" (Change Request) indicator; new slot pending until teacher confirms
+- **Teacher confirm**: Old slot freed, new slot confirmed, student notified
+- **Teacher reject**: New slot freed, old slot unchanged, student notified
+- No double-bookings possible — atomic edge function handles both slot updates
+
+### Notifications
+- **Bell icon**: Shows unread notifications with actionable items (confirm/reject)
+- **Auto-resolve**: Notifications marked as done after teacher takes action
+- **Content**: Reschedule notifications show "From date → To date"
+- **Student info**: Name shown prominently, email shown separately (no duplication)
 
 ### Calendar Settings
 - **Display hours**: Configure start/end hours for the grid (default 7-22)
 - **Student reschedule**: Allow students to reschedule automatically or require teacher approval
 - **Buffer minutes**: Set minimum gap between lessons
-- **All existing**: Booking mode, confirmation type, cancellation policy, notification preferences
-
-### Notifications
-- **Calendar page**: Bell icon shows recent booking/cancellation/new student notifications
-- **Dashboard**: Calendar button shows unread notification count badge
-
-### Settings (`/calendar/settings`)
-Booking mode, lesson duration, public calendar, notifications, slot limits, and **Payment Tracking** (enable/disable, default price, currency).
+- **Cancellation window**: `min_cancellation_hours` calculated using UTC instants (DST-safe)
+- **Deleted slots**: Visible by default (toggle "Hide Deleted"). Restore button available on deleted slots
+- **All existing**: Booking mode, confirmation type, notification preferences
 
 ## Getting Started
 

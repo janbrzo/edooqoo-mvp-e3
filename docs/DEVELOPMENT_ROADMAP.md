@@ -3,14 +3,25 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Feb 2026) - Teacher Calendar Module (Faza 1) ✅
-- 5 new DB tables: calendar_slots, calendar_recurrence_rules, calendar_settings, calendar_student_settings, calendar_payment_records
-- Weekly calendar view (/calendar) with color-coded slots, week navigation, add/edit/delete
-- Recurring slots: useCalendarRecurrence hook auto-generates slots for N weeks ahead
-- Public booking page (/book/:token) for students, auto-confirm or requires confirmation
-- Student lessons page (/my-lessons/:token), LinkWorksheetModal, Calendar tab in StudentPage
-- Settings page (/calendar/settings) with booking rules, notifications, public calendar token
-- Welcome Test translations: 5 questions × 25 languages = 125 new entries
+### Recently Completed (Mar 2026) - Calendar & Booking Overhaul (Faza 3.0) ✅
+- Reschedule with confirmation: `reschedule_request_from/to_slot_id` columns + `calendar-handle-reschedule-decision` edge function (atomic confirm/reject)
+- Dual timezone display: `date-fns-tz`, `timezoneUtils.ts`, student local time primary + teacher time secondary
+- Email-first /book flow: email persisted 7 days in localStorage, auto-load bookings, auto-fill name
+- /book landing page: `find-teachers-by-student-email` edge function, teacher list selector
+- Complete email notifications: booking_rejected, reschedule_rejected, cancellation_confirmed_by_student
+- Student combobox fix: removed preventDefault, added autoFocus
+- Book weekly fix: queries full date range instead of single-week cache
+- Slot overlap fix: hard-delete available slots without history
+- Deleted slots visible by default + restore button
+- Log completeness: buildSlotLogDetails helper, full context in all logs
+- Notification resolution: is_resolved=true after teacher actions
+- Cancellation window: UTC instant calculation (DST-safe) via date-fns-tz
+
+### Previously Completed (Feb 2026) - Teacher Calendar Module (Faza 2.5) ✅
+- Overbooking protection (SQL trigger + client checks), DraggableDialog, UnifiedSlotModal overhaul
+- Recurring lesson fix, SlotDetailModal improvements, multi-select batch delete
+- Calendar Settings (display hours, reschedule toggle, buffer), student filter, student portal on /book
+- Email notifications via Resend, public booking improvements
 
 ### Previously Completed (Feb 2026) - 5 Critical Fixes ✅
 - SharedWorksheet discussion recorder (HomeworkSpeakingRecorder + AutoResizeTextarea)
