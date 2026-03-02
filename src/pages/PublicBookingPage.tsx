@@ -222,18 +222,16 @@ const PublicBookingPage = () => {
     saveValue(NAME_STORAGE_KEY, name.trim());
 
     if (bookWeekly && untilDate && weeklySlotIds.length > 0) {
-      let successCount = 0;
-      let failedDates: string[] = [];
-      for (const slotId of weeklySlotIds) {
-        const ok = await bookSlot(slotId, name.trim(), email.trim());
-        if (ok) successCount++;
-        else {
-          const s = slots.find(sl => sl.id === slotId);
-          if (s) failedDates.push(s.slot_date);
-        }
-      }
-      if (failedDates.length > 0) {
-        toast.info(`Booked ${successCount}/${weeklySlotIds.length} lessons. Some slots were no longer available.`);
+      try {
+        const { data, error } = await supabase.functions.invoke('get-student-bookings', {
+          body: { token, email: email.trim(), action: 'book_batch', slotIds: weeklySlotIds, studentName: name.trim() },
+        });
+        if (error) throw error;
+        if (data?.booked > 0) toast.success(`Booked ${data.booked} lessons!`);
+        if (data?.failed > 0) toast.info(`${data.failed} slots were no longer available.`);
+        refetchSlots();
+      } catch (err: any) {
+        toast.error(err.message || 'Booking failed');
       }
       setBooking(false);
       setSelectedSlot(null); setName(getSavedValue(NAME_STORAGE_KEY) || ''); setBookWeekly(false); setUntilDate('');

@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { token, email, action, slotId, newSlotId } = await req.json();
+    const { token, email, action, slotId, newSlotId, slotIds, studentName: reqStudentName } = await req.json();
 
     if (!token || !email) {
       return new Response(JSON.stringify({ error: 'Token and email are required' }), {
@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     // Verify token
     const { data: settingsData, error: settingsError } = await supabase
       .from('calendar_settings')
-      .select('teacher_id, min_cancellation_hours, allow_student_reschedule, timezone, public_calendar_token')
+      .select('teacher_id, min_cancellation_hours, allow_student_reschedule, timezone, public_calendar_token, default_booking_mode, notify_email_on_booking, notify_email_on_cancellation, notify_email_on_reschedule, notify_email_on_confirmation, notify_email_on_rejection')
       .eq('public_calendar_token', token)
       .eq('public_calendar_enabled', true)
       .maybeSingle();
@@ -345,12 +345,81 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Handle BOOK_BATCH (weekly booking)
+    if (action === 'book_batch' && Array.isArray(slotIds) && slotIds.length > 0) {
+      const normalizedEmail = email.toLowerCase().trim();
+      const batchStudentName = reqStudentName || studentName;
+      const autoConfirm = settingsData.default_booking_mode === 'auto_confirm';
+      const successIds: string[] = [];
+      const failedIds: string[] = [];
+
+      for (const sid of slotIds) {
+        const { data: check } = await supabase
+          .from('calendar_slots').select('status, slot_type').eq('id', sid).single();
+        if (!check || check.status !== 'available' || check.slot_type === 'block') {
+          failedIds.push(sid);
+          continue;
+        }
+
+        const { error: bookErr } = await supabase
+          .from('calendar_slots')
+          .update({
+            student_id: student?.id || null,
+            status: 'booked',
+            booking_type: 'student_booked',
+            booked_at: new Date().toISOString(),
+            booked_by: 'student',
+            confirmed_at: autoConfirm ? new Date().toISOString() : null,
+            student_notes: `Booked by: ${batchStudentName} (${normalizedEmail})`,
+            title: `${batchStudentName} — English lesson`,
+          })
+          .eq('id', sid)
+          .eq('status', 'available');
+
+        if (!bookErr) {
+          successIds.push(sid);
+          await logAction(sid, 'booked', { student_email: normalizedEmail, student_name: batchStudentName, batch: true });
+        } else {
+          failedIds.push(sid);
+        }
+      }
+
+      // One notification for all
+      if (successIds.length > 0) {
+        await supabase.from('calendar_notifications').insert({
+          teacher_id: teacherId,
+          notification_type: autoConfirm ? 'booking_confirmed' : 'booking_pending',
+          message: `${batchStudentName} booked ${successIds.length} weekly lessons${autoConfirm ? ' (auto-confirmed)' : ' — awaiting confirmation'}`,
+          student_name: batchStudentName,
+          slot_id: successIds[0],
+          metadata: { student_email: normalizedEmail, slot_ids: successIds, count: successIds.length, batch: true },
+        });
+
+        // Send batch emails
+        const { teacherName, teacherEmail: tEmail } = await getTeacherInfo();
+        if (settingsData.notify_email_on_booking) {
+          await sendEmail('batch_booking_teacher', {
+            teacherEmail: tEmail, studentEmail: normalizedEmail,
+            studentName: batchStudentName, teacherName, bookUrl, calendarUrl,
+          });
+          await sendEmail('batch_booking_student', {
+            studentEmail: normalizedEmail, studentName: batchStudentName,
+            teacherName, teacherEmail: tEmail, bookUrl, calendarUrl,
+          });
+        }
+      }
+
+      return new Response(JSON.stringify({ success: true, booked: successIds.length, failed: failedIds.length }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Default: fetch bookings
     let query = supabase
       .from('calendar_slots')
       .select('id, slot_date, start_time, end_time, status, confirmed_at, student_notes')
       .eq('teacher_id', teacherId)
-      .in('status', ['booked', 'completed'])
+      .in('status', ['booked', 'completed', 'needs_review'])
       .gte('slot_date', new Date().toISOString().split('T')[0])
       .order('slot_date')
       .order('start_time');
