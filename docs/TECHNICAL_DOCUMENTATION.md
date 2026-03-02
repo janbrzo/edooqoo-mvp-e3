@@ -5,25 +5,22 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 2026) - Teacher Calendar Module (Faza 3.0 - Comprehensive Calendar & Booking Overhaul):**
-- **Reschedule with confirmation fix**: New `reschedule_request_from_slot_id` and `reschedule_request_to_slot_id` columns on `calendar_slots` link old↔new slots during reschedule flow. New edge function `calendar-handle-reschedule-decision` atomically confirms/rejects reschedule requests, preventing double-bookings
-- **Scenario A (pending→reschedule)**: Old pending slot immediately freed to available; new slot becomes pending
-- **Scenario B (confirmed→reschedule)**: Old slot stays booked with CR indicator; new slot pending until teacher confirms
-- **Timezone dual display**: `date-fns-tz` integration. Student sees local time as primary, teacher time as secondary label. `src/utils/timezoneUtils.ts` provides `toStudentLocalTimeRange()`, `toUtcInstant()`, `getStudentTimeZone()`
-- **Cancellation window**: Edge function `get-student-bookings` calculates `min_cancellation_hours` using UTC instants (DST-safe)
-- **Email notifications complete**: New types `booking_rejected`, `reschedule_rejected`, `cancellation_confirmed_by_student` in `send-calendar-notification-email`. All emails have CTA buttons (Teacher→/calendar, Student→/book). Reply-To set to teacher email for student emails
-- **Notification resolution**: `is_resolved=true` set on `calendar_notifications` after teacher confirm/reject actions. Reschedule notifications include From→To dates
-- **/book email-first flow**: Student enters email once (persisted 7 days in localStorage). Auto-loads existing bookings. Name auto-filled from teacher's student DB
-- **/book landing page**: New `/book` route with email input → `find-teachers-by-student-email` edge function returns teacher list → student selects teacher → redirects to `/book/:token`
-- **Student combobox fix**: Removed `preventDefault` on `PopoverContent.onOpenAutoFocus` and `CommandItem.onPointerDown` in SlotDetailModal and UnifiedSlotModal. Added `autoFocus` to `CommandInput`
-- **Book weekly fix**: Recurring booking now queries full date range from Supabase instead of relying on single-week slot cache
-- **Slot overlap fix**: Available slots without booking history are hard-deleted when replaced; soft-delete only for slots with history
-- **Deleted slots default visible**: `showDeleted` defaults to `true`. "Restore (Turn Available)" button on deleted slot modal
-- **Log completeness**: `buildSlotLogDetails()` helper ensures all logs include slot_date, start_time, end_time, student_name, student_email, source
-- **Slot title on /book**: `title` set to `"{StudentName} — English lesson"` during booking so /calendar shows name even without `student_id`
-- **Previous (Faza 2.5)**: Overbooking protection, DraggableDialog, UnifiedSlotModal overhaul, recurring lesson fix, multi-select batch delete, student portal on /book, email notifications
-- **Previous (Faza 2)**: UnifiedSlotModal consolidation, SlotDetailModal inline editing, CalendarToolbar simplification, performance optimizations
-- **Previous (Faza 1)**: 5 DB tables, day/week/month views, recurring slots, public booking, student lessons view, worksheet linking, calendar settings, attendance stats
+**Latest Update (March 2026) - Teacher Calendar Module (Faza 3.1 - Round 2 Fixes):**
+- **Email notification settings**: 5 new toggles in `calendar_settings` (`notify_email_on_booking/cancellation/reschedule/confirmation/rejection`). CalendarSettingsPage has new "Email Notifications" card. All defaults `true`
+- **Worksheet links in emails**: `send-calendar-notification-email` now accepts `worksheetUrl` and `sharedWorksheetUrl` params, rendering green "Open Worksheet" CTA buttons for teacher and student respectively
+- **New email types**: `lesson_time_changed` (student notification when teacher changes lesson time), `batch_booking_teacher` and `batch_booking_student` (weekly batch booking summary)
+- **Auto needs_review status**: Past booked+confirmed lessons automatically transition to `needs_review` status on fetch. Purple badge with '?' in legend. SlotDetailModal shows Complete/No Show/Cancellation actions
+- **Batch weekly booking**: `get-student-bookings` edge function has new `book_batch` action accepting `slotIds[]`. Single atomic request replaces per-slot loop. One notification + one email pair for entire batch
+- **Realtime polling fallback**: `/book` page polls every 5s as fallback since Supabase Realtime may not work for anonymous users due to RLS
+- **Student dropdown fix**: `modal={false}` on Popover components in SlotDetailModal and UnifiedSlotModal prevents focus trap conflicts with DraggableDialog
+- **Specific log actions**: Generic "updated" logs replaced with `student_assigned`, `student_removed`, `student_changed`, `time_changed`, `notes_updated`
+- **Notification resolution states**: New `resolved_action` column on `calendar_notifications`. Bell shows "Done — Approved", "Done — Rejected" etc.
+- **Notification metadata**: All notifications include `slot_date`, `start_time`, `end_time`, `student_email` in metadata. Bell renders these details
+- **Clickable notifications**: `handleNotificationClick` fetches slot from DB if not in current view, navigates to correct date
+- **Slot time change**: Conflict check before time update — deletes empty available slots, blocks if lesson conflict exists. Sends `lesson_time_changed` email
+- **Booking modal UX**: Modal closes immediately on booking failure, toast shown with 6s duration
+- **/book portal**: Email field read-only after verification. "Log out" button clears localStorage. StudentBookingsSection auto-fetches without manual email entry
+- **Previous (Faza 3.0)**: Reschedule confirmation flow, timezone dual display, email-first /book flow, /book landing page, slot overlap fix, deleted slots visible by default
 
 **Previous Update (February 2026) - Welcome Test Learning Path Score:**
 - **5 new behavioral questions** (Q3b, Q5b, Q13b, Q17b, Q41b) added to Welcome Test for Learning Path detection

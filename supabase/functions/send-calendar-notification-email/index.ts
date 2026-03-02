@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, teacherEmail, teacherName, oldSlotDate, oldSlotTime, calendarUrl, bookUrl } = await req.json();
+    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, teacherEmail, teacherName, oldSlotDate, oldSlotTime, calendarUrl, bookUrl, worksheetUrl, sharedWorksheetUrl } = await req.json();
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) {
@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
     const lessonInfo = `${slotDate} at ${slotTime}`;
     
-    const isStudentEmail = ['booking_confirmation', 'booking_pending', 'booking_rejected', 'cancellation_student', 'cancellation_confirmed_by_student', 'reschedule_confirmation', 'reschedule_pending', 'reschedule_rejected', 'lesson_reminder'].includes(type);
+    const isStudentEmail = ['booking_confirmation', 'booking_pending', 'booking_rejected', 'cancellation_student', 'cancellation_confirmed_by_student', 'reschedule_confirmation', 'reschedule_pending', 'reschedule_rejected', 'lesson_reminder', 'lesson_time_changed'].includes(type);
     const fromName = isStudentEmail
       ? `${teacherName || 'Your Teacher'} via EDOQOO`
       : 'EDOQOO';
@@ -37,6 +37,14 @@ Deno.serve(async (req) => {
       : '';
     const studentButton = bookUrl 
       ? `<div style="margin-top: 20px;"><a href="${bookUrl}" style="display: inline-block; padding: 10px 24px; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">View Bookings</a></div>` 
+      : '';
+    
+    // Worksheet links for teacher and student
+    const teacherWorksheetButton = worksheetUrl
+      ? `<div style="margin-top: 12px;"><a href="${worksheetUrl}" style="display: inline-block; padding: 8px 20px; background: #16a34a; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">Open Worksheet</a></div>`
+      : '';
+    const studentWorksheetButton = sharedWorksheetUrl
+      ? `<div style="margin-top: 12px;"><a href="${sharedWorksheetUrl}" style="display: inline-block; padding: 8px 20px; background: #16a34a; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">Open Worksheet</a></div>`
       : '';
 
     switch (type) {
@@ -52,6 +60,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
             </div>
             <p>See you there!</p>
+            ${studentWorksheetButton}
             ${studentButton}
           </div>`;
         break;
@@ -91,6 +100,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>Date:</strong> ${slotDate}</p>
               <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
             </div>
+            ${teacherWorksheetButton}
             ${teacherButton}
           </div>`;
         break;
@@ -143,6 +153,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>New time:</strong> ${slotTime}</p>
             </div>
             <p>See you there!</p>
+            ${studentWorksheetButton}
             ${studentButton}
           </div>`;
         break;
@@ -198,6 +209,48 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
             </div>
             <p>See you soon!</p>
+            ${studentWorksheetButton}
+            ${studentButton}
+          </div>`;
+        break;
+
+      case 'lesson_time_changed':
+        to = studentEmail;
+        subject = `Lesson time changed: ${lessonInfo}`;
+        html = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1a1a1a;">Lesson Time Changed 🔄</h2>
+            <p>Hi ${studentName},</p>
+            <p>Your teacher has changed the time of your lesson:</p>
+            <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              ${oldSlotDate ? `<p style="margin: 4px 0;"><strong>Previous:</strong> ${oldSlotDate} at ${oldSlotTime || 'N/A'}</p>` : ''}
+              <p style="margin: 4px 0;"><strong>New date:</strong> ${slotDate}</p>
+              <p style="margin: 4px 0;"><strong>New time:</strong> ${slotTime}</p>
+            </div>
+            <p>If you have any questions, please contact your teacher.</p>
+            ${studentWorksheetButton}
+            ${studentButton}
+          </div>`;
+        break;
+
+      case 'batch_booking_teacher':
+        to = teacherEmail;
+        subject = `${studentName} booked multiple lessons`;
+        html = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1a1a1a;">Weekly Booking 📅</h2>
+            <p>${studentName} (${studentEmail}) has booked multiple lessons.</p>
+            <p>Check your calendar for details.</p>
+            ${teacherButton}
+          </div>`;
+        break;
+
+      case 'batch_booking_student':
+        to = studentEmail;
+        subject = 'Your weekly lessons have been submitted';
+        html = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1a1a1a;">Weekly Lessons Submitted ⏳</h2>
+            <p>Hi ${studentName},</p>
+            <p>Your weekly lesson bookings have been submitted to the teacher.</p>
+            <p>You will receive confirmations as the teacher approves each one.</p>
             ${studentButton}
           </div>`;
         break;

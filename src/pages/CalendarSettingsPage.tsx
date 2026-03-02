@@ -331,6 +331,51 @@ const CalendarSettingsPage = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Email Notifications */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Email Notifications</CardTitle>
+            <CardDescription>Choose which email notifications are sent to you and your students</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Email on new booking</Label>
+                <p className="text-xs text-muted-foreground">Send email when a student books a lesson</p>
+              </div>
+              <Switch checked={settings.notify_email_on_booking} onCheckedChange={v => updateSettings({ notify_email_on_booking: v })} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Email on cancellation</Label>
+                <p className="text-xs text-muted-foreground">Send email when a lesson is cancelled</p>
+              </div>
+              <Switch checked={settings.notify_email_on_cancellation} onCheckedChange={v => updateSettings({ notify_email_on_cancellation: v })} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Email on reschedule request</Label>
+                <p className="text-xs text-muted-foreground">Send email when a student requests to reschedule</p>
+              </div>
+              <Switch checked={settings.notify_email_on_reschedule} onCheckedChange={v => updateSettings({ notify_email_on_reschedule: v })} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Email on confirmation</Label>
+                <p className="text-xs text-muted-foreground">Send email when you confirm a booking</p>
+              </div>
+              <Switch checked={settings.notify_email_on_confirmation} onCheckedChange={v => updateSettings({ notify_email_on_confirmation: v })} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Email on rejection</Label>
+                <p className="text-xs text-muted-foreground">Send email when you reject a booking</p>
+              </div>
+              <Switch checked={settings.notify_email_on_rejection} onCheckedChange={v => updateSettings({ notify_email_on_rejection: v })} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

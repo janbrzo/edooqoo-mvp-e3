@@ -13,7 +13,7 @@ export interface CalendarSlot {
   slot_date: string;
   start_time: string;
   end_time: string;
-  status: 'available' | 'booked' | 'completed' | 'cancelled' | 'no_show' | 'deleted';
+  status: 'available' | 'booked' | 'completed' | 'cancelled' | 'no_show' | 'deleted' | 'needs_review';
   booking_type: 'manual' | 'student_booked' | 'recurring_instance';
   recurrence_rule_id: string | null;
   worksheet_id: string | null;
@@ -91,7 +91,23 @@ export function useCalendarSlots(teacherId?: string) {
       
       const { data, error } = await query;
       if (error) throw error;
-      setSlots((data || []) as unknown as CalendarSlot[]);
+      
+      // Auto-mark past booked+confirmed lessons as needs_review
+      const now = new Date();
+      const pastBooked = (data || []).filter((s: any) => {
+        if (s.status !== 'booked' || !s.confirmed_at) return false;
+        const slotEnd = new Date(`${s.slot_date}T${s.end_time}`);
+        return slotEnd < now;
+      });
+      if (pastBooked.length > 0) {
+        const ids = pastBooked.map((s: any) => s.id);
+        supabase.from('calendar_slots').update({ status: 'needs_review' } as any).in('id', ids).then(() => {});
+        // Update local data immediately
+        const updatedData = (data || []).map((s: any) => ids.includes(s.id) ? { ...s, status: 'needs_review' } : s);
+        setSlots(updatedData as unknown as CalendarSlot[]);
+      } else {
+        setSlots((data || []) as unknown as CalendarSlot[]);
+      }
     } catch (err) {
       console.error('Error fetching slots:', err);
     } finally {
