@@ -109,3 +109,9 @@ verify_jwt = false
 
 [functions.notify-generation-failure]
 verify_jwt = false
+
+[functions.calendar-handle-reschedule-decision]
+verify_jwt = true
+
+[functions.find-teachers-by-student-email]
+verify_jwt = false

@@ -398,9 +398,9 @@ export function UnifiedSlotModal({
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start" onOpenAutoFocus={e => e.preventDefault()}>
+                <PopoverContent className="w-full p-0" align="start">
                   <Command>
-                    <CommandInput placeholder="Search students..." />
+                    <CommandInput placeholder="Search students..." autoFocus />
                     <CommandList>
                       <CommandEmpty>No student found.</CommandEmpty>
                       <CommandGroup>
@@ -409,7 +409,6 @@ export function UnifiedSlotModal({
                             key={s.id}
                             value={`${s.name}__${s.id}`}
                             onSelect={() => { setStudentId(s.id); setStudentComboOpen(false); }}
-                            onPointerDown={(e) => e.preventDefault()}
                           >
                             <Check className={cn("mr-2 h-4 w-4", studentId === s.id ? "opacity-100" : "opacity-0")} />
                             {s.name}

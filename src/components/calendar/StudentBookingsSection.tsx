@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { CalendarSettings } from '@/hooks/useCalendarSettings';
 import { Button } from '@/components/ui/button';
@@ -27,21 +27,31 @@ interface StudentBookingsSectionProps {
   onBookingChanged: () => void;
   onRescheduleStart?: (bookingId: string) => void;
   rescheduleBookingId?: string | null;
+  defaultEmail?: string;
 }
 
-export function StudentBookingsSection({ settings, token, availableSlots, onBookingChanged, onRescheduleStart, rescheduleBookingId }: StudentBookingsSectionProps) {
-  const [email, setEmail] = useState('');
+export function StudentBookingsSection({ settings, token, availableSlots, onBookingChanged, onRescheduleStart, rescheduleBookingId, defaultEmail }: StudentBookingsSectionProps) {
+  const [email, setEmail] = useState(defaultEmail || '');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  const fetchBookings = useCallback(async () => {
-    if (!email.trim()) return;
+  // Auto-fetch if defaultEmail provided
+  useEffect(() => {
+    if (defaultEmail && defaultEmail.trim()) {
+      setEmail(defaultEmail);
+      fetchBookingsWithEmail(defaultEmail);
+    }
+  }, [defaultEmail, token]);
+
+  const fetchBookingsWithEmail = useCallback(async (emailToFetch?: string) => {
+    const e = (emailToFetch || email).trim();
+    if (!e) return;
     setLoading(true);
     setSearched(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-student-bookings', {
-        body: { token, email: email.trim() },
+        body: { token, email: e },
       });
       if (error) throw error;
       setBookings(data?.bookings || []);
@@ -53,6 +63,8 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
       setLoading(false);
     }
   }, [email, token]);
+
+  const fetchBookings = useCallback(() => fetchBookingsWithEmail(), [fetchBookingsWithEmail]);
 
   const handleCancel = async (bookingId: string) => {
     if (!window.confirm('Are you sure you want to cancel this lesson?')) return;

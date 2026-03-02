@@ -40,6 +40,7 @@ import CalendarSettingsPage from "./pages/CalendarSettingsPage";
 import PublicBookingPage from "./pages/PublicBookingPage";
 import StudentLessonsPage from "./pages/StudentLessonsPage";
 import CalendarLogHistoryPage from "./components/calendar/CalendarLogHistoryPage";
+import BookLandingPage from "./pages/BookLandingPage";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ const App = () => (
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/calendar/settings" element={<CalendarSettingsPage />} />
               <Route path="/calendar/logs" element={<CalendarLogHistoryPage />} />
+              <Route path="/book" element={<BookLandingPage />} />
               <Route path="/book/:token" element={<PublicBookingPage />} />
               <Route path="/my-lessons/:token" element={<StudentLessonsPage />} />
               <Route path="/admin" element={<AdminDashboardPage />} />
