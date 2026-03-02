@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0";
 import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_VERTEX_API_KEY = Deno.env.get("GEMINI_VERTEX_API_KEY");
@@ -11,12 +12,33 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // ── AUTH CHECK ──
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid authentication token' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    // ── END AUTH CHECK ──
+
     const { topic, englishLevel = "B1/B2" } = await req.json();
 
     if (!topic) {
@@ -40,7 +62,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`[GENERATE-IMAGE] Starting image generation for topic: "${topic}", level: ${englishLevel}`);
+    console.log(`[GENERATE-IMAGE] Starting image generation for topic: "${topic}", level: ${englishLevel}, user: ${user.id}`);
 
     // STEP 1: Generate image using Vertex AI Imagen 4.0 Fast
     const imagePrompt = createImagePrompt(topic, englishLevel);
@@ -108,7 +130,7 @@ serve(async (req) => {
     // Pass the actual image to Gemini for VISUAL analysis
     const imagePart = {
       inlineData: {
-        data: base64Image, // raw base64 without data URL prefix
+        data: base64Image,
         mimeType: "image/png",
       },
     };
@@ -132,7 +154,7 @@ FORMAT:
 
     const descriptionResult = await descriptionModel.generateContent([
       descriptionPrompt,
-      imagePart, // ✅ PASS THE ACTUAL IMAGE TO GEMINI!
+      imagePart,
     ]);
     let detailedDescription = descriptionResult.response.text();
 
@@ -140,7 +162,6 @@ FORMAT:
       throw new Error("Generated description is too short or empty");
     }
 
-    // Truncate to max 2000 chars as backup
     if (detailedDescription.length > 2000) {
       detailedDescription = detailedDescription.substring(0, 1997) + "...";
       console.log(`[GENERATE-IMAGE] Description truncated to 2000 chars`);
@@ -149,14 +170,12 @@ FORMAT:
     console.log(`[GENERATE-IMAGE] Description generated with vision analysis (${detailedDescription.length} chars)`);
     console.log(`[GENERATE-IMAGE] Description preview: ${detailedDescription.substring(0, 200)}...`);
 
-    // ✅ OPT 3 FIXED: Upload to R2 and wait for URL before returning
-    const finalImageUrl = imageUrl; // Base64 initially
-    const imageSource = "r2-cloudflare"; // Will be R2 after upload
+    const finalImageUrl = imageUrl;
+    const imageSource = "r2-cloudflare";
     const timestamp = Date.now();
 
     console.log(`[GENERATE-IMAGE] 🚀 Starting R2 upload...`);
 
-    // Upload to R2 synchronously (we need R2 URL in database, not base64!)
     let finalR2Url = finalImageUrl;
     try {
       const uploadResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/upload-to-r2`, {
@@ -192,7 +211,7 @@ FORMAT:
         success: true,
         image: {
           id: `vertex-ai-${timestamp}`,
-          url: finalR2Url, // R2 URL if upload succeeded, base64 as fallback
+          url: finalR2Url,
           ai_generated_url: finalR2Url,
           thumbnail: finalR2Url,
           description: detailedDescription.substring(0, 100) + "...",
@@ -224,16 +243,13 @@ FORMAT:
  * Convert PEM private key to ArrayBuffer
  */
 function pemToArrayBuffer(pem: string): ArrayBuffer {
-  // Remove PEM header/footer and newlines
   const pemContents = pem
     .replace(/-----BEGIN PRIVATE KEY-----/, "")
     .replace(/-----END PRIVATE KEY-----/, "")
     .replace(/\s/g, "");
 
-  // Decode base64 to binary string
   const binaryString = atob(pemContents);
 
-  // Convert binary string to ArrayBuffer
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
@@ -271,7 +287,6 @@ async function importPrivateKey(pemKey: string): Promise<CryptoKey> {
 async function getVertexAccessToken(serviceAccountJson: string): Promise<string> {
   const serviceAccount = JSON.parse(serviceAccountJson);
 
-  // Import the private key as CryptoKey
   const privateKey = await importPrivateKey(serviceAccount.private_key);
 
   const jwt = await create(
@@ -280,7 +295,7 @@ async function getVertexAccessToken(serviceAccountJson: string): Promise<string>
       iss: serviceAccount.client_email,
       scope: "https://www.googleapis.com/auth/cloud-platform",
       aud: "https://oauth2.googleapis.com/token",
-      exp: getNumericDate(60 * 60), // 1 hour
+      exp: getNumericDate(60 * 60),
       iat: getNumericDate(0),
     },
     privateKey,
@@ -306,10 +321,8 @@ async function getVertexAccessToken(serviceAccountJson: string): Promise<string>
 
 /**
  * Creates a detailed prompt for Gemini Imagen 3.0
- * Focus: photorealistic, everyday situations, clear context for exercises
  */
 function createImagePrompt(topic: string, englishLevel: string): string {
-  // Map English levels to complexity
   const complexity =
     {
       "A1/A2": "simple, clear, basic",

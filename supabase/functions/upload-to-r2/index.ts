@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,29 +52,24 @@ async function signAwsRequest(
   const date = new Date().toISOString().replace(/[:-]|\.\d{3}/g, "");
   const dateStamp = date.slice(0, 8);
 
-  // Canonical request - MUST include x-amz-content-sha256 for R2
   const payloadHash = await sha256(body);
   const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${date}\n`;
   const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
   const canonicalRequest = `${method}\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
 
-  // String to sign
   const algorithm = "AWS4-HMAC-SHA256";
   const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
   const canonicalRequestHash = await sha256(canonicalRequest);
   const stringToSign = `${algorithm}\n${date}\n${credentialScope}\n${canonicalRequestHash}`;
 
-  // Signing key (chain of HMAC operations)
   const kDate = await hmacSha256(`AWS4${secretAccessKey}`, dateStamp);
   const kRegion = await hmacSha256(kDate, region);
   const kService = await hmacSha256(kRegion, "s3");
   const kSigning = await hmacSha256(kService, "aws4_request");
 
-  // Signature
   const signatureBytes = await hmacSha256(kSigning, stringToSign);
   const signature = bufferToHex(signatureBytes.buffer);
 
-  // Authorization header
   const authHeader = `${algorithm} Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
   return {
@@ -85,12 +81,45 @@ async function signAwsRequest(
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // ── AUTH CHECK: allow service_role OR authenticated user ──
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    // Allow service role key (used by other edge functions like generate-image, generate-audio)
+    const isServiceRole = token === serviceRoleKey;
+    
+    if (!isServiceRole) {
+      // Validate as user JWT
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'Invalid authentication token' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log(`[UPLOAD-TO-R2] Authenticated user: ${user.id}`);
+    } else {
+      console.log(`[UPLOAD-TO-R2] Service role access`);
+    }
+    // ── END AUTH CHECK ──
+
     const { base64Image, base64Data, filename, contentType = "image/png" } = await req.json();
 
     if ((!base64Image && !base64Data) || !filename) {
@@ -116,7 +145,7 @@ serve(async (req) => {
 
     console.log(`[UPLOAD-TO-R2] Starting upload: ${filename} to bucket: ${R2_BUCKET_NAME}`);
 
-    // Convert base64 to binary - support both images and audio
+    // Convert base64 to binary
     const rawBase64 = (base64Image || base64Data || "").replace(/^data:[^;]+;base64,/, "");
     const binaryString = atob(rawBase64);
     const bytes = new Uint8Array(binaryString.length);
@@ -141,7 +170,7 @@ serve(async (req) => {
       R2_SECRET_ACCESS_KEY
     );
 
-    // Upload to R2 using native fetch with signed request
+    // Upload to R2
     const response = await fetch(uploadUrl, {
       method: "PUT",
       headers: signedHeaders,
@@ -154,17 +183,13 @@ serve(async (req) => {
       throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
     }
 
-    // ✅ FIX: Use hardcoded Public Development URL from Cloudflare R2 settings
-    // NEW Public Development URL: https://pub-1b974ada9ae240948229c52d927980ee.r2.dev
-    const CUSTOM_DOMAIN = Deno.env.get("R2_CUSTOM_DOMAIN");  // Optional custom domain
-    const PUBLIC_DEV_URL = "https://pub-1b974ada9ae240948229c52d927980ee.r2.dev"; // ✅ From R2 bucket settings
+    const CUSTOM_DOMAIN = Deno.env.get("R2_CUSTOM_DOMAIN");
+    const PUBLIC_DEV_URL = Deno.env.get("R2_PUBLIC_URL") || "https://pub-1b974ada9ae240948229c52d927980ee.r2.dev";
     
     const publicUrl = CUSTOM_DOMAIN 
       ? `https://${CUSTOM_DOMAIN}/${filename}`
       : `${PUBLIC_DEV_URL}/${filename}`;
     
-    console.log(`[UPLOAD-TO-R2] ✅ Constructed public URL: ${publicUrl}`);
-
     console.log(`[UPLOAD-TO-R2] ✅ Upload successful: ${publicUrl}`);
     console.log(`[UPLOAD-TO-R2] File size: ${Math.round(bytes.length / 1024)}KB`);
 
@@ -182,7 +207,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: error.message || "Upload failed",
-        details: "Failed to upload image to R2",
+        details: "Failed to upload file to R2",
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
