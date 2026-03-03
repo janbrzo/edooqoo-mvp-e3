@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Bell, Calendar, UserPlus, CheckCircle2 } from 'lucide-react';
-import { useCalendarNotifications, CalendarNotification } from '@/hooks/useCalendarNotifications';
+import { CalendarNotification } from '@/hooks/useCalendarNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -12,13 +12,14 @@ interface CalendarNotificationBellProps {
   students?: Array<{ id: string; name: string; student_email?: string | null }>;
   onNotificationClick?: (notification: CalendarNotification) => void;
   onAddStudentClick?: (name: string, email: string) => void;
+  notifications: CalendarNotification[];
+  unreadCount: number;
+  onMarkAllRead: () => void;
 }
 
-export function CalendarNotificationBell({ teacherId, students, onNotificationClick, onAddStudentClick }: CalendarNotificationBellProps) {
-  const { notifications, unreadCount, markAllRead } = useCalendarNotifications(teacherId);
-
+export function CalendarNotificationBell({ students, onNotificationClick, onAddStudentClick, notifications, unreadCount, onMarkAllRead }: CalendarNotificationBellProps) {
   return (
-    <Popover onOpenChange={(open) => { if (open) markAllRead(); }}>
+    <Popover onOpenChange={(open) => { if (open) onMarkAllRead(); }}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 relative">
           <Bell className="h-3.5 w-3.5" />
@@ -47,11 +48,8 @@ export function CalendarNotificationBell({ teacherId, students, onNotificationCl
                 s.student_email.toLowerCase() === metadata.student_email.toLowerCase()
               );
 
-              const displayName = n.student_name || '';
               const displayEmail = metadata.student_email || '';
-              const showEmailSeparately = displayName && displayEmail && displayName !== displayEmail;
 
-              // Resolved action label
               const resolvedLabel = (() => {
                 if (!isResolved) return null;
                 const action = n.resolved_action;
@@ -61,7 +59,6 @@ export function CalendarNotificationBell({ teacherId, students, onNotificationCl
                 if (action === 'rescheduled') return 'Done — Rescheduled';
                 if (action === 'added') return 'Done — Added';
                 if (action === 'noted') return 'Done — Noted';
-                // Fallback based on notification_type
                 if (n.notification_type === 'booking_pending') return 'Done — Resolved';
                 if (n.notification_type === 'new_student') return 'Done — Added';
                 return 'Done';
@@ -81,17 +78,7 @@ export function CalendarNotificationBell({ teacherId, students, onNotificationCl
                     <Calendar className="h-3.5 w-3.5 mt-0.5 text-muted-foreground flex-shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs">{n.message}</p>
-                      {displayName && <p className="text-xs text-muted-foreground">Student: {displayName}</p>}
-                      {showEmailSeparately && <p className="text-[10px] text-muted-foreground">{displayEmail}</p>}
-                      {/* Date/time/email from metadata */}
-                      {metadata.slot_date && (
-                        <p className="text-[10px] text-muted-foreground">
-                          {metadata.slot_date} at {metadata.start_time || ''}–{metadata.end_time || ''}
-                        </p>
-                      )}
-                      {metadata.student_email && !showEmailSeparately && (
-                        <p className="text-[10px] text-muted-foreground">{metadata.student_email}</p>
-                      )}
+                      {displayEmail && <p className="text-xs text-muted-foreground">Student: {displayEmail}</p>}
                       <p className="text-[10px] text-muted-foreground mt-0.5">{formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}</p>
                       
                       {isResolved && resolvedLabel && (
