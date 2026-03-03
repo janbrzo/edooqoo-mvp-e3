@@ -52,6 +52,7 @@ export function useCalendarSlots(teacherId?: string) {
   const [showDeleted, setShowDeleted] = useState(true);
   const { toast } = useToast();
   const fetchingRef = useRef(false);
+  const pendingRefetch = useRef(false);
 
   const dateRange = useMemo(() => {
     if (viewMode === 'day') return { from: currentDate, to: currentDate };
@@ -70,7 +71,11 @@ export function useCalendarSlots(teacherId?: string) {
   const weekEnd = useMemo(() => endOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
 
   const fetchSlots = useCallback(async () => {
-    if (!teacherId || fetchingRef.current) return;
+    if (!teacherId) return;
+    if (fetchingRef.current) {
+      pendingRefetch.current = true;
+      return;
+    }
     fetchingRef.current = true;
     setLoading(true);
     try {
@@ -102,7 +107,6 @@ export function useCalendarSlots(teacherId?: string) {
       if (pastBooked.length > 0) {
         const ids = pastBooked.map((s: any) => s.id);
         supabase.from('calendar_slots').update({ status: 'needs_review' } as any).in('id', ids).then(() => {});
-        // Update local data immediately
         const updatedData = (data || []).map((s: any) => ids.includes(s.id) ? { ...s, status: 'needs_review' } : s);
         setSlots(updatedData as unknown as CalendarSlot[]);
       } else {
@@ -113,6 +117,10 @@ export function useCalendarSlots(teacherId?: string) {
     } finally {
       setLoading(false);
       fetchingRef.current = false;
+      if (pendingRefetch.current) {
+        pendingRefetch.current = false;
+        fetchSlots();
+      }
     }
   }, [teacherId, dateRange, showDeleted]);
 
@@ -202,15 +210,17 @@ export function useCalendarSlots(teacherId?: string) {
         end_time: input.end_time,
       });
 
-      // Teacher notification for lesson (replaces removed trigger)
+      // Teacher notification for lesson
       if (input.student_id) {
+        const studentLabel = input.title?.split(' — ')[0] || 'Student';
         try {
           await supabase.from('calendar_notifications').insert({
             teacher_id: teacherId,
             notification_type: 'lesson_created_by_teacher',
-            message: `You added a new lesson on ${input.slot_date} at ${input.start_time.slice(0, 5)}`,
-            student_name: input.title?.split(' — ')[0] || '',
+            message: `You added a new lesson for ${studentLabel} on ${input.slot_date} at ${input.start_time.slice(0, 5)}`,
+            student_name: studentLabel,
             slot_id: data.id,
+            metadata: { slot_date: input.slot_date, start_time: input.start_time.slice(0, 5), end_time: input.end_time.slice(0, 5) },
           } as any);
         } catch (_) {}
       }
@@ -324,7 +334,6 @@ export function useCalendarSlots(teacherId?: string) {
   const deleteSlotsBatch = useCallback(async (slotIds: string[]) => {
     if (slotIds.length === 0) return;
     try {
-      // Check which ones have history
       const slotsToCheck = slots.filter(s => slotIds.includes(s.id));
       const hardDeleteIds = slotsToCheck.filter(s => !s.cancelled_at).map(s => s.id);
       const softDeleteIds = slotsToCheck.filter(s => !!s.cancelled_at).map(s => s.id);

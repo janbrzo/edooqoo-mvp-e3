@@ -82,37 +82,29 @@ Deno.serve(async (req) => {
     };
 
     // Helper: resolve notifications
-    const resolveNotifications = async (slotIds: string[], types: string[]) => {
-      if (slotIds.length === 0) return;
+    const resolveNotifications = async (resolveSlotIds: string[], types: string[]) => {
+      if (resolveSlotIds.length === 0) return;
       await supabase
         .from('calendar_notifications')
         .update({ is_resolved: true })
         .eq('teacher_id', teacherId)
-        .in('slot_id', slotIds)
+        .in('slot_id', resolveSlotIds)
         .in('notification_type', types);
     };
 
     // Helper: calculate hours until lesson using teacher timezone
     const hoursUntilLesson = (slotDate: string, startTime: string): number => {
-      // Build a date string in teacher timezone and compare to now
-      // Simple approach: parse as local and calculate. For DST accuracy, we use the timezone info.
       const lessonStr = `${slotDate}T${startTime.slice(0, 5)}:00`;
-      // We need to treat lessonStr as being in teacherTz
-      // Since Deno doesn't have date-fns-tz, use a simpler approach:
-      // Create date and use timezone offset
       const lessonDate = new Date(lessonStr);
-      // Get the offset for teacher timezone
       const formatter = new Intl.DateTimeFormat('en-US', { timeZone: teacherTz, hour: 'numeric', timeZoneName: 'longOffset' });
       const parts = formatter.formatToParts(new Date());
       const offsetPart = parts.find(p => p.type === 'timeZoneName')?.value || '';
-      // Parse UTC offset from format like "GMT+01:00"
       const offsetMatch = offsetPart.match(/GMT([+-])(\d{2}):(\d{2})/);
       let tzOffsetMinutes = 0;
       if (offsetMatch) {
         const sign = offsetMatch[1] === '+' ? 1 : -1;
         tzOffsetMinutes = sign * (parseInt(offsetMatch[2]) * 60 + parseInt(offsetMatch[3]));
       }
-      // Adjust: lessonDate is interpreted as local, but we need UTC
       const lessonUtc = new Date(lessonDate.getTime() - tzOffsetMinutes * 60 * 1000);
       return (lessonUtc.getTime() - Date.now()) / (1000 * 60 * 60);
     };
@@ -138,7 +130,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Revert slot to available
+      // Revert slot to available — Problem 4: clear recurrence_rule_id
       await supabase
         .from('calendar_slots')
         .update({
@@ -147,6 +139,7 @@ Deno.serve(async (req) => {
           student_notes: null, title: null,
           cancelled_at: new Date().toISOString(), cancelled_by: 'student',
           cancellation_reason: `Cancelled by student (${email})`,
+          recurrence_rule_id: null,
         })
         .eq('id', slotId);
 
@@ -154,18 +147,16 @@ Deno.serve(async (req) => {
         slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time,
       });
 
-      // Resolve notifications
       await resolveNotifications([slotId], ['booking_pending', 'booking_confirmed']);
 
-      // Notify teacher
+      // Problem 8D: updated cancellation message format
       await supabase.from('calendar_notifications').insert({
         teacher_id: teacherId, notification_type: 'cancellation',
         message: `${studentName} cancelled lesson on ${slot.slot_date} at ${slot.start_time.slice(0, 5)}`,
         student_name: studentName, slot_id: slotId,
-        metadata: { student_email: email },
+        metadata: { student_email: email, slot_date: slot.slot_date, start_time: slot.start_time.slice(0, 5), end_time: slot.end_time.slice(0, 5) },
       });
 
-      // Send emails
       const { teacherName, teacherEmail } = await getTeacherInfo();
       await sendEmail('cancellation_teacher', {
         teacherEmail, studentEmail: email, studentName,
@@ -194,7 +185,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Fetch new slot info for notification message
       const { data: newSlotData } = await supabase
         .from('calendar_slots').select('slot_date, start_time, end_time').eq('id', newSlotId).single();
 
@@ -204,7 +194,6 @@ Deno.serve(async (req) => {
 
       if (settingsData.allow_student_reschedule) {
         // AUTO RESCHEDULE
-        // Revert old slot
         await supabase
           .from('calendar_slots')
           .update({
@@ -213,10 +202,10 @@ Deno.serve(async (req) => {
             student_notes: null, title: null,
             cancelled_at: new Date().toISOString(), cancelled_by: 'student',
             cancellation_reason: `Rescheduled by student (${email}) to new slot`,
+            recurrence_rule_id: null,
           })
           .eq('id', slotId);
 
-        // Book new slot (confirmed)
         const { data: updateResult } = await supabase
           .from('calendar_slots')
           .update({
@@ -240,10 +229,8 @@ Deno.serve(async (req) => {
         await logAction(slotId, 'rescheduled', { new_slot_id: newSlotId, slot_date: oldSlot.slot_date, start_time: oldSlot.start_time });
         await logAction(newSlotId, 'booked', { rescheduled_from: slotId, student_email: email, slot_date: newSlotData?.slot_date, start_time: newSlotData?.start_time });
 
-        // Resolve old notifications
         await resolveNotifications([slotId], ['booking_pending', 'booking_confirmed']);
 
-        // Notify teacher
         await supabase.from('calendar_notifications').insert({
           teacher_id: teacherId, notification_type: 'reschedule',
           message: `${studentName} rescheduled: ${oldSlot.slot_date} ${oldSlot.start_time.slice(0, 5)} → ${newSlotData?.slot_date} ${newSlotData?.start_time?.slice(0, 5)}`,
@@ -251,7 +238,6 @@ Deno.serve(async (req) => {
           metadata: { old_slot_id: slotId, new_slot_id: newSlotId, student_email: email },
         });
 
-        // Emails
         await sendEmail('reschedule_confirmation', {
           studentEmail: email, studentName,
           slotDate: newSlotData?.slot_date, slotTime: newSlotData?.start_time?.slice(0, 5),
@@ -264,7 +250,6 @@ Deno.serve(async (req) => {
         });
       } else {
         // REQUIRES CONFIRMATION
-        // If old slot was pending → free it immediately (student changed their mind)
         if (oldIsPending) {
           await supabase
             .from('calendar_slots')
@@ -274,27 +259,25 @@ Deno.serve(async (req) => {
               student_notes: null, title: null,
               cancelled_at: new Date().toISOString(), cancelled_by: 'student',
               cancellation_reason: `Replaced by reschedule request (${email})`,
+              recurrence_rule_id: null,
             })
             .eq('id', slotId);
 
-          // Resolve old pending notification
           await resolveNotifications([slotId], ['booking_pending']);
         } else {
-          // Old slot was confirmed → mark it with reschedule pointer
           await supabase
             .from('calendar_slots')
             .update({ reschedule_request_to_slot_id: newSlotId })
             .eq('id', slotId);
         }
 
-        // Book new slot as pending with reschedule link
         const { data: updateResult } = await supabase
           .from('calendar_slots')
           .update({
             student_id: oldSlot.student_id,
             status: 'booked', booking_type: 'student_booked',
             booked_at: new Date().toISOString(), booked_by: 'student',
-            confirmed_at: null, // PENDING
+            confirmed_at: null,
             student_notes: `Reschedule from ${oldSlot.slot_date} ${oldSlot.start_time.slice(0, 5)}. ${oldSlot.student_notes || ''}`.trim(),
             title: `${studentName} — English lesson`,
             reschedule_request_from_slot_id: slotId,
@@ -304,7 +287,6 @@ Deno.serve(async (req) => {
           .select();
 
         if (!updateResult || updateResult.length === 0) {
-          // Revert old slot pointer if we set it
           if (!oldIsPending) {
             await supabase.from('calendar_slots').update({ reschedule_request_to_slot_id: null }).eq('id', slotId);
           }
@@ -318,15 +300,14 @@ Deno.serve(async (req) => {
           slot_date: newSlotData?.slot_date, start_time: newSlotData?.start_time,
         });
 
-        // Notify teacher with From→To message
+        // Problem 8C: updated reschedule message format
         await supabase.from('calendar_notifications').insert({
           teacher_id: teacherId, notification_type: 'reschedule_request',
-          message: `${studentName} requests to reschedule: ${oldSlot.slot_date} ${oldSlot.start_time.slice(0, 5)} → ${newSlotData?.slot_date} ${newSlotData?.start_time?.slice(0, 5)}`,
+          message: `${studentName} requests to reschedule: ${oldSlot.slot_date} ${oldSlot.start_time.slice(0, 5)} → ${newSlotData?.slot_date} ${newSlotData?.start_time?.slice(0, 5)} — awaiting confirmation`,
           student_name: studentName, slot_id: newSlotId,
           metadata: { old_slot_id: slotId, new_slot_id: newSlotId, student_email: email, old_date: oldSlot.slot_date, old_time: oldSlot.start_time.slice(0, 5) },
         });
 
-        // Emails
         await sendEmail('reschedule_pending', {
           studentEmail: email, studentName,
           slotDate: newSlotData?.slot_date, slotTime: newSlotData?.start_time?.slice(0, 5),
@@ -384,12 +365,20 @@ Deno.serve(async (req) => {
         }
       }
 
-      // One notification for all
+      // Problem 8B: One notification with updated batch message format
       if (successIds.length > 0) {
+        // Get first slot info for the message
+        const { data: firstSlot } = await supabase.from('calendar_slots').select('slot_date, start_time, end_time').eq('id', successIds[0]).single();
+        let batchMessage = `${batchStudentName} booked ${successIds.length} weekly lessons`;
+        if (firstSlot) {
+          const dayName = new Date(firstSlot.slot_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() + 's';
+          batchMessage = `${batchStudentName} booked ${successIds.length} weekly lessons since ${firstSlot.slot_date} ${dayName} ${firstSlot.start_time.slice(0,5)}–${firstSlot.end_time.slice(0,5)}${autoConfirm ? ' (auto-confirmed)' : ' — awaiting confirmation'}`;
+        }
+
         await supabase.from('calendar_notifications').insert({
           teacher_id: teacherId,
           notification_type: autoConfirm ? 'booking_confirmed' : 'booking_pending',
-          message: `${batchStudentName} booked ${successIds.length} weekly lessons${autoConfirm ? ' (auto-confirmed)' : ' — awaiting confirmation'}`,
+          message: batchMessage,
           student_name: batchStudentName,
           slot_id: successIds[0],
           metadata: { student_email: normalizedEmail, slot_ids: successIds, count: successIds.length, batch: true },
@@ -414,10 +403,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Default: fetch bookings
+    // Default: fetch bookings — Problem 1A: include worksheet_id and notes
     let query = supabase
       .from('calendar_slots')
-      .select('id, slot_date, start_time, end_time, status, confirmed_at, student_notes')
+      .select('id, slot_date, start_time, end_time, status, confirmed_at, student_notes, worksheet_id, notes')
       .eq('teacher_id', teacherId)
       .in('status', ['booked', 'completed', 'needs_review'])
       .gte('slot_date', new Date().toISOString().split('T')[0])
@@ -433,7 +422,25 @@ Deno.serve(async (req) => {
     const { data: bookings, error: bookingsError } = await query;
     if (bookingsError) throw bookingsError;
 
-    return new Response(JSON.stringify({ bookings: bookings || [] }), {
+    // Problem 1B: Fetch share_tokens for worksheets
+    const bookingsList = bookings || [];
+    const worksheetIds = bookingsList.filter((b: any) => b.worksheet_id).map((b: any) => b.worksheet_id);
+    let worksheetMap: Record<string, string> = {};
+    if (worksheetIds.length > 0) {
+      const { data: worksheets } = await supabase.from('worksheets').select('id, share_token').in('id', worksheetIds);
+      if (worksheets) {
+        for (const w of worksheets) {
+          if (w.share_token) worksheetMap[w.id] = w.share_token;
+        }
+      }
+    }
+
+    const enrichedBookings = bookingsList.map((b: any) => ({
+      ...b,
+      share_token: b.worksheet_id ? (worksheetMap[b.worksheet_id] || null) : null,
+    }));
+
+    return new Response(JSON.stringify({ bookings: enrichedBookings }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

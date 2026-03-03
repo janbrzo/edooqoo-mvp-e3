@@ -10,11 +10,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { ChevronLeft, ChevronRight, Calendar, Clock, AlertTriangle, Palmtree, Globe } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Clock, AlertTriangle, Palmtree, Globe, X } from 'lucide-react';
 import { format, addDays, parseISO, isToday, isBefore, addWeeks, isSameDay } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { toStudentLocalTimeRange, getStudentTimeZone } from '@/utils/timezoneUtils';
+import { cn } from '@/lib/utils';
 
 const EMAIL_STORAGE_KEY = 'book_student_email';
 const NAME_STORAGE_KEY = 'book_student_name';
@@ -47,6 +48,7 @@ const PublicBookingPage = () => {
   const [bookWeekly, setBookWeekly] = useState(false);
   const [untilDate, setUntilDate] = useState('');
   const [rescheduleBookingId, setRescheduleBookingId] = useState<string | null>(null);
+  const [slotFilter, setSlotFilter] = useState<string | null>(null); // 'available' or null
 
   const { vacations } = useCalendarVacations(settings?.teacher_id);
   
@@ -54,7 +56,6 @@ const PublicBookingPage = () => {
   const teacherTz = settings?.timezone || 'Europe/Warsaw';
   const showTzInfo = studentTz !== teacherTz;
 
-  // Email-first: load saved email
   useEffect(() => {
     const savedEmail = getSavedValue(EMAIL_STORAGE_KEY);
     const savedName = getSavedValue(NAME_STORAGE_KEY);
@@ -68,7 +69,6 @@ const PublicBookingPage = () => {
     setEmailVerified(true);
   };
 
-  // Helper: convert slot time for display
   const formatSlotTime = useCallback((slot: { slot_date: string; start_time: string; end_time: string }) => {
     if (!showTzInfo) {
       return { primary: `${slot.start_time.slice(0, 5)}–${slot.end_time.slice(0, 5)}`, secondary: null };
@@ -80,7 +80,6 @@ const PublicBookingPage = () => {
     };
   }, [showTzInfo, teacherTz, studentTz]);
 
-  // Book weekly: fetch full range of available slots
   const [weeklySlotIds, setWeeklySlotIds] = useState<string[]>([]);
   const [weeklyLoading, setWeeklyLoading] = useState(false);
 
@@ -298,6 +297,32 @@ const PublicBookingPage = () => {
           </span>
         </div>
 
+        {/* Problem 10: Legend with A/P badges and filter */}
+        <div className="flex items-center gap-4 justify-center text-xs">
+          <button
+            className={cn(
+              'flex items-center gap-1 px-2 py-1 rounded transition-colors',
+              slotFilter === 'available' ? 'ring-2 ring-primary bg-primary/10' : 'hover:bg-muted/50'
+            )}
+            onClick={() => setSlotFilter(slotFilter === 'available' ? null : 'available')}
+          >
+            <span className="w-4 h-4 rounded border border-green-400 bg-green-200 text-[8px] font-bold flex items-center justify-center">A</span>
+            Available
+          </button>
+          <button
+            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-muted/50"
+            onClick={() => setSlotFilter(null)}
+          >
+            <span className="w-4 h-4 rounded border border-amber-400 bg-amber-200 text-[8px] font-bold flex items-center justify-center">P</span>
+            Pending
+          </button>
+          {slotFilter && (
+            <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setSlotFilter(null)}>
+              <X className="h-3 w-3 mr-1" /> Clear
+            </Button>
+          )}
+        </div>
+
         {/* Week grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
           {days.map(date => {
@@ -330,6 +355,9 @@ const PublicBookingPage = () => {
                       const isAvailable = slot.status === 'available';
                       const timeDisplay = formatSlotTime(slot);
 
+                      // Filter logic
+                      if (slotFilter === 'available' && !isAvailable) return null;
+
                       if (isPending) {
                         return (
                           <div
@@ -337,10 +365,10 @@ const PublicBookingPage = () => {
                             className="w-full text-xs py-1.5 px-2 rounded-md border border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300 text-center"
                           >
                             <div className="flex items-center justify-center gap-1">
+                              <span className="w-3 h-3 rounded border border-amber-400 bg-amber-200 text-[7px] font-bold flex items-center justify-center shrink-0">P</span>
                               <Clock className="h-3 w-3" />
                               {timeDisplay.primary}
                             </div>
-                            <div className="text-[10px] opacity-80">Awaiting confirmation</div>
                             {timeDisplay.secondary && (
                               <div className="text-[9px] opacity-60">{timeDisplay.secondary}</div>
                             )}

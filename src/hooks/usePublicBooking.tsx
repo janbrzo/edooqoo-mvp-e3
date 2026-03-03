@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
@@ -12,6 +12,8 @@ export function usePublicBooking(token?: string) {
   const [error, setError] = useState<string | null>(null);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const { toast } = useToast();
+  const fetchingRef = useRef(false);
+  const pendingRefetch = useRef(false);
 
   const weekEnd = useMemo(() => endOfWeek(weekStart, { weekStartsOn: 1 }), [weekStart]);
 
@@ -33,6 +35,8 @@ export function usePublicBooking(token?: string) {
 
   const fetchSlots = useCallback(async () => {
     if (!settings) return;
+    if (fetchingRef.current) { pendingRefetch.current = true; return; }
+    fetchingRef.current = true;
     try {
       const from = format(weekStart, 'yyyy-MM-dd');
       const to = format(weekEnd, 'yyyy-MM-dd');
@@ -51,7 +55,14 @@ export function usePublicBooking(token?: string) {
       if (err) throw err;
       setSlots((data || []) as unknown as CalendarSlot[]);
     } catch (err) { console.error('Error fetching public slots:', err); }
-    finally { setLoading(false); }
+    finally {
+      setLoading(false);
+      fetchingRef.current = false;
+      if (pendingRefetch.current) {
+        pendingRefetch.current = false;
+        fetchSlots();
+      }
+    }
   }, [settings, weekStart, weekEnd]);
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
@@ -69,17 +80,16 @@ export function usePublicBooking(token?: string) {
     return () => { supabase.removeChannel(channel); };
   }, [settings, fetchSlots]);
 
-  // Polling fallback every 5s for /book (public, no auth — Realtime may not work with RLS)
+  // Polling fallback every 3s
   useEffect(() => {
     if (!settings) return;
-    const interval = setInterval(() => { fetchSlots(); }, 5000);
+    const interval = setInterval(() => { fetchSlots(); }, 3000);
     return () => clearInterval(interval);
   }, [settings, fetchSlots]);
 
   const bookSlot = useCallback(async (slotId: string, studentName: string, studentEmail: string) => {
     if (!settings) return false;
     try {
-      // Optimistic lock: verify slot is still available
       const { data: check } = await supabase
         .from('calendar_slots').select('status, slot_type').eq('id', slotId).single();
       if (!check || check.status !== 'available' || check.slot_type === 'block') {
@@ -140,14 +150,15 @@ export function usePublicBooking(token?: string) {
         } catch (e) { console.error(e); }
       }
 
-      // Booking notification
+      // Booking notification — Problem 8A: updated message format
       try {
+        const messageText = autoConfirm
+          ? `${resolvedName} booked a lesson ${slot?.slot_date} at ${slot?.start_time?.slice(0,5)}–${slot?.end_time?.slice(0,5)} (auto-confirmed)`
+          : `${resolvedName} requested a lesson ${slot?.slot_date} at ${slot?.start_time?.slice(0,5)}–${slot?.end_time?.slice(0,5)} — awaiting confirmation`;
         await supabase.from('calendar_notifications').insert({
           teacher_id: settings.teacher_id,
           notification_type: autoConfirm ? 'booking_confirmed' : 'booking_pending',
-          message: autoConfirm
-            ? `${resolvedName} booked a lesson (auto-confirmed)`
-            : `${resolvedName} requested a lesson — awaiting confirmation`,
+          message: messageText,
           student_name: resolvedName,
           slot_id: slotId,
           metadata: {
@@ -159,7 +170,7 @@ export function usePublicBooking(token?: string) {
         } as any);
       } catch (e) { console.error(e); }
 
-      // Send email notifications (check settings)
+      // Send email notifications
       if (slot && settings.notify_email_on_booking) {
         const slotDate = slot.slot_date;
         const slotTime = slot.start_time.slice(0, 5);
@@ -168,12 +179,24 @@ export function usePublicBooking(token?: string) {
         const teacherEmail = teacherProfile?.email || '';
         const bookUrl = `${window.location.origin}/book/${settings.public_calendar_token}`;
         const calendarUrl = `${window.location.origin}/calendar`;
+
+        // Get worksheet shared link if available
+        let worksheetUrl: string | undefined;
+        let sharedWorksheetUrl: string | undefined;
+        if (slot.worksheet_id) {
+          worksheetUrl = `${window.location.origin}/worksheet/${slot.worksheet_id}`;
+          const { data: ws } = await supabase.from('worksheets').select('share_token').eq('id', slot.worksheet_id).maybeSingle();
+          if (ws?.share_token) {
+            sharedWorksheetUrl = `${window.location.origin}/shared/${ws.share_token}`;
+          }
+        }
         
         supabase.functions.invoke('send-calendar-notification-email', {
           body: {
             type: autoConfirm ? 'booking_confirmation' : 'booking_pending',
             studentEmail: normalizedEmail, studentName: resolvedName, slotDate, slotTime,
             teacherName, teacherEmail, bookUrl, calendarUrl,
+            worksheetUrl, sharedWorksheetUrl,
           },
         }).catch(console.error);
 
@@ -184,6 +207,7 @@ export function usePublicBooking(token?: string) {
               teacherEmail, studentEmail: normalizedEmail,
               studentName: resolvedName, slotDate, slotTime,
               teacherName, bookUrl, calendarUrl,
+              worksheetUrl,
             },
           }).catch(console.error);
         }

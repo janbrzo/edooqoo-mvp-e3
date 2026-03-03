@@ -6,6 +6,7 @@ import { useCalendarSettings } from '@/hooks/useCalendarSettings';
 import { useCalendarRecurrence } from '@/hooks/useCalendarRecurrence';
 import { useStudents } from '@/hooks/useStudents';
 import { useCalendarVacations } from '@/hooks/useCalendarVacations';
+import { useCalendarNotifications, CalendarNotification } from '@/hooks/useCalendarNotifications';
 import { CalendarWeekView } from '@/components/calendar/CalendarWeekView';
 import { CalendarDayView } from '@/components/calendar/CalendarDayView';
 import { CalendarMonthView } from '@/components/calendar/CalendarMonthView';
@@ -15,7 +16,6 @@ import { UnifiedSlotModal } from '@/components/calendar/UnifiedSlotModal';
 import { SlotDetailModal } from '@/components/calendar/SlotDetailModal';
 import { LinkWorksheetModal } from '@/components/calendar/LinkWorksheetModal';
 import { CalendarNotificationBell } from '@/components/calendar/CalendarNotificationBell';
-import { CalendarNotification } from '@/hooks/useCalendarNotifications';
 import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +55,9 @@ const CalendarPage = () => {
   const { students } = useStudents();
   const { vacations } = useCalendarVacations(user?.id);
 
+  // Elevated notification state (Problem 7)
+  const { notifications, unreadCount, markAllRead, refetch: refetchNotifications } = useCalendarNotifications(user?.id);
+
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addModalDate, setAddModalDate] = useState<Date | undefined>();
   const [addModalStartTime, setAddModalStartTime] = useState<string | undefined>();
@@ -89,8 +92,6 @@ const CalendarPage = () => {
   }, [students]);
 
   const studentList = useMemo(() => students.map(s => ({ id: s.id, name: s.name })), [students]);
-
-  // Students with email for notification bell
   const studentsWithEmail = useMemo(() => students.map(s => ({ id: s.id, name: s.name, student_email: (s as any).student_email })), [students]);
 
   const filteredSlots = useMemo(() => {
@@ -297,6 +298,9 @@ const CalendarPage = () => {
               students={studentsWithEmail}
               onNotificationClick={handleNotificationClick}
               onAddStudentClick={handleAddStudentFromNotification}
+              notifications={notifications}
+              unreadCount={unreadCount}
+              onMarkAllRead={markAllRead}
             />
           </div>
         </div>
@@ -376,6 +380,7 @@ const CalendarPage = () => {
         onUpdate={updateSlot}
         onDelete={hardDeleteSlot}
         onLinkWorksheet={handleLinkWorksheet}
+        onNotificationsChanged={refetchNotifications}
       />
 
       {linkWorksheetSlot && user && (
@@ -390,7 +395,6 @@ const CalendarPage = () => {
         />
       )}
 
-      {/* Add Student Dialog (from notification) — no trigger button */}
       <AddStudentDialog
         open={addStudentOpen}
         onOpenChange={setAddStudentOpen}

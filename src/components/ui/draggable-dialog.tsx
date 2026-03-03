@@ -63,6 +63,18 @@ export const DraggableDialogContent = React.forwardRef<HTMLDivElement, Draggable
           style={{
             transform: `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`,
           }}
+          onPointerDownOutside={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('[data-radix-popper-content-wrapper]') || target.closest('[cmdk-list]') || target.closest('[cmdk-input]')) {
+              e.preventDefault();
+            }
+          }}
+          onInteractOutside={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('[data-radix-popper-content-wrapper]') || target.closest('[cmdk-list]') || target.closest('[cmdk-input]')) {
+              e.preventDefault();
+            }
+          }}
           {...props}
         >
           {/* Drag handle */}

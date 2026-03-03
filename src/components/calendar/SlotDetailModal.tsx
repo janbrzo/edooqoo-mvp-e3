@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DraggableDialog, DraggableDialogContent, DraggableDialogHeader, DraggableDialogTitle, DraggableDialogFooter } from '@/components/ui/draggable-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CalendarSlot } from '@/hooks/useCalendarSlots';
 import { format, differenceInMinutes } from 'date-fns';
 import { Check, X, Trash2, FileText, ExternalLink, AlertTriangle, Link2, Undo2, UserMinus, Repeat, Ban, ChevronsUpDown, History, Lock } from 'lucide-react';
@@ -37,6 +38,7 @@ interface SlotDetailModalProps {
   onUpdate: (id: string, updates: Partial<CalendarSlot>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onLinkWorksheet?: (slot: CalendarSlot, studentId?: string | null) => void;
+  onNotificationsChanged?: () => void;
 }
 
 const STATUS_BADGES: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -49,7 +51,15 @@ const STATUS_BADGES: Record<string, { label: string; variant: 'default' | 'secon
   needs_review: { label: 'Needs Review', variant: 'secondary' },
 };
 
-export function SlotDetailModal({ open, onOpenChange, slot, studentName, students, onUpdate, onDelete, onLinkWorksheet }: SlotDetailModalProps) {
+const DURATION_OPTIONS = [
+  { value: '30', label: '30 min' },
+  { value: '45', label: '45 min' },
+  { value: '60', label: '60 min' },
+  { value: '90', label: '90 min' },
+  { value: '120', label: '120 min' },
+];
+
+export function SlotDetailModal({ open, onOpenChange, slot, studentName, students, onUpdate, onDelete, onLinkWorksheet, onNotificationsChanged }: SlotDetailModalProps) {
   const [editDate, setEditDate] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
@@ -94,6 +104,32 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     editNotes !== (slot.notes || '') ||
     editStudentId !== (slot.student_id || 'none');
 
+  // Duration calculation
+  const durationMinutes = useMemo(() => {
+    const [sh, sm] = editStartTime.split(':').map(Number);
+    const [eh, em] = editEndTime.split(':').map(Number);
+    if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return 60;
+    return (eh * 60 + em) - (sh * 60 + sm);
+  }, [editStartTime, editEndTime]);
+
+  const handleStartTimeChange = (newStart: string) => {
+    setEditStartTime(newStart);
+    const [h, m] = newStart.split(':').map(Number);
+    if (isNaN(h) || isNaN(m)) return;
+    const dur = durationMinutes > 0 ? durationMinutes : 60;
+    const totalMin = h * 60 + m + dur;
+    const newEnd = `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`;
+    setEditEndTime(newEnd);
+  };
+
+  const handleDurationChange = (newDur: string) => {
+    const [h, m] = editStartTime.split(':').map(Number);
+    if (isNaN(h) || isNaN(m)) return;
+    const totalMin = h * 60 + m + parseInt(newDur);
+    const newEnd = `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`;
+    setEditEndTime(newEnd);
+  };
+
   const resetChanges = () => {
     setEditDate(slot.slot_date);
     setEditStartTime(slot.start_time.slice(0, 5));
@@ -111,7 +147,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       slot_date: editDate, start_time: editStartTime, end_time: editEndTime, notes: editNotes || null,
     };
 
-    // Determine specific log action
     let logActionName = 'updated';
     const logDetails: any = { slot_date: editDate, start_time: editStartTime, end_time: editEndTime };
 
@@ -137,13 +172,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       }
     }
 
-    // Time change: check for conflicts and handle them
+    // Time change: check for conflicts
     if (timeChanged) {
       if (logActionName === 'updated') logActionName = 'time_changed';
       logDetails.previous_date = slot.slot_date;
       logDetails.previous_time = `${slot.start_time.slice(0, 5)}-${slot.end_time.slice(0, 5)}`;
 
-      // Check for conflicts
       const { data: conflicts } = await supabase
         .from('calendar_slots')
         .select('id, student_id, status')
@@ -162,13 +196,11 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
           setSaving(false);
           return;
         }
-        // Delete available slots that conflict
         for (const c of conflicts) {
           await supabase.from('calendar_slots').delete().eq('id', c.id);
         }
       }
 
-      // If slot has student and time changed, send email notification
       if (slot.student_id && slot.status === 'booked') {
         const studentEmail = extractStudentEmail(slot.student_notes);
         if (studentEmail) {
@@ -185,7 +217,23 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     }
 
     await onUpdate(slot.id, updates);
-    // Log with specific action
+
+    // Notification when teacher assigns student (Problem 3B/C)
+    if (studentChanged && editStudentId !== 'none') {
+      const assignedName = students.find(s => s.id === editStudentId)?.name || '';
+      try {
+        await supabase.from('calendar_notifications').insert({
+          teacher_id: slot.teacher_id,
+          notification_type: 'lesson_created_by_teacher',
+          message: `You added a new lesson for ${assignedName} on ${editDate} at ${editStartTime}`,
+          student_name: assignedName,
+          slot_id: slot.id,
+          metadata: { slot_date: editDate, start_time: editStartTime, end_time: editEndTime },
+        } as any);
+      } catch (_) {}
+      onNotificationsChanged?.();
+    }
+
     try {
       await supabase.from('calendar_slot_logs').insert({
         slot_id: slot.id, teacher_id: slot.teacher_id, action: logActionName, actor: 'teacher',
@@ -196,14 +244,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     onOpenChange(false);
   };
 
-  // Helper: extract student email from student_notes
   const extractStudentEmail = (notes: string | null): string => {
     if (!notes) return '';
     const match = notes.match(/\(([^)]+@[^)]+)\)/);
     return match ? match[1] : '';
   };
 
-  // Helper: resolve notifications for this slot with resolved_action
   const resolveNotifications = async (slotId: string, types: string[], resolvedAction?: string) => {
     try {
       const updatePayload: any = { is_resolved: true };
@@ -217,7 +263,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     } catch (_) {}
   };
 
-  // Helper: send email notification
   const sendCalendarEmail = async (type: string, extraParams: Record<string, any> = {}) => {
     const studentEmail = extractStudentEmail(slot.student_notes);
     if (!studentEmail) return;
@@ -229,10 +274,15 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       const bookUrl = calSettings?.public_calendar_token ? `${window.location.origin}/book/${calSettings.public_calendar_token}` : '';
       const calendarUrl = `${window.location.origin}/calendar`;
 
-      // Build worksheet URLs if available
       let worksheetUrl: string | undefined;
+      let sharedWorksheetUrl: string | undefined;
       if (slot.worksheet_id) {
         worksheetUrl = `${window.location.origin}/worksheet/${slot.worksheet_id}`;
+        // Get share_token for student link
+        const { data: ws } = await supabase.from('worksheets').select('share_token').eq('id', slot.worksheet_id).maybeSingle();
+        if (ws?.share_token) {
+          sharedWorksheetUrl = `${window.location.origin}/shared/${ws.share_token}`;
+        }
       }
 
       supabase.functions.invoke('send-calendar-notification-email', {
@@ -240,14 +290,13 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
           type, studentEmail, studentName: studentName || 'Student',
           slotDate: extraParams.slotDate || slot.slot_date, slotTime: extraParams.slotTime || slot.start_time.slice(0, 5),
           teacherName, teacherEmail, bookUrl, calendarUrl,
-          worksheetUrl,
+          worksheetUrl, sharedWorksheetUrl,
           ...extraParams,
         },
       }).catch(console.error);
     } catch (_) {}
   };
 
-  // Check email settings before sending
   const shouldSendEmail = async (settingKey: string): Promise<boolean> => {
     try {
       const { data } = await supabase.from('calendar_settings').select(settingKey).eq('teacher_id', slot.teacher_id).maybeSingle();
@@ -258,6 +307,18 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const handleConfirm = async () => {
     const isReschedule = !!(slot as any).reschedule_request_from_slot_id;
     
+    // Check for batch booking (Problem 11)
+    const { data: batchNotif } = await supabase
+      .from('calendar_notifications')
+      .select('metadata')
+      .eq('slot_id', slot.id)
+      .eq('teacher_id', slot.teacher_id)
+      .eq('is_resolved', false)
+      .in('notification_type', ['booking_pending'])
+      .maybeSingle();
+    
+    const batchSlotIds = (batchNotif?.metadata as any)?.slot_ids;
+
     if (isReschedule) {
       try {
         const { data: session } = await supabase.auth.getSession();
@@ -272,6 +333,14 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       } catch (err: any) {
         toast.error(err.message || 'Failed to confirm reschedule');
       }
+    } else if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
+      // Batch confirm all slots
+      for (const sid of batchSlotIds) {
+        await onUpdate(sid, { confirmed_at: new Date().toISOString() } as any);
+      }
+      toast.success(`Confirmed ${batchSlotIds.length} lessons`);
+      const canSend = await shouldSendEmail('notify_email_on_confirmation');
+      if (canSend) await sendCalendarEmail('booking_confirmation');
     } else {
       await onUpdate(slot.id, { confirmed_at: new Date().toISOString() } as any);
       const canSend = await shouldSendEmail('notify_email_on_confirmation');
@@ -281,17 +350,37 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     try {
       await supabase.from('calendar_slot_logs').insert({
         slot_id: slot.id, teacher_id: slot.teacher_id, action: 'confirmed', actor: 'teacher',
-        details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, source: isReschedule ? 'reschedule_confirm' : 'booking_confirm' },
+        details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, source: isReschedule ? 'reschedule_confirm' : 'booking_confirm', batch: batchSlotIds?.length > 1 ? batchSlotIds.length : undefined },
       } as any);
     } catch (_) {}
 
-    await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
+    // Resolve notifications for all batch slots if applicable
+    if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
+      for (const sid of batchSlotIds) {
+        await resolveNotifications(sid, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
+      }
+    } else {
+      await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
+    }
     
+    onNotificationsChanged?.();
     onOpenChange(false);
   };
 
   const handleReject = async () => {
     const isReschedule = !!(slot as any).reschedule_request_from_slot_id;
+
+    // Check for batch booking
+    const { data: batchNotif } = await supabase
+      .from('calendar_notifications')
+      .select('metadata')
+      .eq('slot_id', slot.id)
+      .eq('teacher_id', slot.teacher_id)
+      .eq('is_resolved', false)
+      .in('notification_type', ['booking_pending'])
+      .maybeSingle();
+    
+    const batchSlotIds = (batchNotif?.metadata as any)?.slot_ids;
 
     if (isReschedule) {
       try {
@@ -303,6 +392,16 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       } catch (err: any) {
         toast.error(err.message || 'Failed to reject reschedule');
       }
+    } else if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
+      // Batch reject
+      for (const sid of batchSlotIds) {
+        await onUpdate(sid, {
+          status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
+        } as any);
+      }
+      toast.success(`Rejected ${batchSlotIds.length} bookings`);
+      const canSend = await shouldSendEmail('notify_email_on_rejection');
+      if (canSend) await sendCalendarEmail('booking_rejected');
     } else {
       await onUpdate(slot.id, {
         status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
@@ -319,8 +418,15 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       } as any);
     } catch (_) {}
 
-    await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
+    if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
+      for (const sid of batchSlotIds) {
+        await resolveNotifications(sid, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
+      }
+    } else {
+      await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
+    }
 
+    onNotificationsChanged?.();
     onOpenChange(false);
   };
 
@@ -338,6 +444,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       cancelled_at: new Date().toISOString(), cancelled_by: 'teacher',
       cancellation_reason: `Teacher cancellation. Student was: ${cancelledStudentName}`,
       booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
+      recurrence_rule_id: null, // Problem 4: remove recurring link
     } as any);
     try {
       await supabase.from('calendar_slot_logs').insert({
@@ -348,6 +455,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     const canSend = await shouldSendEmail('notify_email_on_cancellation');
     if (canSend) await sendCalendarEmail('cancellation_student');
     await resolveNotifications(slot.id, ['booking_pending', 'booking_confirmed'], 'cancelled');
+    onNotificationsChanged?.();
     onOpenChange(false);
   };
 
@@ -360,6 +468,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       cancelled_at: new Date().toISOString(), cancelled_by: 'student',
       cancellation_reason: `Student cancellation. Student was: ${cancelledStudentName}`,
       booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
+      recurrence_rule_id: null, // Problem 4: remove recurring link
     } as any);
     try {
       await supabase.from('calendar_slot_logs').insert({
@@ -368,6 +477,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       } as any);
     } catch (_) {}
     await resolveNotifications(slot.id, ['booking_pending', 'booking_confirmed'], 'cancelled');
+    onNotificationsChanged?.();
     onOpenChange(false);
   };
 
@@ -405,29 +515,56 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const handleEditSeries = async () => {
     if (!slot.recurrence_rule_id) return;
     const today = format(new Date(), 'yyyy-MM-dd');
+    
+    // Get all future slots in this series
+    const { data: seriesSlots } = await supabase
+      .from('calendar_slots')
+      .select('id, slot_date, start_time, end_time')
+      .eq('recurrence_rule_id', slot.recurrence_rule_id)
+      .gte('slot_date', today)
+      .neq('status', 'completed');
+    
+    // Delete conflicting available slots at the new time (Problem 9B)
+    if (seriesSlots) {
+      for (const ss of seriesSlots) {
+        const { data: conflicts } = await supabase
+          .from('calendar_slots')
+          .select('id')
+          .eq('teacher_id', slot.teacher_id)
+          .eq('slot_date', ss.slot_date)
+          .neq('id', ss.id)
+          .is('student_id', null)
+          .neq('status', 'cancelled')
+          .neq('status', 'deleted')
+          .lt('start_time', editEndTime + ':00')
+          .gt('end_time', editStartTime + ':00');
+        
+        if (conflicts) {
+          for (const c of conflicts) {
+            await supabase.from('calendar_slots').delete().eq('id', c.id);
+          }
+        }
+      }
+    }
+
     const updates: any = { start_time: editStartTime, end_time: editEndTime, notes: editNotes || null };
     if (editStudentId !== (slot.student_id || 'none')) {
       if (editStudentId === 'none') { updates.student_id = null; updates.status = 'available'; }
       else { updates.student_id = editStudentId; updates.status = 'booked'; updates.confirmed_at = new Date().toISOString(); }
     }
     const { error } = await supabase.from('calendar_slots').update(updates).eq('recurrence_rule_id', slot.recurrence_rule_id).gte('slot_date', today).neq('status', 'completed');
+    
+    // Also update the recurrence rule
+    await supabase.from('calendar_recurrence_rules')
+      .update({ start_time: editStartTime, end_time: editEndTime } as any)
+      .eq('id', slot.recurrence_rule_id);
+
     if (error) toast.error('Failed to update series'); else toast.success('Series updated');
     onOpenChange(false);
   };
 
-  const handleLinkWorksheetClick = async () => {
-    if (editStudentId !== (slot.student_id || 'none')) {
-      const updates: any = {};
-      if (editStudentId === 'none') {
-        updates.student_id = null; updates.status = 'available';
-      } else {
-        updates.student_id = editStudentId; updates.status = 'booked';
-        updates.booked_at = new Date().toISOString();
-        updates.booked_by = 'teacher';
-        updates.confirmed_at = new Date().toISOString();
-      }
-      await onUpdate(slot.id, updates);
-    }
+  // Problem 3A: Don't save to DB, just open link worksheet modal
+  const handleLinkWorksheetClick = () => {
     onLinkWorksheet?.(slot, editStudentId !== 'none' ? editStudentId : null);
   };
 
@@ -506,11 +643,24 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </>
           )}
 
-          {/* Date + Time */}
+          {/* Date + Time + Duration */}
           <div><Label className="text-xs">Date</Label><Input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="h-9" /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label className="text-xs">Start</Label><Input type="time" value={editStartTime} onChange={e => setEditStartTime(e.target.value)} className="h-9" /></div>
+          <div className="grid grid-cols-3 gap-2">
+            <div><Label className="text-xs">Start</Label><Input type="time" value={editStartTime} onChange={e => handleStartTimeChange(e.target.value)} className="h-9" /></div>
             <div><Label className="text-xs">End</Label><Input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)} className="h-9" /></div>
+            <div>
+              <Label className="text-xs">Duration</Label>
+              <Select value={String(durationMinutes)} onValueChange={handleDurationChange}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DURATION_OPTIONS.map(d => (
+                    <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Worksheet */}
@@ -594,7 +744,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
           )}
         </div>
 
-        <DraggableDialogFooter className="flex-col sm:flex-row gap-2">
+        <DraggableDialogFooter className="flex-col gap-2">
           <div className="flex gap-1 flex-wrap w-full">
             {canUndoCancel && (
               <Button size="sm" variant="outline" onClick={handleUndoCancel} className="text-xs h-7"><Undo2 className="h-3 w-3 mr-1" /> Undo Cancel</Button>
@@ -609,14 +759,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
                 </Button>
               </>
             )}
-            {/* Complete / No Show for booked+confirmed OR needs_review */}
             {((slot.status === 'booked' && slot.confirmed_at) || isNeedsReview) && (
               <>
                 <Button size="sm" variant="outline" onClick={() => handleStatusChange('completed')} className="text-xs h-7"><Check className="h-3 w-3 mr-1" /> Complete</Button>
                 <Button size="sm" variant="outline" onClick={() => handleStatusChange('no_show')} className="text-xs h-7"><AlertTriangle className="h-3 w-3 mr-1" /> No Show</Button>
               </>
             )}
-            {/* Teacher/Student Cancellation buttons */}
             {isBooked && !isPending && slot.status !== 'cancelled' && (
               <>
                 <Button size="sm" variant="outline" className="text-blue-600 text-xs h-7" onClick={handleTeacherCancellation}>
@@ -633,7 +781,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
               <Repeat className="h-3 w-3 mr-1" /> Save for Entire Series
             </Button>
           )}
-          <div className="flex gap-2 w-full justify-end">
+          <div className="flex gap-2 w-full justify-end flex-wrap">
             {slot.status === 'deleted' && (
               <Button size="sm" variant="outline" className="text-xs h-8" onClick={async () => {
                 await onUpdate(slot.id, { status: 'available' } as any);

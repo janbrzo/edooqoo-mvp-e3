@@ -4,7 +4,7 @@ import { CalendarSettings } from '@/hooks/useCalendarSettings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, X, ArrowRightLeft, Info } from 'lucide-react';
+import { Calendar, Clock, X, ArrowRightLeft, Info, FileText } from 'lucide-react';
 import { format, parseISO, differenceInHours } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -16,6 +16,9 @@ interface Booking {
   status: string;
   confirmed_at: string | null;
   student_notes: string | null;
+  worksheet_id?: string | null;
+  share_token?: string | null;
+  notes?: string | null;
 }
 
 interface StudentBookingsSectionProps {
@@ -128,7 +131,12 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
                     )}
                   </div>
 
-                  <div className="flex gap-2">
+                  {/* Notes from teacher */}
+                  {booking.notes && (
+                    <p className="text-xs text-muted-foreground">{booking.notes}</p>
+                  )}
+
+                  <div className="flex gap-2 flex-wrap">
                     {canCancel(booking) && (
                       <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => handleCancel(booking.id)}>
                         <X className="h-3 w-3 mr-1" /> Cancel
@@ -142,6 +150,12 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
                     >
                       <ArrowRightLeft className="h-3 w-3 mr-1" /> Reschedule
                     </Button>
+                    {/* Problem 1C: Open Worksheet button */}
+                    {booking.share_token && (
+                      <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => window.open(`/shared/${booking.share_token}`, '_blank')}>
+                        <FileText className="h-3 w-3 mr-1" /> Open Worksheet
+                      </Button>
+                    )}
                   </div>
 
                   {isActiveReschedule && (
