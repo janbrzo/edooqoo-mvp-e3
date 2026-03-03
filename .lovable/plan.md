@@ -1,553 +1,436 @@
-# Plan: Calendar & Booking — Runda napraw #3
+
+
+# Plan: Calendar & Booking — Runda napraw #4
 
 ---
 
-## Problem 1: Linki do worksheet w emailach + na /book przycisk "Open Worksheet" + Location/Notes + **Location (optional)**
+## Problem 1 (KRYTYCZNY): Biała strona po kliknięciu slota — React error #310
 
-**Analiza:** Na `/book` w `StudentBookingsSection` sekcja "Your Lessons" pokazuje booking z przyciskami Cancel/Reschedule, ale bez linku do shared worksheet. Edge function `get-student-bookings` nie zwraca `worksheet_id` ani `notes`/`location`. `send-calendar-notification-email` już obsługuje `worksheetUrl`, ale nie `sharedWorksheetUrl`.
+**Root cause:** W `SlotDetailModal.tsx` na linii 88 jest `if (!slot) return null;` — to jest PRZED hookami `useMemo` (linia 108) i innymi. React wymaga, żeby hooki były wywoływane zawsze w tej samej kolejności. Gdy `slot` zmienia się z `null` na obiekt, React widzi więcej hooków niż poprzednio i rzuca błąd #310 ("Rendered more hooks than during the previous render").
 
-**Plan:**
+Dodatkowo w konsoli widać `Failed to load resource: 400` na zapytaniu `.in('id', (...))` — to pewnie z `handleNotificationClick` w CalendarPage, ale to nie jest główna przyczyna crashu.
 
-**A) get-student-bookings/index.ts** — rozszerzyć SELECT na linii 420:
-
-```sql
-.select('id, slot_date, start_time, end_time, status, confirmed_at, student_notes, worksheet_id, notes')
-```
-
-**B) Pobierz share_token dla worksheetów** — po pobraniu bookingów, jeśli którykolwiek ma `worksheet_id`, a jeżeli nie ma to wygeneruj. zrób dodatkowy fetch:
-
-```ts
-const worksheetIds = bookings.filter(b => b.worksheet_id).map(b => b.worksheet_id);
-if (worksheetIds.length > 0) {
-  const { data: worksheets } = await supabase.from('worksheets').select('id, share_token').in('id', worksheetIds);
-  // Map worksheet_id → share_token
-}
-```
-
-Dodać do każdego bookinga pole `share_token` i `notes` i location **Location (optional)** w response.
-
-**C) StudentBookingsSection.tsx** — rozszerzyć interfejs `Booking`:
-
-```ts
-interface Booking {
-  // ...existing...
-  worksheet_id?: string | null;
-  share_token?: string | null;
-  notes?: string | null;
-}
-```
-
-Dodać przycisk "Open Worksheet" po Reschedule:
+**Fix:** Przenieść `if (!slot) return null;` PONIŻEJ wszystkich hooków. Zamiast early return, ustawić bezpieczne domyślne wartości:
 
 ```tsx
-{booking.share_token && (
-  <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => window.open(`/shared/${booking.share_token}`, '_blank')}>
-    <FileText className="h-3 w-3 mr-1" /> Open Worksheet
-  </Button>
-)}
+// PRZED wszystkimi hookami — NIGDY nie robimy return null
+const safeSlot = slot || { slot_date: '', start_time: '00:00', end_time: '01:00', notes: '', student_id: null, status: 'available', teacher_id: '', id: '', recurrence_rule_id: null, cancelled_at: null, cancelled_by: null } as CalendarSlot;
+
+// Wszystkie hooki (useState, useEffect, useMemo) używają safeSlot
+// ...
+
+// NA KOŃCU — dopiero w renderze:
+if (!slot) return null;
 ```
 
-Dodać Location i Notes (opcjonalne) pod datą/godziną:
+Konkretnie:
+- Linia 88: usunąć `if (!slot) return null;`
+- Wszystkie odwołania do `slot` w hookach (useEffect linia 74, useMemo linia 108) zamienić na `safeSlot`
+- Dodać `if (!slot) return null;` tuż przed `return (<DraggableDialog ...>)` na linii 573
 
-```tsx
-{booking.notes && <p className="text-xs text-muted-foreground">{booking.notes}</p>}
-```
-
-**D) send-calendar-notification-email/index.ts** — dodać `sharedWorksheetUrl` (opcjonalny parametr). Dla emaili do ucznia renderować link "Open Worksheet" prowadzący do shared worksheet. Dla emaili do nauczyciela — link do `/worksheet/{id}`.
-
-**Pliki:** `supabase/functions/get-student-bookings/index.ts`, `src/components/calendar/StudentBookingsSection.tsx`, `supabase/functions/send-calendar-notification-email/index.ts`
+**Plik:** `src/components/calendar/SlotDetailModal.tsx`
 
 ---
 
-## Problem 2: Realtime — zmiany nadal nie widoczne natychmiast
+## Problem 2: Brak emaili po dodaniu lekcji z worksheet przez Add Lesson modal
 
-**Analiza:** Polling co 5s jest dodany w `usePublicBooking.tsx`, ale Realtime nie działa dla anonimowych z powodu RLS. Na `/calendar` Realtime jest podpięty i powinien działać (teacher jest zalogowany). Problem może być w `fetchingRef.current` — jeśli fetchSlots jest wywoływany szybciej niż się kończy, to jest blokowany.
+**Analiza:** `useCalendarSlots.createSlot` tworzy powiadomienie na dzwoneczku (linia ~192), ale NIE wysyła emaila do studenta. Email powinien być wysłany do studenta z linkiem do shared worksheet.
 
-**Root cause:** W `useCalendarSlots.tsx` linia 73: `if (!teacherId || fetchingRef.current) return;` — jeśli Realtime event przychodzi w momencie gdy fetch jest w toku, jest ignorowany. Powoduje to brak aktualizacji.
-
-**Fix w `useCalendarSlots.tsx`:** Zamiast ignorować, ustawiać flagę "pending refetch":
+**Fix:** W `useCalendarSlots.createSlot`, po insercie slota, jeśli `input.student_id` istnieje i `input.worksheet_id` istnieje:
+1. Pobrać `student_email` z tabeli `students` (trzeba zrobić fetch)
+2. Pobrać `share_token` z tabeli `worksheets`
+3. Wywołać `send-calendar-notification-email` z typem `new_booking_student` i parametrem `sharedWorksheetUrl`
 
 ```ts
-const pendingRefetch = useRef(false);
-
-const fetchSlots = useCallback(async () => {
-  if (!teacherId) return;
-  if (fetchingRef.current) { pendingRefetch.current = true; return; }
-  fetchingRef.current = true;
-  // ...existing fetch logic...
-  finally {
-    setLoading(false);
-    fetchingRef.current = false;
-    if (pendingRefetch.current) {
-      pendingRefetch.current = false;
-      fetchSlots(); // re-trigger
+if (input.student_id && input.worksheet_id) {
+  try {
+    const { data: studentData } = await supabase.from('students').select('student_email').eq('id', input.student_id).maybeSingle();
+    const { data: wsData } = await supabase.from('worksheets').select('share_token').eq('id', input.worksheet_id).maybeSingle();
+    const { data: teacherProfile } = await supabase.from('profiles').select('email, first_name, last_name').eq('id', teacherId).maybeSingle();
+    const { data: calSettings } = await supabase.from('calendar_settings').select('public_calendar_token, notify_email_on_booking').eq('teacher_id', teacherId).maybeSingle();
+    
+    if (studentData?.student_email && calSettings?.notify_email_on_booking !== false) {
+      const teacherName = [teacherProfile?.first_name, teacherProfile?.last_name].filter(Boolean).join(' ') || 'Your Teacher';
+      const bookUrl = calSettings?.public_calendar_token ? `${window.location.origin}/book/${calSettings.public_calendar_token}` : '';
+      const sharedWorksheetUrl = wsData?.share_token ? `${window.location.origin}/shared/${wsData.share_token}` : undefined;
+      
+      supabase.functions.invoke('send-calendar-notification-email', {
+        body: {
+          type: 'new_booking_student',
+          studentEmail: studentData.student_email,
+          studentName: input.title?.split(' — ')[0] || 'Student',
+          slotDate: input.slot_date,
+          slotTime: input.start_time.slice(0, 5),
+          teacherName,
+          teacherEmail: teacherProfile?.email || '',
+          bookUrl,
+          sharedWorksheetUrl,
+        },
+      }).catch(console.error);
     }
-  }
-}, [...]);
-```
-
-**Dla `/book`:** Polling 5s jest backup. Ale dodatkowo w `usePublicBooking`, sprawdzić czy Realtime channel subskrybuje się poprawnie — dodać `console.log` na subscription status i upewnić się że `fetchSlots` jest wywoływany. Ewentualnie zmniejszyć polling do 3s.
-
-**Pliki:** `src/hooks/useCalendarSlots.tsx`, `src/hooks/usePublicBooking.tsx`
-
----
-
-## Problem 3: Link Worksheet na Available Slot automatycznie zapisuje studenta
-
-**Analiza:** W `SlotDetailModal.tsx` linia 418-432, `handleLinkWorksheetClick` sprawdza czy student się zmienił, i jeśli tak — **natychmiast** robi `await onUpdate(slot.id, updates)` co zapisuje studenta do bazy PRZED otwarciem modalu worksheet. To jest błąd.
-
-**Fix A:** `handleLinkWorksheetClick` NIE powinien zapisywać zmian do bazy. Powinien jedynie przekazać `editStudentId` do `onLinkWorksheet` bez zapisu:
-
-```ts
-const handleLinkWorksheetClick = () => {
-  // DON'T save to DB yet — just pass the student id to link worksheet modal
-  onLinkWorksheet?.(slot, editStudentId !== 'none' ? editStudentId : null);
-};
-```
-
-Zapis studenta i statusu musi się odbyć DOPIERO gdy użytkownik kliknie "Save Changes" 
-
-**Fix B:** Powiadomienia przy Save Changes — w `handleSave` po `onUpdate`, jeśli student został przypisany (`studentChanged && editStudentId !== 'none'`), dodać powiadomienie na dzwoneczek i wysłać email:
-
-```ts
-if (studentChanged && editStudentId !== 'none') {
-  // Create notification
-  await supabase.from('calendar_notifications').insert({
-    teacher_id: slot.teacher_id,
-    notification_type: 'lesson_created_by_teacher',
-    message: `You added a new lesson on ${editDate} at ${editStartTime}`,
-    student_name: students.find(s => s.id === editStudentId)?.name || '',
-    slot_id: slot.id,
-    metadata: { slot_date: editDate, start_time: editStartTime, end_time: editEndTime },
-  } as any);
-  // Send email if settings allow
-  const canSend = await shouldSendEmail('notify_email_on_booking');
-  if (canSend) await sendCalendarEmail('new_booking_teacher', { slotDate: editDate, slotTime: editStartTime });
+  } catch (_) {}
 }
 ```
 
-**Fix C:** To samo dotyczy sytuacji bez worksheet — kliknięcie "Save Changes" z nowym studentem na Available Slot powinno generować powiadomienie. To jest ten sam fix B.
+Analogicznie, jeśli lekcja jest dodawana BEZ worksheet ale z studentem — też wysłać email (bez linku worksheet).
 
-**Pliki:** `src/components/calendar/SlotDetailModal.tsx`
-
----
-
-## Problem 4: Anulowana lekcja recurring pokazuje "Available Recurring" zamiast "Available"
-
-**Analiza:** Po anulowaniu lekcji z recurring slot, status zmienia się na `available`, ale `recurrence_rule_id` pozostaje. Dlatego badge "Recurring" się wyświetla.
-
-**Fix:** W `handleTeacherCancellation` i `handleStudentCancellation`, dodać `recurrence_rule_id: null` do updates. Tak samo w edge function `get-student-bookings` w sekcji CANCEL (linia 142-151).
-
-Dodatkowo w `SlotDetailModal.tsx`:
-
-```ts
-// W handleTeacherCancellation i handleStudentCancellation:
-await onUpdate(slot.id, {
-  // ...existing fields...
-  recurrence_rule_id: null, // Remove recurring link on cancellation
-} as any);
-```
-
-W `get-student-bookings/index.ts` linia 144-151:
-
-```ts
-await supabase.from('calendar_slots').update({
-  // ...existing...
-  recurrence_rule_id: null,
-}).eq('id', slotId);
-```
-
-**Pliki:** `src/components/calendar/SlotDetailModal.tsx`, `supabase/functions/get-student-bookings/index.ts`
+**Plik:** `src/hooks/useCalendarSlots.tsx`
 
 ---
 
-## Problem 5: Calendar Settings — sidebar z nawigacją sekcji
+## Problem 3: Realtime nadal nie działa
 
-**Analiza:** Strona CalendarSettingsPage jest prostą listą kart. Trzeba dodać sidebar z linkami do sekcji na tej samej stronie (scroll-to-section).
+**Analiza:** `pendingRefetch` ref jest już dodany. Ale Realtime na `/book` (anonimowy użytkownik) nie działa z powodu RLS — anon user nie ma `auth.uid()`, więc Realtime listener nie dostarcza eventów zmienionych wierszy. Polling 5s (lub 3s) powinien działać jako fallback.
 
-**Plan:** Dodać po lewej stronie fixed sidebar z linkami do sekcji. Na mobile sidebar jest ukryty, na desktop widoczny.
+**Na `/calendar`** (zalogowany teacher): Realtime powinien działać. Jeśli nie — sprawdzić czy `fetchSlots` w `useCalendarSlots` jest stabilny (dependency `fetchingRef`/`pendingRefetch` jest OK).
+
+**Fix:** 
+1. W `usePublicBooking` — zmniejszyć polling do **2 sekundy** i dodać `refetchSlots` po każdej akcji bookSlot
+2. W `useCalendarSlots` — upewnić się, że Realtime channel jest poprawnie podpięty. Dodać `console.log` w handleru Realtime, żeby potwierdzić że eventy przychodzą
+3. W CalendarPage po zamknięciu SlotDetailModal (`onOpenChange(false)`) — wymusić `refetch()`
 
 ```tsx
-const SECTIONS = [
-  { id: 'general', label: 'General' },
-  { id: 'booking', label: 'Booking Rules' },
-  { id: 'public', label: 'Public Calendar' },
-  { id: 'vacations', label: 'Vacations' },
-  { id: 'payments', label: 'Payment Tracking' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'email-notifications', label: 'Email Notifications' },
-];
+// CalendarPage.tsx — po zamknięciu SlotDetailModal
+onOpenChange={(open) => { if (!open) { setSelectedSlot(null); refetch(); } }}
 ```
 
-Każda karta dostaje `id={section.id}`. Sidebar ma linki z `onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })}`. Aktywna sekcja podświetlona na podstawie `IntersectionObserver`.
+**Pliki:** `src/hooks/usePublicBooking.tsx`, `src/pages/CalendarPage.tsx`
 
-Layout: `<div className="flex gap-6">` — sidebar po lewej (200px, sticky top-20), content po prawej.
+---
 
-**Pliki:** `src/pages/CalendarSettingsPage.tsx`
+## Problem 4: Badge C → SC / TC + legenda
+
+**Fix w `CalendarSlotCard.tsx`:**
+- Zmienić badge z `C` na `SC` (student cancellation) i `TC` (teacher cancellation)
+- Kolor SC: amber, kolor TC: blue (jak jest teraz, ale z inną literą)
+
+```tsx
+{showBadgeC ? (
+  <div className={cn(
+    'absolute top-0 left-0 min-w-[14px] h-[14px] rounded-br text-[8px] font-bold flex items-center justify-center z-10 px-0.5',
+    slot.cancelled_by === 'student' ? 'bg-amber-400 text-amber-900' : 'bg-blue-400 text-blue-900'
+  )}>
+    {slot.cancelled_by === 'student' ? 'SC' : 'TC'}
+  </div>
+) : (...)}
+```
+
+**Fix w `CalendarPage.tsx` — LEGEND_ITEMS:** Dodać:
+```ts
+{ key: 'student_cancelled', label: 'Student Cancellation', badge: 'SC', color: 'bg-amber-200 border-amber-400' },
+{ key: 'teacher_cancelled', label: 'Teacher Cancellation', badge: 'TC', color: 'bg-blue-200 border-blue-400' },
+```
+Usunąć (lub zostawić) stary generyczny `cancelled`.
+
+**Fix filtrowania legendy** w `filteredSlots`:
+```ts
+if (legendFilter === 'student_cancelled') return s.status === 'available' && s.cancelled_by === 'student';
+if (legendFilter === 'teacher_cancelled') return s.status === 'available' && s.cancelled_by === 'teacher';
+```
+
+**Pliki:** `src/components/calendar/CalendarSlotCard.tsx`, `src/pages/CalendarPage.tsx`
+
+---
+
+## Problem 5: Notifications vs Email Notifications + nowy switch
+
+**Analiza:** "Notifications" to powiadomienia na dzwoneczku (in-app). "Email Notifications" to powiadomienia mailowe. Nazwy są niejasne.
+
+**Fix:**
+1. Zmienić label "Notifications" na **"In-App Notifications"** z opisem "Bell icon notifications that appear in the calendar toolbar"
+2. Zmienić label "Email Notifications" na **"Email Alerts"** z opisem "Emails sent to you and your students when calendar events happen"
+3. Dodać nowy switch: **"Email on new lesson created by teacher (to student only)"** — kolumna `notify_email_on_lesson_created` w `calendar_settings` (migracja SQL). Domyślnie `true`.
+
+**Migracja SQL:**
+```sql
+ALTER TABLE calendar_settings ADD COLUMN IF NOT EXISTS notify_email_on_lesson_created boolean NOT NULL DEFAULT true;
+```
+
+**W `useCalendarSettings.tsx`** — dodać do interfejsu `CalendarSettings`:
+```ts
+notify_email_on_lesson_created: boolean;
+```
+
+**W `CalendarSettingsPage.tsx`** — dodać switch w sekcji Email Alerts:
+```tsx
+<div className="flex items-center justify-between">
+  <div><Label>Email on new lesson (to student)</Label><p className="text-xs text-muted-foreground">Send email to student when you create a new lesson for them</p></div>
+  <Switch checked={settings.notify_email_on_lesson_created} onCheckedChange={v => updateSettings({ notify_email_on_lesson_created: v })} />
+</div>
+```
+
+**W `useCalendarSlots.createSlot`** — sprawdzać `notify_email_on_lesson_created` przed wysłaniem emaila (z problemu 2).
+
+**Sidebar SECTIONS** — zmienić labels:
+```ts
+{ id: 'notifications', label: 'In-App Notifications' },
+{ id: 'email-notifications', label: 'Email Alerts' },
+```
+
+**Pliki:** migracja SQL, `src/hooks/useCalendarSettings.tsx`, `src/pages/CalendarSettingsPage.tsx`, `src/hooks/useCalendarSlots.tsx`
 
 ---
 
 ## Problem 6: Dropdown studentów nie da się kliknąć
 
-**Analiza:** Mamy `modal={false}` na Popover i `onPointerDownOutside={e => e.preventDefault()}` na PopoverContent. Ale `DraggableDialogContent` używa `DialogPrimitive.Content` z Radix, który ma wbudowany focus trap. CommandItem `onSelect` powinien działać — ale może problem jest w tym, że `value` w CommandItem zawiera `__` separator i Radix normalizuje wartość.
+**Analiza:** `DraggableDialogContent` już ma `onPointerDownOutside` i `onInteractOutside` z obsługą `[data-radix-popper-content-wrapper]`, `[cmdk-list]`, `[cmdk-input]`. Ale problem może być z `focus trapping` — Radix Dialog z `modal=true` (domyślnie) tworzy focus trap, który blokuje interakcje poza dialogiem, a PopoverContent renderuje się w portalu POZA dialogiem.
 
-**Root cause:** Problem jest prawdopodobnie w `DialogPrimitive.Content` z Radix, który blokuje interakcje z portalowymi elementami (Popover jest wewnątrz portalu dialogu). `PopoverContent` renderuje się w osobnym portalu, ale dialog przechwytuje focus.
+**Root cause:** `DialogPrimitive.Root` nie ma `modal={false}`. Radix Dialog domyślnie jest `modal={true}` co tworzy focus trap uniemożliwiający interakcje z elementami portalu (Popover).
 
-**Fix:** Na `DraggableDialogContent` dodać `onPointerDownOutside` i `onInteractOutside` aby nie blokować interakcji:
-
+**Fix:** W `DraggableDialog` ustawić `modal={false}`:
 ```tsx
-<DialogPrimitive.Content
-  onPointerDownOutside={(e) => { 
-    // Allow interaction with popovers
-    const target = e.target as HTMLElement;
-    if (target.closest('[data-radix-popper-content-wrapper]')) {
-      e.preventDefault();
-    }
-  }}
-  onInteractOutside={(e) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('[data-radix-popper-content-wrapper]')) {
-      e.preventDefault();
-    }
-  }}
->
+export function DraggableDialog({ open, onOpenChange, children }: DraggableDialogProps) {
+  return (
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} modal={false}>
+      {children}
+    </DialogPrimitive.Root>
+  );
+}
 ```
 
-**Alternatywnie:** Jeśli to nie pomoże, zamienić DraggableDialog na zwykły Dialog z `modal={true}` i dodać `Popover` z `side="bottom"` renderowany inline (nie w portalu) — ale to bardziej inwazyjne.
+Jeśli `modal={false}` powoduje inne problemy (np. brak overlay/dismiss) — alternatywnie renderować Popover NIE w portalu, ustawiając `container` na DialogContent div.
 
-**Test:** Po implementacji, przetestować klikanie na nazwę studenta w dropdown na obu modalach.
-
-**Pliki:** `src/components/ui/draggable-dialog.tsx`
+**Plik:** `src/components/ui/draggable-dialog.tsx`
 
 ---
 
-## Problem 7: Status powiadomień nie aktualizuje się natychmiast po akcji
+## Problem 7: Status powiadomienia nie zmienia się natychmiast po akcji
 
-**Analiza:** `resolveNotifications` w `SlotDetailModal` robi update, który powinien triggerować Realtime w `useCalendarNotifications`. Ale `calendar_notifications` ma restrictive RLS — `Teachers can update` wymaga `auth.uid() = teacher_id`. Realtime listener nasłuchuje na `teacher_id=eq.${teacherId}`. Powinno działać.
+**Analiza:** `onNotificationsChanged` jest przekazywany do `SlotDetailModal`, ale wywoływany jest PRZED `onOpenChange(false)`. Po zamknięciu modalu, CalendarPage powinien refetchować notyfikacje. Hook `useCalendarNotifications` zwraca `refetch`, a CalendarPage go wywołuje.
 
-**Root cause:** Prawdopodobnie `resolveNotifications` w SlotDetailModal rozwiązuje po `onOpenChange(false)` — modal się zamyka, ale refetch notyfikacji może nie zostać wyzwolony bo event z Realtime przychodzi z opóźnieniem.
+**Fix:** Upewnić się, że `refetchNotifications` jest wywoływany RÓWNIEŻ po zamknięciu SlotDetailModal, nie tylko wewnątrz handlera. Dodać małe opóźnienie aby baza zdążyła się zaktualizować:
 
-**Fix:** Dodać explicit refetch. W `CalendarPage.tsx`, przekazać `refetchNotifications` callback do `SlotDetailModal`, a po confirm/reject wywołać go ręcznie.
-
-Zmienić `useCalendarNotifications` aby eksportować `refetch`:
-
+W `SlotDetailModal` — w `handleConfirm`, `handleReject`, `handleTeacherCancellation`, `handleStudentCancellation` — po `resolveNotifications`, dodać `await` i `setTimeout` na `onNotificationsChanged`:
 ```ts
-return { notifications, unreadCount, loading, markAllRead, refetch: fetchNotifications };
+await resolveNotifications(slot.id, [...], 'approved');
+// Small delay to let DB propagate
+setTimeout(() => onNotificationsChanged?.(), 300);
 ```
 
-(To już jest — hook zwraca `refetch: fetchNotifications`.)
-
-W `CalendarPage.tsx`:
-
-```tsx
-const { notifications, unreadCount, loading: notifLoading, markAllRead, refetch: refetchNotifications } = useCalendarNotifications(user?.id);
-```
-
-Ale `CalendarNotificationBell` używa wewnętrznie `useCalendarNotifications`. Trzeba albo:
-a) przenieść hook do CalendarPage i przekazywać dane jako props, albo
-b) dodać callback `onResolved` do SlotDetailModal, który wywołuje refetch z CalendarPage
-
-Opcja B jest prostsza:
-
-- `CalendarPage` tworzy `useCalendarNotifications(user?.id)` — wyciągnąć go z `CalendarNotificationBell`
-- `CalendarNotificationBell` przyjmuje `notifications`, `unreadCount`, `markAllRead` jako props
-- `SlotDetailModal` przyjmuje nowy prop `onNotificationsChanged?: () => void`
-- Po resolve, wywołać `onNotificationsChanged?.()`
-
-**Pliki:** `src/pages/CalendarPage.tsx`, `src/components/calendar/CalendarNotificationBell.tsx`, `src/components/calendar/SlotDetailModal.tsx`, `src/hooks/useCalendarNotifications.tsx`
+**Plik:** `src/components/calendar/SlotDetailModal.tsx`
 
 ---
 
-## Problem 8: Treść powiadomień — zmiana układu
+## Problem 7b: Anulowanie pending request — treść i badge
 
-**Analiza:** Treść notification `message` jest tworzona w kilku miejscach:
+**Analiza:** Gdy student anuluje pending request (jeszcze nie potwierdzony), w edge function `get-student-bookings` linia 155 message brzmi "cancelled lesson" — powinno brzmieć "cancelled request for a lesson". Dodatkowo badge C nie powinien się pojawiać na slocie, bo request nie był potwierdzony.
 
-- `usePublicBooking.bookSlot` linia 148-150 (booking_pending/booking_confirmed)
-- `get-student-bookings/index.ts` linia 163 (cancellation), 249/324 (reschedule), 392 (batch)
-- `useCalendarSlots.createSlot` linia 211 (lesson_created_by_teacher)
-
-**Plan — zmienić treść `message` w każdym miejscu:**
-
-**A) booking_pending** (`usePublicBooking.bookSlot` linia 148):
-
-```
-`${resolvedName} requested a lesson ${slot?.slot_date} at ${slot?.start_time?.slice(0,5)}–${slot?.end_time?.slice(0,5)} — awaiting confirmation`
-```
-
-**B) batch booking** (`get-student-bookings/index.ts` linia 392):
-Potrzebujemy pierwszy slot date i day name. Pobrać dane pierwszego slota:
-
+**Fix A — treść:** W `get-student-bookings/index.ts`, sprawdzić `isPending` (linia 123) i zmienić message:
 ```ts
-const { data: firstSlot } = await supabase.from('calendar_slots').select('slot_date, start_time, end_time').eq('id', successIds[0]).single();
-const dayName = new Date(firstSlot.slot_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() + 's';
+const messageText = isPending
+  ? `${studentName} cancelled request for a lesson on ${slot.slot_date} at ${slot.start_time.slice(0, 5)}`
+  : `${studentName} cancelled lesson on ${slot.slot_date} at ${slot.start_time.slice(0, 5)}`;
 ```
 
-Message:
-
-```
-`${batchStudentName} booked ${successIds.length} weekly lessons since ${firstSlot.slot_date} ${dayName} ${firstSlot.start_time.slice(0,5)}–${firstSlot.end_time.slice(0,5)} — awaiting confirmation`
-```
-
-**C) reschedule_request** (`get-student-bookings/index.ts` linia 324):
-
-```
-`${studentName} requests to reschedule: ${oldSlot.slot_date} ${oldSlot.start_time.slice(0,5)} → ${newSlotData?.slot_date} ${newSlotData?.start_time?.slice(0,5)} — awaiting confirmation`
-```
-
-(To JUŻ jest prawie tak — brakuje "awaiting confirmation")
-
-**D) cancellation** (`get-student-bookings/index.ts` linia 163):
-
-```
-`${studentName} cancelled lesson on ${slot.slot_date} at ${slot.start_time.slice(0,5)}`
-```
-
-(To JUŻ jest prawie tak.)
-
-**E) lesson_created_by_teacher** (`useCalendarSlots.createSlot` linia 211):
-
-```
-`You added a new lesson for ${input.title?.split(' — ')[0] || 'Student'} on ${input.slot_date} at ${input.start_time.slice(0, 5)}`
+**Fix B — badge:** Gdy student anuluje pending request, slot NIE powinien mieć `cancelled_at`/`cancelled_by` ustawionych, bo to nie jest prawdziwa cancellation — to cofnięcie requestu. Zmienić update w `get-student-bookings`:
+```ts
+if (isPending) {
+  // Just revert to available — no cancellation record
+  await supabase.from('calendar_slots').update({
+    student_id: null, status: 'available', booking_type: 'manual',
+    booked_at: null, booked_by: null, confirmed_at: null,
+    student_notes: null, title: null,
+    recurrence_rule_id: null,
+    // NO cancelled_at, cancelled_by — this is a request withdrawal, not cancellation
+  }).eq('id', slotId);
+} else {
+  // Confirmed lesson cancellation — keep cancellation record
+  await supabase.from('calendar_slots').update({
+    ...existing cancellation logic...
+  }).eq('id', slotId);
+}
 ```
 
-**W `CalendarNotificationBell.tsx**` — zmienić render aby NIE pokazywać duplikatu informacji. Dane z `metadata` (slot_date, start_time, email) będą już w `message`, więc usunąć osobne wyświetlanie `metadata.slot_date`:
-
-```tsx
-// Wyświetlać:
-// 1. message (zawiera już datę/godzinę)
-// 2. Student: {email}
-// 3. time ago
-```
-
-Ale email wyświetlać pod "Student:" tylko jeśli `showEmailSeparately` jest true. Zmienić logikę na:
-
-```tsx
-<p className="text-xs">{n.message}</p>
-{displayEmail && <p className="text-xs text-muted-foreground">Student: {displayEmail}</p>}
-<p className="text-[10px] text-muted-foreground mt-0.5">{formatDistanceToNow(...)}</p>
-```
-
-**Pliki:** `src/hooks/usePublicBooking.tsx`, `supabase/functions/get-student-bookings/index.ts`, `src/hooks/useCalendarSlots.tsx`, `src/components/calendar/CalendarNotificationBell.tsx`
+**Plik:** `supabase/functions/get-student-bookings/index.ts`
 
 ---
 
-## Problem 9: Zmiana godziny
+## Problem 8: Treść powiadomienia "You added a new lesson"
 
-**A) Auto-przesuwanie end przy zmianie start + dropdown Duration:**
+**Analiza:** `useCalendarSlots.createSlot` linia ~210 message: `You added a new lesson for ${studentLabel} on ${input.slot_date} at ${input.start_time.slice(0, 5)}`. 
 
-W `SlotDetailModal.tsx`, dodać stan `duration` wyliczany z `editStartTime`/`editEndTime`, i przy zmianie `editStartTime` automatycznie przesuwać `editEndTime`:
-
+Trzeba dodać email studenta do metadata:
 ```ts
-const durationMinutes = useMemo(() => {
-  const [sh, sm] = editStartTime.split(':').map(Number);
-  const [eh, em] = editEndTime.split(':').map(Number);
-  return (eh * 60 + em) - (sh * 60 + sm);
-}, [editStartTime, editEndTime]);
+metadata: { 
+  slot_date: input.slot_date, 
+  start_time: input.start_time.slice(0, 5), 
+  end_time: input.end_time.slice(0, 5),
+  student_email: studentEmail, // pobrany z tabeli students
+},
+```
 
-const handleStartTimeChange = (newStart: string) => {
-  setEditStartTime(newStart);
-  // Auto-adjust end to keep same duration
-  const [h, m] = newStart.split(':').map(Number);
-  const totalMin = h * 60 + m + durationMinutes;
-  const newEnd = `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`;
-  setEditEndTime(newEnd);
-};
+Trzeba pobrać email studenta z tabeli `students` przed insertem notyfikacji.
 
-const handleDurationChange = (newDur: string) => {
-  const [h, m] = editStartTime.split(':').map(Number);
-  const totalMin = h * 60 + m + parseInt(newDur);
-  const newEnd = `${String(Math.floor(totalMin / 60)).padStart(2, '0')}:${String(totalMin % 60).padStart(2, '0')}`;
-  setEditEndTime(newEnd);
+**Plik:** `src/hooks/useCalendarSlots.tsx`
+
+---
+
+## Problem 9: Na /book badge P na godzinie — usunąć
+
+**Fix:** W `PublicBookingPage.tsx` linia 368, usunąć badge `P` z wyświetlania godziny pending slota:
+```tsx
+// Zmienić z:
+<span className="w-3 h-3 rounded border border-amber-400 bg-amber-200 ...">P</span>
+// Na: usunąć tę linię
+```
+
+Cała reszta (legenda, filtrowanie) ma zostać.
+
+**Plik:** `src/pages/PublicBookingPage.tsx`
+
+---
+
+## Problem 10: /book — rozbudowa kafelka rezerwacji
+
+**A) Minęła lekcja → ukryć Reschedule:**
+```tsx
+const isPast = isBefore(parseISO(`${booking.slot_date}T${booking.end_time}`), new Date());
+// ...
+{!isPast && <Button ... onClick={() => handleRescheduleClick(booking.id)}>Reschedule</Button>}
+```
+
+**B) Brak Cancel + info o min_cancellation_hours:**
+```tsx
+const hoursUntil = differenceInHours(parseISO(`${booking.slot_date}T${booking.start_time}`), new Date());
+const canCancelResult = canCancel(booking);
+// ...
+{!canCancelResult && !isPast && (
+  <p className="text-xs text-muted-foreground">
+    Cancellation window closed ({settings.min_cancellation_hours}h before lesson)
+  </p>
+)}
+```
+
+**C) Przycisk History — logi:**
+Dodać przycisk "History" przy każdym booking. Kliknięcie otwiera mały collapsible z logami. Potrzeba fetcha logów:
+```tsx
+const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
+const [historyLogs, setHistoryLogs] = useState<Record<string, any[]>>({});
+
+const fetchLogs = async (slotId: string) => {
+  const { data } = await supabase.functions.invoke('get-student-bookings', {
+    body: { token, email: email.trim(), action: 'get_logs', slotId },
+  });
+  setHistoryLogs(prev => ({ ...prev, [slotId]: data?.logs || [] }));
 };
 ```
 
-Zamienić pole Start na input z `onChange={e => handleStartTimeChange(e.target.value)}`.
-Dodać dropdown Duration (30/45/60/90/120 min) obok Start/End:
-
-```tsx
-<div className="grid grid-cols-3 gap-2">
-  <div><Label className="text-xs">Start</Label><Input type="time" ... /></div>
-  <div><Label className="text-xs">End</Label><Input type="time" ... /></div>
-  <div><Label className="text-xs">Duration</Label>
-    <Select value={String(durationMinutes)} onValueChange={handleDurationChange}>...DURATIONS...</Select>
-  </div>
-</div>
+W edge function `get-student-bookings` dodać nowy action `get_logs`:
+```ts
+if (action === 'get_logs' && slotId) {
+  const { data: logs } = await supabase
+    .from('calendar_slot_logs')
+    .select('action, actor, details, created_at')
+    .eq('slot_id', slotId)
+    .order('created_at', { ascending: false })
+    .limit(10);
+  return new Response(JSON.stringify({ logs: logs || [] }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+}
 ```
 
-**B) Save for Entire Series — przyciski wystające + podwójne sloty:**
+**D) Statusy widoczne dla studenta:**
+Edge function `get-student-bookings` (action domyślny — lista bookingów) powinien zwracać `status` i `confirmed_at`. Teraz zwraca te pola (linia ~400 SELECT). W `StudentBookingsSection` dodać badge dla statusów:
+- `needs_review` → `? Needs Review` (purple)
+- `completed` → `✓ Completed` (green)
+- `no_show` → `NS No Show` (red)
+- `available` + `cancelled_by='student'` → `SC Student Cancellation`
+- `available` + `cancelled_by='teacher'` → `TC Teacher Cancellation`
 
-Problem z przyciskami: footer ma `flex-col` co powoduje overflow. Fix: dodać `overflow-x-auto` albo zmienić layout buttonów aby się zawijały (`flex-wrap`).
-
-Problem z podwójnymi slotami: `handleEditSeries` (linia 405-416) updatuje wszystkie sloty w serii z `gte('slot_date', today)`, ale NIE usuwa available slotów które kolidują z nowym czasem. 
-
-Fix w `handleEditSeries`:
+Ale uwaga — slot po cancellation ma status `available` i nie jest już powiązany z tym studentem (student_id=null), więc nie pojawi się w bookings. Trzeba zmienić query w edge function aby zwracać również anulowane sloty dla tego studenta:
 
 ```ts
-const handleEditSeries = async () => {
-  if (!slot.recurrence_rule_id) return;
-  const today = format(new Date(), 'yyyy-MM-dd');
-  
-  // Get all future slots in this series
-  const { data: seriesSlots } = await supabase
-    .from('calendar_slots')
-    .select('id, slot_date, start_time, end_time')
-    .eq('recurrence_rule_id', slot.recurrence_rule_id)
-    .gte('slot_date', today)
-    .neq('status', 'completed');
-  
-  // For each series slot, find and delete conflicting available slots at new time
-  if (seriesSlots) {
-    for (const ss of seriesSlots) {
-      const { data: conflicts } = await supabase
-        .from('calendar_slots')
-        .select('id')
-        .eq('teacher_id', slot.teacher_id)
-        .eq('slot_date', ss.slot_date)
-        .neq('id', ss.id)
-        .is('student_id', null) // only available
-        .neq('status', 'cancelled')
-        .neq('status', 'deleted')
-        .lt('start_time', editEndTime + ':00')
-        .gt('end_time', editStartTime + ':00');
-      
-      if (conflicts) {
-        for (const c of conflicts) {
-          await supabase.from('calendar_slots').delete().eq('id', c.id);
-        }
-      }
-    }
-  }
-  
-  // Now update series
-  const updates = { start_time: editStartTime, end_time: editEndTime, notes: editNotes || null };
-  // ...rest of existing logic...
-};
+// Oprócz aktualnych bookingów, pobrać też ostatnie cancellation z logów
+const { data: cancelledLogs } = await supabase
+  .from('calendar_slot_logs')
+  .select('slot_id, action, details, created_at')
+  .eq('teacher_id', teacherId)
+  .in('action', ['cancelled_by_student', 'cancelled_by_teacher', 'status_changed'])
+  .order('created_at', { ascending: false })
+  .limit(20);
 ```
 
-Dodatkowo update recurrence_rule z nowym czasem:
+To skomplikowane. Prostsze podejście: dodać `cancelled_student_email` do `calendar_slots` przy cancellation, i potem filtrować po nim. ALE to zmiana schematu.
 
-```ts
-await supabase.from('calendar_recurrence_rules')
-  .update({ start_time: editStartTime, end_time: editEndTime })
-  .eq('id', slot.recurrence_rule_id);
-```
-
-**Pliki:** `src/components/calendar/SlotDetailModal.tsx`
-
----
-
-## Problem 10: Na /book "Awaiting confirmation" zajmuje dużo miejsca — legenda z badgami A/P
-
-**Analiza:** Pending sloty na `/book` wyświetlają pełny tekst "Awaiting confirmation". Trzeba zastąpić to legendą (jak na `/calendar`) z badge'ami A (Available) i P (Pending).
-
-**Plan:**
-
-Dodać legendę na górze `/book` (pod navigation):
+**Najprostsze podejście:** W response dodać pole `status` (już jest), i dla aktywnych bookingów wyświetlać badge. Cancelled bookings nie będą widoczne bo student_id jest null po cancellation — i to jest OK. Wystarczy dodać badgery dla: `needs_review`, `completed`, `no_show`.
 
 ```tsx
-<div className="flex items-center gap-4 justify-center text-xs">
-  <button onClick={() => setFilter(filter === 'available' ? null : 'available')} className={cn(...)}>
-    <span className="w-4 h-4 rounded border border-green-400 bg-green-200 text-[8px] font-bold flex items-center justify-center">A</span>
-    Available
-  </button>
-  <button onClick={() => setFilter(null)} className={cn(...)}>
-    <span className="w-4 h-4 rounded border border-amber-400 bg-amber-200 text-[8px] font-bold flex items-center justify-center">P</span>
-    Pending
-  </button>
-  {filter && <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setFilter(null)}>
-    <X className="h-3 w-3 mr-1" /> Clear
-  </Button>}
-</div>
+{booking.status === 'needs_review' && <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300">? Needs Review</Badge>}
+{booking.status === 'completed' && <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300">✓ Completed</Badge>}
+{booking.status === 'no_show' && <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">NS No Show</Badge>}
 ```
 
-Na slot cards zamiast "Awaiting confirmation" pod godziną, dodać mały badge "P" z lewej strony godziny:
-
-```tsx
-<div className="flex items-center justify-center gap-1">
-  <span className="w-3 h-3 rounded border border-amber-400 bg-amber-200 text-[7px] font-bold flex items-center justify-center">P</span>
-  <Clock className="h-3 w-3" />
-  {timeDisplay.primary}
-</div>
-```
-
-Filtrowanie: jeśli `filter === 'available'` → ukryj pending sloty.
-
-**Pliki:** `src/pages/PublicBookingPage.tsx`
-
----
-
-## Problem 11: Book weekly — potwierdzenie jednego z trzech terminów
-
-**Analiza:** Notification z batch booking ma `slot_id: successIds[0]` (pierwszy slot) i `metadata.slot_ids: successIds`. Ale `handleConfirm` w `SlotDetailModal` potwierdza tylko jeden slot (`slot.id`). Nie sprawdza czy to batch.
-
-**Fix:** W `handleConfirm`, sprawdzić metadata powiadomienia. Ale `SlotDetailModal` nie ma dostępu do metadata notyfikacji — ma dostęp do `slot`.
-
-Lepsze podejście: W `handleConfirm`, po potwierdzeniu/odrzuceniu, sprawdzić w `calendar_notifications` czy istnieje batch notification dla tego slota i potwierdzić/odrzucić wszystkie sloty z `metadata.slot_ids`:
-
+**E) Reschedule info na kafelku:**
+Edge function `get-student-bookings` powinien w response dodawać info o pending reschedule. Przy query bookingów:
 ```ts
-const handleConfirm = async () => {
-  // Check if this is a batch booking
-  const { data: batchNotif } = await supabase
-    .from('calendar_notifications')
-    .select('metadata')
-    .eq('slot_id', slot.id)
-    .eq('teacher_id', slot.teacher_id)
-    .eq('is_resolved', false)
-    .in('notification_type', ['booking_pending'])
+// Check for pending reschedule requests
+const bookingsWithReschedule = await Promise.all(bookings.map(async (b) => {
+  // Check if this slot has outgoing reschedule
+  const { data: outgoing } = await supabase.from('calendar_slots')
+    .select('slot_date, start_time, end_time')
+    .eq('reschedule_request_from_slot_id', b.id)
     .maybeSingle();
-  
-  const batchSlotIds = batchNotif?.metadata?.slot_ids;
-  
-  if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
-    // Confirm all slots in batch
-    for (const sid of batchSlotIds) {
-      await onUpdate(sid, { confirmed_at: new Date().toISOString() } as any);
-    }
-    toast.success(`Confirmed ${batchSlotIds.length} lessons`);
-  } else {
-    // Single confirm (existing logic)
-    await onUpdate(slot.id, { confirmed_at: new Date().toISOString() } as any);
-  }
-  
-  // ...rest of existing logic (email, log, resolve)...
-};
+  // Check if this slot is a reschedule target
+  const { data: incoming } = await supabase.from('calendar_slots')
+    .select('slot_date, start_time, end_time')
+    .eq('reschedule_request_to_slot_id', b.id)
+    .maybeSingle();
+  return {
+    ...b,
+    reschedule_to: outgoing ? { slot_date: outgoing.slot_date, start_time: outgoing.start_time, end_time: outgoing.end_time } : null,
+    reschedule_from: incoming ? { slot_date: incoming.slot_date, start_time: incoming.start_time, end_time: incoming.end_time } : null,
+  };
+}));
 ```
 
-Analogicznie dla `handleReject` — odrzucić wszystkie sloty z batch.
+W `StudentBookingsSection`:
+```tsx
+{booking.reschedule_to && (
+  <div className="flex items-start gap-1 text-xs text-amber-600 bg-amber-50 rounded px-2 py-1">
+    <ArrowRightLeft className="h-3 w-3 mt-0.5 shrink-0" />
+    <span>You requested to reschedule this to {booking.reschedule_to.slot_date} {booking.reschedule_to.start_time.slice(0,5)}–{booking.reschedule_to.end_time.slice(0,5)}</span>
+  </div>
+)}
+{booking.reschedule_from && (
+  <div className="flex items-start gap-1 text-xs text-blue-600 bg-blue-50 rounded px-2 py-1">
+    <ArrowRightLeft className="h-3 w-3 mt-0.5 shrink-0" />
+    <span>This is a reschedule from {booking.reschedule_from.slot_date} {booking.reschedule_from.start_time.slice(0,5)}–{booking.reschedule_from.end_time.slice(0,5)}</span>
+  </div>
+)}
+```
 
-**Pliki:** `src/components/calendar/SlotDetailModal.tsx`
+**Pliki:** `src/components/calendar/StudentBookingsSection.tsx`, `supabase/functions/get-student-bookings/index.ts`
 
 ---
 
 ## Kolejność wdrożenia
 
-1. **Fix DraggableDialog** (pkt 6 — dropdown studentów)
-2. **Fix handleLinkWorksheetClick** (pkt 3 — nie zapisywać przed link worksheet)
-3. **Realtime fix** (pkt 2 — pendingRefetch)
-4. **Treść powiadomień** (pkt 8)
-5. **Notifications refresh** (pkt 7 — explicit refetch)
-6. **Zmiana godziny** (pkt 9 — auto-end, duration dropdown, series conflicts)
-7. **Cancel recurring → remove recurrence_rule_id** (pkt 4)
-8. **Book weekly batch confirm/reject** (pkt 11)
-9. **Worksheet links na /book + emails** (pkt 1)
-10. **Legenda A/P na /book** (pkt 10)
-11. **Calendar Settings sidebar** (pkt 5)
-12. **Deploy edge functions + docs update**
+1. **KRYTYCZNY: Fix białej strony** (problem 1 — early return before hooks)
+2. **Fix dropdown studentów** (problem 6 — `modal={false}` na DraggableDialog)
+3. **Badge SC/TC + legenda** (problem 4)
+4. **Treść powiadomień** (problem 7b — cancelled request vs lesson + brak badge C)
+5. **Powiadomienie "You added"** (problem 8 — email w metadata)
+6. **Email po Add Lesson** (problem 2) + nowy switch w settings (problem 5)
+7. **Realtime force refetch** (problem 3)
+8. **Status powiadomień instant update** (problem 7)
+9. **Badge P na /book — usunąć** (problem 9)
+10. **Rozbudowa kafelka /book** (problem 10 — past/cancel info/history/statusy/reschedule info)
+11. **Deploy edge functions + docs**
 
 ## Pliki (podsumowanie)
 
+| Plik | Zmiany |
+|---|---|
+| `src/components/calendar/SlotDetailModal.tsx` | Fix hooks order (early return), timeout na onNotificationsChanged |
+| `src/components/ui/draggable-dialog.tsx` | `modal={false}` na DialogPrimitive.Root |
+| `src/components/calendar/CalendarSlotCard.tsx` | Badge SC/TC zamiast C |
+| `src/pages/CalendarPage.tsx` | Legend SC/TC + filter + refetch on modal close |
+| `src/hooks/useCalendarSlots.tsx` | Email do studenta po createSlot, email studenta w metadata |
+| `src/hooks/usePublicBooking.tsx` | Polling 2s |
+| `src/pages/PublicBookingPage.tsx` | Usunąć badge P z godziny |
+| `src/components/calendar/StudentBookingsSection.tsx` | Past check, cancel info, history, statusy, reschedule info |
+| `src/pages/CalendarSettingsPage.tsx` | Labels In-App/Email Alerts, nowy switch |
+| `src/hooks/useCalendarSettings.tsx` | Nowe pole notify_email_on_lesson_created |
+| `supabase/functions/get-student-bookings/index.ts` | Cancel request vs lesson, get_logs action, reschedule info w response |
+| Migracja SQL | notify_email_on_lesson_created |
+| Docs (7 plików) | update |
 
-| Plik                                                           | Zmiany                                                                                                                                                                                                          |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/components/ui/draggable-dialog.tsx`                       | onPointerDownOutside + onInteractOutside                                                                                                                                                                        |
-| `src/components/calendar/SlotDetailModal.tsx`                  | handleLinkWorksheetClick (no save), handleSave (notifications), handleStartTimeChange + duration dropdown, handleEditSeries (conflict cleanup), handleConfirm/Reject (batch), recurrence_rule_id null on cancel |
-| `src/hooks/useCalendarSlots.tsx`                               | pendingRefetch logic                                                                                                                                                                                            |
-| `src/hooks/usePublicBooking.tsx`                               | message format, polling 3s                                                                                                                                                                                      |
-| `src/pages/PublicBookingPage.tsx`                              | legenda A/P, filter                                                                                                                                                                                             |
-| `src/components/calendar/StudentBookingsSection.tsx`           | Open Worksheet button, notes                                                                                                                                                                                    |
-| `src/components/calendar/CalendarNotificationBell.tsx`         | simplified message render, accept props from parent                                                                                                                                                             |
-| `src/pages/CalendarPage.tsx`                                   | useCalendarNotifications elevated, pass to bell + slot modal                                                                                                                                                    |
-| `src/pages/CalendarSettingsPage.tsx`                           | sidebar navigation                                                                                                                                                                                              |
-| `supabase/functions/get-student-bookings/index.ts`             | worksheet data in response, batch message, recurrence_rule_id null                                                                                                                                              |
-| `supabase/functions/send-calendar-notification-email/index.ts` | sharedWorksheetUrl                                                                                                                                                                                              |
-| Docs (7 plików)                                                | update                                                                                                                                                                                                          |
