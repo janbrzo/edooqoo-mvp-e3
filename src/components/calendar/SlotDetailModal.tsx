@@ -59,7 +59,21 @@ const DURATION_OPTIONS = [
   { value: '120', label: '120 min' },
 ];
 
+// Safe default for hooks — NEVER do early return before hooks
+const EMPTY_SLOT = {
+  slot_date: '', start_time: '00:00', end_time: '01:00', notes: '',
+  student_id: null, status: 'available', teacher_id: '', id: '',
+  recurrence_rule_id: null, cancelled_at: null, cancelled_by: null,
+  student_notes: null, worksheet_id: null, confirmed_at: null,
+  booked_at: null, booked_by: null, cancellation_reason: null,
+  booking_type: 'manual', is_paid: false, title: null,
+  created_at: '', updated_at: '', slot_type: 'slot',
+} as unknown as CalendarSlot;
+
 export function SlotDetailModal({ open, onOpenChange, slot, studentName, students, onUpdate, onDelete, onLinkWorksheet, onNotificationsChanged }: SlotDetailModalProps) {
+  // Use safeSlot for all hooks to ensure consistent hook order
+  const safeSlot = slot || EMPTY_SLOT;
+
   const [editDate, setEditDate] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
@@ -85,32 +99,32 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     }
   }, [slot?.id, open]);
 
-  if (!slot) return null;
-
-  const isBlock = (slot as any).slot_type === 'block';
-  const isPending = slot.status === 'booked' && !slot.confirmed_at;
-  const isNeedsReview = (slot.status as string) === 'needs_review';
-  const badge = STATUS_BADGES[slot.status] || STATUS_BADGES.available;
-  const hasStudent = editStudentId !== 'none';
-  const isRecurring = !!slot.recurrence_rule_id;
-  const isBooked = !!slot.student_id && (slot.status === 'booked' || isNeedsReview);
-
-  const canUndoCancel = slot.status === 'cancelled' && slot.cancelled_at &&
-    differenceInMinutes(new Date(), new Date(slot.cancelled_at)) < 30;
-
-  const hasChanges = editDate !== slot.slot_date ||
-    editStartTime !== slot.start_time.slice(0, 5) ||
-    editEndTime !== slot.end_time.slice(0, 5) ||
-    editNotes !== (slot.notes || '') ||
-    editStudentId !== (slot.student_id || 'none');
-
-  // Duration calculation
+  // Duration calculation — uses safe values
   const durationMinutes = useMemo(() => {
     const [sh, sm] = editStartTime.split(':').map(Number);
     const [eh, em] = editEndTime.split(':').map(Number);
     if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return 60;
     return (eh * 60 + em) - (sh * 60 + sm);
   }, [editStartTime, editEndTime]);
+
+  // Derived values — uses safeSlot
+  const isBlock = (safeSlot as any).slot_type === 'block';
+  const isPending = safeSlot.status === 'booked' && !safeSlot.confirmed_at;
+  const isNeedsReview = (safeSlot.status as string) === 'needs_review';
+  const badge = STATUS_BADGES[safeSlot.status] || STATUS_BADGES.available;
+  const hasStudent = editStudentId !== 'none';
+  const isRecurring = !!safeSlot.recurrence_rule_id;
+  const isBooked = !!safeSlot.student_id && (safeSlot.status === 'booked' || isNeedsReview);
+  const canUndoCancel = safeSlot.status === 'cancelled' && safeSlot.cancelled_at &&
+    differenceInMinutes(new Date(), new Date(safeSlot.cancelled_at)) < 30;
+  const hasChanges = editDate !== safeSlot.slot_date ||
+    editStartTime !== safeSlot.start_time.slice(0, 5) ||
+    editEndTime !== safeSlot.end_time.slice(0, 5) ||
+    editNotes !== (safeSlot.notes || '') ||
+    editStudentId !== (safeSlot.student_id || 'none');
+
+  // CRITICAL: early return AFTER all hooks
+  if (!slot) return null;
 
   const handleStartTimeChange = (newStart: string) => {
     setEditStartTime(newStart);
@@ -172,7 +186,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       }
     }
 
-    // Time change: check for conflicts
     if (timeChanged) {
       if (logActionName === 'updated') logActionName = 'time_changed';
       logDetails.previous_date = slot.slot_date;
@@ -218,20 +231,22 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
 
     await onUpdate(slot.id, updates);
 
-    // Notification when teacher assigns student (Problem 3B/C)
+    // Notification when teacher assigns student
     if (studentChanged && editStudentId !== 'none') {
       const assignedName = students.find(s => s.id === editStudentId)?.name || '';
       try {
+        // Get student email for metadata
+        const { data: studentData } = await supabase.from('students').select('student_email').eq('id', editStudentId).maybeSingle();
         await supabase.from('calendar_notifications').insert({
           teacher_id: slot.teacher_id,
           notification_type: 'lesson_created_by_teacher',
           message: `You added a new lesson for ${assignedName} on ${editDate} at ${editStartTime}`,
           student_name: assignedName,
           slot_id: slot.id,
-          metadata: { slot_date: editDate, start_time: editStartTime, end_time: editEndTime },
+          metadata: { slot_date: editDate, start_time: editStartTime, end_time: editEndTime, student_email: (studentData as any)?.student_email || '' },
         } as any);
       } catch (_) {}
-      onNotificationsChanged?.();
+      setTimeout(() => onNotificationsChanged?.(), 300);
     }
 
     try {
@@ -278,7 +293,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       let sharedWorksheetUrl: string | undefined;
       if (slot.worksheet_id) {
         worksheetUrl = `${window.location.origin}/worksheet/${slot.worksheet_id}`;
-        // Get share_token for student link
         const { data: ws } = await supabase.from('worksheets').select('share_token').eq('id', slot.worksheet_id).maybeSingle();
         if (ws?.share_token) {
           sharedWorksheetUrl = `${window.location.origin}/shared/${ws.share_token}`;
@@ -307,7 +321,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const handleConfirm = async () => {
     const isReschedule = !!(slot as any).reschedule_request_from_slot_id;
     
-    // Check for batch booking (Problem 11)
     const { data: batchNotif } = await supabase
       .from('calendar_notifications')
       .select('metadata')
@@ -334,7 +347,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         toast.error(err.message || 'Failed to confirm reschedule');
       }
     } else if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
-      // Batch confirm all slots
       for (const sid of batchSlotIds) {
         await onUpdate(sid, { confirmed_at: new Date().toISOString() } as any);
       }
@@ -354,7 +366,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       } as any);
     } catch (_) {}
 
-    // Resolve notifications for all batch slots if applicable
     if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
       for (const sid of batchSlotIds) {
         await resolveNotifications(sid, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
@@ -363,14 +374,13 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
     }
     
-    onNotificationsChanged?.();
+    setTimeout(() => onNotificationsChanged?.(), 300);
     onOpenChange(false);
   };
 
   const handleReject = async () => {
     const isReschedule = !!(slot as any).reschedule_request_from_slot_id;
 
-    // Check for batch booking
     const { data: batchNotif } = await supabase
       .from('calendar_notifications')
       .select('metadata')
@@ -393,7 +403,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         toast.error(err.message || 'Failed to reject reschedule');
       }
     } else if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
-      // Batch reject
       for (const sid of batchSlotIds) {
         await onUpdate(sid, {
           status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
@@ -426,7 +435,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
     }
 
-    onNotificationsChanged?.();
+    setTimeout(() => onNotificationsChanged?.(), 300);
     onOpenChange(false);
   };
 
@@ -444,7 +453,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       cancelled_at: new Date().toISOString(), cancelled_by: 'teacher',
       cancellation_reason: `Teacher cancellation. Student was: ${cancelledStudentName}`,
       booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
-      recurrence_rule_id: null, // Problem 4: remove recurring link
+      recurrence_rule_id: null,
     } as any);
     try {
       await supabase.from('calendar_slot_logs').insert({
@@ -455,7 +464,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     const canSend = await shouldSendEmail('notify_email_on_cancellation');
     if (canSend) await sendCalendarEmail('cancellation_student');
     await resolveNotifications(slot.id, ['booking_pending', 'booking_confirmed'], 'cancelled');
-    onNotificationsChanged?.();
+    setTimeout(() => onNotificationsChanged?.(), 300);
     onOpenChange(false);
   };
 
@@ -468,7 +477,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       cancelled_at: new Date().toISOString(), cancelled_by: 'student',
       cancellation_reason: `Student cancellation. Student was: ${cancelledStudentName}`,
       booked_at: null, booked_by: null, confirmed_at: null, student_notes: null,
-      recurrence_rule_id: null, // Problem 4: remove recurring link
+      recurrence_rule_id: null,
     } as any);
     try {
       await supabase.from('calendar_slot_logs').insert({
@@ -477,7 +486,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       } as any);
     } catch (_) {}
     await resolveNotifications(slot.id, ['booking_pending', 'booking_confirmed'], 'cancelled');
-    onNotificationsChanged?.();
+    setTimeout(() => onNotificationsChanged?.(), 300);
     onOpenChange(false);
   };
 
@@ -516,7 +525,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     if (!slot.recurrence_rule_id) return;
     const today = format(new Date(), 'yyyy-MM-dd');
     
-    // Get all future slots in this series
     const { data: seriesSlots } = await supabase
       .from('calendar_slots')
       .select('id, slot_date, start_time, end_time')
@@ -524,7 +532,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       .gte('slot_date', today)
       .neq('status', 'completed');
     
-    // Delete conflicting available slots at the new time (Problem 9B)
     if (seriesSlots) {
       for (const ss of seriesSlots) {
         const { data: conflicts } = await supabase
@@ -554,7 +561,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     }
     const { error } = await supabase.from('calendar_slots').update(updates).eq('recurrence_rule_id', slot.recurrence_rule_id).gte('slot_date', today).neq('status', 'completed');
     
-    // Also update the recurrence rule
     await supabase.from('calendar_recurrence_rules')
       .update({ start_time: editStartTime, end_time: editEndTime } as any)
       .eq('id', slot.recurrence_rule_id);
@@ -563,7 +569,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     onOpenChange(false);
   };
 
-  // Problem 3A: Don't save to DB, just open link worksheet modal
   const handleLinkWorksheetClick = () => {
     onLinkWorksheet?.(slot, editStudentId !== 'none' ? editStudentId : null);
   };
@@ -584,7 +589,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         </DraggableDialogHeader>
 
         <div className="space-y-3">
-          {/* Student section — Combobox with search */}
           {!isBlock && (
             <>
               {hasStudent && !showStudentSelect ? (
@@ -643,7 +647,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </>
           )}
 
-          {/* Date + Time + Duration */}
           <div><Label className="text-xs">Date</Label><Input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="h-9" /></div>
           <div className="grid grid-cols-3 gap-2">
             <div><Label className="text-xs">Start</Label><Input type="time" value={editStartTime} onChange={e => handleStartTimeChange(e.target.value)} className="h-9" /></div>
@@ -663,7 +666,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </div>
           </div>
 
-          {/* Worksheet */}
           {!isBlock && (
             <div className="flex justify-between items-center">
               <span className="text-xs text-muted-foreground">Worksheet</span>
@@ -684,10 +686,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </div>
           )}
 
-          {/* Notes */}
           <div><Label className="text-xs">Notes</Label><AutoResizeTextarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={1} className="min-h-[36px]" /></div>
 
-          {/* Student notes (from booking) */}
           {slot.student_notes && (
             <div className="bg-muted/50 rounded-md px-3 py-2">
               <Label className="text-xs text-muted-foreground">Student booking info</Label>
@@ -695,7 +695,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </div>
           )}
 
-          {/* Cancelled slot info */}
           {slot.status === 'cancelled' && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md px-3 py-2 text-xs space-y-1">
               <p className="font-medium text-red-700 dark:text-red-400">Cancelled</p>
@@ -705,7 +704,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </div>
           )}
 
-          {/* Badge C info */}
           {slot.status === 'available' && slot.cancelled_at && slot.cancelled_by && (
             <div className={cn(
               "border rounded-md px-3 py-2 text-xs space-y-1",
@@ -718,7 +716,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </div>
           )}
 
-          {/* History */}
           {slotLogs.length > 0 && (
             <Collapsible>
               <CollapsibleTrigger className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors w-full">

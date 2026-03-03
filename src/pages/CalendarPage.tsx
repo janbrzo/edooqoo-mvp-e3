@@ -32,6 +32,8 @@ const LEGEND_ITEMS = [
   { key: 'needs_review', label: 'Needs Review', badge: '?', color: 'bg-purple-200 border-purple-400' },
   { key: 'completed', label: 'Completed', badge: '✓', color: 'bg-emerald-200 border-emerald-400' },
   { key: 'no_show', label: 'No Show', badge: 'NS', color: 'bg-red-200 border-red-400' },
+  { key: 'student_cancelled', label: 'Student Cancellation', badge: 'SC', color: 'bg-amber-200 border-amber-400' },
+  { key: 'teacher_cancelled', label: 'Teacher Cancellation', badge: 'TC', color: 'bg-blue-200 border-blue-400' },
   { key: 'block', label: 'Block', badge: 'B', color: 'bg-gray-200 border-gray-400', icon: Lock },
   { key: 'deleted', label: 'Deleted', badge: 'D', color: 'bg-muted/50 border-border/50' },
 ];
@@ -115,6 +117,8 @@ const CalendarPage = () => {
         if (legendFilter === 'booked') return s.status === 'booked' && !!s.confirmed_at;
         if (legendFilter === 'deleted') return (s.status as any) === 'deleted';
         if (legendFilter === 'needs_review') return (s.status as any) === 'needs_review';
+        if (legendFilter === 'student_cancelled') return s.status === 'available' && s.cancelled_by === 'student';
+        if (legendFilter === 'teacher_cancelled') return s.status === 'available' && s.cancelled_by === 'teacher';
         return s.status === legendFilter;
       });
     }
@@ -373,7 +377,7 @@ const CalendarPage = () => {
 
       <SlotDetailModal
         open={!!selectedSlot && !linkWorksheetSlot}
-        onOpenChange={(open) => { if (!open) setSelectedSlot(null); }}
+        onOpenChange={(open) => { if (!open) { setSelectedSlot(null); refetch(); } }}
         slot={selectedSlot}
         studentName={selectedSlot?.student_id ? studentMap[selectedSlot.student_id] : undefined}
         students={studentList}

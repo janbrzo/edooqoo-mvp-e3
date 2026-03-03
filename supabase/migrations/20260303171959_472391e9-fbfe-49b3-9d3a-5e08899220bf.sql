@@ -1,0 +1,1 @@
+ALTER TABLE calendar_settings ADD COLUMN IF NOT EXISTS notify_email_on_lesson_created boolean NOT NULL DEFAULT true;

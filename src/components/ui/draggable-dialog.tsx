@@ -11,7 +11,7 @@ interface DraggableDialogProps {
 
 export function DraggableDialog({ open, onOpenChange, children }: DraggableDialogProps) {
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} modal={false}>
       {children}
     </DialogPrimitive.Root>
   );

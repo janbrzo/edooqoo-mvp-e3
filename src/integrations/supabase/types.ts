@@ -249,6 +249,7 @@ export type Database = {
           notify_email_on_booking: boolean
           notify_email_on_cancellation: boolean
           notify_email_on_confirmation: boolean
+          notify_email_on_lesson_created: boolean
           notify_email_on_rejection: boolean
           notify_email_on_reschedule: boolean
           notify_on_booking: boolean
@@ -282,6 +283,7 @@ export type Database = {
           notify_email_on_booking?: boolean
           notify_email_on_cancellation?: boolean
           notify_email_on_confirmation?: boolean
+          notify_email_on_lesson_created?: boolean
           notify_email_on_rejection?: boolean
           notify_email_on_reschedule?: boolean
           notify_on_booking?: boolean
@@ -315,6 +317,7 @@ export type Database = {
           notify_email_on_booking?: boolean
           notify_email_on_cancellation?: boolean
           notify_email_on_confirmation?: boolean
+          notify_email_on_lesson_created?: boolean
           notify_email_on_rejection?: boolean
           notify_email_on_reschedule?: boolean
           notify_on_booking?: boolean

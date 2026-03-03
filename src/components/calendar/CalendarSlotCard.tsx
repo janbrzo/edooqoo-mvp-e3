@@ -75,10 +75,10 @@ export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, stu
       {/* Badge C — cancellation history (priority over status badge) */}
       {showBadgeC ? (
         <div className={cn(
-          'absolute top-0 left-0 w-4 h-4 rounded-br text-[9px] font-bold flex items-center justify-center z-10',
+          'absolute top-0 left-0 min-w-[14px] h-[14px] rounded-br text-[8px] font-bold flex items-center justify-center z-10 px-0.5',
           slot.cancelled_by === 'student' ? 'bg-amber-400 text-amber-900' : 'bg-blue-400 text-blue-900'
         )}>
-          C
+          {slot.cancelled_by === 'student' ? 'SC' : 'TC'}
         </div>
       ) : (
         <div className={cn(
