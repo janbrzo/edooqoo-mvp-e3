@@ -4,7 +4,9 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **Calendar & Booking Overhaul (March 2026)** — Reschedule with confirmation now prevents double-bookings (atomic edge function). Dual timezone display (student local + teacher time). Email-first /book flow (email saved 7 days). New /book landing page (enter email → select teacher). Complete email notifications (booking rejected, reschedule rejected, cancellation confirmed). Student combobox fix. Book weekly fix (full date range query). Deleted slots visible by default with restore button. Complete slot logs.
+**Latest Update:** **Calendar Fixes Round 4 (March 3, 2026)** — Fixed white screen crash (React #310). Student dropdown now clickable (modal={false}). SC/TC cancellation badges with legend filtering. Cancel request vs lesson distinction. Email sent to student on teacher-created lesson. New `notify_email_on_lesson_created` setting. Labels: "In-App Notifications" / "Email Alerts". Polling 2s on /book. History logs, status badges, reschedule info on student portal. Past lesson protection (hide Reschedule).
+
+**Previous Update:** **Calendar & Booking Overhaul (March 2026)** — Reschedule with confirmation now prevents double-bookings (atomic edge function). Dual timezone display (student local + teacher time). Email-first /book flow (email saved 7 days). New /book landing page (enter email → select teacher). Complete email notifications (booking rejected, reschedule rejected, cancellation confirmed). Student combobox fix. Book weekly fix (full date range query). Deleted slots visible by default with restore button. Complete slot logs.
 
 **Previous Update:** **Welcome Test Learning Path Score** — 5 new behavioral questions detect student's learning timeline, persistence, deadline response, career importance, and usage context. Deterministic algorithm calculates Learning Path Score (0-100) from 15 signals, mapping to 4 paths: Comfort, Guided, Accelerated, Target.
 

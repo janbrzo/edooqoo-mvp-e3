@@ -1,7 +1,9 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Mar 2026):** Calendar & Booking Overhaul — Reschedule with confirmation prevents double-bookings (atomic edge function `calendar-handle-reschedule-decision`). Dual timezone display for students. Email-first /book flow (7-day email persistence). New /book landing page with teacher selector. Complete email notification coverage (rejected, confirmed, cancelled). Student combobox fix. Book weekly fix. Deleted slots visible by default with restore.
+**Latest Update (Mar 3, 2026):** Calendar Fixes Round 4 — Fixed critical white screen crash (React #310). Student dropdown clickable via `modal={false}`. SC/TC cancellation badges. Cancel request vs lesson distinction in notifications. Email to student on teacher-created lesson. New `notify_email_on_lesson_created` setting. Labels: "In-App Notifications" / "Email Alerts". Polling 2s. Student portal: history logs, status badges, reschedule info, past lesson protection. P badge removed from /book.
+
+**Previous Update (Mar 2026):** Calendar & Booking Overhaul — Reschedule with confirmation prevents double-bookings (atomic edge function `calendar-handle-reschedule-decision`). Dual timezone display for students. Email-first /book flow (7-day email persistence). New /book landing page with teacher selector. Complete email notification coverage (rejected, confirmed, cancelled). Student combobox fix. Book weekly fix. Deleted slots visible by default with restore.
 
 **Previous Update (Feb 2026):** Teacher Calendar Module (Faza 2.5) — Overbooking protection (SQL trigger + client checks). DraggableDialog. UnifiedSlotModal overhaul. Multi-select batch delete. Student portal on /book. Email notifications via Resend.
 
