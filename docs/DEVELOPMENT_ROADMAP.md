@@ -3,7 +3,19 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Mar 2026) - Calendar & Booking Overhaul (Faza 3.0) ✅
+### Recently Completed (Mar 3, 2026) - Calendar Fixes Round 4 (Faza 3.1r4) ✅
+- React #310 crash fix: `safeSlot` pattern in SlotDetailModal, early return moved below all hooks
+- DraggableDialog `modal={false}`: eliminates focus trap blocking Popover portals for student dropdown
+- SC/TC badges: Student Cancellation (amber) / Teacher Cancellation (blue) with legend filtering
+- Cancel request vs lesson: pending request withdrawal has no `cancelled_at/cancelled_by` record
+- Email on teacher-created lesson: `createSlot` sends `new_booking_student` email with shared worksheet URL
+- New `notify_email_on_lesson_created` toggle in calendar_settings (default true)
+- Settings labels: "In-App Notifications" / "Email Alerts"
+- Polling reduced to 2s on /book. Force refetch on SlotDetailModal close
+- Student portal: history logs (`get_logs`), status badges, reschedule tracking, past lesson protection
+- P badge removed from /book time slots
+
+### Previously Completed (Mar 2026) - Calendar & Booking Overhaul (Faza 3.0) ✅
 - Reschedule with confirmation: `reschedule_request_from/to_slot_id` columns + `calendar-handle-reschedule-decision` edge function (atomic confirm/reject)
 - Dual timezone display: `date-fns-tz`, `timezoneUtils.ts`, student local time primary + teacher time secondary
 - Email-first /book flow: email persisted 7 days in localStorage, auto-load bookings, auto-fill name

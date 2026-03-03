@@ -5,7 +5,19 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 2026) - Teacher Calendar Module (Faza 3.1 - Round 2 Fixes):**
+**Latest Update (March 3, 2026) - Teacher Calendar Module (Faza 3.1 - Round 4 Fixes):**
+- **React #310 crash fix**: Moved `if (!slot) return null` below all hooks in `SlotDetailModal.tsx`, using `safeSlot` fallback object to maintain consistent hook order
+- **DraggableDialog `modal={false}`**: Eliminates Radix focus trap that blocked Popover/Command portal interactions for student dropdown selection
+- **SC/TC badges**: Replaced generic 'C' cancellation badge with `SC` (Student Cancellation, amber) and `TC` (Teacher Cancellation, blue). Added to legend with filtering support
+- **Cancel request vs lesson distinction**: Edge function `get-student-bookings` now differentiates pending request withdrawal (no `cancelled_at/cancelled_by` — clean revert to available) from confirmed lesson cancellation (keeps cancellation record)
+- **Email on teacher-created lesson**: `useCalendarSlots.createSlot` sends `new_booking_student` email with shared worksheet URL. Controlled by new `notify_email_on_lesson_created` setting
+- **New DB column**: `calendar_settings.notify_email_on_lesson_created` (boolean, default true)
+- **Settings labels**: "Notifications" → "In-App Notifications", "Email Notifications" → "Email Alerts" for clarity
+- **Polling reduced to 2s** on `/book` for faster sync. CalendarPage forces `refetch()` on SlotDetailModal close
+- **Student portal enhancements**: History logs (`get_logs` action), status badges (`needs_review`, `completed`, `no_show`), reschedule tracking (from/to), past lesson protection (hide Reschedule, show cancellation window info)
+- **P badge removed** from time slots on `/book` page
+
+**Previous Update (March 2026) - Teacher Calendar Module (Faza 3.1 - Round 2 Fixes):**
 - **Email notification settings**: 5 new toggles in `calendar_settings` (`notify_email_on_booking/cancellation/reschedule/confirmation/rejection`). CalendarSettingsPage has new "Email Notifications" card. All defaults `true`
 - **Worksheet links in emails**: `send-calendar-notification-email` now accepts `worksheetUrl` and `sharedWorksheetUrl` params, rendering green "Open Worksheet" CTA buttons for teacher and student respectively
 - **New email types**: `lesson_time_changed` (student notification when teacher changes lesson time), `batch_booking_teacher` and `batch_booking_student` (weekly batch booking summary)

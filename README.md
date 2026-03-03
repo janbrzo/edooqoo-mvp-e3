@@ -3,13 +3,13 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: Calendar & Booking Overhaul (March 2026)
-- Reschedule with confirmation prevents double-bookings (atomic edge function)
-- Dual timezone display (student local time + teacher time label)
-- Email-first /book flow (email saved 7 days, auto-loads bookings)
-- New /book landing page (enter email → select teacher from list)
-- Complete email notifications (rejected, confirmed, cancelled, reschedule)
-- Student combobox fix, Book weekly fix, deleted slots visible by default
+## Latest: Calendar Fixes Round 4 (March 3, 2026)
+- Fixed white screen crash (React #310) and student dropdown focus trap
+- SC/TC cancellation badges with legend filtering
+- Email to student on teacher-created lesson (with shared worksheet link)
+- Student portal: history logs, status badges, reschedule info, past lesson protection
+- Settings: "In-App Notifications" / "Email Alerts" labels, new toggle
+- Polling 2s on /book, P badge removed from time slots
 
 ## 🎯 What This Is
 

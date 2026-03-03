@@ -6,7 +6,24 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-03-02) - Moduł Kalendarza v4.0 (kompleksowa przebudowa kalendarza i bookingu):**
+**Ostatnia naprawa (2026-03-03) - Moduł Kalendarza v4.1 (Runda napraw #4):**
+- ✅ **Fix React Error #310**: Naprawiony crash białej strony po kliknięciu slota — `if (!slot) return null` przeniesione poniżej wszystkich hooków, dodany `safeSlot` obiekt
+- ✅ **DraggableDialog modal={false}**: Naprawiony dropdown studentów — ustawienie `modal={false}` na `DialogPrimitive.Root` eliminuje focus trap blokujący portale Popover
+- ✅ **Badge SC/TC**: Zamieniony generyczny badge `C` na `SC` (Student Cancellation, amber) i `TC` (Teacher Cancellation, blue) z legendą i filtrami
+- ✅ **Cancel request vs lesson**: W edge function `get-student-bookings` rozróżnienie między cofnięciem pending request (bez `cancelled_at/cancelled_by`) a anulowaniem potwierdzonej lekcji
+- ✅ **Email po Add Lesson**: `useCalendarSlots.createSlot` wysyła email do studenta z linkiem do shared worksheet przy tworzeniu lekcji
+- ✅ **Nowy switch `notify_email_on_lesson_created`**: Kolumna w `calendar_settings`, toggle w CalendarSettingsPage sekcja "Email Alerts"
+- ✅ **Labels ujednolicone**: "Notifications" → "In-App Notifications", "Email Notifications" → "Email Alerts"
+- ✅ **Polling 2s na /book**: Zmniejszony z 5s dla szybszej synchronizacji
+- ✅ **Refetch po zamknięciu modalu**: CalendarPage wymusza `refetch()` i `refetchNotifications()` po zamknięciu SlotDetailModal
+- ✅ **Badge P usunięty z /book**: Usunięty badge P z godzin pending slotów na stronie bookingu
+- ✅ **Student email w metadata notyfikacji**: Notyfikacja "You added a new lesson" zawiera email studenta
+- ✅ **History logs na /book**: Nowy action `get_logs` w edge function, collapsible historia na kafelkach rezerwacji
+- ✅ **Statusy na /book**: Badge'y `needs_review`, `completed`, `no_show` widoczne dla studenta
+- ✅ **Reschedule info na /book**: Info o pending reschedule (from/to) na kafelkach rezerwacji
+- ✅ **Past lesson protection**: Ukrycie Reschedule i info o zamkniętym oknie anulowania dla lekcji z przeszłości
+
+**Poprzednia naprawa (2026-03-02) - Moduł Kalendarza v4.0 (kompleksowa przebudowa kalendarza i bookingu):**
 - ✅ **Reschedule z potwierdzeniem**: Nowe kolumny `reschedule_request_from_slot_id` / `reschedule_request_to_slot_id` na `calendar_slots`. Nowa edge function `calendar-handle-reschedule-decision` atomowo potwierdza/odrzuca reschedule — eliminuje podwójne rezerwacje
 - ✅ **Scenariusz A (pending→reschedule)**: Stary pending slot natychmiast zwalniany do available; nowy slot pending
 - ✅ **Scenariusz B (confirmed→reschedule)**: Stary slot booked z wskaźnikiem CR; nowy pending do decyzji nauczyciela
