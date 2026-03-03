@@ -83,7 +83,7 @@ export function usePublicBooking(token?: string) {
   // Polling fallback every 3s
   useEffect(() => {
     if (!settings) return;
-    const interval = setInterval(() => { fetchSlots(); }, 3000);
+    const interval = setInterval(() => { fetchSlots(); }, 2000);
     return () => clearInterval(interval);
   }, [settings, fetchSlots]);
 

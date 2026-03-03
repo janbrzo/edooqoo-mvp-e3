@@ -33,6 +33,7 @@ export interface CalendarSettings {
   notify_email_on_reschedule: boolean;
   notify_email_on_confirmation: boolean;
   notify_email_on_rejection: boolean;
+  notify_email_on_lesson_created: boolean;
 }
 
 const DEFAULT_SETTINGS: Omit<CalendarSettings, 'id' | 'teacher_id'> = {
@@ -63,6 +64,7 @@ const DEFAULT_SETTINGS: Omit<CalendarSettings, 'id' | 'teacher_id'> = {
   notify_email_on_reschedule: true,
   notify_email_on_confirmation: true,
   notify_email_on_rejection: true,
+  notify_email_on_lesson_created: true,
 };
 
 export function useCalendarSettings(teacherId?: string) {

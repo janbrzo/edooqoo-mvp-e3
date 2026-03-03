@@ -130,44 +130,64 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Revert slot to available — Problem 4: clear recurrence_rule_id
-      await supabase
-        .from('calendar_slots')
-        .update({
-          student_id: null, status: 'available', booking_type: 'manual',
-          booked_at: null, booked_by: null, confirmed_at: null,
-          student_notes: null, title: null,
-          cancelled_at: new Date().toISOString(), cancelled_by: 'student',
-          cancellation_reason: `Cancelled by student (${email})`,
-          recurrence_rule_id: null,
-        })
-        .eq('id', slotId);
+      if (isPending) {
+        // Request withdrawal — no cancellation record, no badge C
+        await supabase
+          .from('calendar_slots')
+          .update({
+            student_id: null, status: 'available', booking_type: 'manual',
+            booked_at: null, booked_by: null, confirmed_at: null,
+            student_notes: null, title: null,
+            recurrence_rule_id: null,
+          })
+          .eq('id', slotId);
+      } else {
+        // Confirmed lesson cancellation — keep cancellation record
+        await supabase
+          .from('calendar_slots')
+          .update({
+            student_id: null, status: 'available', booking_type: 'manual',
+            booked_at: null, booked_by: null, confirmed_at: null,
+            student_notes: null, title: null,
+            cancelled_at: new Date().toISOString(), cancelled_by: 'student',
+            cancellation_reason: `Cancelled by student (${email})`,
+            recurrence_rule_id: null,
+          })
+          .eq('id', slotId);
+      }
 
       await logAction(slotId, 'cancelled_by_student', {
         slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time,
+        was_pending: isPending,
       });
 
       await resolveNotifications([slotId], ['booking_pending', 'booking_confirmed']);
 
-      // Problem 8D: updated cancellation message format
+      // Different message for pending request vs confirmed lesson
+      const messageText = isPending
+        ? `${studentName} cancelled request for a lesson on ${slot.slot_date} at ${slot.start_time.slice(0, 5)}`
+        : `${studentName} cancelled lesson on ${slot.slot_date} at ${slot.start_time.slice(0, 5)}`;
+
       await supabase.from('calendar_notifications').insert({
         teacher_id: teacherId, notification_type: 'cancellation',
-        message: `${studentName} cancelled lesson on ${slot.slot_date} at ${slot.start_time.slice(0, 5)}`,
+        message: messageText,
         student_name: studentName, slot_id: slotId,
-        metadata: { student_email: email, slot_date: slot.slot_date, start_time: slot.start_time.slice(0, 5), end_time: slot.end_time.slice(0, 5) },
+        metadata: { student_email: email, slot_date: slot.slot_date, start_time: slot.start_time.slice(0, 5), end_time: slot.end_time.slice(0, 5), was_pending: isPending },
       });
 
       const { teacherName, teacherEmail } = await getTeacherInfo();
-      await sendEmail('cancellation_teacher', {
-        teacherEmail, studentEmail: email, studentName,
-        slotDate: slot.slot_date, slotTime: slot.start_time.slice(0, 5),
-        teacherName, bookUrl, calendarUrl,
-      });
-      await sendEmail('cancellation_confirmed_by_student', {
-        studentEmail: email, studentName,
-        slotDate: slot.slot_date, slotTime: slot.start_time.slice(0, 5),
-        teacherName, teacherEmail, bookUrl, calendarUrl,
-      });
+      if (!isPending && settingsData.notify_email_on_cancellation) {
+        await sendEmail('cancellation_teacher', {
+          teacherEmail, studentEmail: email, studentName,
+          slotDate: slot.slot_date, slotTime: slot.start_time.slice(0, 5),
+          teacherName, bookUrl, calendarUrl,
+        });
+        await sendEmail('cancellation_confirmed_by_student', {
+          studentEmail: email, studentName,
+          slotDate: slot.slot_date, slotTime: slot.start_time.slice(0, 5),
+          teacherName, teacherEmail, bookUrl, calendarUrl,
+        });
+      }
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -403,12 +423,25 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Default: fetch bookings — Problem 1A: include worksheet_id and notes
+    // Handle GET_LOGS
+    if (action === 'get_logs' && slotId) {
+      const { data: logs } = await supabase
+        .from('calendar_slot_logs')
+        .select('action, actor, details, created_at')
+        .eq('slot_id', slotId)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      return new Response(JSON.stringify({ logs: logs || [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Default: fetch bookings
     let query = supabase
       .from('calendar_slots')
-      .select('id, slot_date, start_time, end_time, status, confirmed_at, student_notes, worksheet_id, notes')
+      .select('id, slot_date, start_time, end_time, status, confirmed_at, student_notes, worksheet_id, notes, reschedule_request_from_slot_id, reschedule_request_to_slot_id')
       .eq('teacher_id', teacherId)
-      .in('status', ['booked', 'completed', 'needs_review'])
+      .in('status', ['booked', 'completed', 'needs_review', 'no_show'])
       .gte('slot_date', new Date().toISOString().split('T')[0])
       .order('slot_date')
       .order('start_time');
@@ -422,7 +455,6 @@ Deno.serve(async (req) => {
     const { data: bookings, error: bookingsError } = await query;
     if (bookingsError) throw bookingsError;
 
-    // Problem 1B: Fetch share_tokens for worksheets
     const bookingsList = bookings || [];
     const worksheetIds = bookingsList.filter((b: any) => b.worksheet_id).map((b: any) => b.worksheet_id);
     let worksheetMap: Record<string, string> = {};
@@ -435,9 +467,30 @@ Deno.serve(async (req) => {
       }
     }
 
-    const enrichedBookings = bookingsList.map((b: any) => ({
-      ...b,
-      share_token: b.worksheet_id ? (worksheetMap[b.worksheet_id] || null) : null,
+    // Enrich with reschedule info
+    const enrichedBookings = await Promise.all(bookingsList.map(async (b: any) => {
+      let reschedule_to = null;
+      let reschedule_from = null;
+      if (b.reschedule_request_to_slot_id) {
+        const { data: outgoing } = await supabase.from('calendar_slots')
+          .select('slot_date, start_time, end_time')
+          .eq('id', b.reschedule_request_to_slot_id)
+          .maybeSingle();
+        if (outgoing) reschedule_to = { slot_date: outgoing.slot_date, start_time: outgoing.start_time, end_time: outgoing.end_time };
+      }
+      if (b.reschedule_request_from_slot_id) {
+        const { data: incoming } = await supabase.from('calendar_slots')
+          .select('slot_date, start_time, end_time')
+          .eq('id', b.reschedule_request_from_slot_id)
+          .maybeSingle();
+        if (incoming) reschedule_from = { slot_date: incoming.slot_date, start_time: incoming.start_time, end_time: incoming.end_time };
+      }
+      return {
+        ...b,
+        share_token: b.worksheet_id ? (worksheetMap[b.worksheet_id] || null) : null,
+        reschedule_to,
+        reschedule_from,
+      };
     }));
 
     return new Response(JSON.stringify({ bookings: enrichedBookings }), {

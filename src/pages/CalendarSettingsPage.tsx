@@ -20,8 +20,8 @@ const SECTIONS = [
   { id: 'public', label: 'Public Calendar' },
   { id: 'vacations', label: 'Vacations' },
   { id: 'payments', label: 'Payment Tracking' },
-  { id: 'notifications', label: 'Notifications' },
-  { id: 'email-notifications', label: 'Email Notifications' },
+  { id: 'notifications', label: 'In-App Notifications' },
+  { id: 'email-notifications', label: 'Email Alerts' },
 ];
 
 const CalendarSettingsPage = () => {
@@ -263,7 +263,10 @@ const CalendarSettingsPage = () => {
 
             {/* Notifications */}
             <Card id="notifications">
-              <CardHeader><CardTitle className="text-lg">Notifications</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="text-lg">In-App Notifications</CardTitle>
+                <CardDescription>Bell icon notifications that appear in the calendar toolbar</CardDescription>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between"><Label>Notify on new booking</Label><Switch checked={settings.notify_on_booking} onCheckedChange={v => updateSettings({ notify_on_booking: v })} /></div>
                 <div className="flex items-center justify-between"><Label>Notify on cancellation</Label><Switch checked={settings.notify_on_cancellation} onCheckedChange={v => updateSettings({ notify_on_cancellation: v })} /></div>
@@ -277,8 +280,8 @@ const CalendarSettingsPage = () => {
             {/* Email Notifications */}
             <Card id="email-notifications">
               <CardHeader>
-                <CardTitle className="text-lg">Email Notifications</CardTitle>
-                <CardDescription>Choose which email notifications are sent to you and your students</CardDescription>
+                <CardTitle className="text-lg">Email Alerts</CardTitle>
+                <CardDescription>Emails sent to you and your students when calendar events happen</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -300,6 +303,10 @@ const CalendarSettingsPage = () => {
                 <div className="flex items-center justify-between">
                   <div><Label>Email on rejection</Label><p className="text-xs text-muted-foreground">Send email when you reject a booking</p></div>
                   <Switch checked={settings.notify_email_on_rejection} onCheckedChange={v => updateSettings({ notify_email_on_rejection: v })} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div><Label>Email on new lesson (to student)</Label><p className="text-xs text-muted-foreground">Send email to student when you create a new lesson for them</p></div>
+                  <Switch checked={settings.notify_email_on_lesson_created} onCheckedChange={v => updateSettings({ notify_email_on_lesson_created: v })} />
                 </div>
               </CardContent>
             </Card>

@@ -213,6 +213,13 @@ export function useCalendarSlots(teacherId?: string) {
       // Teacher notification for lesson
       if (input.student_id) {
         const studentLabel = input.title?.split(' — ')[0] || 'Student';
+        // Get student email for metadata and email sending
+        let studentEmail = '';
+        try {
+          const { data: studentData } = await supabase.from('students').select('student_email').eq('id', input.student_id).maybeSingle();
+          studentEmail = (studentData as any)?.student_email || '';
+        } catch (_) {}
+
         try {
           await supabase.from('calendar_notifications').insert({
             teacher_id: teacherId,
@@ -220,9 +227,44 @@ export function useCalendarSlots(teacherId?: string) {
             message: `You added a new lesson for ${studentLabel} on ${input.slot_date} at ${input.start_time.slice(0, 5)}`,
             student_name: studentLabel,
             slot_id: data.id,
-            metadata: { slot_date: input.slot_date, start_time: input.start_time.slice(0, 5), end_time: input.end_time.slice(0, 5) },
+            metadata: { slot_date: input.slot_date, start_time: input.start_time.slice(0, 5), end_time: input.end_time.slice(0, 5), student_email: studentEmail },
           } as any);
         } catch (_) {}
+
+        // Send email to student
+        if (studentEmail) {
+          try {
+            const { data: teacherProfile } = await supabase.from('profiles').select('email, first_name, last_name').eq('id', teacherId).maybeSingle();
+            const { data: calSettings } = await supabase.from('calendar_settings').select('public_calendar_token, notify_email_on_lesson_created').eq('teacher_id', teacherId).maybeSingle();
+            
+            if ((calSettings as any)?.notify_email_on_lesson_created !== false) {
+              const teacherName = [teacherProfile?.first_name, teacherProfile?.last_name].filter(Boolean).join(' ') || 'Your Teacher';
+              const bookUrl = calSettings?.public_calendar_token ? `${window.location.origin}/book/${calSettings.public_calendar_token}` : '';
+              
+              let sharedWorksheetUrl: string | undefined;
+              if (input.worksheet_id) {
+                const { data: wsData } = await supabase.from('worksheets').select('share_token').eq('id', input.worksheet_id).maybeSingle();
+                if (wsData?.share_token) {
+                  sharedWorksheetUrl = `${window.location.origin}/shared/${wsData.share_token}`;
+                }
+              }
+
+              supabase.functions.invoke('send-calendar-notification-email', {
+                body: {
+                  type: 'new_booking_student',
+                  studentEmail,
+                  studentName: studentLabel,
+                  slotDate: input.slot_date,
+                  slotTime: input.start_time.slice(0, 5),
+                  teacherName,
+                  teacherEmail: teacherProfile?.email || '',
+                  bookUrl,
+                  sharedWorksheetUrl,
+                },
+              }).catch(console.error);
+            }
+          } catch (_) {}
+        }
       }
 
       await fetchSlots();

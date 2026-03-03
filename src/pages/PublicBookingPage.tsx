@@ -365,7 +365,6 @@ const PublicBookingPage = () => {
                             className="w-full text-xs py-1.5 px-2 rounded-md border border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300 text-center"
                           >
                             <div className="flex items-center justify-center gap-1">
-                              <span className="w-3 h-3 rounded border border-amber-400 bg-amber-200 text-[7px] font-bold flex items-center justify-center shrink-0">P</span>
                               <Clock className="h-3 w-3" />
                               {timeDisplay.primary}
                             </div>
