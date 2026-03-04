@@ -358,18 +358,26 @@ const PublicBookingPage = () => {
                       // Filter logic
                       if (slotFilter === 'available' && !isAvailable) return null;
 
+                      // Hide past slots for today (Problem 8A)
+                      if (isToday(date)) {
+                        const [h, m] = slot.start_time.split(':').map(Number);
+                        const slotStart = new Date(date);
+                        slotStart.setHours(h, m, 0, 0);
+                        if (slotStart < new Date()) return null;
+                      }
+
                       if (isPending) {
                         return (
                           <div
                             key={slot.id}
                             className="w-full text-xs py-1.5 px-2 rounded-md border border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300 text-center"
                           >
-                            <div className="flex items-center justify-center gap-1">
+                            <span className="flex items-center justify-center gap-1">
                               <Clock className="h-3 w-3" />
                               {timeDisplay.primary}
-                            </div>
+                            </span>
                             {timeDisplay.secondary && (
-                              <div className="text-[9px] opacity-60">{timeDisplay.secondary}</div>
+                              <span className="text-[9px] opacity-60">{timeDisplay.secondary}</span>
                             )}
                           </div>
                         );

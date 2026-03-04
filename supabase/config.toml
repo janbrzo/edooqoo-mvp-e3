@@ -115,3 +115,15 @@ verify_jwt = true
 
 [functions.find-teachers-by-student-email]
 verify_jwt = false
+
+[functions.gcal-auth-start]
+verify_jwt = false
+
+[functions.gcal-auth-callback]
+verify_jwt = false
+
+[functions.gcal-sync]
+verify_jwt = false
+
+[functions.calendar-export-csv]
+verify_jwt = false

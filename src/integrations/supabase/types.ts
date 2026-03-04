@@ -41,6 +41,47 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_gcal_tokens: {
+        Row: {
+          access_token: string
+          created_at: string | null
+          gcal_calendar_id: string | null
+          id: string
+          refresh_token: string
+          teacher_id: string
+          token_expires_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_token: string
+          created_at?: string | null
+          gcal_calendar_id?: string | null
+          id?: string
+          refresh_token: string
+          teacher_id: string
+          token_expires_at: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string
+          created_at?: string | null
+          gcal_calendar_id?: string | null
+          id?: string
+          refresh_token?: string
+          teacher_id?: string
+          token_expires_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_gcal_tokens_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_notifications: {
         Row: {
           created_at: string
@@ -109,6 +150,8 @@ export type Database = {
           is_confirmed: boolean
           lessons_count: number | null
           notes: string | null
+          payment_date: string | null
+          payment_method: string | null
           payment_type: string
           slot_id: string | null
           student_id: string
@@ -124,6 +167,8 @@ export type Database = {
           is_confirmed?: boolean
           lessons_count?: number | null
           notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
           payment_type?: string
           slot_id?: string | null
           student_id: string
@@ -139,6 +184,8 @@ export type Database = {
           is_confirmed?: boolean
           lessons_count?: number | null
           notes?: string | null
+          payment_date?: string | null
+          payment_method?: string | null
           payment_type?: string
           slot_id?: string | null
           student_id?: string
@@ -382,8 +429,10 @@ export type Database = {
           confirmed_at: string | null
           created_at: string
           end_time: string
+          gcal_event_id: string | null
           id: string
           is_paid: boolean
+          meeting_link: string | null
           notes: string | null
           recurrence_rule_id: string | null
           reschedule_request_from_slot_id: string | null
@@ -409,8 +458,10 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           end_time: string
+          gcal_event_id?: string | null
           id?: string
           is_paid?: boolean
+          meeting_link?: string | null
           notes?: string | null
           recurrence_rule_id?: string | null
           reschedule_request_from_slot_id?: string | null
@@ -436,8 +487,10 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           end_time?: string
+          gcal_event_id?: string | null
           id?: string
           is_paid?: boolean
+          meeting_link?: string | null
           notes?: string | null
           recurrence_rule_id?: string | null
           reschedule_request_from_slot_id?: string | null
