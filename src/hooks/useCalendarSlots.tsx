@@ -151,6 +151,21 @@ export function useCalendarSlots(teacherId?: string) {
     } catch (_) {}
   };
 
+  const triggerGcalSync = async (slotId: string, action: 'upsert' | 'delete') => {
+    if (!teacherId) return;
+    try {
+      const { data: calSettings } = await supabase.from('calendar_settings')
+        .select('gcal_integration_enabled').eq('teacher_id', teacherId).maybeSingle();
+      if (!(calSettings as any)?.gcal_integration_enabled) return;
+      const { data: gcalToken } = await supabase.from('calendar_gcal_tokens')
+        .select('id').eq('teacher_id', teacherId).maybeSingle();
+      if (!gcalToken) return;
+      supabase.functions.invoke('gcal-sync', {
+        body: { teacherId, slotId, action },
+      }).catch(console.error);
+    } catch (_) {}
+  };
+
   const createSlot = useCallback(async (input: CreateSlotInput) => {
     if (!teacherId) return null;
     try {
@@ -268,6 +283,8 @@ export function useCalendarSlots(teacherId?: string) {
       }
 
       await fetchSlots();
+      // GCal sync
+      if (input.student_id) triggerGcalSync(data.id, 'upsert');
       toast({ title: input.slot_type === 'block' ? 'Block created' : input.student_id ? 'Lesson created' : 'Slot created' });
       return data;
     } catch (err: any) {
@@ -341,6 +358,7 @@ export function useCalendarSlots(teacherId?: string) {
       const { error } = await supabase.from('calendar_slots').update(updates as any).eq('id', slotId);
       if (error) throw error;
       await fetchSlots();
+      triggerGcalSync(slotId, 'upsert');
       toast({ title: 'Slot updated' });
     } catch (err: any) {
       toast({ title: 'Error updating slot', description: err.message, variant: 'destructive' });

@@ -9,19 +9,29 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Copy, Trash2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const SECTIONS = [
   { id: 'general', label: 'General' },
   { id: 'booking', label: 'Booking Rules' },
   { id: 'public', label: 'Public Calendar' },
+  { id: 'gcal', label: 'Google Calendar' },
   { id: 'vacations', label: 'Vacations' },
   { id: 'payments', label: 'Payment Tracking' },
   { id: 'notifications', label: 'In-App Notifications' },
   { id: 'email-notifications', label: 'Email Alerts' },
+];
+
+const GCAL_COLORS = [
+  { v: '1', l: 'Lavender' }, { v: '2', l: 'Sage' }, { v: '3', l: 'Grape' },
+  { v: '4', l: 'Flamingo' }, { v: '5', l: 'Banana' }, { v: '6', l: 'Tangerine' },
+  { v: '7', l: 'Peacock' }, { v: '9', l: 'Blueberry' }, { v: '10', l: 'Basil' },
+  { v: '11', l: 'Tomato' },
 ];
 
 const CalendarSettingsPage = () => {
@@ -40,6 +50,38 @@ const CalendarSettingsPage = () => {
   const [vacLabel, setVacLabel] = useState('Vacation');
   const [activeSection, setActiveSection] = useState('general');
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const [gcalConnected, setGcalConnected] = useState(false);
+  const [gcalLoading, setGcalLoading] = useState(false);
+
+  // Check GCal connection status
+  const fetchGcalStatus = useCallback(async () => {
+    if (!user?.id) return;
+    const { data } = await supabase.from('calendar_gcal_tokens').select('id').eq('teacher_id', user.id).maybeSingle();
+    setGcalConnected(!!data);
+  }, [user?.id]);
+
+  useEffect(() => { fetchGcalStatus(); }, [fetchGcalStatus]);
+
+  // Handle OAuth callback from Google
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code && user?.id) {
+      setGcalLoading(true);
+      supabase.functions.invoke('gcal-auth-callback', {
+        body: { code, redirectUri: `${window.location.origin}/calendar/settings`, teacherId: user.id },
+      }).then(({ error }) => {
+        if (error) {
+          toast.error('Failed to connect Google Calendar');
+        } else {
+          toast.success('Google Calendar connected!');
+          fetchGcalStatus();
+        }
+        window.history.replaceState({}, '', '/calendar/settings');
+        setGcalLoading(false);
+      });
+    }
+  }, [user?.id]);
 
   // IntersectionObserver for active section
   useEffect(() => {
@@ -76,6 +118,29 @@ const CalendarSettingsPage = () => {
     if (!vacStart || !vacEnd) return;
     await addVacation(vacStart, vacEnd, vacLabel || 'Vacation');
     setVacStart(''); setVacEnd(''); setVacLabel('Vacation');
+  };
+
+  const handleConnectGcal = async () => {
+    setGcalLoading(true);
+    try {
+      const redirectUri = `${window.location.origin}/calendar/settings`;
+      const { data, error } = await supabase.functions.invoke('gcal-auth-start', {
+        body: { teacherId: user?.id, redirectUri },
+      });
+      if (error) throw error;
+      if (data?.authUrl) window.location.href = data.authUrl;
+    } catch (err: any) {
+      toast.error('Failed to start Google Calendar connection');
+      setGcalLoading(false);
+    }
+  };
+
+  const handleDisconnectGcal = async () => {
+    if (!user?.id) return;
+    await supabase.from('calendar_gcal_tokens').delete().eq('teacher_id', user.id);
+    await updateSettings({ gcal_integration_enabled: false });
+    setGcalConnected(false);
+    toast.success('Google Calendar disconnected');
   };
 
   return (
@@ -198,6 +263,47 @@ const CalendarSettingsPage = () => {
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Google Calendar */}
+            <Card id="gcal">
+              <CardHeader>
+                <CardTitle className="text-lg">Google Calendar</CardTitle>
+                <CardDescription>Sync confirmed lessons to your Google Calendar automatically</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {gcalConnected ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700">✓ Connected</Badge>
+                      <Button variant="outline" size="sm" className="text-xs h-7" onClick={handleDisconnectGcal}>Disconnect</Button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div><Label>Auto-sync confirmed lessons</Label><p className="text-xs text-muted-foreground">Automatically create Google Calendar events for confirmed lessons</p></div>
+                      <Switch checked={settings.gcal_integration_enabled} onCheckedChange={v => updateSettings({ gcal_integration_enabled: v })} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label>Event color</Label>
+                      <Select value={settings.gcal_default_color || '1'} onValueChange={v => updateSettings({ gcal_default_color: v })}>
+                        <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {GCAL_COLORS.map(c => (
+                            <SelectItem key={c.v} value={c.v}>{c.l}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label>Reminder (minutes before)</Label>
+                      <Input type="number" className="w-24" value={settings.gcal_default_reminder_minutes ?? 30} onChange={e => updateSettings({ gcal_default_reminder_minutes: Number(e.target.value) })} />
+                    </div>
+                  </>
+                ) : (
+                  <Button onClick={handleConnectGcal} disabled={gcalLoading} variant="outline">
+                    {gcalLoading ? 'Connecting...' : '🗓️ Connect Google Calendar'}
+                  </Button>
                 )}
               </CardContent>
             </Card>

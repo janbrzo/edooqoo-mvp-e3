@@ -20,10 +20,11 @@ import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Filter, Search, Eye, EyeOff, Lock, X } from 'lucide-react';
+import { ArrowLeft, Filter, Search, Eye, EyeOff, Lock, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { format as fnsFormat } from 'date-fns';
 
 const LEGEND_ITEMS = [
   { key: 'available', label: 'Available', badge: 'A', color: 'bg-green-200 border-green-400' },
@@ -48,7 +49,7 @@ const CalendarPage = () => {
 
   const {
     slots, loading, viewMode, setViewMode, currentDate, setCurrentDate,
-    weekStart, weekEnd, showDeleted, setShowDeleted,
+    weekStart, weekEnd, dateRange, showDeleted, setShowDeleted,
     createSlot, createSlotsBatch, updateSlot, deleteSlot, hardDeleteSlot, deleteSlotsBatch,
     navigate: calNavigate, getSlotsForDay, refetch,
   } = useCalendarSlots(user?.id);
@@ -72,6 +73,11 @@ const CalendarPage = () => {
   // Multi-select for batch delete
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedSlotIds, setSelectedSlotIds] = useState<Set<string>>(new Set());
+
+  // Unpaid counter
+  const unpaidCount = useMemo(() => slots.filter(s =>
+    s.student_id && ['booked', 'completed', 'needs_review'].includes(s.status) && !s.is_paid
+  ).length, [slots]);
 
   // Add student dialog (from notification)
   const [addStudentOpen, setAddStudentOpen] = useState(false);
@@ -117,6 +123,7 @@ const CalendarPage = () => {
         if (legendFilter === 'booked') return s.status === 'booked' && !!s.confirmed_at;
         if (legendFilter === 'deleted') return (s.status as any) === 'deleted';
         if (legendFilter === 'needs_review') return (s.status as any) === 'needs_review';
+        if (legendFilter === 'unpaid') return !!s.student_id && !s.is_paid && ['booked','completed','needs_review'].includes(s.status);
         if (legendFilter === 'student_cancelled') return s.status === 'available' && s.cancelled_by === 'student';
         if (legendFilter === 'teacher_cancelled') return s.status === 'available' && s.cancelled_by === 'teacher';
         return s.status === legendFilter;
@@ -162,6 +169,24 @@ const CalendarPage = () => {
     } else {
       navigate('/calendar/settings');
       toast.info('Enable public calendar in settings first.');
+    }
+  };
+
+  const handleExport = async () => {
+    const from = fnsFormat(dateRange.from, 'yyyy-MM-dd');
+    const to = fnsFormat(dateRange.to, 'yyyy-MM-dd');
+    try {
+      const { data, error } = await supabase.functions.invoke('calendar-export-csv', {
+        body: { teacherId: user?.id, dateFrom: from, dateTo: to },
+      });
+      if (error) throw error;
+      const blob = new Blob([data], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `calendar-${from}-${to}.csv`;
+      a.click(); URL.revokeObjectURL(url);
+      toast.success('Export downloaded!');
+    } catch (err: any) {
+      toast.error('Export failed: ' + (err.message || 'Unknown error'));
     }
   };
 
@@ -287,6 +312,15 @@ const CalendarPage = () => {
                 </Button>
               </div>
             )}
+            {settings?.payment_tracking_enabled && unpaidCount > 0 && (
+              <Button variant="outline" size="sm" className="h-8 text-xs text-red-600 border-red-200"
+                onClick={() => setLegendFilter(legendFilter === 'unpaid' ? null : 'unpaid')}>
+                💰 {unpaidCount} unpaid
+              </Button>
+            )}
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleExport}>
+              <Download className="h-3 w-3 mr-1" /> Export
+            </Button>
             <CalendarNotificationBell
               teacherId={user?.id}
               students={studentsWithEmail}
