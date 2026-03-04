@@ -68,6 +68,7 @@ const EMPTY_SLOT = {
   booked_at: null, booked_by: null, cancellation_reason: null,
   booking_type: 'manual', is_paid: false, title: null,
   created_at: '', updated_at: '', slot_type: 'slot',
+  meeting_link: null,
 } as unknown as CalendarSlot;
 
 export function SlotDetailModal({ open, onOpenChange, slot, studentName, students, onUpdate, onDelete, onLinkWorksheet, onNotificationsChanged }: SlotDetailModalProps) {
@@ -84,6 +85,10 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
   const [slotLogs, setSlotLogs] = useState<SlotLog[]>([]);
+  const [editMeetingLink, setEditMeetingLink] = useState('');
+  const [paymentTrackingEnabled, setPaymentTrackingEnabled] = useState(false);
+  const [defaultLessonPrice, setDefaultLessonPrice] = useState<number | null>(null);
+  const [currency, setCurrency] = useState('USD');
 
   useEffect(() => {
     if (slot) {
@@ -92,12 +97,29 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       setEditEndTime(slot.end_time.slice(0, 5));
       setEditNotes(slot.notes || '');
       setEditStudentId(slot.student_id || 'none');
+      setEditMeetingLink((slot as any).meeting_link || '');
       setShowStudentSelect(false);
       setConfirming(false);
       supabase.from('calendar_slot_logs').select('*').eq('slot_id', slot.id).order('created_at', { ascending: false }).limit(20)
         .then(({ data }) => setSlotLogs((data || []) as SlotLog[]));
     }
   }, [slot?.id, open]);
+
+  // Fetch payment settings
+  useEffect(() => {
+    if (slot?.teacher_id) {
+      supabase.from('calendar_settings')
+        .select('payment_tracking_enabled, default_lesson_price, currency')
+        .eq('teacher_id', slot.teacher_id).maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            setPaymentTrackingEnabled(!!(data as any).payment_tracking_enabled);
+            setDefaultLessonPrice((data as any).default_lesson_price);
+            setCurrency((data as any).currency || 'USD');
+          }
+        });
+    }
+  }, [slot?.teacher_id]);
 
   // Duration calculation — uses safe values
   const durationMinutes = useMemo(() => {
@@ -159,6 +181,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     setSaving(true);
     const updates: any = {
       slot_date: editDate, start_time: editStartTime, end_time: editEndTime, notes: editNotes || null,
+      meeting_link: editMeetingLink || null,
     };
 
     let logActionName = 'updated';
@@ -247,6 +270,39 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         } as any);
       } catch (_) {}
       setTimeout(() => onNotificationsChanged?.(), 300);
+
+      // Send email to student (Problem 5)
+      try {
+        const { data: studentData } = await supabase.from('students').select('student_email').eq('id', editStudentId).maybeSingle();
+        if ((studentData as any)?.student_email) {
+          const { data: teacherProfile } = await supabase.from('profiles').select('email, first_name, last_name').eq('id', slot.teacher_id).maybeSingle();
+          const { data: calSettings } = await supabase.from('calendar_settings').select('public_calendar_token, notify_email_on_lesson_created').eq('teacher_id', slot.teacher_id).maybeSingle();
+          if ((calSettings as any)?.notify_email_on_lesson_created !== false) {
+            const tName = [teacherProfile?.first_name, teacherProfile?.last_name].filter(Boolean).join(' ') || 'Your Teacher';
+            const bUrl = calSettings?.public_calendar_token ? `${window.location.origin}/book/${calSettings.public_calendar_token}` : '';
+            let sharedWsUrl: string | undefined;
+            const wsId = slot.worksheet_id || (updates.worksheet_id);
+            if (wsId) {
+              const { data: ws } = await supabase.from('worksheets').select('share_token').eq('id', wsId).maybeSingle();
+              if (ws?.share_token) sharedWsUrl = `${window.location.origin}/shared/${ws.share_token}`;
+            }
+            supabase.functions.invoke('send-calendar-notification-email', {
+              body: {
+                type: 'new_booking_student',
+                studentEmail: (studentData as any).student_email,
+                studentName: assignedName,
+                slotDate: editDate,
+                slotTime: editStartTime,
+                teacherName: tName,
+                teacherEmail: teacherProfile?.email || '',
+                bookUrl: bUrl,
+                sharedWorksheetUrl: sharedWsUrl,
+                meetingLink: editMeetingLink || undefined,
+              },
+            }).catch(console.error);
+          }
+        }
+      } catch (_) {}
     }
 
     try {
@@ -774,7 +830,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             )}
           </div>
           {isRecurring && hasChanges && (
-            <Button size="sm" variant="outline" className="w-full text-xs h-8" onClick={handleEditSeries}>
+            <Button size="sm" variant="outline" className="w-full text-xs h-7" onClick={handleEditSeries}>
               <Repeat className="h-3 w-3 mr-1" /> Save for Entire Series
             </Button>
           )}

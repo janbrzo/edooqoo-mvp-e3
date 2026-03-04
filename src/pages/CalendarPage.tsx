@@ -171,18 +171,8 @@ const CalendarPage = () => {
 
   const handleWorksheetLinked = async (worksheetId: string | null) => {
     if (linkWorksheetSlot) {
-      const updates: any = { worksheet_id: worksheetId };
-      const originalSlot = slots.find(s => s.id === linkWorksheetSlot.id);
-      if (originalSlot && linkWorksheetSlot.student_id !== originalSlot.student_id) {
-        updates.student_id = linkWorksheetSlot.student_id;
-        updates.status = linkWorksheetSlot.student_id ? 'booked' : 'available';
-        if (linkWorksheetSlot.student_id) {
-          updates.booked_at = new Date().toISOString();
-          updates.booked_by = 'teacher';
-          updates.confirmed_at = new Date().toISOString();
-        }
-      }
-      await updateSlot(linkWorksheetSlot.id, updates);
+      // Only update worksheet_id — student assignment is handled by Save Changes in SlotDetailModal
+      await updateSlot(linkWorksheetSlot.id, { worksheet_id: worksheetId } as any);
     }
   };
 

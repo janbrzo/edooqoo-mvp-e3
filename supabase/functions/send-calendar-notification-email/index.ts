@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, teacherEmail, teacherName, oldSlotDate, oldSlotTime, calendarUrl, bookUrl, worksheetUrl, sharedWorksheetUrl } = await req.json();
+    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, teacherEmail, teacherName, oldSlotDate, oldSlotTime, calendarUrl, bookUrl, worksheetUrl, sharedWorksheetUrl, meetingLink } = await req.json();
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) {
@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
     const lessonInfo = `${slotDate} at ${slotTime}`;
     
-    const isStudentEmail = ['booking_confirmation', 'booking_pending', 'booking_rejected', 'cancellation_student', 'cancellation_confirmed_by_student', 'reschedule_confirmation', 'reschedule_pending', 'reschedule_rejected', 'lesson_reminder', 'lesson_time_changed'].includes(type);
+    const isStudentEmail = ['booking_confirmation', 'booking_pending', 'booking_rejected', 'cancellation_student', 'cancellation_confirmed_by_student', 'reschedule_confirmation', 'reschedule_pending', 'reschedule_rejected', 'lesson_reminder', 'lesson_time_changed', 'new_booking_student'].includes(type);
     const fromName = isStudentEmail
       ? `${teacherName || 'Your Teacher'} via EDOQOO`
       : 'EDOQOO';
@@ -47,6 +47,11 @@ Deno.serve(async (req) => {
       ? `<div style="margin-top: 12px;"><a href="${sharedWorksheetUrl}" style="display: inline-block; padding: 8px 20px; background: #16a34a; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">Open Worksheet</a></div>`
       : '';
 
+    // Meeting link button
+    const meetingButton = meetingLink
+      ? `<div style="margin-top: 12px;"><a href="${meetingLink}" style="display: inline-block; padding: 8px 20px; background: #7c3aed; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">Join Meeting</a></div>`
+      : '';
+
     switch (type) {
       case 'booking_confirmation':
         to = studentEmail;
@@ -60,6 +65,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
             </div>
             <p>See you there!</p>
+            ${meetingButton}
             ${studentWorksheetButton}
             ${studentButton}
           </div>`;
@@ -153,6 +159,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>New time:</strong> ${slotTime}</p>
             </div>
             <p>See you there!</p>
+            ${meetingButton}
             ${studentWorksheetButton}
             ${studentButton}
           </div>`;
@@ -209,6 +216,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
             </div>
             <p>See you soon!</p>
+            ${meetingButton}
             ${studentWorksheetButton}
             ${studentButton}
           </div>`;
@@ -227,6 +235,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>New time:</strong> ${slotTime}</p>
             </div>
             <p>If you have any questions, please contact your teacher.</p>
+            ${meetingButton}
             ${studentWorksheetButton}
             ${studentButton}
           </div>`;
@@ -251,6 +260,23 @@ Deno.serve(async (req) => {
             <p>Hi ${studentName},</p>
             <p>Your weekly lesson bookings have been submitted to the teacher.</p>
             <p>You will receive confirmations as the teacher approves each one.</p>
+            ${studentButton}
+          </div>`;
+        break;
+
+      case 'new_booking_student':
+        to = studentEmail;
+        subject = `New lesson scheduled: ${lessonInfo}`;
+        html = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1a1a1a;">New Lesson Scheduled 📅</h2>
+            <p>Hi ${studentName},</p>
+            <p>Your teacher has scheduled a new lesson for you:</p>
+            <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <p style="margin: 4px 0;"><strong>Date:</strong> ${slotDate}</p>
+              <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
+            </div>
+            ${meetingButton}
+            ${studentWorksheetButton}
             ${studentButton}
           </div>`;
         break;

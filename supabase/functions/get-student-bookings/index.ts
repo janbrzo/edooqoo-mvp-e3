@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { token, email, action, slotId, newSlotId, slotIds, studentName: reqStudentName } = await req.json();
+    const { token, email, action, slotId, newSlotId, slotIds, studentName: reqStudentName, includePast } = await req.json();
 
     if (!token || !email) {
       return new Response(JSON.stringify({ error: 'Token and email are required' }), {
@@ -432,6 +432,33 @@ Deno.serve(async (req) => {
         .order('created_at', { ascending: false })
         .limit(10);
       return new Response(JSON.stringify({ logs: logs || [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle GET_CANCELLED (Problem 9C)
+    if (action === 'get_cancelled') {
+      const { data: cancelledLogs } = await supabase
+        .from('calendar_slot_logs')
+        .select('slot_id, action, details, created_at')
+        .eq('teacher_id', teacherId)
+        .in('action', ['cancelled_by_student', 'cancelled_by_teacher'])
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      const matchingLogs = (cancelledLogs || []).filter((l: any) =>
+        l.details?.student_email?.toLowerCase() === email.toLowerCase().trim()
+      );
+      const cancelledSlotIds = [...new Set(matchingLogs.map((l: any) => l.slot_id))];
+      let cancelledBookingsData: any[] = [];
+      if (cancelledSlotIds.length > 0) {
+        const { data: cSlots } = await supabase
+          .from('calendar_slots')
+          .select('id, slot_date, start_time, end_time, cancelled_at, cancelled_by, cancellation_reason')
+          .in('id', cancelledSlotIds);
+        cancelledBookingsData = cSlots || [];
+      }
+      return new Response(JSON.stringify({ cancelledBookings: cancelledBookingsData }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
