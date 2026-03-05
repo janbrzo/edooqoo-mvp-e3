@@ -290,6 +290,7 @@ export type Database = {
           gcal_default_color: string | null
           gcal_default_reminder_minutes: number | null
           gcal_integration_enabled: boolean
+          gcal_on_cancel_action: string | null
           id: string
           max_slots_per_student_per_week: number | null
           min_cancellation_hours: number | null
@@ -324,6 +325,7 @@ export type Database = {
           gcal_default_color?: string | null
           gcal_default_reminder_minutes?: number | null
           gcal_integration_enabled?: boolean
+          gcal_on_cancel_action?: string | null
           id?: string
           max_slots_per_student_per_week?: number | null
           min_cancellation_hours?: number | null
@@ -358,6 +360,7 @@ export type Database = {
           gcal_default_color?: string | null
           gcal_default_reminder_minutes?: number | null
           gcal_integration_enabled?: boolean
+          gcal_on_cancel_action?: string | null
           id?: string
           max_slots_per_student_per_week?: number | null
           min_cancellation_hours?: number | null

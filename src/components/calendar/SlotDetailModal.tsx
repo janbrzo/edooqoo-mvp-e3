@@ -544,6 +544,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     const canSend = await shouldSendEmail('notify_email_on_cancellation');
     if (canSend) await sendCalendarEmail('cancellation_student');
     await resolveNotifications(slot.id, ['booking_pending', 'booking_confirmed'], 'cancelled');
+    // GCal: update to Available or delete based on settings
+    supabase.functions.invoke('gcal-sync', { body: { teacherId: slot.teacher_id, slotId: slot.id, action: 'cancel' } }).catch(console.error);
     setTimeout(() => onNotificationsChanged?.(), 300);
     onOpenChange(false);
   };

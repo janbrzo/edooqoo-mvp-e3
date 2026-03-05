@@ -459,15 +459,14 @@ serve(async (req) => {
 
       // Background: Generate with streaming
       (async () => {
+        let fullContent = "";
+        let lastExerciseCount = 0;
+        let streamUsedModel = "";
+
         try {
           send("start", { message: "Starting generation..." });
 
           const expectedTotal = getExpectedCount(formData?.lessonTime);
-
-          // Try Gemini streaming first, fallback to OpenAI
-          let fullContent = "";
-          let lastExerciseCount = 0;
-          let streamUsedModel = "";
 
           try {
             console.log("🔵 Trying Gemini 2.5 Flash streaming...");

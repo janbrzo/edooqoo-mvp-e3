@@ -52,7 +52,7 @@ const DEFAULT_SETTINGS: Omit<CalendarSettings, 'id' | 'teacher_id'> = {
   currency: 'USD',
   min_cancellation_hours: 24,
   gcal_integration_enabled: false,
-  gcal_default_color: '1',
+  gcal_default_color: '9',
   gcal_default_reminder_minutes: 30,
   timezone: 'Europe/Warsaw',
   display_start_hour: 7,
