@@ -1,206 +1,290 @@
 
-Cel: naprawić 4 zgłoszone regresje bez ruszania stabilnych flow i przygotować gotowy, „bez-decyzyjny” plan wdrożenia + testy E2E + checklistę gotowości.
 
-## 1) Diagnoza źródłowa (dlaczego nadal nie działa)
+# Plan: Runda napraw #7
 
-1. Available Slot + Link Worksheet (regresja krytyczna)
-- W `CalendarPage.tsx` `handleWorksheetLinked()` od razu robi `updateSlot(...)` (persist do DB).
-- W tym samym czasie `selectedSlot` jest synchronizowany z `slots` (efekt w `CalendarPage`), więc niezapisany draft z modala (wybrany student) jest nadpisywany świeżym stanem z DB.
-- Skutek: student znika, worksheet zapisuje się „na stałe”, znikają „Save Changes” (bo draft został utracony).
+## Problem 1: Dropdown "Assign to Student" w DuplicateWorksheetModal nie scrolluje się myszką
 
-2. Przepełnienie stopki modala przy Recurring edit
-- `DraggableDialogFooter` domyślnie ma `sm:flex-row`; w `SlotDetailModal` dodano `flex-col`, ale bez `sm:flex-col`, więc na desktop i tak układ jest w wierszu.
-- Po pojawieniu się „Save for Entire Series” przyciski się rozpychają i wychodzą poza modal.
+**Diagnoza:** Radix `SelectContent` domyślnie używa virtualnego scrollowania ze strzałkami, ale nie obsługuje dobrze mouse wheel w pewnych warunkach. Dodatkowo lista wystaje poza ekran w górę.
 
-3. `/book/:token` (oraz `/book`) – nadal niespójności
-- 3A: ukrywanie „past” działa tylko częściowo w UI; nadal renderują się wyszarzone boxy dni.
-- 3B: pending chip ma inny layout niż available (oddzielna gałąź renderu, inne klasy/strukturę).
-- 3C: `Show past` w `StudentBookingsSection` wysyła `includePast`, ale edge function `get-student-bookings` ignoruje ten parametr (ma twarde `.gte(today)`).
-- 3D: logi są technicznie pobierane, ale prezentacja jest „surowa” i nie ma formatowania semantycznego jak w /calendar.
+**Fix w `src/components/DuplicateWorksheetModal.tsx`:**
+- Dodać do `<SelectContent>` prop `position="popper"` + klasy `max-h-60 overflow-y-auto`:
+```tsx
+<SelectContent position="popper" className="max-h-60 overflow-y-auto">
+```
+To wymusza popper positioning (nie wypływa poza viewport) i dodaje natywny scroll myszką.
 
-4. Kafelek rezerwacji na `/book` – brak pełnej funkcjonalności
-- History jest tylko dla aktywnych bookingów; cancelled section nie ma historii.
-- Filtry obejmują tylko `completed/no_show/needs_review`; brak `cancelled`, `student_cancelled`, `teacher_cancelled`.
-- Statusy są częściowo, ale brak pełnej spójności (w tym cancelled jako osobna klasa widokowa i filtrowanie przekrojowe).
+**Plik:** `src/components/DuplicateWorksheetModal.tsx` linia 83
 
 ---
 
-## 2) Plan wdrożenia (konkretne zmiany, plik po pliku)
+## Problem 2: Błąd generowania worksheet — `streamUsedModel is not defined`
 
-### Problem 1 — naprawa draftu Worksheet/Student na Available Slot (bez autosave)
-Pliki:
-- `src/components/calendar/SlotDetailModal.tsx`
-- `src/pages/CalendarPage.tsx`
-- (opcjonalnie porządkowo) `src/components/calendar/LinkWorksheetModal.tsx`
+**Diagnoza:** W `generateWorksheet/index.ts` zmienna `streamUsedModel` jest zadeklarowana wewnątrz bloku `try` (linia 470: `let streamUsedModel = ""`) ale jest referowana w bloku `catch` (linie 635, 639). W normalnym JS/TS `let` w bloku `try` nie jest widoczny w `catch`. Stąd `ReferenceError`.
 
-Zmiana architektury:
-- Dla `SlotDetailModal` przechodzimy na model jak `UnifiedSlotModal` (Add Lesson Single): worksheet jest stanem lokalnym (`editWorksheetId`), NIE zapisuje się do DB przed `Save Changes`.
-- Linkowanie worksheet dla edycji istniejącego slota przenosimy do lokalnego selecta w `SlotDetailModal` (z listą worksheetów ucznia), bez zamykania modala i bez przechodzenia przez `CalendarPage.handleWorksheetLinked`.
+Mimo tego erroru generowanie naprawiło się samo (JSON repair succeeded) i worksheet się wygenerował — ale error w `catch` powoduje że:
+1. `notifyGenerationFailure` jest wywoływana z niezdefiniowaną zmienną → crash
+2. Email o błędzie się NIE wysyła bo sam `catch` crashuje
 
-Dokładne kroki:
-1) `SlotDetailModal`:
-- Dodać stany:
-  - `editWorksheetId` (`'none' | worksheetId`)
-  - `studentWorksheets` (lista worksheetów ucznia)
-- Inicjalizacja przy otwarciu modala: `editWorksheetId = slot.worksheet_id ?? 'none'`.
-- Fetch worksheetów po zmianie `editStudentId` (analogicznie do `UnifiedSlotModal`).
-- W sekcji Worksheet:
-  - jeśli student wybrany: `Select` z `No worksheet` + worksheety ucznia;
-  - jeśli brak studenta: disabled.
-- `hasChanges` musi uwzględniać zmianę worksheet.
-- `handleSave()` musi wysyłać `updates.worksheet_id` razem z innymi polami.
+**Fix w `supabase/functions/generateWorksheet/index.ts`:**
+Przenieść deklarację `let streamUsedModel = "";` PRZED blok `try` (na poziom async IIFE, tuż po `let lastExerciseCount = 0;`):
 
-2) `CalendarPage`:
-- Dla `SlotDetailModal` usunąć flow `onLinkWorksheet` (dla existing slot edit).
-- `handleWorksheetLinked()` przestaje dotykać existing slot path (zostaje tylko dla innych miejsc lub do usunięcia jeśli nieużywane).
-- Utrzymać obecne `Save Changes` jako jedyny punkt utrwalenia draftu.
+Zmiana: linia 468-470 → przenieść `let streamUsedModel = "";` do linii 467 (przed try):
+```ts
+let fullContent = "";
+let lastExerciseCount = 0;
+let streamUsedModel = ""; // ← przenieść tutaj, PRZED try
 
-Efekt oczekiwany:
-- Po wyborze studenta i worksheet nic nie zapisuje się automatycznie.
-- Dopiero `Save Changes` zapisuje student + worksheet + status.
+try {
+  console.log("🔵 Trying Gemini 2.5 Flash streaming...");
+  streamUsedModel = "gemini-2.5-flash";
+```
+
+Dzięki temu `catch` będzie miał dostęp do zmiennej i email z alertem dotrze poprawnie.
+
+**Plik:** `supabase/functions/generateWorksheet/index.ts`
 
 ---
 
-### Problem 2 — footer modala Recurring (przyciski nie mogą wystawać)
-Plik:
-- `src/components/calendar/SlotDetailModal.tsx`
+## Problem 3: /book — UI fixes
 
-Kroki:
-1) W `DraggableDialogFooter` ustawić responsywnie kolumnę również na `sm`:
-- dodać klasy: `sm:flex-col sm:space-x-0`.
-2) Ustawić sekcje akcji jako:
-- górny rząd: `flex flex-wrap gap-1 w-full`
-- przycisk „Save for Entire Series” jako full width `h-7 text-xs`
-- dolny rząd: `flex flex-wrap gap-2 w-full justify-end`
-3) Spójne wysokości (`h-7`) dla wszystkich buttonów akcji modalowych.
+### 3A: Pending w dwóch liniach vs Available w jednej
 
-Efekt:
-- Na desktop i mobile stopka nie przepełnia się, wszystkie CTA widoczne.
+**Diagnoza:** W `PublicBookingPage.tsx` pending slot (linia 384-399) używa `<div>` z klasą `text-center`, a available (402-418) to `<Button>` z `flex-col`. Obie gałęzie mają tę samą strukturę od ostatnich zmian. Problem to prawdopodobnie brak `flex-col` na divie pending — plik wygląda OK, ale sprawdźmy: pending div NIE ma `h-auto py-1.5 flex-col` jak Button available.
 
----
+**Fix:** Ujednolicić pending div z available button:
+```tsx
+// Pending: linia 387-398
+<div
+  key={slot.id}
+  className={`w-full text-xs h-auto py-1.5 rounded-md border ${colorClasses} text-center flex flex-col items-center`}
+>
+```
+Dodać `h-auto flex flex-col items-center` żeby layout był identyczny.
 
-### Problem 3 — `/book` (A/B/C/D)
+### 3B: Widoki Schedule/Month/Range — dodać napisy zamiast samych ikon + Show past domyślnie ON
 
-Pliki:
-- `src/pages/PublicBookingPage.tsx`
-- `src/components/calendar/StudentBookingsSection.tsx`
-- `supabase/functions/get-student-bookings/index.ts`
+**Fix w `StudentBookingsSection.tsx`:**
+1. Zmienić switcher widoków (linia 406-416) — dodać teksty:
+```tsx
+<button className={...} onClick={() => setViewMode('schedule')}>
+  <List className="h-3.5 w-3.5 mr-1" /> Schedule
+</button>
+<button className={...} onClick={() => setViewMode('month')}>
+  <CalendarDays className="h-3.5 w-3.5 mr-1" /> Month
+</button>
+<button className={...} onClick={() => setViewMode('range')}>
+  <CalendarRange className="h-3.5 w-3.5 mr-1" /> Date Range
+</button>
+```
 
-3A (znikanie past available):
-1) W `PublicBookingPage` wyliczać `visibleDaySlots`:
-- `available` ukrywać jeśli `slot_start <= now` (nie tylko dla today, ale wynikowo dla każdego dnia).
-2) Nie nakładać „past opacity” na cały card dnia.
-3) Dzień bez `visibleDaySlots` pokazuje „No slots” bez wyszarzania.
+2. Zmienić domyślną wartość `showPast` (linia 85):
+```ts
+const [showPast, setShowPast] = useState(true); // domyślnie ON
+```
 
-3B (Pending ma wyglądać jak Available):
-1) Wyrównać render pending i available do jednej struktury komponentu/chipu.
-2) Różnić tylko kolorem/borderem.
-3) Wymusić jednoliniowy primary time (bez skoków typografii).
+### 3C: Cancelled Lessons jako normalne kafelki w głównej liście (nie osobna sekcja)
 
-3C (Show past + widoki Schedule/Month/Date Range):
-1) Edge function:
-- w default query użyć `includePast`:
-  - `if (!includePast) .gte(today)`
-  - `if (includePast) bez ograniczenia`.
-2) `StudentBookingsSection`:
-- dodać `viewMode` (`schedule` domyślnie, `month`, `range`);
-- dodać przełącznik widoków obok „Your Lessons”;
-- `schedule`: obecna lista;
-- `month`: siatka miesięczna z count/status dot, klik dzień => lista z tego dnia;
-- `range`: od/do + lista filtrowana.
-3) Domyślnie `schedule`.
+**Fix:** Zamiast osobnej sekcji "Cancelled Lessons" (linia 462-489), merged cancelled bookings do `viewFilteredBookings`:
+1. Gdy `showCancelled=true`, dodać cancelled bookings do głównej listy
+2. Usunąć osobną sekcję
+3. W `renderBookingCard` dodać obsługę cancelled statusu (badge SC/TC)
 
-3D (pełniejsze logi):
-1) Edge `get_logs`:
-- zwiększyć limit (np. 30),
-- dodać walidację, że student (email/token) ma dostęp do slotu.
-2) UI `StudentBookingsSection`:
-- dodać formatowanie semantyczne akcji (np. `time_changed`, `student_assigned`, `status_changed`),
-- pokazywać komplet detali (old/new status, old/new time, student, email, actor, timestamp),
-- czytelny separator i spacing.
+Zmiana logiki:
+```ts
+const allBookings = useMemo(() => {
+  let result = [...viewFilteredBookings];
+  if (showCancelled && filteredCancelled.length > 0) {
+    // Map cancelled to Booking format and merge
+    const cancelledMapped = filteredCancelled.map((cb: any) => ({
+      ...cb,
+      status: cb.cancelled_by === 'student' ? 'student_cancelled' : 'teacher_cancelled',
+      confirmed_at: null,
+    }));
+    result = [...result, ...cancelledMapped];
+  }
+  // Sort all by slot_date + start_time
+  result.sort((a, b) => `${a.slot_date}${a.start_time}`.localeCompare(`${b.slot_date}${b.start_time}`));
+  return result;
+}, [viewFilteredBookings, showCancelled, filteredCancelled]);
+```
 
----
+W `renderBookingCard` dodać badge cancelled:
+```tsx
+{(booking.status === 'student_cancelled' || booking.cancelled_by === 'student') && (
+  <Badge ... title={STATUS_TOOLTIPS.student_cancelled}>SC Cancelled</Badge>
+)}
+{(booking.status === 'teacher_cancelled' || booking.cancelled_by === 'teacher') && (
+  <Badge ... title={STATUS_TOOLTIPS.teacher_cancelled}>TC Cancelled</Badge>
+)}
+```
 
-### Problem 4 — kafelki rezerwacji `/book` (A/B/C/D)
-Pliki:
-- `src/components/calendar/StudentBookingsSection.tsx`
-- `supabase/functions/get-student-bookings/index.ts`
+### 3D: Usunąć filtr "Needs Review" — uczeń nie powinien widzieć
 
-A) History button:
-- utrzymać dla aktywnych + dodać dla `Cancelled Lessons`.
-- cancelled card ma własny toggle historii (ten sam fetch logs po slot_id).
+**Fix:** Linia 42-48, usunąć z `STATUS_FILTERS`:
+```ts
+const STATUS_FILTERS = [
+  { key: 'completed', label: 'Completed' },
+  { key: 'no_show', label: 'No Show' },
+  { key: 'student_cancelled', label: 'Student Cancellation' },
+  { key: 'teacher_cancelled', label: 'Teacher Cancellation' },
+];
+```
+Usunąć też `needs_review` z `filteredBookings` logic (linia 181).
 
-B) Statusy równoległe + tooltip:
-- aktywny slot może mieć jednocześnie np. `Confirmed` + `✓ Completed`.
-- tooltipy na każdym badge (Pending/Confirmed/Completed/No Show/Needs Review/SC/TC).
+### 3E: Scrollowalny box z lekcjami + przycisk "Today"
 
-C) Przycisk cancelled:
-- istnieje, ale utrwalić i nie ukrywać przy filtrach; odświeżanie listy po toggle.
+**Fix w `StudentBookingsSection.tsx`:**
+W schedule view (linia 453-457), zawinąć w scrollowalny kontener z max-height na ~7 lekcji (~560px) i ref do scroll:
+```tsx
+const listRef = useRef<HTMLDivElement>(null);
 
-D) Filtry:
-- rozszerzyć `statusFilter` o:
-  - `completed`, `no_show`, `cancelled`, `student_cancelled`, `teacher_cancelled`, `needs_review`.
-- logika:
-  - aktywne bookingi filtrują statusy aktywne,
-  - cancelled sekcja filtruje `cancelled/student_cancelled/teacher_cancelled`.
+const scrollToToday = () => {
+  if (!listRef.current) return;
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const todayEl = listRef.current.querySelector(`[data-date="${todayStr}"]`);
+  if (todayEl) todayEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+};
 
----
+// W renderBookingCard dodać data-date:
+<div key={booking.id} data-date={booking.slot_date} className={...}>
 
-## 3) Kolejność implementacji (bezpieczna)
+// Schedule view:
+<div className="flex gap-2">
+  <Button variant="outline" size="sm" className="text-xs h-7 shrink-0 self-start" onClick={scrollToToday}>
+    Today
+  </Button>
+  <div ref={listRef} className="space-y-2 max-h-[560px] overflow-y-auto flex-1 pr-1">
+    {allBookings.map(renderBookingCard)}
+  </div>
+</div>
+```
 
-1. Fix krytyczny draft/worksheet (Problem 1).
-2. Fix footer overflow (Problem 2).
-3. Edge `includePast` + `get_logs` access/format payload (Problem 3C/3D).
-4. PublicBooking UI: 3A/3B.
-5. StudentBookingsSection: viewMode (schedule/month/range), status/filter/history dla active+cancelled (3C + 4A-D).
-6. Smoke test + pełny E2E + checklist update.
+### 3F: Filtry wyżej — na poziomie sterowania tygodniami
 
----
+**Fix:** Przenieść filtry statusów z `CardHeader` (linia 431-443) do `PublicBookingPage.tsx`, na poziomie toolbar tygodniowego.
 
-## 4) Plan testów end-to-end (obowiązkowy)
+To wymaga wyciągnięcia state filtrów do parenta. Prostsze rozwiązanie: w `StudentBookingsSection` przenieść filtry z `CardHeader` do poziomu PRZED `CardContent`, bezpośrednio po nagłówku "Your Lessons":
 
-Scenariusze krytyczne:
-1) `/calendar` Available Slot:
-- wybierz studenta -> wybierz worksheet -> NIE klikaj Save -> zamknij modal -> brak zapisu.
-- powtórz i kliknij Save -> student + worksheet zapisane razem.
-2) Recurring Booked edit:
-- zmień godzinę -> pojawia się „Save for Entire Series” -> wszystkie przyciski widoczne, nic nie wychodzi poza modal.
-3) `/book/:token`:
-- available znika po minięciu start_time,
-- pending ma identyczny layout jak available (tylko kolor inny).
-4) `Your Lessons`:
-- `Show past` OFF: brak historycznych,
-- `Show past` ON: historyczne widoczne,
-- widoki `Schedule/Month/Date Range` działają, domyślnie `Schedule`.
-5) Kafelki lekcji:
-- History działa dla active i cancelled,
-- badge równoległe (np. Confirmed + Completed),
-- filtry: Completed, No Show, Cancelled, Student Cancellation, Teacher Cancellation.
-6) Regresja:
-- booking, confirm/reject, cancel, reschedule nadal działają i logują poprawnie.
+W `CardHeader` wstawić filtry w jednej linii z tygodniowym toolbarem — ale StudentBookingsSection nie ma dostępu do toolbaru tygodniowego. Prostsze: przenieść slot filtery `Available/Pending` z `PublicBookingPage` na poziom nagłówka obok toolbaru dat.
 
----
+W `PublicBookingPage.tsx` przenieść `slotFilter` buttons (linie z Available/Pending) do pozycji obok "Today Mar 16 – Mar 22" zamiast pod spodem.
 
-## 5) Step-by-step Calendar Readiness Checklist (do wdrożenia i odhaczenia)
-
-Dodać/uzupełnić `docs/CALENDAR_READINESS_CHECKLIST.md` o sekwencję:
-1. Data integrity precheck (overlap, recurring detach, cancellation semantics).
-2. Teacher flow validation (`/calendar`).
-3. Public booking flow validation (`/book/:token`).
-4. Student lesson history + filters + views validation.
-5. Notifications/logs validation (in-app + audit completeness).
-6. Regression sweep (booking/confirmation/cancellation/reschedule).
-7. Release gate: „all critical scenarios pass twice (desktop + mobile viewport)”.
+**Plik:** `src/pages/PublicBookingPage.tsx` — przenieść `slotFilter` do toolbara dat
 
 ---
 
-## 6) Ryzyka i zabezpieczenia (żeby nie popsuć działającej appki)
+## Problem 4: Google Calendar
 
-- Największe ryzyko: utrata draftu przez synchronizację `selectedSlot` z DB.
-  - Mitigacja: worksheet i student zmiany trzymane lokalnie w `SlotDetailModal`, brak autosave.
-- Ryzyko UI overflow:
-  - Mitigacja: wymuszenie `sm:flex-col` + jednolity sizing buttonów.
-- Ryzyko data leak w `get_logs`:
-  - Mitigacja: walidacja dostępu do slotu po email+token przed zwrotem logów.
-- Ryzyko regresji booking flow:
-  - Mitigacja: E2E matrix + smoke testy po każdym etapie.
+### 4A: "Connect Google Calendar" poza ustawieniami
+
+**Fix w `CalendarPage.tsx`:** Dodać w toolbarze (obok Share, Export) przycisk "Connect GCal" jeśli `!gcalConnected`:
+```tsx
+{!gcalConnected && (
+  <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => navigate('/calendar/settings#gcal')}>
+    🗓️ Connect GCal
+  </Button>
+)}
+```
+Wymaga pobrania `gcalConnected` stanu — dodać prosty fetch z `calendar_gcal_tokens`.
+
+### 4B: Ustawienia GCal — domyślny kolor niebieski + opcja wyłączenia
+
+**Fix w `CalendarSettingsPage.tsx`:**
+- Domyślny kolor: zmienić w `useCalendarSettings.tsx` wartość `gcal_default_color` z `'1'` (Lavender) na `'9'` (Blueberry = niebieski)
+- Opcja wyłączenia sync jest już zaimplementowana (`gcal_integration_enabled` switch). OK.
+
+### 4C: Teacher Cancellation → GCal event zmienia się na "Available Slot"
+
+**Fix w `gcal-sync/index.ts`:**
+Dodać obsługę action `'cancel'` (obok `'upsert'` i `'delete'`):
+```ts
+} else if (action === 'cancel' && slot.gcal_event_id) {
+  // Update to Available Slot — green, no reminder
+  const event = {
+    summary: 'Available Slot — English Lesson',
+    colorId: '2', // Sage (green)
+    reminders: { useDefault: false, overrides: [] },
+    start: { dateTime: `${slot.slot_date}T${slot.start_time}`, timeZone: timezone },
+    end: { dateTime: `${slot.slot_date}T${slot.end_time}`, timeZone: timezone },
+  };
+  await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(event),
+  });
+}
+```
+
+W `SlotDetailModal.tsx` → `handleTeacherCancellation` — po cancellation, wywołać:
+```ts
+supabase.functions.invoke('gcal-sync', { body: { teacherId: slot.teacher_id, slotId: slot.id, action: 'cancel' } }).catch(console.error);
+```
+
+### 4D: Usunięcie lekcji → usunięcie z GCal
+
+**Fix w `useCalendarSlots.tsx`:**
+W `deleteSlot` (linia 382-392) i `hardDeleteSlot` (linia 369-379) dodać:
+```ts
+triggerGcalSync(slotId, 'delete');
+```
+przed `fetchSlots()`.
+
+Analogicznie w `deleteSlotsBatch` — dla każdego slotId.
+
+### 4E: Ustawienia GCal w settings
+
+Już zaimplementowane — karta "Google Calendar" w `CalendarSettingsPage` z color, reminder, enable/disable. Jedyne brakujące: opcja "Sync available slots to GCal" (osobny switch) i "On cancellation: update to Available / delete". To dodatkowe opcje.
+
+Dodać w settings:
+```tsx
+<div className="flex items-center justify-between">
+  <div><Label>On cancellation</Label><p className="text-xs text-muted-foreground">What happens to the GCal event when lesson is cancelled</p></div>
+  <Select value={settings.gcal_on_cancel_action || 'update'} onValueChange={v => updateSettings({ gcal_on_cancel_action: v })}>
+    <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+    <SelectContent>
+      <SelectItem value="update">Update to Available Slot</SelectItem>
+      <SelectItem value="delete">Delete event</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
+```
+
+Wymaga dodania kolumny `gcal_on_cancel_action text DEFAULT 'update'` do `calendar_settings`.
+
+---
+
+## Migracja SQL
+
+```sql
+ALTER TABLE calendar_settings ADD COLUMN IF NOT EXISTS gcal_on_cancel_action text DEFAULT 'update';
+```
+
+---
+
+## Kolejność wdrożenia
+
+1. Migracja SQL (gcal_on_cancel_action)
+2. Fix `streamUsedModel` scoping w generateWorksheet (Problem 2)
+3. Fix dropdown scroll w DuplicateWorksheetModal (Problem 1)
+4. Fix PublicBookingPage: pending layout, slot filter position (Problem 3A, 3F)
+5. Fix StudentBookingsSection: napisy w widokach, showPast=true, cancelled merged, usunięcie Needs Review, scrollowalny box + Today (Problem 3B-E)
+6. Fix GCal: cancel action, delete sync, default color, connect button (Problem 4A-E)
+7. Deploy edge functions
+8. Update docs
+
+## Pliki do zmiany
+
+| Plik | Zmiany |
+|---|---|
+| Migracja SQL | `gcal_on_cancel_action` |
+| `src/components/DuplicateWorksheetModal.tsx` | `position="popper" className="max-h-60 overflow-y-auto"` |
+| `supabase/functions/generateWorksheet/index.ts` | Przenieść `let streamUsedModel` przed try |
+| `src/pages/PublicBookingPage.tsx` | Pending layout fix, slot filter position |
+| `src/components/calendar/StudentBookingsSection.tsx` | Napisy widoków, showPast=true, cancelled merged, Needs Review usunięty, scrollowalny box + Today |
+| `supabase/functions/gcal-sync/index.ts` | Dodać action `'cancel'` |
+| `src/hooks/useCalendarSlots.tsx` | GCal delete sync w deleteSlot/hardDeleteSlot, default color '9' |
+| `src/hooks/useCalendarSettings.tsx` | Default `gcal_default_color: '9'` |
+| `src/pages/CalendarSettingsPage.tsx` | gcal_on_cancel_action select |
+| `src/pages/CalendarPage.tsx` | Connect GCal button w toolbarze |
+| `src/components/calendar/SlotDetailModal.tsx` | GCal cancel trigger |
+
