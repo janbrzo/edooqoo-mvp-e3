@@ -37,7 +37,7 @@ interface SlotDetailModalProps {
   students: Student[];
   onUpdate: (id: string, updates: Partial<CalendarSlot>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  onLinkWorksheet?: (slot: CalendarSlot, studentId?: string | null) => void;
+  onLinkWorksheet?: (slot: CalendarSlot, studentId?: string | null) => void; // kept for backward compat, no longer used
   onNotificationsChanged?: () => void;
 }
 
@@ -86,6 +86,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const [saving, setSaving] = useState(false);
   const [slotLogs, setSlotLogs] = useState<SlotLog[]>([]);
   const [editMeetingLink, setEditMeetingLink] = useState('');
+  const [editWorksheetId, setEditWorksheetId] = useState<string>('none');
+  const [studentWorksheets, setStudentWorksheets] = useState<Array<{ id: string; title: string }>>([]);
   const [paymentTrackingEnabled, setPaymentTrackingEnabled] = useState(false);
   const [defaultLessonPrice, setDefaultLessonPrice] = useState<number | null>(null);
   const [currency, setCurrency] = useState('USD');
@@ -98,12 +100,31 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       setEditNotes(slot.notes || '');
       setEditStudentId(slot.student_id || 'none');
       setEditMeetingLink((slot as any).meeting_link || '');
+      setEditWorksheetId(slot.worksheet_id || 'none');
       setShowStudentSelect(false);
       setConfirming(false);
       supabase.from('calendar_slot_logs').select('*').eq('slot_id', slot.id).order('created_at', { ascending: false }).limit(20)
         .then(({ data }) => setSlotLogs((data || []) as SlotLog[]));
     }
   }, [slot?.id, open]);
+
+  // Fetch student worksheets when student changes
+  useEffect(() => {
+    if (editStudentId && editStudentId !== 'none') {
+      supabase.from('worksheets')
+        .select('id, title')
+        .eq('student_id', editStudentId)
+        .order('created_at', { ascending: false })
+        .limit(50)
+        .then(({ data }) => setStudentWorksheets((data || []) as Array<{ id: string; title: string }>));
+    } else {
+      setStudentWorksheets([]);
+      // If student removed, also remove worksheet
+      if (editWorksheetId !== 'none' && editWorksheetId !== (slot?.worksheet_id || 'none')) {
+        setEditWorksheetId('none');
+      }
+    }
+  }, [editStudentId]);
 
   // Fetch payment settings
   useEffect(() => {
@@ -143,7 +164,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     editStartTime !== safeSlot.start_time.slice(0, 5) ||
     editEndTime !== safeSlot.end_time.slice(0, 5) ||
     editNotes !== (safeSlot.notes || '') ||
-    editStudentId !== (safeSlot.student_id || 'none');
+    editStudentId !== (safeSlot.student_id || 'none') ||
+    editWorksheetId !== (safeSlot.worksheet_id || 'none');
 
   // CRITICAL: early return AFTER all hooks
   if (!slot) return null;
@@ -172,6 +194,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     setEditEndTime(slot.end_time.slice(0, 5));
     setEditNotes(slot.notes || '');
     setEditStudentId(slot.student_id || 'none');
+    setEditWorksheetId(slot.worksheet_id || 'none');
     setShowStudentSelect(false);
   };
 
@@ -182,6 +205,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     const updates: any = {
       slot_date: editDate, start_time: editStartTime, end_time: editEndTime, notes: editNotes || null,
       meeting_link: editMeetingLink || null,
+      worksheet_id: editWorksheetId !== 'none' ? editWorksheetId : null,
     };
 
     let logActionName = 'updated';
@@ -625,10 +649,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     onOpenChange(false);
   };
 
-  const handleLinkWorksheetClick = () => {
-    onLinkWorksheet?.(slot, editStudentId !== 'none' ? editStudentId : null);
-  };
-
   const selectedStudentName = students.find(s => s.id === editStudentId)?.name || '';
 
   return (
@@ -723,22 +743,30 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
           </div>
 
           {!isBlock && (
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">Worksheet</span>
-              <div className="flex items-center gap-1">
-                {slot.worksheet_id ? (
-                  <Button variant="link" size="sm" className="p-0 h-auto text-xs" onClick={() => window.open(`/worksheet/${slot.worksheet_id}`, '_blank')}>
-                    <FileText className="h-3 w-3 mr-1" /> Open <ExternalLink className="h-3 w-3 ml-1" />
-                  </Button>
-                ) : (
-                  <span className="text-xs text-muted-foreground">None</span>
-                )}
-                {onLinkWorksheet && (
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-1" disabled={!hasStudent} onClick={handleLinkWorksheetClick}>
-                    <Link2 className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
+            <div>
+              <Label className="text-xs">Worksheet</Label>
+              {hasStudent ? (
+                <div className="flex items-center gap-2">
+                  <Select value={editWorksheetId} onValueChange={setEditWorksheetId}>
+                    <SelectTrigger className="h-9 text-xs flex-1">
+                      <SelectValue placeholder="No worksheet" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No worksheet</SelectItem>
+                      {studentWorksheets.map(w => (
+                        <SelectItem key={w.id} value={w.id}>{w.title || 'Untitled'}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {editWorksheetId !== 'none' && (
+                    <Button variant="ghost" size="sm" className="h-9 px-2" onClick={() => window.open(`/worksheet/${editWorksheetId}`, '_blank')}>
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">Select a student first</p>
+              )}
             </div>
           )}
 
@@ -797,7 +825,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
           )}
         </div>
 
-        <DraggableDialogFooter className="flex-col gap-2">
+        <DraggableDialogFooter className="flex-col sm:flex-col sm:space-x-0 gap-1.5">
           <div className="flex gap-1 flex-wrap w-full">
             {canUndoCancel && (
               <Button size="sm" variant="outline" onClick={handleUndoCancel} className="text-xs h-7"><Undo2 className="h-3 w-3 mr-1" /> Undo Cancel</Button>

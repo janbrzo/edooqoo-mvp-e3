@@ -327,11 +327,30 @@ const PublicBookingPage = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
           {days.map(date => {
             const daySlots = getSlotsForDay(date);
-            const isPast = isBefore(date, today) && !isToday(date);
+            const isPastDay = isBefore(date, today) && !isToday(date);
             const vacLabel = isVacationDay(date);
+            const now = new Date();
+
+            // Filter out slots that have already passed
+            const visibleSlots = daySlots.filter(slot => {
+              const [h, m] = slot.start_time.split(':').map(Number);
+              const slotStart = new Date(date);
+              slotStart.setHours(h, m, 0, 0);
+              if (isBefore(slotStart, now)) return false; // past start time -> hide completely
+              return true;
+            });
+
+            // Apply slot filter
+            const filteredVisibleSlots = visibleSlots.filter(slot => {
+              const isAvailable = slot.status === 'available';
+              const isPending = slot.status === 'booked' && !slot.confirmed_at;
+              if (slotFilter === 'available' && !isAvailable) return false;
+              if (!isAvailable && !isPending) return false; // only show available and pending
+              return true;
+            });
 
             return (
-              <Card key={date.toISOString()} className={`${isPast ? 'opacity-50' : ''} ${isToday(date) ? 'ring-2 ring-primary' : ''} ${vacLabel ? 'bg-orange-50 dark:bg-orange-950/20' : ''}`}>
+              <Card key={date.toISOString()} className={`${isPastDay ? 'opacity-40' : ''} ${isToday(date) ? 'ring-2 ring-primary' : ''} ${vacLabel ? 'bg-orange-50 dark:bg-orange-950/20' : ''}`}>
                 <CardHeader className="p-3 pb-1">
                   <CardTitle className="text-xs font-medium text-center">
                     {format(date, 'EEE')}
@@ -340,37 +359,34 @@ const PublicBookingPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 space-y-1">
-                  {vacLabel && daySlots.length === 0 && (
+                  {vacLabel && filteredVisibleSlots.length === 0 && (
                     <div className="flex flex-col items-center gap-1 py-2 text-orange-600 dark:text-orange-400">
                       <Palmtree className="h-4 w-4" />
                       <span className="text-[10px] text-center">{vacLabel}</span>
                     </div>
                   )}
 
-                  {daySlots.length === 0 && !vacLabel ? (
+                  {filteredVisibleSlots.length === 0 && !vacLabel ? (
                     <p className="text-xs text-muted-foreground text-center py-2">No slots</p>
                   ) : (
-                    daySlots.map(slot => {
+                    filteredVisibleSlots.map(slot => {
                       const isPending = slot.status === 'booked' && !slot.confirmed_at;
                       const isAvailable = slot.status === 'available';
                       const timeDisplay = formatSlotTime(slot);
 
-                      // Filter logic
-                      if (slotFilter === 'available' && !isAvailable) return null;
-
-                      // Hide past slots for today (Problem 8A)
-                      if (isToday(date)) {
-                        const [h, m] = slot.start_time.split(':').map(Number);
-                        const slotStart = new Date(date);
-                        slotStart.setHours(h, m, 0, 0);
-                        if (slotStart < new Date()) return null;
-                      }
+                      // Both pending and available use same structure, differ only in color
+                      const colorClasses = isPending
+                        ? 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                        : rescheduleBookingId
+                          ? 'border-primary bg-primary/10 hover:bg-primary/20 text-primary'
+                          : 'border-green-300 bg-green-50 hover:bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-950 dark:text-green-300';
 
                       if (isPending) {
+                        // Pending: same layout as available but not clickable
                         return (
                           <div
                             key={slot.id}
-                            className="w-full text-xs py-1.5 px-2 rounded-md border border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-300 text-center"
+                            className={`w-full text-xs py-1.5 px-2 rounded-md border ${colorClasses} text-center`}
                           >
                             <span className="flex items-center justify-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -383,20 +399,13 @@ const PublicBookingPage = () => {
                         );
                       }
 
-                      if (!isAvailable) return null;
-
                       return (
                         <Button
                           key={slot.id}
                           variant="outline"
                           size="sm"
-                          className={`w-full text-xs h-auto py-1.5 flex-col ${
-                            rescheduleBookingId
-                              ? 'border-primary bg-primary/10 hover:bg-primary/20 text-primary'
-                              : 'border-green-300 bg-green-50 hover:bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-950 dark:text-green-300'
-                          }`}
-                          onClick={() => !isPast && handleSlotClick(slot)}
-                          disabled={isPast}
+                          className={`w-full text-xs h-auto py-1.5 flex-col ${colorClasses}`}
+                          onClick={() => handleSlotClick(slot)}
                         >
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
