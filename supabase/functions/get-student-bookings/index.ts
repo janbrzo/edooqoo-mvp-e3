@@ -430,7 +430,7 @@ Deno.serve(async (req) => {
         .select('action, actor, details, created_at')
         .eq('slot_id', slotId)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(30);
       return new Response(JSON.stringify({ logs: logs || [] }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -464,14 +464,19 @@ Deno.serve(async (req) => {
     }
 
     // Default: fetch bookings
+    const today = new Date().toISOString().split('T')[0];
     let query = supabase
       .from('calendar_slots')
-      .select('id, slot_date, start_time, end_time, status, confirmed_at, student_notes, worksheet_id, notes, reschedule_request_from_slot_id, reschedule_request_to_slot_id')
+      .select('id, slot_date, start_time, end_time, status, confirmed_at, student_notes, worksheet_id, notes, meeting_link, reschedule_request_from_slot_id, reschedule_request_to_slot_id')
       .eq('teacher_id', teacherId)
       .in('status', ['booked', 'completed', 'needs_review', 'no_show'])
-      .gte('slot_date', new Date().toISOString().split('T')[0])
       .order('slot_date')
       .order('start_time');
+
+    // Only filter by date if not showing past
+    if (!includePast) {
+      query = query.gte('slot_date', today);
+    }
 
     if (student?.id) {
       query = query.eq('student_id', student.id);

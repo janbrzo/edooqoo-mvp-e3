@@ -190,14 +190,12 @@ const CalendarPage = () => {
     }
   };
 
-  const handleLinkWorksheet = (slot: CalendarSlot, studentId?: string | null) => {
-    setLinkWorksheetSlot({ ...slot, student_id: studentId ?? slot.student_id } as CalendarSlot);
-  };
-
+  // handleWorksheetLinked is only used by UnifiedSlotModal (new lesson creation)
   const handleWorksheetLinked = async (worksheetId: string | null) => {
-    if (linkWorksheetSlot) {
-      // Only update worksheet_id — student assignment is handled by Save Changes in SlotDetailModal
-      await updateSlot(linkWorksheetSlot.id, { worksheet_id: worksheetId } as any);
+    // For UnifiedSlotModal flow only — SlotDetailModal now manages worksheet locally
+    if (linkWorksheetSlot && linkWorksheetSlot.id === '__new__') {
+      // This is a new lesson workflow — just store the worksheetId for the modal
+      // The actual save happens in UnifiedSlotModal
     }
   };
 
@@ -407,7 +405,6 @@ const CalendarPage = () => {
         students={studentList}
         onUpdate={updateSlot}
         onDelete={hardDeleteSlot}
-        onLinkWorksheet={handleLinkWorksheet}
         onNotificationsChanged={refetchNotifications}
       />
 
