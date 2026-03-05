@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
 
     const { data: settings } = await supabase
       .from('calendar_settings')
-      .select('gcal_default_color, gcal_default_reminder_minutes, timezone')
+      .select('gcal_default_color, gcal_default_reminder_minutes, timezone, gcal_on_cancel_action')
       .eq('teacher_id', teacherId)
       .single();
 
@@ -100,6 +100,37 @@ Deno.serve(async (req) => {
         await supabase.from('calendar_slots').update({ gcal_event_id: null }).eq('id', slotId);
       }
       console.log('GCal delete:', res.status);
+    } else if (action === 'cancel' && slot.gcal_event_id) {
+      // Check settings for cancel action
+      const cancelAction = settings?.gcal_on_cancel_action || 'update';
+      if (cancelAction === 'delete') {
+        const res = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}`,
+          { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.ok || res.status === 404) {
+          await supabase.from('calendar_slots').update({ gcal_event_id: null }).eq('id', slotId);
+        }
+        console.log('GCal cancel-delete:', res.status);
+      } else {
+        // Update to Available Slot — green, no reminder
+        const event = {
+          summary: 'Available Slot — English Lesson',
+          colorId: '2', // Sage (green)
+          reminders: { useDefault: false, overrides: [] },
+          start: { dateTime: `${slot.slot_date}T${slot.start_time}`, timeZone: timezone },
+          end: { dateTime: `${slot.slot_date}T${slot.end_time}`, timeZone: timezone },
+        };
+        const res = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}`,
+          {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(event),
+          }
+        );
+        console.log('GCal cancel-update:', res.status);
+      }
     } else if (action === 'upsert') {
       // Get student name if available
       let summary = slot.title || 'English Lesson';

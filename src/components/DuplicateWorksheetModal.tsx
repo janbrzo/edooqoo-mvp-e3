@@ -80,7 +80,7 @@ export const DuplicateWorksheetModal = ({
               <SelectTrigger id="student-select">
                 <SelectValue placeholder="Select a student" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" className="max-h-60 overflow-y-auto">
                 <SelectItem value="unassigned">Unassigned</SelectItem>
                 {students.map((student) => (
                   <SelectItem key={student.id} value={student.id}>

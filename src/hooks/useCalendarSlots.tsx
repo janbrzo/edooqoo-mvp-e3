@@ -368,6 +368,7 @@ export function useCalendarSlots(teacherId?: string) {
   // Hard delete (for slots without history)
   const hardDeleteSlot = useCallback(async (slotId: string) => {
     try {
+      triggerGcalSync(slotId, 'delete');
       const { error } = await supabase.from('calendar_slots').delete().eq('id', slotId);
       if (error) throw error;
       await logAction(slotId, 'hard_deleted', 'teacher', {});
@@ -381,6 +382,7 @@ export function useCalendarSlots(teacherId?: string) {
   // Soft delete (for slots with history)
   const deleteSlot = useCallback(async (slotId: string) => {
     try {
+      triggerGcalSync(slotId, 'delete');
       const { error } = await supabase.from('calendar_slots').update({ status: 'deleted' } as any).eq('id', slotId);
       if (error) throw error;
       await logAction(slotId, 'deleted', 'teacher', {});

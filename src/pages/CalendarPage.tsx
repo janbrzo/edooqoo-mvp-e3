@@ -61,6 +61,14 @@ const CalendarPage = () => {
   // Elevated notification state (Problem 7)
   const { notifications, unreadCount, markAllRead, refetch: refetchNotifications } = useCalendarNotifications(user?.id);
 
+  // GCal connection status
+  const [gcalConnected, setGcalConnected] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.from('calendar_gcal_tokens').select('id').eq('teacher_id', user.id).maybeSingle()
+      .then(({ data }) => setGcalConnected(!!data));
+  }, [user?.id]);
+
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [addModalDate, setAddModalDate] = useState<Date | undefined>();
   const [addModalStartTime, setAddModalStartTime] = useState<string | undefined>();
@@ -319,6 +327,11 @@ const CalendarPage = () => {
             <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleExport}>
               <Download className="h-3 w-3 mr-1" /> Export
             </Button>
+            {gcalConnected === false && (
+              <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => navigate('/calendar/settings#gcal')}>
+                🗓️ Connect GCal
+              </Button>
+            )}
             <CalendarNotificationBell
               teacherId={user?.id}
               students={studentsWithEmail}

@@ -299,6 +299,16 @@ const CalendarSettingsPage = () => {
                       <Label>Reminder (minutes before)</Label>
                       <Input type="number" className="w-24" value={settings.gcal_default_reminder_minutes ?? 30} onChange={e => updateSettings({ gcal_default_reminder_minutes: Number(e.target.value) })} />
                     </div>
+                    <div className="flex items-center justify-between">
+                      <div><Label>On cancellation</Label><p className="text-xs text-muted-foreground">What happens to the GCal event when a lesson is cancelled</p></div>
+                      <Select value={(settings as any).gcal_on_cancel_action || 'update'} onValueChange={v => updateSettings({ gcal_on_cancel_action: v } as any)}>
+                        <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="update">Update to Available Slot</SelectItem>
+                          <SelectItem value="delete">Delete event</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </>
                 ) : (
                   <Button onClick={handleConnectGcal} disabled={gcalLoading} variant="outline">

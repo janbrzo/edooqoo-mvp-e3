@@ -42,7 +42,6 @@ type ViewMode = 'schedule' | 'month' | 'range';
 const STATUS_FILTERS = [
   { key: 'completed', label: 'Completed' },
   { key: 'no_show', label: 'No Show' },
-  { key: 'needs_review', label: 'Needs Review' },
   { key: 'student_cancelled', label: 'Student Cancellation' },
   { key: 'teacher_cancelled', label: 'Teacher Cancellation' },
 ];
@@ -82,7 +81,7 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
   const [searched, setSearched] = useState(false);
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
   const [historyLogs, setHistoryLogs] = useState<Record<string, any[]>>({});
-  const [showPast, setShowPast] = useState(false);
+  const [showPast, setShowPast] = useState(true);
   const [showCancelled, setShowCancelled] = useState(false);
   const [cancelledBookings, setCancelledBookings] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -178,7 +177,6 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
     if (statusFilter) {
       if (statusFilter === 'completed') result = result.filter(b => b.status === 'completed');
       else if (statusFilter === 'no_show') result = result.filter(b => b.status === 'no_show');
-      else if (statusFilter === 'needs_review') result = result.filter(b => b.status === 'needs_review');
     }
     return result;
   }, [bookings, statusFilter]);
@@ -207,16 +205,41 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
     return filteredBookings;
   }, [filteredBookings, viewMode, monthDate, rangeFrom, rangeTo]);
 
+  // Merge cancelled into main list
+  const allBookings = useMemo(() => {
+    let result = [...viewFilteredBookings];
+    if (showCancelled && filteredCancelled.length > 0) {
+      const cancelledMapped = filteredCancelled.map((cb: any) => ({
+        ...cb,
+        status: cb.cancelled_by === 'student' ? 'student_cancelled' : 'teacher_cancelled',
+        confirmed_at: null,
+      }));
+      result = [...result, ...cancelledMapped];
+    }
+    result.sort((a: any, b: any) => `${a.slot_date}${a.start_time}`.localeCompare(`${b.slot_date}${b.start_time}`));
+    return result;
+  }, [viewFilteredBookings, showCancelled, filteredCancelled]);
+
+  const listRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollToToday = () => {
+    if (!listRef.current) return;
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const todayEl = listRef.current.querySelector(`[data-date="${todayStr}"]`);
+    if (todayEl) todayEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  };
+
   if (!email || (bookings.length === 0 && !loading && !searched)) return null;
 
-  const renderBookingCard = (booking: Booking) => {
+  const renderBookingCard = (booking: any) => {
+    const isCancelled = booking.status === 'student_cancelled' || booking.status === 'teacher_cancelled';
     const isPending = booking.status === 'booked' && !booking.confirmed_at;
     const isActiveReschedule = rescheduleBookingId === booking.id;
     const isPast = isBefore(parseISO(`${booking.slot_date}T${booking.end_time}`), new Date());
-    const canCancelResult = canCancel(booking);
+    const canCancelResult = !isCancelled && canCancel(booking);
 
     return (
-      <div key={booking.id} className={`border rounded-lg p-3 space-y-2 ${isActiveReschedule ? 'ring-2 ring-primary bg-primary/5' : ''}`}>
+      <div key={booking.id} data-date={booking.slot_date} className={`border rounded-lg p-3 space-y-2 ${isCancelled ? 'opacity-60' : ''} ${isActiveReschedule ? 'ring-2 ring-primary bg-primary/5' : ''}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -237,8 +260,11 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
             {booking.status === 'no_show' && (
               <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 dark:bg-red-950 dark:text-red-300 dark:border-red-700" title={STATUS_TOOLTIPS.no_show}>NS No Show</Badge>
             )}
-            {booking.status === 'needs_review' && (
-              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-700" title={STATUS_TOOLTIPS.needs_review}>? Needs Review</Badge>
+            {booking.status === 'student_cancelled' && (
+              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-700" title={STATUS_TOOLTIPS.student_cancelled}>SC Cancelled</Badge>
+            )}
+            {booking.status === 'teacher_cancelled' && (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-700" title={STATUS_TOOLTIPS.teacher_cancelled}>TC Cancelled</Badge>
             )}
           </div>
         </div>
@@ -404,14 +430,14 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
           <div className="flex items-center gap-2 flex-wrap">
             {/* View mode switcher */}
             <div className="flex border rounded-md overflow-hidden">
-              <button className={`px-2 py-1 text-xs ${viewMode === 'schedule' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`} onClick={() => setViewMode('schedule')} title="Schedule">
-                <List className="h-3.5 w-3.5" />
+              <button className={`px-2 py-1 text-xs flex items-center gap-1 ${viewMode === 'schedule' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`} onClick={() => setViewMode('schedule')}>
+                <List className="h-3.5 w-3.5" /> Schedule
               </button>
-              <button className={`px-2 py-1 text-xs ${viewMode === 'month' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`} onClick={() => setViewMode('month')} title="Month">
-                <CalendarDays className="h-3.5 w-3.5" />
+              <button className={`px-2 py-1 text-xs flex items-center gap-1 ${viewMode === 'month' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`} onClick={() => setViewMode('month')}>
+                <CalendarDays className="h-3.5 w-3.5" /> Month
               </button>
-              <button className={`px-2 py-1 text-xs ${viewMode === 'range' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`} onClick={() => setViewMode('range')} title="Date Range">
-                <CalendarRange className="h-3.5 w-3.5" />
+              <button className={`px-2 py-1 text-xs flex items-center gap-1 ${viewMode === 'range' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`} onClick={() => setViewMode('range')}>
+                <CalendarRange className="h-3.5 w-3.5" /> Date Range
               </button>
             </div>
             <div className="flex items-center gap-1.5">
@@ -445,52 +471,24 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
       <CardContent className="space-y-4">
         {loading && <p className="text-sm text-muted-foreground text-center py-4">Loading your lessons...</p>}
 
-        {searched && viewFilteredBookings.length === 0 && !loading && !showCancelled && (
+        {searched && allBookings.length === 0 && !loading && (
           <p className="text-sm text-muted-foreground text-center py-4">No lessons found.</p>
         )}
 
         {/* Main view */}
-        {viewMode === 'schedule' && viewFilteredBookings.length > 0 && (
-          <div className="space-y-2">
-            {viewFilteredBookings.map(renderBookingCard)}
+        {viewMode === 'schedule' && allBookings.length > 0 && (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="text-xs h-7 shrink-0 self-start" onClick={scrollToToday}>
+              Today
+            </Button>
+            <div ref={listRef} className="space-y-2 max-h-[560px] overflow-y-auto flex-1 pr-1">
+              {allBookings.map(renderBookingCard)}
+            </div>
           </div>
         )}
 
         {viewMode === 'month' && renderMonthView()}
         {viewMode === 'range' && renderRangeView()}
-
-        {/* Cancelled bookings section */}
-        {showCancelled && filteredCancelled.length > 0 && (
-          <div className="space-y-2 border-t pt-4">
-            <h3 className="text-sm font-medium text-muted-foreground">Cancelled Lessons</h3>
-            {filteredCancelled.map((cb: any) => (
-              <div key={cb.id} className="border rounded-lg p-3 opacity-60 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{cb.slot_date}</span>
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-sm">{cb.start_time?.slice(0, 5)} – {cb.end_time?.slice(0, 5)}</span>
-                  </div>
-                  <Badge variant="outline"
-                    className={cb.cancelled_by === 'student' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-blue-50 text-blue-700 border-blue-300'}
-                    title={cb.cancelled_by === 'student' ? STATUS_TOOLTIPS.student_cancelled : STATUS_TOOLTIPS.teacher_cancelled}>
-                    {cb.cancelled_by === 'student' ? 'SC' : 'TC'} Cancelled
-                  </Badge>
-                </div>
-                {cb.cancellation_reason && <p className="text-xs text-muted-foreground">{cb.cancellation_reason}</p>}
-                <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground" onClick={() => toggleHistory(cb.id)}>
-                  <History className="h-3 w-3 mr-1" /> History
-                </Button>
-                {expandedHistory === cb.id && renderHistoryLogs(cb.id)}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {showCancelled && filteredCancelled.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-2">No cancelled lessons found.</p>
-        )}
       </CardContent>
     </Card>
   );

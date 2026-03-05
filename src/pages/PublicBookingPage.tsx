@@ -284,7 +284,7 @@ const PublicBookingPage = () => {
           </div>
         )}
 
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => navigateWeek('prev')}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -295,32 +295,31 @@ const PublicBookingPage = () => {
           <span className="text-sm font-medium ml-2">
             {format(weekStart, 'MMM d')} – {format(weekEnd, 'MMM d, yyyy')}
           </span>
-        </div>
-
-        {/* Problem 10: Legend with A/P badges and filter */}
-        <div className="flex items-center gap-4 justify-center text-xs">
-          <button
-            className={cn(
-              'flex items-center gap-1 px-2 py-1 rounded transition-colors',
-              slotFilter === 'available' ? 'ring-2 ring-primary bg-primary/10' : 'hover:bg-muted/50'
+          {/* Slot filter badges inline with date nav */}
+          <div className="flex items-center gap-2 ml-2 text-xs">
+            <button
+              className={cn(
+                'flex items-center gap-1 px-2 py-1 rounded transition-colors',
+                slotFilter === 'available' ? 'ring-2 ring-primary bg-primary/10' : 'hover:bg-muted/50'
+              )}
+              onClick={() => setSlotFilter(slotFilter === 'available' ? null : 'available')}
+            >
+              <span className="w-4 h-4 rounded border border-green-400 bg-green-200 text-[8px] font-bold flex items-center justify-center">A</span>
+              Available
+            </button>
+            <button
+              className="flex items-center gap-1 px-2 py-1 rounded hover:bg-muted/50"
+              onClick={() => setSlotFilter(null)}
+            >
+              <span className="w-4 h-4 rounded border border-amber-400 bg-amber-200 text-[8px] font-bold flex items-center justify-center">P</span>
+              Pending
+            </button>
+            {slotFilter && (
+              <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setSlotFilter(null)}>
+                <X className="h-3 w-3 mr-1" /> Clear
+              </Button>
             )}
-            onClick={() => setSlotFilter(slotFilter === 'available' ? null : 'available')}
-          >
-            <span className="w-4 h-4 rounded border border-green-400 bg-green-200 text-[8px] font-bold flex items-center justify-center">A</span>
-            Available
-          </button>
-          <button
-            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-muted/50"
-            onClick={() => setSlotFilter(null)}
-          >
-            <span className="w-4 h-4 rounded border border-amber-400 bg-amber-200 text-[8px] font-bold flex items-center justify-center">P</span>
-            Pending
-          </button>
-          {slotFilter && (
-            <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setSlotFilter(null)}>
-              <X className="h-3 w-3 mr-1" /> Clear
-            </Button>
-          )}
+          </div>
         </div>
 
         {/* Week grid */}
@@ -386,7 +385,7 @@ const PublicBookingPage = () => {
                         return (
                           <div
                             key={slot.id}
-                            className={`w-full text-xs py-1.5 px-2 rounded-md border ${colorClasses} text-center`}
+                            className={`w-full text-xs h-auto py-1.5 rounded-md border ${colorClasses} flex flex-col items-center`}
                           >
                             <span className="flex items-center justify-center gap-1">
                               <Clock className="h-3 w-3" />

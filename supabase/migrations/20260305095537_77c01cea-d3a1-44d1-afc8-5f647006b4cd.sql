@@ -1,0 +1,1 @@
+ALTER TABLE calendar_settings ADD COLUMN IF NOT EXISTS gcal_on_cancel_action text DEFAULT 'update';
