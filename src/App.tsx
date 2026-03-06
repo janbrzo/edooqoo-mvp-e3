@@ -41,6 +41,12 @@ import PublicBookingPage from "./pages/PublicBookingPage";
 import StudentLessonsPage from "./pages/StudentLessonsPage";
 import CalendarLogHistoryPage from "./components/calendar/CalendarLogHistoryPage";
 import BookLandingPage from "./pages/BookLandingPage";
+import StudentHubLanding from "./pages/StudentHubLanding";
+import StudentHubDashboard from "./pages/StudentHubDashboard";
+import StudentHubFlashcards from "./pages/StudentHubFlashcards";
+import StudentHubHomework from "./pages/StudentHubHomework";
+import StudentHubWorksheets from "./pages/StudentHubWorksheets";
+import StudentHubLessons from "./pages/StudentHubLessons";
 
 const queryClient = new QueryClient();
 
@@ -84,6 +90,12 @@ const App = () => (
               <Route path="/calendar/logs" element={<CalendarLogHistoryPage />} />
               <Route path="/book" element={<BookLandingPage />} />
               <Route path="/book/:token" element={<PublicBookingPage />} />
+              <Route path="/my" element={<StudentHubLanding />} />
+              <Route path="/my/:teacherToken" element={<StudentHubDashboard />} />
+              <Route path="/my/:teacherToken/flashcards" element={<StudentHubFlashcards />} />
+              <Route path="/my/:teacherToken/homework" element={<StudentHubHomework />} />
+              <Route path="/my/:teacherToken/worksheets" element={<StudentHubWorksheets />} />
+              <Route path="/my/:teacherToken/lessons" element={<StudentHubLessons />} />
               <Route path="/my-lessons/:token" element={<StudentLessonsPage />} />
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/waiting-list" element={<Navigate to="/" replace />} />
