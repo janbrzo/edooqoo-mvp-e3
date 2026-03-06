@@ -306,7 +306,7 @@ const CalendarPage = () => {
             </Button>
             {!selectionMode ? (
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSelectionMode(true)}>
-                Select
+                Bulk Delete
               </Button>
             ) : (
               <div className="flex items-center gap-1">

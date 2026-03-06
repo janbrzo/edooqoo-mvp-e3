@@ -19,7 +19,6 @@ async function getValidToken(supabase: any, teacherId: string): Promise<string |
     return tokenData.access_token;
   }
 
-  // Refresh token
   const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
   const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
   if (!clientId || !clientSecret) return null;
@@ -56,7 +55,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { teacherId, slotId, action } = await req.json(); // action: 'upsert' | 'delete'
+    const { teacherId, slotId, action, colorOverride } = await req.json();
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -84,7 +83,7 @@ Deno.serve(async (req) => {
 
     const { data: settings } = await supabase
       .from('calendar_settings')
-      .select('gcal_default_color, gcal_default_reminder_minutes, timezone, gcal_on_cancel_action')
+      .select('gcal_default_color, gcal_default_reminder_minutes, timezone, gcal_on_cancel_action, gcal_color_booked, gcal_color_available, gcal_color_pending, gcal_color_completed, gcal_color_no_show, gcal_sync_mode, auto_create_meet_link')
       .eq('teacher_id', teacherId)
       .single();
 
@@ -101,7 +100,6 @@ Deno.serve(async (req) => {
       }
       console.log('GCal delete:', res.status);
     } else if (action === 'cancel' && slot.gcal_event_id) {
-      // Check settings for cancel action
       const cancelAction = settings?.gcal_on_cancel_action || 'update';
       if (cancelAction === 'delete') {
         const res = await fetch(
@@ -113,10 +111,9 @@ Deno.serve(async (req) => {
         }
         console.log('GCal cancel-delete:', res.status);
       } else {
-        // Update to Available Slot — green, no reminder
         const event = {
           summary: 'Available Slot — English Lesson',
-          colorId: '2', // Sage (green)
+          colorId: settings?.gcal_color_available || '2',
           reminders: { useDefault: false, overrides: [] },
           start: { dateTime: `${slot.slot_date}T${slot.start_time}`, timeZone: timezone },
           end: { dateTime: `${slot.slot_date}T${slot.end_time}`, timeZone: timezone },
@@ -132,42 +129,75 @@ Deno.serve(async (req) => {
         console.log('GCal cancel-update:', res.status);
       }
     } else if (action === 'upsert') {
-      // Get student name if available
       let summary = slot.title || 'English Lesson';
       if (slot.student_id) {
         const { data: student } = await supabase.from('students').select('name').eq('id', slot.student_id).maybeSingle();
         if (student?.name) summary = `${student.name} — English Lesson`;
       }
 
+      // Determine color based on status
+      let eventColorId = settings?.gcal_default_color || '9';
+      if (colorOverride) {
+        eventColorId = colorOverride;
+      } else {
+        const statusColorMap: Record<string, string> = {
+          booked: settings?.gcal_color_booked || '9',
+          available: settings?.gcal_color_available || '2',
+          pending: settings?.gcal_color_pending || '5',
+          completed: settings?.gcal_color_completed || '10',
+          no_show: settings?.gcal_color_no_show || '6',
+        };
+        const isPending = slot.status === 'booked' && !slot.confirmed_at;
+        const effectiveStatus = isPending ? 'pending' : (slot.status === 'needs_review' ? 'booked' : slot.status);
+        eventColorId = statusColorMap[effectiveStatus] || eventColorId;
+      }
+
+      // Determine reminders
+      const isTerminalStatus = slot.status === 'completed' || slot.status === 'no_show';
+      const reminders = (isTerminalStatus || !settings?.gcal_default_reminder_minutes)
+        ? { useDefault: false, overrides: [] }
+        : { useDefault: false, overrides: [{ method: 'popup', minutes: settings.gcal_default_reminder_minutes }] };
+
       const event: any = {
         summary,
         start: { dateTime: `${slot.slot_date}T${slot.start_time}`, timeZone: timezone },
         end: { dateTime: `${slot.slot_date}T${slot.end_time}`, timeZone: timezone },
-        reminders: {
-          useDefault: false,
-          overrides: [{ method: 'popup', minutes: settings?.gcal_default_reminder_minutes || 30 }],
-        },
+        colorId: eventColorId,
+        reminders,
       };
 
-      if (settings?.gcal_default_color) {
-        event.colorId = settings.gcal_default_color;
+      // Google Meet auto-creation
+      if (settings?.auto_create_meet_link && slot.student_id && !isTerminalStatus) {
+        event.conferenceData = {
+          createRequest: {
+            requestId: slotId,
+            conferenceSolutionKey: { type: 'hangoutsMeet' },
+          },
+        };
       }
 
+      const conferenceParam = settings?.auto_create_meet_link ? '?conferenceDataVersion=1' : '';
+
       if (slot.gcal_event_id) {
-        // Update
         const res = await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}`,
+          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}${conferenceParam}`,
           {
             method: 'PUT',
             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(event),
           }
         );
+        if (res.ok) {
+          const updated = await res.json();
+          const meetLink = updated.hangoutLink || null;
+          if (meetLink && meetLink !== slot.meeting_link) {
+            await supabase.from('calendar_slots').update({ meeting_link: meetLink }).eq('id', slotId);
+          }
+        }
         console.log('GCal update:', res.status);
       } else {
-        // Create
         const res = await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`,
+          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events${conferenceParam}`,
           {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -176,8 +206,12 @@ Deno.serve(async (req) => {
         );
         if (res.ok) {
           const created = await res.json();
-          await supabase.from('calendar_slots').update({ gcal_event_id: created.id }).eq('id', slotId);
-          console.log('GCal created:', created.id);
+          const meetLink = created.hangoutLink || null;
+          await supabase.from('calendar_slots').update({
+            gcal_event_id: created.id,
+            ...(meetLink ? { meeting_link: meetLink } : {}),
+          }).eq('id', slotId);
+          console.log('GCal created:', created.id, meetLink ? `Meet: ${meetLink}` : '');
         } else {
           console.error('GCal create failed:', res.status, await res.text());
         }

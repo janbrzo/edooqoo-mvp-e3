@@ -568,6 +568,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       } as any);
     } catch (_) {}
     await resolveNotifications(slot.id, ['booking_pending', 'booking_confirmed'], 'cancelled');
+    // GCal: same behavior as teacher cancellation — update to Available or delete
+    supabase.functions.invoke('gcal-sync', { body: { teacherId: slot.teacher_id, slotId: slot.id, action: 'cancel' } }).catch(console.error);
     setTimeout(() => onNotificationsChanged?.(), 300);
     onOpenChange(false);
   };
@@ -582,6 +584,13 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         details: { old_status: slot.status, new_status: status, student_name: studentName, slot_date: slot.slot_date, start_time: slot.start_time },
       } as any);
     } catch (_) {}
+    // GCal: update color based on status (completed=Basil/dark green, no_show=Tangerine/orange)
+    if (status === 'completed' || status === 'no_show') {
+      const colorMap: Record<string, string> = { completed: '10', no_show: '6' };
+      supabase.functions.invoke('gcal-sync', {
+        body: { teacherId: slot.teacher_id, slotId: slot.id, action: 'upsert', colorOverride: colorMap[status] },
+      }).catch(console.error);
+    }
     onOpenChange(false);
   };
 
