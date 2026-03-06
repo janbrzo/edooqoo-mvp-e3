@@ -1,290 +1,220 @@
 
 
-# Plan: Runda napraw #7
+# Plan: Ujednolicony Panel Studenta (Student Hub)
 
-## Problem 1: Dropdown "Assign to Student" w DuplicateWorksheetModal nie scrolluje się myszką
+## Kontekst i analiza obecnego stanu
 
-**Diagnoza:** Radix `SelectContent` domyślnie używa virtualnego scrollowania ze strzałkami, ale nie obsługuje dobrze mouse wheel w pewnych warunkach. Dodatkowo lista wystaje poza ekran w górę.
+Aktualnie student ma rozsiane po różnych URL-ach dostęp do swoich materiałów:
+- **Flashcards**: `/my-flashcards/:studentEmail` — dedykowana strona, ale wymaga znania emaila w URL
+- **Bookings**: `/book` → `/book/:token` — model email-first, localStorage 7 dni
+- **Homework**: `/homework/:shareToken` — osobne linki per zadanie, brak listy
+- **Shared worksheets**: `/shared/:shareToken` — osobne linki per worksheet, brak listy
+- **Lessons history**: `/my-lessons/:token` — uproszczony widok po student_id
 
-**Fix w `src/components/DuplicateWorksheetModal.tsx`:**
-- Dodać do `<SelectContent>` prop `position="popper"` + klasy `max-h-60 overflow-y-auto`:
-```tsx
-<SelectContent position="popper" className="max-h-60 overflow-y-auto">
+Brak jednego miejsca, gdzie student widzi wszystko. Brak dashboardu.
+
+## Architektura rozwiązania
+
+### URL: `/my` — Student Hub Dashboard
+
+Prosty adres. Student wchodzi na `edooqoo.com/my`, wpisuje email, i ma dostęp do wszystkiego.
+
+### Weryfikacja tożsamości
+
+Model identyczny jak na `/book` — **email-first**, bez konta:
+1. Student wchodzi na `/my`
+2. Wpisuje email
+3. System szuka wszystkich nauczycieli powiązanych z tym emailem (istniejąca edge function `find-teachers-by-student-email` + rozszerzona o dodatkowe dane)
+4. Email zapisywany w `localStorage` na 30 dni (klucz: `student_hub_email`)
+5. Przycisk „Log out" czyści localStorage
+6. Jeśli student ma jednego nauczyciela — od razu dashboard. Jeśli wielu — wybór nauczyciela (jak na `/book`)
+
+### Struktura stron
+
+```text
+/my                     → Landing: email input + teacher select
+/my/:teacherToken       → Dashboard studenta u konkretnego nauczyciela
+/my/:teacherToken/flashcards   → Lista flashcard sets
+/my/:teacherToken/homework     → Lista homework assignments
+/my/:teacherToken/worksheets   → Lista shared worksheets
+/my/:teacherToken/lessons      → Bookings (jak /book/:token sekcja Your Lessons)
 ```
-To wymusza popper positioning (nie wypływa poza viewport) i dodaje natywny scroll myszką.
 
-**Plik:** `src/components/DuplicateWorksheetModal.tsx` linia 83
+`teacherToken` = `public_calendar_token` z tabeli `calendar_settings` (już istnieje, unikalny per nauczyciel).
 
----
+### Nowa Edge Function: `get-student-hub-data`
 
-## Problem 2: Błąd generowania worksheet — `streamUsedModel is not defined`
+Centralna funkcja zwracająca wszystkie dane studenta u danego nauczyciela. Parametry: `{ token, email }`.
 
-**Diagnoza:** W `generateWorksheet/index.ts` zmienna `streamUsedModel` jest zadeklarowana wewnątrz bloku `try` (linia 470: `let streamUsedModel = ""`) ale jest referowana w bloku `catch` (linie 635, 639). W normalnym JS/TS `let` w bloku `try` nie jest widoczny w `catch`. Stąd `ReferenceError`.
-
-Mimo tego erroru generowanie naprawiło się samo (JSON repair succeeded) i worksheet się wygenerował — ale error w `catch` powoduje że:
-1. `notifyGenerationFailure` jest wywoływana z niezdefiniowaną zmienną → crash
-2. Email o błędzie się NIE wysyła bo sam `catch` crashuje
-
-**Fix w `supabase/functions/generateWorksheet/index.ts`:**
-Przenieść deklarację `let streamUsedModel = "";` PRZED blok `try` (na poziom async IIFE, tuż po `let lastExerciseCount = 0;`):
-
-Zmiana: linia 468-470 → przenieść `let streamUsedModel = "";` do linii 467 (przed try):
+Zwraca:
 ```ts
-let fullContent = "";
-let lastExerciseCount = 0;
-let streamUsedModel = ""; // ← przenieść tutaj, PRZED try
-
-try {
-  console.log("🔵 Trying Gemini 2.5 Flash streaming...");
-  streamUsedModel = "gemini-2.5-flash";
-```
-
-Dzięki temu `catch` będzie miał dostęp do zmiennej i email z alertem dotrze poprawnie.
-
-**Plik:** `supabase/functions/generateWorksheet/index.ts`
-
----
-
-## Problem 3: /book — UI fixes
-
-### 3A: Pending w dwóch liniach vs Available w jednej
-
-**Diagnoza:** W `PublicBookingPage.tsx` pending slot (linia 384-399) używa `<div>` z klasą `text-center`, a available (402-418) to `<Button>` z `flex-col`. Obie gałęzie mają tę samą strukturę od ostatnich zmian. Problem to prawdopodobnie brak `flex-col` na divie pending — plik wygląda OK, ale sprawdźmy: pending div NIE ma `h-auto py-1.5 flex-col` jak Button available.
-
-**Fix:** Ujednolicić pending div z available button:
-```tsx
-// Pending: linia 387-398
-<div
-  key={slot.id}
-  className={`w-full text-xs h-auto py-1.5 rounded-md border ${colorClasses} text-center flex flex-col items-center`}
->
-```
-Dodać `h-auto flex flex-col items-center` żeby layout był identyczny.
-
-### 3B: Widoki Schedule/Month/Range — dodać napisy zamiast samych ikon + Show past domyślnie ON
-
-**Fix w `StudentBookingsSection.tsx`:**
-1. Zmienić switcher widoków (linia 406-416) — dodać teksty:
-```tsx
-<button className={...} onClick={() => setViewMode('schedule')}>
-  <List className="h-3.5 w-3.5 mr-1" /> Schedule
-</button>
-<button className={...} onClick={() => setViewMode('month')}>
-  <CalendarDays className="h-3.5 w-3.5 mr-1" /> Month
-</button>
-<button className={...} onClick={() => setViewMode('range')}>
-  <CalendarRange className="h-3.5 w-3.5 mr-1" /> Date Range
-</button>
-```
-
-2. Zmienić domyślną wartość `showPast` (linia 85):
-```ts
-const [showPast, setShowPast] = useState(true); // domyślnie ON
-```
-
-### 3C: Cancelled Lessons jako normalne kafelki w głównej liście (nie osobna sekcja)
-
-**Fix:** Zamiast osobnej sekcji "Cancelled Lessons" (linia 462-489), merged cancelled bookings do `viewFilteredBookings`:
-1. Gdy `showCancelled=true`, dodać cancelled bookings do głównej listy
-2. Usunąć osobną sekcję
-3. W `renderBookingCard` dodać obsługę cancelled statusu (badge SC/TC)
-
-Zmiana logiki:
-```ts
-const allBookings = useMemo(() => {
-  let result = [...viewFilteredBookings];
-  if (showCancelled && filteredCancelled.length > 0) {
-    // Map cancelled to Booking format and merge
-    const cancelledMapped = filteredCancelled.map((cb: any) => ({
-      ...cb,
-      status: cb.cancelled_by === 'student' ? 'student_cancelled' : 'teacher_cancelled',
-      confirmed_at: null,
-    }));
-    result = [...result, ...cancelledMapped];
+{
+  teacherName: string;
+  studentName: string;
+  studentId: string;
+  flashcardSets: Array<{
+    id, title, description, share_token, cards_count, mastered_count, 
+    is_bidirectional, back_type, created_at, updated_at
+  }>;
+  homeworks: Array<{
+    id, title, share_token, deadline, created_at, completed_at, 
+    reviewed_at, source_worksheet_title, exercises_count, 
+    completed_exercises_count
+  }>;
+  sharedWorksheets: Array<{
+    id, title, share_token, created_at, english_level, lesson_topic,
+    share_expires_at, exercises_count, completed_exercises_count,
+    linked_slot_date  // jeśli worksheet jest przypisany do slotu
+  }>;
+  upcomingLessons: Array<{
+    id, slot_date, start_time, end_time, status, title, notes,
+    meeting_link, confirmed_at, worksheet_share_token
+  }>;
+  stats: {
+    totalLessons: number;
+    completedLessons: number;
+    upcomingLessons: number;
+    activeHomeworks: number;
+    flashcardSetsCount: number;
+    totalFlashcards: number;
+    masteredFlashcards: number;
   }
-  // Sort all by slot_date + start_time
-  result.sort((a, b) => `${a.slot_date}${a.start_time}`.localeCompare(`${b.slot_date}${b.start_time}`));
-  return result;
-}, [viewFilteredBookings, showCancelled, filteredCancelled]);
-```
-
-W `renderBookingCard` dodać badge cancelled:
-```tsx
-{(booking.status === 'student_cancelled' || booking.cancelled_by === 'student') && (
-  <Badge ... title={STATUS_TOOLTIPS.student_cancelled}>SC Cancelled</Badge>
-)}
-{(booking.status === 'teacher_cancelled' || booking.cancelled_by === 'teacher') && (
-  <Badge ... title={STATUS_TOOLTIPS.teacher_cancelled}>TC Cancelled</Badge>
-)}
-```
-
-### 3D: Usunąć filtr "Needs Review" — uczeń nie powinien widzieć
-
-**Fix:** Linia 42-48, usunąć z `STATUS_FILTERS`:
-```ts
-const STATUS_FILTERS = [
-  { key: 'completed', label: 'Completed' },
-  { key: 'no_show', label: 'No Show' },
-  { key: 'student_cancelled', label: 'Student Cancellation' },
-  { key: 'teacher_cancelled', label: 'Teacher Cancellation' },
-];
-```
-Usunąć też `needs_review` z `filteredBookings` logic (linia 181).
-
-### 3E: Scrollowalny box z lekcjami + przycisk "Today"
-
-**Fix w `StudentBookingsSection.tsx`:**
-W schedule view (linia 453-457), zawinąć w scrollowalny kontener z max-height na ~7 lekcji (~560px) i ref do scroll:
-```tsx
-const listRef = useRef<HTMLDivElement>(null);
-
-const scrollToToday = () => {
-  if (!listRef.current) return;
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const todayEl = listRef.current.querySelector(`[data-date="${todayStr}"]`);
-  if (todayEl) todayEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
-};
-
-// W renderBookingCard dodać data-date:
-<div key={booking.id} data-date={booking.slot_date} className={...}>
-
-// Schedule view:
-<div className="flex gap-2">
-  <Button variant="outline" size="sm" className="text-xs h-7 shrink-0 self-start" onClick={scrollToToday}>
-    Today
-  </Button>
-  <div ref={listRef} className="space-y-2 max-h-[560px] overflow-y-auto flex-1 pr-1">
-    {allBookings.map(renderBookingCard)}
-  </div>
-</div>
-```
-
-### 3F: Filtry wyżej — na poziomie sterowania tygodniami
-
-**Fix:** Przenieść filtry statusów z `CardHeader` (linia 431-443) do `PublicBookingPage.tsx`, na poziomie toolbar tygodniowego.
-
-To wymaga wyciągnięcia state filtrów do parenta. Prostsze rozwiązanie: w `StudentBookingsSection` przenieść filtry z `CardHeader` do poziomu PRZED `CardContent`, bezpośrednio po nagłówku "Your Lessons":
-
-W `CardHeader` wstawić filtry w jednej linii z tygodniowym toolbarem — ale StudentBookingsSection nie ma dostępu do toolbaru tygodniowego. Prostsze: przenieść slot filtery `Available/Pending` z `PublicBookingPage` na poziom nagłówka obok toolbaru dat.
-
-W `PublicBookingPage.tsx` przenieść `slotFilter` buttons (linie z Available/Pending) do pozycji obok "Today Mar 16 – Mar 22" zamiast pod spodem.
-
-**Plik:** `src/pages/PublicBookingPage.tsx` — przenieść `slotFilter` do toolbara dat
-
----
-
-## Problem 4: Google Calendar
-
-### 4A: "Connect Google Calendar" poza ustawieniami
-
-**Fix w `CalendarPage.tsx`:** Dodać w toolbarze (obok Share, Export) przycisk "Connect GCal" jeśli `!gcalConnected`:
-```tsx
-{!gcalConnected && (
-  <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => navigate('/calendar/settings#gcal')}>
-    🗓️ Connect GCal
-  </Button>
-)}
-```
-Wymaga pobrania `gcalConnected` stanu — dodać prosty fetch z `calendar_gcal_tokens`.
-
-### 4B: Ustawienia GCal — domyślny kolor niebieski + opcja wyłączenia
-
-**Fix w `CalendarSettingsPage.tsx`:**
-- Domyślny kolor: zmienić w `useCalendarSettings.tsx` wartość `gcal_default_color` z `'1'` (Lavender) na `'9'` (Blueberry = niebieski)
-- Opcja wyłączenia sync jest już zaimplementowana (`gcal_integration_enabled` switch). OK.
-
-### 4C: Teacher Cancellation → GCal event zmienia się na "Available Slot"
-
-**Fix w `gcal-sync/index.ts`:**
-Dodać obsługę action `'cancel'` (obok `'upsert'` i `'delete'`):
-```ts
-} else if (action === 'cancel' && slot.gcal_event_id) {
-  // Update to Available Slot — green, no reminder
-  const event = {
-    summary: 'Available Slot — English Lesson',
-    colorId: '2', // Sage (green)
-    reminders: { useDefault: false, overrides: [] },
-    start: { dateTime: `${slot.slot_date}T${slot.start_time}`, timeZone: timezone },
-    end: { dateTime: `${slot.slot_date}T${slot.end_time}`, timeZone: timezone },
-  };
-  await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}`, {
-    method: 'PUT',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(event),
-  });
 }
 ```
 
-W `SlotDetailModal.tsx` → `handleTeacherCancellation` — po cancellation, wywołać:
-```ts
-supabase.functions.invoke('gcal-sync', { body: { teacherId: slot.teacher_id, slotId: slot.id, action: 'cancel' } }).catch(console.error);
-```
+Logika wewnętrzna:
+1. Weryfikacja tokena → `teacher_id`
+2. Znalezienie studenta po email + teacher_id w tabeli `students`
+3. Flashcards: `flashcard_sets` + `flashcard_cards` count + `flashcard_progress` mastered count
+4. Homework: `homework_assignments` z `share_token` + join z `homework_student_answers` dla postępu
+5. Shared worksheets: `worksheets` z `share_token IS NOT NULL` + `student_id` + join z `worksheet_student_answers` dla postępu
+6. Lessons: `calendar_slots` z `student_id` — upcoming (future + today) + ostatnie 5 past
 
-### 4D: Usunięcie lekcji → usunięcie z GCal
+### Komponenty frontend
 
-**Fix w `useCalendarSlots.tsx`:**
-W `deleteSlot` (linia 382-392) i `hardDeleteSlot` (linia 369-379) dodać:
-```ts
-triggerGcalSync(slotId, 'delete');
-```
-przed `fetchSlots()`.
+#### 1. `src/pages/StudentHubLanding.tsx` — strona `/my`
 
-Analogicznie w `deleteSlotsBatch` — dla każdego slotId.
+Identyczna logika jak `BookLandingPage.tsx`:
+- Input email → `find-teachers-by-student-email` → lista nauczycieli
+- localStorage `student_hub_email` TTL 30 dni
+- Klik na nauczyciela → `/my/:teacherToken`
+- Jeśli 1 nauczyciel → auto-redirect
+- Design: prosty, czysty, ikona + "Welcome! Enter your email to access your learning materials"
+- Logout button (jeśli email saved)
 
-### 4E: Ustawienia GCal w settings
+#### 2. `src/pages/StudentHubDashboard.tsx` — strona `/my/:teacherToken`
 
-Już zaimplementowane — karta "Google Calendar" w `CalendarSettingsPage` z color, reminder, enable/disable. Jedyne brakujące: opcja "Sync available slots to GCal" (osobny switch) i "On cancellation: update to Available / delete". To dodatkowe opcje.
+Dashboard z sekcjami:
 
-Dodać w settings:
+**Header**: "Welcome, {studentName}! 👋" + nauczyciel badge + logout
+
+**Quick Stats** (karty na górze):
+- 📚 X Flashcard sets (Y mastered / Z total cards)
+- 📝 X Active homeworks
+- 📄 X Shared worksheets
+- 📅 Next lesson: {date} at {time}
+
+**Sekcja 1: Next Lesson** (jeśli jest upcoming)
+- Kafelek z datą, godziną, statusem, meeting linkiem
+- Przycisk "View all lessons" → `/my/:token/lessons`
+
+**Sekcja 2: Flashcards** (ostatnie 3 sety)
+- Karty z tytułem, postępem, przyciskami Browse/Study
+- "View all flashcards" → `/my/:token/flashcards`
+
+**Sekcja 3: Homework** (ostatnie 3, posortowane: pending first)
+- Kafelek: tytuł, deadline, postęp (X/Y exercises), status badge
+- "View all homework" → `/my/:token/homework`
+
+**Sekcja 4: Shared Worksheets** (ostatnie 3)
+- Kafelek: tytuł, level, topic, postęp study mode
+- "View all worksheets" → `/my/:token/worksheets`
+
+#### 3. Podstrony kategorii
+
+- `StudentHubFlashcards.tsx` → pełna lista flashcard sets (reuse logiki z `StudentPortal.tsx`)
+- `StudentHubHomework.tsx` → pełna lista homework z filtrami (Pending/Completed/Overdue)
+- `StudentHubWorksheets.tsx` → pełna lista shared worksheets
+- `StudentHubLessons.tsx` → reuse `StudentBookingsSection` (jak na `/book/:token`)
+
+Każda podstrona ma:
+- Nawigację powrotną do dashboardu
+- Shared header z imieniem studenta
+- Sortowanie i filtry
+
+### Layout i nawigacja
+
+Wspólny layout `StudentHubLayout.tsx`:
+- Sticky header: logo + student name + teacher name + logout
+- Tab navigation (ikonki + tekst): Dashboard | Flashcards | Homework | Worksheets | Lessons
+- Footer: "Powered by edooqoo"
+
+### Co jeszcze powinno być na panelu studenta (punkt E z promptu)
+
+1. **Welcome Test results** — jeśli student ma wykonany welcome test, pokaż wynik i rekomendowany poziom
+2. **Teacher info** — imię nauczyciela, email kontaktowy
+3. **Student profile** — imię, email, poziom angielskiego (read-only)
+
+## Routing (App.tsx)
+
 ```tsx
-<div className="flex items-center justify-between">
-  <div><Label>On cancellation</Label><p className="text-xs text-muted-foreground">What happens to the GCal event when lesson is cancelled</p></div>
-  <Select value={settings.gcal_on_cancel_action || 'update'} onValueChange={v => updateSettings({ gcal_on_cancel_action: v })}>
-    <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-    <SelectContent>
-      <SelectItem value="update">Update to Available Slot</SelectItem>
-      <SelectItem value="delete">Delete event</SelectItem>
-    </SelectContent>
-  </Select>
-</div>
+<Route path="/my" element={<StudentHubLanding />} />
+<Route path="/my/:teacherToken" element={<StudentHubDashboard />} />
+<Route path="/my/:teacherToken/flashcards" element={<StudentHubFlashcards />} />
+<Route path="/my/:teacherToken/homework" element={<StudentHubHomework />} />
+<Route path="/my/:teacherToken/worksheets" element={<StudentHubWorksheets />} />
+<Route path="/my/:teacherToken/lessons" element={<StudentHubLessons />} />
 ```
 
-Wymaga dodania kolumny `gcal_on_cancel_action text DEFAULT 'update'` do `calendar_settings`.
+Obecne trasy (`/my-flashcards/:email`, `/my-lessons/:token`) zostawiamy jako redirect lub zachowujemy dla kompatybilności wstecznej.
 
----
+## Kompatybilność
 
-## Migracja SQL
+- **Nie ruszamy** istniejących stron `/book`, `/homework/:token`, `/flashcards/:token`, `/shared/:token` — one dalej działają jako bezpośrednie linki
+- Student Hub jest **nakładką nawigacyjną** — klikając "Study" w flashcards na hubie, nawigujemy do istniejącej strony `/flashcards/:shareToken?email=...`
+- Klikając homework → `/homework/:shareToken`
+- Klikając worksheet → `/shared/:shareToken`
+- Klikając lesson → otwiera booking detail (reuse `StudentBookingsSection`)
 
-```sql
-ALTER TABLE calendar_settings ADD COLUMN IF NOT EXISTS gcal_on_cancel_action text DEFAULT 'update';
-```
+## Nowe pliki
 
----
+| Plik | Opis |
+|---|---|
+| `supabase/functions/get-student-hub-data/index.ts` | Edge function — centralne API |
+| `src/pages/StudentHubLanding.tsx` | Landing z email input |
+| `src/pages/StudentHubDashboard.tsx` | Dashboard overview |
+| `src/pages/StudentHubFlashcards.tsx` | Lista flashcard sets |
+| `src/pages/StudentHubHomework.tsx` | Lista homework |
+| `src/pages/StudentHubWorksheets.tsx` | Lista shared worksheets |
+| `src/pages/StudentHubLessons.tsx` | Bookings/lessons |
+| `src/components/student-hub/StudentHubLayout.tsx` | Shared layout z nav |
+| `src/components/student-hub/StudentHubStats.tsx` | Quick stats cards |
+| `src/hooks/useStudentHubData.tsx` | Hook do fetch danych z edge function |
+
+## Edytowane pliki
+
+| Plik | Zmiana |
+|---|---|
+| `src/App.tsx` | Dodanie 6 nowych route'ów |
+| `supabase/functions/find-teachers-by-student-email/index.ts` | Opcjonalnie: zwracać też `studentName` |
 
 ## Kolejność wdrożenia
 
-1. Migracja SQL (gcal_on_cancel_action)
-2. Fix `streamUsedModel` scoping w generateWorksheet (Problem 2)
-3. Fix dropdown scroll w DuplicateWorksheetModal (Problem 1)
-4. Fix PublicBookingPage: pending layout, slot filter position (Problem 3A, 3F)
-5. Fix StudentBookingsSection: napisy w widokach, showPast=true, cancelled merged, usunięcie Needs Review, scrollowalny box + Today (Problem 3B-E)
-6. Fix GCal: cancel action, delete sync, default color, connect button (Problem 4A-E)
-7. Deploy edge functions
-8. Update docs
+1. Edge function `get-student-hub-data`
+2. Hook `useStudentHubData`
+3. Layout `StudentHubLayout`
+4. Landing page `/my`
+5. Dashboard `/my/:teacherToken`
+6. Podstrony: Flashcards, Homework, Worksheets, Lessons
+7. Routing w App.tsx
+8. Deploy edge function
+9. Update docs
 
-## Pliki do zmiany
+## Bezpieczeństwo
 
-| Plik | Zmiany |
-|---|---|
-| Migracja SQL | `gcal_on_cancel_action` |
-| `src/components/DuplicateWorksheetModal.tsx` | `position="popper" className="max-h-60 overflow-y-auto"` |
-| `supabase/functions/generateWorksheet/index.ts` | Przenieść `let streamUsedModel` przed try |
-| `src/pages/PublicBookingPage.tsx` | Pending layout fix, slot filter position |
-| `src/components/calendar/StudentBookingsSection.tsx` | Napisy widoków, showPast=true, cancelled merged, Needs Review usunięty, scrollowalny box + Today |
-| `supabase/functions/gcal-sync/index.ts` | Dodać action `'cancel'` |
-| `src/hooks/useCalendarSlots.tsx` | GCal delete sync w deleteSlot/hardDeleteSlot, default color '9' |
-| `src/hooks/useCalendarSettings.tsx` | Default `gcal_default_color: '9'` |
-| `src/pages/CalendarSettingsPage.tsx` | gcal_on_cancel_action select |
-| `src/pages/CalendarPage.tsx` | Connect GCal button w toolbarze |
-| `src/components/calendar/SlotDetailModal.tsx` | GCal cancel trigger |
+- Edge function używa `SUPABASE_SERVICE_ROLE_KEY` (jak `get-student-bookings`)
+- Weryfikacja: token musi być valid + student email musi być powiązany z nauczycielem (tabela `students`)
+- Brak dostępu do danych innych studentów
+- Homework/worksheet dane zwracane tylko jeśli `share_token IS NOT NULL`
+- Flashcards zwracane tylko jeśli `share_token IS NOT NULL` i `deleted_at IS NULL`
 
