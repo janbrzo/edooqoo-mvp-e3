@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { useCalendarSlots, CalendarSlot, ViewMode } from '@/hooks/useCalendarSlots';
 import { useCalendarSettings } from '@/hooks/useCalendarSettings';
