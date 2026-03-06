@@ -337,7 +337,6 @@ export default function WorksheetForm({
                      Tailored to your students. In seconds.
                    </p>
                    <div className="mt-1"><GCalStatusButton /></div>
-                  </p>
                 </div>
                 
                 <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-14'}`}>
