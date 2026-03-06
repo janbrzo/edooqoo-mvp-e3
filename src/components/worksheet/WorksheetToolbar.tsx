@@ -7,6 +7,7 @@ import ShareWorksheetModal from "@/components/ShareWorksheetModal";
 import { DuplicateWorksheetButton } from "@/components/DuplicateWorksheetButton";
 import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 import { exportAsHTML } from "@/utils/htmlExport";
+import { GCalStatusButton } from "@/components/calendar/GCalStatusButton";
 import { trackWorksheetEvent } from "@/services/worksheetService";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDownloadTracking } from "@/hooks/useDownloadTracking";
@@ -261,7 +262,8 @@ const WorksheetToolbar = ({
     <>
       <div className="sticky top-0 z-[60] bg-white border-b mb-6 py-3 px-4">
         <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'} max-w-[98%] mx-auto`}>
-          <div className={`flex ${isMobile ? 'justify-center flex-wrap' : ''} space-x-2`}>
+          <div className={`flex ${isMobile ? 'justify-center flex-wrap' : ''} space-x-2 items-center`}>
+            <GCalStatusButton />
             <Button
               variant={viewMode === 'student' ? 'default' : 'outline'}
               onClick={() => setViewMode('student')}

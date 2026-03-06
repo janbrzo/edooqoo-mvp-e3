@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { useCalendarSlots, CalendarSlot, ViewMode } from '@/hooks/useCalendarSlots';
 import { useCalendarSettings } from '@/hooks/useCalendarSettings';
@@ -306,7 +307,7 @@ const CalendarPage = () => {
             </Button>
             {!selectionMode ? (
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSelectionMode(true)}>
-                Select
+                Bulk Delete
               </Button>
             ) : (
               <div className="flex items-center gap-1">

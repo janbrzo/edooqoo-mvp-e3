@@ -5,13 +5,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Generate "Add to Google Calendar" link
+const generateGcalLink = (title: string, slotDate: string, startTime: string, endTime: string, timezone: string) => {
+  const start = `${slotDate.replace(/-/g, '')}T${(startTime || '').replace(':', '')}00`;
+  const end = `${slotDate.replace(/-/g, '')}T${(endTime || startTime || '').replace(':', '')}00`;
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: title,
+    dates: `${start}/${end}`,
+    ctz: timezone || 'Europe/Warsaw',
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, teacherEmail, teacherName, oldSlotDate, oldSlotTime, calendarUrl, bookUrl, worksheetUrl, sharedWorksheetUrl, meetingLink } = await req.json();
+    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, endTime, teacherEmail, teacherName, oldSlotDate, oldSlotTime, calendarUrl, bookUrl, worksheetUrl, sharedWorksheetUrl, meetingLink, timezone } = await req.json();
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) {
@@ -39,7 +52,6 @@ Deno.serve(async (req) => {
       ? `<div style="margin-top: 20px;"><a href="${bookUrl}" style="display: inline-block; padding: 10px 24px; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">View Bookings</a></div>` 
       : '';
     
-    // Worksheet links for teacher and student
     const teacherWorksheetButton = worksheetUrl
       ? `<div style="margin-top: 12px;"><a href="${worksheetUrl}" style="display: inline-block; padding: 8px 20px; background: #16a34a; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">Open Worksheet</a></div>`
       : '';
@@ -47,9 +59,13 @@ Deno.serve(async (req) => {
       ? `<div style="margin-top: 12px;"><a href="${sharedWorksheetUrl}" style="display: inline-block; padding: 8px 20px; background: #16a34a; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">Open Worksheet</a></div>`
       : '';
 
-    // Meeting link button
     const meetingButton = meetingLink
       ? `<div style="margin-top: 12px;"><a href="${meetingLink}" style="display: inline-block; padding: 8px 20px; background: #7c3aed; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">Join Meeting</a></div>`
+      : '';
+
+    // "Add to Google Calendar" button for student emails with lesson info
+    const addToCalendarBtn = (isStudentEmail && slotDate && slotTime)
+      ? `<div style="margin-top: 12px;"><a href="${generateGcalLink('English Lesson' + (teacherName ? ' with ' + teacherName : ''), slotDate, slotTime, endTime || slotTime, timezone || 'Europe/Warsaw')}" target="_blank" style="display: inline-block; padding: 8px 20px; background: #4285f4; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">📅 Add to Google Calendar</a></div>`
       : '';
 
     switch (type) {
@@ -67,6 +83,7 @@ Deno.serve(async (req) => {
             <p>See you there!</p>
             ${meetingButton}
             ${studentWorksheetButton}
+            ${addToCalendarBtn}
             ${studentButton}
           </div>`;
         break;
@@ -161,6 +178,7 @@ Deno.serve(async (req) => {
             <p>See you there!</p>
             ${meetingButton}
             ${studentWorksheetButton}
+            ${addToCalendarBtn}
             ${studentButton}
           </div>`;
         break;
@@ -218,6 +236,7 @@ Deno.serve(async (req) => {
             <p>See you soon!</p>
             ${meetingButton}
             ${studentWorksheetButton}
+            ${addToCalendarBtn}
             ${studentButton}
           </div>`;
         break;
@@ -237,6 +256,7 @@ Deno.serve(async (req) => {
             <p>If you have any questions, please contact your teacher.</p>
             ${meetingButton}
             ${studentWorksheetButton}
+            ${addToCalendarBtn}
             ${studentButton}
           </div>`;
         break;
@@ -277,6 +297,7 @@ Deno.serve(async (req) => {
             </div>
             ${meetingButton}
             ${studentWorksheetButton}
+            ${addToCalendarBtn}
             ${studentButton}
           </div>`;
         break;

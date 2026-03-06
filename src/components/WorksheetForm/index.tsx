@@ -16,6 +16,7 @@ import { useStudents } from "@/hooks/useStudents";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shuffle, Brain, MousePointer, ChevronDown, Image, Headphones, Lock } from "lucide-react";
+import { GCalStatusButton } from "@/components/calendar/GCalStatusButton";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import type { MediaType } from './types';
 export type { FormData };
@@ -332,9 +333,10 @@ export default function WorksheetForm({
                   <h1 className={`font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-violet-500 to-blue-500 ${isMobile ? 'text-xl' : 'text-3xl'} mb-2`}>
                     Create A Worksheet
                   </h1>
-                  <p className={`text-gray-600 ${isMobile ? 'text-sm' : 'text-base'}`}>
-                    Tailored to your students. In seconds.
-                  </p>
+                   <p className={`text-gray-600 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                     Tailored to your students. In seconds.
+                   </p>
+                   <div className="mt-1"><GCalStatusButton /></div>
                 </div>
                 
                 <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-14'}`}>

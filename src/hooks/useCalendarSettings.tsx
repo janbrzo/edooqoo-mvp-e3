@@ -22,6 +22,13 @@ export interface CalendarSettings {
   gcal_integration_enabled: boolean;
   gcal_default_color: string | null;
   gcal_default_reminder_minutes: number | null;
+  gcal_color_booked: string | null;
+  gcal_color_available: string | null;
+  gcal_color_pending: string | null;
+  gcal_color_completed: string | null;
+  gcal_color_no_show: string | null;
+  gcal_sync_mode: string;
+  auto_create_meet_link: boolean;
   timezone: string;
   display_start_hour: number;
   display_end_hour: number;
@@ -54,6 +61,13 @@ const DEFAULT_SETTINGS: Omit<CalendarSettings, 'id' | 'teacher_id'> = {
   gcal_integration_enabled: false,
   gcal_default_color: '9',
   gcal_default_reminder_minutes: 30,
+  gcal_color_booked: '9',
+  gcal_color_available: '2',
+  gcal_color_pending: '5',
+  gcal_color_completed: '10',
+  gcal_color_no_show: '6',
+  gcal_sync_mode: 'booked_only',
+  auto_create_meet_link: false,
   timezone: 'Europe/Warsaw',
   display_start_hour: 7,
   display_end_hour: 22,

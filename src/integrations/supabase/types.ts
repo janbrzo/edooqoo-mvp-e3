@@ -278,6 +278,7 @@ export type Database = {
       calendar_settings: {
         Row: {
           allow_student_reschedule: boolean
+          auto_create_meet_link: boolean | null
           buffer_minutes: number
           created_at: string
           currency: string | null
@@ -287,10 +288,16 @@ export type Database = {
           display_end_hour: number
           display_start_hour: number
           enforce_slot_limit: boolean
+          gcal_color_available: string | null
+          gcal_color_booked: string | null
+          gcal_color_completed: string | null
+          gcal_color_no_show: string | null
+          gcal_color_pending: string | null
           gcal_default_color: string | null
           gcal_default_reminder_minutes: number | null
           gcal_integration_enabled: boolean
           gcal_on_cancel_action: string | null
+          gcal_sync_mode: string | null
           id: string
           max_slots_per_student_per_week: number | null
           min_cancellation_hours: number | null
@@ -313,6 +320,7 @@ export type Database = {
         }
         Insert: {
           allow_student_reschedule?: boolean
+          auto_create_meet_link?: boolean | null
           buffer_minutes?: number
           created_at?: string
           currency?: string | null
@@ -322,10 +330,16 @@ export type Database = {
           display_end_hour?: number
           display_start_hour?: number
           enforce_slot_limit?: boolean
+          gcal_color_available?: string | null
+          gcal_color_booked?: string | null
+          gcal_color_completed?: string | null
+          gcal_color_no_show?: string | null
+          gcal_color_pending?: string | null
           gcal_default_color?: string | null
           gcal_default_reminder_minutes?: number | null
           gcal_integration_enabled?: boolean
           gcal_on_cancel_action?: string | null
+          gcal_sync_mode?: string | null
           id?: string
           max_slots_per_student_per_week?: number | null
           min_cancellation_hours?: number | null
@@ -348,6 +362,7 @@ export type Database = {
         }
         Update: {
           allow_student_reschedule?: boolean
+          auto_create_meet_link?: boolean | null
           buffer_minutes?: number
           created_at?: string
           currency?: string | null
@@ -357,10 +372,16 @@ export type Database = {
           display_end_hour?: number
           display_start_hour?: number
           enforce_slot_limit?: boolean
+          gcal_color_available?: string | null
+          gcal_color_booked?: string | null
+          gcal_color_completed?: string | null
+          gcal_color_no_show?: string | null
+          gcal_color_pending?: string | null
           gcal_default_color?: string | null
           gcal_default_reminder_minutes?: number | null
           gcal_integration_enabled?: boolean
           gcal_on_cancel_action?: string | null
+          gcal_sync_mode?: string | null
           id?: string
           max_slots_per_student_per_week?: number | null
           min_cancellation_hours?: number | null

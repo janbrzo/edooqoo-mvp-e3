@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     // Verify token
     const { data: settingsData, error: settingsError } = await supabase
       .from('calendar_settings')
-      .select('teacher_id, min_cancellation_hours, allow_student_reschedule, timezone, public_calendar_token, default_booking_mode, notify_email_on_booking, notify_email_on_cancellation, notify_email_on_reschedule, notify_email_on_confirmation, notify_email_on_rejection')
+      .select('teacher_id, min_cancellation_hours, allow_student_reschedule, timezone, public_calendar_token, default_booking_mode, notify_email_on_booking, notify_email_on_cancellation, notify_email_on_reschedule, notify_email_on_confirmation, notify_email_on_rejection, gcal_on_cancel_action')
       .eq('public_calendar_token', token)
       .eq('public_calendar_enabled', true)
       .maybeSingle();
@@ -162,6 +162,23 @@ Deno.serve(async (req) => {
       });
 
       await resolveNotifications([slotId], ['booking_pending', 'booking_confirmed']);
+
+      // GCal sync for student cancellation
+      if (!isPending && slot.gcal_event_id) {
+        try {
+          const gcalAction = (settingsData as any).gcal_on_cancel_action === 'delete' ? 'delete' : 'cancel';
+          await fetch(`${supabaseUrl}/functions/v1/gcal-sync`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({ teacherId, slotId, action: gcalAction }),
+          });
+        } catch (gcalErr) {
+          console.error('GCal sync failed for student cancellation:', gcalErr);
+        }
+      }
 
       // Different message for pending request vs confirmed lesson
       const messageText = isPending

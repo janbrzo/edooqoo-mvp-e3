@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
     const { data: slots } = await supabase
       .from('calendar_slots')
-      .select('slot_date, start_time, end_time, status, notes, is_paid, title, student_id, confirmed_at, cancelled_at, cancelled_by, meeting_link')
+      .select('id, slot_date, start_time, end_time, status, notes, is_paid, title, student_id, confirmed_at, cancelled_at, cancelled_by, meeting_link, cancellation_reason, booking_type, recurrence_rule_id, slot_type, student_notes, worksheet_id')
       .eq('teacher_id', teacherId)
       .gte('slot_date', dateFrom)
       .lte('slot_date', dateTo)
@@ -47,39 +47,98 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Escape CSV field
+    // Get payment records
+    const slotIds = (slots || []).map((s: any) => s.id);
+    const paymentMap: Record<string, { amount: number; currency: string; payment_method: string }> = {};
+    if (slotIds.length > 0) {
+      const { data: payments } = await supabase
+        .from('calendar_payment_records')
+        .select('slot_id, amount, currency, payment_method')
+        .eq('teacher_id', teacherId)
+        .in('slot_id', slotIds);
+      (payments || []).forEach((p: any) => {
+        paymentMap[p.slot_id] = { amount: p.amount, currency: p.currency, payment_method: p.payment_method };
+      });
+    }
+
+    // Get worksheet titles
+    const worksheetIds = [...new Set((slots || []).filter((s: any) => s.worksheet_id).map((s: any) => s.worksheet_id))];
+    const worksheetMap: Record<string, string> = {};
+    if (worksheetIds.length > 0) {
+      const { data: worksheets } = await supabase
+        .from('worksheets')
+        .select('id, title')
+        .in('id', worksheetIds);
+      (worksheets || []).forEach((w: any) => {
+        worksheetMap[w.id] = w.title || '';
+      });
+    }
+
+    // Escape CSV field for semicolon-separated
     const esc = (val: string) => {
       if (!val) return '';
-      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+      if (val.includes(';') || val.includes('"') || val.includes('\n')) {
         return `"${val.replace(/"/g, '""')}"`;
       }
       return val;
     };
 
-    const headers = ['Date', 'Start', 'End', 'Student', 'Email', 'Status', 'Notes', 'Paid', 'Confirmed', 'Cancelled By', 'Meeting Link'];
+    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    const headers = ['Date', 'Day', 'Start', 'End', 'Duration (min)', 'Student', 'Student Email', 'Status', 'Lesson Title', 'Notes', 'Paid', 'Amount', 'Currency', 'Payment Method', 'Confirmed', 'Confirmed Date', 'Cancelled By', 'Cancellation Reason', 'Meeting Link', 'Worksheet', 'Recurring', 'Type'];
+    
     const rows = (slots || []).map((s: any) => {
       const st = s.student_id ? studentMap[s.student_id] : null;
+      const pay = paymentMap[s.id];
+      const wsTitle = s.worksheet_id ? worksheetMap[s.worksheet_id] : '';
+
+      // Calculate duration
+      const [sh, sm] = (s.start_time || '00:00').split(':').map(Number);
+      const [eh, em] = (s.end_time || '00:00').split(':').map(Number);
+      const duration = (eh * 60 + em) - (sh * 60 + sm);
+
+      // Day of week
+      const dayOfWeek = DAY_NAMES[new Date(s.slot_date + 'T00:00:00').getDay()] || '';
+
+      // Effective status
+      let effectiveStatus = s.status;
+      if (s.status === 'booked' && !s.confirmed_at) effectiveStatus = 'pending';
+      if (s.status === 'available' && s.cancelled_by === 'student') effectiveStatus = 'student_cancelled';
+      if (s.status === 'available' && s.cancelled_by === 'teacher') effectiveStatus = 'teacher_cancelled';
+
       return [
         s.slot_date,
+        dayOfWeek,
         s.start_time?.slice(0, 5),
         s.end_time?.slice(0, 5),
+        duration > 0 ? String(duration) : '',
         esc(st?.name || ''),
         esc(st?.email || ''),
-        s.status,
+        effectiveStatus,
+        esc(s.title || ''),
         esc(s.notes || ''),
         s.is_paid ? 'Yes' : 'No',
+        pay ? String(pay.amount) : '',
+        pay ? pay.currency : '',
+        pay ? (pay.payment_method || '') : '',
         s.confirmed_at ? 'Yes' : 'No',
+        s.confirmed_at ? s.confirmed_at.slice(0, 10) : '',
         s.cancelled_by || '',
+        esc(s.cancellation_reason || ''),
         esc(s.meeting_link || ''),
-      ].join(',');
+        esc(wsTitle),
+        s.recurrence_rule_id ? 'Yes' : 'No',
+        s.slot_type || 'slot',
+      ].join(';');
     });
 
-    const csv = [headers.join(','), ...rows].join('\n');
+    const BOM = '\uFEFF';
+    const csv = BOM + [headers.join(';'), ...rows].join('\r\n');
 
     return new Response(csv, {
       headers: {
         ...corsHeaders,
-        'Content-Type': 'text/csv',
+        'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="calendar-export-${dateFrom}-${dateTo}.csv"`,
       },
     });
