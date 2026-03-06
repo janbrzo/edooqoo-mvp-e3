@@ -127,3 +127,6 @@ verify_jwt = false
 
 [functions.calendar-export-csv]
 verify_jwt = false
+
+[functions.get-student-hub-data]
+verify_jwt = false
