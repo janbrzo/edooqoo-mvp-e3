@@ -18,6 +18,7 @@ import { SlotDetailModal } from '@/components/calendar/SlotDetailModal';
 import { LinkWorksheetModal } from '@/components/calendar/LinkWorksheetModal';
 import { CalendarNotificationBell } from '@/components/calendar/CalendarNotificationBell';
 import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
+import { PaymentHistoryModal } from '@/components/calendar/PaymentHistoryModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -91,6 +92,7 @@ const CalendarPage = () => {
   // Add student dialog (from notification)
   const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [addStudentPrefill, setAddStudentPrefill] = useState<{ name: string; email: string } | null>(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   // Sync selectedSlot with fresh slots data
   useEffect(() => {
@@ -320,8 +322,8 @@ const CalendarPage = () => {
               </div>
             )}
             {settings?.payment_tracking_enabled && unpaidCount > 0 && (
-              <Button variant="outline" size="sm" className="h-8 text-xs text-red-600 border-red-200"
-                onClick={() => setLegendFilter(legendFilter === 'unpaid' ? null : 'unpaid')}>
+              <Button variant="outline" size="sm" className="h-8 text-xs text-destructive border-destructive/30"
+                onClick={() => setPaymentModalOpen(true)}>
                 💰 {unpaidCount} unpaid
               </Button>
             )}
@@ -439,6 +441,17 @@ const CalendarPage = () => {
         prefillName={addStudentPrefill?.name}
         prefillEmail={addStudentPrefill?.email}
       />
+
+      {user?.id && (
+        <PaymentHistoryModal
+          open={paymentModalOpen}
+          onOpenChange={setPaymentModalOpen}
+          teacherId={user.id}
+          students={studentList}
+          settings={settings}
+          onUpdated={refetch}
+        />
+      )}
     </div>
   );
 };
