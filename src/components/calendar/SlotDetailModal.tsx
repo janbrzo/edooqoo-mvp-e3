@@ -317,6 +317,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
                 studentName: assignedName,
                 slotDate: editDate,
                 slotTime: editStartTime,
+                endTime: editEndTime,
                 teacherName: tName,
                 teacherEmail: teacherProfile?.email || '',
                 bookUrl: bUrl,
@@ -383,6 +384,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         body: {
           type, studentEmail, studentName: studentName || 'Student',
           slotDate: extraParams.slotDate || slot.slot_date, slotTime: extraParams.slotTime || slot.start_time.slice(0, 5),
+          endTime: extraParams.endTime || slot.end_time.slice(0, 5),
           teacherName, teacherEmail, bookUrl, calendarUrl,
           worksheetUrl, sharedWorksheetUrl,
           ...extraParams,
@@ -782,6 +784,18 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
           )}
 
           <div><Label className="text-xs">Notes</Label><AutoResizeTextarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={1} className="min-h-[36px]" /></div>
+
+          {!isBlock && hasStudent && (
+            <div>
+              <Label className="text-xs flex items-center gap-1">Meeting Link</Label>
+              <Input value={editMeetingLink} onChange={e => setEditMeetingLink(e.target.value)} placeholder="https://meet.google.com/..." className="h-9 text-xs" />
+              {editMeetingLink && (
+                <Button variant="link" size="sm" className="h-6 p-0 text-xs mt-1" onClick={() => window.open(editMeetingLink, '_blank')}>
+                  Join Meeting ↗
+                </Button>
+              )}
+            </div>
+          )}
 
           {slot.student_notes && (
             <div className="bg-muted/50 rounded-md px-3 py-2">
