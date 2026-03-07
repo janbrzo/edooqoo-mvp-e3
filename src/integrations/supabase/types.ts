@@ -297,7 +297,11 @@ export type Database = {
           gcal_default_reminder_minutes: number | null
           gcal_integration_enabled: boolean
           gcal_on_cancel_action: string | null
+          gcal_sync_available_new: boolean | null
+          gcal_sync_available_on_cancel: boolean | null
+          gcal_sync_booked: boolean | null
           gcal_sync_mode: string | null
+          gcal_sync_pending: boolean | null
           id: string
           max_slots_per_student_per_week: number | null
           min_cancellation_hours: number | null
@@ -339,7 +343,11 @@ export type Database = {
           gcal_default_reminder_minutes?: number | null
           gcal_integration_enabled?: boolean
           gcal_on_cancel_action?: string | null
+          gcal_sync_available_new?: boolean | null
+          gcal_sync_available_on_cancel?: boolean | null
+          gcal_sync_booked?: boolean | null
           gcal_sync_mode?: string | null
+          gcal_sync_pending?: boolean | null
           id?: string
           max_slots_per_student_per_week?: number | null
           min_cancellation_hours?: number | null
@@ -381,7 +389,11 @@ export type Database = {
           gcal_default_reminder_minutes?: number | null
           gcal_integration_enabled?: boolean
           gcal_on_cancel_action?: string | null
+          gcal_sync_available_new?: boolean | null
+          gcal_sync_available_on_cancel?: boolean | null
+          gcal_sync_booked?: boolean | null
           gcal_sync_mode?: string | null
+          gcal_sync_pending?: boolean | null
           id?: string
           max_slots_per_student_per_week?: number | null
           min_cancellation_hours?: number | null
@@ -565,6 +577,7 @@ export type Database = {
         Row: {
           booking_mode_override: string | null
           created_at: string
+          default_meeting_link: string | null
           id: string
           lesson_price_override: number | null
           prepaid_lessons_remaining: number
@@ -575,6 +588,7 @@ export type Database = {
         Insert: {
           booking_mode_override?: string | null
           created_at?: string
+          default_meeting_link?: string | null
           id?: string
           lesson_price_override?: number | null
           prepaid_lessons_remaining?: number
@@ -585,6 +599,7 @@ export type Database = {
         Update: {
           booking_mode_override?: string | null
           created_at?: string
+          default_meeting_link?: string | null
           id?: string
           lesson_price_override?: number | null
           prepaid_lessons_remaining?: number
