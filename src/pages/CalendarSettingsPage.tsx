@@ -569,8 +569,6 @@ const CalendarSettingsPage = () => {
                 </div>
               </CardContent>
             </Card>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
