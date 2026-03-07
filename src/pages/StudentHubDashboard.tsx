@@ -98,6 +98,14 @@ const StudentHubDashboard = () => {
                       <FileText className="h-3 w-3 mr-1" /> Worksheet
                     </Button>
                   )}
+                  <Button size="sm" variant="outline" className="text-xs" onClick={() => {
+                    const title = encodeURIComponent(`English Lesson`);
+                    const startDt = `${nextLesson.slot_date.replace(/-/g, '')}T${nextLesson.start_time.slice(0, 5).replace(':', '')}00`;
+                    const endDt = `${nextLesson.slot_date.replace(/-/g, '')}T${nextLesson.end_time.slice(0, 5).replace(':', '')}00`;
+                    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDt}/${endDt}&ctz=Europe/Warsaw`, '_blank');
+                  }}>
+                    📅 Add to GCal
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -132,11 +140,11 @@ const StudentHubDashboard = () => {
                     </div>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" className="flex-1 text-xs h-7"
-                        onClick={() => navigate(`/flashcards/${set.share_token}?mode=browse&email=${encodeURIComponent(email)}`)}>
+                        onClick={() => navigate(`/flashcards/${set.share_token}?mode=browse&email=${encodeURIComponent(email)}&returnTo=${encodeURIComponent(`/my/${teacherToken}/flashcards`)}`)}>
                         <Eye className="h-3 w-3 mr-1" /> Browse
                       </Button>
                       <Button size="sm" className="flex-1 text-xs h-7"
-                        onClick={() => navigate(`/flashcards/${set.share_token}?email=${encodeURIComponent(email)}`)}>
+                        onClick={() => navigate(`/flashcards/${set.share_token}?email=${encodeURIComponent(email)}&returnTo=${encodeURIComponent(`/my/${teacherToken}/flashcards`)}`)}>
                         <Brain className="h-3 w-3 mr-1" /> Study
                       </Button>
                     </div>

@@ -1,10 +1,21 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { StudentHubLayout } from '@/components/student-hub/StudentHubLayout';
 import { getSavedHubEmail } from '@/hooks/useStudentHubData';
+import { usePublicBooking } from '@/hooks/usePublicBooking';
+import { useCalendarVacations } from '@/hooks/useCalendarVacations';
 import { StudentBookingsSection } from '@/components/calendar/StudentBookingsSection';
-import { useCalendarSettings } from '@/hooks/useCalendarSettings';
-import { Loader2 } from 'lucide-react';
+import { CalendarSlot } from '@/hooks/useCalendarSlots';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ChevronLeft, ChevronRight, Calendar, Clock, AlertTriangle, Palmtree, Loader2 } from 'lucide-react';
+import { format, addDays, parseISO, isToday, isBefore, addWeeks, isSameDay } from 'date-fns';
+import { toStudentLocalTimeRange, getStudentTimeZone } from '@/utils/timezoneUtils';
+import { cn } from '@/lib/utils';
 
 const StudentHubLessons = () => {
   const { teacherToken } = useParams<{ teacherToken: string }>();
@@ -13,63 +24,168 @@ const StudentHubLessons = () => {
 
   useEffect(() => { if (!email) navigate('/my'); }, [email, navigate]);
 
-  const { settings, loading: settingsLoading } = useCalendarSettings();
+  const { settings, slots, loading, error, weekStart, weekEnd, bookSlot, navigateWeek, getSlotsForDay, refetchSlots } = usePublicBooking(teacherToken);
+  const { vacations } = useCalendarVacations(settings?.teacher_id);
+
+  const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
+  const [booking, setBooking] = useState(false);
+  const [bookWeekly, setBookWeekly] = useState(false);
+  const [untilDate, setUntilDate] = useState('');
+
+  const studentTz = useMemo(() => getStudentTimeZone(), []);
+  const teacherTz = settings?.timezone || 'Europe/Warsaw';
+  const showTzInfo = studentTz !== teacherTz;
+
+  const formatSlotTime = useCallback((slot: { slot_date: string; start_time: string; end_time: string }) => {
+    if (!showTzInfo) return { primary: `${slot.start_time.slice(0, 5)}–${slot.end_time.slice(0, 5)}`, secondary: null };
+    const conv = toStudentLocalTimeRange(slot.slot_date, slot.start_time, slot.end_time, teacherTz, studentTz);
+    return { primary: `${conv.studentStartHHMM}–${conv.studentEndHHMM}`, secondary: `Teacher: ${conv.teacherStartHHMM}–${conv.teacherEndHHMM}` };
+  }, [showTzInfo, teacherTz, studentTz]);
+
+  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
+
+  const handleBook = async () => {
+    if (!selectedSlot || !email) return;
+    setBooking(true);
+    const name = email.split('@')[0];
+    const success = await bookSlot(selectedSlot.id, name, email);
+    if (success && bookWeekly && untilDate) {
+      let d = addWeeks(parseISO(selectedSlot.slot_date), 1);
+      const end = parseISO(untilDate);
+      while (!isBefore(end, d)) {
+        const dateStr = format(d, 'yyyy-MM-dd');
+        const daySlots = getSlotsForDay(d);
+        const match = daySlots.find(s => s.start_time.slice(0, 5) === selectedSlot.start_time.slice(0, 5) && s.status === 'available');
+        if (match) await bookSlot(match.id, name, email);
+        d = addWeeks(d, 1);
+      }
+    }
+    setBooking(false);
+    setSelectedSlot(null);
+    setBookWeekly(false);
+    setUntilDate('');
+  };
 
   if (!email || !teacherToken) return null;
 
-  // Reuse StudentBookingsSection with the token and email
-  // We need minimal settings for the component
-  const minimalSettings = useMemo(() => settings || {
-    min_cancellation_hours: 24,
-    allow_student_reschedule: false,
-    buffer_minutes: 0,
-    default_booking_mode: 'requires_confirmation',
-    default_lesson_duration_minutes: 60,
-    display_start_hour: 7,
-    display_end_hour: 22,
-    timezone: 'Europe/Warsaw',
-    notify_on_booking: true,
-    notify_on_cancellation: true,
-    public_calendar_enabled: true,
-    public_calendar_token: teacherToken,
-    enforce_slot_limit: false,
-    max_slots_per_student_per_week: null,
-    teacher_id: '',
-    gcal_integration_enabled: false,
-    gcal_default_color: '1',
-    gcal_default_reminder_minutes: 30,
-    gcal_on_cancel_action: 'update',
-    payment_tracking_enabled: false,
-    default_lesson_price: null,
-    currency: 'USD',
-    notify_email_on_booking: true,
-    notify_email_on_cancellation: true,
-    notify_email_on_confirmation: true,
-    notify_email_on_rejection: true,
-    notify_email_on_reschedule: true,
-    notify_email_on_lesson_created: true,
-    notify_payment_reminder: false,
-    notify_student_reminder_hours: 24,
-    gcal_color_booked: '9',
-    gcal_color_available: '2',
-    gcal_color_pending: '5',
-    gcal_color_completed: '10',
-    gcal_color_no_show: '6',
-    gcal_sync_mode: 'booked_only',
-    auto_create_meet_link: false,
-  }, [settings, teacherToken]);
+  if (loading) {
+    return (
+      <StudentHubLayout>
+        <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+      </StudentHubLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <StudentHubLayout>
+        <div className="text-center py-20 text-destructive">{error}</div>
+      </StudentHubLayout>
+    );
+  }
+
+  const availableSlots = slots.filter(s => s.status === 'available' && !s.student_id);
 
   return (
     <StudentHubLayout>
       <div className="space-y-6">
-        <StudentBookingsSection
-          settings={minimalSettings as any}
-          token={teacherToken}
-          availableSlots={[]}
-          onBookingChanged={() => {}}
-          defaultEmail={email}
-        />
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2"><Calendar className="h-5 w-5" /> Lessons</h1>
+          <p className="text-sm text-muted-foreground mt-1">Book new lessons and view your upcoming schedule</p>
+        </div>
+
+        {/* Available Slots Grid */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <Button variant="ghost" size="sm" onClick={() => navigateWeek('prev')}><ChevronLeft className="h-4 w-4" /></Button>
+              <span className="font-medium text-sm">{format(weekStart, 'MMM d')} – {format(addDays(weekStart, 6), 'MMM d, yyyy')}</span>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => navigateWeek('today')}>Today</Button>
+                <Button variant="ghost" size="sm" onClick={() => navigateWeek('next')}><ChevronRight className="h-4 w-4" /></Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {days.map(day => {
+                const dateStr = format(day, 'yyyy-MM-dd');
+                const daySlots = getSlotsForDay(day).filter(s => s.status === 'available' && !s.student_id);
+                const isVacation = vacations.some(v => !isBefore(day, parseISO(v.start_date)) && !isBefore(parseISO(v.end_date), day));
+                const isPast = isBefore(day, new Date()) && !isToday(day);
+
+                return (
+                  <div key={dateStr} className={cn('min-h-[80px] border rounded-md p-1', isToday(day) && 'border-primary', isPast && 'opacity-40')}>
+                    <div className="text-xs font-medium text-center mb-1">
+                      <span className="text-muted-foreground">{format(day, 'EEE')}</span>
+                      <br />
+                      <span className={isToday(day) ? 'text-primary font-bold' : ''}>{format(day, 'd')}</span>
+                    </div>
+                    {isVacation ? (
+                      <div className="text-xs text-center text-muted-foreground flex items-center justify-center gap-0.5"><Palmtree className="h-3 w-3" /></div>
+                    ) : (
+                      <div className="space-y-0.5">
+                        {daySlots.map(slot => {
+                          const time = formatSlotTime(slot);
+                          return (
+                            <button key={slot.id} className="w-full text-xs bg-green-100 hover:bg-green-200 text-green-800 rounded px-1 py-0.5 text-center transition-colors" onClick={() => !isPast && setSelectedSlot(slot)} disabled={isPast}>
+                              {time.primary}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {availableSlots.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center mt-4">No available slots this week. Try navigating to another week.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Your Bookings */}
+        {settings && (
+          <StudentBookingsSection
+            settings={settings as any}
+            token={teacherToken}
+            availableSlots={availableSlots}
+            onBookingChanged={() => refetchSlots()}
+            defaultEmail={email}
+          />
+        )}
       </div>
+
+      {/* Booking Dialog */}
+      <Dialog open={!!selectedSlot} onOpenChange={open => { if (!open) setSelectedSlot(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Book this lesson?</DialogTitle>
+          </DialogHeader>
+          {selectedSlot && (
+            <div className="space-y-4">
+              <div className="bg-muted/50 rounded-md p-3 space-y-1 text-sm">
+                <p><strong>Date:</strong> {format(parseISO(selectedSlot.slot_date), 'EEEE, MMMM d, yyyy')}</p>
+                <p><strong>Time:</strong> {formatSlotTime(selectedSlot).primary}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={bookWeekly} onCheckedChange={setBookWeekly} />
+                <Label className="text-sm">Book weekly (recurring)</Label>
+              </div>
+              {bookWeekly && (
+                <div>
+                  <Label className="text-xs">Until date</Label>
+                  <Input type="date" value={untilDate} onChange={e => setUntilDate(e.target.value)} className="h-9" />
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedSlot(null)}>Cancel</Button>
+            <Button onClick={handleBook} disabled={booking}>{booking ? 'Booking...' : 'Confirm Booking'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </StudentHubLayout>
   );
 };
