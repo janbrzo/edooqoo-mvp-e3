@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Copy, Trash2, Plus } from 'lucide-react';
+import { ArrowLeft, Copy, Trash2, Plus, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -471,6 +471,39 @@ const CalendarSettingsPage = () => {
                     </div>
                   </>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Data Export */}
+            <Card id="data-export">
+              <CardHeader>
+                <CardTitle className="text-lg">Data Export</CardTitle>
+                <CardDescription>Export your calendar data as a CSV file for Excel or Google Sheets</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Export includes all lessons within the currently selected date range in the calendar view. The CSV file contains lesson dates, times, student names, status, payment info, and more.
+                </p>
+                <Button variant="outline" size="sm" onClick={async () => {
+                  const now = new Date();
+                  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+                  try {
+                    const { data, error } = await supabase.functions.invoke('calendar-export-csv', {
+                      body: { teacherId: user?.id, dateFrom: from, dateTo: to },
+                    });
+                    if (error) throw error;
+                    const blob = new Blob([data], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = `calendar-${from}-${to}.csv`;
+                    a.click(); URL.revokeObjectURL(url);
+                    toast.success('Export downloaded!');
+                  } catch (err: any) {
+                    toast.error('Export failed: ' + (err.message || 'Unknown error'));
+                  }
+                }}>
+                  <Download className="h-3.5 w-3.5 mr-1" /> Export Current Month (CSV)
+                </Button>
               </CardContent>
             </Card>
 
