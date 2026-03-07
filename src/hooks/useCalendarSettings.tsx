@@ -28,13 +28,16 @@ export interface CalendarSettings {
   gcal_color_completed: string | null;
   gcal_color_no_show: string | null;
   gcal_sync_mode: string;
+  gcal_sync_booked: boolean;
+  gcal_sync_pending: boolean;
+  gcal_sync_available_new: boolean;
+  gcal_sync_available_on_cancel: boolean;
   auto_create_meet_link: boolean;
   timezone: string;
   display_start_hour: number;
   display_end_hour: number;
   allow_student_reschedule: boolean;
   buffer_minutes: number;
-  // Email notification toggles
   notify_email_on_booking: boolean;
   notify_email_on_cancellation: boolean;
   notify_email_on_reschedule: boolean;
@@ -48,7 +51,7 @@ const DEFAULT_SETTINGS: Omit<CalendarSettings, 'id' | 'teacher_id'> = {
   max_slots_per_student_per_week: null,
   enforce_slot_limit: false,
   default_lesson_duration_minutes: 60,
-  public_calendar_enabled: false,
+  public_calendar_enabled: true,
   public_calendar_token: null,
   notify_on_booking: true,
   notify_on_cancellation: true,
@@ -67,6 +70,10 @@ const DEFAULT_SETTINGS: Omit<CalendarSettings, 'id' | 'teacher_id'> = {
   gcal_color_completed: '10',
   gcal_color_no_show: '6',
   gcal_sync_mode: 'booked_only',
+  gcal_sync_booked: true,
+  gcal_sync_pending: true,
+  gcal_sync_available_new: false,
+  gcal_sync_available_on_cancel: true,
   auto_create_meet_link: false,
   timezone: 'Europe/Warsaw',
   display_start_hour: 7,
@@ -101,9 +108,11 @@ export function useCalendarSettings(teacherId?: string) {
       if (data) {
         setSettings(data as unknown as CalendarSettings);
       } else {
+        // Auto-generate public calendar token for new settings
+        const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
         const { data: newData, error: insertError } = await supabase
           .from('calendar_settings')
-          .insert({ teacher_id: teacherId, ...DEFAULT_SETTINGS })
+          .insert({ teacher_id: teacherId, ...DEFAULT_SETTINGS, public_calendar_enabled: true, public_calendar_token: token })
           .select()
           .single();
 

@@ -9,14 +9,19 @@ interface SessionSummaryProps {
   onRestart: (mode: "all" | "mistakes") => void;
   setTitle: string;
   studentEmail: string;
+  returnTo?: string;
 }
 
-export function SessionSummary({ stats, onRestart, setTitle, studentEmail }: SessionSummaryProps) {
+export function SessionSummary({ stats, onRestart, setTitle, studentEmail, returnTo }: SessionSummaryProps) {
   const navigate = useNavigate();
   const accuracy = stats.reviewedCards > 0 ? Math.round((stats.correctAnswers / stats.reviewedCards) * 100) : 0;
 
   const handleBackToDashboard = () => {
-    navigate(`/my-flashcards/${encodeURIComponent(studentEmail)}`);
+    if (returnTo) {
+      navigate(returnTo);
+    } else {
+      navigate(`/my-flashcards/${encodeURIComponent(studentEmail)}`);
+    }
   };
 
   return (

@@ -111,8 +111,9 @@ Deno.serve(async (req) => {
         }
         console.log('GCal cancel-delete:', res.status);
       } else {
+        const cancelSuffix = slot.cancelled_by === 'student' ? ' — Student Cancellation' : ' — Teacher Cancellation';
         const event = {
-          summary: 'Available Slot — English Lesson',
+          summary: `Available Slot — English Lesson${cancelSuffix}`,
           colorId: settings?.gcal_color_available || '2',
           reminders: { useDefault: false, overrides: [] },
           start: { dateTime: `${slot.slot_date}T${slot.start_time}`, timeZone: timezone },
@@ -133,6 +134,21 @@ Deno.serve(async (req) => {
       if (slot.student_id) {
         const { data: student } = await supabase.from('students').select('name').eq('id', slot.student_id).maybeSingle();
         if (student?.name) summary = `${student.name} — English Lesson`;
+      }
+
+      // Add status suffix
+      const isPendingSlot = slot.status === 'booked' && !slot.confirmed_at;
+      const effectiveStatus = isPendingSlot ? 'pending' : (slot.status === 'needs_review' ? 'booked' : slot.status);
+      const statusSuffixMap: Record<string, string> = {
+        booked: ' — Booked',
+        pending: ' — Pending',
+        completed: ' — Complete',
+        no_show: ' — No Show',
+      };
+      if (effectiveStatus === 'available' && slot.cancelled_by) {
+        summary += slot.cancelled_by === 'student' ? ' — Student Cancellation' : ' — Teacher Cancellation';
+      } else if (statusSuffixMap[effectiveStatus]) {
+        summary += statusSuffixMap[effectiveStatus];
       }
 
       // Determine color based on status

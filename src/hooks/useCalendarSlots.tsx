@@ -271,6 +271,7 @@ export function useCalendarSlots(teacherId?: string) {
                   studentName: studentLabel,
                   slotDate: input.slot_date,
                   slotTime: input.start_time.slice(0, 5),
+                  endTime: input.end_time.slice(0, 5),
                   teacherName,
                   teacherEmail: teacherProfile?.email || '',
                   bookUrl,
@@ -283,8 +284,16 @@ export function useCalendarSlots(teacherId?: string) {
       }
 
       await fetchSlots();
-      // GCal sync
-      if (input.student_id) triggerGcalSync(data.id, 'upsert');
+      // GCal sync — check sync flags
+      const { data: syncSettings } = await supabase.from('calendar_settings')
+        .select('gcal_sync_booked, gcal_sync_pending, gcal_sync_available_new, gcal_integration_enabled')
+        .eq('teacher_id', teacherId).maybeSingle();
+      if (syncSettings?.gcal_integration_enabled) {
+        const shouldSync = 
+          (input.student_id && (syncSettings as any).gcal_sync_booked !== false) ||
+          (!input.student_id && (syncSettings as any).gcal_sync_available_new === true);
+        if (shouldSync) triggerGcalSync(data.id, 'upsert');
+      }
       toast({ title: input.slot_type === 'block' ? 'Block created' : input.student_id ? 'Lesson created' : 'Slot created' });
       return data;
     } catch (err: any) {

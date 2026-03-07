@@ -325,9 +325,7 @@ const CalendarPage = () => {
                 💰 {unpaidCount} unpaid
               </Button>
             )}
-            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={handleExport}>
-              <Download className="h-3 w-3 mr-1" /> Export
-            </Button>
+            
             {gcalConnected === false && (
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => navigate('/calendar/settings#gcal')}>
                 🗓️ Connect GCal

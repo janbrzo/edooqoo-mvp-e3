@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Copy, Trash2, Plus } from 'lucide-react';
+import { ArrowLeft, Copy, Trash2, Plus, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -21,10 +21,12 @@ const SECTIONS = [
   { id: 'booking', label: 'Booking Rules' },
   { id: 'public', label: 'Public Calendar' },
   { id: 'gcal', label: 'Google Calendar' },
+  { id: 'google-meet', label: 'Google Meet' },
   { id: 'vacations', label: 'Vacations' },
   { id: 'payments', label: 'Payment Tracking' },
   { id: 'notifications', label: 'In-App Notifications' },
   { id: 'email-notifications', label: 'Email Alerts' },
+  { id: 'data-export', label: 'Data Export' },
 ];
 
 const GCAL_COLORS = [
@@ -33,6 +35,12 @@ const GCAL_COLORS = [
   { v: '7', l: 'Peacock' }, { v: '9', l: 'Blueberry' }, { v: '10', l: 'Basil' },
   { v: '11', l: 'Tomato' },
 ];
+
+const GCAL_COLOR_HEX: Record<string, string> = {
+  '1': '#7986cb', '2': '#33b679', '3': '#8e24aa', '4': '#e67c73',
+  '5': '#f6bf26', '6': '#f4511e', '7': '#039be5', '9': '#3f51b5',
+  '10': '#0b8043', '11': '#d50000',
+};
 
 const CalendarSettingsPage = () => {
   const { user, loading: authLoading, isRegisteredUser } = useAuthFlow();
@@ -271,7 +279,7 @@ const CalendarSettingsPage = () => {
             <Card id="gcal">
               <CardHeader>
                 <CardTitle className="text-lg">Google Calendar</CardTitle>
-                <CardDescription>Sync confirmed lessons to your Google Calendar automatically</CardDescription>
+                <CardDescription>Sync lessons to your Google Calendar automatically</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {gcalConnected ? (
@@ -284,7 +292,7 @@ const CalendarSettingsPage = () => {
                       <div><Label>Auto-sync confirmed lessons</Label><p className="text-xs text-muted-foreground">Automatically create Google Calendar events for confirmed lessons</p></div>
                       <Switch checked={settings.gcal_integration_enabled} onCheckedChange={v => updateSettings({ gcal_integration_enabled: v })} />
                     </div>
-                    {/* Per-status colors */}
+                    {/* Per-status colors with visual dots */}
                     <div className="space-y-3">
                       <Label className="text-sm font-medium">Event colors by status</Label>
                       {[
@@ -293,19 +301,35 @@ const CalendarSettingsPage = () => {
                         { key: 'gcal_color_pending', label: 'Pending booking', def: '5' },
                         { key: 'gcal_color_completed', label: 'Completed lesson', def: '10' },
                         { key: 'gcal_color_no_show', label: 'No Show', def: '6' },
-                      ].map(item => (
-                        <div key={item.key} className="flex items-center justify-between">
-                          <Label className="text-sm">{item.label}</Label>
-                          <Select value={(settings as any)[item.key] || item.def} onValueChange={v => updateSettings({ [item.key]: v } as any)}>
-                            <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {GCAL_COLORS.map(c => (
-                                <SelectItem key={c.v} value={c.v}>{c.l}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ))}
+                      ].map(item => {
+                        const currentVal = (settings as any)[item.key] || item.def;
+                        return (
+                          <div key={item.key} className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="w-3.5 h-3.5 rounded-full inline-block border border-border" style={{ backgroundColor: GCAL_COLOR_HEX[currentVal] || '#ccc' }} />
+                              <Label className="text-sm">{item.label}</Label>
+                            </div>
+                            <Select value={currentVal} onValueChange={v => updateSettings({ [item.key]: v } as any)}>
+                              <SelectTrigger className="w-40">
+                                <span className="flex items-center gap-2">
+                                  <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: GCAL_COLOR_HEX[currentVal] || '#ccc' }} />
+                                  <SelectValue />
+                                </span>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {GCAL_COLORS.map(c => (
+                                  <SelectItem key={c.v} value={c.v}>
+                                    <span className="flex items-center gap-2">
+                                      <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: GCAL_COLOR_HEX[c.v] || '#ccc' }} />
+                                      {c.l}
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      })}
                     </div>
                     {/* Reminder toggle */}
                     <div className="flex items-center justify-between">
@@ -319,17 +343,27 @@ const CalendarSettingsPage = () => {
                         <Input type="number" className="w-24" value={settings.gcal_default_reminder_minutes} onChange={e => updateSettings({ gcal_default_reminder_minutes: Number(e.target.value) })} />
                       </div>
                     )}
-                    {/* Sync mode */}
-                    <div className="flex items-center justify-between">
-                      <div><Label>What to sync</Label><p className="text-xs text-muted-foreground">Which slots appear in Google Calendar</p></div>
-                      <Select value={(settings as any).gcal_sync_mode || 'booked_only'} onValueChange={v => updateSettings({ gcal_sync_mode: v } as any)}>
-                        <SelectTrigger className="w-52"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="booked_only">Only booked lessons</SelectItem>
-                          <SelectItem value="booked_and_pending">Booked + pending</SelectItem>
-                          <SelectItem value="all">All (including available slots)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    {/* Sync toggles */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">What to sync to Google Calendar</Label>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div><Label className="text-sm">Booked lessons</Label><p className="text-xs text-muted-foreground">Confirmed lessons with students</p></div>
+                          <Switch checked={(settings as any).gcal_sync_booked !== false} onCheckedChange={v => updateSettings({ gcal_sync_booked: v } as any)} />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div><Label className="text-sm">Pending bookings</Label><p className="text-xs text-muted-foreground">Student requests awaiting your confirmation</p></div>
+                          <Switch checked={(settings as any).gcal_sync_pending !== false} onCheckedChange={v => updateSettings({ gcal_sync_pending: v } as any)} />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div><Label className="text-sm">Available slots (when you create them)</Label><p className="text-xs text-muted-foreground">Show empty available slots in your Google Calendar</p></div>
+                          <Switch checked={(settings as any).gcal_sync_available_new === true} onCheckedChange={v => updateSettings({ gcal_sync_available_new: v } as any)} />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div><Label className="text-sm">Available slots (after cancellation)</Label><p className="text-xs text-muted-foreground">When a booked lesson is cancelled and becomes available again</p></div>
+                          <Switch checked={(settings as any).gcal_sync_available_on_cancel !== false} onCheckedChange={v => updateSettings({ gcal_sync_available_on_cancel: v } as any)} />
+                        </div>
+                      </div>
                     </div>
                     {/* On cancellation */}
                     <div className="flex items-center justify-between">
@@ -342,17 +376,39 @@ const CalendarSettingsPage = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    {/* Auto-create Google Meet */}
-                    <div className="flex items-center justify-between">
-                      <div><Label>Auto-create Google Meet</Label><p className="text-xs text-muted-foreground">Automatically generate a Google Meet link for each booked lesson</p></div>
-                      <Switch checked={(settings as any).auto_create_meet_link || false} onCheckedChange={v => updateSettings({ auto_create_meet_link: v } as any)} />
-                    </div>
                   </>
                 ) : (
                   <Button onClick={handleConnectGcal} disabled={gcalLoading} variant="outline">
                     {gcalLoading ? 'Connecting...' : '🗓️ Connect Google Calendar'}
                   </Button>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Google Meet */}
+            <Card id="google-meet">
+              <CardHeader>
+                <CardTitle className="text-lg">Google Meet Integration</CardTitle>
+                <CardDescription>Automatically generate video meeting links for lessons</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Auto-create Google Meet links</Label>
+                    <p className="text-xs text-muted-foreground">Disabled by default. Enable to auto-generate a unique Google Meet room for every booked lesson.</p>
+                  </div>
+                  <Switch checked={(settings as any).auto_create_meet_link || false} onCheckedChange={v => updateSettings({ auto_create_meet_link: v } as any)} />
+                </div>
+                <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-2">
+                  <p><strong>How it works:</strong></p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>When enabled, every time a lesson is booked (by you or a student), a new Google Meet link is automatically created and attached to the lesson.</li>
+                    <li>The link appears in the lesson details modal, in student notification emails, and on the student's booking page.</li>
+                    <li>Requires Google Calendar to be connected. Meet links are generated through Google Calendar events.</li>
+                    <li>Each lesson gets its own unique Meet room. If you prefer a fixed meeting room per student, you can set a "Default Meeting Link" in each student's profile.</li>
+                    <li>Students can join the meeting directly from their Student Hub dashboard or booking page.</li>
+                  </ul>
+                </div>
               </CardContent>
             </Card>
 
@@ -415,6 +471,39 @@ const CalendarSettingsPage = () => {
                     </div>
                   </>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Data Export */}
+            <Card id="data-export">
+              <CardHeader>
+                <CardTitle className="text-lg">Data Export</CardTitle>
+                <CardDescription>Export your calendar data as a CSV file for Excel or Google Sheets</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Export includes all lessons within the currently selected date range in the calendar view. The CSV file contains lesson dates, times, student names, status, payment info, and more.
+                </p>
+                <Button variant="outline" size="sm" onClick={async () => {
+                  const now = new Date();
+                  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+                  try {
+                    const { data, error } = await supabase.functions.invoke('calendar-export-csv', {
+                      body: { teacherId: user?.id, dateFrom: from, dateTo: to },
+                    });
+                    if (error) throw error;
+                    const blob = new Blob([data], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = `calendar-${from}-${to}.csv`;
+                    a.click(); URL.revokeObjectURL(url);
+                    toast.success('Export downloaded!');
+                  } catch (err: any) {
+                    toast.error('Export failed: ' + (err.message || 'Unknown error'));
+                  }
+                }}>
+                  <Download className="h-3.5 w-3.5 mr-1" /> Export Current Month (CSV)
+                </Button>
               </CardContent>
             </Card>
 
