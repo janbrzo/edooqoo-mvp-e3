@@ -21,10 +21,12 @@ const SECTIONS = [
   { id: 'booking', label: 'Booking Rules' },
   { id: 'public', label: 'Public Calendar' },
   { id: 'gcal', label: 'Google Calendar' },
+  { id: 'google-meet', label: 'Google Meet' },
   { id: 'vacations', label: 'Vacations' },
   { id: 'payments', label: 'Payment Tracking' },
   { id: 'notifications', label: 'In-App Notifications' },
   { id: 'email-notifications', label: 'Email Alerts' },
+  { id: 'data-export', label: 'Data Export' },
 ];
 
 const GCAL_COLORS = [
@@ -33,6 +35,12 @@ const GCAL_COLORS = [
   { v: '7', l: 'Peacock' }, { v: '9', l: 'Blueberry' }, { v: '10', l: 'Basil' },
   { v: '11', l: 'Tomato' },
 ];
+
+const GCAL_COLOR_HEX: Record<string, string> = {
+  '1': '#7986cb', '2': '#33b679', '3': '#8e24aa', '4': '#e67c73',
+  '5': '#f6bf26', '6': '#f4511e', '7': '#039be5', '9': '#3f51b5',
+  '10': '#0b8043', '11': '#d50000',
+};
 
 const CalendarSettingsPage = () => {
   const { user, loading: authLoading, isRegisteredUser } = useAuthFlow();
