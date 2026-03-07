@@ -441,6 +441,17 @@ const CalendarPage = () => {
         prefillName={addStudentPrefill?.name}
         prefillEmail={addStudentPrefill?.email}
       />
+
+      {user?.id && (
+        <PaymentHistoryModal
+          open={paymentModalOpen}
+          onOpenChange={setPaymentModalOpen}
+          teacherId={user.id}
+          students={studentList}
+          settings={settings}
+          onUpdated={refetch}
+        />
+      )}
     </div>
   );
 };

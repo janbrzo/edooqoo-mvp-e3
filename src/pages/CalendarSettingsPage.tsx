@@ -527,33 +527,48 @@ const CalendarSettingsPage = () => {
             <Card id="email-notifications">
               <CardHeader>
                 <CardTitle className="text-lg">Your Email Notifications</CardTitle>
-                <CardDescription>Email notifications sent to you when calendar events happen. Student email preferences can be configured individually in each student's profile. By default, all students receive all notifications.</CardDescription>
+                <CardDescription>Emails sent to <strong>you</strong> when calendar events happen.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div><Label>Email on new booking</Label><p className="text-xs text-muted-foreground">Send email when a student books a lesson</p></div>
+                  <div><Label>Email on new booking</Label><p className="text-xs text-muted-foreground">Receive email when a student books a lesson</p></div>
                   <Switch checked={settings.notify_email_on_booking} onCheckedChange={v => updateSettings({ notify_email_on_booking: v })} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <div><Label>Email on cancellation</Label><p className="text-xs text-muted-foreground">Send email when a lesson is cancelled</p></div>
+                  <div><Label>Email on cancellation</Label><p className="text-xs text-muted-foreground">Receive email when a lesson is cancelled</p></div>
                   <Switch checked={settings.notify_email_on_cancellation} onCheckedChange={v => updateSettings({ notify_email_on_cancellation: v })} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <div><Label>Email on reschedule request</Label><p className="text-xs text-muted-foreground">Send email when a student requests to reschedule</p></div>
+                  <div><Label>Email on reschedule request</Label><p className="text-xs text-muted-foreground">Receive email when a student requests to reschedule</p></div>
                   <Switch checked={settings.notify_email_on_reschedule} onCheckedChange={v => updateSettings({ notify_email_on_reschedule: v })} />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Student Email Defaults */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Student Email Defaults</CardTitle>
+                <CardDescription>Default email notification settings for all students. You can override these per student in each student's profile.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div><Label>Email on confirmation</Label><p className="text-xs text-muted-foreground">Send email when you confirm a booking</p></div>
+                  <div><Label>Email on confirmation</Label><p className="text-xs text-muted-foreground">Send email to student when you confirm a booking</p></div>
                   <Switch checked={settings.notify_email_on_confirmation} onCheckedChange={v => updateSettings({ notify_email_on_confirmation: v })} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <div><Label>Email on rejection</Label><p className="text-xs text-muted-foreground">Send email when you reject a booking</p></div>
+                  <div><Label>Email on rejection</Label><p className="text-xs text-muted-foreground">Send email to student when you reject a booking</p></div>
                   <Switch checked={settings.notify_email_on_rejection} onCheckedChange={v => updateSettings({ notify_email_on_rejection: v })} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <div><Label>Email on new lesson (to student)</Label><p className="text-xs text-muted-foreground">Send email to student when you create a new lesson for them</p></div>
+                  <div><Label>Email on new lesson created</Label><p className="text-xs text-muted-foreground">Send email to student when you create a new lesson for them</p></div>
                   <Switch checked={settings.notify_email_on_lesson_created} onCheckedChange={v => updateSettings({ notify_email_on_lesson_created: v })} />
                 </div>
+                <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground">
+                  💡 You can customize email preferences for each student individually in their profile page (Student → Overview tab → Payment & Meeting card).
+                </div>
+              </CardContent>
+            </Card>
               </CardContent>
             </Card>
           </div>
