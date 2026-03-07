@@ -193,6 +193,18 @@ export function useCalendarSlots(teacherId?: string) {
         }
       }
 
+      // Auto-fill meeting link from student settings if not provided
+      let autoMeetingLink: string | null = null;
+      if (input.student_id) {
+        try {
+          const { data: studentSettings } = await supabase.from('calendar_student_settings')
+            .select('default_meeting_link').eq('student_id', input.student_id).eq('teacher_id', teacherId).maybeSingle();
+          if ((studentSettings as any)?.default_meeting_link) {
+            autoMeetingLink = (studentSettings as any).default_meeting_link;
+          }
+        } catch (_) {}
+      }
+
       const { data, error } = await supabase
         .from('calendar_slots')
         .insert({
@@ -210,6 +222,7 @@ export function useCalendarSlots(teacherId?: string) {
           booked_at: input.student_id ? new Date().toISOString() : null,
           booked_by: input.student_id ? 'teacher' : null,
           slot_type: input.slot_type || 'slot',
+          meeting_link: autoMeetingLink,
         } as any)
         .select()
         .single();
