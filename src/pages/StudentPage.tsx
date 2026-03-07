@@ -48,6 +48,7 @@ import ShareWorksheetModal from '@/components/ShareWorksheetModal';
 import RenameDialog from '@/components/RenameDialog';
 import { StudentSwitcherPopover } from '@/components/StudentSwitcherPopover';
 import { toast } from 'sonner';
+import { StudentPaymentMeetingCard } from '@/components/dashboard/StudentPaymentMeetingCard';
 
 const StudentPage = () => {
   const { id } = useParams<{ id: string }>();
