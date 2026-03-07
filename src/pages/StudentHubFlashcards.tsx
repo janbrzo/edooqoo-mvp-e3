@@ -18,6 +18,8 @@ const StudentHubFlashcards = () => {
 
   if (!email) return null;
 
+  const returnToPath = `/my/${teacherToken}/flashcards`;
+
   return (
     <StudentHubLayout studentName={data?.studentName} teacherName={data?.teacherName}>
       <div className="space-y-6">
@@ -53,11 +55,11 @@ const StudentHubFlashcards = () => {
                   </div>
                   <div className="flex gap-2 pt-1">
                     <Button variant="outline" size="sm" className="flex-1"
-                      onClick={() => navigate(`/flashcards/${set.share_token}?mode=browse&email=${encodeURIComponent(email)}`)}>
+                      onClick={() => navigate(`/flashcards/${set.share_token}?mode=browse&email=${encodeURIComponent(email)}&returnTo=${encodeURIComponent(returnToPath)}`)}>
                       <Eye className="w-3 h-3 mr-1" /> Browse
                     </Button>
                     <Button size="sm" className="flex-1"
-                      onClick={() => navigate(`/flashcards/${set.share_token}?email=${encodeURIComponent(email)}`)}>
+                      onClick={() => navigate(`/flashcards/${set.share_token}?email=${encodeURIComponent(email)}&returnTo=${encodeURIComponent(returnToPath)}`)}>
                       <Brain className="w-3 h-3 mr-1" /> Study
                     </Button>
                   </div>
