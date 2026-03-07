@@ -6,7 +6,21 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-03-03) - Moduł Kalendarza v4.1 (Runda napraw #4):**
+**Ostatnia naprawa (2026-03-07) - Runda napraw #9:**
+- ✅ **Payment Tracking rozbudowa**: `PaymentHistoryModal` z bulk mark-as-paid, `StudentPaymentMeetingCard` na profilu studenta z price override, prepaid lessons, default meeting link
+- ✅ **Email Alerts podział**: Rozdzielenie na "Your Email Notifications" (nauczyciel) i "Student Email Defaults" (domyślne dla studentów) z info o per-student override
+- ✅ **Default Meeting Link per student**: Nowa kolumna `default_meeting_link` w `calendar_student_settings`, auto-fill przy tworzeniu lekcji w `useCalendarSlots.createSlot`
+- ✅ **GCal sync granularne toggles**: 4 niezależne switche (booked, pending, available_new, available_on_cancel) zamiast jednego dropdown
+- ✅ **GCal status suffixes**: Nazwy wydarzeń w GCal z przyrostkami statusu (— Booked, — Complete, — No Show, — Teacher/Student Cancellation)
+- ✅ **GCal kolory wizualne**: Kółka kolorowe (hex) w dropdown i obok etykiet w ustawieniach
+- ✅ **Google Meet osobna sekcja**: Wydzielona sekcja w CalendarSettingsPage z obszernym opisem działania
+- ✅ **Export CSV → Settings**: Przycisk przeniesiony z kalendarza do Calendar Settings
+- ✅ **Flashcards returnTo**: Parametr `returnTo` w URL umożliwia powrót do Student Hub po zakończeniu nauki fiszek
+- ✅ **Student Hub Lessons**: Pełny booking UI z grid dostępnych slotów i dialog rezerwacji
+- ✅ **Student Hub GCal**: Przyciski "Add to Google Calendar" i "Join Meeting" na dashboard
+- ✅ **GCalStatusButton przerobiony**: Zalogowany → "Calendar" → /calendar; Niezalogowany → disabled z tooltip
+
+**Poprzednia naprawa (2026-03-03) - Moduł Kalendarza v4.1 (Runda napraw #4):**
 - ✅ **Fix React Error #310**: Naprawiony crash białej strony po kliknięciu slota — `if (!slot) return null` przeniesione poniżej wszystkich hooków, dodany `safeSlot` obiekt
 - ✅ **DraggableDialog modal={false}**: Naprawiony dropdown studentów — ustawienie `modal={false}` na `DialogPrimitive.Root` eliminuje focus trap blokujący portale Popover
 - ✅ **Badge SC/TC**: Zamieniony generyczny badge `C` na `SC` (Student Cancellation, amber) i `TC` (Teacher Cancellation, blue) z legendą i filtrami
