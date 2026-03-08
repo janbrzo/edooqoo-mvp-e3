@@ -18,7 +18,7 @@ const FinalCTA: React.FC = () => {
       
       <div className="relative z-10 max-w-3xl mx-auto px-4">
         <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">
-          Join 200+ teachers who stopped stressing about lesson prep.
+          Ready to save hours every week?
         </h2>
         <p className="text-xl text-violet-100 mb-10 max-w-2xl mx-auto">
           Experience the difference in your next class. Your students will love it, and you'll love having your free time back.
