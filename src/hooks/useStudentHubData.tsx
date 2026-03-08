@@ -62,10 +62,9 @@ export interface StudentHubData {
   sharedWorksheets: Array<{
     id: string;
     title: string;
-    share_token: string;
+    share_token: string | null;
     created_at: string;
     english_level: string | null;
-    share_token: string | null;
     exercises_count: number;
     linked_slot_date: string | null;
   }>;

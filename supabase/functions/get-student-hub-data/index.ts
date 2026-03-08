@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
     // 6. Shared worksheets
     const { data: sharedWorksheets } = await supabase
       .from('worksheets')
-      .select('id, lesson_topic, share_token, created_at, english_level, share_expires_at, content')
+      .select('id, lesson_topic, share_token, created_at, english_level, content')
       .eq('student_id', studentId)
       .eq('teacher_id', teacherId)
       .not('share_token', 'is', null)
@@ -233,7 +233,6 @@ Deno.serve(async (req) => {
         share_token: w.share_token,
         created_at: w.created_at,
         english_level: w.english_level,
-        share_expires_at: w.share_expires_at,
         exercises_count: exercises.length,
         linked_slot_date: linkedSlotMap[w.id] || null,
       };
