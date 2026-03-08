@@ -6,7 +6,15 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-03-08) - Runda napraw #10:**
+**Ostatnia naprawa (2026-03-08) - Runda napraw #11 (Permanent Share Links):**
+- ✅ **Auto share_token**: Worksheet share token generowany automatycznie przy tworzeniu (w edge function `generateWorksheet`), nie po kliknięciu "Generate Share Link"
+- ✅ **Permanent links**: Usunięto kolumnę `share_expires_at` z tabel `worksheets`, `homework_assignments`, `flashcard_sets`. Linki nigdy nie wygasają
+- ✅ **RPC bez expiration**: Zaktualizowano `get_worksheet_by_share_token`, `get_homework_by_share_token`, `get_flashcard_set_by_share_token` — usunięto warunki na `share_expires_at`
+- ✅ **ShareWorksheetModal uproszczony**: Auto-load tokena, fallback auto-generacja dla starych worksheetów, tekst "Share link is permanent"
+- ✅ **GCalStatusButton pozycja**: Przeniesiony do globalnego nav (Index.tsx + WorksheetHeader.tsx), usunięty z WorksheetForm i WorksheetToolbar
+- ✅ **Color dropdown fix**: Poszerzony do w-56, wrapper `<div>` omija `line-clamp-1`, jawne mapowanie nazw kolorów
+
+**Poprzednia naprawa (2026-03-08) - Runda napraw #10:**
 - ✅ **GCalStatusButton pozycja**: Przeniesiony na górę obok Dashboard na WorksheetToolbar i WorksheetForm (spójnie z /student)
 - ✅ **Color dropdown szerokość**: Zmieniono z w-40 na w-48 aby kolory i nazwy były widoczne
 - ✅ **Fałszywa informacja usunięta**: Zmieniono tekst o per-student email preferences na "available in a future update"

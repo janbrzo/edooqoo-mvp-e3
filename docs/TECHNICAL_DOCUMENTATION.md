@@ -5,7 +5,17 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 3, 2026) - Teacher Calendar Module (Faza 3.1 - Round 4 Fixes):**
+**Latest Update (March 8, 2026) - Permanent Share Links + Auto Token Generation:**
+- **Auto share_token**: `generateWorksheet` edge function now generates `share_token` at worksheet creation time (no manual "Generate Share Link" button needed)
+- **Permanent links**: Removed `share_expires_at` column from `worksheets`, `homework_assignments`, and `flashcard_sets` tables. All share links are now permanent (never expire)
+- **RPC functions updated**: `get_worksheet_by_share_token`, `get_homework_by_share_token`, `get_flashcard_set_by_share_token` — removed expiration checks
+- **`generate_worksheet_share_token` RPC**: Now sets `share_expires_at = null` (fallback for legacy worksheets)
+- **RLS updated**: `flashcard_sets` "Public can view sets by share_token" policy no longer checks expiration
+- **ShareWorksheetModal simplified**: Auto-loads existing token on open, fallback auto-generates for old worksheets, text changed to "Share link is permanent"
+- **Calendar button position**: Moved GCalStatusButton to global nav (Index.tsx AuthenticatedNav + WorksheetHeader.tsx), removed from WorksheetForm and WorksheetToolbar
+- **Color dropdown fix**: Event colors by status dropdown widened to w-56, `<div>` wrapper bypasses `line-clamp-1`, explicit color label mapping
+
+**Previous Update (March 3, 2026) - Teacher Calendar Module (Faza 3.1 - Round 4 Fixes):**
 - **React #310 crash fix**: Moved `if (!slot) return null` below all hooks in `SlotDetailModal.tsx`, using `safeSlot` fallback object to maintain consistent hook order
 - **DraggableDialog `modal={false}`**: Eliminates Radix focus trap that blocked Popover/Command portal interactions for student dropdown selection
 - **SC/TC badges**: Replaced generic 'C' cancellation badge with `SC` (Student Cancellation, amber) and `TC` (Teacher Cancellation, blue). Added to legend with filtering support

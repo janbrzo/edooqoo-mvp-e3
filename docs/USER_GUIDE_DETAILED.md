@@ -92,7 +92,12 @@ When "Allow student rescheduling without confirmation" is OFF:
 
 ## Getting Started
 
-**Latest Improvements (5 Critical Fixes):**
+**Latest Improvements (Permanent Share Links - March 8, 2026):**
+- **Permanent share links**: All shared worksheet, homework, and flashcard links are now permanent — they never expire
+- **Auto share token**: When you generate a worksheet, a share link is automatically created. No need to click "Generate Share Link" anymore
+- **Simplified sharing modal**: Opens with the link ready to copy or email immediately
+
+**Previous Improvements (5 Critical Fixes):**
 - **SharedWorksheet discussion recorder**: Students can now record audio answers for discussion questions in shared worksheets (was text-only)
 - **Inline recorder layout**: Audio recorder appears to the left of the text input for better space usage in single-column exercises
 - **Auto-save recordings**: Unsaved recordings auto-save after 30 seconds; all pending recordings are flushed before homework submission

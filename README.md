@@ -3,13 +3,12 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: Calendar Fixes Round 4 (March 3, 2026)
-- Fixed white screen crash (React #310) and student dropdown focus trap
-- SC/TC cancellation badges with legend filtering
-- Email to student on teacher-created lesson (with shared worksheet link)
-- Student portal: history logs, status badges, reschedule info, past lesson protection
-- Settings: "In-App Notifications" / "Email Alerts" labels, new toggle
-- Polling 2s on /book, P badge removed from time slots
+## Latest: Permanent Share Links (March 8, 2026)
+- Share links for worksheets, homework, and flashcards are now permanent (never expire)
+- Auto share_token: worksheets get a share link at creation time
+- ShareWorksheetModal simplified: opens with link ready, no "Generate" button needed
+- Calendar button moved to global nav (top bar)
+- Color dropdown in calendar settings widened for readability
 
 ## 🎯 What This Is
 
