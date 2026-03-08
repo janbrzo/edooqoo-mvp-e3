@@ -46,8 +46,7 @@ export async function duplicateWorksheetAPI(
       status: 'copy',
       // Reset download count and share token for the copy
       download_count: 0,
-      share_token: null,
-      share_expires_at: null
+      share_token: null
     };
     
     console.log('📝 Duplicate data prepared:', { 

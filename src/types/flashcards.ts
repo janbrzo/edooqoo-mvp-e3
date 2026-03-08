@@ -9,7 +9,6 @@ export interface FlashcardSet {
   is_bidirectional: boolean;
   back_type: 'translation' | 'definition';
   share_token: string | null;
-  share_expires_at: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
