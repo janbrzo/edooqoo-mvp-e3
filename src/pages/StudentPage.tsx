@@ -265,8 +265,20 @@ const StudentPage = () => {
           </div>
           <div className="flex items-center gap-2">
             <GCalStatusButton />
+            <Button asChild variant="outline" size="sm">
+              <Link to="/dashboard">
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Dashboard
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/profile">
+                <User2 className="h-4 w-4 mr-2" />
+                Profile
+              </Link>
+            </Button>
             <Button onClick={handleGenerateWorksheet}>
-              Generate New Worksheet
+              Generate Worksheet
             </Button>
           </div>
         </div>

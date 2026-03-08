@@ -207,6 +207,10 @@ const Dashboard = () => {
                 )}
               </Link>
             </Button>
+            <Button variant="outline" size="sm" onClick={handleGenerateWorksheet}>
+              <Plus className="h-4 w-4 mr-2" />
+              Generate Worksheet
+            </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/profile">
                 <User className="h-4 w-4 mr-2" />
