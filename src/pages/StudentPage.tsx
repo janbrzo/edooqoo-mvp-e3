@@ -48,7 +48,7 @@ import ShareWorksheetModal from '@/components/ShareWorksheetModal';
 import RenameDialog from '@/components/RenameDialog';
 import { StudentSwitcherPopover } from '@/components/StudentSwitcherPopover';
 import { toast } from 'sonner';
-import { StudentPaymentMeetingCard } from '@/components/dashboard/StudentPaymentMeetingCard';
+import { Label } from '@/components/ui/label';
 
 const StudentPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -388,11 +388,10 @@ const StudentPage = () => {
                     <span>{format(new Date(student.created_at), 'MMM dd, yyyy')}</span>
                   </div>
                 </div>
+                {/* Default Meeting Link */}
+                <MeetingLinkField studentId={student.id} teacherId={student.teacher_id} />
               </CardContent>
             </Card>
-
-              {/* Payment & Meeting Link */}
-              <StudentPaymentMeetingCard studentId={student.id} teacherId={student.teacher_id} />
 
               {/* Recent Worksheets */}
               <Card>
