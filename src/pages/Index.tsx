@@ -5,7 +5,6 @@ import { useWorksheetState } from "@/hooks/useWorksheetState";
 import { useWorksheetGeneration } from "@/hooks/useWorksheetGeneration";
 import { useTokenSystem } from "@/hooks/useTokenSystem";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import GeneratingModal from "@/components/GeneratingModal";
 import FormView from "@/components/worksheet/FormView";
 import GenerationView from "@/components/worksheet/GenerationView";
@@ -13,10 +12,15 @@ import { TokenPaywallModal } from "@/components/TokenPaywallModal";
 import { PricingSection } from "@/components/PricingSection";
 import { FreeWeekBanner } from "@/components/FreeWeekBanner";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
-import { User, GraduationCap, DollarSign, Bell, Lock, CheckCircle } from "lucide-react";
-import { GCalStatusButton } from "@/components/calendar/GCalStatusButton";
-import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { CheckCircle } from "lucide-react";
+import StickyNav from "@/components/landing/StickyNav";
+import HeroHeadline from "@/components/landing/HeroHeadline";
+import StatsBar from "@/components/landing/StatsBar";
+import ValueCards from "@/components/landing/ValueCards";
+import EcosystemSection from "@/components/landing/EcosystemSection";
+import TestimonialsRow from "@/components/landing/TestimonialsRow";
+import FinalCTA from "@/components/landing/FinalCTA";
+import GlobalFooter from "@/components/GlobalFooter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 /**
@@ -48,22 +52,18 @@ const Index = () => {
     
     if (lastVisit && hasGeneratedBefore === 'true') {
       const hoursSinceLastVisit = (Date.now() - parseInt(lastVisit)) / (1000 * 60 * 60);
-      // Show modal if more than 1 hour has passed since last visit AND they generated a worksheet before
       if (hoursSinceLastVisit > 1) {
         setShowWelcomeBackModal(true);
       }
     }
     
-    // Update last visit timestamp
     localStorage.setItem('worksheetAppLastVisit', Date.now().toString());
   }, [authLoading, isRegisteredUser, user]);
 
-
-  // Handle ?forceNew=true query param from Profile page (enables middle-click to open in new tab)
+  // Handle ?forceNew=true query param from Profile page
   useEffect(() => {
     if (searchParams.get('forceNew') === 'true') {
       sessionStorage.setItem('forceNewWorksheet', 'true');
-      // Remove the param from URL without causing a reload
       setSearchParams({}, { replace: true });
       worksheetState.forceNewWorksheet();
     }
@@ -73,10 +73,7 @@ const Index = () => {
   const scrollToPricing = () => {
     const pricingSection = document.getElementById('pricing-section');
     if (pricingSection) {
-      pricingSection.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      });
+      pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -121,8 +118,6 @@ const Index = () => {
         
         if (parsedWorksheet) {
           parsedWorksheet.id = worksheet.id;
-          
-          // ✅ FIX: Add audio and image fields from database to editableWorksheet
           parsedWorksheet.audio_url = worksheet.audio_url;
           parsedWorksheet.audio_transcript = worksheet.audio_transcript;
           parsedWorksheet.audio_duration = worksheet.audio_duration;
@@ -139,17 +134,14 @@ const Index = () => {
               studentId: worksheet.student_id,
               studentName: studentName || worksheet.studentName,
               selectedImage: worksheet.selected_image,
-              selectedAudio: worksheet.selected_audio  // ✅ FIX: Add audio mapping
+              selectedAudio: worksheet.selected_audio
             };
             worksheetState.setInputParams(inputParamsWithStudent);
-            console.log('✅ Successfully mapped form_data with student info, selectedImage and selectedAudio:', inputParamsWithStudent);
           }
           
           worksheetState.setWorksheetId(worksheet.id);
           worksheetState.setGenerationTime(worksheet.generation_time_seconds || 5);
           worksheetState.setSourceCount(75);
-          
-          console.log('🎉 Worksheet fully restored with student information');
         }
         
         sessionStorage.removeItem('restoredWorksheet');
@@ -162,25 +154,21 @@ const Index = () => {
     }
   }, []);
 
-  // IMPORTANT: This must be BEFORE any early returns to satisfy React hooks rules
   const bothWorksheetsReady = worksheetState.generatedWorksheet && worksheetState.editableWorksheet;
 
-  // Mark that user has generated a worksheet (for Welcome Back Modal logic)
   useEffect(() => {
     if (bothWorksheetsReady && !isRegisteredUser) {
       localStorage.setItem('worksheetAppHasGenerated', 'true');
     }
   }, [bothWorksheetsReady, isRegisteredUser]);
 
-  // Show loading indicator while auth is initializing
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin h-8 w-8 border-4 border-worksheet-purple border-t-transparent rounded-full"></div>
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
   }
-
 
   const handleGenerateWorksheet = (data: any) => {
     console.log('🔍 POPUP DECISION DEBUG:', {
@@ -194,137 +182,72 @@ const Index = () => {
       userIsAnonymous: user?.is_anonymous
     });
 
-    // FIXED: Only show popup for registered (non-anonymous) users who don't have tokens
     const shouldShowPopup = isRegisteredUser && !hasTokens;
-    
-    console.log('🔍 POPUP DECISION:', {
-      shouldShowPopup,
-      reason: shouldShowPopup 
-        ? "Registered user without tokens" 
-        : isDemo 
-          ? "Demo user - can generate" 
-          : "Anonymous user - can generate demo"
-    });
 
     if (shouldShowPopup) {
-      console.log('❌ Showing token popup');
       setShowTokenModal(true);
       return;
     }
     
-    console.log('✅ Proceeding with worksheet generation');
     generateWorksheetHandler(data);
   };
 
-  // Navigation component for authenticated users
-  const AuthenticatedNav = () => (
-    <div className="absolute top-4 right-4 z-50 flex flex-wrap items-center gap-3 justify-end">
-      <Badge variant="outline" className="text-sm">
-        Token Left: {tokenLeft}
-      </Badge>
-      <HomeworkNotificationBadge />
-      <Button asChild variant="outline" size="sm">
-        <Link to="/dashboard">
-          <GraduationCap className="h-4 w-4 mr-2" />
-          Dashboard
-        </Link>
-      </Button>
-      <Button asChild variant="outline" size="sm">
-        <Link to="/profile">
-          <User className="h-4 w-4 mr-2" />
-          Profile
-        </Link>
-      </Button>
-      <GCalStatusButton />
-    </div>
-  );
-
-  // Navigation component for anonymous users with pulsing "2 FREE" badge
-  const AnonymousNav = () => (
-    <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
-      <Button onClick={scrollToPricing} variant="outline" size="sm">
-        <DollarSign className="h-4 w-4 mr-2" />
-        Pricing
-      </Button>
-      <Button asChild variant="outline" size="sm">
-        <Link to="/login">Login</Link>
-      </Button>
-      <Button asChild size="sm" className="relative">
-        <Link to="/signup">
-          Get Started Free
-          <Badge className="absolute -top-2 -right-2 bg-green-500 text-white animate-pulse text-[10px] px-1.5 py-0.5 border-0">
-            2 FREE
-          </Badge>
-        </Link>
-      </Button>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-gray-100 relative">
-      {/* FREE DEMO WEEK Banner */}
+    <div className="min-h-screen bg-background relative">
       <FreeWeekBanner />
       
-      {/* Navigation based on auth status - hide when worksheet is displayed (WorksheetHeader has its own nav) */}
-      {!bothWorksheetsReady && (isRegisteredUser ? <AuthenticatedNav /> : <AnonymousNav />)}
+      {!bothWorksheetsReady && (
+        <StickyNav
+          isRegisteredUser={!!isRegisteredUser}
+          tokenLeft={tokenLeft}
+          user={user}
+          scrollToPricing={scrollToPricing}
+        />
+      )}
       
       {!bothWorksheetsReady ? (
         <>
-          <FormView 
-            onSubmit={handleGenerateWorksheet} 
-            userId={user?.id || null} 
-            onStudentChange={setSelectedStudentId}
-            preSelectedStudent={preSelectedStudent}
-            isRegisteredUser={!!isRegisteredUser}
-          />
-          
-          {/* Progress Bar for anonymous users - shows journey path */}
-          {!isRegisteredUser && (
-            <TooltipProvider>
-              <div className="w-full max-w-4xl mx-auto px-4 py-4">
-                <div className="flex items-center justify-center gap-2 text-sm">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                      <CheckCircle className="h-3 w-3 text-primary-foreground" />
-                    </div>
-                    <span className="font-medium text-primary">Demo</span>
-                  </div>
-                  
-                  <div className="w-8 h-0.5 bg-muted-foreground/30" />
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center gap-1.5 cursor-help opacity-60 hover:opacity-100 transition-opacity">
-                        <Lock className="h-4 w-4" />
-                        <span>Free Account</span>
-                        <Badge variant="outline" className="text-[10px] px-1 py-0">2 tokens</Badge>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Create free account to save worksheets & get 2 tokens!</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <div className="w-8 h-0.5 bg-muted-foreground/20" />
-                  
-                  <div className="flex items-center gap-1.5 opacity-40">
-                    <span>Side-Gig</span>
-                  </div>
-                  
-                  <div className="w-8 h-0.5 bg-muted-foreground/20" />
-                  
-                  <div className="flex items-center gap-1.5 opacity-40">
-                    <span>Full-Time</span>
-                  </div>
-                </div>
+          {!isRegisteredUser ? (
+            <>
+              <HeroHeadline />
+              <div id="worksheet-form" className="scroll-mt-16 bg-gradient-to-b from-background to-secondary/30 pb-16">
+                <FormView 
+                  onSubmit={handleGenerateWorksheet} 
+                  userId={user?.id || null} 
+                  onStudentChange={setSelectedStudentId}
+                  preSelectedStudent={preSelectedStudent}
+                  isRegisteredUser={false}
+                  variant="landing"
+                />
               </div>
-            </TooltipProvider>
-          )}
-          
-          {/* Add pricing section below the form for anonymous users */}
-          {!isRegisteredUser && (
-            <div id="pricing-section">
-              <PricingSection />
+              <StatsBar />
+              <ValueCards />
+              <EcosystemSection />
+              <TestimonialsRow />
+              <div id="pricing-section">
+                <PricingSection />
+              </div>
+              <FinalCTA />
+              <GlobalFooter />
+            </>
+          ) : (
+            <div className="max-w-5xl mx-auto px-4 pt-8 pb-16">
+              <div className="text-center mb-6">
+                <h1 className="text-2xl font-bold text-foreground">
+                  Create a new worksheet
+                </h1>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Describe your lesson and AI will generate exercises
+                </p>
+              </div>
+              <FormView 
+                onSubmit={handleGenerateWorksheet} 
+                userId={user?.id || null} 
+                onStudentChange={setSelectedStudentId}
+                preSelectedStudent={preSelectedStudent}
+                isRegisteredUser={true}
+                variant="dashboard"
+              />
             </div>
           )}
         </>
@@ -358,7 +281,6 @@ const Index = () => {
         availableTokens={tokenLeft}
         profile={profile}
         onUpgrade={() => {
-          console.log('Upgrade plan clicked');
           setShowTokenModal(false);
         }}
       />

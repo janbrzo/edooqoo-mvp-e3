@@ -1,16 +1,12 @@
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import Sidebar from "@/components/Sidebar";
 import WorksheetForm, { FormData } from "@/components/WorksheetForm";
 import TrackingFormWrapper from "@/components/WorksheetForm/TrackingFormWrapper";
-import IsometricBackground from "@/components/IsometricBackground";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { User, GraduationCap } from "lucide-react";
 
 interface FormViewProps {
   onSubmit: (data: FormData) => void;
@@ -18,6 +14,7 @@ interface FormViewProps {
   onStudentChange?: (studentId: string | null) => void;
   preSelectedStudent?: { id: string; name: string } | null;
   isRegisteredUser?: boolean;
+  variant?: 'landing' | 'dashboard';
 }
 
 const FormView: React.FC<FormViewProps> = ({ 
@@ -25,7 +22,8 @@ const FormView: React.FC<FormViewProps> = ({
   userId, 
   onStudentChange, 
   preSelectedStudent,
-  isRegisteredUser = false
+  isRegisteredUser = false,
+  variant = 'dashboard'
 }) => {
   const isMobile = useIsMobile();
   const [couponCode, setCouponCode] = useState("");
@@ -53,27 +51,64 @@ const FormView: React.FC<FormViewProps> = ({
     }
   };
 
+  if (variant === 'landing') {
+    return (
+      <TrackingFormWrapper userId={userId}>
+        <div className={`max-w-5xl mx-auto ${isMobile ? 'px-2' : 'px-4'}`}>
+          <p className="text-center text-sm text-muted-foreground mb-3">
+            Describe your lesson — AI handles the rest
+          </p>
+          <div className="bg-background rounded-2xl shadow-xl shadow-muted/50 border border-border overflow-hidden p-1">
+            <WorksheetForm 
+              onSubmit={onSubmit} 
+              onStudentChange={onStudentChange} 
+              preSelectedStudent={preSelectedStudent}
+            />
+          </div>
+          <p className="text-center text-xs text-muted-foreground mt-3">
+            No signup needed. No credit card. Just try it.
+          </p>
+        </div>
+
+        {/* Coupon dialog */}
+        <Dialog open={showCouponDialog} onOpenChange={setShowCouponDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Coupon Code</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Enter coupon code (optional)"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <Button onClick={() => setShowCouponDialog(false)} variant="outline">
+                  Cancel
+                </Button>
+                <Button onClick={() => setShowCouponDialog(false)}>
+                  Apply & Continue
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </TrackingFormWrapper>
+    );
+  }
+
+  // variant === 'dashboard'
   return (
     <TrackingFormWrapper userId={userId}>
-      <div className={`${isMobile ? 'w-full min-h-screen' : 'container mx-auto'} flex main-container relative`}>
-        {/* Izometryczne tło - tylko na desktop */}
-        {!isMobile && <IsometricBackground />}
-        
-        {!isMobile && (
-          <div className="w-1/5 mx-0 py-[48px] relative z-10">
-            <Sidebar />
-          </div>
-        )}
-        <div className={`${isMobile ? 'w-full px-2 py-2' : 'w-4/5 px-6 py-6'} form-container relative z-10`}>
-          <WorksheetForm 
-            onSubmit={onSubmit} 
-            onStudentChange={onStudentChange} 
-            preSelectedStudent={preSelectedStudent}
-          />
-        </div>
+      <div className="max-w-5xl mx-auto">
+        <WorksheetForm 
+          onSubmit={onSubmit} 
+          onStudentChange={onStudentChange} 
+          preSelectedStudent={preSelectedStudent}
+        />
       </div>
 
-      {/* Dialog for coupon code input */}
+      {/* Coupon dialog */}
       <Dialog open={showCouponDialog} onOpenChange={setShowCouponDialog}>
         <DialogContent>
           <DialogHeader>
@@ -89,10 +124,7 @@ const FormView: React.FC<FormViewProps> = ({
               <Button onClick={() => setShowCouponDialog(false)} variant="outline">
                 Cancel
               </Button>
-              <Button onClick={() => {
-                // This would be called with actual plan details
-                setShowCouponDialog(false);
-              }}>
+              <Button onClick={() => setShowCouponDialog(false)}>
                 Apply & Continue
               </Button>
             </div>
