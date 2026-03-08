@@ -43,10 +43,10 @@ const EcosystemSection: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4">
         <div className="text-center mb-8">
           <h2 className={`text-2xl font-bold text-foreground mb-2 animate-fade-up ${isVisible ? 'visible' : ''}`}>
-            More than a worksheet generator
+            Your complete teaching toolkit
           </h2>
           <p className={`text-sm text-muted-foreground max-w-2xl mx-auto animate-fade-up stagger-1 ${isVisible ? 'visible' : ''}`}>
-            edooqoo saves you time at every step — from lesson prep to student management
+            Everything you need to run professional 1-on-1 lessons — built into one platform.
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
