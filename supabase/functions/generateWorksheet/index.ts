@@ -846,6 +846,7 @@ serve(async (req) => {
         if (worksheet && worksheet.length > 0 && worksheet[0].id) {
           const worksheetId = worksheet[0].id;
           worksheetData.id = worksheetId;
+          worksheetData.share_token = worksheet[0].share_token;
 
           // ⏱️ TIMING: Database save completed
           const dbSaveDuration = Date.now() - dbSaveStartTime;
