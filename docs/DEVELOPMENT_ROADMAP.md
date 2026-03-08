@@ -3,7 +3,12 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Mar 8, 2026) - DSLM Audio Persistence + Welcome Test Fixes ✅
+### Recently Completed (Mar 8, 2026) - FAQ & Feature Documentation Update ✅
+- Updated all FAQ items in `src/constants/faqItems.ts` to reflect current features
+- Added 6 new FAQ entries: Student Hub, Welcome Test & Learning Path, Lesson Booking, Student Progress, AI Evaluation, Google Calendar
+- Updated existing FAQ: Flashcards, Homework, Live Session, Student Management, Share Worksheet
+
+### Previously Completed (Mar 8, 2026) - DSLM Audio Persistence + Welcome Test Fixes ✅
 - Audio recordings now persist in DB (`audio_answers` JSONB column on both answer tables)
 - Updated RPCs: `save_worksheet_answer`, `save_homework_answer`, getters — all support `audio_answers`
 - `HomeworkSpeakingRecorder` ref-based timer (immune to parent re-renders)

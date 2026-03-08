@@ -3,7 +3,12 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: DSLM Audio + Welcome Test Fixes (March 8, 2026)
+## Latest: FAQ & Feature Documentation Update (March 8, 2026)
+- Updated all FAQ items to reflect current app state
+- 6 new FAQ entries: Student Hub, Welcome Test, Lesson Booking, Progress, AI Evaluation, Google Calendar
+- Existing FAQ items updated with Student Hub portal, AI evaluation, nano-skill tracking
+
+## Previous: DSLM Audio + Welcome Test Fixes (March 8, 2026)
 - Audio recordings persist after page refresh (saved to `audio_answers` DB column)
 - Auto-save countdown timer no longer resets during interactions
 - Progress tracking includes audio answers alongside written

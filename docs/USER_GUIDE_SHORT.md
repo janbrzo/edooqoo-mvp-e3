@@ -4,7 +4,9 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **DSLM Audio + Welcome Test Fixes (March 8, 2026)** — Audio recordings now persist after page refresh (saved to DB). Auto-save countdown timer no longer resets. Progress bar includes audio answers. Separate event logs for written and audio responses. Welcome Test: unified Skill Scores section (MC + AI scores merged), "Preview Test" and "View Results" buttons on student Overview. Mastery data backfilled for accuracy.
+**Latest Update:** **FAQ & Feature Documentation Update (March 8, 2026)** — Updated all FAQ items to reflect current app features. Added 6 new FAQ entries: Student Hub, Welcome Test & Learning Path, Lesson Booking, Student Progress tracking, AI Evaluation, Google Calendar integration. Existing FAQ items updated with Student Hub portal access, AI evaluation mentions, and nano-skill tracking details.
+
+**Previous Update:** **DSLM Audio + Welcome Test Fixes (March 8, 2026)** — Audio recordings now persist after page refresh (saved to DB). Auto-save countdown timer no longer resets. Progress bar includes audio answers. Separate event logs for written and audio responses. Welcome Test: unified Skill Scores section (MC + AI scores merged), "Preview Test" and "View Results" buttons on student Overview. Mastery data backfilled for accuracy.
 
 **Previous Update:** **Permanent Share Links (March 8, 2026)** — Share links permanent, auto-generated at creation. Calendar button in top nav.
 
