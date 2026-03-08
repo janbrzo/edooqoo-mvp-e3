@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Zap, Database, Clock, GraduationCap, User, Pencil } from "lucide-react";
+import { GCalStatusButton } from "@/components/calendar/GCalStatusButton";
 import { Link, useNavigate } from "react-router-dom";
 import { StudentSelector } from "@/components/StudentSelector";
 import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
@@ -135,6 +136,7 @@ function WorksheetHeader({
                 Profile
               </Link>
             </Button>
+            <GCalStatusButton />
           </div>
         )}
       </div>

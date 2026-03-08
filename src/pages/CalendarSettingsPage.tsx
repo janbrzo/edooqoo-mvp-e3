@@ -310,17 +310,17 @@ const CalendarSettingsPage = () => {
                               <Label className="text-sm">{item.label}</Label>
                             </div>
                             <Select value={currentVal} onValueChange={v => updateSettings({ [item.key]: v } as any)}>
-                              <SelectTrigger className="w-48">
-                                <span className="flex items-center gap-2">
-                                  <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: GCAL_COLOR_HEX[currentVal] || '#ccc' }} />
-                                  <SelectValue />
-                                </span>
+                              <SelectTrigger className="w-56">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="w-3 h-3 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: GCAL_COLOR_HEX[currentVal] || '#ccc' }} />
+                                  <span className="truncate">{GCAL_COLORS.find(c => c.v === currentVal)?.l || 'Select color'}</span>
+                                </div>
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent className="min-w-[220px]">
                                 {GCAL_COLORS.map(c => (
                                   <SelectItem key={c.v} value={c.v}>
                                     <span className="flex items-center gap-2">
-                                      <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: GCAL_COLOR_HEX[c.v] || '#ccc' }} />
+                                      <span className="w-3 h-3 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: GCAL_COLOR_HEX[c.v] || '#ccc' }} />
                                       {c.l}
                                     </span>
                                   </SelectItem>
