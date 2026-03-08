@@ -14,6 +14,7 @@ import { PricingSection } from "@/components/PricingSection";
 import { FreeWeekBanner } from "@/components/FreeWeekBanner";
 import { deepFixTextObjects } from "@/utils/textObjectFixer";
 import { User, GraduationCap, DollarSign, Bell, Lock, CheckCircle } from "lucide-react";
+import { GCalStatusButton } from "@/components/calendar/GCalStatusButton";
 import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -217,7 +218,7 @@ const Index = () => {
 
   // Navigation component for authenticated users
   const AuthenticatedNav = () => (
-    <div className="absolute top-4 right-4 z-50 flex items-center gap-4">
+    <div className="absolute top-4 right-4 z-50 flex flex-wrap items-center gap-3 justify-end">
       <Badge variant="outline" className="text-sm">
         Token Left: {tokenLeft}
       </Badge>
@@ -234,6 +235,7 @@ const Index = () => {
           Profile
         </Link>
       </Button>
+      <GCalStatusButton />
     </div>
   );
 

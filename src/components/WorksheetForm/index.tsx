@@ -329,13 +329,6 @@ export default function WorksheetForm({
         <CardContent className={`${isMobile ? 'p-3' : 'p-8'}`}>
           <form onSubmit={handleSubmit}>
             <div className="mb-6">
-              {/* Top nav row with Dashboard + Calendar */}
-              <div className="flex items-center gap-2 mb-4">
-                <Button variant="ghost" size="sm" className="text-xs h-7" asChild>
-                  <Link to="/dashboard">Dashboard</Link>
-                </Button>
-                <GCalStatusButton />
-              </div>
               <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-start'} mb-6`}>
                 <div className={`${isMobile ? 'text-center' : ''}`}>
                   <h1 className={`font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-violet-500 to-blue-500 ${isMobile ? 'text-xl' : 'text-3xl'} mb-2`}>
