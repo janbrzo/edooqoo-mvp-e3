@@ -86,17 +86,31 @@ export const useInteractiveSharedWorksheet = ({
       if (data && data.length > 0) {
         const loadedAnswers: Record<number, ExerciseAnswers> = {};
         const loadedEvals: Record<number, any[]> = {};
+        const loadedAudio: Record<number, Record<number, string>> = {};
 
         data.forEach((answer: any) => {
           loadedAnswers[answer.exercise_index] = answer.answers;
           if (answer.item_evaluations && Array.isArray(answer.item_evaluations)) {
             loadedEvals[answer.exercise_index] = answer.item_evaluations;
           }
+          // FIX 1.2: Load audio_answers from DB
+          if (answer.audio_answers && typeof answer.audio_answers === 'object' && Object.keys(answer.audio_answers).length > 0) {
+            const audioForExercise: Record<number, string> = {};
+            for (const [qIdx, url] of Object.entries(answer.audio_answers)) {
+              if (url && typeof url === 'string') {
+                audioForExercise[parseInt(qIdx)] = url;
+              }
+            }
+            if (Object.keys(audioForExercise).length > 0) {
+              loadedAudio[answer.exercise_index] = audioForExercise;
+            }
+          }
         });
 
         setAnswers(loadedAnswers);
         setItemEvaluations(loadedEvals);
-        console.log('[useInteractiveSharedWorksheet] Loaded answers:', loadedAnswers, 'evals:', loadedEvals);
+        setAudioAnswers(loadedAudio);
+        console.log('[useInteractiveSharedWorksheet] Loaded answers:', loadedAnswers, 'audio:', loadedAudio, 'evals:', loadedEvals);
       }
     } catch (error: any) {
       console.error('Error loading answers:', error);
@@ -127,7 +141,8 @@ export const useInteractiveSharedWorksheet = ({
     exerciseType: string, 
     exerciseAnswers: ExerciseAnswers, 
     mastery?: number | null,
-    itemEvaluations?: ItemEvaluation[] | null
+    itemEvaluations?: ItemEvaluation[] | null,
+    audioAnswersForExercise?: Record<number, string> | null
   ) => {
     try {
       setIsSaving(true);
@@ -143,7 +158,8 @@ export const useInteractiveSharedWorksheet = ({
         p_answers: exerciseAnswers as any,
         p_time_spent_ms: activeTimeMs,
         p_mastery: mastery ?? null,
-        p_item_evaluations: itemEvaluations ? JSON.parse(JSON.stringify(itemEvaluations)) : null
+        p_item_evaluations: itemEvaluations ? JSON.parse(JSON.stringify(itemEvaluations)) : null,
+        p_audio_answers: audioAnswersForExercise ? JSON.parse(JSON.stringify(audioAnswersForExercise)) : null
       });
 
       if (error) throw error;
@@ -513,27 +529,25 @@ export const useInteractiveSharedWorksheet = ({
 
   // Update audio answer for a specific exercise/question
   const updateAudioAnswer = useCallback((exerciseIndex: number, questionIndex: number, audioUrl: string) => {
-    setAudioAnswers(prev => {
-      const updated = {
-        ...prev,
-        [exerciseIndex]: {
-          ...(prev[exerciseIndex] || {}),
-          [questionIndex]: audioUrl
-        }
-      };
-      return updated;
-    });
+    const newAudioForExercise = { ...(audioAnswers[exerciseIndex] || {}), [questionIndex]: audioUrl };
     
-    // FIX 1.2+1.4: Trigger DB save so audio persists and SQL triggers fire for student_events
+    setAudioAnswers(prev => ({
+      ...prev,
+      [exerciseIndex]: {
+        ...(prev[exerciseIndex] || {}),
+        [questionIndex]: audioUrl
+      }
+    }));
+    
+    // FIX 1.2+1.4: Save audio_answers to DB so they persist after refresh + SQL triggers fire
     const exerciseType = exerciseTypesRef.current[exerciseIndex] || exercises[exerciseIndex]?.type || exercises[exerciseIndex]?.exercise_type || '';
     const currentAnswers = answers[exerciseIndex] || {};
     const exerciseData = { ...exercises[exerciseIndex], worksheetId };
     const mastery = calculateOverallMastery(exerciseType, exerciseData, currentAnswers as Record<string | number, any>);
-    const newAudioForExercise = { ...(audioAnswers[exerciseIndex] || {}), [questionIndex]: audioUrl };
     const itemEvals = buildItemEvaluations(exerciseData, currentAnswers as Record<string | number, any>, exerciseType, null, newAudioForExercise);
     const hasRealAiEval = itemEvals?.some(e => e.hasValue !== false);
     const evalToSend = hasRealAiEval ? itemEvals : null;
-    saveAnswer(exerciseIndex, exerciseType, currentAnswers, mastery, evalToSend);
+    saveAnswer(exerciseIndex, exerciseType, currentAnswers, mastery, evalToSend, newAudioForExercise);
     
     console.log('[useInteractiveSharedWorksheet] Audio answer saved to DB:', { exerciseIndex, questionIndex, audioUrl: audioUrl.substring(0, 50) });
   }, [answers, exercises, saveAnswer, worksheetId, audioAnswers]);

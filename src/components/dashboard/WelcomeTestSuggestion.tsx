@@ -188,11 +188,28 @@ export function WelcomeTestSuggestion({ studentId, teacherId, studentName, stude
   };
 
   const handlePreview = () => {
-    // Navigate to Tests tab with testId to auto-open specific test
     if (testId) {
       navigate(`/student/${studentId}?tab=tests&testId=${testId}`);
     } else {
       navigate(`/student/${studentId}?tab=tests`);
+    }
+  };
+
+  const handlePreviewTest = async () => {
+    if (!testId) return;
+    try {
+      // Get or generate share token for teacher preview
+      const { data } = await supabase
+        .from('student_tests')
+        .select('share_token')
+        .eq('id', testId)
+        .single();
+      
+      if (data?.share_token) {
+        window.open(`${window.location.origin}/welcome-test/${data.share_token}`, '_blank');
+      }
+    } catch (err) {
+      console.error('Error opening preview:', err);
     }
   };
 
@@ -259,7 +276,7 @@ export function WelcomeTestSuggestion({ studentId, teacherId, studentName, stude
               <>
                 <Button variant="outline" size="sm" onClick={handlePreview}>
                   <Eye className="h-4 w-4 mr-1" />
-                  Preview
+                  Preview Test
                 </Button>
                 <Button onClick={handleCreateAndSend} disabled={creating}>
                   {creating ? (
@@ -277,17 +294,27 @@ export function WelcomeTestSuggestion({ studentId, teacherId, studentName, stude
                   <Copy className="h-4 w-4 mr-1" />
                   Copy Link
                 </Button>
-                <Button variant="outline" size="sm" onClick={handlePreview}>
-                  <Eye className="h-4 w-4 mr-1" />
-                  Preview
+                <Button variant="outline" size="sm" onClick={handleViewResults}>
+                  <BarChart3 className="h-4 w-4 mr-1" />
+                  View Results
+                </Button>
+                <Button variant="outline" size="sm" onClick={handlePreviewTest}>
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  Preview Test
                 </Button>
               </>
             )}
             {status === 'completed' && (
-              <Button onClick={handleViewResults}>
-                <BarChart3 className="h-4 w-4 mr-2" />
-                View Results
-              </Button>
+              <>
+                <Button onClick={handleViewResults}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  View Results
+                </Button>
+                <Button variant="outline" size="sm" onClick={handlePreviewTest}>
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  Preview Test
+                </Button>
+              </>
             )}
           </div>
         </div>

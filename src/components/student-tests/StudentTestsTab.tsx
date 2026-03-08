@@ -204,11 +204,13 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
                 <Badge className={`${TEST_STATUS_CONFIG[welcomeTest.status]?.bgColor} ${TEST_STATUS_CONFIG[welcomeTest.status]?.color}`}>
                   {TEST_STATUS_CONFIG[welcomeTest.status]?.label}
                 </Badge>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedTestId(welcomeTest.id)} title="View Results">
-                  <BarChart3 className="h-4 w-4" />
+                <Button variant="outline" size="sm" onClick={() => setSelectedTestId(welcomeTest.id)}>
+                  <BarChart3 className="h-4 w-4 mr-1.5" />
+                  View Results
                 </Button>
-                <Button variant="ghost" size="sm" onClick={handlePreviewTest} disabled={creatingPreview} title="Preview test">
-                  {creatingPreview ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+                <Button variant="outline" size="sm" onClick={handlePreviewTest} disabled={creatingPreview}>
+                  {creatingPreview ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <ExternalLink className="h-4 w-4 mr-1.5" />}
+                  Preview Test
                 </Button>
               </div>
             </div>

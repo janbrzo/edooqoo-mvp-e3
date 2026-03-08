@@ -86,25 +86,36 @@ export const useInteractiveHomework = ({
 
       if (data && data.length > 0) {
         const loadedAnswers: Record<number, ExerciseAnswers> = {};
-        const loadedEvaluations: Record<number, Record<number, AiEvaluation>> = {}; // PROBLEM 4: Load AI evaluations per exercise -> per question
+        const loadedEvaluations: Record<number, Record<number, AiEvaluation>> = {};
+        const loadedAudio: Record<number, Record<number, string>> = {};
         let allSubmitted = true;
 
         data.forEach((answer: any) => {
           loadedAnswers[answer.exercise_index] = answer.answers;
           
-          // PROBLEM 4: Load AI evaluation - handle both old format (single) and new format (per-question)
+          // Load AI evaluation - handle both old format (single) and new format (per-question)
           if (answer.ai_evaluation) {
             const evalData = answer.ai_evaluation;
-            
-            // Check if it's new per-question format (has question_evaluations array)
             if (evalData.question_evaluations && Array.isArray(evalData.question_evaluations)) {
               loadedEvaluations[answer.exercise_index] = {};
               evalData.question_evaluations.forEach((qEval: any) => {
                 loadedEvaluations[answer.exercise_index][qEval.question_index] = qEval;
               });
             } else if (evalData.is_acceptable !== undefined) {
-              // Old format - single evaluation for whole exercise, store under index 0
               loadedEvaluations[answer.exercise_index] = { 0: evalData as AiEvaluation };
+            }
+          }
+          
+          // FIX 1.2: Load audio_answers from DB
+          if (answer.audio_answers && typeof answer.audio_answers === 'object' && Object.keys(answer.audio_answers).length > 0) {
+            const audioForExercise: Record<number, string> = {};
+            for (const [qIdx, url] of Object.entries(answer.audio_answers)) {
+              if (url && typeof url === 'string') {
+                audioForExercise[parseInt(qIdx)] = url;
+              }
+            }
+            if (Object.keys(audioForExercise).length > 0) {
+              loadedAudio[answer.exercise_index] = audioForExercise;
             }
           }
           
@@ -117,7 +128,8 @@ export const useInteractiveHomework = ({
         });
 
         setAnswers(loadedAnswers);
-        setAiEvaluations(loadedEvaluations); // PROBLEM 4: Store loaded evaluations
+        setAiEvaluations(loadedEvaluations);
+        setAudioAnswers(loadedAudio);
         setIsSubmitted(allSubmitted);
       }
     } catch (error: any) {
@@ -149,12 +161,12 @@ export const useInteractiveHomework = ({
     exerciseType: string, 
     exerciseAnswers: ExerciseAnswers, 
     mastery?: number | null,
-    itemEvaluations?: ItemEvaluation[] | null
+    itemEvaluations?: ItemEvaluation[] | null,
+    audioAnswersForExercise?: Record<number, string> | null
   ) => {
     try {
       setIsSaving(true);
       
-      // PROBLEM 2 FIX: Include active time in save
       const activeTimeMs = getActiveTimeMs(exerciseIndex);
       
       const { error } = await supabase.rpc('save_homework_answer', {
@@ -165,7 +177,8 @@ export const useInteractiveHomework = ({
         p_answers: exerciseAnswers as any,
         p_time_spent_ms: activeTimeMs,
         p_mastery: mastery ?? null,
-        p_item_evaluations: itemEvaluations ? JSON.parse(JSON.stringify(itemEvaluations)) : null
+        p_item_evaluations: itemEvaluations ? JSON.parse(JSON.stringify(itemEvaluations)) : null,
+        p_audio_answers: audioAnswersForExercise ? JSON.parse(JSON.stringify(audioAnswersForExercise)) : null
       });
 
       if (error) throw error;
@@ -173,7 +186,6 @@ export const useInteractiveHomework = ({
       setLastSavedAt(new Date());
       pendingSavesRef.current.delete(exerciseIndex);
       
-      // Show save confirmation only if no other saves are pending
       if (pendingSavesRef.current.size === 0) {
         setIsSaving(false);
       }
@@ -634,26 +646,24 @@ export const useInteractiveHomework = ({
 
   // Update audio answer for a specific exercise/question
   const updateAudioAnswer = useCallback((exerciseIndex: number, questionIndex: number, audioUrl: string) => {
-    setAudioAnswers(prev => {
-      const updated = {
-        ...prev,
-        [exerciseIndex]: {
-          ...(prev[exerciseIndex] || {}),
-          [questionIndex]: audioUrl
-        }
-      };
-      return updated;
-    });
+    const newAudioForExercise = { ...(audioAnswers[exerciseIndex] || {}), [questionIndex]: audioUrl };
     
-    // FIX 1.2+1.4: Trigger DB save so audio persists and SQL triggers fire for student_events
+    setAudioAnswers(prev => ({
+      ...prev,
+      [exerciseIndex]: {
+        ...(prev[exerciseIndex] || {}),
+        [questionIndex]: audioUrl
+      }
+    }));
+    
+    // FIX 1.2+1.4: Save audio_answers to DB so they persist after refresh + SQL triggers fire
     const exerciseType = exercises[exerciseIndex]?.type || exercises[exerciseIndex]?.exercise_type || '';
     const currentAnswers = answers[exerciseIndex] || {};
     const effectiveWorksheetId = sourceWorksheetId || homeworkId;
     const exerciseData = { ...exercises[exerciseIndex], worksheetId: effectiveWorksheetId };
     const mastery = calculateOverallMastery(exerciseType, exerciseData, currentAnswers as Record<string | number, any>);
-    const newAudioForExercise = { ...(audioAnswers[exerciseIndex] || {}), [questionIndex]: audioUrl };
     const itemEvals = buildItemEvaluations(exerciseData, currentAnswers as Record<string | number, any>, exerciseType, null, newAudioForExercise);
-    saveAnswer(exerciseIndex, exerciseType, currentAnswers, mastery, itemEvals);
+    saveAnswer(exerciseIndex, exerciseType, currentAnswers, mastery, itemEvals, newAudioForExercise);
     
     console.log('[useInteractiveHomework] Audio answer saved to DB:', { exerciseIndex, questionIndex, audioUrl: audioUrl.substring(0, 50) });
   }, [answers, exercises, saveAnswer, sourceWorksheetId, homeworkId, audioAnswers]);

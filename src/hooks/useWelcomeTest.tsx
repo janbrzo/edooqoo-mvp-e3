@@ -349,6 +349,7 @@ export function useWelcomeTest({ shareToken }: UseWelcomeTestProps) {
         // Round 8: Use semantic trait keys instead of generic 'answer_value'
         const QUESTION_TRAIT_FALLBACK: Record<string, string> = {
           'wt_q2': 'main_frustrations',
+          'wt_q3b': 'usage_context',
           'wt_q6': 'preferred_activities',
           'wt_q9': 'learning_duration',
           'wt_q10': 'learning_background',

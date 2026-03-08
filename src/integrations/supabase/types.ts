@@ -1197,6 +1197,7 @@ export type Database = {
         Row: {
           ai_evaluation: Json | null
           answers: Json
+          audio_answers: Json | null
           eval_trigger: string | null
           exercise_index: number
           exercise_type: string
@@ -1214,6 +1215,7 @@ export type Database = {
         Insert: {
           ai_evaluation?: Json | null
           answers?: Json
+          audio_answers?: Json | null
           eval_trigger?: string | null
           exercise_index: number
           exercise_type: string
@@ -1231,6 +1233,7 @@ export type Database = {
         Update: {
           ai_evaluation?: Json | null
           answers?: Json
+          audio_answers?: Json | null
           eval_trigger?: string | null
           exercise_index?: number
           exercise_type?: string
@@ -2532,6 +2535,7 @@ export type Database = {
       worksheet_student_answers: {
         Row: {
           answers: Json
+          audio_answers: Json | null
           completed_at: string | null
           eval_trigger: string | null
           exercise_index: number
@@ -2549,6 +2553,7 @@ export type Database = {
         }
         Insert: {
           answers?: Json
+          audio_answers?: Json | null
           completed_at?: string | null
           eval_trigger?: string | null
           exercise_index: number
@@ -2566,6 +2571,7 @@ export type Database = {
         }
         Update: {
           answers?: Json
+          audio_answers?: Json | null
           completed_at?: string | null
           eval_trigger?: string | null
           exercise_index?: number
@@ -2921,6 +2927,7 @@ export type Database = {
         Returns: {
           ai_evaluation: Json
           answers: Json
+          audio_answers: Json
           exercise_index: number
           exercise_type: string
           id: string
@@ -2984,6 +2991,7 @@ export type Database = {
         Args: { p_student_email: string; p_worksheet_id: string }
         Returns: {
           answers: Json
+          audio_answers: Json
           completed_at: string
           exercise_index: number
           exercise_type: string
@@ -3149,6 +3157,20 @@ export type Database = {
             }
             Returns: string
           }
+        | {
+            Args: {
+              p_answers: Json
+              p_audio_answers?: Json
+              p_exercise_index: number
+              p_exercise_type: string
+              p_homework_id: string
+              p_item_evaluations?: Json
+              p_mastery?: number
+              p_student_email: string
+              p_time_spent_ms?: number
+            }
+            Returns: string
+          }
       save_teacher_comment: {
         Args: {
           p_comment_text: string
@@ -3196,6 +3218,20 @@ export type Database = {
         | {
             Args: {
               p_answers: Json
+              p_exercise_index: number
+              p_exercise_type: string
+              p_item_evaluations?: Json
+              p_mastery?: number
+              p_student_email: string
+              p_time_spent_ms?: number
+              p_worksheet_id: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_answers: Json
+              p_audio_answers?: Json
               p_exercise_index: number
               p_exercise_type: string
               p_item_evaluations?: Json
