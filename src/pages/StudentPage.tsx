@@ -50,6 +50,51 @@ import { StudentSwitcherPopover } from '@/components/StudentSwitcherPopover';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 
+function MeetingLinkField({ studentId, teacherId }: { studentId: string; teacherId: string }) {
+  const [link, setLink] = useState('');
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    supabase.from('calendar_student_settings')
+      .select('default_meeting_link')
+      .eq('student_id', studentId)
+      .eq('teacher_id', teacherId)
+      .maybeSingle()
+      .then(({ data }) => { if (data?.default_meeting_link) setLink(data.default_meeting_link); });
+  }, [studentId, teacherId]);
+
+  const handleSave = async () => {
+    if (!link && !saved) return;
+    const { data: existing } = await supabase.from('calendar_student_settings')
+      .select('id').eq('student_id', studentId).eq('teacher_id', teacherId).maybeSingle();
+    if (existing) {
+      await supabase.from('calendar_student_settings').update({ default_meeting_link: link || null, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
+    } else {
+      await supabase.from('calendar_student_settings').insert({ student_id: studentId, teacher_id: teacherId, default_meeting_link: link || null } as any);
+    }
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div>
+      <label className="text-sm font-medium text-muted-foreground">Default Meeting Link</label>
+      <div className="flex items-center gap-2 mt-1">
+        <Video className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        <Input
+          value={link}
+          onChange={e => { setLink(e.target.value); setSaved(false); }}
+          onBlur={handleSave}
+          placeholder="https://meet.google.com/..."
+          className="h-8 text-sm"
+        />
+        {saved && <span className="text-xs text-green-600 whitespace-nowrap">✓ Saved</span>}
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">This link will be auto-filled for new lessons with this student.</p>
+    </div>
+  );
+}
+
 const StudentPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
