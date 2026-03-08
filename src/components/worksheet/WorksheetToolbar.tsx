@@ -8,7 +8,7 @@ import ShareWorksheetModal from "@/components/ShareWorksheetModal";
 import { DuplicateWorksheetButton } from "@/components/DuplicateWorksheetButton";
 import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 import { exportAsHTML } from "@/utils/htmlExport";
-import { GCalStatusButton } from "@/components/calendar/GCalStatusButton";
+
 import { trackWorksheetEvent } from "@/services/worksheetService";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useDownloadTracking } from "@/hooks/useDownloadTracking";
