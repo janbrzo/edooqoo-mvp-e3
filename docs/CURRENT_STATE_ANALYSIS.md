@@ -6,7 +6,15 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-08) - FAQ & Feature Documentation Update:**
+**Ostatnia aktualizacja (2026-03-08) - Landing Page "Product-First" Redesign:**
+- ✅ **Nowy landing page**: Hero headline, stats bar, value cards, ecosystem section (6 features), testimonials, final CTA
+- ✅ **StickyNav**: Sticky navigation z conditional UI (anonymous vs authenticated), mobile hamburger menu
+- ✅ **FormView variant prop**: `landing` (premium card with shadow) vs `dashboard` (clean, no wrapper)
+- ✅ **Usunięte**: Sidebar i IsometricBackground z FormView, inline AnonymousNav/AuthenticatedNav z Index.tsx, progress bar Demo→Full-Time
+- ✅ **8 nowych komponentów**: StickyNav, HeroHeadline, StatsBar, ValueCards, EcosystemSection, TestimonialsRow, FinalCTA, useScrollAnimation
+- ✅ **Scroll animations**: IntersectionObserver-based fade-up z stagger delays
+
+**Poprzednia aktualizacja (2026-03-08) - FAQ & Feature Documentation Update:**
 - ✅ **FAQ zaktualizowane**: Wszystkie istniejące FAQ items zaktualizowane o aktualne funkcje (Student Hub, AI evaluation, nano-skill tracking)
 - ✅ **6 nowych FAQ**: Student Hub, Welcome Test & Learning Path, Lesson Booking, Student Progress tracking, AI Evaluation, Google Calendar integration
 

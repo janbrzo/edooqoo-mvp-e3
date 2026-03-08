@@ -3,10 +3,14 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: FAQ & Feature Documentation Update (March 8, 2026)
-- Updated all FAQ items to reflect current app state
-- 6 new FAQ entries: Student Hub, Welcome Test, Lesson Booking, Progress, AI Evaluation, Google Calendar
-- Existing FAQ items updated with Student Hub portal, AI evaluation, nano-skill tracking
+## Latest: Landing Page "Product-First" Redesign (March 8, 2026)
+- New high-conversion landing page with hero, social proof, stats, value cards, ecosystem section, testimonials, final CTA
+- Sticky navigation with conditional UI (anonymous vs authenticated)
+- Form in premium card for visitors, clean dashboard for logged-in users
+- 8 new components in `src/components/landing/`, scroll animations with IntersectionObserver
+
+## Previous: FAQ & Feature Documentation Update (March 8, 2026)
+- Updated all FAQ items, added 6 new entries
 
 ## Previous: DSLM Audio + Welcome Test Fixes (March 8, 2026)
 - Audio recordings persist after page refresh (saved to `audio_answers` DB column)

@@ -1,7 +1,9 @@
 
 # English Worksheet Generator - Complete User Guide
 
-**Latest Update (March 8, 2026):** FAQ & Feature Documentation Update — Updated all FAQ items to reflect current features. Added 6 new FAQ entries: Student Hub, Welcome Test & Learning Path, Lesson Booking, Student Progress tracking, AI Evaluation, Google Calendar integration.
+**Latest Update (March 8, 2026):** Landing Page Redesign — New product-first landing page. Anonymous users see: sticky nav → hero headline with social proof → worksheet form in premium card → stats bar → value cards → ecosystem section (6 platform features) → testimonials → pricing → final CTA. Logged-in users see: sticky nav with tokens/dashboard/profile → clean form. Removed old sidebar, isometric background, and progress bar.
+
+**Previous Update (March 8, 2026):** FAQ & Feature Documentation Update — Updated all FAQ items. Added 6 new FAQ entries.
 
 **Previous Update (March 8, 2026):** Audio recordings on shared worksheets and homework now persist after page refresh. The auto-save countdown (30s) no longer resets during interactions. Progress tracking includes both written and audio answers. Welcome Test results show unified Skill Scores (MC scores for Grammar/Vocab/Reading/Listening, AI scores for Writing/Speaking). "Preview Test" and "View Results" buttons added to student Overview tab.
 
