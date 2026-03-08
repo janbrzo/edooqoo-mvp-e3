@@ -1,22 +1,22 @@
 import React from 'react';
-import { Sparkles, Users, BarChart3 } from 'lucide-react';
+import { Lightbulb, Workflow, Target } from 'lucide-react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const cards = [
   {
-    icon: Sparkles,
-    title: '29 Exercise Types',
-    description: 'Reading, gap fill, matching, listening, picture-based, discussion, error correction — and 22 more.',
+    icon: Lightbulb,
+    title: 'Never run out of lesson ideas',
+    description: 'With 29 exercise types including gap-fill, matching, listening, and discussion — every lesson feels fresh and engaging.',
   },
   {
-    icon: Users,
-    title: 'Student Hub',
-    description: 'Students get their own portal with worksheets, flashcards, homework, and lesson booking.',
+    icon: Workflow,
+    title: 'Zero admin work for you',
+    description: 'Students get their own portal with worksheets, interactive flashcards, automated homework, and seamless lesson booking.',
   },
   {
-    icon: BarChart3,
-    title: 'Progress Analytics',
-    description: 'CEFR-tagged skill tracking. See what each student knows and what to teach next.',
+    icon: Target,
+    title: 'Know exactly what to teach',
+    description: 'CEFR-tagged skill tracking and analytics. See exactly what each student has mastered and what to focus on next.',
   },
 ];
 
@@ -24,22 +24,28 @@ const ValueCards: React.FC = () => {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section ref={ref} className="bg-secondary/50 py-12">
-      <div className="max-w-4xl mx-auto px-4">
-        <h2 className={`text-2xl font-bold text-center text-foreground mb-8 animate-fade-up ${isVisible ? 'visible' : ''}`}>
-          Everything you need to teach better
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <section ref={ref} className="bg-background py-20 relative border-b border-border">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className={`text-center mb-16 animate-fade-up ${isVisible ? 'visible' : ''}`}>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Everything you need to teach better
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            A complete toolkit designed specifically for 1-on-1 language tutors.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {cards.map((card, i) => (
             <div
               key={card.title}
-              className={`bg-background rounded-xl p-6 border border-border hover:shadow-md transition-shadow animate-fade-up stagger-${i + 1} ${isVisible ? 'visible' : ''}`}
+              className={`group bg-background rounded-2xl p-8 border border-border hover:border-violet-200 hover:shadow-xl hover:shadow-violet-500/5 transition-all duration-300 animate-fade-up stagger-${i + 1} ${isVisible ? 'visible' : ''}`}
             >
-              <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center mb-3">
-                <card.icon className="h-5 w-5 text-violet-600" />
+              <div className="w-14 h-14 rounded-xl bg-violet-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <card.icon className="h-7 w-7 text-violet-600" />
               </div>
-              <h3 className="font-semibold text-foreground mb-1">{card.title}</h3>
-              <p className="text-sm text-muted-foreground">{card.description}</p>
+              <h3 className="text-xl font-bold text-foreground mb-3">{card.title}</h3>
+              <p className="text-base text-muted-foreground leading-relaxed">{card.description}</p>
             </div>
           ))}
         </div>

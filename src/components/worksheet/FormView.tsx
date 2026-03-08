@@ -54,20 +54,35 @@ const FormView: React.FC<FormViewProps> = ({
   if (variant === 'landing') {
     return (
       <TrackingFormWrapper userId={userId}>
-        <div className={`max-w-5xl mx-auto ${isMobile ? 'px-2' : 'px-4'}`}>
-          <p className="text-center text-sm text-muted-foreground mb-3">
-            Describe your lesson — AI handles the rest
-          </p>
-          <div className="bg-background rounded-2xl shadow-xl shadow-muted/50 border border-border overflow-hidden p-1">
-            <WorksheetForm 
-              onSubmit={onSubmit} 
-              onStudentChange={onStudentChange} 
-              preSelectedStudent={preSelectedStudent}
-            />
+        <div id="worksheet-form" className="scroll-mt-24 pb-12 pt-8">
+          <div className={`max-w-5xl mx-auto ${isMobile ? 'px-2' : 'px-4'}`}>
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-foreground mb-2">Try it right now</h2>
+              <p className="text-lg text-muted-foreground">
+                Describe your lesson below. AI will handle the rest in seconds.
+              </p>
+            </div>
+            
+            {/* Premium Form Wrapper with glow */}
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-[2rem] blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
+              <div className="relative bg-background rounded-3xl shadow-2xl border border-border/50 overflow-hidden p-1 md:p-2">
+                <WorksheetForm 
+                  onSubmit={onSubmit} 
+                  onStudentChange={onStudentChange} 
+                  preSelectedStudent={preSelectedStudent}
+                />
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mt-6 text-sm font-medium text-muted-foreground">
+              <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-green-500"></div> System online</span>
+              <span className="hidden sm:inline text-border">•</span>
+              <span>Generates in ~90 seconds</span>
+              <span className="hidden sm:inline text-border">•</span>
+              <span>100% Free trial</span>
+            </div>
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-3">
-            No signup needed. No credit card. Just try it.
-          </p>
         </div>
 
         {/* Coupon dialog */}
