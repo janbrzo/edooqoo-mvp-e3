@@ -1,7 +1,9 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Mar 8, 2026):** FAQ & Feature Documentation Update — All FAQ items updated to reflect current app features. 6 new FAQ entries added: Student Hub, Welcome Test & Learning Path, Lesson Booking, Student Progress tracking, AI Evaluation, Google Calendar integration.
+**Latest Update (Mar 8, 2026):** Landing Page "Product-First" Redesign — New high-conversion landing page: hero with social proof, form in premium card, stats bar (2000+ worksheets, 29 types, 15+ countries), value cards, ecosystem section showing full platform (Live Sessions, Homework+AI, Flashcards, Calendar, Welcome Test, Share), testimonials, final CTA. Sticky nav with conditional UI. Expected impact: higher signup conversion from anonymous visitors who now see the full value proposition.
+
+**Previous Update (Mar 8, 2026):** FAQ & Feature Documentation Update — All FAQ items updated. 6 new FAQ entries added.
 
 **Previous Update (Mar 8, 2026):** DSLM Audio Persistence + Welcome Test Fixes — Audio recordings now saved to DB (persist after refresh). Auto-save timer immune to re-renders. Progress includes audio. Dual event logging (written + audio). Welcome Test unified Skill Scores. UI buttons for Preview/Results on Overview. Mastery backfill for accuracy.
 

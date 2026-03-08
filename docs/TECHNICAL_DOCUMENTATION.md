@@ -5,10 +5,18 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 8, 2026) - FAQ & Feature Documentation Update:**
+**Latest Update (March 8, 2026) - Landing Page "Product-First" Redesign:**
+- **New landing structure**: Anonymous users see Hero → Form in premium card → StatsBar → ValueCards → EcosystemSection → Testimonials → Pricing → FinalCTA → Footer
+- **Authenticated users**: StickyNav with token/dashboard/profile → clean form without wrappers
+- **New components**: `src/components/landing/` — StickyNav, HeroHeadline, StatsBar, ValueCards, EcosystemSection, TestimonialsRow, FinalCTA
+- **New hook**: `src/hooks/useScrollAnimation.ts` — IntersectionObserver-based visibility trigger
+- **FormView refactored**: `variant` prop (`landing` | `dashboard`), removed Sidebar/IsometricBackground imports
+- **Index.tsx cleanup**: Removed inline AuthenticatedNav/AnonymousNav, progress bar, unused imports (Lock, DollarSign, TooltipProvider)
+- **CSS animations**: `.animate-fade-up` with `.visible` trigger and `.stagger-1` through `.stagger-6` delays
+
+**Previous Update (March 8, 2026) - FAQ & Feature Documentation Update:**
 - Updated all FAQ items in `src/constants/faqItems.ts` to reflect current app features
 - Added 6 new FAQ entries: Student Hub, Welcome Test & Learning Path, Lesson Booking, Student Progress tracking, AI Evaluation, Google Calendar integration
-- Updated existing FAQ items: Flashcards (Student Hub access), Homework (AI evaluation, Student Hub), Live Session (nano-skill mastery, AI eval), Student Management (Welcome Test), Share Worksheet (Student Hub)
 
 **Previous Update (March 8, 2026) - DSLM Audio Persistence + Welcome Test Fixes + Event Logging:**
 - **Audio persistence**: Added `audio_answers` JSONB column to `worksheet_student_answers` and `homework_student_answers`. Updated RPCs (`save_worksheet_answer`, `save_homework_answer`, `get_worksheet_student_answers`, `get_student_homework_answers`) to save/load audio URLs. Recordings now survive page refresh

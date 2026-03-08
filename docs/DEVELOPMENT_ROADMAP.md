@@ -3,10 +3,16 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Mar 8, 2026) - FAQ & Feature Documentation Update ✅
-- Updated all FAQ items in `src/constants/faqItems.ts` to reflect current features
-- Added 6 new FAQ entries: Student Hub, Welcome Test & Learning Path, Lesson Booking, Student Progress, AI Evaluation, Google Calendar
-- Updated existing FAQ: Flashcards, Homework, Live Session, Student Management, Share Worksheet
+### Recently Completed (Mar 8, 2026) - Landing Page "Product-First" Redesign ✅
+- 8 new components: `StickyNav`, `HeroHeadline`, `StatsBar`, `ValueCards`, `EcosystemSection`, `TestimonialsRow`, `FinalCTA`, `useScrollAnimation`
+- `Index.tsx` restructured: anonymous landing page flow vs clean authenticated dashboard
+- `FormView.tsx` refactored: `variant` prop (landing/dashboard), removed Sidebar/IsometricBackground
+- CSS scroll animations with IntersectionObserver and stagger delays
+- Removed: inline nav components, progress bar, unused imports
+
+### Previously Completed (Mar 8, 2026) - FAQ & Feature Documentation Update ✅
+- Updated all FAQ items to reflect current features
+- Added 6 new FAQ entries: Student Hub, Welcome Test, Lesson Booking, Progress, AI Evaluation, Google Calendar
 
 ### Previously Completed (Mar 8, 2026) - DSLM Audio Persistence + Welcome Test Fixes ✅
 - Audio recordings now persist in DB (`audio_answers` JSONB column on both answer tables)
