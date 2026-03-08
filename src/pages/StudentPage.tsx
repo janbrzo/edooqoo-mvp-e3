@@ -141,7 +141,7 @@ const StudentPage = () => {
     useDeletedWorksheets(id || '', false, true, deletedCurrentPage, pageSize);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [shareWorksheetData, setShareWorksheetData] = useState<{id: string; title: string; shareToken?: string; shareExpiresAt?: string} | null>(null);
+  const [shareWorksheetData, setShareWorksheetData] = useState<{id: string; title: string; shareToken?: string} | null>(null);
   
   // Rename worksheet state
   const [renameWorksheetData, setRenameWorksheetData] = useState<{id: string; title: string} | null>(null);

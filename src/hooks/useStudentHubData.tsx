@@ -65,7 +65,7 @@ export interface StudentHubData {
     share_token: string;
     created_at: string;
     english_level: string | null;
-    share_expires_at: string | null;
+    share_token: string | null;
     exercises_count: number;
     linked_slot_date: string | null;
   }>;
