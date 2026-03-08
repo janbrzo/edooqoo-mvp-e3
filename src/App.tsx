@@ -48,6 +48,7 @@ import StudentHubHomework from "./pages/StudentHubHomework";
 import StudentHubWorksheets from "./pages/StudentHubWorksheets";
 import StudentHubLessons from "./pages/StudentHubLessons";
 import StudentHubSettings from "./pages/StudentHubSettings";
+import GCalStudentCallback from "./pages/GCalStudentCallback";
 
 const queryClient = new QueryClient();
 
@@ -98,6 +99,7 @@ const App = () => (
               <Route path="/my/:teacherToken/worksheets" element={<StudentHubWorksheets />} />
               <Route path="/my/:teacherToken/lessons" element={<StudentHubLessons />} />
               <Route path="/my/:teacherToken/settings" element={<StudentHubSettings />} />
+              <Route path="/gcal-student-callback" element={<GCalStudentCallback />} />
               <Route path="/my-lessons/:token" element={<StudentLessonsPage />} />
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/waiting-list" element={<Navigate to="/" replace />} />

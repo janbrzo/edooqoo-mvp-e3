@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,35 +39,16 @@ export default function StudentHubSettings() {
     color_id: '9',
   });
 
-  // Check for OAuth callback code
+  // Check for successful gcal connection via callback redirect
   useEffect(() => {
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
-    if (code && email && teacherToken) {
-      handleOAuthCallback(code);
-      // Clean URL
+    const gcal = searchParams.get('gcal');
+    if (gcal === 'connected') {
+      setConnected(true);
+      setSearchParams({});
+    } else if (gcal === 'error') {
       setSearchParams({});
     }
-  }, [searchParams]);
-
-  const handleOAuthCallback = async (code: string) => {
-    setConnecting(true);
-    try {
-      const redirectUri = `${window.location.origin}/my/${teacherToken}/settings`;
-      const { data, error } = await supabase.functions.invoke('student-gcal-auth-callback', {
-        body: { code, redirectUri, email, teacherToken },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setConnected(true);
-      toast.success('Google Calendar connected successfully!');
-    } catch (err: any) {
-      console.error('OAuth callback error:', err);
-      toast.error('Failed to connect Google Calendar: ' + (err.message || 'Unknown error'));
-    } finally {
-      setConnecting(false);
-    }
-  };
+  }, [searchParams, setSearchParams]);
 
   // Fetch current state
   useEffect(() => {
