@@ -218,6 +218,30 @@ export function usePublicBooking(token?: string) {
         description: autoConfirm ? 'Your lesson is confirmed.' : 'The teacher will confirm your booking soon.',
       });
       await fetchSlots();
+
+      // GCal sync for student booking (teacher's calendar)
+      try {
+        const { data: syncSettings } = await supabase.from('calendar_settings')
+          .select('gcal_sync_booked, gcal_sync_pending, gcal_integration_enabled')
+          .eq('teacher_id', settings.teacher_id).maybeSingle();
+        if (syncSettings?.gcal_integration_enabled) {
+          const isPending = !autoConfirm;
+          const shouldSync = isPending
+            ? (syncSettings as any).gcal_sync_pending !== false
+            : (syncSettings as any).gcal_sync_booked !== false;
+          if (shouldSync) {
+            supabase.functions.invoke('gcal-sync', {
+              body: { teacherId: settings.teacher_id, slotId, action: 'upsert' },
+            }).catch(console.error);
+          }
+        }
+      } catch (e) { console.error('GCal sync error:', e); }
+
+      // Student GCal auto-sync
+      supabase.functions.invoke('student-gcal-sync', {
+        body: { email: normalizedEmail, teacherId: settings.teacher_id, slotId, action: 'upsert' },
+      }).catch(console.error);
+
       return true;
     } catch (err: any) {
       toast({ title: 'Booking failed', description: err.message, variant: 'destructive' });
