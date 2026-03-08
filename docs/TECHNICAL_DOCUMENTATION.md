@@ -5,15 +5,22 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 8, 2026) - Permanent Share Links + Auto Token Generation:**
-- **Auto share_token**: `generateWorksheet` edge function now generates `share_token` at worksheet creation time (no manual "Generate Share Link" button needed)
-- **Permanent links**: Removed `share_expires_at` column from `worksheets`, `homework_assignments`, and `flashcard_sets` tables. All share links are now permanent (never expire)
-- **RPC functions updated**: `get_worksheet_by_share_token`, `get_homework_by_share_token`, `get_flashcard_set_by_share_token` — removed expiration checks
-- **`generate_worksheet_share_token` RPC**: Now sets `share_expires_at = null` (fallback for legacy worksheets)
-- **RLS updated**: `flashcard_sets` "Public can view sets by share_token" policy no longer checks expiration
-- **ShareWorksheetModal simplified**: Auto-loads existing token on open, fallback auto-generates for old worksheets, text changed to "Share link is permanent"
-- **Calendar button position**: Moved GCalStatusButton to global nav (Index.tsx AuthenticatedNav + WorksheetHeader.tsx), removed from WorksheetForm and WorksheetToolbar
-- **Color dropdown fix**: Event colors by status dropdown widened to w-56, `<div>` wrapper bypasses `line-clamp-1`, explicit color label mapping
+**Latest Update (March 8, 2026) - DSLM Audio Persistence + Welcome Test Fixes + Event Logging:**
+- **Audio persistence**: Added `audio_answers` JSONB column to `worksheet_student_answers` and `homework_student_answers`. Updated RPCs (`save_worksheet_answer`, `save_homework_answer`, `get_worksheet_student_answers`, `get_student_homework_answers`) to save/load audio URLs. Recordings now survive page refresh
+- **Auto-save timer fix**: `HomeworkSpeakingRecorder` refactored to use `useRef`-based countdown timer (not `useState`+`useEffect`). Timer no longer resets from parent re-renders
+- **Progress includes audio**: `getProgress()` in both `useInteractiveSharedWorksheet` and `useInteractiveHomework` now merges text answers + audio answers for accurate completion tracking
+- **Dual event logging**: SQL triggers `log_worksheet_answer_to_events` and `log_homework_answer_to_events` now insert separate events for `response_type: 'written'` and `response_type: 'audio'` per exercise. Exception handler added (`EXCEPTION WHEN OTHERS THEN RETURN NEW`). Fixed `user_id` → `COALESCE(teacher_id, user_id)` in worksheet trigger
+- **Welcome Test unified Skill Scores**: Merged "Skill Scores" and "Results by Skill" into single section. MC skills (Grammar, Vocabulary, Reading, Listening) use `test_skill_results.score_percentage`; open-ended skills (Writing, Speaking) use AI profile scores. Shows `(X/Y)` alongside percentage. Strongest/weakest recalculated from merged data
+- **Welcome Test UI**: Added "Preview Test" and "View Results" buttons to `WelcomeTestSuggestion` (Overview tab). `StudentTestsTab` buttons now include text labels ("View Results", "Preview Test")
+- **Welcome Test trait mapping**: `wt_q3b` fallback updated to `usage_context` (was `selected_preferences`). SQL backfill corrects existing events
+- **Welcome Test mastery backfill**: MC events with `skill_ids` but NULL mastery backfilled (100 for correct, 0 for incorrect). Profiling events without `skill_ids` have mastery cleared to NULL
+
+**Previous Update (March 8, 2026) - Permanent Share Links + Auto Token Generation:**
+- **Auto share_token**: `generateWorksheet` edge function now generates `share_token` at worksheet creation time
+- **Permanent links**: Removed `share_expires_at` column from all share tables. All share links permanent
+- **ShareWorksheetModal simplified**: Auto-loads existing token, text "Share link is permanent"
+- **Calendar button position**: Moved GCalStatusButton to global nav
+- **Color dropdown fix**: Widened to w-56
 
 **Previous Update (March 3, 2026) - Teacher Calendar Module (Faza 3.1 - Round 4 Fixes):**
 - **React #310 crash fix**: Moved `if (!slot) return null` below all hooks in `SlotDetailModal.tsx`, using `safeSlot` fallback object to maintain consistent hook order

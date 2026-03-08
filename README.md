@@ -3,12 +3,17 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: Permanent Share Links (March 8, 2026)
-- Share links for worksheets, homework, and flashcards are now permanent (never expire)
-- Auto share_token: worksheets get a share link at creation time
-- ShareWorksheetModal simplified: opens with link ready, no "Generate" button needed
-- Calendar button moved to global nav (top bar)
-- Color dropdown in calendar settings widened for readability
+## Latest: DSLM Audio + Welcome Test Fixes (March 8, 2026)
+- Audio recordings persist after page refresh (saved to `audio_answers` DB column)
+- Auto-save countdown timer no longer resets during interactions
+- Progress tracking includes audio answers alongside written
+- Separate event logs for written vs audio responses (dual SQL triggers)
+- Welcome Test: unified Skill Scores (MC + AI), Preview/Results buttons on Overview
+- Mastery backfill for MC questions, trait mapping fixes
+
+## Previous: Permanent Share Links (March 8, 2026)
+- Share links permanent, auto-generated at worksheet creation
+- ShareWorksheetModal simplified, calendar button in global nav
 
 ## 🎯 What This Is
 

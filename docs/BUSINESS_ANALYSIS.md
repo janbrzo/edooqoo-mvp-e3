@@ -1,7 +1,9 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Mar 8, 2026):** Permanent Share Links — Share tokens for worksheets, homework, and flashcards are now permanent (no expiration). Worksheets get share_token automatically at creation. `share_expires_at` column removed from all tables. ShareWorksheetModal simplified to auto-show link. Calendar button moved to global nav. Color dropdown widened.
+**Latest Update (Mar 8, 2026):** DSLM Audio Persistence + Welcome Test Fixes — Audio recordings now saved to DB (persist after refresh). Auto-save timer immune to re-renders. Progress includes audio. Dual event logging (written + audio). Welcome Test unified Skill Scores. UI buttons for Preview/Results on Overview. Mastery backfill for accuracy.
+
+**Previous Update (Mar 8, 2026):** Permanent Share Links — Share tokens permanent, auto-generated. `share_expires_at` removed. ShareWorksheetModal simplified.
 
 **Previous Update (Mar 3, 2026):** Calendar Fixes Round 4 — Fixed critical white screen crash (React #310). Student dropdown clickable via `modal={false}`. SC/TC cancellation badges. Cancel request vs lesson distinction in notifications. Email to student on teacher-created lesson. New `notify_email_on_lesson_created` setting. Labels: "In-App Notifications" / "Email Alerts". Polling 2s. Student portal: history logs, status badges, reschedule info, past lesson protection. P badge removed from /book.
 

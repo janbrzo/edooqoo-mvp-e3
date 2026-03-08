@@ -3,13 +3,21 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Mar 8, 2026) - Permanent Share Links + Auto Token ✅
-- Auto share_token generation in `generateWorksheet` edge function at creation time
-- Removed `share_expires_at` column from `worksheets`, `homework_assignments`, `flashcard_sets`
-- All share links permanent (worksheets, homework, flashcards)
-- Updated RPCs: `get_worksheet_by_share_token`, `get_homework_by_share_token`, `get_flashcard_set_by_share_token` — no expiration checks
-- ShareWorksheetModal simplified: auto-load token, fallback auto-generate, "Share link is permanent"
-- Calendar button moved to global nav, color dropdown widened
+### Recently Completed (Mar 8, 2026) - DSLM Audio Persistence + Welcome Test Fixes ✅
+- Audio recordings now persist in DB (`audio_answers` JSONB column on both answer tables)
+- Updated RPCs: `save_worksheet_answer`, `save_homework_answer`, getters — all support `audio_answers`
+- `HomeworkSpeakingRecorder` ref-based timer (immune to parent re-renders)
+- Progress calculation merges text + audio answers in both hooks
+- SQL triggers create dual events (written + audio) per exercise with exception handlers
+- Fixed `user_id` → `COALESCE(teacher_id, user_id)` in worksheet trigger
+- Welcome Test: unified Skill Scores (MC from test_skill_results, Writing/Speaking from AI profile)
+- Welcome Test UI: "Preview Test" + "View Results" on Overview, text labels in Tests tab
+- Trait mapping: `wt_q3b` → `usage_context`, backfill existing events
+- Mastery backfill: MC events with skill_ids get 100/0, profiling events cleared
+
+### Previously Completed (Mar 8, 2026) - Permanent Share Links + Auto Token ✅
+- Auto share_token in `generateWorksheet`, removed `share_expires_at`, all links permanent
+- ShareWorksheetModal simplified, calendar button moved to global nav
 
 ### Previously Completed (Mar 3, 2026) - Calendar Fixes Round 4 (Faza 3.1r4) ✅
 - React #310 crash fix: `safeSlot` pattern in SlotDetailModal, early return moved below all hooks
