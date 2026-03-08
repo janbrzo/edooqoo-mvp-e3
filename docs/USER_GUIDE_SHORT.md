@@ -4,7 +4,9 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **Permanent Share Links (March 8, 2026)** — Share links for worksheets, homework, and flashcards are now permanent (never expire). Worksheets automatically get a share link at creation — no need to click "Generate Share Link". Calendar button moved to top nav bar.
+**Latest Update:** **DSLM Audio + Welcome Test Fixes (March 8, 2026)** — Audio recordings now persist after page refresh (saved to DB). Auto-save countdown timer no longer resets. Progress bar includes audio answers. Separate event logs for written and audio responses. Welcome Test: unified Skill Scores section (MC + AI scores merged), "Preview Test" and "View Results" buttons on student Overview. Mastery data backfilled for accuracy.
+
+**Previous Update:** **Permanent Share Links (March 8, 2026)** — Share links permanent, auto-generated at creation. Calendar button in top nav.
 
 **Previous Update:** **Calendar Fixes Round 4 (March 3, 2026)** — Fixed white screen crash (React #310). Student dropdown now clickable (modal={false}). SC/TC cancellation badges with legend filtering. Cancel request vs lesson distinction. Email sent to student on teacher-created lesson. New `notify_email_on_lesson_created` setting. Labels: "In-App Notifications" / "Email Alerts". Polling 2s on /book. History logs, status badges, reschedule info on student portal. Past lesson protection (hide Reschedule).
 

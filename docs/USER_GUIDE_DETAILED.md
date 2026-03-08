@@ -1,6 +1,8 @@
 
 # English Worksheet Generator - Complete User Guide
 
+**Latest Update (March 8, 2026):** Audio recordings on shared worksheets and homework now persist after page refresh. The auto-save countdown (30s) no longer resets during interactions. Progress tracking includes both written and audio answers. Welcome Test results show unified Skill Scores (MC scores for Grammar/Vocab/Reading/Listening, AI scores for Writing/Speaking). "Preview Test" and "View Results" buttons added to student Overview tab.
+
 ## Table of Contents
 1. [Getting Started](#getting-started)
 2. [Account Management](#account-management)
