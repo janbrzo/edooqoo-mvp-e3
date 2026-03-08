@@ -6,7 +6,19 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-03-07) - Runda napraw #9:**
+**Ostatnia naprawa (2026-03-08) - Runda napraw #10:**
+- ✅ **GCalStatusButton pozycja**: Przeniesiony na górę obok Dashboard na WorksheetToolbar i WorksheetForm (spójnie z /student)
+- ✅ **Color dropdown szerokość**: Zmieniono z w-40 na w-48 aby kolory i nazwy były widoczne
+- ✅ **Fałszywa informacja usunięta**: Zmieniono tekst o per-student email preferences na "available in a future update"
+- ✅ **Payment wyszarzony**: Payment Tracking switch disabled z info "currently in development"
+- ✅ **StudentPaymentMeetingCard usunięty z /student**: Zamiast tego Default Meeting Link input bezpośrednio w Student Details
+- ✅ **Pending bookings GCal sync**: Dodano gcal-sync po student booking (usePublicBooking + get-student-bookings book_batch)
+- ✅ **gcal_sync_pending check**: useCalendarSlots.createSlot rozróżnia pending vs booked vs available
+- ✅ **Student GCal Integration**: Nowa tabela `student_gcal_tokens`, 3 edge functions (auth-start, auth-callback, student-gcal-sync)
+- ✅ **Student Hub Settings**: Nowa strona /my/:teacherToken/settings z Google Calendar connect, auto-add toggle, reminder minutes, color picker
+- ✅ **Auto-sync po bookingu**: student-gcal-sync wywoływany po booking w usePublicBooking i get-student-bookings
+
+**Poprzednia naprawa (2026-03-07) - Runda napraw #9:**
 - ✅ **Payment Tracking rozbudowa**: `PaymentHistoryModal` z bulk mark-as-paid, `StudentPaymentMeetingCard` na profilu studenta z price override, prepaid lessons, default meeting link
 - ✅ **Email Alerts podział**: Rozdzielenie na "Your Email Notifications" (nauczyciel) i "Student Email Defaults" (domyślne dla studentów) z info o per-student override
 - ✅ **Default Meeting Link per student**: Nowa kolumna `default_meeting_link` w `calendar_student_settings`, auto-fill przy tworzeniu lekcji w `useCalendarSlots.createSlot`
