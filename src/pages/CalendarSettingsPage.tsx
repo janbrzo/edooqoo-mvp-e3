@@ -310,7 +310,7 @@ const CalendarSettingsPage = () => {
                               <Label className="text-sm">{item.label}</Label>
                             </div>
                             <Select value={currentVal} onValueChange={v => updateSettings({ [item.key]: v } as any)}>
-                              <SelectTrigger className="w-40">
+                              <SelectTrigger className="w-48">
                                 <span className="flex items-center gap-2">
                                   <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: GCAL_COLOR_HEX[currentVal] || '#ccc' }} />
                                   <SelectValue />
@@ -446,12 +446,12 @@ const CalendarSettingsPage = () => {
               <CardHeader><CardTitle className="text-lg">Payment Tracking</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label>Enable Payment Tracking</Label>
-                  <Switch checked={settings.payment_tracking_enabled} onCheckedChange={v => updateSettings({ payment_tracking_enabled: v })} />
+                  <div>
+                    <Label className="text-muted-foreground">Enable Payment Tracking</Label>
+                    <p className="text-xs text-muted-foreground">Payment tracking is currently in development and will be available soon.</p>
+                  </div>
+                  <Switch checked={settings.payment_tracking_enabled} disabled className="opacity-50" />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  When enabled, each lesson shows a "Mark Paid / Unpaid" button. Unpaid lessons appear in the 💰 counter in the calendar toolbar. You can set per-student prices in each student's profile page.
-                </p>
                 {settings.payment_tracking_enabled && (
                   <>
                     <div className="flex items-center justify-between">
@@ -565,7 +565,7 @@ const CalendarSettingsPage = () => {
                   <Switch checked={settings.notify_email_on_lesson_created} onCheckedChange={v => updateSettings({ notify_email_on_lesson_created: v })} />
                 </div>
                 <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground">
-                  💡 You can customize email preferences for each student individually in their profile page (Student → Overview tab → Payment & Meeting card).
+                  💡 By default, all students receive email notifications for confirmations, rejections, and new lessons. Per-student email preferences will be available in a future update.
                 </div>
               </CardContent>
             </Card>
