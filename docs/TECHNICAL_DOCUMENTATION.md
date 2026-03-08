@@ -5,7 +5,12 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 8, 2026) - DSLM Audio Persistence + Welcome Test Fixes + Event Logging:**
+**Latest Update (March 8, 2026) - FAQ & Feature Documentation Update:**
+- Updated all FAQ items in `src/constants/faqItems.ts` to reflect current app features
+- Added 6 new FAQ entries: Student Hub, Welcome Test & Learning Path, Lesson Booking, Student Progress tracking, AI Evaluation, Google Calendar integration
+- Updated existing FAQ items: Flashcards (Student Hub access), Homework (AI evaluation, Student Hub), Live Session (nano-skill mastery, AI eval), Student Management (Welcome Test), Share Worksheet (Student Hub)
+
+**Previous Update (March 8, 2026) - DSLM Audio Persistence + Welcome Test Fixes + Event Logging:**
 - **Audio persistence**: Added `audio_answers` JSONB column to `worksheet_student_answers` and `homework_student_answers`. Updated RPCs (`save_worksheet_answer`, `save_homework_answer`, `get_worksheet_student_answers`, `get_student_homework_answers`) to save/load audio URLs. Recordings now survive page refresh
 - **Auto-save timer fix**: `HomeworkSpeakingRecorder` refactored to use `useRef`-based countdown timer (not `useState`+`useEffect`). Timer no longer resets from parent re-renders
 - **Progress includes audio**: `getProgress()` in both `useInteractiveSharedWorksheet` and `useInteractiveHomework` now merges text answers + audio answers for accurate completion tracking

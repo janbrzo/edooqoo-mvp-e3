@@ -1,7 +1,9 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Mar 8, 2026):** DSLM Audio Persistence + Welcome Test Fixes — Audio recordings now saved to DB (persist after refresh). Auto-save timer immune to re-renders. Progress includes audio. Dual event logging (written + audio). Welcome Test unified Skill Scores. UI buttons for Preview/Results on Overview. Mastery backfill for accuracy.
+**Latest Update (Mar 8, 2026):** FAQ & Feature Documentation Update — All FAQ items updated to reflect current app features. 6 new FAQ entries added: Student Hub, Welcome Test & Learning Path, Lesson Booking, Student Progress tracking, AI Evaluation, Google Calendar integration.
+
+**Previous Update (Mar 8, 2026):** DSLM Audio Persistence + Welcome Test Fixes — Audio recordings now saved to DB (persist after refresh). Auto-save timer immune to re-renders. Progress includes audio. Dual event logging (written + audio). Welcome Test unified Skill Scores. UI buttons for Preview/Results on Overview. Mastery backfill for accuracy.
 
 **Previous Update (Mar 8, 2026):** Permanent Share Links — Share tokens permanent, auto-generated. `share_expires_at` removed. ShareWorksheetModal simplified.
 

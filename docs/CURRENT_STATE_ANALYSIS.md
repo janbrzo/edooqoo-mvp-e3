@@ -6,7 +6,11 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia naprawa (2026-03-08) - Runda napraw #12 (DSLM Audio + Welcome Test + Event Logging):**
+**Ostatnia aktualizacja (2026-03-08) - FAQ & Feature Documentation Update:**
+- ✅ **FAQ zaktualizowane**: Wszystkie istniejące FAQ items zaktualizowane o aktualne funkcje (Student Hub, AI evaluation, nano-skill tracking)
+- ✅ **6 nowych FAQ**: Student Hub, Welcome Test & Learning Path, Lesson Booking, Student Progress tracking, AI Evaluation, Google Calendar integration
+
+**Poprzednia naprawa (2026-03-08) - Runda napraw #12 (DSLM Audio + Welcome Test + Event Logging):**
 - ✅ **Persystencja nagrań audio**: Nowa kolumna `audio_answers` (JSONB) w `worksheet_student_answers` i `homework_student_answers`. RPC zaktualizowane. Nagrania przetrwają odświeżenie strony
 - ✅ **Timer auto-save**: `HomeworkSpeakingRecorder` przepisany na `useRef`-based countdown — odporny na re-rendery rodzica
 - ✅ **Progress uwzględnia audio**: `getProgress()` w obu hookach merguje odpowiedzi tekstowe + audio
