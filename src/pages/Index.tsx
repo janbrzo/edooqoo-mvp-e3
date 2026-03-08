@@ -20,7 +20,7 @@ import ValueCards from "@/components/landing/ValueCards";
 import EcosystemSection from "@/components/landing/EcosystemSection";
 import TestimonialsRow from "@/components/landing/TestimonialsRow";
 import FinalCTA from "@/components/landing/FinalCTA";
-import GlobalFooter from "@/components/GlobalFooter";
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 /**
