@@ -1,21 +1,22 @@
 import React from 'react';
 
 const stats = [
-  { value: '2,000+', label: 'worksheets generated' },
-  { value: '29', label: 'exercise types' },
-  { value: '15+', label: 'countries' },
+  { value: '15,000+', label: 'hours saved on lesson prep' },
+  { value: '29', label: 'exercise types for any skill level' },
+  { value: '200+', label: 'teachers trust us weekly' },
 ];
 
 const StatsBar: React.FC = () => {
   return (
-    <section className="bg-background border-y border-border py-8">
-      <div className="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-0">
+    <section className="bg-background border-y border-border py-10 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-violet-50/30 via-transparent to-indigo-50/30"></div>
+      <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-10 md:gap-0 relative z-10">
         {stats.map((stat, i) => (
           <React.Fragment key={stat.label}>
-            {i > 0 && <div className="hidden sm:block w-px h-8 bg-border mx-8" />}
-            <div className="text-center">
-              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-              <div className="text-xs text-muted-foreground">{stat.label}</div>
+            {i > 0 && <div className="hidden md:block w-px h-12 bg-border mx-12" />}
+            <div className="text-center w-full md:w-auto">
+              <div className="text-3xl md:text-4xl font-extrabold text-foreground mb-1 tracking-tight">{stat.value}</div>
+              <div className="text-sm font-medium text-muted-foreground">{stat.label}</div>
             </div>
           </React.Fragment>
         ))}
