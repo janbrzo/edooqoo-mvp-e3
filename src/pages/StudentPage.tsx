@@ -25,7 +25,7 @@ import { EventLogPanel } from '@/components/dslm/EventLogPanel';
 import { SkillsOverviewPanel } from '@/components/dslm/SkillsOverviewPanel';
 import { WelcomeTestSuggestion } from '@/components/dashboard/WelcomeTestSuggestion';
 import { StudentCalendarTab } from '@/components/calendar/StudentCalendarTab';
-import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2, TrendingUp, ClipboardCheck, Activity, Pencil, BarChart3, DollarSign, Video } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, User, BookOpen, Target, Edit, Plus, Trash2, Brain, GraduationCap, StickyNote, Mail, Globe, Share2, TrendingUp, ClipboardCheck, Activity, Pencil, BarChart3, DollarSign, Video, LayoutDashboard, User2 } from 'lucide-react';
 import { GCalStatusButton } from '@/components/calendar/GCalStatusButton';
 import { formatGoalLabel } from '@/constants/studentGoals';
 import { Input } from '@/components/ui/input';
@@ -265,8 +265,20 @@ const StudentPage = () => {
           </div>
           <div className="flex items-center gap-2">
             <GCalStatusButton />
+            <Button asChild variant="outline" size="sm">
+              <Link to="/dashboard">
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Dashboard
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/profile">
+                <User2 className="h-4 w-4 mr-2" />
+                Profile
+              </Link>
+            </Button>
             <Button onClick={handleGenerateWorksheet}>
-              Generate New Worksheet
+              Generate Worksheet
             </Button>
           </div>
         </div>
