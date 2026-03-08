@@ -47,6 +47,7 @@ import StudentHubFlashcards from "./pages/StudentHubFlashcards";
 import StudentHubHomework from "./pages/StudentHubHomework";
 import StudentHubWorksheets from "./pages/StudentHubWorksheets";
 import StudentHubLessons from "./pages/StudentHubLessons";
+import StudentHubSettings from "./pages/StudentHubSettings";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,7 @@ const App = () => (
               <Route path="/my/:teacherToken/homework" element={<StudentHubHomework />} />
               <Route path="/my/:teacherToken/worksheets" element={<StudentHubWorksheets />} />
               <Route path="/my/:teacherToken/lessons" element={<StudentHubLessons />} />
+              <Route path="/my/:teacherToken/settings" element={<StudentHubSettings />} />
               <Route path="/my-lessons/:token" element={<StudentLessonsPage />} />
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/waiting-list" element={<Navigate to="/" replace />} />

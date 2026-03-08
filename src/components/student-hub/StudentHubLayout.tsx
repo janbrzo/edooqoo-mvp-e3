@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { BookOpen, ClipboardList, FileText, Calendar, LayoutDashboard, LogOut } from 'lucide-react';
+import { BookOpen, ClipboardList, FileText, Calendar, LayoutDashboard, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { clearHubEmail } from '@/hooks/useStudentHubData';
 
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { key: 'homework', label: 'Homework', icon: ClipboardList },
   { key: 'worksheets', label: 'Worksheets', icon: FileText },
   { key: 'lessons', label: 'Lessons', icon: Calendar },
+  { key: 'settings', label: 'Settings', icon: Settings },
 ];
 
 export function StudentHubLayout({ children, studentName, teacherName }: StudentHubLayoutProps) {
