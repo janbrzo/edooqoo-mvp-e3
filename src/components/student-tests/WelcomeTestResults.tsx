@@ -200,7 +200,7 @@ export function WelcomeTestResults({ testId, studentId, teacherId }: WelcomeTest
         </CardContent>
       </Card>
 
-      {/* Skill Scores */}
+      {/* Skill Scores - Unified: MC skills use test_skill_results, open-ended use AI profile scores */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -209,43 +209,75 @@ export function WelcomeTestResults({ testId, studentId, teacherId }: WelcomeTest
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {[
-            { label: 'Grammar', score: profile.grammar_score, skill: 'grammar' },
-            { label: 'Vocabulary', score: profile.vocabulary_score, skill: 'vocabulary' },
-            { label: 'Reading', score: profile.reading_score, skill: 'reading' },
-            { label: 'Listening', score: null, skill: 'listening' },
-            { label: 'Writing', score: profile.writing_score, skill: 'writing' },
-            { label: 'Speaking', score: (profile as any).speaking_score, skill: 'speaking' },
-          ].map(({ label, score, skill }) => {
-            const result = skillResults.find(r => r.element_type === skill);
-            const displayScore = score ?? (result ? result.score_percentage : null);
+          {(() => {
+            const SKILL_DISPLAY = [
+              { label: 'Grammar', profileKey: 'grammar_score' as const, useAiScore: false, skill: 'grammar' },
+              { label: 'Vocabulary', profileKey: 'vocabulary_score' as const, useAiScore: false, skill: 'vocabulary' },
+              { label: 'Reading', profileKey: 'reading_score' as const, useAiScore: false, skill: 'reading' },
+              { label: 'Listening', profileKey: null, useAiScore: false, skill: 'listening' },
+              { label: 'Writing', profileKey: 'writing_score' as const, useAiScore: true, skill: 'writing' },
+              { label: 'Speaking', profileKey: 'speaking_score' as const, useAiScore: true, skill: 'speaking' },
+            ];
+
+            // Calculate merged scores for strongest/weakest
+            const mergedScores: { label: string; score: number | null }[] = [];
+
             return (
-              <div key={label} className="flex items-center gap-3">
-                <span className="w-24 text-sm">{label}</span>
-                <div className="flex-1">
-                  <Progress value={displayScore || 0} className="h-2" />
-                </div>
-                <span className="w-12 text-right text-sm font-medium">
-                  {displayScore !== null ? `${Math.round(displayScore)}%` : '—'}
-                </span>
-                {result && (
-                  <span className="w-14 text-right text-xs text-muted-foreground">
-                    ({result.correct_answers}/{result.total_questions})
-                  </span>
-                )}
-              </div>
+              <>
+                {SKILL_DISPLAY.map(({ label, profileKey, useAiScore, skill }) => {
+                  const result = skillResults.find(r => r.element_type === skill);
+                  const aiScore = profileKey ? (profile as any)[profileKey] : null;
+                  
+                  // For MC-heavy skills: prefer test_skill_results; for open-ended: prefer AI score
+                  let displayScore: number | null;
+                  if (useAiScore) {
+                    displayScore = aiScore ?? (result ? result.score_percentage : null);
+                  } else {
+                    displayScore = result ? result.score_percentage : (aiScore ?? null);
+                  }
+                  
+                  mergedScores.push({ label, score: displayScore });
+                  
+                  return (
+                    <div key={label} className="flex items-center gap-3">
+                      <span className="w-24 text-sm">{label}</span>
+                      <div className="flex-1">
+                        <Progress value={displayScore || 0} className="h-2" />
+                      </div>
+                      <span className="w-12 text-right text-sm font-medium">
+                        {displayScore !== null ? `${Math.round(displayScore)}%` : '—'}
+                      </span>
+                      {result && (
+                        <span className="w-14 text-right text-xs text-muted-foreground">
+                          ({result.correct_answers}/{result.total_questions})
+                        </span>
+                      )}
+                      {useAiScore && !result && displayScore !== null && (
+                        <span className="w-14 text-right text-xs text-muted-foreground">(AI)</span>
+                      )}
+                    </div>
+                  );
+                })}
+                {(() => {
+                  const validScores = mergedScores.filter(s => s.score !== null);
+                  const strongest = validScores.length > 0 ? validScores.reduce((a, b) => (a.score! >= b.score! ? a : b)) : null;
+                  const weakest = validScores.length > 0 ? validScores.reduce((a, b) => (a.score! <= b.score! ? a : b)) : null;
+                  return (
+                    <div className="flex gap-4 mt-4 text-sm">
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground">Strongest:</span>
+                        <Badge variant="default">{strongest?.label || '—'}</Badge>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground">Weakest:</span>
+                        <Badge variant="destructive">{weakest?.label || '—'}</Badge>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>
             );
-          })}
-          <div className="flex gap-4 mt-4 text-sm">
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground">Strongest:</span>
-              <Badge variant="default">{profile.strongest_skill || '—'}</Badge>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground">Weakest:</span>
-              <Badge variant="destructive">{profile.weakest_skill || '—'}</Badge>
-            </div>
-          </div>
+          })()}
         </CardContent>
       </Card>
 
