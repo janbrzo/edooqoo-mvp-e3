@@ -1,9 +1,10 @@
 /**
  * HomeworkSpeakingRecorder - Minimalist inline audio recorder for homework/shared worksheet exercises
  * Records audio, uploads to R2, returns audio_url
+ * FIX 1.1: Ref-based countdown timer to prevent resets from parent re-renders
  */
 
-import { useState, useRef, useCallback, useEffect, type RefObject } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Mic, Square, Play, Pause, RotateCcw, Upload, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { uploadBlobToR2 } from '@/components/welcome-test/SpeakingRecorder';
@@ -45,7 +46,11 @@ export function HomeworkSpeakingRecorder({
   const [audioUrl, setAudioUrl] = useState<string | null>(existingAudioUrl || null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [autoSaveCountdown, setAutoSaveCountdown] = useState<number | null>(null);
+  
+  // FIX 1.1: Ref-based countdown - immune to parent re-renders
+  const [displayCountdown, setDisplayCountdown] = useState<number | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -69,9 +74,10 @@ export function HomeworkSpeakingRecorder({
       if (timerRef.current) clearInterval(timerRef.current);
       if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
       if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
     };
   }, []);
-
 
   const startRecording = useCallback(async () => {
     setErrorMsg(null);
@@ -141,11 +147,18 @@ export function HomeworkSpeakingRecorder({
   const resetRecording = useCallback(() => {
     if (audioUrl?.startsWith('blob:')) URL.revokeObjectURL(audioUrl);
     setAudioUrl(null); blobRef.current = null; setSeconds(0); setStatus('idle'); setIsPlaying(false); setErrorMsg(null);
+    setDisplayCountdown(null);
+    if (autoSaveTimerRef.current) { clearTimeout(autoSaveTimerRef.current); autoSaveTimerRef.current = null; }
+    if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
   }, [audioUrl]);
 
   const uploadAndSave = useCallback(async () => {
     if (!blobRef.current) return;
     setStatus('uploading');
+    // Clear countdown on manual save
+    setDisplayCountdown(null);
+    if (autoSaveTimerRef.current) { clearTimeout(autoSaveTimerRef.current); autoSaveTimerRef.current = null; }
+    if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
     try {
       const url = await uploadBlobToR2(blobRef.current);
       if (!url) throw new Error('No URL returned');
@@ -156,29 +169,46 @@ export function HomeworkSpeakingRecorder({
     }
   }, []); // STABLE - no dependency on onAudioSaved
 
-  // Auto-save: register pending recording + 30s countdown
+  // FIX 1.1: Single ref-based effect for auto-save timer + countdown
+  // Only depends on [status, registryKey] — uploadAndSave is stable (deps=[])
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    // Cleanup previous timers
+    if (autoSaveTimerRef.current) { clearTimeout(autoSaveTimerRef.current); autoSaveTimerRef.current = null; }
+    if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+
     if (status === 'recorded' && blobRef.current) {
       if (registryKey) {
         (window as any).__pendingSpeakingRecordings?.set(registryKey, { blob: blobRef.current, save: uploadAndSave });
       }
-      setAutoSaveCountdown(30);
-      timer = setTimeout(() => { uploadAndSave(); }, 30000);
+      
+      // Start 30s countdown using closure variable (not state)
+      let remaining = 30;
+      setDisplayCountdown(remaining);
+      
+      countdownIntervalRef.current = setInterval(() => {
+        remaining--;
+        setDisplayCountdown(remaining > 0 ? remaining : null);
+        if (remaining <= 0 && countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+        }
+      }, 1000);
+      
+      autoSaveTimerRef.current = setTimeout(() => {
+        uploadAndSave();
+      }, 30000);
     }
+    
     if (status === 'done' || status === 'idle') {
       if (registryKey) (window as any).__pendingSpeakingRecordings?.delete(registryKey);
-      setAutoSaveCountdown(null);
+      setDisplayCountdown(null);
     }
-    return () => { if (timer) clearTimeout(timer); };
-  }, [status, registryKey]); // uploadAndSave is now stable via useRef
 
-  // Countdown ticker
-  useEffect(() => {
-    if (autoSaveCountdown === null || autoSaveCountdown <= 0) return;
-    const t = setInterval(() => setAutoSaveCountdown(p => p !== null && p > 0 ? p - 1 : null), 1000);
-    return () => clearInterval(t);
-  }, [autoSaveCountdown]);
+    return () => {
+      if (autoSaveTimerRef.current) { clearTimeout(autoSaveTimerRef.current); autoSaveTimerRef.current = null; }
+      if (countdownIntervalRef.current) { clearInterval(countdownIntervalRef.current); countdownIntervalRef.current = null; }
+    };
+  }, [status, registryKey, uploadAndSave]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
@@ -217,8 +247,8 @@ export function HomeworkSpeakingRecorder({
             <Upload className="h-3 w-3" />
             Save
           </Button>
-          {autoSaveCountdown !== null && autoSaveCountdown > 0 && (
-            <span className="text-xs text-muted-foreground">Auto-save {autoSaveCountdown}s</span>
+          {displayCountdown !== null && displayCountdown > 0 && (
+            <span className="text-xs text-muted-foreground">Auto-save {displayCountdown}s</span>
           )}
         </>
       )}
