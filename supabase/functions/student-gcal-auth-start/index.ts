@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
     const scopes = 'https://www.googleapis.com/auth/calendar.events';
     const state = btoa(JSON.stringify({ email, teacherToken }));
-    const redirectUri = `${origin}/my/${teacherToken}/settings`;
+    const redirectUri = `${origin}/gcal-student-callback`;
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent&state=${state}`;
 
     return new Response(JSON.stringify({ authUrl }), {
