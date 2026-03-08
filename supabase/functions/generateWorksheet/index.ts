@@ -834,7 +834,6 @@ serve(async (req) => {
             country: geoData.country || null,
             city: geoData.city || null,
             share_token: shareToken,
-            share_expires_at: null,
           })
           .select("id, created_at, title, share_token");
 
