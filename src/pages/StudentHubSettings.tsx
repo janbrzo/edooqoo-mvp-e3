@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Settings, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { StudentHubLayout } from '@/components/student-hub/StudentHubLayout';
-import { getHubEmail } from '@/hooks/useStudentHubData';
+import { getSavedHubEmail } from '@/hooks/useStudentHubData';
 import { toast } from 'sonner';
 
 const GCAL_COLORS = [
@@ -29,7 +29,7 @@ const GCAL_COLOR_HEX: Record<string, string> = {
 export default function StudentHubSettings() {
   const { teacherToken } = useParams<{ teacherToken: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const email = getHubEmail();
+  const email = getSavedHubEmail();
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
