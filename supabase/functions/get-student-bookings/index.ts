@@ -435,6 +435,39 @@ Deno.serve(async (req) => {
         }
       }
 
+      // GCal sync for batch booking
+      if (successIds.length > 0) {
+        const { data: syncCfg } = await supabase.from('calendar_settings')
+          .select('gcal_sync_booked, gcal_sync_pending, gcal_integration_enabled')
+          .eq('teacher_id', teacherId).maybeSingle();
+        if (syncCfg?.gcal_integration_enabled) {
+          const shouldSync = autoConfirm
+            ? syncCfg.gcal_sync_booked !== false
+            : syncCfg.gcal_sync_pending !== false;
+          if (shouldSync) {
+            for (const sid of successIds) {
+              try {
+                await fetch(`${supabaseUrl}/functions/v1/gcal-sync`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+                  body: JSON.stringify({ teacherId, slotId: sid, action: 'upsert' }),
+                });
+              } catch (_) {}
+            }
+          }
+        }
+        // Student GCal auto-sync
+        for (const sid of successIds) {
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/student-gcal-sync`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+              body: JSON.stringify({ email: normalizedEmail, teacherId, slotId: sid, action: 'upsert' }),
+            });
+          } catch (_) {}
+        }
+      }
+
       return new Response(JSON.stringify({ success: true, booked: successIds.length, failed: failedIds.length }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

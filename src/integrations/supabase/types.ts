@@ -1564,6 +1564,53 @@ export type Database = {
           },
         ]
       }
+      student_gcal_tokens: {
+        Row: {
+          access_token: string
+          created_at: string | null
+          gcal_calendar_id: string | null
+          id: string
+          refresh_token: string
+          settings: Json | null
+          student_email: string
+          teacher_id: string
+          token_expires_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_token: string
+          created_at?: string | null
+          gcal_calendar_id?: string | null
+          id?: string
+          refresh_token: string
+          settings?: Json | null
+          student_email: string
+          teacher_id: string
+          token_expires_at: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string
+          created_at?: string | null
+          gcal_calendar_id?: string | null
+          id?: string
+          refresh_token?: string
+          settings?: Json | null
+          student_email?: string
+          teacher_id?: string
+          token_expires_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_gcal_tokens_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_knowledge_entries: {
         Row: {
           category: string

@@ -302,8 +302,11 @@ export function useCalendarSlots(teacherId?: string) {
         .select('gcal_sync_booked, gcal_sync_pending, gcal_sync_available_new, gcal_integration_enabled')
         .eq('teacher_id', teacherId).maybeSingle();
       if (syncSettings?.gcal_integration_enabled) {
+        const isPendingSlot = input.student_id && !(input as any).confirmed_at;
+        const isBookedSlot = input.student_id && !!(input as any).confirmed_at;
         const shouldSync = 
-          (input.student_id && (syncSettings as any).gcal_sync_booked !== false) ||
+          (isBookedSlot && (syncSettings as any).gcal_sync_booked !== false) ||
+          (isPendingSlot && (syncSettings as any).gcal_sync_pending !== false) ||
           (!input.student_id && (syncSettings as any).gcal_sync_available_new === true);
         if (shouldSync) triggerGcalSync(data.id, 'upsert');
       }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Edit, Lightbulb, User, Download, Lock, Loader2, Share2, Gift, BookOpen, Copy, Radio, Paintbrush, Eye, EyeOff, Plus } from "lucide-react";
 import { isFreeCustomDemoWeek } from "@/utils/promoUtils";
@@ -261,9 +262,15 @@ const WorksheetToolbar = ({
   return (
     <>
       <div className="sticky top-0 z-[60] bg-white border-b mb-6 py-3 px-4">
+        {/* Top nav row with Dashboard + Calendar */}
+        <div className="flex items-center gap-2 max-w-[98%] mx-auto mb-2">
+          <Button variant="ghost" size="sm" className="text-xs h-7" asChild>
+            <Link to="/dashboard">Dashboard</Link>
+          </Button>
+          <GCalStatusButton />
+        </div>
         <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-center'} max-w-[98%] mx-auto`}>
           <div className={`flex ${isMobile ? 'justify-center flex-wrap' : ''} space-x-2 items-center`}>
-            <GCalStatusButton />
             <Button
               variant={viewMode === 'student' ? 'default' : 'outline'}
               onClick={() => setViewMode('student')}

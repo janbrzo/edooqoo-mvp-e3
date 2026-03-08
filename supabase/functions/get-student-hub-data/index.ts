@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { token, email } = await req.json();
+    const { token, email, action, gcalSettings } = await req.json();
     if (!token || !email) {
       return new Response(JSON.stringify({ error: 'Token and email are required' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -39,6 +39,41 @@ Deno.serve(async (req) => {
     }
 
     const teacherId = settingsData.teacher_id;
+    const normalEmail = normalizedEmail;
+
+    // Handle GCal-related actions
+    if (action === 'get_gcal_status') {
+      const { data: gcalToken } = await supabase.from('student_gcal_tokens')
+        .select('settings')
+        .eq('student_email', normalEmail)
+        .eq('teacher_id', teacherId)
+        .maybeSingle();
+      return new Response(JSON.stringify({
+        gcal_connected: !!gcalToken,
+        gcal_settings: gcalToken?.settings || null,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    if (action === 'disconnect_gcal') {
+      await supabase.from('student_gcal_tokens')
+        .delete()
+        .eq('student_email', normalEmail)
+        .eq('teacher_id', teacherId);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'update_gcal_settings' && gcalSettings) {
+      await supabase.from('student_gcal_tokens')
+        .update({ settings: gcalSettings, updated_at: new Date().toISOString() })
+        .eq('student_email', normalEmail)
+        .eq('teacher_id', teacherId);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
 
     // 2. Find student
     const { data: studentData, error: studentError } = await supabase
