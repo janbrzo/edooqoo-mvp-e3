@@ -807,12 +807,15 @@ serve(async (req) => {
           console.warn(`⚠️ [MONITORING] Worksheet ai_response TRUNCATED from ${aiResponseLength} to ${aiResponseLimit} chars`);
         }
 
+        // Auto-generate share token at creation time (permanent, no expiration)
+        const shareToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+
         const { data: worksheet, error: worksheetError } = await supabase
           .from("worksheets")
           .insert({
             prompt: fullPrompt,
             form_data: sanitizedFormData,
-            ai_response: jsonContent?.substring(0, aiResponseLimit) || "", // Increased from 50000 to 200000
+            ai_response: jsonContent?.substring(0, aiResponseLimit) || "",
             html_content: JSON.stringify(worksheetData),
             user_id: userId || null,
             teacher_id: userId || null,
@@ -830,8 +833,10 @@ serve(async (req) => {
             generation_time_seconds: generationTimeSeconds,
             country: geoData.country || null,
             city: geoData.city || null,
+            share_token: shareToken,
+            share_expires_at: null,
           })
-          .select("id, created_at, title");
+          .select("id, created_at, title, share_token");
 
         if (worksheetError) {
           console.error("Error saving worksheet to database:", worksheetError);
@@ -841,6 +846,7 @@ serve(async (req) => {
         if (worksheet && worksheet.length > 0 && worksheet[0].id) {
           const worksheetId = worksheet[0].id;
           worksheetData.id = worksheetId;
+          worksheetData.share_token = worksheet[0].share_token;
 
           // ⏱️ TIMING: Database save completed
           const dbSaveDuration = Date.now() - dbSaveStartTime;
