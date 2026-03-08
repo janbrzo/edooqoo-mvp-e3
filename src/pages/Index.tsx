@@ -228,7 +228,7 @@ const Index = () => {
                 <PricingSection />
               </div>
               <FinalCTA />
-              <GlobalFooter />
+              
             </>
           ) : (
             <div className="max-w-5xl mx-auto px-4 pt-8 pb-16">
