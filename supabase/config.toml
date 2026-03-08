@@ -130,3 +130,12 @@ verify_jwt = false
 
 [functions.get-student-hub-data]
 verify_jwt = false
+
+[functions.student-gcal-auth-start]
+verify_jwt = false
+
+[functions.student-gcal-auth-callback]
+verify_jwt = false
+
+[functions.student-gcal-sync]
+verify_jwt = false
