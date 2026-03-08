@@ -141,7 +141,7 @@ const StudentPage = () => {
     useDeletedWorksheets(id || '', false, true, deletedCurrentPage, pageSize);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [shareWorksheetData, setShareWorksheetData] = useState<{id: string; title: string; shareToken?: string; shareExpiresAt?: string} | null>(null);
+  const [shareWorksheetData, setShareWorksheetData] = useState<{id: string; title: string; shareToken?: string} | null>(null);
   
   // Rename worksheet state
   const [renameWorksheetData, setRenameWorksheetData] = useState<{id: string; title: string} | null>(null);
@@ -674,7 +674,7 @@ const StudentPage = () => {
                                   variant="ghost"
                                   size="icon"
                                   className={`${
-                                    worksheet.share_token && worksheet.share_expires_at && new Date(worksheet.share_expires_at) > new Date()
+                                    worksheet.share_token
                                       ? 'border-2 border-green-500 rounded-md'
                                       : ''
                                   }`}
@@ -683,8 +683,7 @@ const StudentPage = () => {
                                     setShareWorksheetData({
                                       id: worksheet.id,
                                       title: worksheet.title || 'Untitled Worksheet',
-                                      shareToken: worksheet.share_token || undefined,
-                                      shareExpiresAt: worksheet.share_expires_at || undefined
+                                      shareToken: worksheet.share_token || undefined
                                     });
                                     setShareModalOpen(true);
                                   }}

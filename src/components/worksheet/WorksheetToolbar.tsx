@@ -104,19 +104,14 @@ const WorksheetToolbar = ({
         // Fetch worksheet data including share token and student_id
         const { data: worksheet, error: worksheetError } = await supabase
           .from('worksheets')
-          .select('share_token, share_expires_at, student_id')
+          .select('share_token, student_id')
           .eq('id', worksheetId)
           .single();
         
         if (worksheetError) throw worksheetError;
         
-        // Check if share token is active (PROBLEM 7)
-        if (worksheet?.share_token && worksheet?.share_expires_at) {
-          const expiresAt = new Date(worksheet.share_expires_at);
-          setHasActiveShareToken(expiresAt > new Date());
-        } else {
-          setHasActiveShareToken(false);
-        }
+        // Check if share token exists (permanent links, no expiration)
+        setHasActiveShareToken(!!worksheet?.share_token);
         
         // Fetch student email if student_id exists (PROBLEM 6)
         if (worksheet?.student_id) {

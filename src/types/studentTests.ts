@@ -71,7 +71,6 @@ export interface StudentTest {
   
   // Sharing
   share_token: string | null;
-  share_expires_at: string | null;
   
   // AI generation
   ai_generated: boolean;
