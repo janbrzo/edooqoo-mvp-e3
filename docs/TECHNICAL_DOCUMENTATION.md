@@ -5,10 +5,25 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 9, 2026) - LLM Optimization (LLMO):**
+**Latest Update (March 9, 2026) - LLM Optimization Phase 2:**
+- **FAQPage JSON-LD**: Added 10-question FAQPage structured data schema to `index.html` for direct LLM citation
+- **AI Plugin Manifest**: Created `public/.well-known/ai-plugin.json` — AI agent discovery manifest describing edooqoo capabilities
+- **OpenAPI Spec**: Created `public/openapi.yaml` — informational API spec building technical entity authority
+- **5 Static SEO Landing Pages** in `public/` targeting key LLM queries:
+  - `ai-worksheet-generator-for-english-teachers.html`
+  - `best-ai-tools-for-esl-teachers.html`
+  - `cefr-worksheet-generator.html`
+  - `how-to-create-english-worksheets-with-ai.html`
+  - `esl-homework-grading-tool.html`
+- **Prompts Page**: New `/prompts` route (`src/pages/Prompts.tsx`) with 50+ copy-paste teacher prompts organized by category (Vocabulary, Grammar, Reading, Speaking, Business English, Exam Prep)
+- **Extended Sitemap**: Updated to 13 pages (from 7), including all new static pages and /prompts
+- **Dynamic Meta Tags**: Added `document.title` and meta description to Pricing, Login, Signup pages
+- **GlobalFooter**: Added "Prompts" link
+
+**Previous Update (March 9, 2026) - LLM Optimization Phase 1:**
 - **AI Discovery files**: Created `public/llms.txt` (short) and `public/llms-full.txt` (~3000 words) for AI crawler discovery
 - **robots.txt**: Added 12 AI bot user-agents (GPTBot, ClaudeBot, PerplexityBot, etc.) + sitemap reference
-- **sitemap.xml**: New static sitemap with 7 pages and priority weights
+- **sitemap.xml**: New static sitemap with pages and priority weights
 - **JSON-LD structured data**: Added `SoftwareApplication` + `Organization` schemas to `index.html`
 - **Meta tags**: Updated title, description, keywords, canonical URL, OG tags, Twitter cards
 - **About page**: New `/about` route (`src/pages/About.tsx`) with full product description, 29 exercise types, FAQ (from `faqItems.ts`), competitor comparison table, personas, how-it-works

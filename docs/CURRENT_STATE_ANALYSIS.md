@@ -6,13 +6,23 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-09) - LLM Optimization (LLMO):**
-- ✅ **AI Discovery**: `public/llms.txt` + `public/llms-full.txt` (~3000 słów) — pliki discovery dla crawlerów AI (ChatGPT, Claude, Perplexity)
-- ✅ **robots.txt**: 12 AI bot user-agents (GPTBot, ClaudeBot, PerplexityBot, itd.) + link do sitemap
-- ✅ **sitemap.xml**: Statyczny sitemap z 7 stronami i priorytetami
+**Ostatnia aktualizacja (2026-03-09) - LLM Optimization Phase 2:**
+- ✅ **FAQPage JSON-LD**: 10-question FAQPage schema w `index.html` dla bezpośrednich cytatów w LLM
+- ✅ **AI Plugin Manifest**: `public/.well-known/ai-plugin.json` — manifest pluginu AI
+- ✅ **OpenAPI Spec**: `public/openapi.yaml` — specyfikacja OpenAPI
+- ✅ **5 statycznych landing pages**: `ai-worksheet-generator`, `best-ai-tools-for-esl`, `cefr-worksheet-generator`, `how-to-create-worksheets`, `esl-homework-grading-tool`
+- ✅ **Strona /prompts**: 50+ gotowych promptów dla nauczycieli w 6 kategoriach
+- ✅ **Rozszerzony sitemap**: 13 stron (z 7)
+- ✅ **Dynamic meta tags**: Pricing, Login, Signup — dynamiczne title i description
+- ✅ **Footer**: Dodany link "Prompts"
+
+**Poprzednia aktualizacja (2026-03-09) - LLM Optimization Phase 1:**
+- ✅ **AI Discovery**: `public/llms.txt` + `public/llms-full.txt` (~3000 słów)
+- ✅ **robots.txt**: 12 AI bot user-agents + link do sitemap
+- ✅ **sitemap.xml**: Statyczny sitemap ze stronami i priorytetami
 - ✅ **JSON-LD**: Structured data `SoftwareApplication` + `Organization` w `index.html`
 - ✅ **Meta tagi**: Zaktualizowany title, description, keywords, canonical URL, OG, Twitter cards
-- ✅ **Strona /about**: Nowa `About.tsx` z pełnym opisem produktu, 29 typów ćwiczeń, FAQ, porównanie z konkurencją
+- ✅ **Strona /about**: Nowa `About.tsx` z pełnym opisem produktu, FAQ, porównanie z konkurencją
 - ✅ **Static HTML**: `public/about.html` — kopia dla crawlerów nie renderujących JS
 - ✅ **Footer**: Dodany link "About"
 

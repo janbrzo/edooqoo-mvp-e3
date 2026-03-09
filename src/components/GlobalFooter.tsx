@@ -18,6 +18,12 @@ const GlobalFooter = () => {
               About
             </Link>
             <Link 
+              to="/prompts" 
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              Prompts
+            </Link>
+            <Link 
               to="/privacy-policy" 
               className="text-muted-foreground hover:text-primary transition-colors"
             >

@@ -42,6 +42,7 @@ import StudentLessonsPage from "./pages/StudentLessonsPage";
 import CalendarLogHistoryPage from "./components/calendar/CalendarLogHistoryPage";
 import BookLandingPage from "./pages/BookLandingPage";
 import About from "./pages/About";
+import Prompts from "./pages/Prompts";
 import StudentHubLanding from "./pages/StudentHubLanding";
 import StudentHubDashboard from "./pages/StudentHubDashboard";
 import StudentHubFlashcards from "./pages/StudentHubFlashcards";
@@ -92,6 +93,7 @@ const App = () => (
               <Route path="/calendar/settings" element={<CalendarSettingsPage />} />
               <Route path="/calendar/logs" element={<CalendarLogHistoryPage />} />
               <Route path="/about" element={<About />} />
+              <Route path="/prompts" element={<Prompts />} />
               <Route path="/book" element={<BookLandingPage />} />
               <Route path="/book/:token" element={<PublicBookingPage />} />
               <Route path="/my" element={<StudentHubLanding />} />

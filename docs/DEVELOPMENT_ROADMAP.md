@@ -3,10 +3,20 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Mar 9, 2026) - LLM Optimization (LLMO) ✅
+### Recently Completed (Mar 9, 2026) - LLM Optimization Phase 2 ✅
+- FAQPage JSON-LD schema (10 questions) in `index.html`
+- `public/.well-known/ai-plugin.json` — AI plugin manifest for agent discovery
+- `public/openapi.yaml` — informational OpenAPI spec
+- 5 static SEO landing pages targeting key teacher queries
+- `src/pages/Prompts.tsx` — `/prompts` page with 50+ teacher prompts (6 categories)
+- Extended `sitemap.xml` to 13 pages
+- Dynamic meta tags on Pricing, Login, Signup
+- "Prompts" link in GlobalFooter
+
+### Previously Completed (Mar 9, 2026) - LLM Optimization Phase 1 ✅
 - `public/llms.txt` + `public/llms-full.txt` — AI crawler discovery files
 - `public/robots.txt` updated with 12 AI bot user-agents + sitemap
-- `public/sitemap.xml` — static sitemap with 7 pages
+- `public/sitemap.xml` — static sitemap
 - `index.html` — JSON-LD structured data (SoftwareApplication + Organization), updated meta tags
 - `src/pages/About.tsx` — new `/about` page with product info, exercise types, FAQ, competitor comparison
 - `public/about.html` — static HTML backup for non-JS crawlers

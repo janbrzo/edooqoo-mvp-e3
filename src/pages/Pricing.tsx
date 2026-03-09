@@ -33,6 +33,12 @@ const Pricing = () => {
   const [openFaqItems, setOpenFaqItems] = useState<number[]>([]);
   const [showEmailConfirmationModal, setShowEmailConfirmationModal] = useState(false);
 
+  useEffect(() => {
+    document.title = "Pricing — Edooqoo AI Worksheet Generator | Free, Side-Gig & Full-Time Plans";
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute('content', 'Edooqoo pricing: Free (2 worksheets), Side-Gig $9/mo (15 worksheets + homework + flashcards), Full-Time from $19/mo (30-90 worksheets + all features). All plans include 29 exercise types for CEFR A1-C2.');
+  }, []);
+
   // NEW: Downgrade dialog state
   const [showDowngradeDialog, setShowDowngradeDialog] = useState(false);
   const [pendingDowngrade, setPendingDowngrade] = useState<{
