@@ -170,23 +170,12 @@ const Dashboard = () => {
       <StickyNav isRegisteredUser={true} tokenLeft={tokenLeft} user={user} />
 
       {/* Quick actions bar */}
-      <div className="border-b bg-background/80 backdrop-blur-sm py-2 px-4 sm:px-6 flex flex-wrap items-center gap-2">
-        <Button variant="default" size="sm" onClick={handleGenerateWorksheet}>
+      <div className="border-b bg-background/80 backdrop-blur-sm py-2 px-4 sm:px-6 flex items-center gap-2 overflow-x-auto">
+        <Button variant="default" size="sm" onClick={handleGenerateWorksheet} className="shrink-0">
           <Plus className="h-4 w-4 mr-2" />
           Generate Worksheet
         </Button>
-        <Button asChild variant="outline" size="sm" className="relative">
-          <Link to="/calendar">
-            <Calendar className="h-4 w-4 mr-2" />
-            Calendar
-            {calendarUnread > 0 && (
-              <Badge className="absolute -top-1.5 -right-1.5 h-5 min-w-5 flex items-center justify-center p-0 text-[10px] bg-destructive text-destructive-foreground">
-                {calendarUnread > 9 ? '9+' : calendarUnread}
-              </Badge>
-            )}
-          </Link>
-        </Button>
-        <Badge variant="secondary" className="text-sm">
+        <Badge variant="secondary" className="text-sm shrink-0">
           {subscriptionType}
         </Badge>
       </div>
