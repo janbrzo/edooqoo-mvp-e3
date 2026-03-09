@@ -58,8 +58,8 @@ const FormView: React.FC<FormViewProps> = ({
           <div className={`max-w-5xl mx-auto ${isMobile ? 'px-2' : 'px-4'}`}>
             
             {/* Premium Form Wrapper with glow */}
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-[2rem] blur opacity-20 group-hover:opacity-30 transition duration-500"></div>
+            <div className="relative group/glow">
+              <div className="absolute -inset-1 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-[2rem] blur opacity-20 group-hover/glow:opacity-30 transition duration-500"></div>
               <div className="relative bg-background rounded-3xl shadow-2xl border border-border/50 overflow-hidden p-1 md:p-2">
                 <WorksheetForm 
                   onSubmit={onSubmit} 
