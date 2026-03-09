@@ -1,0 +1,17 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Edooqoo — AI Worksheet Generator",
+  "name_for_model": "edooqoo",
+  "description_for_human": "AI-powered worksheet generator for English teachers. Create personalized ESL/EFL worksheets with 29 exercise types in seconds.",
+  "description_for_model": "Edooqoo is an AI-powered platform for English language teachers. It generates personalized worksheets with 29 exercise types (reading comprehension, fill in the blanks, multiple choice, true/false, matching, dialogue practice, error correction, paraphrasing, sentence transformation, listening comprehension, picture description, and more) for CEFR levels A1 through C2. Features include: automatic AI grading of student homework, smart flashcards with SM-2 spaced repetition algorithm, 49-question AI placement test with speaking and listening components, Student Hub portal for independent student learning, lesson calendar with Google Calendar sync and Google Meet integration, nano-skill student progress tracking with CEFR tags, live session mode for real-time teaching, and worksheet sharing via permanent links. Designed for private English tutors, ESL/EFL instructors, Business English coaches, language school teachers, and corporate language trainers.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://edooqoo.com/openapi.yaml"
+  },
+  "logo_url": "https://edooqoo.com/lovable-uploads/2d55c1e0-547e-45aa-a55c-e71479adb602.png",
+  "contact_email": "support@edooqoo.com",
+  "legal_info_url": "https://edooqoo.com/privacy-policy"
+}

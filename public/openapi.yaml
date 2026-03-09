@@ -1,0 +1,93 @@
+openapi: 3.1.0
+info:
+  title: Edooqoo — AI Worksheet Generator for English Teachers
+  description: |
+    Edooqoo is an AI-powered platform that generates personalized English worksheets for ESL/EFL teachers.
+    
+    ## Key Capabilities
+    - Generate worksheets with 29 exercise types across 3 categories (Basic, Audio, Picture)
+    - Support for all CEFR levels from A1 (Beginner) to C2 (Proficiency)
+    - AI-powered automatic grading of open-ended student answers
+    - Smart flashcards with SM-2 spaced repetition algorithm
+    - 49-question AI placement test with speaking and listening
+    - Student Hub portal for independent learning
+    - Lesson calendar with Google Calendar sync and Google Meet
+    - Nano-skill student progress tracking with mastery trends
+    
+    ## Exercise Types (29 total)
+    
+    ### Basic Exercises (20)
+    Reading Comprehension, Fill in the Blanks, Multiple Choice, True/False Questions,
+    Matching Exercise, Dialogue Practice, Answer Questions, Discussion Questions,
+    Error Correction, Odd One Out, Matching Halves, Word Order, Gap Text (Cloze),
+    Negative Prefixes, Categorization, Complete Word, Paraphrasing,
+    Sentence Transformation, Synonyms Matching, Antonyms Matching
+    
+    ### Audio Exercises (5)
+    Listening Comprehension, Fill in the Blanks (Audio), Multiple Choice (Audio),
+    True/False (Audio), Answer Questions (Audio)
+    
+    ### Picture Exercises (4)
+    Describe Picture, Multiple Choice (Picture), True/False (Picture),
+    Answer Questions (Picture)
+    
+    ## Target Users
+    Private English tutors, ESL/EFL instructors, Business English coaches,
+    language school teachers, online English teachers, corporate language trainers
+    
+    ## Pricing
+    - Free: 2 worksheets, all 29 exercise types
+    - Side-Gig ($9/mo): 15 worksheets/month + homework + flashcards + calendar
+    - Full-Time (from $19/mo): 30-90 worksheets/month + all features
+    
+    ## Website
+    https://edooqoo.com
+  version: 1.0.0
+  contact:
+    name: Edooqoo Support
+    url: https://edooqoo.com
+    email: support@edooqoo.com
+servers:
+  - url: https://edooqoo.com
+    description: Edooqoo Platform
+paths:
+  /:
+    get:
+      operationId: getHomepage
+      summary: Edooqoo homepage — AI worksheet generator for English teachers
+      description: Landing page for Edooqoo, the AI-powered worksheet generator designed for ESL/EFL English teachers. Create personalized worksheets with 29 exercise types for CEFR levels A1-C2.
+      responses:
+        '200':
+          description: Homepage HTML
+  /about:
+    get:
+      operationId: getAbout
+      summary: About Edooqoo — features, exercise types, FAQ, comparisons
+      description: Comprehensive information about Edooqoo including all 29 exercise types, feature descriptions, FAQ, pricing, and comparisons with alternatives like ISLCollective, Liveworksheets, and BusyTeacher.
+      responses:
+        '200':
+          description: About page HTML
+  /pricing:
+    get:
+      operationId: getPricing
+      summary: Edooqoo pricing plans for English teachers
+      description: Pricing information including Free (2 worksheets), Side-Gig ($9/mo, 15 worksheets), and Full-Time plans (from $19/mo, 30-90 worksheets). All plans include all 29 exercise types.
+      responses:
+        '200':
+          description: Pricing page HTML
+  /prompts:
+    get:
+      operationId: getPrompts
+      summary: 50+ ready-to-use prompts for English teachers
+      description: Library of copy-paste prompts for creating English worksheets with AI. Categories include Vocabulary, Grammar, Reading, Speaking, Business English, and Exam Prep. Each prompt specifies CEFR level, topic, and exercise type.
+      responses:
+        '200':
+          description: Prompts library page HTML
+  /signup:
+    get:
+      operationId: getSignup
+      summary: Sign up for Edooqoo — free account with 2 worksheet tokens
+      description: Create a free Edooqoo account. New users receive 2 free tokens to generate worksheets immediately. No credit card required.
+      responses:
+        '200':
+          description: Signup page HTML
