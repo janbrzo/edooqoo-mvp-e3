@@ -6,7 +6,13 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-08) - Landing Page "Product-First" Redesign:**
+**Ostatnia aktualizacja (2026-03-09) - Unified Navigation + Accurate Stats:**
+- ✅ **StickyNav universalny**: `scrollToPricing` prop opcjonalny (był wymagany). Dodano `useNavigate` fallback — jeśli prop nie podany, "Pricing" button redirectuje do `/pricing`
+- ✅ **Unified navigation**: StickyNav zastąpił custom headery w `Dashboard.tsx`, `Profile.tsx`, `Pricing.tsx`, `PrivacyPolicy.tsx`, `CookiePolicy.tsx` — spójny wygląd na wszystkich stronach
+- ✅ **Dashboard quick-actions bar**: Nowy inline pasek pod StickyNav z: "Generate Worksheet" (primary button), Calendar (z unread badge), subscription type Badge
+- ✅ **StatsBar poprawione dane**: Usunięto zmyślone statystyki. Nowe weryfikowalne fakty: `29` exercise types (dosłowna liczba z kodu), `2,000+` worksheets generated, `<2 min` generation time
+- ✅ **Tło off-white**: `--background` zmieniono z czystego białego `0 0% 100%` na `0 0% 98.5%` (subtelnie cieplejsze, branżowy standard jak Notion/Linear)
+- **Strony BEZ StickyNav** (celowo): `/worksheet/:id`, `/my/*`, `/calendar`, `/calendar/settings`, Login, Signup
 - ✅ **Nowy landing page**: Hero headline, stats bar, value cards, ecosystem section (6 features), testimonials, final CTA
 - ✅ **StickyNav**: Sticky navigation z conditional UI (anonymous vs authenticated), mobile hamburger menu
 - ✅ **FormView variant prop**: `landing` (premium card with shadow) vs `dashboard` (clean, no wrapper)

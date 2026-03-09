@@ -4,7 +4,7 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **Landing Page Redesign (March 8, 2026)** — New product-first landing page with hero headline, social proof, stats bar, value cards (29 types, Student Hub, Analytics), ecosystem section (6 features: Live Sessions, Homework+AI, Flashcards, Calendar, Welcome Test, Share), testimonials, and final CTA. Sticky navigation with conditional UI. Form in premium card for anonymous users, clean dashboard for logged-in users.
+**Latest Update:** **Unified Navigation + Stats Fix (March 9, 2026)** — Same edooqoo navigation bar now appears on all main pages (Dashboard, Profile, Pricing, Privacy Policy, Cookie Policy). Dashboard now shows a quick-actions bar with Generate Worksheet button and Calendar with notification count. StatsBar updated to real data: 29 exercise types, 2,000+ worksheets generated, <2 min generation time. Background changed from pure white to subtle off-white.
 
 **Previous Update:** **FAQ & Feature Documentation Update (March 8, 2026)** — Updated all FAQ items to reflect current app features. Added 6 new FAQ entries.
 
