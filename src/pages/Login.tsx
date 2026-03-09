@@ -19,6 +19,10 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = "Log In — Edooqoo AI Worksheet Generator for English Teachers";
+  }, []);
+
+  useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();

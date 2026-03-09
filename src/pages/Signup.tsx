@@ -12,6 +12,11 @@ import { GoogleSignInButton } from '@/components/GoogleSignInButton';
 import { DashboardPreviewBackground } from '@/components/DashboardPreviewBackground';
 
 const Signup = () => {
+  useEffect(() => {
+    document.title = "Sign Up Free — Edooqoo AI Worksheet Generator | 2 Free Worksheets";
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) meta.setAttribute('content', 'Create your free Edooqoo account. Get 2 free worksheet tokens to generate personalized English worksheets with 29 exercise types for CEFR A1-C2. No credit card required.');
+  }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
