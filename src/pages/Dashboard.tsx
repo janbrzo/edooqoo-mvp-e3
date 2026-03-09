@@ -167,18 +167,13 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
       <FreeWeekBanner />
-      <StickyNav isRegisteredUser={true} tokenLeft={tokenLeft} user={user} />
-
-      {/* Quick actions bar */}
-      <div className="border-b bg-background/80 backdrop-blur-sm py-2 px-4 sm:px-6 flex items-center gap-2 overflow-x-auto">
-        <Button variant="default" size="sm" onClick={handleGenerateWorksheet} className="shrink-0">
-          <Plus className="h-4 w-4 mr-2" />
-          Generate Worksheet
-        </Button>
-        <Badge variant="secondary" className="text-sm shrink-0">
-          {subscriptionType}
-        </Badge>
-      </div>
+      <StickyNav 
+        isRegisteredUser={true} 
+        tokenLeft={tokenLeft} 
+        user={user}
+        subscriptionType={subscriptionType}
+        onGenerateWorksheet={handleGenerateWorksheet}
+      />
 
       <div className="container mx-auto px-4 py-4">
 
