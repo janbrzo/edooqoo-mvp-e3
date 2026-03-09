@@ -14,6 +14,7 @@ import { ConfirmDowngradeDialog } from '@/components/ConfirmDowngradeDialog';
 import { toast } from '@/hooks/use-toast';
 import { User, Coins, CreditCard, Calendar, Zap, GraduationCap, Users, Mail } from 'lucide-react';
 import { FreeWeekBanner } from '@/components/FreeWeekBanner';
+import StickyNav from '@/components/landing/StickyNav';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 const Profile = () => {
@@ -607,34 +608,11 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
-      {/* FREE DEMO WEEK Banner */}
       <FreeWeekBanner />
-      
+      <StickyNav isRegisteredUser={true} tokenLeft={tokensAvailableForUse} user={user} />
+
       <div className="p-4">
         <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center">
-              <User className="h-8 w-8 mr-3" />
-              <span className={profile?.first_name ? "text-primary" : ""}>{displayName}</span>
-              {<span className="ml-2">Profile</span>}
-            </h1>
-            <p className="text-muted-foreground">
-              Manage your account settings and subscription
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleForceNewWorksheet}>
-              Generate Worksheet
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/dashboard">
-                <GraduationCap className="h-4 w-4 mr-2" />
-                Dashboard
-              </Link>
-            </Button>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-6">

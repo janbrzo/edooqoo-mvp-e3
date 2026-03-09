@@ -16,6 +16,7 @@ import { PricingCalculator } from '@/components/PricingCalculator';
 import { ConfirmDowngradeDialog } from '@/components/ConfirmDowngradeDialog';
 import { HomeworkNotificationBadge } from '@/components/homework/HomeworkNotificationBadge';
 import { faqItems } from '@/constants/faqItems';
+import StickyNav from '@/components/landing/StickyNav';
 
 const Pricing = () => {
   const { user, isRegisteredUser } = useAuthFlow();
@@ -320,62 +321,9 @@ const Pricing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex gap-3">
-            {isRegisteredUser && (
-              <>
-                <HomeworkNotificationBadge />
-                <Button asChild variant="outline">
-                  <Link to="/dashboard" className="flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4" />
-                    Dashboard
-                  </Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link to="/profile" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Profile
-                  </Link>
-                </Button>
-              </>
-            )}
-            {!isRegisteredUser && (
-              <div className="flex gap-3">
-                <Button asChild variant="outline">
-                  <Link to="/login" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Login
-                  </Link>
-                </Button>
-                <Button asChild>
-                  <Link to="/signup" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Get Started Free
-                  </Link>
-                </Button>
-                <Button asChild variant="outline">
-                  <Link to="/" className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Generate Worksheet
-                  </Link>
-                </Button>
-              </div>
-            )}
-          </div>
-          
-          {isRegisteredUser && (
-            <div className="flex items-center gap-4">
-              <Badge variant="outline" className="text-sm px-3 py-1">
-                Balance: {tokenLeft} tokens
-              </Badge>
-              <Badge variant="secondary" className="text-sm px-3 py-1">
-                Current: {currentPlan.name}
-              </Badge>
-            </div>
-          )}
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+      <StickyNav isRegisteredUser={!!isRegisteredUser} tokenLeft={tokenLeft} user={user} />
+      <div className="max-w-6xl mx-auto p-4">
 
         <PricingCalculator onRecommendation={handleRecommendation} />
 

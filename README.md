@@ -3,7 +3,13 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: Landing Page "Product-First" Redesign (March 8, 2026)
+## Latest: Unified Navigation + Accurate Stats (March 9, 2026)
+- StickyNav now universal — same consistent header on Dashboard, Profile, Pricing, Privacy Policy, Cookie Policy
+- Dashboard: custom header replaced with StickyNav + inline quick-actions bar (Generate Worksheet, Calendar with notifications, subscription badge)
+- StatsBar: replaced fictional numbers with real data (29 types, 2,000+ worksheets, <2 min generation)
+- Background: subtle off-white `0 0% 98.5%` (was pure white) — cleaner professional look
+
+## Previous: Landing Page "Product-First" Redesign (March 8, 2026)
 - New high-conversion landing page with hero, social proof, stats, value cards, ecosystem section, testimonials, final CTA
 - Sticky navigation with conditional UI (anonymous vs authenticated)
 - Form in premium card for visitors, clean dashboard for logged-in users

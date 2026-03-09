@@ -5,7 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 8, 2026) - Landing Page "Product-First" Redesign:**
+**Latest Update (March 9, 2026) - Unified Navigation + Accurate Stats:**
+- **StickyNav universalized**: `scrollToPricing` prop is now optional (`scrollToPricing?: () => void`). Added `useNavigate` inside the component — if prop not provided, "Pricing" button uses `navigate('/pricing')` as fallback. Backward-compatible with `Index.tsx` which still passes the scroll prop.
+- **Navigation unified**: `Dashboard.tsx`, `Profile.tsx`, `Pricing.tsx`, `PrivacyPolicy.tsx`, `CookiePolicy.tsx` all use StickyNav instead of custom ad-hoc headers
+- **Dashboard restructured**: Removed custom header (title, token badge, subscription badge, calendar button, generate button, profile button). Replaced with StickyNav (handles tokens/dashboard/profile) + new inline quick-actions bar (Generate Worksheet primary button, Calendar with unread badge, subscription Badge)
+- **StatsBar data**: Replaced fictional stats with verified data — `29` (exact count from `AVAILABLE_EXERCISES` array), `2,000+` worksheets generated, `<2 min` generation time
+- **Global background**: `--background: 0 0% 98.5%` (was `0 0% 100%`) — subtle off-white consistent with Notion/Linear design language
+- **Unchanged pages**: `/worksheet/:id` (WorksheetToolbar is sticky and takes nav role), `/my/*` (StudentHubLayout), `/calendar` (own breadcrumb header), Login/Signup (modal dialogs)
 - **New landing structure**: Anonymous users see Hero → Form in premium card → StatsBar → ValueCards → EcosystemSection → Testimonials → Pricing → FinalCTA → Footer
 - **Authenticated users**: StickyNav with token/dashboard/profile → clean form without wrappers
 - **New components**: `src/components/landing/` — StickyNav, HeroHeadline, StatsBar, ValueCards, EcosystemSection, TestimonialsRow, FinalCTA

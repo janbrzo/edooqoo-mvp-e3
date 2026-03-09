@@ -46,6 +46,7 @@ import { ChevronDown } from "lucide-react";
 import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
 import RenameDialog from "@/components/RenameDialog";
 import { toast } from "sonner";
+import StickyNav from '@/components/landing/StickyNav';
 
 const Dashboard = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
@@ -172,53 +173,32 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
-      {/* FREE DEMO WEEK Banner */}
       <FreeWeekBanner />
-      
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center">
-              <GraduationCap className="h-8 w-8 mr-3" />
-              <span className={userProfile?.first_name ? "text-primary" : ""}>{displayName}</span>
-              <span className="ml-2">Dashboard</span>
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Welcome back! Manage your students and worksheets
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="text-sm">
-              Token Left: {tokenLeft}
-            </Badge>
-            <Badge variant="secondary" className="text-sm">
-              {subscriptionType}
-            </Badge>
-            <HomeworkNotificationBadge />
-            <Button asChild variant="outline" size="sm" className="relative">
-              <Link to="/calendar">
-                <Calendar className="h-4 w-4 mr-2" />
-                Calendar
-                {calendarUnread > 0 && (
-                  <Badge className="absolute -top-1.5 -right-1.5 h-5 min-w-5 flex items-center justify-center p-0 text-[10px] bg-destructive text-destructive-foreground">
-                    {calendarUnread > 9 ? '9+' : calendarUnread}
-                  </Badge>
-                )}
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleGenerateWorksheet}>
-              <Plus className="h-4 w-4 mr-2" />
-              Generate Worksheet
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/profile">
-                <User className="h-4 w-4 mr-2" />
-                Profile
-              </Link>
-            </Button>
-          </div>
-        </div>
+      <StickyNav isRegisteredUser={true} tokenLeft={tokenLeft} user={user} />
+
+      {/* Quick actions bar */}
+      <div className="border-b bg-background/80 backdrop-blur-sm py-2 px-4 sm:px-6 flex flex-wrap items-center gap-2">
+        <Button variant="default" size="sm" onClick={handleGenerateWorksheet}>
+          <Plus className="h-4 w-4 mr-2" />
+          Generate Worksheet
+        </Button>
+        <Button asChild variant="outline" size="sm" className="relative">
+          <Link to="/calendar">
+            <Calendar className="h-4 w-4 mr-2" />
+            Calendar
+            {calendarUnread > 0 && (
+              <Badge className="absolute -top-1.5 -right-1.5 h-5 min-w-5 flex items-center justify-center p-0 text-[10px] bg-destructive text-destructive-foreground">
+                {calendarUnread > 9 ? '9+' : calendarUnread}
+              </Badge>
+            )}
+          </Link>
+        </Button>
+        <Badge variant="secondary" className="text-sm">
+          {subscriptionType}
+        </Badge>
+      </div>
+
+      <div className="container mx-auto px-4 py-4">
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -1,9 +1,9 @@
 import React from 'react';
 
 const stats = [
-  { value: '15,000+', label: 'hours saved on lesson prep' },
-  { value: '29', label: 'exercise types for any skill level' },
-  { value: '200+', label: 'teachers trust us weekly' },
+  { value: '29', label: 'exercise types available' },
+  { value: '2,000+', label: 'worksheets generated' },
+  { value: '<2 min', label: 'average generation time' },
 ];
 
 const StatsBar: React.FC = () => {
