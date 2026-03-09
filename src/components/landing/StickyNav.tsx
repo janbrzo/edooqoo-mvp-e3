@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { GCalStatusButton } from '@/components/calendar/GCalStatusButton';
 import { HomeworkNotificationBadge } from '@/components/homework/HomeworkNotificationBadge';
-import { Menu, GraduationCap, User } from 'lucide-react';
+import { Menu, GraduationCap, User, Plus } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface StickyNavProps {
@@ -13,6 +13,8 @@ interface StickyNavProps {
   tokenLeft: number;
   user: any;
   scrollToPricing?: () => void;
+  subscriptionType?: string;
+  onGenerateWorksheet?: () => void;
 }
 
 const StickyNav: React.FC<StickyNavProps> = ({ isRegisteredUser, tokenLeft, user, scrollToPricing }) => {
