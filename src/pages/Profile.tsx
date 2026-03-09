@@ -14,6 +14,7 @@ import { ConfirmDowngradeDialog } from '@/components/ConfirmDowngradeDialog';
 import { toast } from '@/hooks/use-toast';
 import { User, Coins, CreditCard, Calendar, Zap, GraduationCap, Users, Mail } from 'lucide-react';
 import { FreeWeekBanner } from '@/components/FreeWeekBanner';
+import StickyNav from '@/components/landing/StickyNav';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 
 const Profile = () => {

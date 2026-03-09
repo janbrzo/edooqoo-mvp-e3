@@ -16,6 +16,7 @@ import { PricingCalculator } from '@/components/PricingCalculator';
 import { ConfirmDowngradeDialog } from '@/components/ConfirmDowngradeDialog';
 import { HomeworkNotificationBadge } from '@/components/homework/HomeworkNotificationBadge';
 import { faqItems } from '@/constants/faqItems';
+import StickyNav from '@/components/landing/StickyNav';
 
 const Pricing = () => {
   const { user, isRegisteredUser } = useAuthFlow();

@@ -46,6 +46,7 @@ import { ChevronDown } from "lucide-react";
 import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
 import RenameDialog from "@/components/RenameDialog";
 import { toast } from "sonner";
+import StickyNav from '@/components/landing/StickyNav';
 
 const Dashboard = () => {
   const { user, loading, isRegisteredUser } = useAuthFlow();
