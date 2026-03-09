@@ -128,14 +128,14 @@ export const PricingSection = () => {
                 <CardTitle className="text-xl">Free Demo</CardTitle>
               </div>
               <CardDescription className="text-base">
-                Try our worksheet generator
+                Start teaching smarter today
               </CardDescription>
               <div className="mt-4">
                 <span className="text-4xl font-bold">$0</span>
                 <span className="text-lg text-muted-foreground">/forever</span>
               </div>
               <div className="mt-2">
-                <Badge variant="secondary">2 free tokens + limited access</Badge>
+                <Badge variant="secondary">2 free worksheets to start</Badge>
               </div>
               <div className="mt-1">
                 <p className="text-xs text-muted-foreground">Free per worksheet</p>
@@ -146,7 +146,7 @@ export const PricingSection = () => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="text-sm">2 free tokens on signup</span>
+                  <span className="text-sm">2 free worksheets on signup</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
@@ -162,11 +162,23 @@ export const PricingSection = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Live Session mode</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
                   <span className="text-sm">Flashcards auto-synced</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
                   <span className="text-sm">Draw on Worksheet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Homework Assignments</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span className="text-sm">Student Knowledge tracking</span>
                 </div>
               </div>
               

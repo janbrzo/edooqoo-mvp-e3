@@ -38,19 +38,22 @@ const HeroHeadline: React.FC = () => {
       <div className="max-w-4xl mx-auto text-center">
         {/* Headline */}
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-3 leading-[1.1]">
-          Stop wasting{' '}
-          <span
-            className="relative inline-block overflow-hidden"
-            style={{ height: '1.2em', verticalAlign: 'text-bottom' }}
-          >
+          <span className="whitespace-nowrap">
+            Stop wasting{' '}
             <span
-              key={dayIndex}
-              className="inline-block animate-day-enter text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600"
+              className="relative inline-block overflow-hidden"
+              style={{ height: '1.2em', verticalAlign: 'text-bottom', minWidth: '3.5em' }}
             >
-              {days[dayIndex]}
+              <span
+                key={dayIndex}
+                className="inline-block animate-day-enter text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600"
+              >
+                {days[dayIndex]}
+              </span>
             </span>
+            {' '}evenings
           </span>
-          {' '}evenings <br />
+          <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">
             on lesson prep.
           </span>
@@ -63,7 +66,7 @@ const HeroHeadline: React.FC = () => {
         </p>
 
         {/* CTA Area */}
-        <div className="flex flex-col items-center gap-4 mb-5">
+        <div className="flex flex-col items-center gap-4 mb-8">
           <Button
             onClick={scrollToForm}
             size="lg"
