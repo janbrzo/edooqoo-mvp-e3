@@ -21,6 +21,7 @@ import {
   Plus,
   Target,
   Coins,
+  BookOpen,
   Pencil,
   Search,
   ArrowUpAZ,
