@@ -15,18 +15,12 @@ import { StudentSelector } from "@/components/StudentSelector";
 import { useProfile } from "@/hooks/useProfile";
 import { format } from "date-fns";
 import { 
-  User, 
-  GraduationCap, 
   Users, 
   FileText, 
-  
-  TrendingUp,
+  Calendar,
   Plus,
-  BookOpen,
-  Clock,
   Target,
   Coins,
-  Bell,
   Pencil,
   Search,
   ArrowUpAZ,
