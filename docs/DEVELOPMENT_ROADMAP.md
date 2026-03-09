@@ -3,14 +3,7 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Mar 9, 2026) - Button & Primary Color Unification ✅
-- `--primary` changed from `255 85% 76%` (pastel) to `262 83% 58%` (deep violet = violet-600)
-- Dark mode `--primary-foreground` fixed for white text on deep violet
-- Hero CTA: gradient `from-violet-600 to-indigo-600`
-- Removed `bg-worksheet-purple` overrides from Signup and PaymentSuccess
-- Files: `index.css`, `HeroHeadline.tsx`, `Signup.tsx`, `PaymentSuccess.tsx`
-
-### Previously Completed (Mar 9, 2026) - Unified Navigation + Accurate Stats ✅
+### Recently Completed (Mar 8, 2026) - Landing Page "Product-First" Redesign ✅
 - 8 new components: `StickyNav`, `HeroHeadline`, `StatsBar`, `ValueCards`, `EcosystemSection`, `TestimonialsRow`, `FinalCTA`, `useScrollAnimation`
 - `Index.tsx` restructured: anonymous landing page flow vs clean authenticated dashboard
 - `FormView.tsx` refactored: `variant` prop (landing/dashboard), removed Sidebar/IsometricBackground

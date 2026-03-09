@@ -5,15 +5,7 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 9, 2026) - Button & Primary Color Unification:**
-- **`--primary` color fix**: Changed from pastel lavender `255 85% 76%` (#9b87f5) to deep violet `262 83% 58%` (#7c3aed ≈ violet-600). All default-variant buttons now use the deep brand color
-- **Dark mode fix**: `--primary-foreground` in dark mode changed from dark text (`222.2 47.4% 11.2%`) to white (`210 40% 98%`) for proper contrast on deep violet background
-- **`--ring` unified**: Both light and dark mode ring set to `262 83% 58%`
-- **Hero CTA gradient**: "Generate Your First Worksheet — Free" button now uses `bg-gradient-to-r from-violet-600 to-indigo-600` with hover darkening, matching the headline gradient
-- **Removed `bg-worksheet-purple` overrides**: Signup button and PaymentSuccess buttons now use default variant (inherit `--primary`)
-- **Files changed**: `src/index.css`, `src/components/landing/HeroHeadline.tsx`, `src/pages/Signup.tsx`, `src/pages/PaymentSuccess.tsx`
-
-**Previous Update (March 9, 2026) - Unified Navigation + Accurate Stats:**
+**Latest Update (March 9, 2026) - Unified Navigation + Accurate Stats:**
 - **StickyNav universalized**: `scrollToPricing` prop is now optional (`scrollToPricing?: () => void`). Added `useNavigate` inside the component — if prop not provided, "Pricing" button uses `navigate('/pricing')` as fallback. Backward-compatible with `Index.tsx` which still passes the scroll prop.
 - **Navigation unified**: `Dashboard.tsx`, `Profile.tsx`, `Pricing.tsx`, `PrivacyPolicy.tsx`, `CookiePolicy.tsx` all use StickyNav instead of custom ad-hoc headers
 - **Dashboard restructured**: Removed custom header (title, token badge, subscription badge, calendar button, generate button, profile button). Replaced with StickyNav (handles tokens/dashboard/profile) + new inline quick-actions bar (Generate Worksheet primary button, Calendar with unread badge, subscription Badge)

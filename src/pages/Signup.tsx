@@ -186,7 +186,7 @@ const Signup = () => {
                   
                   <Button 
                     type="submit" 
-                    className="w-full"
+                    className="w-full bg-worksheet-purple hover:bg-worksheet-purpleDark"
                     disabled={loading}
                   >
                     {loading ? 'Creating Account...' : 'Create Account'}

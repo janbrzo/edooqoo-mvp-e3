@@ -6,14 +6,7 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-09) - Unifikacja przycisków i koloru primary:**
-- ✅ **`--primary` naprawiony**: Zmieniony z pastelowego `255 85% 76%` na głęboki violet `262 83% 58%` (= Tailwind violet-600). Wszystkie przyciski default variant automatycznie naprawione
-- ✅ **Dark mode fix**: `--primary-foreground` zmieniony na biały tekst (był ciemny — nieczytelny na głębokim fiolecie)
-- ✅ **Hero CTA gradient**: Przycisk "Generate Your First Worksheet — Free" teraz z gradientem violet-600 → indigo-600
-- ✅ **Usunięte nadpisania**: `bg-worksheet-purple` usunięty z Signup i PaymentSuccess — dziedziczą z design systemu
-- ✅ **Pliki**: `index.css`, `HeroHeadline.tsx`, `Signup.tsx`, `PaymentSuccess.tsx`
-
-**Poprzednia aktualizacja (2026-03-09) - Unified Navigation + Accurate Stats:**
+**Ostatnia aktualizacja (2026-03-09) - Unified Navigation + Accurate Stats:**
 - ✅ **StickyNav universalny**: `scrollToPricing` prop opcjonalny (był wymagany). Dodano `useNavigate` fallback — jeśli prop nie podany, "Pricing" button redirectuje do `/pricing`
 - ✅ **Unified navigation**: StickyNav zastąpił custom headery w `Dashboard.tsx`, `Profile.tsx`, `Pricing.tsx`, `PrivacyPolicy.tsx`, `CookiePolicy.tsx` — spójny wygląd na wszystkich stronach
 - ✅ **Dashboard quick-actions bar**: Nowy inline pasek pod StickyNav z: "Generate Worksheet" (primary button), Calendar (z unread badge), subscription type Badge

@@ -144,7 +144,7 @@ const PaymentSuccess = () => {
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2 text-red-600">Payment Verification Failed</h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <Button onClick={handleReturnToWorksheet}>
+          <Button onClick={handleReturnToWorksheet} className="bg-worksheet-purple hover:bg-worksheet-purpleDark">
             Return to Worksheet
           </Button>
         </div>
@@ -183,7 +183,7 @@ const PaymentSuccess = () => {
           </p>
         )}
         
-        <Button onClick={handleReturnToWorksheet}>
+        <Button onClick={handleReturnToWorksheet} className="bg-worksheet-purple hover:bg-worksheet-purpleDark">
           Return to Worksheet Now
         </Button>
       </div>
