@@ -193,7 +193,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 relative">
       <FreeWeekBanner />
       
       {!bothWorksheetsReady && (

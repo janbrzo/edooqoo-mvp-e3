@@ -50,7 +50,7 @@ const HeroHeadline: React.FC = () => {
               {days[dayIndex]}
             </span>
           </span>
-          {' '}evenings <br className="hidden md:block" />
+          {' '}evenings <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">
             on lesson prep.
           </span>
@@ -63,7 +63,7 @@ const HeroHeadline: React.FC = () => {
         </p>
 
         {/* CTA Area */}
-        <div className="flex flex-col items-center gap-3 mb-3">
+        <div className="flex flex-col items-center gap-4 mb-5">
           <Button
             onClick={scrollToForm}
             size="lg"
