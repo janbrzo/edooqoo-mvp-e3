@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Star, Lock, PlayCircle, ArrowDown, BookOpen, Brain, Calendar, BarChart2, ClipboardCheck, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -11,7 +11,18 @@ const unlockFeatures = [
   { icon: Share2, label: 'Interactive Sharing' },
 ];
 
+const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 const HeroHeadline: React.FC = () => {
+  const [dayIndex, setDayIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDayIndex(i => (i + 1) % 7);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, []);
+
   const scrollToForm = () => {
     const formSection = document.getElementById('worksheet-form');
     if (formSection) {
@@ -20,27 +31,39 @@ const HeroHeadline: React.FC = () => {
   };
 
   return (
-    <section className="relative pt-14 pb-4 px-4 overflow-hidden">
+    <section className="relative pt-10 pb-2 px-4 overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-violet-100/50 via-background to-background"></div>
 
       <div className="max-w-4xl mx-auto text-center">
         {/* Headline */}
-        <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground mb-6 leading-[1.1]">
-          Stop wasting Sunday evenings <br className="hidden md:block" />
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-3 leading-[1.1]">
+          Stop wasting{' '}
+          <span
+            className="relative inline-block overflow-hidden"
+            style={{ height: '1.2em', verticalAlign: 'text-bottom' }}
+          >
+            <span
+              key={dayIndex}
+              className="inline-block animate-day-enter text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600"
+            >
+              {days[dayIndex]}
+            </span>
+          </span>
+          {' '}evenings <br className="hidden md:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">
             on lesson prep.
           </span>
         </h1>
 
         {/* Subheadline */}
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto leading-relaxed">
           AI creates complete, personalized worksheets for your 1-on-1 lessons.
           29 exercise types. Ready in 2 minutes.
         </p>
 
         {/* CTA Area */}
-        <div className="flex flex-col items-center gap-5 mb-6">
+        <div className="flex flex-col items-center gap-3 mb-3">
           <Button
             onClick={scrollToForm}
             size="lg"
@@ -51,7 +74,7 @@ const HeroHeadline: React.FC = () => {
           </Button>
 
           {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center items-center gap-6 text-sm font-medium text-muted-foreground">
+          <div className="flex flex-wrap justify-center items-center gap-4 text-sm font-medium text-muted-foreground">
             <div className="flex items-center gap-2">
               <div className="flex">
                 {[...Array(5)].map((_, i) => (
@@ -73,18 +96,21 @@ const HeroHeadline: React.FC = () => {
           </div>
         </div>
 
-        {/* Unlock features block */}
-        <div className="inline-flex flex-col items-center gap-2.5 bg-secondary/60 border border-border rounded-2xl px-5 py-3 max-w-2xl mx-auto">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-            Create a free account to also unlock
+        {/* Unlock features ticker */}
+        <div className="w-full max-w-2xl mx-auto overflow-hidden border border-border rounded-2xl bg-secondary/60 py-2.5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center mb-1.5 px-4">
+            Create a free account to unlock
           </p>
-          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
-            {unlockFeatures.map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-1.5 text-sm text-foreground/80">
-                <Icon className="h-3.5 w-3.5 text-violet-500 flex-shrink-0" />
-                <span>{label}</span>
-              </div>
-            ))}
+          <div className="flex overflow-hidden">
+            <div className="flex animate-marquee whitespace-nowrap">
+              {[...unlockFeatures, ...unlockFeatures].map(({ icon: Icon, label }, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-sm text-foreground/80 mx-4 shrink-0">
+                  <Icon className="h-3.5 w-3.5 text-violet-500 flex-shrink-0" />
+                  <span>{label}</span>
+                  <span className="mx-3 text-muted-foreground/40">·</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
