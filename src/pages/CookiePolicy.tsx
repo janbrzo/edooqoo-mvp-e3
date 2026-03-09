@@ -1,22 +1,15 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Cookie } from 'lucide-react';
+import { Cookie } from 'lucide-react';
+import StickyNav from '@/components/landing/StickyNav';
 
 const CookiePolicy = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <Button asChild variant="outline">
-            <Link to="/" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Link>
-          </Button>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+      <StickyNav isRegisteredUser={false} tokenLeft={0} user={null} />
+      <div className="max-w-4xl mx-auto p-4">
 
         <Card>
           <CardHeader className="text-center border-b">

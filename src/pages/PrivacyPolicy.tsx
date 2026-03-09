@@ -1,23 +1,11 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import StickyNav from '@/components/landing/StickyNav';
 
 const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with back button */}
-      <div className="border-b bg-white">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/" className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Edooqoo
-            </Link>
-          </Button>
-        </div>
-      </div>
+      <StickyNav isRegisteredUser={false} tokenLeft={0} user={null} />
 
       {/* Main content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
