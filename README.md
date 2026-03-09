@@ -3,7 +3,13 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: Unified Navigation + Accurate Stats (March 9, 2026)
+## Latest: Button & Primary Color Unification (March 9, 2026)
+- `--primary` upgraded from pastel lavender to deep violet (#7c3aed ≈ violet-600)
+- All default buttons now use the saturated brand color
+- Hero CTA: modern violet→indigo gradient
+- Dark mode contrast fixed (white text on deep violet)
+
+## Previous: Unified Navigation + Accurate Stats (March 9, 2026)
 - StickyNav now universal — same consistent header on Dashboard, Profile, Pricing, Privacy Policy, Cookie Policy
 - Dashboard: custom header replaced with StickyNav + inline quick-actions bar (Generate Worksheet, Calendar with notifications, subscription badge)
 - StatsBar: replaced fictional numbers with real data (29 types, 2,000+ worksheets, <2 min generation)

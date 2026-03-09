@@ -70,7 +70,7 @@ const HeroHeadline: React.FC = () => {
           <Button
             onClick={scrollToForm}
             size="lg"
-            className="h-14 px-8 text-lg font-semibold rounded-full shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:-translate-y-0.5 transition-all duration-200"
+            className="h-14 px-8 text-lg font-semibold rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200"
           >
             Generate Your First Worksheet — Free
             <ArrowDown className="ml-2 h-5 w-5" />
