@@ -1,26 +1,18 @@
 
-# Plan: Student Hub — WDROŻONY ✅
+# Plan: LLM Optimization (LLMO) — WDROŻONY ✅
 
 ## Podsumowanie
 
-Panel studenta `/my` zaimplementowany. Student wchodzi na `/my`, podaje email, wybiera nauczyciela i widzi dashboard z:
-- Quick stats (flashcards, homework, lessons)
-- Next lesson z meeting link
-- Ostatnie flashcard sety z Browse/Study
-- Ostatnie homework z postępem
-- Ostatnie shared worksheets
+Pełna warstwa AI discovery dla edooqoo.com. Pliki llms.txt, llms-full.txt, robots.txt z AI botami, sitemap.xml, JSON-LD structured data, strona /about z pełnym opisem produktu i FAQ, statyczny about.html dla non-JS crawlerów.
 
-Podstrony: `/my/:token/flashcards`, `/homework`, `/worksheets`, `/lessons`
+## Pliki utworzone/zmodyfikowane
 
-## Pliki
-
-- `supabase/functions/get-student-hub-data/index.ts` — centralna edge function
-- `src/hooks/useStudentHubData.tsx` — hook + localStorage helpers
-- `src/components/student-hub/StudentHubLayout.tsx` — shared layout z nav
-- `src/components/student-hub/StudentHubStats.tsx` — quick stats cards
-- `src/pages/StudentHubLanding.tsx` — email input landing
-- `src/pages/StudentHubDashboard.tsx` — dashboard overview
-- `src/pages/StudentHubFlashcards.tsx` — full flashcard list
-- `src/pages/StudentHubHomework.tsx` — homework z filtrami
-- `src/pages/StudentHubWorksheets.tsx` — shared worksheets list
-- `src/pages/StudentHubLessons.tsx` — reuse StudentBookingsSection
+- `public/llms.txt` — krótki opis produktu dla AI crawlerów
+- `public/llms-full.txt` — pełny opis (~3000 słów) z FAQ, ćwiczeniami, porównaniami
+- `public/robots.txt` — 12 AI botów + sitemap link
+- `public/sitemap.xml` — 7 stron z priorytetami
+- `public/about.html` — statyczny HTML backup dla non-JS crawlerów
+- `index.html` — JSON-LD (SoftwareApplication + Organization), meta tagi, canonical URL
+- `src/pages/About.tsx` — strona /about z opisem produktu, FAQ, porównaniami
+- `src/App.tsx` — route /about
+- `src/components/GlobalFooter.tsx` — link About

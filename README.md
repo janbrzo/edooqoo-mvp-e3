@@ -3,7 +3,16 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: Unified Navigation + Accurate Stats (March 9, 2026)
+## Latest: LLM Optimization / LLMO (March 9, 2026)
+- AI discovery files: `public/llms.txt`, `public/llms-full.txt` for AI crawler indexing
+- `robots.txt` updated with 12 AI bot user-agents + sitemap reference
+- `public/sitemap.xml` with 7 pages
+- JSON-LD structured data (SoftwareApplication + Organization) in `index.html`
+- New `/about` page with full product info, 29 exercise types, FAQ, competitor comparison
+- Static `public/about.html` for non-JS crawlers
+- Footer: added About link
+
+## Previous: Unified Navigation + Accurate Stats (March 9, 2026)
 - StickyNav now universal — same consistent header on Dashboard, Profile, Pricing, Privacy Policy, Cookie Policy
 - Dashboard: custom header replaced with StickyNav + inline quick-actions bar (Generate Worksheet, Calendar with notifications, subscription badge)
 - StatsBar: replaced fictional numbers with real data (29 types, 2,000+ worksheets, <2 min generation)

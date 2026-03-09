@@ -4,7 +4,9 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **Unified Navigation + Stats Fix (March 9, 2026)** — Same edooqoo navigation bar now appears on all main pages (Dashboard, Profile, Pricing, Privacy Policy, Cookie Policy). Dashboard now shows a quick-actions bar with Generate Worksheet button and Calendar with notification count. StatsBar updated to real data: 29 exercise types, 2,000+ worksheets generated, <2 min generation time. Background changed from pure white to subtle off-white.
+**Latest Update:** **LLM Optimization / About Page (March 9, 2026)** — New `/about` page with full product description, 29 exercise types, FAQ, competitor comparison. AI discovery files (llms.txt, llms-full.txt) and structured data (JSON-LD) added for search engine and AI crawler visibility.
+
+**Previous Update:** **Unified Navigation + Stats Fix (March 9, 2026)** — Same edooqoo navigation bar now appears on all main pages (Dashboard, Profile, Pricing, Privacy Policy, Cookie Policy). Dashboard now shows a quick-actions bar with Generate Worksheet button and Calendar with notification count. StatsBar updated to real data: 29 exercise types, 2,000+ worksheets generated, <2 min generation time. Background changed from pure white to subtle off-white.
 
 **Previous Update:** **FAQ & Feature Documentation Update (March 8, 2026)** — Updated all FAQ items to reflect current app features. Added 6 new FAQ entries.
 
