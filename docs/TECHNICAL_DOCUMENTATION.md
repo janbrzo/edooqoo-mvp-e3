@@ -5,7 +5,18 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 9, 2026) - Unified Navigation + Accurate Stats:**
+**Latest Update (March 9, 2026) - LLM Optimization (LLMO):**
+- **AI Discovery files**: Created `public/llms.txt` (short) and `public/llms-full.txt` (~3000 words) for AI crawler discovery
+- **robots.txt**: Added 12 AI bot user-agents (GPTBot, ClaudeBot, PerplexityBot, etc.) + sitemap reference
+- **sitemap.xml**: New static sitemap with 7 pages and priority weights
+- **JSON-LD structured data**: Added `SoftwareApplication` + `Organization` schemas to `index.html`
+- **Meta tags**: Updated title, description, keywords, canonical URL, OG tags, Twitter cards
+- **About page**: New `/about` route (`src/pages/About.tsx`) with full product description, 29 exercise types, FAQ (from `faqItems.ts`), competitor comparison table, personas, how-it-works
+- **Static HTML backup**: `public/about.html` — same content as plain HTML for non-JS crawlers
+- **GlobalFooter**: Added "About" link
+- **No existing code changed**: All additions are additive files or minimal edits to index.html/App.tsx/GlobalFooter
+
+**Previous Update (March 9, 2026) - Unified Navigation + Accurate Stats:**
 - **StickyNav universalized**: `scrollToPricing` prop is now optional (`scrollToPricing?: () => void`). Added `useNavigate` inside the component — if prop not provided, "Pricing" button uses `navigate('/pricing')` as fallback. Backward-compatible with `Index.tsx` which still passes the scroll prop.
 - **Navigation unified**: `Dashboard.tsx`, `Profile.tsx`, `Pricing.tsx`, `PrivacyPolicy.tsx`, `CookiePolicy.tsx` all use StickyNav instead of custom ad-hoc headers
 - **Dashboard restructured**: Removed custom header (title, token badge, subscription badge, calendar button, generate button, profile button). Replaced with StickyNav (handles tokens/dashboard/profile) + new inline quick-actions bar (Generate Worksheet primary button, Calendar with unread badge, subscription Badge)

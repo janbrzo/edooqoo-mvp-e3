@@ -3,7 +3,16 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Mar 8, 2026) - Landing Page "Product-First" Redesign ✅
+### Recently Completed (Mar 9, 2026) - LLM Optimization (LLMO) ✅
+- `public/llms.txt` + `public/llms-full.txt` — AI crawler discovery files
+- `public/robots.txt` updated with 12 AI bot user-agents + sitemap
+- `public/sitemap.xml` — static sitemap with 7 pages
+- `index.html` — JSON-LD structured data (SoftwareApplication + Organization), updated meta tags
+- `src/pages/About.tsx` — new `/about` page with product info, exercise types, FAQ, competitor comparison
+- `public/about.html` — static HTML backup for non-JS crawlers
+- `GlobalFooter.tsx` — added About link
+
+### Previously Completed (Mar 9, 2026) - Landing Page "Product-First" Redesign ✅
 - 8 new components: `StickyNav`, `HeroHeadline`, `StatsBar`, `ValueCards`, `EcosystemSection`, `TestimonialsRow`, `FinalCTA`, `useScrollAnimation`
 - `Index.tsx` restructured: anonymous landing page flow vs clean authenticated dashboard
 - `FormView.tsx` refactored: `variant` prop (landing/dashboard), removed Sidebar/IsometricBackground

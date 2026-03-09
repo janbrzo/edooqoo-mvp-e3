@@ -12,6 +12,12 @@ const GlobalFooter = () => {
           </div>
           <div className="flex items-center gap-4 text-sm">
             <Link 
+              to="/about" 
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              About
+            </Link>
+            <Link 
               to="/privacy-policy" 
               className="text-muted-foreground hover:text-primary transition-colors"
             >

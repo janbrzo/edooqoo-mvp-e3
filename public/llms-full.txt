@@ -1,0 +1,289 @@
+# Edooqoo — Complete Product Documentation
+
+> Edooqoo is an AI-powered platform built specifically for English teachers. It generates personalized worksheets tailored to each student, manages student portfolios, tracks learning progress at the nano-skill level, assigns homework with automatic AI grading, creates smart flashcards with spaced repetition, schedules lessons with Google Calendar sync, and provides a complete Student Hub portal for independent learning. Edooqoo is used by private English tutors, ESL/EFL instructors, Business English coaches, language school teachers, and corporate language trainers worldwide.
+
+Website: https://edooqoo.com
+
+---
+
+## Product Overview
+
+Edooqoo solves the #1 problem English teachers face: creating personalized lesson materials takes too much time. With Edooqoo, teachers generate a complete, customized worksheet in under 2 minutes. The AI considers the student's English level (CEFR A1-C2), lesson topic, learning goals, and — uniquely — the student's actual skill data from previous lessons (via DSLM, the Dynamic Student Learning Model).
+
+Unlike generic worksheet generators, Edooqoo is a complete teaching ecosystem. A teacher adds a student, generates worksheets, assigns homework, creates flashcards, schedules lessons, and tracks progress — all in one platform. Students get their own portal (Student Hub) where they access worksheets, study flashcards, complete homework, and book lessons independently.
+
+Edooqoo works entirely in the browser. No downloads, no installations. Teachers sign up, add their first student, and generate their first worksheet in minutes. The platform supports all CEFR levels from A1 (beginner) to C2 (proficiency).
+
+---
+
+## Complete Feature List
+
+### 1. AI Worksheet Generator
+The core feature. Teachers specify the student's English level, lesson topic, learning goals, and select from 29 exercise types. The AI generates a complete, ready-to-use worksheet in under 2 minutes. Each worksheet is personalized using Student Knowledge entries and DSLM skill data.
+- 29 exercise types across 3 categories (basic, audio, picture)
+- CEFR levels A1, A2, B1, B2, C1, C2
+- Custom topics, grammar focus, vocabulary targets
+- AI uses student context for personalization
+- Worksheets can be shared online, downloaded as HTML/PDF, or used in live sessions
+
+### 2. Homework System
+Teachers assign any worksheet or specific exercises as homework. Students receive an email notification with a link. They complete exercises interactively online. AI automatically grades open-ended answers (paraphrasing, sentence transformation, discussion questions). Teachers review, adjust scores, and add comments.
+- Set deadlines with automatic reminders
+- Track completion status in real-time
+- AI pre-fills mastery scores for teacher review
+- Teacher comments per exercise
+- Students complete via direct link or Student Hub
+
+### 3. Smart Flashcards
+Teachers create flashcard sets from worksheet vocabulary or manually. Each card has front (word/phrase), back (definition/translation), and optional example sentence. Students study using the SM-2 spaced repetition algorithm for optimal retention.
+- Auto-generate from worksheet vocabulary
+- Manual card creation and editing
+- SM-2 spaced repetition with quality ratings
+- Bidirectional study (front→back and back→front)
+- Share via link or Student Hub access
+
+### 4. Welcome Placement Test
+A comprehensive 49-question AI-powered assessment covering grammar, vocabulary, reading, listening, and speaking. After completion, AI analyzes results to create a detailed Learning Profile with CEFR level estimation, skill scores, strengths, weaknesses, and one of 4 Learning Paths.
+- 49 questions across 5 skill categories
+- AI-generated speaking and listening exercises
+- Detailed Learning Profile with radar chart
+- 4 Learning Paths: Comfort, Guided, Accelerated, Target
+- 15 behavioral and performance signals analyzed
+
+### 5. Student Hub Portal
+A dedicated portal for students at edooqoo.com/my. Students enter their email, select their teacher, and access a personalized dashboard. No teacher account needed for students.
+- Quick stats (flashcards reviewed, homework completed, lessons scheduled)
+- Browse and study flashcard sets
+- Complete homework assignments
+- View shared worksheets
+- Book and manage lessons
+- Google Calendar sync for students
+
+### 6. Lesson Calendar & Booking
+Teachers set availability, students book lessons via a public booking page. Supports one-time and recurring weekly bookings. Google Calendar integration for automatic sync. Optional Google Meet link auto-generation.
+- Public booking page with shareable link
+- Weekly recurring bookings
+- Google Calendar two-way sync
+- Google Meet auto-generation
+- Buffer times, slot limits, booking modes
+- Reschedule and cancellation policies
+- Payment tracking per lesson
+
+### 7. Student Progress Tracking (DSLM)
+The Dynamic Student Learning Model tracks student skills at the nano-skill level with CEFR tags. Every interaction (worksheet, homework, flashcard, test) generates events that update skill metrics automatically. Teachers see mastery trends, strengths, weaknesses, and AI-generated suggestions.
+- Nano-skill mastery tracking (e.g., "B1.grammar.present_perfect.negative")
+- Exponential decay weighting for recent performance
+- Trend detection: improving, stable, declining
+- Category aggregation: grammar, vocabulary, speaking, listening, reading, writing
+- AI suggestions for future worksheets based on skill gaps
+
+### 8. Interactive Worksheets & Live Sessions
+Worksheets can be shared via permanent links. Students fill in answers interactively in the browser. Teachers see responses in real-time during live sessions. Up to 12 exercises per live session with on-the-fly additions.
+- Permanent shareable links
+- Real-time answer visibility
+- Live Session mode for online lessons
+- Drawing/annotation tools for teachers
+- Exercise-level nano-skill mastery ratings
+
+### 9. Student Knowledge Base
+Teachers record important notes about each student — strengths, weaknesses, interests, learning preferences. This information is automatically fed to the AI when generating worksheets for more personalized content.
+- Categorized entries (strengths, weaknesses, interests, goals)
+- Auto-populated from worksheet results
+- Injected into AI worksheet generation prompts
+- Tagging system for easy organization
+
+---
+
+## All 29 Exercise Types
+
+### Basic Exercises (20 types)
+1. **Reading Comprehension** — Students read a passage and answer questions about content, inference, and vocabulary in context.
+2. **Fill in the Blanks** — Complete sentences with missing words. Tests grammar, vocabulary, and collocations.
+3. **Multiple Choice** — Select the correct answer from 3-4 options. Covers grammar, vocabulary, and comprehension.
+4. **True/False Questions** — Determine if statements are true or false based on a text or general knowledge.
+5. **Matching Exercise** — Match items from two columns (e.g., words to definitions, sentences to pictures).
+6. **Dialogue Practice** — Complete or create dialogues for specific situations. Practices conversational English.
+7. **Answer Questions** — Open-ended questions requiring full sentence answers. Tests comprehension and production.
+8. **Discussion Questions** — Thought-provoking questions for speaking practice. AI grades written responses.
+9. **Error Correction** — Find and correct grammatical or vocabulary errors in sentences.
+10. **Odd One Out** — Identify which word doesn't belong in a group and explain why.
+11. **Matching Halves** — Match sentence beginnings with correct endings.
+12. **Word Order** — Rearrange scrambled words into correct sentences.
+13. **Gap Text (Cloze)** — Fill gaps in a longer text. Tests contextual understanding.
+14. **Negative Prefixes** — Add correct negative prefixes (un-, in-, im-, ir-, dis-) to words.
+15. **Categorization** — Sort words or phrases into correct categories.
+16. **Complete Word** — Fill in missing letters to complete words based on definitions or context.
+17. **Paraphrasing** — Rewrite sentences keeping the same meaning using different words. AI graded.
+18. **Sentence Transformation** — Transform sentences using specific grammar structures (e.g., active→passive). AI graded.
+19. **Synonyms Matching** — Match words with their synonyms from a provided list.
+20. **Antonyms Matching** — Match words with their antonyms from a provided list.
+
+### Audio Exercises (5 types)
+21. **Listening Comprehension** — Listen to AI-generated audio and answer comprehension questions.
+22. **Fill in the Blanks (Audio)** — Listen to audio and fill in missing words in a transcript.
+23. **Multiple Choice (Audio)** — Listen to audio and select correct answers.
+24. **True/False (Audio)** — Listen to audio and determine if statements are true or false.
+25. **Answer Questions (Audio)** — Listen to audio and answer open-ended questions.
+
+### Picture Exercises (4 types)
+26. **Describe Picture** — Write a description of an AI-generated image. AI graded.
+27. **Multiple Choice (Picture)** — Look at an image and select the correct answer.
+28. **True/False (Picture)** — Look at an image and determine if statements are true or false.
+29. **Answer Questions (Picture)** — Look at an image and answer questions about it.
+
+---
+
+## Use Cases & Personas
+
+### Private English Tutor
+Anna teaches 15 adult students privately. She uses Edooqoo to generate personalized worksheets for each student based on their level and interests. She assigns homework between lessons and tracks each student's progress. The Student Hub lets her students study flashcards and complete homework independently.
+
+### Business English Coach
+Mark specializes in corporate English training. He creates worksheets focused on business vocabulary, email writing, and presentation skills. He uses the Welcome Test to assess new clients' levels and the DSLM to track their improvement over time.
+
+### Online ESL Teacher
+Sarah teaches students from different countries via Zoom. She uses the Lesson Calendar to manage bookings across time zones, generates worksheets during lessons using Live Session mode, and assigns homework for practice between sessions.
+
+### Language School Teacher
+David works at a language school with 30+ students. He uses Edooqoo to quickly generate varied materials for different class levels. The homework system saves him hours of manual grading each week.
+
+### Exam Preparation Tutor
+Lisa prepares students for Cambridge exams (FCE, CAE, CPE). She selects exercise types that mirror exam formats and uses progress tracking to identify weak areas that need more practice.
+
+### Corporate Language Trainer
+Tom provides English training for companies. He uses the booking system for scheduling sessions, generates industry-specific worksheets, and provides progress reports to HR departments using the skill metrics dashboard.
+
+---
+
+## Frequently Asked Questions
+
+### Do I need to be logged in to generate worksheets?
+No, you can try the worksheet generator without logging in (demo mode). However, to save worksheets and access all features, you need to create an account. When you sign up, you get 2 free tokens to start creating worksheets immediately.
+
+### What happens when I run out of tokens?
+When you have no tokens or monthly worksheets left, you can either upgrade to a subscription plan for monthly worksheets or purchase additional tokens. The system first uses your monthly allowance, then uses available tokens.
+
+### How does the upgrade/downgrade system work?
+You can upgrade anytime and pay only the prorated difference. For downgrades, the change takes effect at your next billing cycle. All unused monthly worksheets automatically roll over as tokens so you never lose them.
+
+### What are rollover tokens and how do they work?
+Unused monthly worksheets automatically convert to rollover tokens at the end of your billing cycle. These tokens are used after your purchased tokens but before new monthly worksheets. This ensures you never lose unused worksheets!
+
+### What is Share Interactive Worksheet?
+You can share any worksheet with students via a secure permanent link (auto-generated at creation). Students can open it in their browser, fill in answers interactively, and you can see their responses in real-time or review them later. Students can also access all their shared worksheets through the Student Hub portal. Perfect for remote teaching!
+
+### What is Live Session mode?
+Live Session mode allows you to conduct real-time lessons. You can see all students' answers as they type, add exercises on-the-fly (up to 12 per session), and view nano-skill mastery ratings per exercise. AI evaluation assists with scoring open-ended exercises like paraphrasing and discussion questions, making it perfect for online group classes or tutoring sessions.
+
+### How do Flashcards work?
+Add vocabulary to flashcards by clicking the + button on individual words in the Vocabulary Sheet, using 'Add All to Flashcards' button, or by selecting words directly on the worksheet. You can also add words manually in the student's Flashcard panel. Students study using the spaced repetition system (SM-2 algorithm) for effective learning. Students can also browse and study their flashcards independently through the Student Hub portal.
+
+### What is Student Knowledge tracking?
+Student Knowledge lets you record important notes about each student - their strengths, weaknesses, interests, and preferences. This information is automatically fed to the AI when generating worksheets, creating more personalized and relevant content for each student.
+
+### How does Homework Assignments work?
+You can assign any worksheet or specific exercises as homework. Set deadlines, send email notifications to students, track completion status, and add teacher comments. Students can complete homework interactively online — either through the direct link or via the Student Hub portal. AI automatically evaluates open-ended answers and pre-fills mastery scores for teacher review.
+
+### Can I draw on worksheets?
+Yes! The Draw on Worksheet feature lets you annotate worksheets during lessons - highlight text, circle answers, draw diagrams. Your drawings are saved and can be exported with the worksheet.
+
+### What file formats can I download?
+You can download worksheets as HTML files (recommended for best quality) or PDF files. HTML files work offline and preserve all formatting perfectly. All registered users have automatic download access.
+
+### How does student management work?
+You can add unlimited students to your account. Each worksheet gets assigned to a specific student, and you can view all worksheets created for each student. You can send each student a Welcome Test to assess their level, and the AI creates a detailed Learning Profile with strengths, weaknesses, and a recommended Learning Path. Student selection is required when generating worksheets.
+
+### What exercise types are available?
+Edooqoo offers 29 exercise types organized in 3 categories: 20 Basic Exercises, 5 Audio Exercises, and 4 Picture Exercises. All exercise types are available on all plans including the Free Demo.
+
+### How long does worksheet generation take?
+Worksheet generation typically takes 30-60 seconds. The AI creates custom content based on your specifications like English level, lesson topic, learning goals, and student context.
+
+### Can I cancel my subscription anytime?
+Yes, you can cancel anytime through the 'Manage Subscription' button in your profile, which opens the Stripe Customer Portal. Your subscription remains active until the end of your current billing period.
+
+### What happens if worksheet generation fails?
+If generation fails, you'll see an error message and return to the form with all your input preserved. No tokens are consumed for failed generations, so you can try again without penalty.
+
+### Do you offer refunds or free trials?
+We offer 2 free tokens when you sign up to test the service. For subscription refunds, please contact support. You can also start with our Free Demo plan to evaluate the service.
+
+### Is there a limit on students I can manage?
+No, there's no limit on the number of students you can add to your account. Student management is available for all registered users at no additional cost.
+
+### What's the difference between tokens and monthly worksheets?
+Monthly worksheets are included with subscription plans and reset each billing cycle. Tokens are purchased separately and never expire. The system uses monthly worksheets first, then tokens.
+
+### Can I use the service for commercial purposes?
+Yes, all plans support commercial use including private tutoring, language schools, and corporate training. The worksheets you create are yours to use commercially.
+
+### Can I duplicate worksheets?
+Yes! You can duplicate any worksheet to create a copy. This is useful when you want to reuse similar content for different students or create variations of the same lesson.
+
+### What is the Student Hub?
+The Student Hub is a dedicated portal for your students. Students visit the portal, enter their email, and select their teacher to access a personalized dashboard. From there they can view quick stats, browse shared worksheets, study flashcards with spaced repetition, complete homework assignments, book and manage lessons, and sync with Google Calendar — all without needing a teacher account.
+
+### What is the Welcome Test & Learning Path?
+The Welcome Test is an AI-powered 49-question assessment covering grammar, vocabulary, reading, listening, and speaking. After the student completes it, AI analyzes the results to create a detailed Learning Profile with skill scores, strengths, and weaknesses. It also determines one of 4 Learning Paths (Comfort, Guided, Accelerated, or Target) based on 15 behavioral and performance signals. Teachers can preview all questions, review results, and use the profile to generate more personalized worksheets.
+
+### How does Lesson Booking work?
+Teachers get a public booking page link to share with students. Students enter their email, browse available time slots, and book lessons — including weekly recurring bookings. Reschedule and cancellation options are configurable by the teacher. The system integrates with Google Calendar for automatic sync and supports Google Meet link auto-generation. Teachers set availability rules, buffer times, booking modes, and slot limits in Calendar Settings.
+
+### How does Student Progress tracking work?
+Student skills are tracked at the nano-skill level with CEFR tags across categories: grammar, vocabulary, speaking, listening, reading, and writing. Mastery metrics update automatically from worksheet completions, homework submissions, flashcard reviews, and teacher evaluations. Teachers can view mastery trends (improving, stable, or declining), filter by time period and CEFR level, and get AI-generated suggestions for future worksheets based on skill gaps.
+
+### How does AI Evaluation work?
+AI automatically evaluates open-ended student answers — such as sentence transformation, paraphrasing, discussion questions, and descriptions — and pre-fills mastery scores (0-100) for each item. Teachers can review, adjust, and confirm the AI scores. This works across worksheet review, homework submissions, and live sessions, saving significant time on manual evaluation.
+
+### What is Google Calendar integration?
+Teachers can connect their Google Calendar to automatically sync lesson bookings, cancellations, and reschedules. Students can also connect their own Google Calendar via the Student Hub. The integration supports Google Meet link auto-generation for online lessons, customizable calendar event colors by status (available, booked, completed, no-show), and configurable sync preferences — all managed in Calendar Settings.
+
+---
+
+## Comparison with Alternatives
+
+| Feature | Edooqoo | ISLCollective | Liveworksheets | BusyTeacher | Canva for Education |
+|---------|---------|---------------|----------------|-------------|---------------------|
+| AI-generated worksheets | ✅ Fully AI-generated, personalized per student | ❌ User-uploaded only | ❌ Manual creation | ❌ User-uploaded | ❌ Template-based |
+| Exercise types | 29 types (basic, audio, picture) | Varies by upload | Limited interactive | Varies by upload | Design-focused |
+| Homework with AI grading | ✅ Automatic AI grading | ❌ | ❌ | ❌ | ❌ |
+| Student progress tracking | ✅ Nano-skill DSLM | ❌ | Basic | ❌ | ❌ |
+| Flashcards with spaced repetition | ✅ SM-2 algorithm | ❌ | ❌ | ❌ | ❌ |
+| Lesson calendar & booking | ✅ Full calendar system | ❌ | ❌ | ❌ | ❌ |
+| Student portal | ✅ Student Hub | ❌ | ❌ | ❌ | ❌ |
+| Placement test | ✅ 49-question AI test | ❌ | ❌ | ❌ | ❌ |
+| Personalization | ✅ Uses student skill data | ❌ | ❌ | ❌ | ❌ |
+| CEFR levels | A1-C2 | Varies | Varies | Varies | N/A |
+| Price | From $0 (free trial) | Free (limited) | Free (limited) | Free | Free (limited) |
+
+### Why Edooqoo is Different
+Edooqoo is the only platform that combines AI worksheet generation with a complete teaching ecosystem. Other platforms are either content libraries (ISLCollective, BusyTeacher) where teachers share their own materials, or basic worksheet makers (Liveworksheets) without AI or student management. Edooqoo generates unique, personalized content for each student using AI, tracks their progress at the nano-skill level, and provides tools for the entire teaching workflow — from placement test to lesson booking to homework grading.
+
+---
+
+## Technical Capabilities
+
+### Dynamic Student Learning Model (DSLM)
+DSLM is Edooqoo's proprietary 4-layer system for tracking and utilizing student learning data:
+- **Layer A (Event Log)**: Every student interaction generates timestamped events with skill tags
+- **Layer B (Metrics)**: Events are aggregated into nano-skill metrics using exponential decay weighting
+- **Layer C (Profile)**: Metrics are synthesized into a student learning profile with strengths and weaknesses
+- **Layer D (Decision Engine)**: Profile data drives AI recommendations for future lessons and worksheets
+
+### AI Grading Engine
+Edooqoo uses AI to automatically grade open-ended exercises including paraphrasing, sentence transformation, discussion questions, and picture descriptions. The AI provides mastery scores (0-100) that teachers can review and adjust.
+
+### SM-2 Spaced Repetition
+Flashcards use the SM-2 algorithm with quality ratings to optimize review intervals. The system tracks easiness factor, repetition count, and interval days for each card per student.
+
+---
+
+## Getting Started
+
+1. **Sign up** at https://edooqoo.com/signup — you get 2 free worksheets
+2. **Add your first student** — enter their name, email, and English level
+3. **Generate a worksheet** — select topic, level, exercise types, and click Generate
+4. **Share with your student** — use the permanent link or assign as homework
+5. **Track progress** — view skill metrics, mastery trends, and AI suggestions
+
+Start creating personalized English worksheets today at https://edooqoo.com

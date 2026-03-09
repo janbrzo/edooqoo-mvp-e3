@@ -6,7 +6,17 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-09) - Unified Navigation + Accurate Stats:**
+**Ostatnia aktualizacja (2026-03-09) - LLM Optimization (LLMO):**
+- ✅ **AI Discovery**: `public/llms.txt` + `public/llms-full.txt` (~3000 słów) — pliki discovery dla crawlerów AI (ChatGPT, Claude, Perplexity)
+- ✅ **robots.txt**: 12 AI bot user-agents (GPTBot, ClaudeBot, PerplexityBot, itd.) + link do sitemap
+- ✅ **sitemap.xml**: Statyczny sitemap z 7 stronami i priorytetami
+- ✅ **JSON-LD**: Structured data `SoftwareApplication` + `Organization` w `index.html`
+- ✅ **Meta tagi**: Zaktualizowany title, description, keywords, canonical URL, OG, Twitter cards
+- ✅ **Strona /about**: Nowa `About.tsx` z pełnym opisem produktu, 29 typów ćwiczeń, FAQ, porównanie z konkurencją
+- ✅ **Static HTML**: `public/about.html` — kopia dla crawlerów nie renderujących JS
+- ✅ **Footer**: Dodany link "About"
+
+**Poprzednia aktualizacja (2026-03-09) - Unified Navigation + Accurate Stats:**
 - ✅ **StickyNav universalny**: `scrollToPricing` prop opcjonalny (był wymagany). Dodano `useNavigate` fallback — jeśli prop nie podany, "Pricing" button redirectuje do `/pricing`
 - ✅ **Unified navigation**: StickyNav zastąpił custom headery w `Dashboard.tsx`, `Profile.tsx`, `Pricing.tsx`, `PrivacyPolicy.tsx`, `CookiePolicy.tsx` — spójny wygląd na wszystkich stronach
 - ✅ **Dashboard quick-actions bar**: Nowy inline pasek pod StickyNav z: "Generate Worksheet" (primary button), Calendar (z unread badge), subscription type Badge

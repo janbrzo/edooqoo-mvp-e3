@@ -1,7 +1,9 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Mar 8, 2026):** Landing Page "Product-First" Redesign — New high-conversion landing page: hero with social proof, form in premium card, stats bar (2000+ worksheets, 29 types, 15+ countries), value cards, ecosystem section showing full platform (Live Sessions, Homework+AI, Flashcards, Calendar, Welcome Test, Share), testimonials, final CTA. Sticky nav with conditional UI. Expected impact: higher signup conversion from anonymous visitors who now see the full value proposition.
+**Latest Update (Mar 9, 2026):** LLM Optimization (LLMO) — Full AI discovery layer: llms.txt/llms-full.txt for AI crawlers, robots.txt with 12 AI bots, sitemap.xml, JSON-LD structured data (SoftwareApplication + Organization), new /about page with product info/FAQ/competitor comparison, static about.html for non-JS crawlers. Expected impact: edooqoo.com becomes discoverable and recommendable by ChatGPT, Claude, Perplexity, and other AI assistants when teachers ask about English teaching tools.
+
+**Previous Update (Mar 9, 2026):** Landing Page "Product-First" Redesign — New high-conversion landing page: hero with social proof, form in premium card, stats bar (2000+ worksheets, 29 types, 15+ countries), value cards, ecosystem section showing full platform (Live Sessions, Homework+AI, Flashcards, Calendar, Welcome Test, Share), testimonials, final CTA. Sticky nav with conditional UI. Expected impact: higher signup conversion from anonymous visitors who now see the full value proposition.
 
 **Previous Update (Mar 8, 2026):** FAQ & Feature Documentation Update — All FAQ items updated. 6 new FAQ entries added.
 
