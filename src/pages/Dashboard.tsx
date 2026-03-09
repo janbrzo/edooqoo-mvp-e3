@@ -15,18 +15,13 @@ import { StudentSelector } from "@/components/StudentSelector";
 import { useProfile } from "@/hooks/useProfile";
 import { format } from "date-fns";
 import { 
-  User, 
-  GraduationCap, 
   Users, 
   FileText, 
   Calendar,
-  TrendingUp,
   Plus,
-  BookOpen,
-  Clock,
   Target,
   Coins,
-  Bell,
+  BookOpen,
   Pencil,
   Search,
   ArrowUpAZ,
@@ -40,10 +35,8 @@ import { MediaBadges } from '@/components/worksheet/MediaBadges';
 import { hasImage, hasAudio } from '@/utils/worksheetUtils';
 import { useAllWorksheetHomework } from "@/hooks/useAllWorksheetHomework";
 import { WorksheetHomeworkList } from "@/components/dashboard/WorksheetHomeworkList";
-import { useCalendarNotifications } from "@/hooks/useCalendarNotifications";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
-import { HomeworkNotificationBadge } from "@/components/homework/HomeworkNotificationBadge";
 import RenameDialog from "@/components/RenameDialog";
 import { toast } from "sonner";
 import StickyNav from '@/components/landing/StickyNav';
@@ -56,7 +49,7 @@ const Dashboard = () => {
   const { worksheets, loading: historyLoading, refetch: refetchWorksheets, deleteWorksheet } = useWorksheetHistory(undefined, true, true);
   const { thisMonthCount, loading: statsLoading } = useWorksheetStats();
   const { profile: userProfile } = useProfile();
-  const { unreadCount: calendarUnread } = useCalendarNotifications(user?.id);
+  
   const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
   const navigate = useNavigate();
   const [selectedTimeFrame, setSelectedTimeFrame] = useState("month");
@@ -177,23 +170,12 @@ const Dashboard = () => {
       <StickyNav isRegisteredUser={true} tokenLeft={tokenLeft} user={user} />
 
       {/* Quick actions bar */}
-      <div className="border-b bg-background/80 backdrop-blur-sm py-2 px-4 sm:px-6 flex flex-wrap items-center gap-2">
-        <Button variant="default" size="sm" onClick={handleGenerateWorksheet}>
+      <div className="border-b bg-background/80 backdrop-blur-sm py-2 px-4 sm:px-6 flex items-center gap-2 overflow-x-auto">
+        <Button variant="default" size="sm" onClick={handleGenerateWorksheet} className="shrink-0">
           <Plus className="h-4 w-4 mr-2" />
           Generate Worksheet
         </Button>
-        <Button asChild variant="outline" size="sm" className="relative">
-          <Link to="/calendar">
-            <Calendar className="h-4 w-4 mr-2" />
-            Calendar
-            {calendarUnread > 0 && (
-              <Badge className="absolute -top-1.5 -right-1.5 h-5 min-w-5 flex items-center justify-center p-0 text-[10px] bg-destructive text-destructive-foreground">
-                {calendarUnread > 9 ? '9+' : calendarUnread}
-              </Badge>
-            )}
-          </Link>
-        </Button>
-        <Badge variant="secondary" className="text-sm">
+        <Badge variant="secondary" className="text-sm shrink-0">
           {subscriptionType}
         </Badge>
       </div>
