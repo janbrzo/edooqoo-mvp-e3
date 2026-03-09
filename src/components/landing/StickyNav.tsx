@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -12,12 +12,13 @@ interface StickyNavProps {
   isRegisteredUser: boolean;
   tokenLeft: number;
   user: any;
-  scrollToPricing: () => void;
+  scrollToPricing?: () => void;
 }
 
 const StickyNav: React.FC<StickyNavProps> = ({ isRegisteredUser, tokenLeft, user, scrollToPricing }) => {
   const isMobile = useIsMobile();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const navigate = useNavigate();
 
   const Logo = () => (
     <Link to="/" className="text-lg font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
@@ -91,7 +92,10 @@ const StickyNav: React.FC<StickyNavProps> = ({ isRegisteredUser, tokenLeft, user
           </SheetTrigger>
           <SheetContent side="right" className="w-64">
             <div className="flex flex-col gap-3 pt-8">
-              <Button variant="ghost" size="sm" onClick={() => { scrollToPricing(); setSheetOpen(false); }}>
+              <Button variant="ghost" size="sm" onClick={() => {
+                scrollToPricing ? scrollToPricing() : navigate('/pricing');
+                setSheetOpen(false);
+              }}>
                 Pricing
               </Button>
               <Button asChild variant="outline" size="sm" onClick={() => setSheetOpen(false)}>
@@ -116,7 +120,12 @@ const StickyNav: React.FC<StickyNavProps> = ({ isRegisteredUser, tokenLeft, user
     <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border h-14 px-6 flex items-center justify-between">
       <Logo />
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={scrollToPricing} className="text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => scrollToPricing ? scrollToPricing() : navigate('/pricing')}
+          className="text-muted-foreground hover:text-foreground"
+        >
           Pricing
         </Button>
         <Button asChild variant="ghost" size="sm">
