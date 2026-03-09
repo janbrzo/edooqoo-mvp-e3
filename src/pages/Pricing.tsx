@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Check, User, GraduationCap, Zap, Users, Gift, ChevronDown, ChevronUp, Mail, FileText, DollarSign, Bell } from 'lucide-react';
+import { Check, Zap, Users, Gift, ChevronDown, ChevronUp, Mail } from 'lucide-react';
 import { useAuthFlow } from '@/hooks/useAuthFlow';
 import { useTokenSystem } from '@/hooks/useTokenSystem';
 import { usePlanLogic } from '@/hooks/usePlanLogic';
@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { PricingCalculator } from '@/components/PricingCalculator';
 import { ConfirmDowngradeDialog } from '@/components/ConfirmDowngradeDialog';
-import { HomeworkNotificationBadge } from '@/components/homework/HomeworkNotificationBadge';
+
 import { faqItems } from '@/constants/faqItems';
 import StickyNav from '@/components/landing/StickyNav';
 
