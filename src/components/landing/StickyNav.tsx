@@ -17,10 +17,13 @@ interface StickyNavProps {
   onGenerateWorksheet?: () => void;
 }
 
-const StickyNav: React.FC<StickyNavProps> = ({ isRegisteredUser, tokenLeft, user, scrollToPricing }) => {
+const StickyNav: React.FC<StickyNavProps> = ({ isRegisteredUser, tokenLeft, user, scrollToPricing, subscriptionType, onGenerateWorksheet }) => {
   const isMobile = useIsMobile();
   const [sheetOpen, setSheetOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDashboard = location.pathname === '/dashboard';
+  const isProfile = location.pathname === '/profile';
 
   const Logo = () => (
     <Link to="/" className="text-lg font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
@@ -34,6 +37,15 @@ const StickyNav: React.FC<StickyNavProps> = ({ isRegisteredUser, tokenLeft, user
         <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border h-14 px-4 flex items-center justify-between">
           <Logo />
           <div className="flex items-center gap-2">
+            {onGenerateWorksheet && (
+              <Button size="sm" onClick={onGenerateWorksheet} className="h-8 text-xs">
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Generate
+              </Button>
+            )}
+            {subscriptionType && (
+              <Badge variant="secondary" className="text-xs shrink-0">{subscriptionType}</Badge>
+            )}
             <Badge variant="outline" className="text-xs">
               Tokens: {tokenLeft}
             </Badge>
@@ -46,12 +58,16 @@ const StickyNav: React.FC<StickyNavProps> = ({ isRegisteredUser, tokenLeft, user
               </SheetTrigger>
               <SheetContent side="right" className="w-64">
                 <div className="flex flex-col gap-3 pt-8">
-                  <Button asChild variant="outline" size="sm" onClick={() => setSheetOpen(false)}>
-                    <Link to="/dashboard"><GraduationCap className="h-4 w-4 mr-2" />Dashboard</Link>
-                  </Button>
-                  <Button asChild variant="outline" size="sm" onClick={() => setSheetOpen(false)}>
-                    <Link to="/profile"><User className="h-4 w-4 mr-2" />Profile</Link>
-                  </Button>
+                  {!isDashboard && (
+                    <Button asChild variant="outline" size="sm" onClick={() => setSheetOpen(false)}>
+                      <Link to="/dashboard"><GraduationCap className="h-4 w-4 mr-2" />Dashboard</Link>
+                    </Button>
+                  )}
+                  {!isProfile && (
+                    <Button asChild variant="outline" size="sm" onClick={() => setSheetOpen(false)}>
+                      <Link to="/profile"><User className="h-4 w-4 mr-2" />Profile</Link>
+                    </Button>
+                  )}
                   <GCalStatusButton />
                 </div>
               </SheetContent>
@@ -65,16 +81,29 @@ const StickyNav: React.FC<StickyNavProps> = ({ isRegisteredUser, tokenLeft, user
       <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-border h-14 px-6 flex items-center justify-between">
         <Logo />
         <div className="flex items-center gap-3">
+          {onGenerateWorksheet && (
+            <Button size="sm" onClick={onGenerateWorksheet}>
+              <Plus className="h-4 w-4 mr-2" />
+              Generate Worksheet
+            </Button>
+          )}
+          {subscriptionType && (
+            <Badge variant="secondary" className="text-sm shrink-0">{subscriptionType}</Badge>
+          )}
           <Badge variant="outline" className="text-sm">
             Tokens: {tokenLeft}
           </Badge>
           <HomeworkNotificationBadge />
-          <Button asChild variant="outline" size="sm">
-            <Link to="/dashboard"><GraduationCap className="h-4 w-4 mr-2" />Dashboard</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/profile"><User className="h-4 w-4 mr-2" />Profile</Link>
-          </Button>
+          {!isDashboard && (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/dashboard"><GraduationCap className="h-4 w-4 mr-2" />Dashboard</Link>
+            </Button>
+          )}
+          {!isProfile && (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/profile"><User className="h-4 w-4 mr-2" />Profile</Link>
+            </Button>
+          )}
           <GCalStatusButton />
         </div>
       </nav>
