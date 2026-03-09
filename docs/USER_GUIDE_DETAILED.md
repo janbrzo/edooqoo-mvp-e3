@@ -1,7 +1,9 @@
 
 # English Worksheet Generator - Complete User Guide
 
-**Latest Update (March 8, 2026):** Landing Page Redesign — New product-first landing page. Anonymous users see: sticky nav → hero headline with social proof → worksheet form in premium card → stats bar → value cards → ecosystem section (6 platform features) → testimonials → pricing → final CTA. Logged-in users see: sticky nav with tokens/dashboard/profile → clean form. Removed old sidebar, isometric background, and progress bar.
+**Latest Update (March 9, 2026):** Button & Primary Color Unification — All buttons upgraded from pastel lavender to deep saturated violet. Hero CTA uses violet-to-indigo gradient. Consistent brand identity across landing, signup, pricing, and dashboard.
+
+**Previous Update (March 8, 2026):** Landing Page Redesign — New product-first landing page. Anonymous users see: sticky nav → hero headline with social proof → worksheet form in premium card → stats bar → value cards → ecosystem section (6 platform features) → testimonials → pricing → final CTA. Logged-in users see: sticky nav with tokens/dashboard/profile → clean form. Removed old sidebar, isometric background, and progress bar.
 
 **Previous Update (March 8, 2026):** FAQ & Feature Documentation Update — Updated all FAQ items. Added 6 new FAQ entries.
 

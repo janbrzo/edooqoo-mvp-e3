@@ -1,7 +1,9 @@
 
 # Business Analysis - English Worksheet Generator
 
-**Latest Update (Mar 8, 2026):** Landing Page "Product-First" Redesign — New high-conversion landing page: hero with social proof, form in premium card, stats bar (2000+ worksheets, 29 types, 15+ countries), value cards, ecosystem section showing full platform (Live Sessions, Homework+AI, Flashcards, Calendar, Welcome Test, Share), testimonials, final CTA. Sticky nav with conditional UI. Expected impact: higher signup conversion from anonymous visitors who now see the full value proposition.
+**Latest Update (Mar 9, 2026):** Button & Primary Color Unification — Fixed `--primary` from pastel (#9b87f5) to deep violet (#7c3aed). All default buttons now feel premium and intentional. Hero CTA has violet→indigo gradient matching brand. Expected impact: stronger visual confidence, higher perceived quality → better conversion.
+
+**Previous Update (Mar 8, 2026):** Landing Page "Product-First" Redesign — New high-conversion landing page: hero with social proof, form in premium card, stats bar (2000+ worksheets, 29 types, 15+ countries), value cards, ecosystem section showing full platform (Live Sessions, Homework+AI, Flashcards, Calendar, Welcome Test, Share), testimonials, final CTA. Sticky nav with conditional UI. Expected impact: higher signup conversion from anonymous visitors who now see the full value proposition.
 
 **Previous Update (Mar 8, 2026):** FAQ & Feature Documentation Update — All FAQ items updated. 6 new FAQ entries added.
 
