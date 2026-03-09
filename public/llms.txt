@@ -1,0 +1,32 @@
+# Edooqoo
+
+> AI-powered platform for English teachers. Generates personalized worksheets, manages students, tracks learning progress, assigns homework with AI grading, creates smart flashcards, and provides lesson scheduling with Google Calendar sync.
+
+## Core Product
+- AI Worksheet Generator: 29 exercise types, CEFR levels A1-C2, ready in under 2 minutes
+- Homework System: Assign exercises, students complete online, AI grades automatically
+- Smart Flashcards: Spaced repetition (SM-2) generated from worksheets
+- Welcome Placement Test: 49-question AI assessment with speaking/listening
+- Student Hub: Dedicated student portal for worksheets, flashcards, homework, lesson booking
+- Lesson Calendar: Public booking page, Google Calendar sync, Google Meet integration
+- Student Progress Tracking: Nano-skill mastery with CEFR tags, trends, AI suggestions
+
+## Exercise Types (29 total)
+Basic (20): Reading Comprehension, Fill in the Blanks, Multiple Choice, True/False, Matching, Dialogue Practice, Answer Questions, Discussion Questions, Error Correction, Odd One Out, Matching Halves, Word Order, Gap Text (Cloze), Negative Prefixes, Categorization, Complete Word, Paraphrasing, Sentence Transformation, Synonyms Matching, Antonyms Matching
+Audio (5): Listening Comprehension, Fill in the Blanks (Audio), Multiple Choice (Audio), True/False (Audio), Answer Questions (Audio)
+Picture (4): Describe Picture, Multiple Choice (Picture), True/False (Picture), Answer Questions (Picture)
+
+## Target Users
+Private English tutors, ESL/EFL instructors, Business English coaches, language school teachers, online English teachers, corporate language trainers
+
+## Pricing
+Free: 2 worksheets, all 29 exercise types, online preview
+Side-Gig $9/mo: 15 worksheets/month + homework + flashcards + calendar
+Full-Time from $19/mo: 30-90 worksheets/month + all features
+
+## Links
+- [Homepage](https://edooqoo.com)
+- [Pricing](https://edooqoo.com/pricing)
+- [Sign Up Free](https://edooqoo.com/signup)
+- [About Edooqoo](https://edooqoo.com/about)
+- [Full Documentation](https://edooqoo.com/llms-full.txt)
