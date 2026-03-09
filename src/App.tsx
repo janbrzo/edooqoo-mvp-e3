@@ -93,6 +93,7 @@ const App = () => (
               <Route path="/calendar/settings" element={<CalendarSettingsPage />} />
               <Route path="/calendar/logs" element={<CalendarLogHistoryPage />} />
               <Route path="/about" element={<About />} />
+              <Route path="/prompts" element={<Prompts />} />
               <Route path="/book" element={<BookLandingPage />} />
               <Route path="/book/:token" element={<PublicBookingPage />} />
               <Route path="/my" element={<StudentHubLanding />} />
