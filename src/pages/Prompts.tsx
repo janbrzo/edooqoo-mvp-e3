@@ -117,7 +117,7 @@ const Prompts = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <StickyNav />
+      <StickyNav isRegisteredUser={false} tokenLeft={0} user={null} />
       
       <main className="container mx-auto px-4 py-12 max-w-5xl">
         <header className="text-center mb-12">
