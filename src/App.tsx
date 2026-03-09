@@ -41,6 +41,7 @@ import PublicBookingPage from "./pages/PublicBookingPage";
 import StudentLessonsPage from "./pages/StudentLessonsPage";
 import CalendarLogHistoryPage from "./components/calendar/CalendarLogHistoryPage";
 import BookLandingPage from "./pages/BookLandingPage";
+import About from "./pages/About";
 import StudentHubLanding from "./pages/StudentHubLanding";
 import StudentHubDashboard from "./pages/StudentHubDashboard";
 import StudentHubFlashcards from "./pages/StudentHubFlashcards";
