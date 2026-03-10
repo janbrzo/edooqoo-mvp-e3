@@ -1,0 +1,1 @@
+ALTER TABLE public.flashcard_sets ADD COLUMN share_expires_at timestamptz;

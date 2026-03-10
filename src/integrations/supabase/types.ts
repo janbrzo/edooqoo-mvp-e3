@@ -893,6 +893,7 @@ export type Database = {
           description: string | null
           id: string
           is_bidirectional: boolean | null
+          share_expires_at: string | null
           share_token: string | null
           student_id: string
           teacher_id: string
@@ -906,6 +907,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_bidirectional?: boolean | null
+          share_expires_at?: string | null
           share_token?: string | null
           student_id: string
           teacher_id: string
@@ -919,6 +921,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_bidirectional?: boolean | null
+          share_expires_at?: string | null
           share_token?: string | null
           student_id?: string
           teacher_id?: string
