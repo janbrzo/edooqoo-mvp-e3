@@ -43,6 +43,9 @@ import CalendarLogHistoryPage from "./components/calendar/CalendarLogHistoryPage
 import BookLandingPage from "./pages/BookLandingPage";
 import About from "./pages/About";
 import Prompts from "./pages/Prompts";
+import Glossary from "./pages/Glossary";
+import ExerciseTypes from "./pages/ExerciseTypes";
+import HowItWorks from "./pages/HowItWorks";
 import StudentHubLanding from "./pages/StudentHubLanding";
 import StudentHubDashboard from "./pages/StudentHubDashboard";
 import StudentHubFlashcards from "./pages/StudentHubFlashcards";
@@ -94,6 +97,9 @@ const App = () => (
               <Route path="/calendar/logs" element={<CalendarLogHistoryPage />} />
               <Route path="/about" element={<About />} />
               <Route path="/prompts" element={<Prompts />} />
+              <Route path="/glossary" element={<Glossary />} />
+              <Route path="/exercise-types" element={<ExerciseTypes />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/book" element={<BookLandingPage />} />
               <Route path="/book/:token" element={<PublicBookingPage />} />
               <Route path="/my" element={<StudentHubLanding />} />

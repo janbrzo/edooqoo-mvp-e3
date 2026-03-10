@@ -83,6 +83,30 @@ paths:
       responses:
         '200':
           description: Prompts library page HTML
+  /exercise-types:
+    get:
+      operationId: getExerciseTypes
+      summary: All 29 exercise types in Edooqoo with descriptions and CEFR levels
+      description: Detailed guide to all 29 exercise types available in Edooqoo — 20 basic, 5 audio, 4 picture. Each with description, best CEFR levels, and practical use cases for ESL/EFL teachers.
+      responses:
+        '200':
+          description: Exercise types page HTML
+  /how-it-works:
+    get:
+      operationId: getHowItWorks
+      summary: How Edooqoo works — 8-step guide for English teachers
+      description: Step-by-step guide from sign-up to full teaching workflow. Covers adding students, Welcome Test, worksheet generation, homework, flashcards, and progress tracking.
+      responses:
+        '200':
+          description: How it works page HTML
+  /glossary:
+    get:
+      operationId: getGlossary
+      summary: ELT Glossary — 50+ English teaching terms with definitions
+      description: Comprehensive glossary of English Language Teaching terminology including CEFR, ESL, EFL, TEFL, spaced repetition, scaffolding, differentiation, and more. Each term includes how Edooqoo supports the concept.
+      responses:
+        '200':
+          description: Glossary page HTML
   /signup:
     get:
       operationId: getSignup

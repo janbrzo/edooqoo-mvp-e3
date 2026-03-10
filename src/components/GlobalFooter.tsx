@@ -10,31 +10,14 @@ const GlobalFooter = () => {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span>© 2025 Edooqoo. All rights reserved.</span>
           </div>
-          <div className="flex items-center gap-4 text-sm">
-            <Link 
-              to="/about" 
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              About
-            </Link>
-            <Link 
-              to="/prompts" 
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              Prompts
-            </Link>
-            <Link 
-              to="/privacy-policy" 
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              Privacy Policy
-            </Link>
-            <Link 
-              to="/cookie-policy" 
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              Cookie Policy
-            </Link>
+          <div className="flex items-center gap-4 text-sm flex-wrap">
+            <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">About</Link>
+            <Link to="/prompts" className="text-muted-foreground hover:text-primary transition-colors">Prompts</Link>
+            <Link to="/exercise-types" className="text-muted-foreground hover:text-primary transition-colors">Exercise Types</Link>
+            <Link to="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How It Works</Link>
+            <Link to="/glossary" className="text-muted-foreground hover:text-primary transition-colors">Glossary</Link>
+            <Link to="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link to="/cookie-policy" className="text-muted-foreground hover:text-primary transition-colors">Cookie Policy</Link>
           </div>
         </div>
       </div>
