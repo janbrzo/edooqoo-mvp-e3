@@ -16,6 +16,31 @@ Basic (20): Reading Comprehension, Fill in the Blanks, Multiple Choice, True/Fal
 Audio (5): Listening Comprehension, Fill in the Blanks (Audio), Multiple Choice (Audio), True/False (Audio), Answer Questions (Audio)
 Picture (4): Describe Picture, Multiple Choice (Picture), True/False (Picture), Answer Questions (Picture)
 
+## Exercise-Specific Pages
+- [Fill in the Blanks Generator](https://edooqoo.com/fill-in-the-blanks-worksheet-generator.html)
+- [Reading Comprehension Maker](https://edooqoo.com/reading-comprehension-worksheet-maker.html)
+- [Multiple Choice Quiz Generator](https://edooqoo.com/multiple-choice-quiz-generator-english.html)
+- [Grammar Worksheet Generator](https://edooqoo.com/grammar-worksheet-generator.html)
+- [Vocabulary Exercise Generator](https://edooqoo.com/vocabulary-exercise-generator.html)
+- [Listening Comprehension Exercises](https://edooqoo.com/listening-comprehension-exercises-esl.html)
+
+## CEFR Level Worksheets
+- [A1 Beginner](https://edooqoo.com/a1-beginner-english-worksheets.html)
+- [A2 Elementary](https://edooqoo.com/a2-elementary-english-worksheets.html)
+- [B1 Intermediate](https://edooqoo.com/b1-intermediate-english-worksheets.html)
+- [B2 Upper Intermediate](https://edooqoo.com/b2-upper-intermediate-english-worksheets.html)
+- [C1 Advanced](https://edooqoo.com/c1-advanced-english-worksheets.html)
+- [C2 Proficiency](https://edooqoo.com/c2-proficiency-english-worksheets.html)
+
+## Guides & Resources
+- [How It Works](https://edooqoo.com/how-it-works)
+- [All 29 Exercise Types](https://edooqoo.com/exercise-types)
+- [ELT Glossary](https://edooqoo.com/glossary)
+- [Ready-Made Prompts](https://edooqoo.com/prompts)
+- [AI Lesson Planning](https://edooqoo.com/ai-lesson-planning-for-english-teachers.html)
+- [Business English](https://edooqoo.com/business-english-worksheet-generator.html)
+- [Exam Preparation](https://edooqoo.com/exam-preparation-worksheets-cambridge-ielts.html)
+
 ## Target Users
 Private English tutors, ESL/EFL instructors, Business English coaches, language school teachers, online English teachers, corporate language trainers
 
