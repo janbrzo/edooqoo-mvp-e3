@@ -286,4 +286,67 @@ Flashcards use the SM-2 algorithm with quality ratings to optimize review interv
 4. **Share with your student** — use the permanent link or assign as homework
 5. **Track progress** — view skill metrics, mastery trends, and AI suggestions
 
+---
+
+## ELT Glossary — Key Terms
+
+### CEFR (Common European Framework of Reference for Languages)
+A 6-level scale (A1, A2, B1, B2, C1, C2) used worldwide to describe language proficiency. Edooqoo generates worksheets calibrated to all 6 CEFR levels, adjusting vocabulary complexity, grammar structures, and text length accordingly.
+
+### ESL (English as a Second Language)
+Teaching English to non-native speakers in an English-speaking country. Edooqoo serves ESL teachers with culturally diverse, real-world content generation.
+
+### EFL (English as a Foreign Language)
+Teaching English to non-native speakers in a non-English-speaking country. Edooqoo's online platform works globally for EFL teachers regardless of location.
+
+### TEFL (Teaching English as a Foreign Language)
+The qualification and practice of teaching English abroad. Edooqoo helps TEFL teachers create professional materials quickly without relying on textbooks.
+
+### TESOL (Teaching English to Speakers of Other Languages)
+An umbrella term encompassing both ESL and EFL contexts. Edooqoo's 29 exercise types cover all TESOL teaching scenarios.
+
+### Spaced Repetition (SM-2 Algorithm)
+A learning technique that schedules reviews at increasing intervals based on recall difficulty. Edooqoo's flashcard system uses the SM-2 algorithm to optimize vocabulary retention for each student.
+
+### Nano-skill
+The smallest measurable unit of language competence in Edooqoo's DSLM system. Example: "B1.grammar.present_perfect.negative" tracks a specific grammar point at a specific level. This granularity enables precise progress tracking.
+
+### DSLM (Dynamic Student Learning Model)
+Edooqoo's proprietary 4-layer system: Layer A (Event Log) captures every interaction; Layer B (Metrics) aggregates into nano-skill scores using exponential decay; Layer C (Profile) synthesizes strengths/weaknesses; Layer D (Decision Engine) drives AI recommendations.
+
+### Scaffolding
+Providing temporary support structures that help learners achieve tasks beyond their current ability. Edooqoo scaffolds by generating exercises at the student's exact level and gradually increasing complexity as skills improve.
+
+### Differentiation
+Adapting teaching to meet individual learner needs. Edooqoo enables differentiation by generating unique, personalized worksheets for each student based on their DSLM profile.
+
+### Formative Assessment
+Ongoing assessment during the learning process. Edooqoo's homework system, live sessions, and worksheet completions all serve as formative assessments, feeding data into the DSLM.
+
+### Summative Assessment
+Assessment at the end of a learning period. Edooqoo's Welcome Test provides a comprehensive summative assessment with CEFR level determination.
+
+### CLT (Communicative Language Teaching)
+An approach emphasizing communication as the primary goal. Edooqoo supports CLT with dialogue practice, discussion questions, and real-world scenario exercises.
+
+### PPP (Presentation, Practice, Production)
+A lesson framework common in ELT. Edooqoo's exercise types map naturally to PPP: reading/listening for presentation, fill-in-the-blanks/matching for practice, paraphrasing/discussion for production.
+
+### Washback
+The influence of testing on teaching and learning. Edooqoo's exam preparation worksheets (Cambridge, IELTS) create positive washback by aligning practice materials with exam formats.
+
+### L1 Interference
+When a learner's first language negatively affects their English production. Edooqoo's error correction exercises specifically target common L1 interference patterns at each CEFR level.
+
+### Collocations
+Words that frequently appear together (e.g., "make a decision," "heavy rain"). Edooqoo's vocabulary exercises and fill-in-the-blanks naturally practice collocations in context.
+
+### Receptive Skills
+Listening and reading — understanding input. Edooqoo offers 6 exercise types specifically for receptive skills: Reading Comprehension, Listening Comprehension, and their audio variants.
+
+### Productive Skills
+Speaking and writing — producing output. Edooqoo's Discussion Questions, Paraphrasing, Sentence Transformation, and Describe Picture exercises develop productive skills with AI grading.
+
+---
+
 Start creating personalized English worksheets today at https://edooqoo.com

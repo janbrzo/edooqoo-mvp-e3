@@ -115,3 +115,59 @@ paths:
       responses:
         '200':
           description: Signup page HTML
+  /edooqoo-vs-islcollective.html:
+    get:
+      operationId: getComparisonISLCollective
+      summary: Edooqoo vs ISLCollective — AI Generated vs User-Uploaded Worksheets
+      description: Comparison of Edooqoo (AI-generated personalized worksheets) with ISLCollective (user-uploaded resource library) for English teachers.
+      responses:
+        '200':
+          description: Comparison page HTML
+  /edooqoo-vs-liveworksheets.html:
+    get:
+      operationId: getComparisonLiveworksheets
+      summary: Edooqoo vs Liveworksheets — Which is Better for English Teachers?
+      description: Comparison of Edooqoo (AI worksheet generation) with Liveworksheets (manual interactive conversion) for English teaching.
+      responses:
+        '200':
+          description: Comparison page HTML
+  /edooqoo-vs-twee.html:
+    get:
+      operationId: getComparisonTwee
+      summary: Edooqoo vs Twee — AI Worksheet Generators Compared
+      description: Comparison of Edooqoo (complete teaching ecosystem with 29 exercise types) with Twee (AI content generator) for English teachers.
+      responses:
+        '200':
+          description: Comparison page HTML
+  /edooqoo-vs-magicschool.html:
+    get:
+      operationId: getComparisonMagicSchool
+      summary: Edooqoo vs MagicSchool AI — Best AI Tool for English Teachers
+      description: Comparison of Edooqoo (English-specific with CEFR support) with MagicSchool AI (general K-12) for English language teaching.
+      responses:
+        '200':
+          description: Comparison page HTML
+  /ai-tools-for-private-english-tutors.html:
+    get:
+      operationId: getForPrivateTutors
+      summary: Best AI Tools for Private English Tutors
+      description: How private English tutors use Edooqoo for personalized worksheets, student management, progress tracking, and lesson scheduling.
+      responses:
+        '200':
+          description: Persona landing page HTML
+  /worksheet-generator-for-language-schools.html:
+    get:
+      operationId: getForLanguageSchools
+      summary: AI Worksheet Generator for Language Schools
+      description: How language schools use Edooqoo to generate English worksheets at scale with AI, homework grading, and student progress tracking.
+      responses:
+        '200':
+          description: Persona landing page HTML
+  /ai-tools-for-online-esl-teachers.html:
+    get:
+      operationId: getForOnlineESLTeachers
+      summary: Best AI Tools for Online ESL Teachers
+      description: How online ESL teachers use Edooqoo for live sessions, lesson booking with Google Calendar, interactive worksheets, and remote teaching.
+      responses:
+        '200':
+          description: Persona landing page HTML
