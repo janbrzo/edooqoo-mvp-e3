@@ -46,6 +46,8 @@ import Prompts from "./pages/Prompts";
 import Glossary from "./pages/Glossary";
 import ExerciseTypes from "./pages/ExerciseTypes";
 import HowItWorks from "./pages/HowItWorks";
+import Resources from "./pages/Resources";
+import Blog from "./pages/Blog";
 import StudentHubLanding from "./pages/StudentHubLanding";
 import StudentHubDashboard from "./pages/StudentHubDashboard";
 import StudentHubFlashcards from "./pages/StudentHubFlashcards";
@@ -100,6 +102,8 @@ const App = () => (
               <Route path="/glossary" element={<Glossary />} />
               <Route path="/exercise-types" element={<ExerciseTypes />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/resources" element={<Resources />} />
+              <Route path="/blog" element={<Blog />} />
               <Route path="/book" element={<BookLandingPage />} />
               <Route path="/book/:token" element={<PublicBookingPage />} />
               <Route path="/my" element={<StudentHubLanding />} />
