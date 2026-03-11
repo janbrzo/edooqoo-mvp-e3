@@ -115,6 +115,22 @@ paths:
       responses:
         '200':
           description: Signup page HTML
+  /resources:
+    get:
+      operationId: getResources
+      summary: English Teaching Resources — 60+ guides, tools, and articles
+      description: Content hub organizing all Edooqoo resources into topic clusters — worksheet generators, CEFR level guides, teaching tools, comparisons, and blog articles for English teachers.
+      responses:
+        '200':
+          description: Resources page HTML
+  /blog:
+    get:
+      operationId: getBlog
+      summary: Edooqoo Blog — tips, guides, and resources for English teachers
+      description: Practical blog articles covering AI teaching tips, worksheet creation guides, CEFR assessment strategies, exam preparation, business English, and ESL/EFL best practices.
+      responses:
+        '200':
+          description: Blog index page HTML
   /edooqoo-vs-islcollective.html:
     get:
       operationId: getComparisonISLCollective
@@ -171,3 +187,123 @@ paths:
       responses:
         '200':
           description: Persona landing page HTML
+  /blog/how-to-create-grammar-worksheets-with-ai.html:
+    get:
+      operationId: getBlogGrammarWorksheets
+      summary: How to Create Grammar Worksheets with AI — Step-by-Step Guide
+      description: Complete guide to generating grammar worksheets with AI, including best grammar topics by CEFR level and tips for effective practice.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/vocabulary-teaching-strategies-esl.html:
+    get:
+      operationId: getBlogVocabularyStrategies
+      summary: 10 Vocabulary Teaching Strategies for ESL Teachers
+      description: Research-backed vocabulary teaching strategies with AI worksheet implementation examples for ESL/EFL classrooms.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/reading-comprehension-activities-english.html:
+    get:
+      operationId: getBlogReadingActivities
+      summary: 15 Reading Comprehension Activities for English Classes — A1 to C2
+      description: Reading comprehension activities organized by CEFR level with AI-generated exercise examples.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/fill-in-the-blanks-exercises-best-practices.html:
+    get:
+      operationId: getBlogFillInBlanks
+      summary: Fill in the Blanks Exercises — Best Practices for English Teachers
+      description: When to use gap-fill exercises, types of gap-fill, scaffolding by CEFR level, and grading strategies.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/differentiated-instruction-english-classroom.html:
+    get:
+      operationId: getBlogDifferentiation
+      summary: Differentiated Instruction in the English Classroom — Practical Guide
+      description: 6 strategies for differentiating content in ESL/EFL classrooms with AI-powered personalization.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/how-to-assess-english-level-cefr.html:
+    get:
+      operationId: getBlogCEFRAssessment
+      summary: How to Assess English Level Using CEFR — Teacher's Guide
+      description: Complete guide to CEFR levels, can-do statements, placement testing with AI, and progress tracking.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-english-online-complete-guide.html:
+    get:
+      operationId: getBlogOnlineTeaching
+      summary: Teaching English Online in 2026 — Complete Guide for ESL Teachers
+      description: Setup, tools, lesson structure, engagement, scheduling, and growing your online tutoring business.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/spaced-repetition-vocabulary-learning.html:
+    get:
+      operationId: getBlogSpacedRepetition
+      summary: Spaced Repetition for Vocabulary Learning — How It Works
+      description: The science of SM-2 algorithm, Ebbinghaus forgetting curve, and implementation in ESL classes.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/ai-tools-for-english-teachers-2026.html:
+    get:
+      operationId: getBlogAITools2026
+      summary: Best AI Tools for English Teachers in 2026 — Complete Guide
+      description: Comprehensive comparison of AI teaching tools with evaluation criteria and recommendations.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/ai-homework-grading-for-english-teachers.html:
+    get:
+      operationId: getBlogAIGrading
+      summary: AI Homework Grading for English Teachers — Save Hours Every Week
+      description: How AI grading works for open-ended English answers, teacher review workflow, and time savings.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/ai-generated-listening-exercises-esl.html:
+    get:
+      operationId: getBlogListeningExercises
+      summary: AI-Generated Listening Exercises for ESL — Text-to-Speech Guide
+      description: How AI text-to-speech technology creates listening exercises for language teaching at all CEFR levels.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/personalized-learning-english-teaching.html:
+    get:
+      operationId: getBlogPersonalizedLearning
+      summary: Personalized Learning in English Teaching — Theory to AI Practice
+      description: From learning theory to AI-powered personalization with nano-skill tracking and knowledge mapping.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/cambridge-exam-preparation-tips-teachers.html:
+    get:
+      operationId: getBlogCambridgePrep
+      summary: Cambridge Exam Preparation Tips for Teachers — KET to CPE
+      description: Strategies and worksheet ideas for preparing students for Cambridge English exams with study schedules.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-business-english-guide.html:
+    get:
+      operationId: getBlogBusinessEnglish
+      summary: Teaching Business English — Complete Guide for ESL Tutors
+      description: Key topic areas, industry vocabulary, role-play activities, assessment, and pricing for business English teaching.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/ielts-preparation-worksheets-guide.html:
+    get:
+      operationId: getBlogIELTSPrep
+      summary: IELTS Preparation Worksheets — Teacher's Guide
+      description: Section-by-section IELTS breakdown with AI-generated practice materials and 4-week preparation plan.
+      responses:
+        '200':
+          description: Blog article HTML
