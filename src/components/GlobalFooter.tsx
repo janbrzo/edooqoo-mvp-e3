@@ -5,17 +5,67 @@ import { Link } from 'react-router-dom';
 const GlobalFooter = () => {
   return (
     <footer className="border-t bg-background/95 backdrop-blur-sm">
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>© 2025 Edooqoo. All rights reserved.</span>
+      <div className="container mx-auto px-4 py-10">
+        {/* Brand */}
+        <div className="mb-8">
+          <Link to="/" className="text-xl font-bold text-primary">Edooqoo</Link>
+          <p className="text-sm text-muted-foreground mt-1">AI Worksheet Generator for English Teachers</p>
+        </div>
+
+        {/* 4-column grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+          {/* Column 1: Product */}
+          <div>
+            <h3 className="font-semibold text-foreground mb-3 text-sm">Product</h3>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/" className="text-muted-foreground hover:text-primary transition-colors">Home</Link></li>
+              <li><Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors">Pricing</Link></li>
+              <li><Link to="/exercise-types" className="text-muted-foreground hover:text-primary transition-colors">Exercise Types</Link></li>
+              <li><Link to="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How It Works</Link></li>
+              <li><Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">About</Link></li>
+              <li><Link to="/signup" className="text-muted-foreground hover:text-primary transition-colors">Sign Up Free</Link></li>
+            </ul>
           </div>
-          <div className="flex items-center gap-4 text-sm flex-wrap">
-            <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">About</Link>
-            <Link to="/prompts" className="text-muted-foreground hover:text-primary transition-colors">Prompts</Link>
-            <Link to="/exercise-types" className="text-muted-foreground hover:text-primary transition-colors">Exercise Types</Link>
-            <Link to="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors">How It Works</Link>
-            <Link to="/glossary" className="text-muted-foreground hover:text-primary transition-colors">Glossary</Link>
+
+          {/* Column 2: Resources */}
+          <div>
+            <h3 className="font-semibold text-foreground mb-3 text-sm">Resources</h3>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/prompts" className="text-muted-foreground hover:text-primary transition-colors">Prompt Library</Link></li>
+              <li><Link to="/glossary" className="text-muted-foreground hover:text-primary transition-colors">ELT Glossary</Link></li>
+              <li><Link to="/resources" className="text-muted-foreground hover:text-primary transition-colors">All Resources</Link></li>
+              <li><Link to="/blog" className="text-muted-foreground hover:text-primary transition-colors">Blog</Link></li>
+              <li><a href="/cefr-worksheet-generator.html" className="text-muted-foreground hover:text-primary transition-colors">CEFR Guide</a></li>
+            </ul>
+          </div>
+
+          {/* Column 3: For Teachers */}
+          <div>
+            <h3 className="font-semibold text-foreground mb-3 text-sm">For Teachers</h3>
+            <ul className="space-y-2 text-sm">
+              <li><a href="/ai-tools-for-private-english-tutors.html" className="text-muted-foreground hover:text-primary transition-colors">Private Tutors</a></li>
+              <li><a href="/worksheet-generator-for-language-schools.html" className="text-muted-foreground hover:text-primary transition-colors">Language Schools</a></li>
+              <li><a href="/ai-tools-for-online-esl-teachers.html" className="text-muted-foreground hover:text-primary transition-colors">Online ESL Teachers</a></li>
+              <li><a href="/business-english-worksheet-generator.html" className="text-muted-foreground hover:text-primary transition-colors">Business English</a></li>
+            </ul>
+          </div>
+
+          {/* Column 4: Compare */}
+          <div>
+            <h3 className="font-semibold text-foreground mb-3 text-sm">Compare</h3>
+            <ul className="space-y-2 text-sm">
+              <li><a href="/edooqoo-vs-islcollective.html" className="text-muted-foreground hover:text-primary transition-colors">vs ISLCollective</a></li>
+              <li><a href="/edooqoo-vs-liveworksheets.html" className="text-muted-foreground hover:text-primary transition-colors">vs Liveworksheets</a></li>
+              <li><a href="/edooqoo-vs-twee.html" className="text-muted-foreground hover:text-primary transition-colors">vs Twee</a></li>
+              <li><a href="/edooqoo-vs-magicschool.html" className="text-muted-foreground hover:text-primary transition-colors">vs MagicSchool</a></li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span className="text-sm text-muted-foreground">© 2025 Edooqoo. All rights reserved.</span>
+          <div className="flex items-center gap-4 text-sm">
             <Link to="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link>
             <Link to="/cookie-policy" className="text-muted-foreground hover:text-primary transition-colors">Cookie Policy</Link>
           </div>
