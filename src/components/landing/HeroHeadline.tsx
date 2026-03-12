@@ -61,8 +61,8 @@ const HeroHeadline: React.FC = () => {
 
         {/* Subheadline */}
         <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-          AI creates complete, personalized worksheets for your 1-on-1 lessons.
-          29 exercise types. Ready in 2 minutes.
+          AI creates complete, fully personalized worksheets for your 1-on-1 lessons. 29 exercise types. Ready in under 90 seconds.
+        
         </p>
 
         {/* CTA Area */}
