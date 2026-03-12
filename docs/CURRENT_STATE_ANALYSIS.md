@@ -6,7 +6,19 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-09) - LLM Optimization Phase 2:**
+**Ostatnia aktualizacja (2026-03-12) - SEO Phase 5: Google Search Dominance + UI Polish:**
+- ✅ **52 statyczne HTML pages** (było 35): exercise-specific, CEFR-level, use-case, comparison, blog
+- ✅ **70 sitemap entries** (było 53) z `lastmod` i `priority`
+- ✅ **15 artykułów blog** w `public/blog/` — 1500-2500 słów każdy
+- ✅ **30+ linków w GlobalFooter** w 4 kolumnach — ukryty na stronie głównej (`/`)
+- ✅ **9 React routes** (było 7) — dodane `/resources`, `/blog`
+- ✅ **Kluczowe strony rozbudowane** z 300-500 do 1500-2500 słów
+- ✅ **Static backups**: `resources.html`, `blog.html` z JSON-LD
+- ✅ **Performance**: `preconnect` + `dns-prefetch` dla Supabase
+- ✅ **UI**: "No signup needed" badge na formularzu, formularz `max-w-6xl`, usunięte trust badges z hero
+- ✅ **llms.txt** rozszerzony, **openapi.yaml** +17 paths
+
+**Poprzednia aktualizacja (2026-03-09) - LLM Optimization Phase 2:**
 - ✅ **FAQPage JSON-LD**: 10-question FAQPage schema w `index.html` dla bezpośrednich cytatów w LLM
 - ✅ **AI Plugin Manifest**: `public/.well-known/ai-plugin.json` — manifest pluginu AI
 - ✅ **OpenAPI Spec**: `public/openapi.yaml` — specyfikacja OpenAPI

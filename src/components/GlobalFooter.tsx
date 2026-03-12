@@ -1,8 +1,15 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const GlobalFooter = () => {
+  const location = useLocation();
+
+  // Hide footer on homepage - content exists for SEO but not shown to users
+  if (location.pathname === '/') {
+    return null;
+  }
+
   return (
     <footer className="border-t bg-background/95 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-10">

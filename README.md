@@ -3,14 +3,23 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: LLM Optimization / LLMO (March 9, 2026)
+## Latest: SEO Phase 5 — Google Search Dominance (March 12, 2026)
+- **52 static HTML pages** — exercise, CEFR, use-case, comparison, blog content
+- **70 sitemap entries** with lastmod and priority
+- **15 blog articles** (1500-2500 words each) in `public/blog/`
+- **30+ footer links** in 4 columns (hidden on homepage for clean UX)
+- Key pages expanded to 1500-2500 words for topical authority
+- `preconnect` + `dns-prefetch` for Supabase performance
+- UI: "No signup needed" badge, wider form (`max-w-6xl`), cleaner hero spacing
+
+## Previous: LLM Optimization / LLMO (March 9, 2026)
 - AI discovery files: `public/llms.txt`, `public/llms-full.txt` for AI crawler indexing
 - `robots.txt` updated with 12 AI bot user-agents + sitemap reference
-- `public/sitemap.xml` with 7 pages
-- JSON-LD structured data (SoftwareApplication + Organization) in `index.html`
+- `public/sitemap.xml` with 70 pages
+- JSON-LD structured data (SoftwareApplication + Organization + FAQPage + HowTo) in `index.html`
 - New `/about` page with full product info, 29 exercise types, FAQ, competitor comparison
 - Static `public/about.html` for non-JS crawlers
-- Footer: added About link
+- Footer: 30+ links in 4 columns
 
 ## Previous: Unified Navigation + Accurate Stats (March 9, 2026)
 - StickyNav now universal — same consistent header on Dashboard, Profile, Pricing, Privacy Policy, Cookie Policy
