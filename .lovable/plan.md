@@ -1,52 +1,35 @@
 
-# Plan: LLM Optimization (LLMO) — Phase 1 + Phase 2 + Phase 3 WDROŻONE ✅
+# Plan: LLM Optimization (LLMO) — Phase 1-5 WDROŻONE ✅
 
 ## Podsumowanie
 
-Pełna warstwa AI discovery dla edooqoo.com w trzech fazach:
+Pełna warstwa AI discovery + SEO dominance dla edooqoo.com w pięciu fazach:
 
-### Phase 1 (wdrożone)
-- `public/llms.txt` — krótki opis produktu dla AI crawlerów
-- `public/llms-full.txt` — pełny opis (~3000 słów) z FAQ, ćwiczeniami, porównaniami
-- `public/robots.txt` — 12+ AI botów + sitemap link
-- `public/sitemap.xml` — strony z priorytetami
-- `public/about.html` — statyczny HTML backup dla non-JS crawlerów
-- `index.html` — JSON-LD (SoftwareApplication + Organization), meta tagi, canonical URL
-- `src/pages/About.tsx` — strona /about z opisem produktu, FAQ, porównaniami
-- `src/App.tsx` — route /about
-- `src/components/GlobalFooter.tsx` — link About
+### Phase 1-3 (wdrożone wcześniej)
+- AI discovery files, robots.txt, sitemap, JSON-LD, /about, /prompts, /glossary, /exercise-types, /how-it-works
+- 26 statycznych HTML pages, 5 React content pages, 36 sitemap entries
 
-### Phase 2 (wdrożone)
-- `index.html` — FAQPage JSON-LD schema (10 pytań) dla bezpośrednich cytatów w LLM
-- `public/.well-known/ai-plugin.json` — manifest pluginu AI (entity authority)
-- `public/openapi.yaml` — specyfikacja OpenAPI opisująca capabilities edooqoo
-- 5 statycznych landing pages w `public/` na kluczowe queries
-- `src/pages/Prompts.tsx` — strona /prompts z 50+ gotowymi promptami dla nauczycieli
-- Dynamiczne meta tagi na Pricing, Login, Signup
+### Phase 4 (wdrożone)
+- HowTo JSON-LD, rozszerzony footer, porównania, landing pages dla nauczycieli
 
-### Phase 3 (wdrożone) — Nasycenie Semantyczne 5x
-- `index.html` — HowTo JSON-LD schema (4-krokowy proces tworzenia worksheetu)
-- 20 nowych statycznych landing pages w `public/`:
-  - 6 exercise-specific (fill-in-blanks, reading, MCQ, grammar, vocabulary, listening)
-  - 6 CEFR level-specific (A1, A2, B1, B2, C1, C2)
-  - 5 use-case (lesson planning, online tools, business english, exam prep, progress tracking)
-  - 3 problem-solving (save time, AI grading, flashcards)
-- 3 nowe React content pages:
-  - `/glossary` — 50 terminów ELT z definicjami
-  - `/exercise-types` — opisy 29 typów ćwiczeń z CEFR levels i use cases
-  - `/how-it-works` — 8-krokowy przewodnik workflow
-- Rozszerzony `public/sitemap.xml` — 36 URL-i (z 13)
-- Rozszerzony `public/llms.txt` — z linkami do nowych stron
-- Rozszerzony `public/openapi.yaml` — 3 nowe paths
-- 3 nowe linki w GlobalFooter (Exercise Types, How It Works, Glossary)
-- 3 nowe routes w App.tsx
+### Phase 5 (wdrożone — March 12, 2026) — Google Search Dominance
+- **Content Expansion**: Kluczowe strony rozbudowane do 1500-2500 słów
+- **Blog Cluster**: 15 artykułów blogowych w `public/blog/`
+- **Static Backups**: `resources.html`, `blog.html` z JSON-LD
+- **Performance**: `preconnect` + `dns-prefetch` dla Supabase
+- **Sitemap**: 70 entries z `lastmod` i `priority`
+- **Discovery**: `llms.txt` rozszerzony, `openapi.yaml` +17 paths
+- **UI Polish**: "No signup needed" badge, form `max-w-6xl`, hero bez trust badges
+- **GlobalFooter**: 30+ linków w 4 kolumnach, ukryty na homepage (`/`)
 
 ## Statystyki końcowe
 
-| Element | Phase 1 | Phase 2 | Phase 3 | Razem |
-|---------|---------|---------|---------|-------|
-| Static HTML pages | 1 | 5 | 20 | 26 |
-| React content pages | 1 | 1 | 3 | 5 |
-| Sitemap entries | 7 | 13 | 36 | 36 |
-| JSON-LD schemas | 2 | 3 | 4 | 4 |
-| Footer links | 2 | 4 | 7 | 7 |
+| Element | Phase 1-3 | Phase 4 | Phase 5 | Razem |
+|---------|-----------|---------|---------|-------|
+| Static HTML pages | 26 | 9 | 17 | 52 |
+| React content pages | 5 | 0 | 2 | 7 |
+| Sitemap entries | 36 | 53 | 70 | 70 |
+| JSON-LD schemas | 4 | 4 | 4 | 4 |
+| Footer links | 7 | 15 | 30+ | 30+ |
+| Blog articles | 0 | 0 | 15 | 15 |
+| Key page word count | 300-500 | 300-500 | 1500-2500 | 1500-2500 |
