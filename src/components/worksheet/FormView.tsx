@@ -55,11 +55,19 @@ const FormView: React.FC<FormViewProps> = ({
     return (
       <TrackingFormWrapper userId={userId}>
         <div id="worksheet-form" className="scroll-mt-24 pb-8 pt-0">
-          <div className={`max-w-5xl mx-auto ${isMobile ? 'px-2' : 'px-4'}`}>
+            <div className={`max-w-6xl mx-auto ${isMobile ? 'px-2' : 'px-4'}`}>
             
             {/* Premium Form Wrapper with glow */}
             <div className="relative group/glow">
               <div className="absolute -inset-1 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-[2rem] blur opacity-20 group-hover/glow:opacity-30 transition duration-500"></div>
+              
+              {/* No signup badge */}
+              <div className="absolute -top-3 left-8 z-10">
+                <span className="bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider px-4 py-1 rounded-full shadow-md">
+                  No signup needed
+                </span>
+              </div>
+              
               <div className="relative bg-background rounded-3xl shadow-2xl border border-border/50 overflow-hidden p-1 md:p-2 px-[8px] py-[8px]">
                 <WorksheetForm
                   onSubmit={onSubmit}

@@ -79,9 +79,8 @@ const HeroHeadline: React.FC = () => {
 
         {/* Unlock features ticker */}
         <div className="w-full max-w-2xl mx-auto overflow-hidden border border-border rounded-2xl bg-secondary/60 py-[10px] my-[15px]">
-          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-1.5 px-4">
-            <span className="text-foreground font-bold">No signup needed</span>
-            <span className="text-muted-foreground"> · Create a free account to unlock</span>
+          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-1.5 px-4 text-muted-foreground">
+            Create a free account to unlock
           </p>
           <div className="flex overflow-hidden">
             <div className="flex animate-marquee whitespace-nowrap">
