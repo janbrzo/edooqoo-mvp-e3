@@ -3,13 +3,13 @@ import { ArrowDown, BookOpen, Brain, Calendar, BarChart2, ClipboardCheck, Share2
 import { Button } from '@/components/ui/button';
 
 const unlockFeatures = [
-  { icon: BookOpen, label: 'Homework & AI Grading' },
-  { icon: Brain, label: 'Smart Flashcards' },
-  { icon: Calendar, label: 'Lesson Calendar' },
-  { icon: BarChart2, label: 'Student Progress Tracking' },
-  { icon: ClipboardCheck, label: 'Placement Tests' },
-  { icon: Share2, label: 'Interactive Sharing' },
-];
+{ icon: BookOpen, label: 'Homework & AI Grading' },
+{ icon: Brain, label: 'Smart Flashcards' },
+{ icon: Calendar, label: 'Lesson Calendar' },
+{ icon: BarChart2, label: 'Student Progress Tracking' },
+{ icon: ClipboardCheck, label: 'Placement Tests' },
+{ icon: Share2, label: 'Interactive Sharing' }];
+
 
 const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -18,7 +18,7 @@ const HeroHeadline: React.FC = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setDayIndex(i => (i + 1) % 7);
+      setDayIndex((i) => (i + 1) % 7);
     }, 2200);
     return () => clearInterval(interval);
   }, []);
@@ -42,12 +42,12 @@ const HeroHeadline: React.FC = () => {
             Stop wasting{' '}
             <span
               className="relative inline-block overflow-hidden"
-              style={{ height: '1.2em', verticalAlign: 'text-bottom', minWidth: '3.5em' }}
-            >
+              style={{ height: '1.2em', verticalAlign: 'text-bottom', minWidth: '3.5em' }}>
+              
               <span
                 key={dayIndex}
-                className="inline-block animate-day-enter text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600"
-              >
+                className="inline-block animate-day-enter text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-indigo-600">
+                
                 {days[dayIndex]}
               </span>
             </span>
@@ -70,34 +70,34 @@ const HeroHeadline: React.FC = () => {
           <Button
             onClick={scrollToForm}
             size="lg"
-            className="h-14 px-8 text-lg font-semibold rounded-full shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:-translate-y-0.5 transition-all duration-200"
-          >
+            className="h-14 px-8 text-lg font-semibold rounded-full shadow-lg shadow-violet-500/20 hover:shadow-violet-500/30 hover:-translate-y-0.5 transition-all duration-200">
+            
             Generate Your First Worksheet — Free
             <ArrowDown className="ml-2 h-5 w-5" />
           </Button>
         </div>
 
         {/* Unlock features ticker */}
-        <div className="w-full max-w-2xl mx-auto overflow-hidden border border-border rounded-2xl bg-secondary/60 py-2.5">
+        <div className="w-full max-w-2xl mx-auto overflow-hidden border border-border rounded-2xl bg-secondary/60 py-[10px] my-[15px]">
           <p className="text-xs font-semibold uppercase tracking-widest text-center mb-1.5 px-4">
             <span className="text-foreground font-bold">No signup needed</span>
             <span className="text-muted-foreground"> · Create a free account to unlock</span>
           </p>
           <div className="flex overflow-hidden">
             <div className="flex animate-marquee whitespace-nowrap">
-              {[...unlockFeatures, ...unlockFeatures].map(({ icon: Icon, label }, i) => (
-                <div key={i} className="flex items-center gap-1.5 text-sm text-foreground/80 mx-4 shrink-0">
+              {[...unlockFeatures, ...unlockFeatures].map(({ icon: Icon, label }, i) =>
+              <div key={i} className="flex items-center gap-1.5 text-sm text-foreground/80 mx-4 shrink-0">
                   <Icon className="h-3.5 w-3.5 text-violet-500 flex-shrink-0" />
                   <span>{label}</span>
                   <span className="mx-3 text-muted-foreground/40">·</span>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 };
 
 export default HeroHeadline;

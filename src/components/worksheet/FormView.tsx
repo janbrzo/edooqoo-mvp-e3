@@ -12,15 +12,15 @@ interface FormViewProps {
   onSubmit: (data: FormData) => void;
   userId?: string;
   onStudentChange?: (studentId: string | null) => void;
-  preSelectedStudent?: { id: string; name: string } | null;
+  preSelectedStudent?: {id: string;name: string;} | null;
   isRegisteredUser?: boolean;
   variant?: 'landing' | 'dashboard';
 }
 
-const FormView: React.FC<FormViewProps> = ({ 
-  onSubmit, 
-  userId, 
-  onStudentChange, 
+const FormView: React.FC<FormViewProps> = ({
+  onSubmit,
+  userId,
+  onStudentChange,
   preSelectedStudent,
   isRegisteredUser = false,
   variant = 'dashboard'
@@ -60,12 +60,12 @@ const FormView: React.FC<FormViewProps> = ({
             {/* Premium Form Wrapper with glow */}
             <div className="relative group/glow">
               <div className="absolute -inset-1 bg-gradient-to-r from-violet-500 to-indigo-500 rounded-[2rem] blur opacity-20 group-hover/glow:opacity-30 transition duration-500"></div>
-              <div className="relative bg-background rounded-3xl shadow-2xl border border-border/50 overflow-hidden p-1 md:p-2">
-                <WorksheetForm 
-                  onSubmit={onSubmit} 
-                  onStudentChange={onStudentChange} 
-                  preSelectedStudent={preSelectedStudent}
-                />
+              <div className="relative bg-background rounded-3xl shadow-2xl border border-border/50 overflow-hidden p-1 md:p-2 px-[8px] py-[8px]">
+                <WorksheetForm
+                  onSubmit={onSubmit}
+                  onStudentChange={onStudentChange}
+                  preSelectedStudent={preSelectedStudent} />
+                
               </div>
             </div>
             
@@ -89,8 +89,8 @@ const FormView: React.FC<FormViewProps> = ({
               <Input
                 placeholder="Enter coupon code (optional)"
                 value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-              />
+                onChange={(e) => setCouponCode(e.target.value)} />
+              
               <div className="flex gap-2">
                 <Button onClick={() => setShowCouponDialog(false)} variant="outline">
                   Cancel
@@ -102,19 +102,19 @@ const FormView: React.FC<FormViewProps> = ({
             </div>
           </DialogContent>
         </Dialog>
-      </TrackingFormWrapper>
-    );
+      </TrackingFormWrapper>);
+
   }
 
   // variant === 'dashboard'
   return (
     <TrackingFormWrapper userId={userId}>
       <div className="max-w-5xl mx-auto">
-        <WorksheetForm 
-          onSubmit={onSubmit} 
-          onStudentChange={onStudentChange} 
-          preSelectedStudent={preSelectedStudent}
-        />
+        <WorksheetForm
+          onSubmit={onSubmit}
+          onStudentChange={onStudentChange}
+          preSelectedStudent={preSelectedStudent} />
+        
       </div>
 
       {/* Coupon dialog */}
@@ -127,8 +127,8 @@ const FormView: React.FC<FormViewProps> = ({
             <Input
               placeholder="Enter coupon code (optional)"
               value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-            />
+              onChange={(e) => setCouponCode(e.target.value)} />
+            
             <div className="flex gap-2">
               <Button onClick={() => setShowCouponDialog(false)} variant="outline">
                 Cancel
@@ -140,8 +140,8 @@ const FormView: React.FC<FormViewProps> = ({
           </div>
         </DialogContent>
       </Dialog>
-    </TrackingFormWrapper>
-  );
+    </TrackingFormWrapper>);
+
 };
 
 export default FormView;
