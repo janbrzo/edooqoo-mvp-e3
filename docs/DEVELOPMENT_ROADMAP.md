@@ -3,7 +3,18 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Mar 9, 2026) - LLM Optimization Phase 2 ✅
+### Recently Completed (Mar 12, 2026) - SEO Phase 5: Google Search Dominance ✅
+- 52 static HTML pages (was 35) — exercise, CEFR, use-case, comparison, blog pages
+- 70 sitemap entries (was 53) with `lastmod` and `priority`
+- 15 blog articles (1500-2500 words each) in `public/blog/`
+- 30+ GlobalFooter links in 4 columns (hidden on homepage via `useLocation`)
+- Static backups: `public/resources.html`, `public/blog.html` with JSON-LD
+- Key pages expanded from 300-500 to 1500-2500 words
+- `preconnect` + `dns-prefetch` for Supabase in `index.html`
+- `llms.txt` expanded, `openapi.yaml` +17 paths
+- UI: "No signup needed" badge on form, form width `max-w-6xl`, hero trust badges removed
+
+### Previously Completed (Mar 9, 2026) - LLM Optimization Phase 2 ✅
 - FAQPage JSON-LD schema (10 questions) in `index.html`
 - `public/.well-known/ai-plugin.json` — AI plugin manifest for agent discovery
 - `public/openapi.yaml` — informational OpenAPI spec

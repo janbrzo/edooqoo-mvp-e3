@@ -5,7 +5,23 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 9, 2026) - LLM Optimization Phase 2:**
+**Latest Update (March 12, 2026) - SEO Phase 5: Google Search Dominance + UI Polish:**
+- **52 static HTML pages** in `public/` (was 35) — exercise-specific, CEFR-level, use-case, comparison, and blog pages
+- **70 sitemap entries** (was 53) with `lastmod` and `priority` tags
+- **15 blog articles** in `public/blog/` — detailed guides for teachers (1500-2500 words each)
+- **30+ GlobalFooter links** organized in 4 columns (Product, Resources, For Teachers, Compare) — hidden on homepage
+- **9 React routes** (was 7) — added `/resources`, `/blog` content pages
+- **Key page content expanded** from 300-500 to 1500-2500 words
+- **Static backups**: `public/resources.html`, `public/blog.html` with JSON-LD (CollectionPage, Blog)
+- **Performance**: `preconnect` + `dns-prefetch` for Supabase in `index.html`
+- **llms.txt expanded** with resource and blog clusters
+- **openapi.yaml**: 17 new paths for AI discovery
+- **BreadcrumbList**: Added `/resources` and `/blog`
+- **HeroHeadline**: Removed trust badges (Rating, No signup, Takes 2 min), increased spacing
+- **FormView**: "No signup needed" badge on form border, form width expanded to `max-w-6xl`
+- **GlobalFooter**: Hidden on homepage (`/`) via `useLocation` check — SEO content preserved but not shown to users
+
+**Previous Update (March 9, 2026) - LLM Optimization Phase 2:**
 - **FAQPage JSON-LD**: Added 10-question FAQPage structured data schema to `index.html` for direct LLM citation
 - **AI Plugin Manifest**: Created `public/.well-known/ai-plugin.json` — AI agent discovery manifest describing edooqoo capabilities
 - **OpenAPI Spec**: Created `public/openapi.yaml` — informational API spec building technical entity authority

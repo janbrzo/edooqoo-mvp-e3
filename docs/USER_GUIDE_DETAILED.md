@@ -1,7 +1,9 @@
 
 # English Worksheet Generator - Complete User Guide
 
-**Latest Update (March 9, 2026):** LLM Optimization & About Page — New `/about` page with complete product description, all 29 exercise types, FAQ, competitor comparison table, and how-it-works guide. Footer now includes About link.
+**Latest Update (March 12, 2026):** SEO Phase 5 — 52 static HTML pages (exercise, CEFR, use-case, blog), 70 sitemap entries, 15 blog articles (1500-2500 words each). Footer with 30+ links hidden on homepage. "No signup needed" badge on form. Form width expanded. Performance: preconnect/dns-prefetch for Supabase.
+
+**Previous Update (March 9, 2026):** LLM Optimization & About Page — New `/about` page with complete product description, all 29 exercise types, FAQ, competitor comparison table, and how-it-works guide. Footer now includes About link.
 
 **Previous Update (March 8, 2026):** Landing Page Redesign — New product-first landing page. Anonymous users see: sticky nav → hero headline with social proof → worksheet form in premium card → stats bar → value cards → ecosystem section (6 platform features) → testimonials → pricing → final CTA. Logged-in users see: sticky nav with tokens/dashboard/profile → clean form. Removed old sidebar, isometric background, and progress bar.
 
