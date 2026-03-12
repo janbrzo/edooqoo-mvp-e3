@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Lock, PlayCircle, ArrowDown, BookOpen, Brain, Calendar, BarChart2, ClipboardCheck, Share2 } from 'lucide-react';
+import { ArrowDown, BookOpen, Brain, Calendar, BarChart2, ClipboardCheck, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const unlockFeatures = [
@@ -31,13 +31,13 @@ const HeroHeadline: React.FC = () => {
   };
 
   return (
-    <section className="relative pt-10 pb-2 px-4 overflow-hidden">
+    <section className="relative pt-12 pb-4 px-4 overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-violet-100/50 via-background to-background"></div>
 
       <div className="max-w-4xl mx-auto text-center">
         {/* Headline */}
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-3 leading-[1.1]">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-5 leading-[1.1]">
           <span className="whitespace-nowrap">
             Stop wasting{' '}
             <span
@@ -60,13 +60,13 @@ const HeroHeadline: React.FC = () => {
         </h1>
 
         {/* Subheadline */}
-        <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
           AI creates complete, personalized worksheets for your 1-on-1 lessons.
           29 exercise types. Ready in 2 minutes.
         </p>
 
         {/* CTA Area */}
-        <div className="flex flex-col items-center gap-4 mb-8">
+        <div className="flex flex-col items-center gap-6 mb-10">
           <Button
             onClick={scrollToForm}
             size="lg"
@@ -75,34 +75,13 @@ const HeroHeadline: React.FC = () => {
             Generate Your First Worksheet — Free
             <ArrowDown className="ml-2 h-5 w-5" />
           </Button>
-
-          {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center items-center gap-4 text-sm font-medium text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
-              <span className="text-foreground">4.9/5 Rating</span>
-            </div>
-            <div className="hidden sm:block w-1 h-1 bg-border rounded-full"></div>
-            <div className="flex items-center gap-1.5">
-              <Lock className="h-4 w-4" />
-              <span>No signup needed</span>
-            </div>
-            <div className="hidden sm:block w-1 h-1 bg-border rounded-full"></div>
-            <div className="flex items-center gap-1.5">
-              <PlayCircle className="h-4 w-4" />
-              <span>Takes 2 minutes</span>
-            </div>
-          </div>
         </div>
 
         {/* Unlock features ticker */}
         <div className="w-full max-w-2xl mx-auto overflow-hidden border border-border rounded-2xl bg-secondary/60 py-2.5">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center mb-1.5 px-4">
-            Create a free account to unlock
+          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-1.5 px-4">
+            <span className="text-foreground font-bold">No signup needed</span>
+            <span className="text-muted-foreground"> · Create a free account to unlock</span>
           </p>
           <div className="flex overflow-hidden">
             <div className="flex animate-marquee whitespace-nowrap">
