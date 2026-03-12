@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Lock, PlayCircle, ArrowDown, BookOpen, Brain, Calendar, BarChart2, ClipboardCheck, Share2 } from 'lucide-react';
+import { ArrowDown, BookOpen, Brain, Calendar, BarChart2, ClipboardCheck, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const unlockFeatures = [
