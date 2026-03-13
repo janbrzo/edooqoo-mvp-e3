@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from '@/hooks/use-toast';
+import { devLog } from '@/utils/logger';
 
 type Student = Tables<'students'>;
 
@@ -12,7 +13,7 @@ export const useStudents = () => {
 
   const fetchStudents = useCallback(async () => {
     try {
-      console.log('📚 Fetching students...');
+      devLog('📚 Fetching students...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setStudents([]);
@@ -24,13 +25,13 @@ export const useStudents = () => {
         .from('students')
         .select('*')
         .eq('teacher_id', user.id)
-        .is('deleted_at', null) // Only fetch non-deleted students
+        .is('deleted_at', null)
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
 
-      console.log('📚 Students fetched:', data?.length, 'students');
-      console.log('📚 Students order:', data?.map(s => ({ name: s.name, updated_at: s.updated_at })));
+      devLog('📚 Students fetched:', data?.length, 'students');
+      devLog('📚 Students order:', data?.map(s => ({ name: s.name, updated_at: s.updated_at })));
       setStudents(data || []);
     } catch (error: any) {
       console.error('Error fetching students:', error);
@@ -49,7 +50,6 @@ export const useStudents = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Check for duplicate email
       if (studentEmail) {
         const normalizedEmail = studentEmail.toLowerCase().trim();
         const { data: existing } = await supabase
@@ -108,11 +108,10 @@ export const useStudents = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Get user email and include it in updates if needed
       const userEmail = user.email;
       const updatesWithEmail = {
         ...updates,
-        teacher_email: userEmail // Ensure teacher_email is always up to date
+        teacher_email: userEmail
       };
 
       const { data, error } = await supabase
@@ -149,7 +148,7 @@ export const useStudents = () => {
 
   const updateStudentActivity = useCallback(async (studentId: string) => {
     try {
-      console.log('🔄 UPDATING STUDENT ACTIVITY for:', studentId);
+      devLog('🔄 UPDATING STUDENT ACTIVITY for:', studentId);
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -160,22 +159,21 @@ export const useStudents = () => {
         .from('students')
         .update({ 
           updated_at: new Date().toISOString(),
-          teacher_email: userEmail // Ensure teacher_email is always up to date
+          teacher_email: userEmail
         })
         .eq('id', studentId)
-        .is('deleted_at', null) // Only update non-deleted students
+        .is('deleted_at', null)
         .select()
         .single();
 
       if (error) throw error;
       
-      console.log('✅ Student activity updated successfully:', data);
+      devLog('✅ Student activity updated successfully:', data);
       
-      // Wait a bit to ensure database is updated, then refetch
       setTimeout(async () => {
-        console.log('🔄 Refetching students to update order...');
+        devLog('🔄 Refetching students to update order...');
         await fetchStudents();
-        console.log('✅ Students refetched after activity update');
+        devLog('✅ Students refetched after activity update');
       }, 1000);
       
       return data;
@@ -197,7 +195,6 @@ export const useStudents = () => {
 
       if (error) throw error;
 
-      // Remove from local state
       setStudents(prevStudents => 
         prevStudents.filter(student => student.id !== studentId)
       );
@@ -222,13 +219,12 @@ export const useStudents = () => {
   useEffect(() => {
     fetchStudents();
     
-    // Listen for student updates from worksheet generation
     const handleStudentUpdate = async (event: CustomEvent) => {
-      console.log('🎯 RECEIVED studentUpdated event:', event.detail);
+      devLog('🎯 RECEIVED studentUpdated event:', event.detail);
       const { studentId } = event.detail;
       
       if (studentId) {
-        console.log('🎯 Processing student update for:', studentId);
+        devLog('🎯 Processing student update for:', studentId);
         await updateStudentActivity(studentId);
       }
     };
