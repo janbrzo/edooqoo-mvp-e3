@@ -3,7 +3,13 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: SEO Phase 5 — Google Search Dominance (March 12, 2026)
+## Latest: E2E Readiness & Production Hardening (March 13, 2026)
+- **Production logging**: `src/utils/logger.ts` with `devLog()`/`devWarn()` — silences `console.log` in production
+- **13 hooks refactored**: `console.log` → `devLog` across all major hooks
+- **Duplicate DOM ID fix**: Removed duplicate `id="worksheet-form"` from FormView.tsx
+- **PRE_LAUNCH_CHECKLIST.md**: Updated with SEO Phase 5 items and 5 critical test flows
+
+## Previous: SEO Phase 5 — Google Search Dominance (March 12, 2026)
 - **52 static HTML pages** — exercise, CEFR, use-case, comparison, blog content
 - **70 sitemap entries** with lastmod and priority
 - **15 blog articles** (1500-2500 words each) in `public/blog/`
