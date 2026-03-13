@@ -2,10 +2,11 @@
 # Pre-Launch Checklist
 
 ## 🛡️ Security & Privacy
-- [ ] **Console Logs**: Production logs are disabled (only errors/warnings visible)
+- [x] **Console Logs**: Production logs silenced via `devLog()` utility — only `console.error` and `console.warn` active in prod
 - [ ] **RLS (Row Level Security)**: All tables have proper access control
 - [ ] **Anonymous Users**: Cannot access other users' data
 - [ ] **Environment Variables**: All production secrets are configured in Supabase
+- [x] **Duplicate DOM IDs**: Fixed `id="worksheet-form"` duplication in FormView
 
 ## 💰 Payment System
 - [ ] **Stripe Keys**: Production Stripe keys are configured in Supabase secrets
@@ -34,6 +35,7 @@
 - [ ] **Monthly Limits**: Subscription limits are enforced
 - [ ] **Token Balance**: Displayed correctly in UI
 - [ ] **Subscription Status**: Shows correct plan and status
+- [ ] **Subscription Sync**: Auto-syncs on visibility/focus change
 
 ## 📊 Worksheet Functionality
 - [ ] **Generation Quality**: AI generates proper educational content
@@ -41,6 +43,7 @@
 - [ ] **Responsive Design**: Works on mobile and desktop
 - [ ] **Print Friendly**: Worksheets print correctly
 - [ ] **PDF Export**: PDF generation works properly
+- [ ] **Streaming Progress**: Real-time progress bar during generation
 
 ## 🎨 User Experience
 - [ ] **Loading States**: Clear feedback during generation
@@ -48,12 +51,24 @@
 - [ ] **Success Messages**: Confirmation toasts for actions
 - [ ] **Navigation**: All links and buttons work correctly
 - [ ] **Mobile Responsive**: App works well on phones/tablets
+- [ ] **Double-click Guard**: Duplicate generation requests blocked
 
 ## 📈 Analytics & Tracking
 - [ ] **User Events**: Key actions are tracked properly
 - [ ] **Generation Tracking**: Worksheet creation is logged
 - [ ] **Payment Tracking**: Payment events are recorded
 - [ ] **Error Tracking**: Failed operations are logged
+
+## 🔍 SEO & Content (Phase 5)
+- [ ] **Resources Page**: `/resources` loads with 7 sections, JSON-LD present
+- [ ] **Blog Page**: `/blog` loads with 15 articles, JSON-LD present
+- [ ] **Blog Articles**: All 15 `public/blog/*.html` files load correctly
+- [ ] **Expanded Pages**: 8 pages with 1500+ words load correctly
+- [ ] **Sitemap**: 70 entries with `lastmod` on all
+- [ ] **Footer**: 4 columns, 30+ links, visible everywhere except `/`
+- [ ] **Static Backups**: `resources.html` and `blog.html` load correctly
+- [ ] **Meta Tags**: Title <60 chars, meta desc <160 chars on all pages
+- [ ] **Canonical Tags**: Present on all pages
 
 ## 🔧 Technical Requirements
 - [ ] **Build Process**: Application builds without errors
@@ -95,6 +110,13 @@
 3. Verify User B cannot see User A's worksheets
 4. Test anonymous user cannot see any user data
 
+### Test 5: SEO Verification
+1. `/resources` → 7 sections with cards
+2. `/blog` → 15 articles with links
+3. Blog article HTML files load correctly
+4. Footer visible on `/resources`, `/blog`, `/pricing` but NOT on `/`
+5. Static landing pages (e.g., `/ai-worksheet-generator-for-english-teachers.html`) load
+
 ## 📞 Support Readiness
 - [ ] **FAQ**: Common questions are documented
 - [ ] **Error Handling**: Clear error messages guide users
@@ -104,4 +126,5 @@
 ---
 
 **Status**: Ready for testing ✅
+**Last Updated**: 2026-03-13
 **Next**: Complete all checklist items before public launch

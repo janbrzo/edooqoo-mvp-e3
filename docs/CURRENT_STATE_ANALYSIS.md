@@ -6,7 +6,13 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-12) - SEO Phase 5: Google Search Dominance + UI Polish:**
+**Ostatnia aktualizacja (2026-03-13) - E2E Readiness & Production Hardening:**
+- ✅ **Production logging**: `src/utils/logger.ts` z `devLog()`/`devWarn()` — wycisza `console.log` w produkcji
+- ✅ **13 hooków zrefaktorowanych**: `console.log` → `devLog` (useTokenSystem, useAuthFlow, useWorksheetGeneration, useWorksheetState, useStudentSelector, useExerciseRegeneration, useSectionRegeneration, useInteractiveHomework, useEventTracking, useProfile, useStudents, useDrawingCanvas, useHomeworkExerciseGeneration)
+- ✅ **Fix duplicate DOM ID**: Usunięte `id="worksheet-form"` z FormView.tsx
+- ✅ **PRE_LAUNCH_CHECKLIST.md**: Zaktualizowana z SEO Phase 5 + 5 scenariuszy testowych
+
+**Poprzednia aktualizacja (2026-03-12) - SEO Phase 5: Google Search Dominance + UI Polish:**
 - ✅ **52 statyczne HTML pages** (było 35): exercise-specific, CEFR-level, use-case, comparison, blog
 - ✅ **70 sitemap entries** (było 53) z `lastmod` i `priority`
 - ✅ **15 artykułów blog** w `public/blog/` — 1500-2500 słów każdy

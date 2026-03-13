@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { updateWorksheetStudentAPI } from '@/services/worksheetService/updateService';
 import { toast } from '@/hooks/use-toast';
+import { devLog } from '@/utils/logger';
 
 export const useStudentSelector = (onSuccess?: () => void) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +26,7 @@ export const useStudentSelector = (onSuccess?: () => void) => {
     setIsLoading(true);
     
     try {
-      console.log('🔄 Updating worksheet student:', { worksheetId, newStudentId, userId });
+      devLog('🔄 Updating worksheet student:', { worksheetId, newStudentId, userId });
       
       const result = await updateWorksheetStudentAPI(worksheetId, newStudentId, userId);
       
@@ -39,7 +40,6 @@ export const useStudentSelector = (onSuccess?: () => void) => {
           description: message,
         });
         
-        // Call success callback to refresh data
         if (onSuccess) {
           onSuccess();
         }

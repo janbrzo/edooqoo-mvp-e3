@@ -5,7 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 12, 2026) - SEO Phase 5: Google Search Dominance + UI Polish:**
+**Latest Update (March 13, 2026) - E2E Readiness & Production Hardening:**
+- **Production logging**: Created `src/utils/logger.ts` with `devLog()`/`devWarn()` — silences all `console.log` in production builds to prevent leaking user IDs, tokens, emails
+- **13 hooks refactored**: Replaced `console.log` → `devLog` in useTokenSystem, useAuthFlow, useWorksheetGeneration, useWorksheetState, useStudentSelector, useExerciseRegeneration, useSectionRegeneration, useInteractiveHomework, useEventTracking, useProfile, useStudents, useDrawingCanvas, useHomeworkExerciseGeneration
+- **Duplicate DOM ID fix**: Removed `id="worksheet-form"` from FormView.tsx (kept in Index.tsx) to fix HTML validity
+- **PRE_LAUNCH_CHECKLIST.md**: Updated with SEO Phase 5 items, security items, and 5 critical test flows
+
+**Previous Update (March 12, 2026) - SEO Phase 5: Google Search Dominance + UI Polish:**
 - **52 static HTML pages** in `public/` (was 35) — exercise-specific, CEFR-level, use-case, comparison, and blog pages
 - **70 sitemap entries** (was 53) with `lastmod` and `priority` tags
 - **15 blog articles** in `public/blog/` — detailed guides for teachers (1500-2500 words each)

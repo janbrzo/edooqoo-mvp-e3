@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { devLog } from '@/utils/logger';
 
 interface GeneratedExercise {
   id: string;
@@ -32,25 +33,22 @@ export const useHomeworkExerciseGeneration = () => {
     setIsGenerating(true);
     
     try {
-      console.log('🎯 Generating similar exercises for homework', options);
+      devLog('🎯 Generating similar exercises for homework', options);
       
-      // If options.targetTypes is provided, use BATCH GENERATION
       if (options?.targetTypes && options.targetTypes.length > 0) {
         const count = options.countPerType && options.countPerType > 0 ? options.countPerType : 1;
         
-        console.log(`📝 BATCH MODE: Will generate ${options.targetTypes.length} type(s), ${count} exercise(s) each`);
-        console.log(`   Types: ${options.targetTypes.join(', ')}`);
+        devLog(`📝 BATCH MODE: Will generate ${options.targetTypes.length} type(s), ${count} exercise(s) each`);
+        devLog(`   Types: ${options.targetTypes.join(', ')}`);
 
-        // Create and store prompt
         const prompt = createGenerationPrompt(
           worksheetFormData, 
-          undefined, // No single targetType - we're doing batch
+          undefined,
           count, 
           options.additionalInstructions
         );
         setLastPrompt(prompt);
         
-        // ✅ BATCH GENERATION: Send ONE request with ALL target types
         const response = await fetch('https://bvfrkzdlklyvnhlpleck.supabase.co/functions/v1/generateWorksheet', {
           method: 'POST',
           headers: {
@@ -61,13 +59,12 @@ export const useHomeworkExerciseGeneration = () => {
             formData: {
               ...worksheetFormData,
               regenerationMode: true,
-              // Send all target types as an array for batch processing
               targetExerciseTypes: options.targetTypes,
               exerciseCountPerType: count
             },
             userId,
             isRegeneration: true,
-            isBatchGeneration: true // Flag to indicate batch mode
+            isBatchGeneration: true
           })
         });
 
@@ -77,22 +74,19 @@ export const useHomeworkExerciseGeneration = () => {
         }
 
         const data = await response.json();
-        console.log('✅ Batch generation successful:', data);
+        devLog('✅ Batch generation successful:', data);
 
-        // ✅ CRITICAL: Use FULL system prompt returned from edge function
-        // This contains the complete prompt sent to ChatGPT, not just the simplified version
         if (data.fullPrompt) {
-          console.log('📝 Received full prompt from edge function (length:', data.fullPrompt.length, 'characters)');
+          devLog('📝 Received full prompt from edge function (length:', data.fullPrompt.length, 'characters)');
           setLastPrompt(data.fullPrompt);
         } else {
-          console.warn('⚠️ No fullPrompt in response, using simplified prompt');
+          devLog('⚠️ No fullPrompt in response, using simplified prompt');
         }
 
         if (data.exercises && Array.isArray(data.exercises)) {
           const exercisesWithState = data.exercises.map((exercise: any, index: number) => ({
             ...exercise,
             id: `generated-${Date.now()}-${index}`,
-            // PROBLEM 4.5: Auto-select generated exercises
             selected: true,
             title: normalizeExerciseField(exercise.title),
             instructions: normalizeExerciseField(exercise.instructions),
@@ -105,8 +99,7 @@ export const useHomeworkExerciseGeneration = () => {
           throw new Error('No exercises returned from batch generation');
         }
       } else {
-        // Fallback: Generate one generic exercise
-        console.log('📝 Generating generic exercise(s)');
+        devLog('📝 Generating generic exercise(s)');
 
         const prompt = createGenerationPrompt(worksheetFormData, undefined, undefined, options?.additionalInstructions);
         setLastPrompt(prompt);
@@ -133,13 +126,12 @@ export const useHomeworkExerciseGeneration = () => {
         }
 
         const data = await response.json();
-        console.log('✅ Generic generation successful');
+        devLog('✅ Generic generation successful');
 
         if (data.exercises && Array.isArray(data.exercises)) {
           const exercisesWithState = data.exercises.map((exercise: any, index: number) => ({
             ...exercise,
             id: `generated-${Date.now()}-${index}`,
-            // PROBLEM 4.5: Auto-select generated exercises
             selected: true,
             title: normalizeExerciseField(exercise.title),
             instructions: normalizeExerciseField(exercise.instructions),

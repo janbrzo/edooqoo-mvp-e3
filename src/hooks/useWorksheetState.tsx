@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { FormData } from "@/components/WorksheetForm";
+import { devLog } from '@/utils/logger';
 
 export const useWorksheetState = (authLoading: boolean) => {
   const [generatedWorksheet, setGeneratedWorksheet] = useState<any>(null);
@@ -16,20 +17,18 @@ export const useWorksheetState = (authLoading: boolean) => {
   useEffect(() => {
     const restoreWorksheetState = () => {
       try {
-        // Check if user wants to force new worksheet generation
         const forceNewWorksheet = sessionStorage.getItem('forceNewWorksheet');
         if (forceNewWorksheet) {
-          console.log('Force new worksheet flag detected - clearing all state');
+          devLog('Force new worksheet flag detected - clearing all state');
           sessionStorage.removeItem('forceNewWorksheet');
           clearWorksheetStorage();
           return;
         }
 
-        // Check if user is returning from payment - if so, don't show restore message
         const returningFromPayment = sessionStorage.getItem('returningFromPayment');
         if (returningFromPayment) {
           sessionStorage.removeItem('returningFromPayment');
-          console.log('User returning from payment, skipping restore message but proceeding with restoration.');
+          devLog('User returning from payment, skipping restore message but proceeding with restoration.');
         }
 
         const savedWorksheet = sessionStorage.getItem('currentWorksheet');
@@ -40,32 +39,29 @@ export const useWorksheetState = (authLoading: boolean) => {
         const savedWorksheetId = sessionStorage.getItem('currentWorksheetId');
 
         if (savedWorksheet && savedInputParams) {
-          console.log('Restoring worksheet state from sessionStorage');
+          devLog('Restoring worksheet state from sessionStorage');
           const parsedWorksheet = JSON.parse(savedWorksheet);
           setGeneratedWorksheet(parsedWorksheet);
           
-          // Set editable worksheet to saved version or fall back to original
           if (savedEditableWorksheet) {
             setEditableWorksheet(JSON.parse(savedEditableWorksheet));
-            console.log('Restored edited worksheet from sessionStorage');
+            devLog('Restored edited worksheet from sessionStorage');
           } else {
             setEditableWorksheet(parsedWorksheet);
           }
           
-          // Migrate old language style values (1-10) to new scale (1-5)
           const parsedInputParams = JSON.parse(savedInputParams);
           if (parsedInputParams.languageStyle && parsedInputParams.languageStyle > 5) {
-            // Convert 1-10 scale to 1-5 scale
             const oldValue = parsedInputParams.languageStyle;
             let newValue;
-            if (oldValue <= 2) newValue = 1;        // very casual
-            else if (oldValue <= 4) newValue = 2;   // casual  
-            else if (oldValue <= 6) newValue = 3;   // neutral
-            else if (oldValue <= 8) newValue = 4;   // formal
-            else newValue = 5;                      // very formal
+            if (oldValue <= 2) newValue = 1;
+            else if (oldValue <= 4) newValue = 2;
+            else if (oldValue <= 6) newValue = 3;
+            else if (oldValue <= 8) newValue = 4;
+            else newValue = 5;
             
             parsedInputParams.languageStyle = newValue;
-            console.log(`Migrated language style from ${oldValue}/10 to ${newValue}/5`);
+            devLog(`Migrated language style from ${oldValue}/10 to ${newValue}/5`);
           }
           
           setInputParams(parsedInputParams);
@@ -73,7 +69,6 @@ export const useWorksheetState = (authLoading: boolean) => {
           setSourceCount(savedSourceCount ? parseInt(savedSourceCount) : 0);
           setWorksheetId(savedWorksheetId);
           
-          // Only show toast if NOT returning from payment
           if (!returningFromPayment) {
             toast({
               title: "Worksheet restored",
@@ -93,7 +88,6 @@ export const useWorksheetState = (authLoading: boolean) => {
     }
   }, [authLoading, toast]);
 
-  // Save worksheet state to sessionStorage whenever it changes
   useEffect(() => {
     if (generatedWorksheet && inputParams) {
       try {
@@ -104,19 +98,18 @@ export const useWorksheetState = (authLoading: boolean) => {
         if (worksheetId) {
           sessionStorage.setItem('currentWorksheetId', worksheetId);
         }
-        console.log('Worksheet state saved to sessionStorage');
+        devLog('Worksheet state saved to sessionStorage');
       } catch (error) {
         console.error('Error saving worksheet state:', error);
       }
     }
   }, [generatedWorksheet, inputParams, generationTime, sourceCount, worksheetId]);
 
-  // Save editable worksheet separately whenever it changes
   useEffect(() => {
     if (editableWorksheet) {
       try {
         sessionStorage.setItem('currentEditableWorksheet', JSON.stringify(editableWorksheet));
-        console.log('Editable worksheet saved to sessionStorage');
+        devLog('Editable worksheet saved to sessionStorage');
       } catch (error) {
         console.error('Error saving editable worksheet state:', error);
       }
@@ -135,7 +128,7 @@ export const useWorksheetState = (authLoading: boolean) => {
   const clearPaymentStorage = () => {
     sessionStorage.removeItem('downloadToken');
     sessionStorage.removeItem('downloadTokenExpiry');
-    console.log('Payment tokens cleared from sessionStorage');
+    devLog('Payment tokens cleared from sessionStorage');
   };
 
   const resetWorksheetState = () => {
@@ -144,11 +137,11 @@ export const useWorksheetState = (authLoading: boolean) => {
     setInputParams(null);
     setWorksheetId(null);
     clearWorksheetStorage();
-    clearPaymentStorage(); // Clear payment tokens when creating new worksheet
+    clearPaymentStorage();
   };
 
   const forceNewWorksheet = () => {
-    console.log('Setting force new worksheet flag');
+    devLog('Setting force new worksheet flag');
     sessionStorage.setItem('forceNewWorksheet', 'true');
     resetWorksheetState();
   };

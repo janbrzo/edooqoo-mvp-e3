@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
+import { devLog } from '@/utils/logger';
 
 export type AccountType = 'demo' | 'side-gig' | 'full-time' | null;
 
@@ -15,7 +16,7 @@ export function useAuthFlow() {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const anonymous = session?.user?.is_anonymous === true;
-      console.log(`Auth change: ${event}, anonymous=${anonymous}`);
+      devLog(`Auth change: ${event}, anonymous=${anonymous}`);
       setSession(session);
       setUser(session?.user ?? null);
       setIsAnonymous(anonymous);

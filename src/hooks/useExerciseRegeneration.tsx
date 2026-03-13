@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { exerciseRegenerationService } from '@/services/exerciseRegenerationService';
+import { devLog } from '@/utils/logger';
 
 interface RegenerationState {
   isModalOpen: boolean;
@@ -51,7 +52,7 @@ export const useExerciseRegeneration = () => {
       setState(prev => ({ ...prev, isLoading: true }));
       closeModal();
 
-      console.log('🔄 Starting exercise regeneration:', {
+      devLog('🔄 Starting exercise regeneration:', {
         worksheetId,
         exerciseIndex,
         exerciseType: currentExercise.type,
@@ -67,7 +68,6 @@ export const useExerciseRegeneration = () => {
         userId
       );
 
-      // Update the specific exercise in the worksheet
       const updatedExercises = [...editableWorksheet.exercises];
       updatedExercises[exerciseIndex] = newExercise;
 
@@ -78,7 +78,6 @@ export const useExerciseRegeneration = () => {
 
       setEditableWorksheet(updatedWorksheet);
 
-      // Update the worksheet in the database
       await exerciseRegenerationService.updateWorksheetInDatabase(
         worksheetId,
         updatedWorksheet,

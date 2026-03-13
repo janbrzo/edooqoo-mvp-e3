@@ -2,6 +2,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+import { devLog } from '@/utils/logger';
 
 export interface TrackingEvent {
   eventType: 
@@ -32,16 +33,14 @@ export const useEventTracking = (userId?: string) => {
     try {
       setIsTracking(true);
       
-      // Generate a unique event identifier to prevent duplicates
       const eventId = `${event.eventType}_${sessionId}_${Date.now()}`;
       
-      // Check if we've already tracked this specific event
       if (trackedEventsRef.current.has(eventId)) {
-        console.log('Event already tracked, skipping:', eventId);
+        devLog('Event already tracked, skipping:', eventId);
         return;
       }
       
-      console.log('Tracking event:', event.eventType, event.eventData);
+      devLog('Tracking event:', event.eventType, event.eventData);
       
       const { error } = await supabase.functions.invoke('track-user-event', {
         body: {
@@ -56,7 +55,7 @@ export const useEventTracking = (userId?: string) => {
         console.error('Failed to track event:', error);
       } else {
         trackedEventsRef.current.add(eventId);
-        console.log('Event tracked successfully:', event.eventType);
+        devLog('Event tracked successfully:', event.eventType);
       }
     } catch (error) {
       console.error('Error tracking event:', error);
