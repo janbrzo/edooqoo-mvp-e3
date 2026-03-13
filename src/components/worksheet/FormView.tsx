@@ -54,7 +54,7 @@ const FormView: React.FC<FormViewProps> = ({
   if (variant === 'landing') {
     return (
       <TrackingFormWrapper userId={userId}>
-        <div id="worksheet-form" className="scroll-mt-24 pb-8 pt-0">
+        <div className="scroll-mt-24 pb-8 pt-0">
             <div className={`max-w-6xl mx-auto ${isMobile ? 'px-2' : 'px-4'}`}>
             
             {/* Premium Form Wrapper with glow */}

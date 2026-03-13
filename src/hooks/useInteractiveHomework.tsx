@@ -13,6 +13,7 @@ import {
   OPEN_ENDED_EXERCISE_TYPES,
   ItemEvaluation 
 } from '@/utils/masteryCalculator';
+import { devLog } from '@/utils/logger';
 
 
 interface UseInteractiveHomeworkProps {
@@ -45,12 +46,10 @@ export const useInteractiveHomework = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const pendingSavesRef = useRef<Set<number>>(new Set());
   
-  // PROBLEM 2 FIX: Active time tracking per exercise
   const exerciseStartTimeRef = useRef<Record<number, number>>({});
   const exerciseActiveTimeRef = useRef<Record<number, number>>({});
   const isTabActiveRef = useRef(true);
 
-  // Verify student email against database
   const verifyStudentEmail = useCallback(async (homeworkId: string, email: string): Promise<boolean> => {
     try {
       const { data: homework, error } = await supabase
@@ -64,7 +63,6 @@ export const useInteractiveHomework = ({
       // @ts-ignore - Supabase types for nested relations
       const registeredEmail = homework?.students?.student_email;
       
-      // Email matches if it's the registered student email
       return registeredEmail === email;
     } catch (error) {
       console.error('Error verifying student email:', error);
@@ -72,7 +70,6 @@ export const useInteractiveHomework = ({
     }
   }, []);
 
-  // Load existing answers from database
   const loadAnswers = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -93,7 +90,6 @@ export const useInteractiveHomework = ({
         data.forEach((answer: any) => {
           loadedAnswers[answer.exercise_index] = answer.answers;
           
-          // Load AI evaluation - handle both old format (single) and new format (per-question)
           if (answer.ai_evaluation) {
             const evalData = answer.ai_evaluation;
             if (evalData.question_evaluations && Array.isArray(evalData.question_evaluations)) {
@@ -106,7 +102,6 @@ export const useInteractiveHomework = ({
             }
           }
           
-          // FIX 1.2: Load audio_answers from DB
           if (answer.audio_answers && typeof answer.audio_answers === 'object' && Object.keys(answer.audio_answers).length > 0) {
             const audioForExercise: Record<number, string> = {};
             for (const [qIdx, url] of Object.entries(answer.audio_answers)) {
@@ -144,7 +139,6 @@ export const useInteractiveHomework = ({
     }
   }, [homeworkId, studentEmail]);
 
-  // PROBLEM 2 FIX: Calculate active time for an exercise
   const getActiveTimeMs = useCallback((exerciseIndex: number): number => {
     const accumulated = exerciseActiveTimeRef.current[exerciseIndex] || 0;
     const startTime = exerciseStartTimeRef.current[exerciseIndex];
@@ -155,7 +149,6 @@ export const useInteractiveHomework = ({
     return accumulated;
   }, []);
 
-  // Save a single exercise answer to database
   const saveAnswer = useCallback(async (
     exerciseIndex: number, 
     exerciseType: string, 
@@ -200,44 +193,37 @@ export const useInteractiveHomework = ({
     }
   }, [homeworkId, studentEmail, getActiveTimeMs]);
 
-  // Debounced auto-save function (Problem 3: reduced from 5 seconds to 1.5 seconds)
   const scheduleAutoSave = useCallback((exerciseIndex: number, exerciseType: string, exerciseAnswers: ExerciseAnswers) => {
-    // Clear existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Mark this exercise as pending save
     pendingSavesRef.current.add(exerciseIndex);
     setIsSaving(true);
 
-    // PROBLEM 1: Build per-item evaluations with nano_skill_ratings
     const effectiveWorksheetId = sourceWorksheetId || homeworkId;
     const exerciseData = { ...exercises[exerciseIndex], worksheetId: effectiveWorksheetId };
     const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
     const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType, null, audioAnswers[exerciseIndex] || null);
 
-    console.log('[useInteractiveHomework] Saving with itemEvaluations:', {
+    devLog('[useInteractiveHomework] Saving with itemEvaluations:', {
       exerciseIndex,
       exerciseType,
       mastery,
       itemEvaluationsCount: itemEvaluations?.length || 0
     });
 
-    // Schedule new save (1.5 seconds for faster feedback)
     saveTimeoutRef.current = setTimeout(() => {
       saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);
     }, 1500);
   }, [saveAnswer, exercises]);
 
-  // Update answer and schedule auto-save
   const updateAnswer = useCallback((
     exerciseIndex: number, 
     exerciseType: string,
     questionIndex: number, 
     value: any
   ) => {
-    // PROBLEM 2 FIX: Start tracking time for this exercise if not already
     if (!exerciseStartTimeRef.current[exerciseIndex]) {
       exerciseStartTimeRef.current[exerciseIndex] = Date.now();
     }
@@ -252,23 +238,19 @@ export const useInteractiveHomework = ({
         }
       };
 
-      // Schedule auto-save with updated answers
       scheduleAutoSave(exerciseIndex, exerciseType, updated[exerciseIndex]);
 
       return updated;
     });
   }, [scheduleAutoSave]);
 
-  // Save immediately on blur (when user leaves input field)
   const saveOnBlur = useCallback((exerciseIndex: number, exerciseType: string) => {
-    // Clear any pending auto-save
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
     const exerciseAnswers = answers[exerciseIndex];
     if (exerciseAnswers) {
-      // PROBLEM 1: Build per-item evaluations with nano_skill_ratings
       const effectiveWorksheetId = sourceWorksheetId || homeworkId;
       const exerciseData = { ...exercises[exerciseIndex], worksheetId: effectiveWorksheetId };
       const mastery = calculateOverallMastery(exerciseType, exerciseData, exerciseAnswers as Record<string | number, any>);
@@ -277,15 +259,13 @@ export const useInteractiveHomework = ({
     }
   }, [answers, saveAnswer, exercises]);
 
-  // Submit all homework - creates notification in homework_notifications table (bell icon)
   const submitHomework = useCallback(async () => {
     try {
       setIsSaving(true);
 
-      // Flush pending recordings before submit
       const pendingMap = (window as any).__pendingSpeakingRecordings as Map<string, { save: () => Promise<void> }> | undefined;
       if (pendingMap && pendingMap.size > 0) {
-        console.log(`[submitHomework] Flushing ${pendingMap.size} pending recordings...`);
+        devLog(`[submitHomework] Flushing ${pendingMap.size} pending recordings...`);
         await Promise.all(Array.from(pendingMap.values()).map(e => e.save().catch(console.error)));
         await new Promise(r => setTimeout(r, 500));
       }
@@ -300,7 +280,6 @@ export const useInteractiveHomework = ({
       setIsSubmitted(true);
       setSubmittedAt(new Date());
 
-      // PROBLEM 6 FIX: Call AI verification for ALL open-ended exercise types
       const openAnswerTypes = [
         'reading', 'discussion', 'describe', 'answer-questions', 
         'dialogue', 'answer-questions-audio', 'describe-picture',
@@ -309,35 +288,31 @@ export const useInteractiveHomework = ({
         'listening-comprehension'
       ];
       
-      console.log('[submitHomework] Starting AI verification process...');
-      console.log('[submitHomework] Recognized open answer types:', openAnswerTypes);
+      devLog('[submitHomework] Starting AI verification process...');
+      devLog('[submitHomework] Recognized open answer types:', openAnswerTypes);
       setIsWaitingForAiEval(true);
       
       try {
-        // Get exercise types from answers (we need to load them from saved data)
         const { data: savedAnswers } = await supabase.rpc('get_student_homework_answers', {
           p_homework_id: homeworkId,
           p_student_email: studentEmail
         });
 
-        console.log('[submitHomework] Fetched saved answers:', savedAnswers?.length || 0);
+        devLog('[submitHomework] Fetched saved answers:', savedAnswers?.length || 0);
         
         if (savedAnswers && savedAnswers.length > 0) {
-          // Log all exercise types for debugging
           const allTypes = savedAnswers.map((a: any) => a.exercise_type);
-          console.log('[submitHomework] All exercise types:', allTypes);
+          devLog('[submitHomework] All exercise types:', allTypes);
           
-          // PROBLEM 4: Build answers with individual questions for per-question AI verification
           const answersToVerify: any[] = [];
           
-          // SPEAKING: Transcribe audio answers before AI evaluation
           const transcriptionCache: Record<string, { text: string; duration?: number; wordCount?: number }> = {};
           for (const [exIdxStr, questionAudios] of Object.entries(audioAnswers)) {
             for (const [qIdxStr, audioUrl] of Object.entries(questionAudios as Record<number, string>)) {
               if (!audioUrl || !audioUrl.startsWith('http')) continue;
               const cacheKey = `${exIdxStr}_${qIdxStr}`;
               try {
-                console.log(`[submitHomework] Transcribing audio for exercise ${exIdxStr}, question ${qIdxStr}`);
+                devLog(`[submitHomework] Transcribing audio for exercise ${exIdxStr}, question ${qIdxStr}`);
                 const { data: transcResult, error: transcError } = await supabase.functions.invoke('transcribe-audio', {
                   body: { audio_url: audioUrl }
                 });
@@ -346,9 +321,9 @@ export const useInteractiveHomework = ({
                   transcriptionCache[cacheKey] = {
                     text: transcResult.transcription,
                     wordCount: words.length,
-                    duration: undefined // We don't have duration from Whisper, will be estimated
+                    duration: undefined
                   };
-                  console.log(`[submitHomework] Transcription success: ${words.length} words`);
+                  devLog(`[submitHomework] Transcription success: ${words.length} words`);
                 }
               } catch (err) {
                 console.error(`[submitHomework] Transcription failed for ${cacheKey}:`, err);
@@ -358,24 +333,20 @@ export const useInteractiveHomework = ({
           
           for (const ans of savedAnswers.filter((a: any) => {
             const isOpen = openAnswerTypes.includes(a.exercise_type);
-            console.log(`[submitHomework] Exercise ${a.exercise_index}: type=${a.exercise_type}, isOpen=${isOpen}`);
+            devLog(`[submitHomework] Exercise ${a.exercise_index}: type=${a.exercise_type}, isOpen=${isOpen}`);
             return isOpen;
           })) {
             const exerciseData = exercises[ans.exercise_index];
             const studentAnswersForExercise = ans.answers || {};
             
-            // Get questions/prompts/sentences array from exercise
-            // PROBLEM 2.1 FIX: Add 'items' for listening-comprehension support
             const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || exerciseData?.items || [];
             
-            // PROBLEM 4: Send each question separately for individual evaluation
             Object.entries(studentAnswersForExercise).forEach(([qIdxStr, studentAnswer]) => {
               const qIdx = parseInt(qIdxStr);
               const questionItem = questionItems[qIdx];
               
               if (!questionItem || !studentAnswer || String(studentAnswer).trim() === '') return;
               
-              // Extract question text based on data structure
               let questionText = '';
               let suggestedAnswer = '';
               
@@ -386,12 +357,10 @@ export const useInteractiveHomework = ({
                 suggestedAnswer = questionItem.suggested_answer || questionItem.answer || questionItem.correct_answer || questionItem.correct || questionItem.transformed || '';
               }
               
-              // Add exercise context
               if (exerciseData?.instructions && qIdx === 0) {
                 questionText = `[Instructions: ${exerciseData.instructions}]\n\n${questionText}`;
               }
               
-              // SPEAKING: Include transcription data if audio was recorded
               const transcKey = `${ans.exercise_index}_${qIdx}`;
               const transcription = transcriptionCache[transcKey];
               
@@ -412,7 +381,7 @@ export const useInteractiveHomework = ({
           }
 
           if (answersToVerify.length > 0) {
-            console.log('[submitHomework] Verifying', answersToVerify.length, 'individual questions');
+            devLog('[submitHomework] Verifying', answersToVerify.length, 'individual questions');
             
             const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-open-answers', {
               body: { 
@@ -423,14 +392,13 @@ export const useInteractiveHomework = ({
             });
 
             if (!verifyError && verifyResult?.evaluations) {
-              console.log('[submitHomework] AI evaluation received:', verifyResult.evaluations.length, 'results');
+              devLog('[submitHomework] AI evaluation received:', verifyResult.evaluations.length, 'results');
               
-              // PROBLEM 4: Group evaluations by exercise_index, then by question_index
               const groupedEvaluations: Record<number, Record<number, AiEvaluation>> = {};
               const dbUpdates: Record<number, { question_evaluations: any[] }> = {};
               
               for (const evaluation of verifyResult.evaluations) {
-                const exIdx = evaluation.exercise_index ?? evaluation.question_index; // Fallback if not present
+                const exIdx = evaluation.exercise_index ?? evaluation.question_index;
                 const qIdx = evaluation.question_index ?? 0;
                 
                 if (!groupedEvaluations[exIdx]) {
@@ -453,16 +421,12 @@ export const useInteractiveHomework = ({
                 });
               }
               
-              // Save to database - one update per exercise with all question evaluations
-              // PROBLEM 1 FIX: Also update item_evaluations and mastery from AI scores
               for (const [exIdxStr, evalData] of Object.entries(dbUpdates)) {
                 const exIdx = parseInt(exIdxStr);
                 
-              // Build item_evaluations with AI mastery scores
                 const exerciseData = exercises[exIdx];
                 const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || exerciseData?.items || [];
                 
-                // DSLM FIX: Use buildItemEvaluations to capture ALL nano_skills (primary + writing + speaking)
                 const aiEvalLookup: Record<number, { quality_score?: number; writing_score?: number; speaking_score?: number }> = {};
                 if (evalData.question_evaluations) {
                   evalData.question_evaluations.forEach((qEval: any) => {
@@ -498,7 +462,6 @@ export const useInteractiveHomework = ({
                   .eq('exercise_index', exIdx);
               }
               
-              // Update aiEvaluations state immediately with grouped structure
               setAiEvaluations(prev => {
                 const updated = { ...prev };
                 for (const [exIdx, questionEvals] of Object.entries(groupedEvaluations)) {
@@ -514,13 +477,10 @@ export const useInteractiveHomework = ({
           }
         }
       } catch (aiError) {
-        // Don't block submission if AI verification fails
         console.error('[submitHomework] AI verification failed (non-blocking):', aiError);
         setIsWaitingForAiEval(false);
       }
 
-      // Create notification for teacher using SECURITY DEFINER function
-      // The SQL function fetches all data internally, so anonymous students don't need RLS access
       try {
         const { error: notifError } = await supabase.rpc('insert_homework_submission_notification', {
           p_homework_id: homeworkId
@@ -529,7 +489,7 @@ export const useInteractiveHomework = ({
         if (notifError) {
           console.error('[submitHomework] RPC notification error:', notifError);
         } else {
-          console.log('[submitHomework] Notification created successfully');
+          devLog('[submitHomework] Notification created successfully');
         }
       } catch (notifError) {
         console.error('[submitHomework] Failed to create notification:', notifError);
@@ -554,7 +514,6 @@ export const useInteractiveHomework = ({
     }
   }, [homeworkId, studentEmail, audioAnswers, exercises]);
 
-  // Calculate progress - percentage based on individual tasks, exercises based on full completion
   const getProgress = useCallback((): HomeworkProgress => {
     let answeredExercises = 0;
     let totalTasks = 0;
@@ -565,7 +524,6 @@ export const useInteractiveHomework = ({
       totalTasks += questionCount;
     }
     
-    // FIX 1.3: Merge text answers and audio answers for complete progress
     const allExerciseIndices = new Set([
       ...Object.keys(answers).map(Number),
       ...Object.keys(audioAnswers).map(Number)
@@ -600,18 +558,15 @@ export const useInteractiveHomework = ({
     return { totalExercises, answeredExercises, percentageComplete, totalTasks, answeredTasks: cappedAnsweredTasks };
   }, [answers, audioAnswers, totalExercises, exerciseQuestionCounts]);
 
-  // Load answers on mount
   useEffect(() => {
     if (homeworkId && studentEmail) {
       loadAnswers();
     }
   }, [homeworkId, studentEmail, loadAnswers]);
 
-  // PROBLEM 2 FIX: Visibility change tracking for active time
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        // Tab became inactive - pause all timers
         isTabActiveRef.current = false;
         Object.keys(exerciseStartTimeRef.current).forEach(indexStr => {
           const idx = parseInt(indexStr);
@@ -622,7 +577,6 @@ export const useInteractiveHomework = ({
           }
         });
       } else {
-        // Tab became active - restart timers
         isTabActiveRef.current = true;
         Object.keys(exerciseActiveTimeRef.current).forEach(indexStr => {
           const idx = parseInt(indexStr);
@@ -635,7 +589,6 @@ export const useInteractiveHomework = ({
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
@@ -644,7 +597,6 @@ export const useInteractiveHomework = ({
     };
   }, []);
 
-  // Update audio answer for a specific exercise/question
   const updateAudioAnswer = useCallback((exerciseIndex: number, questionIndex: number, audioUrl: string) => {
     const newAudioForExercise = { ...(audioAnswers[exerciseIndex] || {}), [questionIndex]: audioUrl };
     
@@ -656,7 +608,6 @@ export const useInteractiveHomework = ({
       }
     }));
     
-    // FIX 1.2+1.4: Save audio_answers to DB so they persist after refresh + SQL triggers fire
     const exerciseType = exercises[exerciseIndex]?.type || exercises[exerciseIndex]?.exercise_type || '';
     const currentAnswers = answers[exerciseIndex] || {};
     const effectiveWorksheetId = sourceWorksheetId || homeworkId;
@@ -665,7 +616,7 @@ export const useInteractiveHomework = ({
     const itemEvals = buildItemEvaluations(exerciseData, currentAnswers as Record<string | number, any>, exerciseType, null, newAudioForExercise);
     saveAnswer(exerciseIndex, exerciseType, currentAnswers, mastery, itemEvals, newAudioForExercise);
     
-    console.log('[useInteractiveHomework] Audio answer saved to DB:', { exerciseIndex, questionIndex, audioUrl: audioUrl.substring(0, 50) });
+    devLog('[useInteractiveHomework] Audio answer saved to DB:', { exerciseIndex, questionIndex, audioUrl: audioUrl.substring(0, 50) });
   }, [answers, exercises, saveAnswer, sourceWorksheetId, homeworkId, audioAnswers]);
 
   return {

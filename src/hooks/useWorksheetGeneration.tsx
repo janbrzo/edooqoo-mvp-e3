@@ -13,6 +13,7 @@ import { useTokenSystem } from "@/hooks/useTokenSystem";
 import { supabase } from "@/integrations/supabase/client";
 import { generateAudioForWorksheet, generateImageForWorksheet } from '@/services/mediaService';
 import { streamWorksheetGeneration } from '@/services/worksheetStreamService';
+import { devLog } from '@/utils/logger';
 
 export const useWorksheetGeneration = (
   userId: string | null,
@@ -37,8 +38,8 @@ export const useWorksheetGeneration = (
       console.warn('⚠️ Generation already in progress, ignoring duplicate click');
       return;
     }
-    console.log('🚀 Starting worksheet generation for:', data.lessonTime);
-    console.log('🔧 Form data received:', { 
+    devLog('🚀 Starting worksheet generation for:', data.lessonTime);
+    devLog('🔧 Form data received:', { 
       lessonTime: data.lessonTime, 
       grammarFocus: data.teachingPreferences,
       hasGrammar: !!(data.teachingPreferences && data.teachingPreferences.trim()),
@@ -49,21 +50,17 @@ export const useWorksheetGeneration = (
     let streamingStarted = false;
 
     // CRITICAL ADDITION: Sync subscription status before generation
-    // This ensures expired subscriptions are detected before allowing worksheet generation
     if (userId) {
       try {
-        console.log('🔄 Syncing subscription status before worksheet generation...');
+        devLog('🔄 Syncing subscription status before worksheet generation...');
         await supabase.functions.invoke('check-subscription-status');
-        console.log('✅ Subscription status synchronized');
+        devLog('✅ Subscription status synchronized');
       } catch (error) {
         console.error('⚠️ Warning: Subscription sync failed before generation:', error);
-        // Continue with generation - sync failure shouldn't block generation
       }
     }
 
     // PROBLEM 4 FIX: Check token requirements ONLY for authenticated users
-    // Anonymous users (userId=null) can generate worksheets in demo mode
-    // Blocking happens later on download (PaymentPopup)
     if (userId && !isDemo && !hasTokens) {
       toast({
         title: "No tokens available",
@@ -78,10 +75,9 @@ export const useWorksheetGeneration = (
 
     // CRITICAL FIX: Generate temporary ID but DON'T set it in state yet
     const temporaryWorksheetId = uuidv4();
-    console.log('🆔 Generated temporary worksheet ID (for fallback only):', temporaryWorksheetId);
+    devLog('🆔 Generated temporary worksheet ID (for fallback only):', temporaryWorksheetId);
 
     // CRITICAL: Calculate media/grammar requirements BEFORE opening modal
-    // This ensures GeneratingModal shows correct duration and icons from the start
     const audioRequiredExercises = [
       "listening-comprehension", "multiple-choice-audio", 
       "true-false-audio", "fill-in-blanks-audio", "answer-questions-audio"
@@ -100,7 +96,7 @@ export const useWorksheetGeneration = (
     
     const hasGrammar = !!(data.teachingPreferences && data.teachingPreferences.trim());
     
-    console.log('🔍 Media/Grammar requirements calculated:', { requiresAudio, requiresImage, hasGrammar });
+    devLog('🔍 Media/Grammar requirements calculated:', { requiresAudio, requiresImage, hasGrammar });
     
     // Set inputParams with requirements BEFORE opening modal
     worksheetState.setInputParams({
@@ -124,37 +120,30 @@ export const useWorksheetGeneration = (
     });
     
     try {
-      console.log('📡 Starting worksheet generation...');
+      devLog('📡 Starting worksheet generation...');
       
-      // NEW: Create full prompt for ChatGPT and save it to database
       const fullPrompt = formatPromptForAI(data);
       const formDataForStorage = createFormDataForStorage(data);
       
-      // FIXED: Allow anonymous users to generate worksheets in demo mode
-      // They can generate but need to pay for download (handled by PaymentPopup)
-      // Only logged-in users benefit from FREE_CHRISTMAS_WEEK (no token consumption)
       if (!userId) {
-        console.log('📋 Anonymous user detected - proceeding in demo mode');
+        devLog('📋 Anonymous user detected - proceeding in demo mode');
       }
       
       // ============================================================
       // KROK 1: PRE-GENERATE MEDIA (if needed)
-      // This prevents 546 WORKER_LIMIT errors by moving media generation
-      // to frontend, reducing backend execution time from 60s+ to <30s
       // ============================================================
       let selectedAudio = data.selectedAudio || null;
       let selectedImage = data.selectedImage || null;
       
-      console.log('🔍 Using pre-calculated media requirements:', { requiresAudio, requiresImage, hasAudio: !!selectedAudio, hasImage: !!selectedImage });
+      devLog('🔍 Using pre-calculated media requirements:', { requiresAudio, requiresImage, hasAudio: !!selectedAudio, hasImage: !!selectedImage });
       
-      // Generate media BEFORE worksheet (if needed and not already provided)
       if (requiresAudio && !selectedAudio) {
-        console.log('🎵 Pre-generating audio...');
+        devLog('🎵 Pre-generating audio...');
         setMediaGenerating(true);
         
         try {
           selectedAudio = await generateAudioForWorksheet(data);
-          console.log('✅ Audio pre-generated successfully');
+          devLog('✅ Audio pre-generated successfully');
         } catch (error) {
           console.error('❌ Audio generation failed:', error);
           toast({
@@ -168,12 +157,12 @@ export const useWorksheetGeneration = (
       }
       
       if (requiresImage && !selectedImage) {
-        console.log('🎨 Pre-generating image...');
+        devLog('🎨 Pre-generating image...');
         setMediaGenerating(true);
         
         try {
           selectedImage = await generateImageForWorksheet(data);
-          console.log('✅ Image pre-generated successfully');
+          devLog('✅ Image pre-generated successfully');
         } catch (error) {
           console.error('❌ Image generation failed:', error);
           toast({
@@ -186,30 +175,25 @@ export const useWorksheetGeneration = (
         }
       }
       
-      // Update inputParams with generated media BEFORE worksheet generation
-      // This ensures GeneratingModal shows correct duration (150s vs 90s) and media info
       worksheetState.setInputParams({
         ...data,
         selectedAudio,
         selectedImage,
-        requiresAudio,  // ← Zachowujemy dla modala
-        requiresImage,  // ← Zachowujemy dla modala
-        hasGrammar,     // ← Zachowujemy dla modala
+        requiresAudio,
+        requiresImage,
+        hasGrammar,
       });
       
       // ============================================================
-      // KROK 2: GENERATE WORKSHEET (now with pre-generated media)
-      // WITH STREAMING for real-time progress
+      // KROK 2: GENERATE WORKSHEET WITH STREAMING
       // ============================================================
-      console.log('📝 Generating worksheet with STREAMING enabled...');
+      devLog('📝 Generating worksheet with STREAMING enabled...');
       
       let worksheetResult: any = null;
       
-      // CRITICAL: Mark that streaming has started
       streamingStarted = true;
-      console.log('🚦 Streaming flag set to TRUE - modal will stay open');
+      devLog('🚦 Streaming flag set to TRUE - modal will stay open');
       
-      // Use streaming for generation
       abortControllerRef.current = streamWorksheetGeneration(
         { 
           prompt: fullPrompt,
@@ -223,39 +207,35 @@ export const useWorksheetGeneration = (
         userId,
         {
           onStart: () => {
-            console.log('🚀 Streaming started');
+            devLog('🚀 Streaming started');
             const expectedTotal = getExpectedExerciseCount(data.lessonTime);
             setStreamProgress({ exercisesGenerated: 0, expectedTotal });
           },
           onProgress: (progress) => {
-            console.log(`📝 Progress: ${progress.exercisesGenerated}/${progress.expectedTotal}`);
+            devLog(`📝 Progress: ${progress.exercisesGenerated}/${progress.expectedTotal}`);
             setStreamProgress(progress);
           },
           onDone: async (result) => {
-            console.log('✅ Streaming complete:', result.worksheetId);
+            devLog('✅ Streaming complete:', result.worksheetId);
             worksheetResult = result.worksheet;
             worksheetResult.id = result.worksheetId;
             setStreamProgress(null);
             
-            // Continue with existing completion logic
             await handleWorksheetCompletion(worksheetResult, data, startTime);
           },
           onError: (error) => {
             console.error('❌ Stream error:', error);
             setStreamProgress(null);
-            setIsGenerating(false); // Close modal on streaming error
+            setIsGenerating(false);
             throw error;
           }
         }
       );
       
-      // Wait for streaming to complete
-      // The actual completion is handled in onDone callback
       return;
     } catch (error) {
       console.error("💥 Worksheet generation error:", error);
       
-      // Track failed worksheet generation
       trackEvent({
         eventType: 'worksheet_generation_complete',
         eventData: {
@@ -266,7 +246,6 @@ export const useWorksheetGeneration = (
         }
       });
       
-      // ENHANCED: Detect network errors (CORS, Failed to fetch)
       const errorMessage = error instanceof Error ? error.message : String(error);
       const isNetworkError = errorMessage.includes('Failed to fetch') || 
                             errorMessage.includes('CORS') || 
@@ -276,7 +255,6 @@ export const useWorksheetGeneration = (
       if (isNetworkError) {
         console.warn('🌐 Network error detected - showing external issue message');
         
-        // Special toast for external issues - stays for 3 seconds
         toast({
           title: "Generation failed due to external issues",
           description: "No tokens consumed. Your data is preserved. Please click 'Generate Custom Worksheet' again.",
@@ -285,7 +263,6 @@ export const useWorksheetGeneration = (
           duration: 3000
         });
       } else {
-        // Regular error handling for API errors
         toast({
           title: "Worksheet generation failed",
           description: error instanceof Error 
@@ -295,39 +272,32 @@ export const useWorksheetGeneration = (
         });
       }
       
-      // Don't clear the form data - user stays on form with preserved data
     } finally {
-      console.log('🏁 Finishing generation process...');
+      devLog('🏁 Finishing generation process...');
       
-      // CRITICAL FIX: Only close modal if streaming hasn't started
-      // If streaming started, it will close modal in onDone/onError callbacks
       if (!streamingStarted) {
-        console.log('🚪 Closing modal - streaming never started (error before streaming)');
+        devLog('🚪 Closing modal - streaming never started (error before streaming)');
         setIsGenerating(false);
       } else {
-        console.log('🔄 Modal stays open - streaming in progress (will close in callbacks)');
+        devLog('🔄 Modal stays open - streaming in progress (will close in callbacks)');
       }
       
-      // MOVED HERE: Update student activity if studentId is provided - AT THE VERY END
       if (studentId) {
-        console.log('🔄 FINAL STEP: Updating student activity for:', studentId);
+        devLog('🔄 FINAL STEP: Updating student activity for:', studentId);
         
-        // Add a small delay to ensure the worksheet has been fully processed
         setTimeout(() => {
-          // Dispatch custom event to notify other components about student update
           window.dispatchEvent(new CustomEvent('studentUpdated', { 
             detail: { studentId } 
           }));
           
-          console.log('🔄 StudentUpdated event dispatched AFTER generation completed for:', studentId);
+          devLog('🔄 StudentUpdated event dispatched AFTER generation completed for:', studentId);
         }, 500);
       }
     }
   };
 
-  // Helper function to handle worksheet completion (extracted for reuse)
   const handleWorksheetCompletion = async (worksheetResult: any, data: FormData, startTime: number) => {
-    console.log("✅ Generated worksheet result received:", {
+    devLog("✅ Generated worksheet result received:", {
       hasData: !!worksheetResult,
       hasId: !!worksheetResult?.id,
       realId: worksheetResult?.id,
@@ -343,8 +313,7 @@ export const useWorksheetGeneration = (
       throw new Error("Failed to save worksheet to database - no ID returned");
     }
 
-    // Consume token for authenticated users AFTER successful generation
-    console.log('🎯 TOKEN CONSUMPTION CHECK:', {
+    devLog('🎯 TOKEN CONSUMPTION CHECK:', {
       isDemo,
       userId,
       hasUserId: !!userId,
@@ -353,43 +322,40 @@ export const useWorksheetGeneration = (
     });
     
     if (!isDemo && userId) {
-      console.log('✅ Attempting to consume token for user:', userId);
+      devLog('✅ Attempting to consume token for user:', userId);
       const tokenConsumed = await consumeToken(finalWorksheetId);
-      console.log('🔍 Token consumption result:', tokenConsumed);
+      devLog('🔍 Token consumption result:', tokenConsumed);
       if (!tokenConsumed) {
-        console.warn('⚠️ Failed to consume token, but worksheet was generated');
+        devLog('⚠️ Failed to consume token, but worksheet was generated');
       } else {
-        console.log('✅ Token consumed successfully');
+        devLog('✅ Token consumed successfully');
       }
     }
     
     const actualGenerationTime = Math.round((Date.now() - startTime) / 1000);
-    console.log('⏱️ Generation time:', actualGenerationTime, 'seconds');
+    devLog('⏱️ Generation time:', actualGenerationTime, 'seconds');
     
     worksheetState.setGenerationTime(actualGenerationTime);
     worksheetState.setSourceCount(worksheetResult.sourceCount || Math.floor(Math.random() * (90 - 65) + 65));
     
     const expectedExerciseCount = getExpectedExerciseCount(data.lessonTime);
-    console.log(`🎯 Expected ${expectedExerciseCount} exercises for ${data.lessonTime}`);
+    devLog(`🎯 Expected ${expectedExerciseCount} exercises for ${data.lessonTime}`);
     
-    console.log('🔍 Starting worksheet validation...');
+    devLog('🔍 Starting worksheet validation...');
     if (validateWorksheet(worksheetResult, expectedExerciseCount)) {
-      console.log('✅ Worksheet validation passed, processing exercises...');
+      devLog('✅ Worksheet validation passed, processing exercises...');
       
-      // CRITICAL: Deep fix the entire worksheet before processing
-      console.log('🔧 DEEP FIXING entire worksheet before processing...');
+      devLog('🔧 DEEP FIXING entire worksheet before processing...');
       const deepFixedWorksheet = deepFixTextObjects(worksheetResult, 'worksheet');
-      console.log('🔧 Worksheet after deep fix:', deepFixedWorksheet);
+      devLog('🔧 Worksheet after deep fix:', deepFixedWorksheet);
       
-      // Trim exercises if more than expected are returned
       if (deepFixedWorksheet.exercises.length > expectedExerciseCount) {
-        console.log(`✂️ Trimming exercises from ${deepFixedWorksheet.exercises.length} to ${expectedExerciseCount}`);
+        devLog(`✂️ Trimming exercises from ${deepFixedWorksheet.exercises.length} to ${expectedExerciseCount}`);
         deepFixedWorksheet.exercises = deepFixedWorksheet.exercises.slice(0, expectedExerciseCount);
       }
       
-      // FIXED: Pass correct lessonTime and hasGrammar parameters
       const hasGrammar = !!(data.teachingPreferences && data.teachingPreferences.trim());
-      console.log('🔧 Processing exercises with parameters:', { 
+      devLog('🔧 Processing exercises with parameters:', { 
         lessonTime: data.lessonTime, 
         hasGrammar,
         exerciseCount: deepFixedWorksheet.exercises.length 
@@ -397,34 +363,29 @@ export const useWorksheetGeneration = (
       
       deepFixedWorksheet.exercises = processExercises(deepFixedWorksheet.exercises, data.lessonTime, hasGrammar);
       
-      // CRITICAL: Set the correct worksheet ID on the worksheet object
       deepFixedWorksheet.id = finalWorksheetId;
       
       if (!deepFixedWorksheet.vocabulary_sheet || deepFixedWorksheet.vocabulary_sheet.length === 0) {
-        console.log('📝 Creating sample vocabulary sheet...');
+        devLog('📝 Creating sample vocabulary sheet...');
         deepFixedWorksheet.vocabulary_sheet = createSampleVocabulary(15);
       }
       
-      console.log('💾 CRITICAL FIX: Setting worksheet ID FIRST, then worksheet data');
+      devLog('💾 CRITICAL FIX: Setting worksheet ID FIRST, then worksheet data');
       
-      // CRITICAL FIX: Set the worksheet ID FIRST before setting worksheet data
       worksheetState.setWorksheetId(finalWorksheetId);
       
-      // CRITICAL FIX: Add small delay to ensure state is updated
       setTimeout(() => {
-        console.log('💾 Now setting both worksheets in state with final ID:', finalWorksheetId);
+        devLog('💾 Now setting both worksheets in state with final ID:', finalWorksheetId);
         worksheetState.setGeneratedWorksheet(deepFixedWorksheet);
         worksheetState.setEditableWorksheet(deepFixedWorksheet);
         
-        // CRITICAL FIX: Update URL to include worksheet ID after generation
-        console.log('🔗 Updating URL to /worksheet/' + finalWorksheetId);
+        devLog('🔗 Updating URL to /worksheet/' + finalWorksheetId);
         window.history.pushState({}, '', `/worksheet/${finalWorksheetId}`);
         
         // Mark generation as complete
         setIsGenerating(false);
       }, 100);
       
-      // Track successful worksheet generation
       trackEvent({
         eventType: 'worksheet_generation_complete',
         eventData: {
@@ -435,27 +396,26 @@ export const useWorksheetGeneration = (
         }
       });
       
-      console.log('🎉 Worksheet generation completed successfully with ID:', finalWorksheetId);
+      devLog('🎉 Worksheet generation completed successfully with ID:', finalWorksheetId);
       toast({
         title: "Worksheet generated successfully!",
         description: "Your custom worksheet is now ready to use.",
         className: "bg-white border-l-4 border-l-green-500 shadow-lg rounded-xl"
       });
       
-      // Update student activity if studentId is provided
       if (studentId) {
-        console.log('🔄 FINAL STEP: Updating student activity for:', studentId);
+        devLog('🔄 FINAL STEP: Updating student activity for:', studentId);
         
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent('studentUpdated', { 
             detail: { studentId } 
           }));
           
-          console.log('🔄 StudentUpdated event dispatched AFTER generation completed for:', studentId);
+          devLog('🔄 StudentUpdated event dispatched AFTER generation completed for:', studentId);
         }, 500);
       }
     } else {
-      console.log('❌ Worksheet validation failed');
+      devLog('❌ Worksheet validation failed');
       throw new Error("Generated worksheet data is incomplete or invalid");
     }
   };
@@ -469,7 +429,7 @@ export const useWorksheetGeneration = (
     streamProgress,
     mediaGenerating,
     cancelGeneration: () => {
-      console.log('🛑 Cancelling generation...');
+      devLog('🛑 Cancelling generation...');
       abortControllerRef.current?.abort();
       setIsGenerating(false);
       setStreamProgress(null);
