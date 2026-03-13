@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { isFreeCustomDemoWeek } from '@/utils/promoUtils';
+import { devLog } from '@/utils/logger';
 
 export const useTokenSystem = (userId?: string | null) => {
   const [tokenLeft, setTokenLeft] = useState<number>(0);
@@ -10,7 +11,6 @@ export const useTokenSystem = (userId?: string | null) => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // FIXED: Check if user is anonymous by checking the actual user session
   const [isAnonymousUser, setIsAnonymousUser] = useState(true);
 
   useEffect(() => {
@@ -31,16 +31,13 @@ export const useTokenSystem = (userId?: string | null) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // FIXED: User is anonymous ONLY if explicitly marked as anonymous
-      // If user has an email, they're NOT anonymous (registered user)
       let anonymous = user?.is_anonymous === true;
       
-      // Additional check: If user has email, they're definitely NOT anonymous
       if (user?.email && user.email.trim() !== '') {
         anonymous = false;
       }
       
-      console.log('🔍 User status check:', {
+      devLog('🔍 User status check:', {
         hasUser: !!user,
         userId: user?.id,
         isAnonymous: user?.is_anonymous,
@@ -57,14 +54,13 @@ export const useTokenSystem = (userId?: string | null) => {
 
   const fetchTokenBalance = async () => {
     if (!userId || isAnonymousUser) {
-      console.log('🔍 Skipping token fetch - anonymous user');
+      devLog('🔍 Skipping token fetch - anonymous user');
       return;
     }
     
     try {
-      console.log('🔍 Fetching token balance for authenticated user:', userId);
+      devLog('🔍 Fetching token balance for authenticated user:', userId);
       
-      // Get profile data with simplified token system
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('available_tokens, is_tokens_frozen, monthly_worksheet_limit, subscription_type, monthly_worksheets_used, total_worksheets_created, total_tokens_consumed, total_tokens_received, subscription_status, subscription_expires_at')
@@ -72,9 +68,8 @@ export const useTokenSystem = (userId?: string | null) => {
         .single();
       
       if (error) {
-        // Don't show toast for "no profile" errors for authenticated users - they might not have a profile yet
         if (error.code === 'PGRST116') {
-          console.log('🔍 No profile found for authenticated user - this is normal for new users');
+          devLog('🔍 No profile found for authenticated user - this is normal for new users');
           setTokenLeft(0);
           setProfile(null);
           return;
@@ -82,12 +77,9 @@ export const useTokenSystem = (userId?: string | null) => {
         throw error;
       }
       
-      // FIXED: Corrected Token Left calculation
-      // Token Left = actual available_tokens (what user has)
-      // This shows the real token count regardless of frozen state
       const availableTokens = profileData?.available_tokens || 0;
       
-      console.log('🔍 Token balance fetched:', {
+      devLog('🔍 Token balance fetched:', {
         availableTokens,
         is_tokens_frozen: profileData?.is_tokens_frozen,
         subscription_type: profileData?.subscription_type
@@ -98,7 +90,6 @@ export const useTokenSystem = (userId?: string | null) => {
     } catch (error: any) {
       console.error('Error fetching token balance:', error);
       
-      // FIXED: Don't show toast errors for anonymous users
       if (!isAnonymousUser) {
         toast({
           title: "Error",
@@ -112,7 +103,7 @@ export const useTokenSystem = (userId?: string | null) => {
   };
 
   const consumeToken = async (worksheetId: string): Promise<boolean> => {
-    console.log('🎯 consumeToken CALLED:', { 
+    devLog('🎯 consumeToken CALLED:', { 
       userId, 
       worksheetId, 
       isAnonymousUser,
@@ -122,20 +113,18 @@ export const useTokenSystem = (userId?: string | null) => {
     });
     
     if (!userId || isAnonymousUser) {
-      console.log('❌ consumeToken ABORTED: No userId or anonymous user');
+      devLog('❌ consumeToken ABORTED: No userId or anonymous user');
       return false;
     }
     
-    // FREE DEMO WEEK: Don't consume tokens, just return success
     if (isFreeCustomDemoWeek()) {
-      console.log('🎁 FREE DEMO WEEK: Token consumption bypassed for authenticated user');
-      // Still refresh balance to show current state
+      devLog('🎁 FREE DEMO WEEK: Token consumption bypassed for authenticated user');
       await fetchTokenBalance();
       return true;
     }
     
     try {
-      console.log('📡 CALLING RPC consume_token with params:', {
+      devLog('📡 CALLING RPC consume_token with params:', {
         p_teacher_id: userId,
         p_worksheet_id: worksheetId
       });
@@ -146,7 +135,7 @@ export const useTokenSystem = (userId?: string | null) => {
           p_worksheet_id: worksheetId 
         });
       
-      console.log('📥 RPC RESPONSE:', { 
+      devLog('📥 RPC RESPONSE:', { 
         data, 
         error,
         errorDetails: error ? {
@@ -163,12 +152,11 @@ export const useTokenSystem = (userId?: string | null) => {
       }
       
       if (data === true) {
-        console.log('✅ Token consumed successfully, refreshing balance...');
-        // Refresh the token data after successful consumption
+        devLog('✅ Token consumed successfully, refreshing balance...');
         await fetchTokenBalance();
         return true;
       } else {
-        console.warn('⚠️ Token consumption returned FALSE:', data);
+        devLog('⚠️ Token consumption returned FALSE:', data);
         return false;
       }
     } catch (error: any) {
@@ -182,22 +170,19 @@ export const useTokenSystem = (userId?: string | null) => {
     }
   };
 
-  // Check if user has tokens available for use
   const hasTokens = () => {
     if (isAnonymousUser) {
-      console.log('🔍 hasTokens() - Anonymous user, returning true (demo mode)');
-      return true; // Anonymous users can always generate (demo worksheets)
-    }
-    
-    // FREE DEMO WEEK: Authenticated users can always generate
-    if (isFreeCustomDemoWeek()) {
-      console.log('🎁 FREE DEMO WEEK: hasTokens() - Authenticated user gets free access');
+      devLog('🔍 hasTokens() - Anonymous user, returning true (demo mode)');
       return true;
     }
     
-    // Normal operation: Authenticated users need tokens and not frozen
+    if (isFreeCustomDemoWeek()) {
+      devLog('🎁 FREE DEMO WEEK: hasTokens() - Authenticated user gets free access');
+      return true;
+    }
+    
     const result = tokenLeft > 0 && !(profile?.is_tokens_frozen);
-    console.log('🔍 hasTokens() - Authenticated user (normal mode):', {
+    devLog('🔍 hasTokens() - Authenticated user (normal mode):', {
       tokenLeft,
       is_tokens_frozen: profile?.is_tokens_frozen,
       result
@@ -205,10 +190,9 @@ export const useTokenSystem = (userId?: string | null) => {
     return result;
   };
 
-  // FIXED: isDemo should be based on anonymous status, not userId presence
   const isDemo = isAnonymousUser;
 
-  console.log('🔍 useTokenSystem final state:', {
+  devLog('🔍 useTokenSystem final state:', {
     userId,
     tokenLeft,
     isDemo,
@@ -218,7 +202,7 @@ export const useTokenSystem = (userId?: string | null) => {
   });
 
   return {
-    tokenLeft, // Shows actual available_tokens count
+    tokenLeft,
     profile,
     loading,
     hasTokens: hasTokens(),

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { exerciseRegenerationService } from '@/services/exerciseRegenerationService';
+import { devLog } from '@/utils/logger';
 
 interface SectionRegenerationState {
   isModalOpen: boolean;
@@ -51,7 +52,7 @@ export const useSectionRegeneration = () => {
       setState(prev => ({ ...prev, isLoading: true }));
       closeModal();
 
-      console.log('🔄 Starting section regeneration:', {
+      devLog('🔄 Starting section regeneration:', {
         worksheetId,
         sectionType,
         guidelines: state.guidelines
@@ -89,7 +90,6 @@ export const useSectionRegeneration = () => {
 
       setEditableWorksheet(updatedWorksheet);
 
-      // Update the worksheet in the database
       await exerciseRegenerationService.updateWorksheetInDatabase(
         worksheetId,
         updatedWorksheet,
