@@ -1,15 +1,8 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 const GlobalFooter = () => {
-  const location = useLocation();
-
-  // Hide footer on homepage - content exists for SEO but not shown to users
-  if (location.pathname === '/') {
-    return null;
-  }
-
   return (
     <footer className="border-t bg-background/95 backdrop-blur-sm">
       <div className="container mx-auto px-4 py-10">
@@ -19,8 +12,8 @@ const GlobalFooter = () => {
           <p className="text-sm text-muted-foreground mt-1">AI Worksheet Generator for English Teachers</p>
         </div>
 
-        {/* 4-column grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+        {/* 5-column grid */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
           {/* Column 1: Product */}
           <div>
             <h3 className="font-semibold text-foreground mb-3 text-sm">Product</h3>
@@ -46,7 +39,20 @@ const GlobalFooter = () => {
             </ul>
           </div>
 
-          {/* Column 3: For Teachers */}
+          {/* Column 3: Grammar */}
+          <div>
+            <h3 className="font-semibold text-foreground mb-3 text-sm">Grammar</h3>
+            <ul className="space-y-2 text-sm">
+              <li><a href="/present-simple-worksheets.html" className="text-muted-foreground hover:text-primary transition-colors">Present Simple</a></li>
+              <li><a href="/past-simple-worksheets.html" className="text-muted-foreground hover:text-primary transition-colors">Past Simple</a></li>
+              <li><a href="/present-perfect-worksheets.html" className="text-muted-foreground hover:text-primary transition-colors">Present Perfect</a></li>
+              <li><a href="/conditionals-worksheets-english.html" className="text-muted-foreground hover:text-primary transition-colors">Conditionals</a></li>
+              <li><a href="/passive-voice-worksheets-esl.html" className="text-muted-foreground hover:text-primary transition-colors">Passive Voice</a></li>
+              <li><a href="/grammar-worksheet-generator.html" className="text-muted-foreground hover:text-primary transition-colors">All Grammar</a></li>
+            </ul>
+          </div>
+
+          {/* Column 4: For Teachers */}
           <div>
             <h3 className="font-semibold text-foreground mb-3 text-sm">For Teachers</h3>
             <ul className="space-y-2 text-sm">
@@ -54,10 +60,11 @@ const GlobalFooter = () => {
               <li><a href="/worksheet-generator-for-language-schools.html" className="text-muted-foreground hover:text-primary transition-colors">Language Schools</a></li>
               <li><a href="/ai-tools-for-online-esl-teachers.html" className="text-muted-foreground hover:text-primary transition-colors">Online ESL Teachers</a></li>
               <li><a href="/business-english-worksheet-generator.html" className="text-muted-foreground hover:text-primary transition-colors">Business English</a></li>
+              <li><a href="/english-worksheets-for-corporate-training.html" className="text-muted-foreground hover:text-primary transition-colors">Corporate Training</a></li>
             </ul>
           </div>
 
-          {/* Column 4: Compare */}
+          {/* Column 5: Compare */}
           <div>
             <h3 className="font-semibold text-foreground mb-3 text-sm">Compare</h3>
             <ul className="space-y-2 text-sm">
