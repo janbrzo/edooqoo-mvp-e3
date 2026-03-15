@@ -1,72 +1,94 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://edooqoo.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/about</loc><priority>0.9</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/pricing</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/prompts</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/exercise-types</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/how-it-works</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/glossary</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/signup</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/login</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/privacy-policy</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/cookie-policy</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <!-- Phase 5: Hub pages -->
-  <url><loc>https://edooqoo.com/resources</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <!-- Static landings -->
-  <url><loc>https://edooqoo.com/ai-worksheet-generator-for-english-teachers.html</loc><priority>0.9</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/best-ai-tools-for-esl-teachers.html</loc><priority>0.9</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/cefr-worksheet-generator.html</loc><priority>0.9</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/how-to-create-english-worksheets-with-ai.html</loc><priority>0.9</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/esl-homework-grading-tool.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
+  <url><loc>https://edooqoo.com/</loc><priority>1.0</priority><changefreq>weekly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/about</loc><priority>0.9</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/pricing</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/prompts</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/exercise-types</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/how-it-works</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/glossary</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/signup</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/login</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/privacy-policy</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/cookie-policy</loc><priority>0.3</priority><changefreq>yearly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <!-- Hub pages -->
+  <url><loc>https://edooqoo.com/resources</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog</loc><priority>0.9</priority><changefreq>weekly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <!-- Core landings -->
+  <url><loc>https://edooqoo.com/ai-worksheet-generator-for-english-teachers.html</loc><priority>0.9</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/best-ai-tools-for-esl-teachers.html</loc><priority>0.9</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/cefr-worksheet-generator.html</loc><priority>0.9</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/how-to-create-english-worksheets-with-ai.html</loc><priority>0.9</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/esl-homework-grading-tool.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
   <!-- Exercise-specific landings -->
-  <url><loc>https://edooqoo.com/fill-in-the-blanks-worksheet-generator.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/reading-comprehension-worksheet-maker.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/multiple-choice-quiz-generator-english.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/grammar-worksheet-generator.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/vocabulary-exercise-generator.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/listening-comprehension-exercises-esl.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
+  <url><loc>https://edooqoo.com/fill-in-the-blanks-worksheet-generator.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/reading-comprehension-worksheet-maker.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/multiple-choice-quiz-generator-english.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/grammar-worksheet-generator.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/vocabulary-exercise-generator.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/listening-comprehension-exercises-esl.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
   <!-- CEFR level landings -->
-  <url><loc>https://edooqoo.com/a1-beginner-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/a2-elementary-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/b1-intermediate-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/b2-upper-intermediate-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/c1-advanced-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/c2-proficiency-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
+  <url><loc>https://edooqoo.com/a1-beginner-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/a2-elementary-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/b1-intermediate-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/b2-upper-intermediate-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/c1-advanced-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/c2-proficiency-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
   <!-- Use-case landings -->
-  <url><loc>https://edooqoo.com/ai-lesson-planning-for-english-teachers.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/online-english-teaching-tools.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/business-english-worksheet-generator.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/exam-preparation-worksheets-cambridge-ielts.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/esl-student-progress-tracking-tool.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
+  <url><loc>https://edooqoo.com/ai-lesson-planning-for-english-teachers.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/online-english-teaching-tools.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/business-english-worksheet-generator.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/exam-preparation-worksheets-cambridge-ielts.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/esl-student-progress-tracking-tool.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
   <!-- Problem-solving landings -->
-  <url><loc>https://edooqoo.com/how-to-save-time-as-english-teacher.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/ai-grading-tool-for-english-homework.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/spaced-repetition-flashcards-esl.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
+  <url><loc>https://edooqoo.com/how-to-save-time-as-english-teacher.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/ai-grading-tool-for-english-homework.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/spaced-repetition-flashcards-esl.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
   <!-- Comparison pages -->
-  <url><loc>https://edooqoo.com/edooqoo-vs-islcollective.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/edooqoo-vs-liveworksheets.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/edooqoo-vs-twee.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/edooqoo-vs-magicschool.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
+  <url><loc>https://edooqoo.com/edooqoo-vs-islcollective.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/edooqoo-vs-liveworksheets.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/edooqoo-vs-twee.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/edooqoo-vs-magicschool.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
   <!-- Persona pages -->
-  <url><loc>https://edooqoo.com/ai-tools-for-private-english-tutors.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/worksheet-generator-for-language-schools.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/ai-tools-for-online-esl-teachers.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <!-- Phase 5: Blog articles -->
-  <url><loc>https://edooqoo.com/blog/how-to-create-grammar-worksheets-with-ai.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/vocabulary-teaching-strategies-esl.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/reading-comprehension-activities-english.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/fill-in-the-blanks-exercises-best-practices.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/differentiated-instruction-english-classroom.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/how-to-assess-english-level-cefr.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/teaching-english-online-complete-guide.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/spaced-repetition-vocabulary-learning.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/ai-tools-for-english-teachers-2026.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/ai-homework-grading-for-english-teachers.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/ai-generated-listening-exercises-esl.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/personalized-learning-english-teaching.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/cambridge-exam-preparation-tips-teachers.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/teaching-business-english-guide.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
-  <url><loc>https://edooqoo.com/blog/ielts-preparation-worksheets-guide.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-11</lastmod></url>
+  <url><loc>https://edooqoo.com/ai-tools-for-private-english-tutors.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/worksheet-generator-for-language-schools.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/ai-tools-for-online-esl-teachers.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <!-- Phase 6: Grammar topic pages -->
+  <url><loc>https://edooqoo.com/present-simple-worksheets.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/past-simple-worksheets.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/present-perfect-worksheets.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/conditionals-worksheets-english.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/passive-voice-worksheets-esl.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/reported-speech-worksheets.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/articles-a-an-the-worksheets.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/prepositions-worksheets-english.html</loc><priority>0.8</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <!-- Phase 6: Topic pages -->
+  <url><loc>https://edooqoo.com/travel-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/food-and-cooking-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/job-interview-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/health-and-body-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/environment-climate-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/technology-english-worksheets.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <!-- Phase 6: Audience pages -->
+  <url><loc>https://edooqoo.com/english-worksheets-for-kids.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/english-worksheets-for-teenagers.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/english-worksheets-for-adults.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/english-worksheets-for-corporate-training.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/english-worksheets-for-exam-prep.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <!-- Blog articles (Phase 5) -->
+  <url><loc>https://edooqoo.com/blog/how-to-create-grammar-worksheets-with-ai.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/vocabulary-teaching-strategies-esl.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/reading-comprehension-activities-english.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/fill-in-the-blanks-exercises-best-practices.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/differentiated-instruction-english-classroom.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/how-to-assess-english-level-cefr.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/teaching-english-online-complete-guide.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/spaced-repetition-vocabulary-learning.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/ai-tools-for-english-teachers-2026.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/ai-homework-grading-for-english-teachers.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/ai-generated-listening-exercises-esl.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/personalized-learning-english-teaching.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/cambridge-exam-preparation-tips-teachers.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/teaching-business-english-guide.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
+  <url><loc>https://edooqoo.com/blog/ielts-preparation-worksheets-guide.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-15</lastmod></url>
 </urlset>
