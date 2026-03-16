@@ -307,3 +307,203 @@ paths:
       responses:
         '200':
           description: Blog article HTML
+  /blog/communicative-language-teaching-activities.html:
+    get:
+      operationId: getBlogCLT
+      summary: Communicative Language Teaching Activities for ESL
+      description: Practical CLT activities including information gap, role-play, opinion exchange, and task-based activities with AI worksheet examples.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/task-based-language-teaching-worksheets.html:
+    get:
+      operationId: getBlogTBLT
+      summary: Task-Based Language Teaching Worksheets for ESL
+      description: How to design TBLT worksheets covering pre-task, task cycle, and language focus phases with examples for all CEFR levels.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/flipped-classroom-english-teaching.html:
+    get:
+      operationId: getBlogFlippedClassroom
+      summary: Flipped Classroom for English Teaching — Complete Guide
+      description: How to implement the flipped classroom model in ESL/EFL teaching with pre-class worksheets and in-class communicative activities.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/gamification-english-classroom.html:
+    get:
+      operationId: getBlogGamification
+      summary: Gamification in the English Classroom — Strategies & Activities
+      description: Points, badges, leaderboards, quests, and game-based activities for ESL/EFL classes with AI worksheet support.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/scaffolding-strategies-english-learners.html:
+    get:
+      operationId: getBlogScaffolding
+      summary: Scaffolding Strategies for English Learners — Practical Guide
+      description: 10 scaffolding strategies for ESL/EFL including sentence frames, visual supports, graphic organizers, and AI-differentiated worksheets.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/formative-assessment-english-teaching.html:
+    get:
+      operationId: getBlogFormativeAssessment
+      summary: Formative Assessment in English Teaching — Strategies & Tools
+      description: Exit tickets, self-assessment, peer feedback, AI-graded homework, and nano-skill progress tracking for ESL/EFL teachers.
+      responses:
+        '200':
+          description: Blog article HTML
+  /present-simple-worksheets.html:
+    get:
+      operationId: getPresentSimpleWorksheets
+      summary: Present Simple Worksheets for ESL Teachers
+      description: Downloadable present simple exercises, activities, and AI-generated worksheets for all CEFR levels.
+      responses:
+        '200':
+          description: Landing page HTML
+  /past-simple-worksheets.html:
+    get:
+      operationId: getPastSimpleWorksheets
+      summary: Past Simple Worksheets for English Teaching
+      description: Past simple exercises, irregular verbs practice, and AI-generated worksheets for ESL/EFL classes.
+      responses:
+        '200':
+          description: Landing page HTML
+  /present-perfect-worksheets.html:
+    get:
+      operationId: getPresentPerfectWorksheets
+      summary: Present Perfect Worksheets & Exercises for ESL
+      description: Present perfect exercises with since/for, already/yet, and experience contexts for all CEFR levels.
+      responses:
+        '200':
+          description: Landing page HTML
+  /conditionals-worksheets-english.html:
+    get:
+      operationId: getConditionalsWorksheets
+      summary: Conditionals Worksheets for English Teaching
+      description: Zero, first, second, third, and mixed conditionals worksheets with AI-generated exercises.
+      responses:
+        '200':
+          description: Landing page HTML
+  /passive-voice-worksheets-esl.html:
+    get:
+      operationId: getPassiveVoiceWorksheets
+      summary: Passive Voice Worksheets for ESL Teachers
+      description: Passive voice exercises across all tenses with transformation activities and AI worksheet generation.
+      responses:
+        '200':
+          description: Landing page HTML
+  /reported-speech-worksheets.html:
+    get:
+      operationId: getReportedSpeechWorksheets
+      summary: Reported Speech Worksheets for English Classes
+      description: Direct to indirect speech exercises, backshift rules, and reporting verbs practice worksheets.
+      responses:
+        '200':
+          description: Landing page HTML
+  /articles-a-an-the-worksheets.html:
+    get:
+      operationId: getArticlesWorksheets
+      summary: Articles (A/An/The) Worksheets for ESL
+      description: English articles exercises covering definite, indefinite, and zero article usage with AI-generated practice.
+      responses:
+        '200':
+          description: Landing page HTML
+  /prepositions-worksheets-english.html:
+    get:
+      operationId: getPrepositionsWorksheets
+      summary: Prepositions Worksheets for English Teaching
+      description: Prepositions of time, place, and movement exercises with collocations and AI-generated worksheets.
+      responses:
+        '200':
+          description: Landing page HTML
+  /travel-english-worksheets.html:
+    get:
+      operationId: getTravelEnglishWorksheets
+      summary: Travel English Worksheets for ESL Classes
+      description: Travel vocabulary, airport, hotel, and directions exercises with AI-generated worksheets for all levels.
+      responses:
+        '200':
+          description: Landing page HTML
+  /food-and-cooking-english-worksheets.html:
+    get:
+      operationId: getFoodEnglishWorksheets
+      summary: Food & Cooking English Worksheets for ESL
+      description: Food vocabulary, cooking verbs, restaurant dialogues, and recipe-based exercises for English learners.
+      responses:
+        '200':
+          description: Landing page HTML
+  /job-interview-english-worksheets.html:
+    get:
+      operationId: getJobInterviewWorksheets
+      summary: Job Interview English Worksheets & Exercises
+      description: Interview preparation exercises, common questions practice, and professional vocabulary worksheets.
+      responses:
+        '200':
+          description: Landing page HTML
+  /health-and-body-english-worksheets.html:
+    get:
+      operationId: getHealthEnglishWorksheets
+      summary: Health & Body English Worksheets for ESL
+      description: Body parts, health vocabulary, doctor visit dialogues, and wellness topic worksheets for English learners.
+      responses:
+        '200':
+          description: Landing page HTML
+  /environment-climate-english-worksheets.html:
+    get:
+      operationId: getEnvironmentWorksheets
+      summary: Environment & Climate English Worksheets
+      description: Environmental vocabulary, climate change topics, and sustainability discussion worksheets for ESL classes.
+      responses:
+        '200':
+          description: Landing page HTML
+  /technology-english-worksheets.html:
+    get:
+      operationId: getTechnologyWorksheets
+      summary: Technology English Worksheets for ESL
+      description: Technology vocabulary, digital literacy topics, and AI/tech discussion worksheets for English learners.
+      responses:
+        '200':
+          description: Landing page HTML
+  /english-worksheets-for-kids.html:
+    get:
+      operationId: getWorksheetsForKids
+      summary: English Worksheets for Kids — Fun ESL Activities
+      description: Age-appropriate English worksheets for children with games, pictures, and engaging activities.
+      responses:
+        '200':
+          description: Landing page HTML
+  /english-worksheets-for-teenagers.html:
+    get:
+      operationId: getWorksheetsForTeenagers
+      summary: English Worksheets for Teenagers — ESL Activities
+      description: Engaging English worksheets designed for teenage learners with relevant topics and interactive exercises.
+      responses:
+        '200':
+          description: Landing page HTML
+  /english-worksheets-for-adults.html:
+    get:
+      operationId: getWorksheetsForAdults
+      summary: English Worksheets for Adult Learners
+      description: Professional and practical English worksheets designed for adult ESL/EFL learners.
+      responses:
+        '200':
+          description: Landing page HTML
+  /english-worksheets-for-corporate-training.html:
+    get:
+      operationId: getWorksheetsForCorporate
+      summary: English Worksheets for Corporate Training
+      description: Business English worksheets for corporate training programs with industry-specific vocabulary and scenarios.
+      responses:
+        '200':
+          description: Landing page HTML
+  /english-worksheets-for-exam-prep.html:
+    get:
+      operationId: getWorksheetsForExamPrep
+      summary: English Worksheets for Exam Preparation
+      description: Cambridge, IELTS, TOEFL, and general English exam preparation worksheets with practice exercises.
+      responses:
+        '200':
+          description: Landing page HTML
