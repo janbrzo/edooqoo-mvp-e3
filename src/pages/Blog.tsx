@@ -26,6 +26,12 @@ const blogPosts: BlogPost[] = [
   { title: "Cambridge Exam Preparation Tips for Teachers", description: "Worksheet strategies for KET, PET, FCE, CAE, and CPE.", href: "/blog/cambridge-exam-preparation-tips-teachers.html", category: "Exam & Business", date: "March 11, 2026" },
   { title: "Teaching Business English — Complete Guide", description: "Key topics, industry vocabulary, role-play activities, and pricing.", href: "/blog/teaching-business-english-guide.html", category: "Exam & Business", date: "March 11, 2026" },
   { title: "IELTS Preparation Worksheets Guide", description: "Effective practice materials for all four IELTS sections.", href: "/blog/ielts-preparation-worksheets-guide.html", category: "Exam & Business", date: "March 11, 2026" },
+  { title: "Communicative Language Teaching Activities for ESL", description: "Information gap, role-play, opinion exchange, and task-based CLT activities.", href: "/blog/communicative-language-teaching-activities.html", category: "Methodology", date: "March 16, 2026" },
+  { title: "Task-Based Language Teaching Worksheets", description: "Pre-task, task cycle, and language focus phases with TBLT worksheet examples.", href: "/blog/task-based-language-teaching-worksheets.html", category: "Methodology", date: "March 16, 2026" },
+  { title: "Flipped Classroom for English Teaching", description: "Pre-class worksheets and in-class communicative activities for ESL.", href: "/blog/flipped-classroom-english-teaching.html", category: "Methodology", date: "March 16, 2026" },
+  { title: "Gamification in the English Classroom", description: "Points, badges, quests, and game-based activities for ESL/EFL classes.", href: "/blog/gamification-english-classroom.html", category: "Methodology", date: "March 16, 2026" },
+  { title: "Scaffolding Strategies for English Learners", description: "10 scaffolding strategies with AI-differentiated worksheet examples.", href: "/blog/scaffolding-strategies-english-learners.html", category: "Methodology", date: "March 16, 2026" },
+  { title: "Formative Assessment in English Teaching", description: "Exit tickets, self-assessment, peer feedback, and AI-graded homework strategies.", href: "/blog/formative-assessment-english-teaching.html", category: "Methodology", date: "March 16, 2026" },
 ];
 
 const Blog = () => {
