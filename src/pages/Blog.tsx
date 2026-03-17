@@ -32,6 +32,12 @@ const blogPosts: BlogPost[] = [
   { title: "Gamification in the English Classroom", description: "Points, badges, quests, and game-based activities for ESL/EFL classes.", href: "/blog/gamification-english-classroom.html", category: "Methodology", date: "March 16, 2026" },
   { title: "Scaffolding Strategies for English Learners", description: "10 scaffolding strategies with AI-differentiated worksheet examples.", href: "/blog/scaffolding-strategies-english-learners.html", category: "Methodology", date: "March 16, 2026" },
   { title: "Formative Assessment in English Teaching", description: "Exit tickets, self-assessment, peer feedback, and AI-graded homework strategies.", href: "/blog/formative-assessment-english-teaching.html", category: "Methodology", date: "March 16, 2026" },
+  { title: "How to Teach English Grammar Effectively", description: "Proven grammar teaching strategies with inductive and deductive approaches.", href: "/blog/how-to-teach-english-grammar-effectively.html", category: "How to Teach", date: "March 17, 2026" },
+  { title: "How to Teach Speaking in ESL Classes", description: "Fluency vs accuracy, discussion frameworks, and role-play techniques.", href: "/blog/how-to-teach-speaking-esl.html", category: "How to Teach", date: "March 17, 2026" },
+  { title: "How to Teach Writing to ESL Students", description: "Process writing, genre-based approach, and effective feedback strategies.", href: "/blog/how-to-teach-writing-esl-students.html", category: "How to Teach", date: "March 17, 2026" },
+  { title: "How to Teach English Pronunciation", description: "Minimal pairs, connected speech, stress and intonation techniques.", href: "/blog/how-to-teach-english-pronunciation.html", category: "How to Teach", date: "March 17, 2026" },
+  { title: "How to Plan English Lessons Effectively", description: "PPP, ESA, TBL frameworks with lesson plan templates and timing.", href: "/blog/how-to-plan-english-lessons-effectively.html", category: "How to Teach", date: "March 17, 2026" },
+  { title: "Classroom Management Tips for ESL Teachers", description: "Engagement techniques, behavior management, and motivation strategies.", href: "/blog/classroom-management-esl-tips.html", category: "How to Teach", date: "March 17, 2026" },
 ];
 
 const Blog = () => {

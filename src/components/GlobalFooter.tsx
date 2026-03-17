@@ -75,6 +75,10 @@ const GlobalFooter = () => {
               <li><a href="/edooqoo-vs-liveworksheets.html" className="text-muted-foreground hover:text-primary transition-colors">vs Liveworksheets</a></li>
               <li><a href="/edooqoo-vs-twee.html" className="text-muted-foreground hover:text-primary transition-colors">vs Twee</a></li>
               <li><a href="/edooqoo-vs-magicschool.html" className="text-muted-foreground hover:text-primary transition-colors">vs MagicSchool</a></li>
+              <li><a href="/edooqoo-vs-quizlet.html" className="text-muted-foreground hover:text-primary transition-colors">vs Quizlet</a></li>
+              <li><a href="/edooqoo-vs-kahoot.html" className="text-muted-foreground hover:text-primary transition-colors">vs Kahoot</a></li>
+              <li><a href="/edooqoo-vs-wordwall.html" className="text-muted-foreground hover:text-primary transition-colors">vs Wordwall</a></li>
+              <li><a href="/edooqoo-vs-busyteacher.html" className="text-muted-foreground hover:text-primary transition-colors">vs BusyTeacher</a></li>
             </ul>
           </div>
         </div>
