@@ -33,6 +33,13 @@ Picture (4): Describe Picture, Multiple Choice (Picture), True/False (Picture), 
 - [Reported Speech Worksheets](https://edooqoo.com/reported-speech-worksheets.html)
 - [Articles A/An/The Worksheets](https://edooqoo.com/articles-a-an-the-worksheets.html)
 - [Prepositions Worksheets](https://edooqoo.com/prepositions-worksheets-english.html)
+- [Modal Verbs Worksheets](https://edooqoo.com/modal-verbs-worksheets-esl.html)
+- [Future Tenses Worksheets](https://edooqoo.com/future-tenses-worksheets-english.html)
+- [Relative Clauses Worksheets](https://edooqoo.com/relative-clauses-worksheets.html)
+- [Gerunds & Infinitives Worksheets](https://edooqoo.com/gerunds-infinitives-worksheets.html)
+- [Comparatives & Superlatives](https://edooqoo.com/comparatives-superlatives-worksheets.html)
+- [Phrasal Verbs Worksheets](https://edooqoo.com/phrasal-verbs-worksheets-esl.html)
+- [Question Tags Worksheets](https://edooqoo.com/question-tags-worksheets.html)
 
 ## Topic-Based Worksheets
 - [Travel English Worksheets](https://edooqoo.com/travel-english-worksheets.html)
@@ -48,6 +55,12 @@ Picture (4): Describe Picture, Multiple Choice (Picture), True/False (Picture), 
 - [English Worksheets for Adults](https://edooqoo.com/english-worksheets-for-adults.html)
 - [Corporate Training Worksheets](https://edooqoo.com/english-worksheets-for-corporate-training.html)
 - [Exam Preparation Worksheets](https://edooqoo.com/english-worksheets-for-exam-prep.html)
+
+## Skills-Based Worksheets
+- [Speaking Activities ESL](https://edooqoo.com/speaking-activities-esl-worksheets.html)
+- [Writing Worksheets ESL](https://edooqoo.com/writing-worksheets-esl.html)
+- [Reading Activities English](https://edooqoo.com/reading-activities-english-worksheets.html)
+- [Listening Activities ESL](https://edooqoo.com/listening-activities-esl-worksheets.html)
 
 ## CEFR Level Worksheets
 - [A1 Beginner](https://edooqoo.com/a1-beginner-english-worksheets.html)
@@ -71,6 +84,10 @@ Picture (4): Describe Picture, Multiple Choice (Picture), True/False (Picture), 
 - [Edooqoo vs Liveworksheets](https://edooqoo.com/edooqoo-vs-liveworksheets.html)
 - [Edooqoo vs Twee](https://edooqoo.com/edooqoo-vs-twee.html)
 - [Edooqoo vs MagicSchool AI](https://edooqoo.com/edooqoo-vs-magicschool.html)
+- [Edooqoo vs Quizlet](https://edooqoo.com/edooqoo-vs-quizlet.html)
+- [Edooqoo vs Kahoot](https://edooqoo.com/edooqoo-vs-kahoot.html)
+- [Edooqoo vs Wordwall](https://edooqoo.com/edooqoo-vs-wordwall.html)
+- [Edooqoo vs BusyTeacher](https://edooqoo.com/edooqoo-vs-busyteacher.html)
 
 ## For Specific Teachers
 - [For Private Tutors](https://edooqoo.com/ai-tools-for-private-english-tutors.html)
@@ -105,6 +122,14 @@ Picture (4): Describe Picture, Multiple Choice (Picture), True/False (Picture), 
 - [Gamification in the English Classroom](https://edooqoo.com/blog/gamification-english-classroom.html)
 - [Scaffolding Strategies for English Learners](https://edooqoo.com/blog/scaffolding-strategies-english-learners.html)
 - [Formative Assessment in English Teaching](https://edooqoo.com/blog/formative-assessment-english-teaching.html)
+
+## How to Teach (Blog)
+- [How to Teach English Grammar Effectively](https://edooqoo.com/blog/how-to-teach-english-grammar-effectively.html)
+- [How to Teach Speaking ESL](https://edooqoo.com/blog/how-to-teach-speaking-esl.html)
+- [How to Teach Writing ESL](https://edooqoo.com/blog/how-to-teach-writing-esl-students.html)
+- [How to Teach English Pronunciation](https://edooqoo.com/blog/how-to-teach-english-pronunciation.html)
+- [How to Plan English Lessons](https://edooqoo.com/blog/how-to-plan-english-lessons-effectively.html)
+- [Classroom Management ESL Tips](https://edooqoo.com/blog/classroom-management-esl-tips.html)
 
 ## Target Users
 Private English tutors, ESL/EFL instructors, Business English coaches, language school teachers, online English teachers, corporate language trainers

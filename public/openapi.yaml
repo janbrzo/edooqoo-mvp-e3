@@ -507,3 +507,171 @@ paths:
       responses:
         '200':
           description: Landing page HTML
+  /modal-verbs-worksheets-esl.html:
+    get:
+      operationId: getModalVerbsWorksheets
+      summary: Modal Verbs Worksheets for ESL Teachers
+      description: Exercises and activities for teaching modal verbs (can, could, must, should, might) across all CEFR levels.
+      responses:
+        '200':
+          description: Landing page HTML
+  /future-tenses-worksheets-english.html:
+    get:
+      operationId: getFutureTensesWorksheets
+      summary: Future Tenses Worksheets for English Teaching
+      description: Will, going to, present continuous for future, and future perfect exercises with AI generation.
+      responses:
+        '200':
+          description: Landing page HTML
+  /relative-clauses-worksheets.html:
+    get:
+      operationId: getRelativeClausesWorksheets
+      summary: Relative Clauses Worksheets for ESL
+      description: Defining and non-defining relative clauses exercises with who, which, that, where, whose.
+      responses:
+        '200':
+          description: Landing page HTML
+  /gerunds-infinitives-worksheets.html:
+    get:
+      operationId: getGerundsInfinitivesWorksheets
+      summary: Gerunds and Infinitives Worksheets
+      description: Gerund vs infinitive exercises, verb patterns, and practice activities for ESL learners.
+      responses:
+        '200':
+          description: Landing page HTML
+  /comparatives-superlatives-worksheets.html:
+    get:
+      operationId: getComparativesSuperlativesWorksheets
+      summary: Comparatives and Superlatives Worksheets
+      description: Comparative and superlative adjective exercises, irregular forms, and practice activities.
+      responses:
+        '200':
+          description: Landing page HTML
+  /phrasal-verbs-worksheets-esl.html:
+    get:
+      operationId: getPhrasalVerbsWorksheets
+      summary: Phrasal Verbs Worksheets for ESL
+      description: Common phrasal verbs exercises organized by topic and level with matching and gap-fill activities.
+      responses:
+        '200':
+          description: Landing page HTML
+  /question-tags-worksheets.html:
+    get:
+      operationId: getQuestionTagsWorksheets
+      summary: Question Tags Worksheets for English
+      description: Question tag exercises with positive and negative forms, intonation practice, and communication activities.
+      responses:
+        '200':
+          description: Landing page HTML
+  /speaking-activities-esl-worksheets.html:
+    get:
+      operationId: getSpeakingActivities
+      summary: Speaking Activities ESL Worksheets
+      description: Discussion questions, role-play cards, debate prompts, and oral fluency activities for ESL classes.
+      responses:
+        '200':
+          description: Landing page HTML
+  /writing-worksheets-esl.html:
+    get:
+      operationId: getWritingWorksheets
+      summary: Writing Worksheets for ESL Students
+      description: Essay templates, writing prompts, paragraph construction, and process writing exercises for English learners.
+      responses:
+        '200':
+          description: Landing page HTML
+  /reading-activities-english-worksheets.html:
+    get:
+      operationId: getReadingActivities
+      summary: Reading Activities English Worksheets
+      description: Reading comprehension, skimming and scanning, vocabulary from context, and critical reading exercises.
+      responses:
+        '200':
+          description: Landing page HTML
+  /listening-activities-esl-worksheets.html:
+    get:
+      operationId: getListeningActivities
+      summary: Listening Activities ESL Worksheets
+      description: Listening comprehension, dictation, note-taking, and audio-based exercises for ESL classes.
+      responses:
+        '200':
+          description: Landing page HTML
+  /edooqoo-vs-quizlet.html:
+    get:
+      operationId: getComparisonQuizlet
+      summary: Edooqoo vs Quizlet — AI Worksheets vs Flashcard App
+      description: Comparison of Edooqoo (AI worksheet generation with 29 exercise types) and Quizlet (flashcard-based learning).
+      responses:
+        '200':
+          description: Comparison page HTML
+  /edooqoo-vs-kahoot.html:
+    get:
+      operationId: getComparisonKahoot
+      summary: Edooqoo vs Kahoot — Worksheet Generator vs Quiz Platform
+      description: Comparison of Edooqoo (comprehensive ESL worksheet platform) and Kahoot (game-based quiz tool).
+      responses:
+        '200':
+          description: Comparison page HTML
+  /edooqoo-vs-wordwall.html:
+    get:
+      operationId: getComparisonWordwall
+      summary: Edooqoo vs Wordwall — AI-Powered vs Template-Based Activities
+      description: Comparison of Edooqoo (AI-generated content) and Wordwall (template-based interactive activities).
+      responses:
+        '200':
+          description: Comparison page HTML
+  /edooqoo-vs-busyteacher.html:
+    get:
+      operationId: getComparisonBusyTeacher
+      summary: Edooqoo vs BusyTeacher — AI Generation vs Resource Library
+      description: Comparison of Edooqoo (AI worksheet generation) and BusyTeacher (community-uploaded resource library).
+      responses:
+        '200':
+          description: Comparison page HTML
+  /blog/how-to-teach-english-grammar-effectively.html:
+    get:
+      operationId: getBlogTeachGrammar
+      summary: How to Teach English Grammar Effectively
+      description: Grammar teaching strategies including inductive vs deductive approaches, PPP framework, and CEFR-aligned progression.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/how-to-teach-speaking-esl.html:
+    get:
+      operationId: getBlogTeachSpeaking
+      summary: How to Teach Speaking in ESL Classes
+      description: Speaking activity frameworks, fluency vs accuracy balance, and engagement techniques for ESL/EFL classes.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/how-to-teach-writing-esl-students.html:
+    get:
+      operationId: getBlogTeachWriting
+      summary: How to Teach Writing to ESL Students
+      description: Process writing, genre-based approach, feedback strategies, and AI-supported writing practice.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/how-to-teach-english-pronunciation.html:
+    get:
+      operationId: getBlogTeachPronunciation
+      summary: How to Teach English Pronunciation
+      description: Minimal pairs, connected speech, stress and intonation, and pronunciation activities by L1 background.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/how-to-plan-english-lessons-effectively.html:
+    get:
+      operationId: getBlogLessonPlanning
+      summary: How to Plan English Lessons Effectively
+      description: PPP, ESA, and TBL lesson planning frameworks with templates and timing strategies.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/classroom-management-esl-tips.html:
+    get:
+      operationId: getBlogClassroomManagement
+      summary: Classroom Management Tips for ESL Teachers
+      description: Engagement techniques, behavior management, routines, and motivation strategies for ESL/EFL teachers.
+      responses:
+        '200':
+          description: Blog article HTML
