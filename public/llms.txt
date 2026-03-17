@@ -84,6 +84,10 @@ Picture (4): Describe Picture, Multiple Choice (Picture), True/False (Picture), 
 - [Edooqoo vs Liveworksheets](https://edooqoo.com/edooqoo-vs-liveworksheets.html)
 - [Edooqoo vs Twee](https://edooqoo.com/edooqoo-vs-twee.html)
 - [Edooqoo vs MagicSchool AI](https://edooqoo.com/edooqoo-vs-magicschool.html)
+- [Edooqoo vs Quizlet](https://edooqoo.com/edooqoo-vs-quizlet.html)
+- [Edooqoo vs Kahoot](https://edooqoo.com/edooqoo-vs-kahoot.html)
+- [Edooqoo vs Wordwall](https://edooqoo.com/edooqoo-vs-wordwall.html)
+- [Edooqoo vs BusyTeacher](https://edooqoo.com/edooqoo-vs-busyteacher.html)
 
 ## For Specific Teachers
 - [For Private Tutors](https://edooqoo.com/ai-tools-for-private-english-tutors.html)
