@@ -48,6 +48,9 @@ const GlobalFooter = () => {
               <li><a href="/present-perfect-worksheets.html" className="text-muted-foreground hover:text-primary transition-colors">Present Perfect</a></li>
               <li><a href="/conditionals-worksheets-english.html" className="text-muted-foreground hover:text-primary transition-colors">Conditionals</a></li>
               <li><a href="/passive-voice-worksheets-esl.html" className="text-muted-foreground hover:text-primary transition-colors">Passive Voice</a></li>
+              <li><a href="/modal-verbs-worksheets-esl.html" className="text-muted-foreground hover:text-primary transition-colors">Modal Verbs</a></li>
+              <li><a href="/future-tenses-worksheets-english.html" className="text-muted-foreground hover:text-primary transition-colors">Future Tenses</a></li>
+              <li><a href="/phrasal-verbs-worksheets-esl.html" className="text-muted-foreground hover:text-primary transition-colors">Phrasal Verbs</a></li>
               <li><a href="/grammar-worksheet-generator.html" className="text-muted-foreground hover:text-primary transition-colors">All Grammar</a></li>
             </ul>
           </div>
