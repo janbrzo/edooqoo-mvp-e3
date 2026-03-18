@@ -17,6 +17,23 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Authorization: only allow calls with the anon key (from cron) or service role key
+  const authHeader = req.headers.get("Authorization");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  const isAuthorized =
+    authHeader === `Bearer ${anonKey}` ||
+    authHeader === `Bearer ${serviceKey}`;
+
+  if (!isAuthorized) {
+    console.warn("[HOMEWORK-REMINDERS] Unauthorized call attempt");
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     console.log("[HOMEWORK-REMINDERS] Function started");
 
