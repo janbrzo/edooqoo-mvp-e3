@@ -1,9 +1,9 @@
 
-# Plan: LLM Optimization (LLMO) — Phase 1-8 WDROŻONE ✅
+# Plan: LLM Optimization (LLMO) — Phase 1-10 WDROŻONE ✅
 
 ## Podsumowanie
 
-Pełna warstwa AI discovery + SEO dominance dla edooqoo.com w ośmiu fazach:
+Pełna warstwa AI discovery + SEO dominance dla edooqoo.com w dziesięciu fazach:
 
 ### Phase 1-3 (wdrożone wcześniej)
 - AI discovery files, robots.txt, sitemap, JSON-LD, /about, /prompts, /glossary, /exercise-types, /how-it-works
@@ -19,27 +19,28 @@ Pełna warstwa AI discovery + SEO dominance dla edooqoo.com w ośmiu fazach:
 - Grammar/Topic/Audience Worksheets (19 pages), Teaching Methodology Blog (6 articles), ~100 sitemap entries
 
 ### Phase 7 (wdrożone — March 17, 2026) — SEO Keyword Gap Closure
-- **Grammar Expansion**: 7 nowych tematów (Modal Verbs, Future Tenses, Relative Clauses, Gerunds/Infinitives, Comparatives, Phrasal Verbs, Question Tags)
-- **Skills Pages**: 4 strony (Speaking, Writing, Reading, Listening)
-- **New Comparisons**: 4 strony (vs Quizlet, vs Kahoot, vs Wordwall, vs BusyTeacher)
+- Grammar Expansion (7 tematów), Skills Pages (4), New Comparisons (4)
 
 ### Phase 8 (wdrożone — March 17, 2026) — SEO Infrastructure Sync + "How to Teach" Blog
-- **6 artykułów "How to Teach"**: Grammar, Speaking, Writing, Pronunciation, Lesson Planning, Classroom Management
-- **GlobalFooter**: +3 Grammar linki (Modal Verbs, Future Tenses, Phrasal Verbs), +4 Compare linki (Quizlet, Kahoot, Wordwall, BusyTeacher)
-- **Sitemap**: 121 entries (+21)
-- **llms.txt**: +4 sekcje (Skills-Based, expanded Grammar, expanded Comparisons, How to Teach)
-- **openapi.yaml**: +21 paths
-- **Blog.tsx**: +6 wpisów "How to Teach"
-- **resources.html**: +7 grammar, +4 skills, +4 comparisons
-- **blog.html**: +6 kart "How to Teach"
+- 6 artykułów "How to Teach", GlobalFooter updates, Sitemap 121 entries
+
+### Phase 9 (wdrożone — March 18, 2026) — Blog Mega-Expansion Part 1
+- **30 artykułów** w 6 klastrach: Young Learners (5), Vocabulary (5), Grammar Deep Dive (5), Assessment (5), Activities (5), Professional Dev (5)
+
+### Phase 10 (wdrożone — March 19, 2026) — Infrastructure Sync + Blog Mega-Expansion Part 2
+- **Infrastruktura zsynchronizowana** z Phase 9 (30 artykułów) + Phase 10 (30 artykułów)
+- **30 nowych artykułów** w 6 klastrach: Culture (5), Technology (5), Specialized Learners (5), Writing & Comm (5), Lesson Resources (5), Language Systems (5)
+- **Blog.tsx**: 87 wpisów (27→87)
+- **Sitemap**: 186 entries (126→186)
+- **llms.txt**: +12 sekcji blogowych
+- **blog.html**: +12 sekcji z kartami
+- **resources.html**: cross-linking 17 kategorii
 
 ## Statystyki końcowe
 
-| Element | Phase 1-6 | Phase 7 | Phase 8 | Razem |
-|---------|-----------|---------|---------|-------|
-| Static HTML pages | 71 | 15 | 6 | 92 |
-| Blog articles | 21 | 0 | 6 | 27 |
-| Sitemap entries | ~100 | 0 | +21 | 121 |
-| Footer Grammar linków | 6 | 0 | +3 | 9 |
-| Footer Compare linków | 4 | 0 | +4 | 8 |
-| openapi.yaml paths | ~50 | 0 | +21 | ~71 |
+| Element | Phase 1-8 | Phase 9 | Phase 10 | Razem |
+|---------|-----------|---------|----------|-------|
+| Static HTML pages (blog) | 27 | +30 | +30 | 87 |
+| Blog categories | 5 | +6 | +6 | 17 |
+| Sitemap entries | 126 | +30 | +30 | 186 |
+| llms.txt sekcji | ~15 | +6 | +6 | ~27 |
