@@ -675,3 +675,495 @@ paths:
       responses:
         '200':
           description: Blog article HTML
+  # Phase 9: Young Learners
+  /blog/teaching-english-to-young-learners.html:
+    get:
+      operationId: getBlogYoungLearners
+      summary: Teaching English to Young Learners — Complete Guide
+      description: Age-appropriate methods, TPR, songs, games, and classroom management for kids.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/esl-games-for-kids.html:
+    get:
+      operationId: getBlogESLGamesKids
+      summary: 20 ESL Games for Kids That Actually Work
+      description: Tested classroom games for vocabulary, grammar, and speaking practice with young learners.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-english-to-teenagers.html:
+    get:
+      operationId: getBlogTeachingTeenagers
+      summary: Teaching English to Teenagers — Strategies That Work
+      description: Motivation, relevant topics, technology integration, and managing teenage dynamics.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/english-songs-activities-esl.html:
+    get:
+      operationId: getBlogSongsESL
+      summary: Using Songs and Music in the ESL Classroom
+      description: Song-based activities for grammar, vocabulary, pronunciation, and listening skills.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/storytelling-activities-esl.html:
+    get:
+      operationId: getBlogStorytellingESL
+      summary: Storytelling Activities for ESL Classes
+      description: Story-based lessons for reading, speaking, writing, and creative thinking.
+      responses:
+        '200':
+          description: Blog article HTML
+  # Phase 9: Vocabulary
+  /blog/teaching-collocations-esl.html:
+    get:
+      operationId: getBlogCollocations
+      summary: How to Teach Collocations in ESL Classes
+      description: Collocation types, teaching strategies, and practice activities for natural English.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-idioms-esl-activities.html:
+    get:
+      operationId: getBlogIdioms
+      summary: Teaching Idioms — Activities and Worksheets for ESL
+      description: Context-based idiom teaching with categorized activities by CEFR level.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/vocabulary-games-esl-classroom.html:
+    get:
+      operationId: getBlogVocabGames
+      summary: 15 Vocabulary Games for the ESL Classroom
+      description: Engaging games for vocabulary review, acquisition, and retention.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/academic-vocabulary-teaching-strategies.html:
+    get:
+      operationId: getBlogAcademicVocab
+      summary: Teaching Academic Vocabulary — Strategies for ESL
+      description: AWL-based instruction, Tier 2-3 words, and academic register practice.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/word-formation-exercises-english.html:
+    get:
+      operationId: getBlogWordFormation
+      summary: Word Formation Exercises — Prefixes, Suffixes, and Roots
+      description: Morphology-based vocabulary building with exercises and worksheets.
+      responses:
+        '200':
+          description: Blog article HTML
+  # Phase 9: Grammar Deep Dive
+  /blog/teaching-conditionals-esl-guide.html:
+    get:
+      operationId: getBlogConditionalsGuide
+      summary: Teaching Conditionals — Complete ESL Guide
+      description: Zero to third conditional with timelines, practice activities, and common errors.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-passive-voice-activities.html:
+    get:
+      operationId: getBlogPassiveVoiceGuide
+      summary: Teaching Passive Voice — Activities and Worksheets
+      description: When and how to introduce passive voice with engaging transformation activities.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-reported-speech-esl.html:
+    get:
+      operationId: getBlogReportedSpeechGuide
+      summary: Teaching Reported Speech — Step-by-Step Guide
+      description: Tense backshift rules, reporting verbs, and communicative practice activities.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-articles-esl-guide.html:
+    get:
+      operationId: getBlogArticlesGuide
+      summary: Teaching Articles (A, An, The) — ESL Guide
+      description: Rules, exceptions, and practice activities for English articles.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/error-correction-techniques-esl.html:
+    get:
+      operationId: getBlogErrorCorrection
+      summary: Error Correction Techniques for ESL Teachers
+      description: Self-correction, peer correction, delayed correction, and reformulation strategies.
+      responses:
+        '200':
+          description: Blog article HTML
+  # Phase 9: Assessment
+  /blog/creating-english-tests-guide.html:
+    get:
+      operationId: getBlogCreatingTests
+      summary: How to Create Effective English Tests — Teacher's Guide
+      description: Test design principles, item types, scoring, and validity for English assessment.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/rubrics-for-english-teachers.html:
+    get:
+      operationId: getBlogRubrics
+      summary: Creating Rubrics for English Language Assessment
+      description: Analytic and holistic rubrics for writing, speaking, and project assessment.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/self-assessment-strategies-esl.html:
+    get:
+      operationId: getBlogSelfAssessment
+      summary: Self-Assessment Strategies for ESL Students
+      description: Can-do checklists, learning journals, and portfolio-based self-evaluation.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/peer-feedback-activities-english.html:
+    get:
+      operationId: getBlogPeerFeedback
+      summary: Peer Feedback Activities for English Classes
+      description: Structured peer review, feedback frames, and collaborative assessment techniques.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/diagnostic-testing-english-learners.html:
+    get:
+      operationId: getBlogDiagnosticTesting
+      summary: Diagnostic Testing for English Learners — How and When
+      description: Placement tests, needs analysis, and identifying learning gaps.
+      responses:
+        '200':
+          description: Blog article HTML
+  # Phase 9: Activities
+  /blog/warm-up-activities-esl.html:
+    get:
+      operationId: getBlogWarmUpActivities
+      summary: 20 Warm-Up Activities for ESL Classes
+      description: Quick 5-minute activities to start every lesson with energy and focus.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/role-play-activities-esl.html:
+    get:
+      operationId: getBlogRolePlay
+      summary: Role-Play Activities for ESL — Ideas and Templates
+      description: Scenario cards, role assignments, and language support for speaking practice.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/debate-activities-english-class.html:
+    get:
+      operationId: getBlogDebateActivities
+      summary: Debate Activities for English Classes — Topics and Rules
+      description: Structured debate formats, topic lists by level, and language of argumentation.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/pair-work-activities-esl.html:
+    get:
+      operationId: getBlogPairWork
+      summary: Pair Work Activities for ESL — 15 Ready-to-Use Ideas
+      description: Information gap, interview, survey, and collaborative pair activities.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/project-based-learning-english.html:
+    get:
+      operationId: getBlogPBL
+      summary: Project-Based Learning in the English Classroom
+      description: Long-term projects integrating all four skills with assessment criteria.
+      responses:
+        '200':
+          description: Blog article HTML
+  # Phase 9: Professional Dev
+  /blog/tefl-certification-guide.html:
+    get:
+      operationId: getBlogTEFL
+      summary: TEFL Certification — Complete Guide for New Teachers
+      description: TEFL vs TESOL vs CELTA, online vs in-person, costs, and career paths.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teacher-burnout-prevention-esl.html:
+    get:
+      operationId: getBlogBurnout
+      summary: Preventing Teacher Burnout — Strategies for ESL Teachers
+      description: Workload management, boundaries, self-care, and sustainable teaching practices.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/building-esl-teaching-portfolio.html:
+    get:
+      operationId: getBlogPortfolio
+      summary: Building Your ESL Teaching Portfolio — What to Include
+      description: Portfolio structure, sample materials, student testimonials, and digital tools.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/using-ai-teacher-productivity.html:
+    get:
+      operationId: getBlogAIProductivity
+      summary: Using AI to Boost Teacher Productivity in 2026
+      description: AI tools for lesson planning, worksheet creation, grading, and admin tasks.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/setting-up-freelance-esl-business.html:
+    get:
+      operationId: getBlogFreelanceESL
+      summary: Setting Up a Freelance ESL Business — Complete Guide
+      description: Pricing, marketing, student acquisition, tools, and scaling strategies.
+      responses:
+        '200':
+          description: Blog article HTML
+  # Phase 10: Culture & Cross-Cultural
+  /blog/teaching-culture-esl-classroom.html:
+    get:
+      operationId: getBlogTeachingCulture
+      summary: Teaching Culture in the ESL Classroom
+      description: Integrating cultural awareness, intercultural competence, and global citizenship.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/cross-cultural-communication-activities.html:
+    get:
+      operationId: getBlogCrossCultural
+      summary: Cross-Cultural Communication Activities for ESL
+      description: Activities exploring cultural norms, body language, and communication styles.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/using-films-english-teaching.html:
+    get:
+      operationId: getBlogFilmsTeaching
+      summary: Using Films and Videos in English Teaching
+      description: Film-based lessons, clip selection, viewing tasks, and discussion activities.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-english-through-literature.html:
+    get:
+      operationId: getBlogLiterature
+      summary: Teaching English Through Literature — Practical Guide
+      description: Graded readers, poetry, short stories, and literature circles for ESL.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/current-events-esl-lessons.html:
+    get:
+      operationId: getBlogCurrentEvents
+      summary: Using Current Events in ESL Lessons
+      description: News-based lessons, media literacy, and critical thinking activities.
+      responses:
+        '200':
+          description: Blog article HTML
+  # Phase 10: Technology in Teaching
+  /blog/best-apps-learning-english-2026.html:
+    get:
+      operationId: getBlogBestApps
+      summary: Best Apps for Learning English in 2026
+      description: App comparison for vocabulary, grammar, speaking, and listening practice.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/using-google-workspace-esl-teachers.html:
+    get:
+      operationId: getBlogGoogleWorkspace
+      summary: Using Google Workspace for ESL Teachers
+      description: Google Docs, Slides, Forms, and Classroom for English teaching workflows.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/creating-interactive-worksheets-online.html:
+    get:
+      operationId: getBlogInteractiveWorksheets
+      summary: Creating Interactive Worksheets Online — Tools and Tips
+      description: Platforms and techniques for making engaging digital worksheets.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/video-conferencing-tips-online-esl.html:
+    get:
+      operationId: getBlogVideoConferencing
+      summary: Video Conferencing Tips for Online ESL Teachers
+      description: Zoom, Meet, and Teams optimization for effective online English lessons.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/ai-lesson-planning-strategies.html:
+    get:
+      operationId: getBlogAILessonPlanning
+      summary: AI Lesson Planning Strategies for English Teachers
+      description: Using AI to plan, differentiate, and optimize English lessons.
+      responses:
+        '200':
+          description: Blog article HTML
+  # Phase 10: Specialized Learner Groups
+  /blog/teaching-english-immigrants-refugees.html:
+    get:
+      operationId: getBlogImmigrantsRefugees
+      summary: Teaching English to Immigrants and Refugees
+      description: Trauma-informed teaching, survival English, and community integration.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/english-for-specific-purposes-guide.html:
+    get:
+      operationId: getBlogESP
+      summary: English for Specific Purposes (ESP) — Teacher's Guide
+      description: Medical, legal, aviation, and technical English course design.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-english-learning-disabilities.html:
+    get:
+      operationId: getBlogLearningDisabilities
+      summary: Teaching English to Students with Learning Disabilities
+      description: Dyslexia-friendly materials, ADHD strategies, and inclusive classroom design.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/multilevel-esl-classroom-strategies.html:
+    get:
+      operationId: getBlogMultilevel
+      summary: Managing a Multilevel ESL Classroom
+      description: Differentiation strategies, tiered tasks, and flexible grouping techniques.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-english-one-to-one.html:
+    get:
+      operationId: getBlogOneToOne
+      summary: Teaching English One-to-One — Private Lesson Guide
+      description: Needs analysis, lesson structure, pacing, and building rapport in private lessons.
+      responses:
+        '200':
+          description: Blog article HTML
+  # Phase 10: Writing & Communication
+  /blog/teaching-email-writing-esl.html:
+    get:
+      operationId: getBlogEmailWriting
+      summary: Teaching Email Writing to ESL Students
+      description: Formal and informal email templates, register, and common mistakes.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/creative-writing-activities-esl.html:
+    get:
+      operationId: getBlogCreativeWriting
+      summary: Creative Writing Activities for ESL Classes
+      description: Story starters, poetry, flash fiction, and collaborative writing projects.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-presentation-skills-english.html:
+    get:
+      operationId: getBlogPresentationSkills
+      summary: Teaching Presentation Skills in English
+      description: Structure, signposting language, visual aids, and delivery techniques.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/discussion-questions-esl-topics.html:
+    get:
+      operationId: getBlogDiscussionQuestions
+      summary: 100 Discussion Questions for ESL Classes — By Topic
+      description: Curated questions organized by topic and CEFR level for speaking practice.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-formal-informal-english.html:
+    get:
+      operationId: getBlogFormalInformal
+      summary: Teaching Formal vs Informal English — Register Guide
+      description: Register awareness, academic vs conversational English, and style shifting.
+      responses:
+        '200':
+          description: Blog article HTML
+  # Phase 10: Lesson Resources & Seasonal
+  /blog/first-day-esl-class-activities.html:
+    get:
+      operationId: getBlogFirstDay
+      summary: First Day of ESL Class — Activities and Icebreakers
+      description: Needs analysis, icebreakers, classroom rules, and first-lesson routines.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/end-of-term-activities-esl.html:
+    get:
+      operationId: getBlogEndOfTerm
+      summary: End-of-Term Activities for ESL Classes
+      description: Review games, portfolio presentations, reflection activities, and celebrations.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/holiday-themed-esl-activities.html:
+    get:
+      operationId: getBlogHolidayActivities
+      summary: Holiday-Themed ESL Activities and Worksheets
+      description: Christmas, Halloween, Easter, and cultural holiday lesson ideas.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/substitute-teacher-esl-lesson-plans.html:
+    get:
+      operationId: getBlogSubstituteTeacher
+      summary: Substitute Teacher ESL Lesson Plans — Ready to Go
+      description: No-prep emergency lesson plans for substitute ESL teachers.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/five-minute-filler-activities-esl.html:
+    get:
+      operationId: getBlogFillerActivities
+      summary: 20 Five-Minute Filler Activities for ESL
+      description: Quick activities for transitions, early finishers, and unexpected free time.
+      responses:
+        '200':
+          description: Blog article HTML
+  # Phase 10: Language Systems & Analysis
+  /blog/teaching-linking-words-connectors.html:
+    get:
+      operationId: getBlogLinkingWords
+      summary: Teaching Linking Words and Connectors
+      description: Conjunctions, discourse markers, and cohesion activities by CEFR level.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/corpus-linguistics-esl-teaching.html:
+    get:
+      operationId: getBlogCorpusLinguistics
+      summary: Using Corpus Linguistics in ESL Teaching
+      description: Concordancers, frequency lists, and data-driven learning activities.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/contrastive-analysis-language-teaching.html:
+    get:
+      operationId: getBlogContrastiveAnalysis
+      summary: Contrastive Analysis in Language Teaching
+      description: L1 interference patterns, error prediction, and targeted practice strategies.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-pragmatics-esl.html:
+    get:
+      operationId: getBlogPragmatics
+      summary: Teaching Pragmatics in ESL — Politeness and Context
+      description: Speech acts, politeness strategies, and context-appropriate language use.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/extensive-reading-programs-esl.html:
+    get:
+      operationId: getBlogExtensiveReading
+      summary: Setting Up Extensive Reading Programs for ESL
+      description: Graded readers, reading logs, assessment, and motivation strategies.
+      responses:
+        '200':
+          description: Blog article HTML
