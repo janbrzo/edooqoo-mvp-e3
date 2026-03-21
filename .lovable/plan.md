@@ -36,6 +36,12 @@ Pełna warstwa AI discovery + SEO dominance dla edooqoo.com w dziesięciu fazach
 - **blog.html**: +12 sekcji z kartami
 - **resources.html**: cross-linking 17 kategorii
 
+### Phase 11 (wdrożone — March 21, 2026) — Blog Mega-Expansion Part 3
+- **30 nowych artykułów** w 6 klastrach: Pronunciation (5), Homework (5), Motivation (5), Advanced Grammar (5), Listening (5), Communication (5)
+- **Blog.tsx**: 117 wpisów (87→117)
+- **Sitemap**: 216 entries (186→216)
+- **llms.txt**: +6 sekcji blogowych
+
 ## Statystyki końcowe
 
 | Element | Phase 1-8 | Phase 9 | Phase 10 | Razem |
