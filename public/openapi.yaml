@@ -1167,3 +1167,243 @@ paths:
       responses:
         '200':
           description: Blog article HTML
+  /blog/teaching-minimal-pairs-esl.html:
+    get:
+      operationId: getBlogMinimalPairs
+      summary: Teaching Minimal Pairs — Pronunciation Activities for ESL
+      description: Minimal pair drills, card games, and listening discrimination exercises.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-english-intonation-stress.html:
+    get:
+      operationId: getBlogIntonationStress
+      summary: Teaching English Intonation and Stress Patterns
+      description: Sentence stress, word stress, rising/falling intonation with practice activities.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/connected-speech-teaching-activities.html:
+    get:
+      operationId: getBlogConnectedSpeech
+      summary: Teaching Connected Speech — Activities and Exercises
+      description: Linking, elision, assimilation, and weak forms with listening tasks.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/ipa-phonetic-alphabet-esl-teaching.html:
+    get:
+      operationId: getBlogIPA
+      summary: Using the IPA Phonetic Alphabet in ESL Teaching
+      description: When and how to introduce IPA symbols with practical classroom activities.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/accent-reduction-activities-esl.html:
+    get:
+      operationId: getBlogAccentReduction
+      summary: Accent Reduction Activities for ESL Students
+      description: Intelligibility vs nativeness, diagnostic tools, and targeted practice.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/effective-esl-homework-strategies.html:
+    get:
+      operationId: getBlogHomeworkStrategies
+      summary: Effective ESL Homework Strategies
+      description: Meaningful homework design, accountability systems, and feedback loops.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-study-skills-english-learners.html:
+    get:
+      operationId: getBlogStudySkills
+      summary: Teaching Study Skills to English Learners
+      description: Note-taking, time management, vocabulary notebooks, and revision techniques.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/self-directed-learning-esl.html:
+    get:
+      operationId: getBlogSelfDirected
+      summary: Encouraging Self-Directed Learning in ESL
+      description: Learner training, goal setting, and autonomy-building strategies.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/flipped-homework-esl-classroom.html:
+    get:
+      operationId: getBlogFlippedHomework
+      summary: Flipped Homework — Reversing In-Class and At-Home Tasks
+      description: Video-based pre-learning, in-class practice, and blended learning models.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/digital-homework-tools-esl-teachers.html:
+    get:
+      operationId: getBlogDigitalHomework
+      summary: Best Digital Homework Tools for ESL Teachers
+      description: Platform comparison for assigning, tracking, and grading ESL homework online.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/motivating-reluctant-esl-learners.html:
+    get:
+      operationId: getBlogMotivatingReluctant
+      summary: Motivating Reluctant ESL Learners
+      description: Identifying barriers, building rapport, and creating meaningful learning experiences.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/intrinsic-motivation-language-learning.html:
+    get:
+      operationId: getBlogIntrinsicMotivation
+      summary: Building Intrinsic Motivation in Language Learning
+      description: Self-determination theory, autonomy, competence, and relatedness in ESL.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/student-autonomy-esl-classroom.html:
+    get:
+      operationId: getBlogStudentAutonomy
+      summary: Fostering Student Autonomy in the ESL Classroom
+      description: Choice boards, learning contracts, and self-directed projects.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/using-rewards-esl-classroom.html:
+    get:
+      operationId: getBlogRewards
+      summary: Using Rewards in the ESL Classroom
+      description: Token economies, praise strategies, and avoiding reward dependency.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/growth-mindset-language-learning.html:
+    get:
+      operationId: getBlogGrowthMindset
+      summary: Growth Mindset in Language Learning
+      description: Fixed vs growth mindset, error positivity, and effort-based feedback.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-subjunctive-english.html:
+    get:
+      operationId: getBlogSubjunctive
+      summary: Teaching the Subjunctive in English
+      description: Mandative subjunctive, were-subjunctive, and practice contexts.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-inversion-english.html:
+    get:
+      operationId: getBlogInversion
+      summary: Teaching Inversion in English
+      description: Negative adverbials, conditional inversion, and formal register practice.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-cleft-sentences-english.html:
+    get:
+      operationId: getBlogCleftSentences
+      summary: Teaching Cleft Sentences
+      description: Focus and emphasis structures with transformation and production activities.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-ellipsis-substitution-english.html:
+    get:
+      operationId: getBlogEllipsis
+      summary: Teaching Ellipsis and Substitution in English
+      description: Textual cohesion, so/do substitution, and discourse-level grammar.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-mixed-conditionals-esl.html:
+    get:
+      operationId: getBlogMixedConditionals
+      summary: Teaching Mixed Conditionals
+      description: Past-present and present-past conditionals with contextualized practice.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-listening-strategies-esl.html:
+    get:
+      operationId: getBlogListeningStrategies
+      summary: Teaching Listening Strategies to ESL Students
+      description: Top-down, bottom-up, and metacognitive strategies for listening comprehension.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/dictation-activities-esl-classroom.html:
+    get:
+      operationId: getBlogDictation
+      summary: Dictation Activities for the ESL Classroom
+      description: Running dictation, dictogloss, partial dictation, and communicative dictation.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/using-podcasts-esl-teaching.html:
+    get:
+      operationId: getBlogPodcasts
+      summary: Using Podcasts in ESL Teaching
+      description: Podcast selection, pre-listening tasks, and follow-up activities by level.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-note-taking-skills-english.html:
+    get:
+      operationId: getBlogNoteTaking
+      summary: Teaching Note-Taking Skills in English Classes
+      description: Cornell method, mind maps, abbreviations, and academic listening practice.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/authentic-listening-materials-esl.html:
+    get:
+      operationId: getBlogAuthenticListening
+      summary: Using Authentic Listening Materials in ESL
+      description: TED Talks, news broadcasts, interviews, and grading authentic input.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/communicating-with-esl-parents.html:
+    get:
+      operationId: getBlogCommunicatingParents
+      summary: Communicating with ESL Parents
+      description: Multilingual communication, progress updates, and building home-school partnerships.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/writing-student-progress-reports-esl.html:
+    get:
+      operationId: getBlogProgressReports
+      summary: Writing Student Progress Reports for ESL Classes
+      description: CEFR-aligned descriptors, strengths/areas format, and report templates.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/parent-teacher-conferences-esl.html:
+    get:
+      operationId: getBlogParentConferences
+      summary: Parent-Teacher Conferences for ESL
+      description: Conference structure, visual aids, and navigating language barriers.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/advocating-for-ell-students.html:
+    get:
+      operationId: getBlogAdvocating
+      summary: Advocating for ELL Students in Your School
+      description: Policy awareness, accommodation requests, and data-driven advocacy.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/collaborating-with-mainstream-teachers-esl.html:
+    get:
+      operationId: getBlogCollaborating
+      summary: Collaborating with Mainstream Teachers as ESL Specialist
+      description: Co-teaching models, content-language integration, and shared planning.
+      responses:
+        '200':
+          description: Blog article HTML
