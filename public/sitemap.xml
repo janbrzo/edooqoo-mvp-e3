@@ -221,4 +221,7 @@
   <url><loc>https://edooqoo.com/blog/parent-teacher-conferences-esl.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-21</lastmod></url>
   <url><loc>https://edooqoo.com/blog/advocating-for-ell-students.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-21</lastmod></url>
   <url><loc>https://edooqoo.com/blog/collaborating-with-mainstream-teachers-esl.html</loc><priority>0.7</priority><changefreq>monthly</changefreq><lastmod>2026-03-21</lastmod></url>
+  <!-- Phase 12: AI Discovery Files -->
+  <url><loc>https://edooqoo.com/llms-answers.txt</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>2026-03-23</lastmod></url>
+  <url><loc>https://edooqoo.com/knowledge-graph.json</loc><priority>0.5</priority><changefreq>monthly</changefreq><lastmod>2026-03-23</lastmod></url>
 </urlset>
