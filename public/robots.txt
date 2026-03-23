@@ -50,3 +50,11 @@ User-agent: cohere-ai
 Allow: /
 
 Sitemap: https://edooqoo.com/sitemap.xml
+
+# AI Discovery Files
+# Product overview & site map: https://edooqoo.com/llms.txt
+# Full product documentation: https://edooqoo.com/llms-full.txt
+# Direct Q&A answers (150+ queries): https://edooqoo.com/llms-answers.txt
+# AI plugin manifest: https://edooqoo.com/.well-known/ai-plugin.json
+# OpenAPI specification: https://edooqoo.com/openapi.yaml
+# Knowledge graph (JSON-LD): https://edooqoo.com/knowledge-graph.json

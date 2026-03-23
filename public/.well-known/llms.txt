@@ -1,0 +1,273 @@
+# Edooqoo
+
+> AI-powered platform for English teachers. Generates personalized worksheets, manages students, tracks learning progress, assigns homework with AI grading, creates smart flashcards, and provides lesson scheduling with Google Calendar sync.
+
+## Core Product
+- AI Worksheet Generator: 29 exercise types, CEFR levels A1-C2, ready in under 2 minutes
+- Homework System: Assign exercises, students complete online, AI grades automatically
+- Smart Flashcards: Spaced repetition (SM-2) generated from worksheets
+- Welcome Placement Test: 49-question AI assessment with speaking/listening
+- Student Hub: Dedicated student portal for worksheets, flashcards, homework, lesson booking
+- Lesson Calendar: Public booking page, Google Calendar sync, Google Meet integration
+- Student Progress Tracking: Nano-skill mastery with CEFR tags, trends, AI suggestions
+
+## Exercise Types (29 total)
+Basic (20): Reading Comprehension, Fill in the Blanks, Multiple Choice, True/False, Matching, Dialogue Practice, Answer Questions, Discussion Questions, Error Correction, Odd One Out, Matching Halves, Word Order, Gap Text (Cloze), Negative Prefixes, Categorization, Complete Word, Paraphrasing, Sentence Transformation, Synonyms Matching, Antonyms Matching
+Audio (5): Listening Comprehension, Fill in the Blanks (Audio), Multiple Choice (Audio), True/False (Audio), Answer Questions (Audio)
+Picture (4): Describe Picture, Multiple Choice (Picture), True/False (Picture), Answer Questions (Picture)
+
+## Exercise-Specific Pages
+- [Fill in the Blanks Generator](https://edooqoo.com/fill-in-the-blanks-worksheet-generator.html)
+- [Reading Comprehension Maker](https://edooqoo.com/reading-comprehension-worksheet-maker.html)
+- [Multiple Choice Quiz Generator](https://edooqoo.com/multiple-choice-quiz-generator-english.html)
+- [Grammar Worksheet Generator](https://edooqoo.com/grammar-worksheet-generator.html)
+- [Vocabulary Exercise Generator](https://edooqoo.com/vocabulary-exercise-generator.html)
+- [Listening Comprehension Exercises](https://edooqoo.com/listening-comprehension-exercises-esl.html)
+
+## Grammar Topic Worksheets
+- [Present Simple Worksheets](https://edooqoo.com/present-simple-worksheets.html)
+- [Past Simple Worksheets](https://edooqoo.com/past-simple-worksheets.html)
+- [Present Perfect Worksheets](https://edooqoo.com/present-perfect-worksheets.html)
+- [Conditionals Worksheets](https://edooqoo.com/conditionals-worksheets-english.html)
+- [Passive Voice Worksheets](https://edooqoo.com/passive-voice-worksheets-esl.html)
+- [Reported Speech Worksheets](https://edooqoo.com/reported-speech-worksheets.html)
+- [Articles A/An/The Worksheets](https://edooqoo.com/articles-a-an-the-worksheets.html)
+- [Prepositions Worksheets](https://edooqoo.com/prepositions-worksheets-english.html)
+- [Modal Verbs Worksheets](https://edooqoo.com/modal-verbs-worksheets-esl.html)
+- [Future Tenses Worksheets](https://edooqoo.com/future-tenses-worksheets-english.html)
+- [Relative Clauses Worksheets](https://edooqoo.com/relative-clauses-worksheets.html)
+- [Gerunds & Infinitives Worksheets](https://edooqoo.com/gerunds-infinitives-worksheets.html)
+- [Comparatives & Superlatives](https://edooqoo.com/comparatives-superlatives-worksheets.html)
+- [Phrasal Verbs Worksheets](https://edooqoo.com/phrasal-verbs-worksheets-esl.html)
+- [Question Tags Worksheets](https://edooqoo.com/question-tags-worksheets.html)
+
+## Topic-Based Worksheets
+- [Travel English Worksheets](https://edooqoo.com/travel-english-worksheets.html)
+- [Food & Cooking Worksheets](https://edooqoo.com/food-and-cooking-english-worksheets.html)
+- [Job Interview Worksheets](https://edooqoo.com/job-interview-english-worksheets.html)
+- [Health & Body Worksheets](https://edooqoo.com/health-and-body-english-worksheets.html)
+- [Environment & Climate Worksheets](https://edooqoo.com/environment-climate-english-worksheets.html)
+- [Technology Worksheets](https://edooqoo.com/technology-english-worksheets.html)
+
+## Audience-Specific Worksheets
+- [English Worksheets for Kids](https://edooqoo.com/english-worksheets-for-kids.html)
+- [English Worksheets for Teenagers](https://edooqoo.com/english-worksheets-for-teenagers.html)
+- [English Worksheets for Adults](https://edooqoo.com/english-worksheets-for-adults.html)
+- [Corporate Training Worksheets](https://edooqoo.com/english-worksheets-for-corporate-training.html)
+- [Exam Preparation Worksheets](https://edooqoo.com/english-worksheets-for-exam-prep.html)
+
+## Skills-Based Worksheets
+- [Speaking Activities ESL](https://edooqoo.com/speaking-activities-esl-worksheets.html)
+- [Writing Worksheets ESL](https://edooqoo.com/writing-worksheets-esl.html)
+- [Reading Activities English](https://edooqoo.com/reading-activities-english-worksheets.html)
+- [Listening Activities ESL](https://edooqoo.com/listening-activities-esl-worksheets.html)
+
+## CEFR Level Worksheets
+- [A1 Beginner](https://edooqoo.com/a1-beginner-english-worksheets.html)
+- [A2 Elementary](https://edooqoo.com/a2-elementary-english-worksheets.html)
+- [B1 Intermediate](https://edooqoo.com/b1-intermediate-english-worksheets.html)
+- [B2 Upper Intermediate](https://edooqoo.com/b2-upper-intermediate-english-worksheets.html)
+- [C1 Advanced](https://edooqoo.com/c1-advanced-english-worksheets.html)
+- [C2 Proficiency](https://edooqoo.com/c2-proficiency-english-worksheets.html)
+
+## Guides & Resources
+- [How It Works](https://edooqoo.com/how-it-works)
+- [All 29 Exercise Types](https://edooqoo.com/exercise-types)
+- [ELT Glossary](https://edooqoo.com/glossary)
+- [Ready-Made Prompts](https://edooqoo.com/prompts)
+- [AI Lesson Planning](https://edooqoo.com/ai-lesson-planning-for-english-teachers.html)
+- [Business English](https://edooqoo.com/business-english-worksheet-generator.html)
+- [Exam Preparation](https://edooqoo.com/exam-preparation-worksheets-cambridge-ielts.html)
+
+## Comparisons
+- [Edooqoo vs ISLCollective](https://edooqoo.com/edooqoo-vs-islcollective.html)
+- [Edooqoo vs Liveworksheets](https://edooqoo.com/edooqoo-vs-liveworksheets.html)
+- [Edooqoo vs Twee](https://edooqoo.com/edooqoo-vs-twee.html)
+- [Edooqoo vs MagicSchool AI](https://edooqoo.com/edooqoo-vs-magicschool.html)
+- [Edooqoo vs Quizlet](https://edooqoo.com/edooqoo-vs-quizlet.html)
+- [Edooqoo vs Kahoot](https://edooqoo.com/edooqoo-vs-kahoot.html)
+- [Edooqoo vs Wordwall](https://edooqoo.com/edooqoo-vs-wordwall.html)
+- [Edooqoo vs BusyTeacher](https://edooqoo.com/edooqoo-vs-busyteacher.html)
+
+## For Specific Teachers
+- [For Private Tutors](https://edooqoo.com/ai-tools-for-private-english-tutors.html)
+- [For Language Schools](https://edooqoo.com/worksheet-generator-for-language-schools.html)
+- [For Online ESL Teachers](https://edooqoo.com/ai-tools-for-online-esl-teachers.html)
+
+## Resource Center
+- [All Resources](https://edooqoo.com/resources)
+- [Blog](https://edooqoo.com/blog)
+
+## Blog Articles
+- [How to Create Grammar Worksheets with AI](https://edooqoo.com/blog/how-to-create-grammar-worksheets-with-ai.html)
+- [10 Vocabulary Teaching Strategies for ESL](https://edooqoo.com/blog/vocabulary-teaching-strategies-esl.html)
+- [15 Reading Comprehension Activities](https://edooqoo.com/blog/reading-comprehension-activities-english.html)
+- [Fill in the Blanks Best Practices](https://edooqoo.com/blog/fill-in-the-blanks-exercises-best-practices.html)
+- [Differentiated Instruction in English](https://edooqoo.com/blog/differentiated-instruction-english-classroom.html)
+- [How to Assess English Level Using CEFR](https://edooqoo.com/blog/how-to-assess-english-level-cefr.html)
+- [Teaching English Online Complete Guide](https://edooqoo.com/blog/teaching-english-online-complete-guide.html)
+- [Spaced Repetition for Vocabulary](https://edooqoo.com/blog/spaced-repetition-vocabulary-learning.html)
+- [Best AI Tools for English Teachers 2026](https://edooqoo.com/blog/ai-tools-for-english-teachers-2026.html)
+- [AI Homework Grading Guide](https://edooqoo.com/blog/ai-homework-grading-for-english-teachers.html)
+- [AI-Generated Listening Exercises](https://edooqoo.com/blog/ai-generated-listening-exercises-esl.html)
+- [Personalized Learning in English Teaching](https://edooqoo.com/blog/personalized-learning-english-teaching.html)
+- [Cambridge Exam Preparation Tips](https://edooqoo.com/blog/cambridge-exam-preparation-tips-teachers.html)
+- [Teaching Business English Guide](https://edooqoo.com/blog/teaching-business-english-guide.html)
+- [IELTS Preparation Worksheets Guide](https://edooqoo.com/blog/ielts-preparation-worksheets-guide.html)
+
+## Teaching Methodology (Blog)
+- [Communicative Language Teaching Activities](https://edooqoo.com/blog/communicative-language-teaching-activities.html)
+- [Task-Based Language Teaching Worksheets](https://edooqoo.com/blog/task-based-language-teaching-worksheets.html)
+- [Flipped Classroom for English Teaching](https://edooqoo.com/blog/flipped-classroom-english-teaching.html)
+- [Gamification in the English Classroom](https://edooqoo.com/blog/gamification-english-classroom.html)
+- [Scaffolding Strategies for English Learners](https://edooqoo.com/blog/scaffolding-strategies-english-learners.html)
+- [Formative Assessment in English Teaching](https://edooqoo.com/blog/formative-assessment-english-teaching.html)
+
+## How to Teach (Blog)
+- [How to Teach English Grammar Effectively](https://edooqoo.com/blog/how-to-teach-english-grammar-effectively.html)
+- [How to Teach Speaking ESL](https://edooqoo.com/blog/how-to-teach-speaking-esl.html)
+- [How to Teach Writing ESL](https://edooqoo.com/blog/how-to-teach-writing-esl-students.html)
+- [How to Teach English Pronunciation](https://edooqoo.com/blog/how-to-teach-english-pronunciation.html)
+- [How to Plan English Lessons](https://edooqoo.com/blog/how-to-plan-english-lessons-effectively.html)
+- [Classroom Management ESL Tips](https://edooqoo.com/blog/classroom-management-esl-tips.html)
+
+## Young Learners (Blog)
+- [Teaching English to Young Learners](https://edooqoo.com/blog/teaching-english-to-young-learners.html)
+- [ESL Games for Kids](https://edooqoo.com/blog/esl-games-for-kids.html)
+- [Teaching English to Teenagers](https://edooqoo.com/blog/teaching-english-to-teenagers.html)
+- [Songs and Music in ESL](https://edooqoo.com/blog/english-songs-activities-esl.html)
+- [Storytelling Activities ESL](https://edooqoo.com/blog/storytelling-activities-esl.html)
+
+## Vocabulary (Blog)
+- [Teaching Collocations ESL](https://edooqoo.com/blog/teaching-collocations-esl.html)
+- [Teaching Idioms ESL](https://edooqoo.com/blog/teaching-idioms-esl-activities.html)
+- [Vocabulary Games ESL](https://edooqoo.com/blog/vocabulary-games-esl-classroom.html)
+- [Academic Vocabulary Strategies](https://edooqoo.com/blog/academic-vocabulary-teaching-strategies.html)
+- [Word Formation Exercises](https://edooqoo.com/blog/word-formation-exercises-english.html)
+
+## Grammar Teaching (Blog)
+- [Teaching Conditionals Guide](https://edooqoo.com/blog/teaching-conditionals-esl-guide.html)
+- [Teaching Passive Voice](https://edooqoo.com/blog/teaching-passive-voice-activities.html)
+- [Teaching Reported Speech](https://edooqoo.com/blog/teaching-reported-speech-esl.html)
+- [Teaching Articles ESL](https://edooqoo.com/blog/teaching-articles-esl-guide.html)
+- [Error Correction Techniques](https://edooqoo.com/blog/error-correction-techniques-esl.html)
+
+## Assessment (Blog)
+- [Creating English Tests](https://edooqoo.com/blog/creating-english-tests-guide.html)
+- [Rubrics for English Teachers](https://edooqoo.com/blog/rubrics-for-english-teachers.html)
+- [Self-Assessment Strategies](https://edooqoo.com/blog/self-assessment-strategies-esl.html)
+- [Peer Feedback Activities](https://edooqoo.com/blog/peer-feedback-activities-english.html)
+- [Diagnostic Testing English](https://edooqoo.com/blog/diagnostic-testing-english-learners.html)
+
+## Classroom Activities (Blog)
+- [Warm-Up Activities ESL](https://edooqoo.com/blog/warm-up-activities-esl.html)
+- [Role-Play Activities ESL](https://edooqoo.com/blog/role-play-activities-esl.html)
+- [Debate Activities English](https://edooqoo.com/blog/debate-activities-english-class.html)
+- [Pair Work Activities ESL](https://edooqoo.com/blog/pair-work-activities-esl.html)
+- [Project-Based Learning English](https://edooqoo.com/blog/project-based-learning-english.html)
+
+## Professional Development (Blog)
+- [TEFL Certification Guide](https://edooqoo.com/blog/tefl-certification-guide.html)
+- [Teacher Burnout Prevention](https://edooqoo.com/blog/teacher-burnout-prevention-esl.html)
+- [Building ESL Teaching Portfolio](https://edooqoo.com/blog/building-esl-teaching-portfolio.html)
+- [AI for Teacher Productivity](https://edooqoo.com/blog/using-ai-teacher-productivity.html)
+- [Freelance ESL Business Guide](https://edooqoo.com/blog/setting-up-freelance-esl-business.html)
+
+## Culture & Cross-Cultural (Blog)
+- [Teaching Culture in ESL](https://edooqoo.com/blog/teaching-culture-esl-classroom.html)
+- [Cross-Cultural Communication Activities](https://edooqoo.com/blog/cross-cultural-communication-activities.html)
+- [Using Films in English Teaching](https://edooqoo.com/blog/using-films-english-teaching.html)
+- [Teaching English Through Literature](https://edooqoo.com/blog/teaching-english-through-literature.html)
+- [Current Events ESL Lessons](https://edooqoo.com/blog/current-events-esl-lessons.html)
+
+## Technology in Teaching (Blog)
+- [Best Apps for Learning English 2026](https://edooqoo.com/blog/best-apps-learning-english-2026.html)
+- [Google Workspace for ESL Teachers](https://edooqoo.com/blog/using-google-workspace-esl-teachers.html)
+- [Creating Interactive Worksheets Online](https://edooqoo.com/blog/creating-interactive-worksheets-online.html)
+- [Video Conferencing Tips Online ESL](https://edooqoo.com/blog/video-conferencing-tips-online-esl.html)
+- [AI Lesson Planning Strategies](https://edooqoo.com/blog/ai-lesson-planning-strategies.html)
+
+## Specialized Learner Groups (Blog)
+- [Teaching English to Immigrants and Refugees](https://edooqoo.com/blog/teaching-english-immigrants-refugees.html)
+- [English for Specific Purposes Guide](https://edooqoo.com/blog/english-for-specific-purposes-guide.html)
+- [Teaching English with Learning Disabilities](https://edooqoo.com/blog/teaching-english-learning-disabilities.html)
+- [Multilevel ESL Classroom Strategies](https://edooqoo.com/blog/multilevel-esl-classroom-strategies.html)
+- [Teaching English One-to-One](https://edooqoo.com/blog/teaching-english-one-to-one.html)
+
+## Writing & Communication (Blog)
+- [Teaching Email Writing ESL](https://edooqoo.com/blog/teaching-email-writing-esl.html)
+- [Creative Writing Activities ESL](https://edooqoo.com/blog/creative-writing-activities-esl.html)
+- [Teaching Presentation Skills English](https://edooqoo.com/blog/teaching-presentation-skills-english.html)
+- [100 Discussion Questions ESL](https://edooqoo.com/blog/discussion-questions-esl-topics.html)
+- [Teaching Formal vs Informal English](https://edooqoo.com/blog/teaching-formal-informal-english.html)
+
+## Lesson Resources & Seasonal (Blog)
+- [First Day ESL Class Activities](https://edooqoo.com/blog/first-day-esl-class-activities.html)
+- [End-of-Term Activities ESL](https://edooqoo.com/blog/end-of-term-activities-esl.html)
+- [Holiday-Themed ESL Activities](https://edooqoo.com/blog/holiday-themed-esl-activities.html)
+- [Substitute Teacher ESL Lesson Plans](https://edooqoo.com/blog/substitute-teacher-esl-lesson-plans.html)
+- [Five-Minute Filler Activities ESL](https://edooqoo.com/blog/five-minute-filler-activities-esl.html)
+
+## Language Systems & Analysis (Blog)
+- [Teaching Linking Words and Connectors](https://edooqoo.com/blog/teaching-linking-words-connectors.html)
+- [Corpus Linguistics ESL Teaching](https://edooqoo.com/blog/corpus-linguistics-esl-teaching.html)
+- [Contrastive Analysis Language Teaching](https://edooqoo.com/blog/contrastive-analysis-language-teaching.html)
+- [Teaching Pragmatics ESL](https://edooqoo.com/blog/teaching-pragmatics-esl.html)
+- [Extensive Reading Programs ESL](https://edooqoo.com/blog/extensive-reading-programs-esl.html)
+
+## Pronunciation & Phonology (Blog)
+- [Teaching Minimal Pairs ESL](https://edooqoo.com/blog/teaching-minimal-pairs-esl.html)
+- [Intonation and Stress Patterns](https://edooqoo.com/blog/teaching-english-intonation-stress.html)
+- [Connected Speech Activities](https://edooqoo.com/blog/connected-speech-teaching-activities.html)
+- [IPA Phonetic Alphabet ESL](https://edooqoo.com/blog/ipa-phonetic-alphabet-esl-teaching.html)
+- [Accent Reduction Activities](https://edooqoo.com/blog/accent-reduction-activities-esl.html)
+
+## Homework & Independent Learning (Blog)
+- [Effective ESL Homework Strategies](https://edooqoo.com/blog/effective-esl-homework-strategies.html)
+- [Teaching Study Skills](https://edooqoo.com/blog/teaching-study-skills-english-learners.html)
+- [Self-Directed Learning ESL](https://edooqoo.com/blog/self-directed-learning-esl.html)
+- [Flipped Homework ESL](https://edooqoo.com/blog/flipped-homework-esl-classroom.html)
+- [Digital Homework Tools](https://edooqoo.com/blog/digital-homework-tools-esl-teachers.html)
+
+## Motivation & Engagement (Blog)
+- [Motivating Reluctant Learners](https://edooqoo.com/blog/motivating-reluctant-esl-learners.html)
+- [Intrinsic Motivation](https://edooqoo.com/blog/intrinsic-motivation-language-learning.html)
+- [Student Autonomy ESL](https://edooqoo.com/blog/student-autonomy-esl-classroom.html)
+- [Using Rewards ESL](https://edooqoo.com/blog/using-rewards-esl-classroom.html)
+- [Growth Mindset Language Learning](https://edooqoo.com/blog/growth-mindset-language-learning.html)
+
+## Advanced Grammar (Blog)
+- [Teaching Subjunctive](https://edooqoo.com/blog/teaching-subjunctive-english.html)
+- [Teaching Inversion](https://edooqoo.com/blog/teaching-inversion-english.html)
+- [Teaching Cleft Sentences](https://edooqoo.com/blog/teaching-cleft-sentences-english.html)
+- [Ellipsis and Substitution](https://edooqoo.com/blog/teaching-ellipsis-substitution-english.html)
+- [Mixed Conditionals](https://edooqoo.com/blog/teaching-mixed-conditionals-esl.html)
+
+## Listening Skills (Blog)
+- [Listening Strategies ESL](https://edooqoo.com/blog/teaching-listening-strategies-esl.html)
+- [Dictation Activities ESL](https://edooqoo.com/blog/dictation-activities-esl-classroom.html)
+- [Using Podcasts ESL](https://edooqoo.com/blog/using-podcasts-esl-teaching.html)
+- [Note-Taking Skills English](https://edooqoo.com/blog/teaching-note-taking-skills-english.html)
+- [Authentic Listening Materials](https://edooqoo.com/blog/authentic-listening-materials-esl.html)
+
+## Parent & Stakeholder Communication (Blog)
+- [Communicating with ESL Parents](https://edooqoo.com/blog/communicating-with-esl-parents.html)
+- [Student Progress Reports ESL](https://edooqoo.com/blog/writing-student-progress-reports-esl.html)
+- [Parent-Teacher Conferences ESL](https://edooqoo.com/blog/parent-teacher-conferences-esl.html)
+- [Advocating for ELL Students](https://edooqoo.com/blog/advocating-for-ell-students.html)
+- [Collaborating with Mainstream Teachers](https://edooqoo.com/blog/collaborating-with-mainstream-teachers-esl.html)
+
+## Target Users
+Private English tutors, ESL/EFL instructors, Business English coaches, language school teachers, online English teachers, corporate language trainers
+
+## Pricing
+Free: 2 worksheets, all 29 exercise types, online preview
+Side-Gig $9/mo: 15 worksheets/month + homework + flashcards + calendar
+Full-Time from $19/mo: 30-90 worksheets/month + all features
+
+## Links
+- [Homepage](https://edooqoo.com)
+- [Pricing](https://edooqoo.com/pricing)
+- [Sign Up Free](https://edooqoo.com/signup)
+- [About Edooqoo](https://edooqoo.com/about)
+- [Full Documentation](https://edooqoo.com/llms-full.txt)
