@@ -1,0 +1,140 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://edooqoo.com/#application",
+      "name": "Edooqoo",
+      "url": "https://edooqoo.com",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web",
+      "description": "AI-powered worksheet generator for English teachers. Creates personalized worksheets with 29 exercise types for CEFR A1-C2 in under 60 seconds. Includes homework with AI grading, SM-2 flashcards, 49-question placement test, lesson calendar with Google Calendar sync, nano-skill student progress tracking (DSLM), and Student Hub portal.",
+      "keywords": [
+        "ESL worksheet generator",
+        "AI English teaching tool",
+        "EFL worksheet maker",
+        "English teacher platform",
+        "CEFR worksheet generator",
+        "AI homework grading",
+        "English lesson planning",
+        "ESL flashcards",
+        "student progress tracking",
+        "English placement test"
+      ],
+      "offers": {
+        "@type": "AggregateOffer",
+        "lowPrice": "0",
+        "highPrice": "79",
+        "priceCurrency": "USD",
+        "offerCount": "4",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Free Demo",
+            "price": "0",
+            "priceCurrency": "USD",
+            "description": "2 free worksheets, all 29 exercise types"
+          },
+          {
+            "@type": "Offer",
+            "name": "Side-Gig",
+            "price": "9",
+            "priceCurrency": "USD",
+            "billingIncrement": "P1M",
+            "description": "15 worksheets/month + homework + flashcards + calendar"
+          },
+          {
+            "@type": "Offer",
+            "name": "Full-Time",
+            "price": "19",
+            "priceCurrency": "USD",
+            "billingIncrement": "P1M",
+            "description": "30 worksheets/month + all features"
+          },
+          {
+            "@type": "Offer",
+            "name": "Full-Time Pro",
+            "price": "79",
+            "priceCurrency": "USD",
+            "billingIncrement": "P1M",
+            "description": "90 worksheets/month + all features + priority support"
+          }
+        ]
+      },
+      "featureList": [
+        "AI worksheet generation with 29 exercise types (20 basic + 5 audio + 4 picture)",
+        "CEFR levels A1 through C2 with automatic difficulty calibration",
+        "Dynamic Student Learning Model (DSLM) — 4-layer personalization system",
+        "Automatic AI grading of open-ended student answers",
+        "Smart flashcards with SM-2 spaced repetition algorithm",
+        "49-question AI placement test with speaking and listening",
+        "Student Hub portal for independent learning",
+        "Lesson calendar with Google Calendar sync and Google Meet",
+        "Nano-skill mastery tracking with CEFR tags and trend detection",
+        "Homework system with email notifications and deadline tracking",
+        "Interactive worksheet sharing via permanent links",
+        "Live Session mode for real-time teaching",
+        "Drawing and annotation tools",
+        "Student Knowledge Base for AI personalization",
+        "Worksheet download as HTML and PDF"
+      ],
+      "audience": {
+        "@type": "EducationalAudience",
+        "educationalRole": "teacher",
+        "audienceType": [
+          "Private English tutors",
+          "ESL teachers",
+          "EFL instructors",
+          "Business English coaches",
+          "Language school teachers",
+          "Online English teachers",
+          "Corporate language trainers",
+          "Exam preparation tutors",
+          "TEFL/TESOL educators"
+        ]
+      },
+      "screenshot": "https://edooqoo.com/lovable-uploads/2d55c1e0-547e-45aa-a55c-e71479adb602.png",
+      "logo": "https://edooqoo.com/lovable-uploads/2d55c1e0-547e-45aa-a55c-e71479adb602.png",
+      "softwareHelp": {
+        "@type": "WebPage",
+        "url": "https://edooqoo.com/how-it-works"
+      },
+      "releaseNotes": "March 2026 — 29 exercise types, DSLM progress tracking, Student Hub portal, Google Calendar integration"
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://edooqoo.com/#organization",
+      "name": "Edooqoo",
+      "url": "https://edooqoo.com",
+      "logo": "https://edooqoo.com/lovable-uploads/2d55c1e0-547e-45aa-a55c-e71479adb602.png",
+      "description": "AI-powered teaching platform for English language educators. Generates personalized worksheets, manages homework with AI grading, tracks student progress at nano-skill level.",
+      "sameAs": [
+        "https://www.linkedin.com/company/edooqoo",
+        "https://twitter.com/edooqoo"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "support@edooqoo.com",
+        "url": "https://edooqoo.com"
+      },
+      "knowsAbout": [
+        "English language teaching",
+        "ESL/EFL education",
+        "AI-powered education technology",
+        "Worksheet generation",
+        "Spaced repetition learning",
+        "CEFR language assessment",
+        "Student progress tracking"
+      ]
+    },
+    {
+      "@type": "WebApplication",
+      "name": "Student Hub by Edooqoo",
+      "url": "https://edooqoo.com/my",
+      "description": "Student portal for independent learning. Students access shared worksheets, complete homework, study flashcards with spaced repetition, book lessons, and sync with Google Calendar.",
+      "applicationCategory": "EducationalApplication",
+      "isPartOf": { "@id": "https://edooqoo.com/#application" }
+    }
+  ]
+}
