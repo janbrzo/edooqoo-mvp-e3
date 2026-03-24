@@ -1418,3 +1418,243 @@ paths:
       responses:
         '200':
           description: Blog article HTML
+  /blog/toefl-preparation-strategies-teachers.html:
+    get:
+      operationId: getBlogToeflPrep
+      summary: TOEFL Preparation Strategies for ESL Teachers
+      description: Section-by-section TOEFL strategies with practice materials.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/toeic-preparation-worksheets-guide.html:
+    get:
+      operationId: getBlogToeicPrep
+      summary: TOEIC Preparation Worksheets and Practice Guide
+      description: Listening/reading sections, business vocabulary, test-day strategies.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/duolingo-english-test-preparation.html:
+    get:
+      operationId: getBlogDuolingoTest
+      summary: Duolingo English Test Preparation Guide
+      description: Adaptive format, question types, and preparation activities.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-test-taking-strategies-esl.html:
+    get:
+      operationId: getBlogTestTaking
+      summary: Teaching Test-Taking Strategies to ESL Students
+      description: Time management, elimination techniques, anxiety reduction.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/standardized-test-comparison-esl.html:
+    get:
+      operationId: getBlogTestComparison
+      summary: IELTS vs TOEFL vs Cambridge vs TOEIC Comparison
+      description: Format comparison, scoring, acceptance, choosing the right exam.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/classroom-language-esl-teachers.html:
+    get:
+      operationId: getBlogClassroomLanguage
+      summary: Essential Classroom Language for ESL Teachers
+      description: Grading language, interaction patterns, management phrases.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/giving-instructions-esl-classroom.html:
+    get:
+      operationId: getBlogGivingInstructions
+      summary: Giving Clear Instructions in the ESL Classroom
+      description: ICQs, staging instructions, demonstration techniques.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/concept-checking-questions-esl.html:
+    get:
+      operationId: getBlogCCQs
+      summary: Concept Checking Questions (CCQs) for ESL
+      description: Writing effective CCQs for grammar, vocabulary, functional language.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teacher-talking-time-reducing.html:
+    get:
+      operationId: getBlogReducingTTT
+      summary: Reducing Teacher Talking Time Strategies
+      description: Student-centered activities, wait time, activity redesign.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/eliciting-techniques-esl-teaching.html:
+    get:
+      operationId: getBlogEliciting
+      summary: Eliciting Techniques for ESL Teaching
+      description: Visuals, prompts, context, questioning for effective elicitation.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-skimming-scanning-esl.html:
+    get:
+      operationId: getBlogSkimmingScanning
+      summary: Teaching Skimming and Scanning for ESL
+      description: Timed reading tasks, gist questions, information hunting.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-critical-reading-esl.html:
+    get:
+      operationId: getBlogCriticalReading
+      summary: Teaching Critical Reading Skills to ESL Students
+      description: Identifying bias, evaluating sources, argument analysis.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/graded-readers-guide-esl-teachers.html:
+    get:
+      operationId: getBlogGradedReaders
+      summary: Graded Readers Guide for ESL Teachers
+      description: Publisher comparison, level selection, reading programs.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-reading-fluency-esl.html:
+    get:
+      operationId: getBlogReadingFluency
+      summary: Teaching Reading Fluency in ESL Classes
+      description: Repeated reading, timed reading, fluency assessment.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/newspaper-articles-esl-lessons.html:
+    get:
+      operationId: getBlogNewspaperESL
+      summary: Using Newspaper Articles in ESL Lessons
+      description: Headline analysis, jigsaw reading, news-based discussions.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/hybrid-teaching-esl-strategies.html:
+    get:
+      operationId: getBlogHybridTeaching
+      summary: Hybrid Teaching Strategies for ESL Classes
+      description: Simultaneous in-person and online instruction techniques.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/breakout-rooms-esl-activities.html:
+    get:
+      operationId: getBlogBreakoutRooms
+      summary: Breakout Room Activities for Online ESL
+      description: Structured pair and group tasks for Zoom, Meet, Teams.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/digital-whiteboard-activities-esl.html:
+    get:
+      operationId: getBlogDigitalWhiteboard
+      summary: Digital Whiteboard Activities for ESL Teachers
+      description: Jamboard, Miro, Whiteboard.fi activities for online lessons.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/asynchronous-learning-esl.html:
+    get:
+      operationId: getBlogAsyncLearning
+      summary: Asynchronous Learning Activities for ESL
+      description: Self-paced tasks, video assignments, discussion boards.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/building-community-online-esl-class.html:
+    get:
+      operationId: getBlogOnlineCommunity
+      summary: Building Community in Online ESL Classes
+      description: Ice-breakers, social activities, fostering virtual connection.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/fluency-activities-esl-classroom.html:
+    get:
+      operationId: getBlogFluencyActivities
+      summary: Fluency Activities for the ESL Classroom
+      description: 4/3/2 technique, speed dating, information gap drills.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/conversation-classes-esl-structure.html:
+    get:
+      operationId: getBlogConversationClasses
+      summary: Structuring Conversation Classes for ESL
+      description: Topic selection, scaffolding, mixed-level management.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-functional-language-esl.html:
+    get:
+      operationId: getBlogFunctionalLanguage
+      summary: Teaching Functional Language in ESL
+      description: Requests, complaints, suggestions, appropriacy practice.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/shadowing-technique-esl.html:
+    get:
+      operationId: getBlogShadowing
+      summary: The Shadowing Technique for ESL
+      description: Step-by-step shadowing for pronunciation and fluency.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/impromptu-speaking-activities-esl.html:
+    get:
+      operationId: getBlogImpromptuSpeaking
+      summary: Impromptu Speaking Activities for ESL
+      description: One-minute talks, opinion chains, spontaneous speaking.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/giving-written-feedback-esl.html:
+    get:
+      operationId: getBlogWrittenFeedback
+      summary: Giving Effective Written Feedback to ESL Students
+      description: Focused vs comprehensive feedback, feedforward techniques.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/oral-correction-timing-techniques.html:
+    get:
+      operationId: getBlogOralCorrection
+      summary: When and How to Correct Speaking Errors in ESL
+      description: On-the-spot vs delayed correction, recasting, reformulation.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/marking-codes-esl-writing.html:
+    get:
+      operationId: getBlogMarkingCodes
+      summary: Using Marking Codes for ESL Writing Correction
+      description: Standard codes, self-correction, error logs.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/conferencing-with-esl-students.html:
+    get:
+      operationId: getBlogConferencing
+      summary: One-on-One Conferencing with ESL Students
+      description: Conference structure, questioning, goal-setting dialogue.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/positive-error-culture-esl.html:
+    get:
+      operationId: getBlogErrorCulture
+      summary: Creating a Positive Error Culture in ESL
+      description: Normalizing mistakes, growth language, error-as-learning.
+      responses:
+        '200':
+          description: Blog article HTML
