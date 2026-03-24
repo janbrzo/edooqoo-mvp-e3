@@ -143,10 +143,52 @@ Detailed comparison pages showing why teachers choose Edooqoo over alternatives:
 - [Business English](https://edooqoo.com/business-english-worksheet-generator.html)
 - [Exam Preparation](https://edooqoo.com/exam-preparation-worksheets-cambridge-ielts.html)
 - [All Resources](https://edooqoo.com/resources) — Complete resource center
-- [Blog](https://edooqoo.com/blog) — 117 articles on ESL/EFL teaching
+- [Blog](https://edooqoo.com/blog) — 147 articles on ESL/EFL teaching
 
-## Blog — 117 Articles Across 23 Categories
+## Blog — 147 Articles Across 29 Categories
 
-Edooqoo's blog covers every aspect of English teaching with 117 in-depth articles. Categories include: Worksheet Creation, Teaching Methods, AI in Education, Exam & Business, Methodology, How to Teach, Young Learners, Vocabulary, Grammar Teaching, Assessment, Classroom Activities, Professional Development, Culture & Cross-Cultural, Technology in Teaching, Specialized Learner Groups, Writing & Communication, Lesson Resources, Language Systems, Pronunciation, Homework & Independent Learning, Motivation & Engagement, Advanced Grammar, Listening Skills, and Parent Communication.
+Edooqoo's blog covers every aspect of English teaching with 147 in-depth articles. Categories include: Worksheet Creation, Teaching Methods, AI in Education, Exam & Business, Methodology, How to Teach, Young Learners, Vocabulary, Grammar Teaching, Assessment, Classroom Activities, Professional Development, Culture & Cross-Cultural, Technology in Teaching, Specialized Learner Groups, Writing & Communication, Lesson Resources, Language Systems, Pronunciation, Homework & Independent Learning, Motivation & Engagement, Advanced Grammar, Listening Skills, Parent Communication, Standardized Tests, Classroom Language, Reading Skills, Speaking & Fluency, and Feedback & Correction.
+
+## Standardized Tests (Blog)
+- [TOEFL Preparation](https://edooqoo.com/blog/toefl-preparation-strategies-teachers.html)
+- [TOEIC Preparation](https://edooqoo.com/blog/toeic-preparation-worksheets-guide.html)
+- [Duolingo English Test](https://edooqoo.com/blog/duolingo-english-test-preparation.html)
+- [Test-Taking Strategies](https://edooqoo.com/blog/teaching-test-taking-strategies-esl.html)
+- [Test Comparison Guide](https://edooqoo.com/blog/standardized-test-comparison-esl.html)
+
+## Classroom Language (Blog)
+- [Classroom Language](https://edooqoo.com/blog/classroom-language-esl-teachers.html)
+- [Giving Instructions](https://edooqoo.com/blog/giving-instructions-esl-classroom.html)
+- [CCQs](https://edooqoo.com/blog/concept-checking-questions-esl.html)
+- [Reducing TTT](https://edooqoo.com/blog/teacher-talking-time-reducing.html)
+- [Eliciting Techniques](https://edooqoo.com/blog/eliciting-techniques-esl-teaching.html)
+
+## Reading Skills (Blog)
+- [Skimming and Scanning](https://edooqoo.com/blog/teaching-skimming-scanning-esl.html)
+- [Critical Reading](https://edooqoo.com/blog/teaching-critical-reading-esl.html)
+- [Graded Readers Guide](https://edooqoo.com/blog/graded-readers-guide-esl-teachers.html)
+- [Reading Fluency](https://edooqoo.com/blog/teaching-reading-fluency-esl.html)
+- [Newspaper Articles ESL](https://edooqoo.com/blog/newspaper-articles-esl-lessons.html)
+
+## Online & Hybrid Teaching (Blog)
+- [Hybrid Teaching ESL](https://edooqoo.com/blog/hybrid-teaching-esl-strategies.html)
+- [Breakout Room Activities](https://edooqoo.com/blog/breakout-rooms-esl-activities.html)
+- [Digital Whiteboard](https://edooqoo.com/blog/digital-whiteboard-activities-esl.html)
+- [Asynchronous Learning](https://edooqoo.com/blog/asynchronous-learning-esl.html)
+- [Online Community](https://edooqoo.com/blog/building-community-online-esl-class.html)
+
+## Speaking & Fluency (Blog)
+- [Fluency Activities](https://edooqoo.com/blog/fluency-activities-esl-classroom.html)
+- [Conversation Classes](https://edooqoo.com/blog/conversation-classes-esl-structure.html)
+- [Functional Language](https://edooqoo.com/blog/teaching-functional-language-esl.html)
+- [Shadowing Technique](https://edooqoo.com/blog/shadowing-technique-esl.html)
+- [Impromptu Speaking](https://edooqoo.com/blog/impromptu-speaking-activities-esl.html)
+
+## Feedback & Correction (Blog)
+- [Written Feedback ESL](https://edooqoo.com/blog/giving-written-feedback-esl.html)
+- [Oral Correction Timing](https://edooqoo.com/blog/oral-correction-timing-techniques.html)
+- [Marking Codes](https://edooqoo.com/blog/marking-codes-esl-writing.html)
+- [Student Conferencing](https://edooqoo.com/blog/conferencing-with-esl-students.html)
+- [Positive Error Culture](https://edooqoo.com/blog/positive-error-culture-esl.html)
 
 Full blog index: https://edooqoo.com/blog
