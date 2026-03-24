@@ -585,6 +585,9 @@ serve(async (req) => {
             console.warn(`⚠️ [MONITORING] Worksheet ai_response TRUNCATED from ${aiResponseLength} to ${aiResponseLimit} chars`);
           }
 
+          // Auto-generate share token at creation time (permanent, no expiration)
+          const shareToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+
           const { data: worksheet, error: worksheetError } = await supabase
             .from("worksheets")
             .insert({
@@ -608,8 +611,9 @@ serve(async (req) => {
               generation_time_seconds: generationTimeSeconds,
               country: geoData.country || null,
               city: geoData.city || null,
+              share_token: shareToken,
             })
-            .select("id, created_at, title");
+            .select("id, created_at, title, share_token");
 
           if (worksheetError) {
             throw new Error(`Database save failed: ${worksheetError.message}`);
@@ -621,6 +625,7 @@ serve(async (req) => {
           }
 
           worksheetData.id = worksheetId;
+          worksheetData.share_token = worksheet?.[0]?.share_token;
 
           console.log("✅ Streaming generation complete, sending done event");
           send("done", {
