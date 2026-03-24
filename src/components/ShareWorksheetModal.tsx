@@ -67,11 +67,15 @@ const ShareWorksheetModal = ({
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('Not authenticated');
         
-        const { data: token, error: rpcError } = await supabase.rpc('generate_worksheet_share_token' as any, {
+        const { data: token, error: rpcError } = await supabase.rpc('generate_worksheet_share_token', {
           p_worksheet_id: worksheetId,
           p_teacher_id: user.id,
           p_expires_hours: 240
         });
+        
+        if (rpcError) {
+          console.error('[ShareWorksheet] RPC error details:', rpcError);
+        }
         
         if (rpcError) throw rpcError;
         if (token) {
