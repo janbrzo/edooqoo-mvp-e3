@@ -2625,6 +2625,7 @@ export type Database = {
           selected_image: Json | null
           sequence_number: number
           session_id: string | null
+          share_expires_at: string | null
           share_recipient_email: string | null
           share_token: string | null
           status: string
@@ -2659,6 +2660,7 @@ export type Database = {
           selected_image?: Json | null
           sequence_number?: number
           session_id?: string | null
+          share_expires_at?: string | null
           share_recipient_email?: string | null
           share_token?: string | null
           status?: string
@@ -2693,6 +2695,7 @@ export type Database = {
           selected_image?: Json | null
           sequence_number?: number
           session_id?: string | null
+          share_expires_at?: string | null
           share_recipient_email?: string | null
           share_token?: string | null
           status?: string

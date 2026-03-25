@@ -1,0 +1,1 @@
+ALTER TABLE public.worksheets ADD COLUMN IF NOT EXISTS share_expires_at TIMESTAMP WITH TIME ZONE;
