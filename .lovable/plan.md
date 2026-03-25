@@ -1,256 +1,447 @@
 
 
-# Plan: Phase 13 — Fix Share Worksheet + Blog Expansion (30 artykułów)
+# Plan: Phase 14 — Blog Expansion (30 nowych artykułów, 147→177)
 
-## ZADANIE 1: Naprawa "Failed to load share link"
+## Analiza luk tematycznych
 
-### Diagnoza
+Mamy 147 artykułów w 29 kategoriach. Po analizie zapytań nauczycieli angielskiego zidentyfikowałem **6 nowych klastrów**, które pokrywają tematy wciąż nieobecne w naszym content coverage:
 
-Znalazłem przyczynę. W edge function `generateWorksheet/index.ts` są **dwie ścieżki zapisu do bazy**:
-
-1. **Streaming mode** (linia 588) — używany gdy `useStreaming = true` — **NIE zapisuje `share_token`**
-2. **Non-streaming mode** (linia 813) — **zapisuje `share_token`** (dodany wcześniej)
-
-Kiedy worksheet jest wygenerowany w trybie streaming, `share_token` w bazie jest NULL. Potem w `ShareWorksheetModal` fallback wywołuje RPC `generate_worksheet_share_token`, który zwraca 400 (prawdopodobnie problem z uprawnieniami lub kontekstem RPC).
-
-### Naprawa (2 pliki)
-
-**Plik 1: `supabase/functions/generateWorksheet/index.ts`** — dodanie `share_token` do ścieżki streaming
-
-W bloku streaming (przed linią 588), dodać generowanie tokena:
-```typescript
-// Auto-generate share token at creation time (permanent, no expiration)
-const shareToken = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
-```
-
-W insercie na linii 590-611, dodać:
-```typescript
-share_token: shareToken,
-```
-
-W `.select()` na linii 612, zmienić na:
-```typescript
-.select("id, created_at, title, share_token");
-```
-
-Po insercie (ok. linii 618-620), przekazać share_token do worksheetData:
-```typescript
-worksheetData.share_token = worksheet?.[0]?.share_token;
-```
-
-**Plik 2: `src/components/ShareWorksheetModal.tsx`** — ulepszenie fallbacku
-
-Usunąć `as any` cast z RPC call (typy już mają tę funkcję). Dodać lepsze logowanie błędu:
-```typescript
-const { data: token, error: rpcError } = await supabase.rpc('generate_worksheet_share_token', {
-  p_worksheet_id: worksheetId,
-  p_teacher_id: user.id,
-  p_expires_hours: 240
-});
-
-if (rpcError) {
-  console.error('[ShareWorksheet] RPC error details:', rpcError);
-  throw rpcError;
-}
-```
-
-Po tym fixie nowo generowane worksheety (streaming i non-streaming) będą miały `share_token` od razu. Stare worksheety bez tokena użyją fallbacku RPC.
+1. **Classroom Management Advanced** — mamy 1 ogólny artykuł (`classroom-management-esl-tips`), ale brak pokrycia: dyscyplina, zarządzanie energią klasy, praca z trudnymi uczniami, transitions, seating arrangements
+2. **Writing Skills Deep Dive** — mamy `how-to-teach-writing-esl-students`, `creative-writing-activities`, `teaching-email-writing` — ale brak: essay structure, process writing, peer editing workshops, journal writing, portfolio assessment
+3. **Medical / Legal / Aviation ESP** — mamy `english-for-specific-purposes-guide` i `teaching-business-english-guide`, ale brak pokrycia konkretnych branż: medical, legal, hospitality, aviation, IT
+4. **CLIL & Content-Language Integration** — brak pokrycia: CLIL methodology, teaching maths/science through English, bilingual education, EMI (English as Medium of Instruction)
+5. **Assessment Design** — mamy formative assessment, rubrics, diagnostic testing, CEFR — ale brak: designing midterms/finals, item analysis, washback effect, portfolio assessment, cloze tests
+6. **Inclusive & Diverse Classrooms** — mamy `teaching-english-learning-disabilities` i `multilevel-esl-classroom-strategies` — ale brak: neurodiversity, trauma-informed teaching, gender-inclusive language, culturally responsive teaching, heritage speakers
 
 ---
 
-## ZADANIE 2: 30 nowych artykułów blogowych (Phase 13)
+## 30 nowych artykułów — pełna lista
 
-### Analiza luk — co jeszcze nie jest pokryte
+### Klaster Y: "Classroom Management Advanced" (5 artykułów)
 
-Mamy 117 artykułów w 23 kategoriach. Po analizie pozostałych zapytań nauczycieli, zidentyfikowałem **6 nowych klastrów**:
+| # | Plik | H1 | Opis (meta description) |
+|---|------|----|------------------------|
+| 1 | `managing-behavior-esl-classroom.html` | Managing Behavior in the ESL Classroom | Positive discipline, behavior contracts, and de-escalation strategies for language classes. |
+| 2 | `seating-arrangements-esl-classroom.html` | Seating Arrangements for the ESL Classroom — What Works | U-shape, clusters, rows, and flexible seating with activity-type matching. |
+| 3 | `transitions-activities-esl-classroom.html` | Smooth Transitions Between Activities in ESL Classes | Transition signals, timer techniques, and maintaining momentum between tasks. |
+| 4 | `energy-management-esl-lessons.html` | Energy Management in ESL Lessons — Pacing and Flow | Stirrers vs settlers, lesson arc, and balancing high-energy with focused work. |
+| 5 | `managing-large-esl-classes.html` | Managing Large ESL Classes — Strategies for 30+ Students | Monitoring techniques, choral work, group roles, and efficient feedback in large groups. |
 
-### Klaster S: "TOEFL & Standardized Tests" (5 artykułów)
+### Klaster Z: "Writing Skills Deep Dive" (5 artykułów)
 
-Mamy Cambridge i IELTS, ale brak TOEFL, TOEIC, Duolingo English Test.
+| # | Plik | H1 | Opis |
+|---|------|----|------|
+| 6 | `teaching-essay-structure-esl.html` | Teaching Essay Structure to ESL Students | Introduction-body-conclusion, thesis statements, topic sentences, and paragraph unity. |
+| 7 | `process-writing-approach-esl.html` | The Process Writing Approach in ESL Teaching | Brainstorming, drafting, revising, editing, and publishing stages with classroom activities. |
+| 8 | `peer-editing-workshops-esl.html` | Running Peer Editing Workshops in ESL Classes | Training students in peer review, feedback forms, and structured editing protocols. |
+| 9 | `journal-writing-esl-students.html` | Journal Writing for ESL Students — Ideas and Implementation | Dialogue journals, reflective journals, and creative journal prompts by level. |
+| 10 | `portfolio-assessment-esl-writing.html` | Portfolio Assessment for ESL Writing — Complete Guide | Selection criteria, reflection tasks, showcase vs working portfolios, and grading. |
 
-| # | Plik | H1 |
-|---|------|----|
-| 1 | `toefl-preparation-strategies-teachers.html` | TOEFL Preparation Strategies for ESL Teachers |
-| 2 | `toeic-preparation-worksheets-guide.html` | TOEIC Preparation — Worksheets and Practice Guide |
-| 3 | `duolingo-english-test-preparation.html` | Duolingo English Test Preparation — Teacher's Guide |
-| 4 | `teaching-test-taking-strategies-esl.html` | Teaching Test-Taking Strategies to ESL Students |
-| 5 | `standardized-test-comparison-esl.html` | IELTS vs TOEFL vs Cambridge vs TOEIC — Which Test for Your Student? |
+### Klaster AA: "ESP by Industry" (5 artykułów)
 
-### Klaster T: "Classroom Language & Instructions" (5 artykułów)
+| # | Plik | H1 | Opis |
+|---|------|----|------|
+| 11 | `teaching-medical-english.html` | Teaching Medical English — Vocabulary, Scenarios, and Resources | Medical terminology, patient communication, case studies, and role-plays for healthcare professionals. |
+| 12 | `teaching-legal-english.html` | Teaching Legal English — Contracts, Court Language, and Case Studies | Legal vocabulary, contract analysis, moot court activities, and plain English drafting. |
+| 13 | `teaching-english-hospitality-tourism.html` | Teaching English for Hospitality and Tourism | Hotel, restaurant, and travel agency scenarios with functional language worksheets. |
+| 14 | `teaching-english-it-professionals.html` | Teaching English for IT Professionals | Technical documentation, Agile vocabulary, code review language, and presentation skills. |
+| 15 | `teaching-aviation-english.html` | Teaching Aviation English — ICAO Standards and Radiotelephony | ICAO Level 4+ requirements, radiotelephony phrases, and emergency communication drills. |
 
-Fundamentalny klaster — jak dawać instrukcje, classroom language.
+### Klaster AB: "CLIL & Bilingual Education" (5 artykułów)
 
-| # | Plik | H1 |
-|---|------|----|
-| 6 | `classroom-language-esl-teachers.html` | Essential Classroom Language for ESL Teachers |
-| 7 | `giving-instructions-esl-classroom.html` | Giving Clear Instructions in the ESL Classroom |
-| 8 | `concept-checking-questions-esl.html` | Concept Checking Questions (CCQs) — The ESL Teacher's Secret Weapon |
-| 9 | `teacher-talking-time-reducing.html` | Reducing Teacher Talking Time — Practical Strategies |
-| 10 | `eliciting-techniques-esl-teaching.html` | Eliciting Techniques for ESL Teaching |
+| # | Plik | H1 | Opis |
+|---|------|----|------|
+| 16 | `clil-methodology-complete-guide.html` | CLIL Methodology — A Complete Guide for Language Teachers | Content and Language Integrated Learning: the 4Cs framework, lesson planning, and assessment. |
+| 17 | `teaching-science-through-english.html` | Teaching Science Through English — CLIL Activities | Lab reports, experiment descriptions, and scientific vocabulary scaffolding. |
+| 18 | `emi-english-medium-instruction-guide.html` | English as Medium of Instruction (EMI) — Teacher's Guide | Lecture scaffolding, academic language support, and student comprehension strategies. |
+| 19 | `bilingual-education-models-comparison.html` | Bilingual Education Models — Comparison and Implementation | Transitional, maintenance, dual-language, and immersion models with pros/cons. |
+| 20 | `academic-language-functions-clil.html` | Teaching Academic Language Functions in CLIL | Classifying, hypothesizing, comparing, evaluating — language frames by subject area. |
 
-### Klaster U: "Reading Skills Deep Dive" (5 artykułów)
+### Klaster AC: "Assessment Design" (5 artykułów)
 
-Mamy 1 artykuł o reading comprehension, ale brak pokrycia sub-tematów.
+| # | Plik | H1 | Opis |
+|---|------|----|------|
+| 21 | `designing-english-midterm-final-exams.html` | Designing English Midterm and Final Exams | Item types, specification tables, timing, difficulty calibration, and answer key design. |
+| 22 | `cloze-test-design-esl.html` | Designing Cloze Tests for ESL — Types and Best Practices | Fixed-ratio, rational, C-test, and banked cloze with scoring approaches. |
+| 23 | `item-analysis-english-tests.html` | Item Analysis for English Tests — Improving Your Exams | Facility value, discrimination index, distractor analysis, and test reliability. |
+| 24 | `washback-effect-language-testing.html` | The Washback Effect in Language Testing — Teaching to the Test Done Right | Positive vs negative washback, test design for learning, and alignment strategies. |
+| 25 | `alternative-assessment-esl-classroom.html` | Alternative Assessment in the ESL Classroom | Presentations, podcasts, vlogs, infographics, and performance-based assessment rubrics. |
 
-| # | Plik | H1 |
-|---|------|----|
-| 11 | `teaching-skimming-scanning-esl.html` | Teaching Skimming and Scanning — Reading Strategies for ESL |
-| 12 | `teaching-critical-reading-esl.html` | Teaching Critical Reading Skills to ESL Students |
-| 13 | `graded-readers-guide-esl-teachers.html` | Graded Readers — A Complete Guide for ESL Teachers |
-| 14 | `teaching-reading-fluency-esl.html` | Teaching Reading Fluency in ESL Classes |
-| 15 | `newspaper-articles-esl-lessons.html` | Using Newspaper Articles in ESL Lessons |
+### Klaster AD: "Inclusive & Diverse Classrooms" (5 artykułów)
 
-### Klaster V: "Online & Hybrid Teaching" (5 artykułów)
-
-Mamy 1 ogólny artykuł o online teaching, ale brak pokrycia specyficznych aspektów.
-
-| # | Plik | H1 |
-|---|------|----|
-| 16 | `hybrid-teaching-esl-strategies.html` | Hybrid Teaching Strategies for ESL Classes |
-| 17 | `breakout-rooms-esl-activities.html` | Breakout Room Activities for Online ESL Classes |
-| 18 | `digital-whiteboard-activities-esl.html` | Digital Whiteboard Activities for ESL Teachers |
-| 19 | `asynchronous-learning-esl.html` | Asynchronous Learning Activities for ESL Students |
-| 20 | `building-community-online-esl-class.html` | Building Community in Online ESL Classes |
-
-### Klaster W: "Speaking & Fluency Development" (5 artykułów)
-
-Mamy 1 artykuł o teaching speaking, ale brak pokrycia fluency drills, conversation, pronunciation integration.
-
-| # | Plik | H1 |
-|---|------|----|
-| 21 | `fluency-activities-esl-classroom.html` | Fluency Activities for the ESL Classroom |
-| 22 | `conversation-classes-esl-structure.html` | Structuring Conversation Classes for ESL Students |
-| 23 | `teaching-functional-language-esl.html` | Teaching Functional Language — Requests, Complaints, Suggestions |
-| 24 | `shadowing-technique-esl.html` | The Shadowing Technique — Improving Pronunciation and Fluency |
-| 25 | `impromptu-speaking-activities-esl.html` | Impromptu Speaking Activities for ESL Classes |
-
-### Klaster X: "Feedback & Correction Strategies" (5 artykułów)
-
-Mamy 1 artykuł o error correction, ale brak pokrycia written feedback, oral correction timing, marking codes.
-
-| # | Plik | H1 |
-|---|------|----|
-| 26 | `giving-written-feedback-esl.html` | Giving Effective Written Feedback to ESL Students |
-| 27 | `oral-correction-timing-techniques.html` | When and How to Correct Speaking Errors in ESL |
-| 28 | `marking-codes-esl-writing.html` | Using Marking Codes for ESL Writing Correction |
-| 29 | `conferencing-with-esl-students.html` | One-on-One Conferencing with ESL Students — Feedback Guide |
-| 30 | `positive-error-culture-esl.html` | Creating a Positive Error Culture in the ESL Classroom |
+| # | Plik | H1 | Opis |
+|---|------|----|------|
+| 26 | `neurodiversity-esl-classroom.html` | Neurodiversity in the ESL Classroom — ADHD, Autism, and Dyslexia | Accommodations, multisensory techniques, and differentiated materials for neurodiverse learners. |
+| 27 | `trauma-informed-teaching-esl.html` | Trauma-Informed Teaching in ESL Classes | Safety, predictability, choice, and relationship-building for refugee and trauma-affected students. |
+| 28 | `culturally-responsive-teaching-esl.html` | Culturally Responsive Teaching in ESL — Practical Strategies | Funds of knowledge, identity texts, and culturally sustaining pedagogy in language classes. |
+| 29 | `gender-inclusive-language-esl.html` | Teaching Gender-Inclusive Language in ESL | Pronouns, titles, occupational nouns, and navigating evolving language norms. |
+| 30 | `heritage-speakers-esl-classroom.html` | Heritage Speakers in the ESL Classroom — Challenges and Strategies | Bidialectal literacy, academic register development, and identity affirmation activities. |
 
 ---
 
 ## Specyfikacja techniczna artykułów
 
-Identyczny format jak Phase 9-11: `datePublished: 2026-03-24`, schemat `BlogPosting` JSON-LD, 1500+ słów, 4-6 H2, FAQ `<details>/<summary>`, 6-8 cross-linków wewnętrznych, CTA `/signup`, identyczny CSS.
+Identyczny format jak Phase 9-13:
+- `datePublished: 2026-03-25`
+- Schemat JSON-LD `BlogPosting`
+- 1500+ słów, 4-6 H2, FAQ `<details>/<summary>`
+- 6-8 cross-linków wewnętrznych do istniejących artykułów
+- CTA `/signup`
+- Identyczny CSS (body, h1, h2, a, .cta, details, summary)
+- Nav: `← Edooqoo Home` + `Blog`
 
 ---
 
 ## Aktualizacje infrastruktury
 
-### Blog.tsx — +30 wpisów (117 → 147)
+### Blog.tsx — +30 wpisów (147 → 177)
 
 ```typescript
-// Phase 13: TOEFL & Standardized Tests (5)
-{ title: "TOEFL Preparation Strategies for ESL Teachers", description: "Section-by-section strategies, practice materials, and score improvement techniques.", href: "/blog/toefl-preparation-strategies-teachers.html", category: "Standardized Tests", date: "March 24, 2026" },
-{ title: "TOEIC Preparation — Worksheets and Practice Guide", description: "Listening and reading sections, business vocabulary, and test-day strategies.", href: "/blog/toeic-preparation-worksheets-guide.html", category: "Standardized Tests", date: "March 24, 2026" },
-{ title: "Duolingo English Test Preparation — Teacher's Guide", description: "Adaptive format, question types, and preparation activities for students.", href: "/blog/duolingo-english-test-preparation.html", category: "Standardized Tests", date: "March 24, 2026" },
-{ title: "Teaching Test-Taking Strategies to ESL Students", description: "Time management, elimination techniques, and anxiety reduction strategies.", href: "/blog/teaching-test-taking-strategies-esl.html", category: "Standardized Tests", date: "March 24, 2026" },
-{ title: "IELTS vs TOEFL vs Cambridge vs TOEIC — Which Test for Your Student?", description: "Format comparison, scoring, acceptance, and choosing the right exam.", href: "/blog/standardized-test-comparison-esl.html", category: "Standardized Tests", date: "March 24, 2026" },
+// Phase 14: Classroom Management Advanced (5)
+{ title: "Managing Behavior in the ESL Classroom", description: "Positive discipline, behavior contracts, and de-escalation strategies for language classes.", href: "/blog/managing-behavior-esl-classroom.html", category: "Classroom Management", date: "March 25, 2026" },
+{ title: "Seating Arrangements for the ESL Classroom — What Works", description: "U-shape, clusters, rows, and flexible seating with activity-type matching.", href: "/blog/seating-arrangements-esl-classroom.html", category: "Classroom Management", date: "March 25, 2026" },
+{ title: "Smooth Transitions Between Activities in ESL Classes", description: "Transition signals, timer techniques, and maintaining momentum between tasks.", href: "/blog/transitions-activities-esl-classroom.html", category: "Classroom Management", date: "March 25, 2026" },
+{ title: "Energy Management in ESL Lessons — Pacing and Flow", description: "Stirrers vs settlers, lesson arc, and balancing high-energy with focused work.", href: "/blog/energy-management-esl-lessons.html", category: "Classroom Management", date: "March 25, 2026" },
+{ title: "Managing Large ESL Classes — Strategies for 30+ Students", description: "Monitoring techniques, choral work, group roles, and efficient feedback in large groups.", href: "/blog/managing-large-esl-classes.html", category: "Classroom Management", date: "March 25, 2026" },
 
-// Phase 13: Classroom Language & Instructions (5)
-{ title: "Essential Classroom Language for ESL Teachers", description: "Grading language, checking understanding, and managing interaction patterns.", href: "/blog/classroom-language-esl-teachers.html", category: "Classroom Language", date: "March 24, 2026" },
-{ title: "Giving Clear Instructions in the ESL Classroom", description: "ICQs, staging instructions, and demonstration techniques.", href: "/blog/giving-instructions-esl-classroom.html", category: "Classroom Language", date: "March 24, 2026" },
-{ title: "Concept Checking Questions (CCQs) — The ESL Teacher's Secret Weapon", description: "Writing effective CCQs for grammar, vocabulary, and functional language.", href: "/blog/concept-checking-questions-esl.html", category: "Classroom Language", date: "March 24, 2026" },
-{ title: "Reducing Teacher Talking Time — Practical Strategies", description: "Student-centered activities, wait time, and minimizing unnecessary TTT.", href: "/blog/teacher-talking-time-reducing.html", category: "Classroom Language", date: "March 24, 2026" },
-{ title: "Eliciting Techniques for ESL Teaching", description: "Visuals, prompts, context, and question types for effective elicitation.", href: "/blog/eliciting-techniques-esl-teaching.html", category: "Classroom Language", date: "March 24, 2026" },
+// Phase 14: Writing Skills Deep Dive (5)
+{ title: "Teaching Essay Structure to ESL Students", description: "Introduction-body-conclusion, thesis statements, topic sentences, and paragraph unity.", href: "/blog/teaching-essay-structure-esl.html", category: "Writing", date: "March 25, 2026" },
+{ title: "The Process Writing Approach in ESL Teaching", description: "Brainstorming, drafting, revising, editing, and publishing stages with classroom activities.", href: "/blog/process-writing-approach-esl.html", category: "Writing", date: "March 25, 2026" },
+{ title: "Running Peer Editing Workshops in ESL Classes", description: "Training students in peer review, feedback forms, and structured editing protocols.", href: "/blog/peer-editing-workshops-esl.html", category: "Writing", date: "March 25, 2026" },
+{ title: "Journal Writing for ESL Students — Ideas and Implementation", description: "Dialogue journals, reflective journals, and creative journal prompts by level.", href: "/blog/journal-writing-esl-students.html", category: "Writing", date: "March 25, 2026" },
+{ title: "Portfolio Assessment for ESL Writing — Complete Guide", description: "Selection criteria, reflection tasks, showcase vs working portfolios, and grading.", href: "/blog/portfolio-assessment-esl-writing.html", category: "Writing", date: "March 25, 2026" },
 
-// Phase 13: Reading Skills (5)
-{ title: "Teaching Skimming and Scanning — Reading Strategies for ESL", description: "Timed reading tasks, gist questions, and specific information hunting.", href: "/blog/teaching-skimming-scanning-esl.html", category: "Reading", date: "March 24, 2026" },
-{ title: "Teaching Critical Reading Skills to ESL Students", description: "Identifying bias, evaluating sources, and analyzing argument structure.", href: "/blog/teaching-critical-reading-esl.html", category: "Reading", date: "March 24, 2026" },
-{ title: "Graded Readers — A Complete Guide for ESL Teachers", description: "Publisher comparison, level selection, and reading program implementation.", href: "/blog/graded-readers-guide-esl-teachers.html", category: "Reading", date: "March 24, 2026" },
-{ title: "Teaching Reading Fluency in ESL Classes", description: "Repeated reading, timed reading, and fluency assessment techniques.", href: "/blog/teaching-reading-fluency-esl.html", category: "Reading", date: "March 24, 2026" },
-{ title: "Using Newspaper Articles in ESL Lessons", description: "Headline analysis, jigsaw reading, and news-based discussion activities.", href: "/blog/newspaper-articles-esl-lessons.html", category: "Reading", date: "March 24, 2026" },
+// Phase 14: ESP by Industry (5)
+{ title: "Teaching Medical English — Vocabulary, Scenarios, and Resources", description: "Medical terminology, patient communication, case studies, and role-plays for healthcare.", href: "/blog/teaching-medical-english.html", category: "ESP", date: "March 25, 2026" },
+{ title: "Teaching Legal English — Contracts, Court Language, and Case Studies", description: "Legal vocabulary, contract analysis, moot court activities, and plain English drafting.", href: "/blog/teaching-legal-english.html", category: "ESP", date: "March 25, 2026" },
+{ title: "Teaching English for Hospitality and Tourism", description: "Hotel, restaurant, and travel agency scenarios with functional language worksheets.", href: "/blog/teaching-english-hospitality-tourism.html", category: "ESP", date: "March 25, 2026" },
+{ title: "Teaching English for IT Professionals", description: "Technical documentation, Agile vocabulary, code review language, and presentation skills.", href: "/blog/teaching-english-it-professionals.html", category: "ESP", date: "March 25, 2026" },
+{ title: "Teaching Aviation English — ICAO Standards and Radiotelephony", description: "ICAO Level 4+ requirements, radiotelephony phrases, and emergency communication drills.", href: "/blog/teaching-aviation-english.html", category: "ESP", date: "March 25, 2026" },
 
-// Phase 13: Online & Hybrid (5)
-{ title: "Hybrid Teaching Strategies for ESL Classes", description: "Simultaneous in-person and online instruction with engagement techniques.", href: "/blog/hybrid-teaching-esl-strategies.html", category: "Online Teaching", date: "March 24, 2026" },
-{ title: "Breakout Room Activities for Online ESL Classes", description: "Structured pair and group tasks for Zoom, Meet, and Teams breakout rooms.", href: "/blog/breakout-rooms-esl-activities.html", category: "Online Teaching", date: "March 24, 2026" },
-{ title: "Digital Whiteboard Activities for ESL Teachers", description: "Jamboard, Miro, and Whiteboard.fi activities for interactive online lessons.", href: "/blog/digital-whiteboard-activities-esl.html", category: "Online Teaching", date: "March 24, 2026" },
-{ title: "Asynchronous Learning Activities for ESL Students", description: "Self-paced tasks, video assignments, and discussion boards for ESL.", href: "/blog/asynchronous-learning-esl.html", category: "Online Teaching", date: "March 24, 2026" },
-{ title: "Building Community in Online ESL Classes", description: "Ice-breakers, social activities, and fostering connection in virtual classrooms.", href: "/blog/building-community-online-esl-class.html", category: "Online Teaching", date: "March 24, 2026" },
+// Phase 14: CLIL & Bilingual Education (5)
+{ title: "CLIL Methodology — A Complete Guide for Language Teachers", description: "Content and Language Integrated Learning: the 4Cs framework, lesson planning, and assessment.", href: "/blog/clil-methodology-complete-guide.html", category: "CLIL", date: "March 25, 2026" },
+{ title: "Teaching Science Through English — CLIL Activities", description: "Lab reports, experiment descriptions, and scientific vocabulary scaffolding.", href: "/blog/teaching-science-through-english.html", category: "CLIL", date: "March 25, 2026" },
+{ title: "English as Medium of Instruction (EMI) — Teacher's Guide", description: "Lecture scaffolding, academic language support, and student comprehension strategies.", href: "/blog/emi-english-medium-instruction-guide.html", category: "CLIL", date: "March 25, 2026" },
+{ title: "Bilingual Education Models — Comparison and Implementation", description: "Transitional, maintenance, dual-language, and immersion models with pros and cons.", href: "/blog/bilingual-education-models-comparison.html", category: "CLIL", date: "March 25, 2026" },
+{ title: "Teaching Academic Language Functions in CLIL", description: "Classifying, hypothesizing, comparing, evaluating — language frames by subject area.", href: "/blog/academic-language-functions-clil.html", category: "CLIL", date: "March 25, 2026" },
 
-// Phase 13: Speaking & Fluency (5)
-{ title: "Fluency Activities for the ESL Classroom", description: "4/3/2 technique, speed dating, and information gap fluency drills.", href: "/blog/fluency-activities-esl-classroom.html", category: "Speaking", date: "March 24, 2026" },
-{ title: "Structuring Conversation Classes for ESL Students", description: "Topic selection, scaffolding, and managing mixed-level conversation groups.", href: "/blog/conversation-classes-esl-structure.html", category: "Speaking", date: "March 24, 2026" },
-{ title: "Teaching Functional Language — Requests, Complaints, Suggestions", description: "Speech act worksheets, role-plays, and appropriacy practice.", href: "/blog/teaching-functional-language-esl.html", category: "Speaking", date: "March 24, 2026" },
-{ title: "The Shadowing Technique — Improving Pronunciation and Fluency", description: "Step-by-step shadowing method with audio selection and progress tracking.", href: "/blog/shadowing-technique-esl.html", category: "Speaking", date: "March 24, 2026" },
-{ title: "Impromptu Speaking Activities for ESL Classes", description: "1-minute talks, opinion chains, and spontaneous speaking confidence builders.", href: "/blog/impromptu-speaking-activities-esl.html", category: "Speaking", date: "March 24, 2026" },
+// Phase 14: Assessment Design (5)
+{ title: "Designing English Midterm and Final Exams", description: "Item types, specification tables, timing, difficulty calibration, and answer key design.", href: "/blog/designing-english-midterm-final-exams.html", category: "Assessment", date: "March 25, 2026" },
+{ title: "Designing Cloze Tests for ESL — Types and Best Practices", description: "Fixed-ratio, rational, C-test, and banked cloze with scoring approaches.", href: "/blog/cloze-test-design-esl.html", category: "Assessment", date: "March 25, 2026" },
+{ title: "Item Analysis for English Tests — Improving Your Exams", description: "Facility value, discrimination index, distractor analysis, and test reliability.", href: "/blog/item-analysis-english-tests.html", category: "Assessment", date: "March 25, 2026" },
+{ title: "The Washback Effect in Language Testing", description: "Positive vs negative washback, test design for learning, and alignment strategies.", href: "/blog/washback-effect-language-testing.html", category: "Assessment", date: "March 25, 2026" },
+{ title: "Alternative Assessment in the ESL Classroom", description: "Presentations, podcasts, vlogs, infographics, and performance-based assessment rubrics.", href: "/blog/alternative-assessment-esl-classroom.html", category: "Assessment", date: "March 25, 2026" },
 
-// Phase 13: Feedback & Correction (5)
-{ title: "Giving Effective Written Feedback to ESL Students", description: "Focused vs comprehensive feedback, margin notes, and feedforward techniques.", href: "/blog/giving-written-feedback-esl.html", category: "Feedback", date: "March 24, 2026" },
-{ title: "When and How to Correct Speaking Errors in ESL", description: "On-the-spot vs delayed correction, recasting, and reformulation.", href: "/blog/oral-correction-timing-techniques.html", category: "Feedback", date: "March 24, 2026" },
-{ title: "Using Marking Codes for ESL Writing Correction", description: "Standard marking codes, student self-correction, and error logs.", href: "/blog/marking-codes-esl-writing.html", category: "Feedback", date: "March 24, 2026" },
-{ title: "One-on-One Conferencing with ESL Students — Feedback Guide", description: "Conference structure, questioning techniques, and goal-setting dialogue.", href: "/blog/conferencing-with-esl-students.html", category: "Feedback", date: "March 24, 2026" },
-{ title: "Creating a Positive Error Culture in the ESL Classroom", description: "Normalizing mistakes, growth language, and error-as-learning activities.", href: "/blog/positive-error-culture-esl.html", category: "Feedback", date: "March 24, 2026" },
+// Phase 14: Inclusive & Diverse Classrooms (5)
+{ title: "Neurodiversity in the ESL Classroom — ADHD, Autism, and Dyslexia", description: "Accommodations, multisensory techniques, and differentiated materials for neurodiverse learners.", href: "/blog/neurodiversity-esl-classroom.html", category: "Inclusive Teaching", date: "March 25, 2026" },
+{ title: "Trauma-Informed Teaching in ESL Classes", description: "Safety, predictability, choice, and relationship-building for trauma-affected students.", href: "/blog/trauma-informed-teaching-esl.html", category: "Inclusive Teaching", date: "March 25, 2026" },
+{ title: "Culturally Responsive Teaching in ESL — Practical Strategies", description: "Funds of knowledge, identity texts, and culturally sustaining pedagogy.", href: "/blog/culturally-responsive-teaching-esl.html", category: "Inclusive Teaching", date: "March 25, 2026" },
+{ title: "Teaching Gender-Inclusive Language in ESL", description: "Pronouns, titles, occupational nouns, and navigating evolving language norms.", href: "/blog/gender-inclusive-language-esl.html", category: "Inclusive Teaching", date: "March 25, 2026" },
+{ title: "Heritage Speakers in the ESL Classroom — Challenges and Strategies", description: "Bidialectal literacy, academic register development, and identity affirmation.", href: "/blog/heritage-speakers-esl-classroom.html", category: "Inclusive Teaching", date: "March 25, 2026" },
 ```
 
-### sitemap.xml — +30 entries (216 → 246)
+### sitemap.xml — +30 entries (246 → 276)
 
-30 nowych `<url>` z `lastmod=2026-03-24`, priority 0.7.
+30 nowych `<url>` z `lastmod=2026-03-25`, priority 0.7.
 
 ### llms.txt — +6 sekcji
 
 ```markdown
-## Standardized Tests (Blog)
-- [TOEFL Preparation](https://edooqoo.com/blog/toefl-preparation-strategies-teachers.html)
-- [TOEIC Preparation](https://edooqoo.com/blog/toeic-preparation-worksheets-guide.html)
-- [Duolingo English Test](https://edooqoo.com/blog/duolingo-english-test-preparation.html)
-- [Test-Taking Strategies](https://edooqoo.com/blog/teaching-test-taking-strategies-esl.html)
-- [Test Comparison Guide](https://edooqoo.com/blog/standardized-test-comparison-esl.html)
+## Classroom Management (Blog)
+- [Managing Behavior ESL](https://edooqoo.com/blog/managing-behavior-esl-classroom.html)
+- [Seating Arrangements](https://edooqoo.com/blog/seating-arrangements-esl-classroom.html)
+- [Transitions Between Activities](https://edooqoo.com/blog/transitions-activities-esl-classroom.html)
+- [Energy Management](https://edooqoo.com/blog/energy-management-esl-lessons.html)
+- [Managing Large Classes](https://edooqoo.com/blog/managing-large-esl-classes.html)
 
-## Classroom Language (Blog)
-- [Classroom Language](https://edooqoo.com/blog/classroom-language-esl-teachers.html)
-- [Giving Instructions](https://edooqoo.com/blog/giving-instructions-esl-classroom.html)
-- [CCQs](https://edooqoo.com/blog/concept-checking-questions-esl.html)
-- [Reducing TTT](https://edooqoo.com/blog/teacher-talking-time-reducing.html)
-- [Eliciting Techniques](https://edooqoo.com/blog/eliciting-techniques-esl-teaching.html)
+## Writing Skills (Blog)
+- [Essay Structure ESL](https://edooqoo.com/blog/teaching-essay-structure-esl.html)
+- [Process Writing](https://edooqoo.com/blog/process-writing-approach-esl.html)
+- [Peer Editing Workshops](https://edooqoo.com/blog/peer-editing-workshops-esl.html)
+- [Journal Writing ESL](https://edooqoo.com/blog/journal-writing-esl-students.html)
+- [Portfolio Assessment](https://edooqoo.com/blog/portfolio-assessment-esl-writing.html)
 
-## Reading Skills (Blog)
-- [Skimming and Scanning](https://edooqoo.com/blog/teaching-skimming-scanning-esl.html)
-- [Critical Reading](https://edooqoo.com/blog/teaching-critical-reading-esl.html)
-- [Graded Readers Guide](https://edooqoo.com/blog/graded-readers-guide-esl-teachers.html)
-- [Reading Fluency](https://edooqoo.com/blog/teaching-reading-fluency-esl.html)
-- [Newspaper Articles ESL](https://edooqoo.com/blog/newspaper-articles-esl-lessons.html)
+## ESP by Industry (Blog)
+- [Medical English](https://edooqoo.com/blog/teaching-medical-english.html)
+- [Legal English](https://edooqoo.com/blog/teaching-legal-english.html)
+- [Hospitality & Tourism English](https://edooqoo.com/blog/teaching-english-hospitality-tourism.html)
+- [English for IT](https://edooqoo.com/blog/teaching-english-it-professionals.html)
+- [Aviation English](https://edooqoo.com/blog/teaching-aviation-english.html)
 
-## Online & Hybrid Teaching (Blog)
-- [Hybrid Teaching ESL](https://edooqoo.com/blog/hybrid-teaching-esl-strategies.html)
-- [Breakout Room Activities](https://edooqoo.com/blog/breakout-rooms-esl-activities.html)
-- [Digital Whiteboard](https://edooqoo.com/blog/digital-whiteboard-activities-esl.html)
-- [Asynchronous Learning](https://edooqoo.com/blog/asynchronous-learning-esl.html)
-- [Online Community](https://edooqoo.com/blog/building-community-online-esl-class.html)
+## CLIL & Bilingual Education (Blog)
+- [CLIL Methodology Guide](https://edooqoo.com/blog/clil-methodology-complete-guide.html)
+- [Science Through English](https://edooqoo.com/blog/teaching-science-through-english.html)
+- [EMI Guide](https://edooqoo.com/blog/emi-english-medium-instruction-guide.html)
+- [Bilingual Education Models](https://edooqoo.com/blog/bilingual-education-models-comparison.html)
+- [Academic Language Functions](https://edooqoo.com/blog/academic-language-functions-clil.html)
 
-## Speaking & Fluency (Blog)
-- [Fluency Activities](https://edooqoo.com/blog/fluency-activities-esl-classroom.html)
-- [Conversation Classes](https://edooqoo.com/blog/conversation-classes-esl-structure.html)
-- [Functional Language](https://edooqoo.com/blog/teaching-functional-language-esl.html)
-- [Shadowing Technique](https://edooqoo.com/blog/shadowing-technique-esl.html)
-- [Impromptu Speaking](https://edooqoo.com/blog/impromptu-speaking-activities-esl.html)
+## Assessment Design (Blog)
+- [Midterm & Final Exams](https://edooqoo.com/blog/designing-english-midterm-final-exams.html)
+- [Cloze Test Design](https://edooqoo.com/blog/cloze-test-design-esl.html)
+- [Item Analysis](https://edooqoo.com/blog/item-analysis-english-tests.html)
+- [Washback Effect](https://edooqoo.com/blog/washback-effect-language-testing.html)
+- [Alternative Assessment](https://edooqoo.com/blog/alternative-assessment-esl-classroom.html)
 
-## Feedback & Correction (Blog)
-- [Written Feedback ESL](https://edooqoo.com/blog/giving-written-feedback-esl.html)
-- [Oral Correction Timing](https://edooqoo.com/blog/oral-correction-timing-techniques.html)
-- [Marking Codes](https://edooqoo.com/blog/marking-codes-esl-writing.html)
-- [Student Conferencing](https://edooqoo.com/blog/conferencing-with-esl-students.html)
-- [Positive Error Culture](https://edooqoo.com/blog/positive-error-culture-esl.html)
+## Inclusive & Diverse Classrooms (Blog)
+- [Neurodiversity ESL](https://edooqoo.com/blog/neurodiversity-esl-classroom.html)
+- [Trauma-Informed Teaching](https://edooqoo.com/blog/trauma-informed-teaching-esl.html)
+- [Culturally Responsive Teaching](https://edooqoo.com/blog/culturally-responsive-teaching-esl.html)
+- [Gender-Inclusive Language](https://edooqoo.com/blog/gender-inclusive-language-esl.html)
+- [Heritage Speakers](https://edooqoo.com/blog/heritage-speakers-esl-classroom.html)
 ```
 
 ### openapi.yaml — +30 paths
 
-30 nowych paths w identycznym formacie jak Phase 11.
+```yaml
+  /blog/managing-behavior-esl-classroom.html:
+    get:
+      operationId: getBlogManagingBehavior
+      summary: Managing Behavior in the ESL Classroom
+      description: Positive discipline, behavior contracts, and de-escalation strategies.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/seating-arrangements-esl-classroom.html:
+    get:
+      operationId: getBlogSeatingArrangements
+      summary: Seating Arrangements for the ESL Classroom
+      description: U-shape, clusters, rows, and flexible seating with activity-type matching.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/transitions-activities-esl-classroom.html:
+    get:
+      operationId: getBlogTransitions
+      summary: Smooth Transitions Between Activities in ESL Classes
+      description: Transition signals, timer techniques, and maintaining momentum.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/energy-management-esl-lessons.html:
+    get:
+      operationId: getBlogEnergyManagement
+      summary: Energy Management in ESL Lessons
+      description: Stirrers vs settlers, lesson arc, and pacing strategies.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/managing-large-esl-classes.html:
+    get:
+      operationId: getBlogLargeClasses
+      summary: Managing Large ESL Classes
+      description: Monitoring, choral work, group roles, and feedback for 30+ students.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-essay-structure-esl.html:
+    get:
+      operationId: getBlogEssayStructure
+      summary: Teaching Essay Structure to ESL Students
+      description: Thesis statements, topic sentences, paragraph unity, and cohesion.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/process-writing-approach-esl.html:
+    get:
+      operationId: getBlogProcessWriting
+      summary: The Process Writing Approach in ESL
+      description: Brainstorming, drafting, revising, editing, and publishing stages.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/peer-editing-workshops-esl.html:
+    get:
+      operationId: getBlogPeerEditing
+      summary: Running Peer Editing Workshops in ESL
+      description: Peer review training, feedback forms, and structured editing protocols.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/journal-writing-esl-students.html:
+    get:
+      operationId: getBlogJournalWriting
+      summary: Journal Writing for ESL Students
+      description: Dialogue journals, reflective journals, and creative prompts by level.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/portfolio-assessment-esl-writing.html:
+    get:
+      operationId: getBlogPortfolioAssessment
+      summary: Portfolio Assessment for ESL Writing
+      description: Selection criteria, reflection tasks, and showcase vs working portfolios.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-medical-english.html:
+    get:
+      operationId: getBlogMedicalEnglish
+      summary: Teaching Medical English
+      description: Medical terminology, patient communication, and case study role-plays.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-legal-english.html:
+    get:
+      operationId: getBlogLegalEnglish
+      summary: Teaching Legal English
+      description: Legal vocabulary, contract analysis, moot court, and plain English drafting.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-english-hospitality-tourism.html:
+    get:
+      operationId: getBlogHospitalityEnglish
+      summary: Teaching English for Hospitality and Tourism
+      description: Hotel, restaurant, and travel scenarios with functional language.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-english-it-professionals.html:
+    get:
+      operationId: getBlogITEnglish
+      summary: Teaching English for IT Professionals
+      description: Technical documentation, Agile vocabulary, and code review language.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-aviation-english.html:
+    get:
+      operationId: getBlogAviationEnglish
+      summary: Teaching Aviation English
+      description: ICAO Level 4+ requirements, radiotelephony, and emergency communication.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/clil-methodology-complete-guide.html:
+    get:
+      operationId: getBlogCLIL
+      summary: CLIL Methodology Complete Guide
+      description: 4Cs framework, lesson planning, and assessment in CLIL.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/teaching-science-through-english.html:
+    get:
+      operationId: getBlogScienceEnglish
+      summary: Teaching Science Through English — CLIL
+      description: Lab reports, experiment descriptions, and scientific vocabulary scaffolding.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/emi-english-medium-instruction-guide.html:
+    get:
+      operationId: getBlogEMI
+      summary: English as Medium of Instruction Guide
+      description: Lecture scaffolding, academic language support, comprehension strategies.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/bilingual-education-models-comparison.html:
+    get:
+      operationId: getBlogBilingualEducation
+      summary: Bilingual Education Models Comparison
+      description: Transitional, maintenance, dual-language, and immersion models.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/academic-language-functions-clil.html:
+    get:
+      operationId: getBlogAcademicFunctions
+      summary: Academic Language Functions in CLIL
+      description: Classifying, hypothesizing, comparing — language frames by subject.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/designing-english-midterm-final-exams.html:
+    get:
+      operationId: getBlogExamDesign
+      summary: Designing English Midterm and Final Exams
+      description: Item types, specification tables, timing, and difficulty calibration.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/cloze-test-design-esl.html:
+    get:
+      operationId: getBlogClozeTest
+      summary: Designing Cloze Tests for ESL
+      description: Fixed-ratio, rational, C-test, and banked cloze with scoring.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/item-analysis-english-tests.html:
+    get:
+      operationId: getBlogItemAnalysis
+      summary: Item Analysis for English Tests
+      description: Facility value, discrimination index, and distractor analysis.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/washback-effect-language-testing.html:
+    get:
+      operationId: getBlogWashback
+      summary: The Washback Effect in Language Testing
+      description: Positive vs negative washback and test design for learning.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/alternative-assessment-esl-classroom.html:
+    get:
+      operationId: getBlogAlternativeAssessment
+      summary: Alternative Assessment in ESL
+      description: Presentations, podcasts, vlogs, and performance-based assessment.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/neurodiversity-esl-classroom.html:
+    get:
+      operationId: getBlogNeurodiversity
+      summary: Neurodiversity in the ESL Classroom
+      description: ADHD, autism, dyslexia accommodations and multisensory techniques.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/trauma-informed-teaching-esl.html:
+    get:
+      operationId: getBlogTraumaInformed
+      summary: Trauma-Informed Teaching in ESL
+      description: Safety, predictability, choice, and relationship-building strategies.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/culturally-responsive-teaching-esl.html:
+    get:
+      operationId: getBlogCulturallyResponsive
+      summary: Culturally Responsive Teaching in ESL
+      description: Funds of knowledge, identity texts, and sustaining pedagogy.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/gender-inclusive-language-esl.html:
+    get:
+      operationId: getBlogGenderInclusive
+      summary: Teaching Gender-Inclusive Language in ESL
+      description: Pronouns, titles, occupational nouns, and evolving language norms.
+      responses:
+        '200':
+          description: Blog article HTML
+  /blog/heritage-speakers-esl-classroom.html:
+    get:
+      operationId: getBlogHeritageSpeakers
+      summary: Heritage Speakers in the ESL Classroom
+      description: Bidialectal literacy, academic register, and identity affirmation.
+      responses:
+        '200':
+          description: Blog article HTML
+```
 
 ### blog.html — +30 JSON-LD + 6 sekcji z kartami
 
-6 nowych sekcji (Standardized Tests, Classroom Language, Reading Skills, Online & Hybrid, Speaking & Fluency, Feedback & Correction) z po 5 kartami.
+6 nowych sekcji: Classroom Management, Writing Skills, ESP by Industry, CLIL & Bilingual Education, Assessment Design, Inclusive & Diverse Classrooms.
 
 ### resources.html — +30 cross-linków z badge'ami
+
+Badges: `Classroom Management`, `Writing`, `ESP`, `CLIL`, `Assessment`, `Inclusive Teaching`.
 
 ---
 
@@ -258,24 +449,21 @@ Identyczny format jak Phase 9-11: `datePublished: 2026-03-24`, schemat `BlogPost
 
 | Plik | Akcja |
 |------|-------|
-| `supabase/functions/generateWorksheet/index.ts` | FIX — +share_token w streaming path |
-| `src/components/ShareWorksheetModal.tsx` | FIX — usunięcie `as any`, lepsze logowanie |
 | 30 plików `public/blog/*.html` | NOWE |
-| `src/pages/Blog.tsx` | EDYCJA — +30 wpisów (117→147) |
-| `public/sitemap.xml` | EDYCJA — +30 entries (216→246) |
+| `src/pages/Blog.tsx` | EDYCJA — +30 wpisów (147→177) |
+| `public/sitemap.xml` | EDYCJA — +30 entries (246→276) |
 | `public/llms.txt` | EDYCJA — +6 sekcji |
 | `public/openapi.yaml` | EDYCJA — +30 paths |
 | `public/blog.html` | EDYCJA — +30 JSON-LD + 6 sekcji |
 | `public/resources.html` | EDYCJA — +30 linków |
 
-**Łącznie: 39 plików** (30 nowych + 9 edytowanych)
+**Łącznie: 37 plików** (30 nowych + 7 edytowanych)
 
 | Element | Przed | Po |
 |---------|-------|----|
-| Blog articles | 117 | 147 |
-| Sitemap entries | 216 | 246 |
-| Blog categories | 23 | 29 |
-| Share worksheet bug | Broken (streaming) | Fixed |
+| Blog articles | 147 | 177 |
+| Sitemap entries | 246 | 276 |
+| Blog categories | 29 | 35 |
 
-**Ryzyko:** MINIMALNE — fix share_token to dodanie 3 linii do istniejącej ścieżki (pattern skopiowany z non-streaming path). Reszta to statyczne pliki HTML + meta.
+**Ryzyko:** ZEROWE — wyłącznie nowe statyczne pliki HTML + rozszerzenia meta.
 
