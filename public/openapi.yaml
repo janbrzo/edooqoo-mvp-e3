@@ -1657,4 +1657,561 @@ paths:
       description: Normalizing mistakes, growth language, error-as-learning.
       responses:
         '200':
-          description: Blog article HTML
+          description: Blog article HTML  # Phase 14: Classroom Management Advanced
+  /blog/managing-behavior-esl-classroom.html:
+    get:
+      operationId: getBlogManagingBehavior
+      summary: Managing Behavior in the ESL Classroom
+      description: Positive discipline, behavior contracts, and de-escalation.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/seating-arrangements-esl-classroom.html:
+    get:
+      operationId: getBlogSeatingArrangements
+      summary: Seating Arrangements for the ESL Classroom
+      description: U-shape, clusters, rows, and flexible seating.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/transitions-activities-esl-classroom.html:
+    get:
+      operationId: getBlogTransitions
+      summary: Smooth Transitions Between Activities in ESL
+      description: Transition signals, timer techniques, momentum.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/energy-management-esl-lessons.html:
+    get:
+      operationId: getBlogEnergyManagement
+      summary: Energy Management in ESL Lessons
+      description: Stirrers vs settlers, lesson arc, pacing.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/managing-large-esl-classes.html:
+    get:
+      operationId: getBlogLargeClasses
+      summary: Managing Large ESL Classes
+      description: Monitoring, choral work, group roles for 30+ students.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 14: Writing Skills Advanced
+  /blog/teaching-essay-structure-esl.html:
+    get:
+      operationId: getBlogEssayStructure
+      summary: Teaching Essay Structure to ESL Students
+      description: Thesis statements, topic sentences, paragraph unity.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/process-writing-approach-esl.html:
+    get:
+      operationId: getBlogProcessWriting
+      summary: The Process Writing Approach in ESL
+      description: Brainstorming, drafting, revising, editing, publishing.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/peer-editing-workshops-esl.html:
+    get:
+      operationId: getBlogPeerEditing
+      summary: Running Peer Editing Workshops in ESL
+      description: Peer review training, feedback forms, protocols.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/journal-writing-esl-students.html:
+    get:
+      operationId: getBlogJournalWriting
+      summary: Journal Writing for ESL Students
+      description: Dialogue journals, reflective journals, prompts.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/portfolio-assessment-esl-writing.html:
+    get:
+      operationId: getBlogPortfolioAssessment
+      summary: Portfolio Assessment for ESL Writing
+      description: Selection criteria, showcase vs working portfolios.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 14: ESP by Industry
+  /blog/teaching-medical-english.html:
+    get:
+      operationId: getBlogMedicalEnglish
+      summary: Teaching Medical English
+      description: Medical terminology, patient communication, role-plays.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-legal-english.html:
+    get:
+      operationId: getBlogLegalEnglish
+      summary: Teaching Legal English
+      description: Legal vocabulary, contracts, moot court.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-english-hospitality-tourism.html:
+    get:
+      operationId: getBlogHospitalityEnglish
+      summary: Teaching English for Hospitality and Tourism
+      description: Hotel, restaurant, travel scenarios.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-english-it-professionals.html:
+    get:
+      operationId: getBlogITEnglish
+      summary: Teaching English for IT Professionals
+      description: Technical docs, Agile vocabulary, code review.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-aviation-english.html:
+    get:
+      operationId: getBlogAviationEnglish
+      summary: Teaching Aviation English
+      description: ICAO Level 4+, radiotelephony, emergency drills.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 14: CLIL & Bilingual Education
+  /blog/clil-methodology-complete-guide.html:
+    get:
+      operationId: getBlogCLIL
+      summary: CLIL Methodology Complete Guide
+      description: 4Cs framework, lesson planning, assessment.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-science-through-english.html:
+    get:
+      operationId: getBlogScienceEnglish
+      summary: Teaching Science Through English — CLIL
+      description: Lab reports, experiments, scientific vocabulary.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/emi-english-medium-instruction-guide.html:
+    get:
+      operationId: getBlogEMI
+      summary: English as Medium of Instruction Guide
+      description: Lecture scaffolding, academic language support.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/bilingual-education-models-comparison.html:
+    get:
+      operationId: getBlogBilingualEducation
+      summary: Bilingual Education Models Comparison
+      description: Transitional, maintenance, dual-language, immersion.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/academic-language-functions-clil.html:
+    get:
+      operationId: getBlogAcademicFunctions
+      summary: Academic Language Functions in CLIL
+      description: Classifying, hypothesizing, comparing by subject.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 14: Assessment Design
+  /blog/designing-english-midterm-final-exams.html:
+    get:
+      operationId: getBlogExamDesign
+      summary: Designing English Midterm and Final Exams
+      description: Item types, spec tables, difficulty calibration.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/cloze-test-design-esl.html:
+    get:
+      operationId: getBlogClozeTest
+      summary: Designing Cloze Tests for ESL
+      description: Fixed-ratio, rational, C-test, banked cloze.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/item-analysis-english-tests.html:
+    get:
+      operationId: getBlogItemAnalysis
+      summary: Item Analysis for English Tests
+      description: Facility value, discrimination index, distractors.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/washback-effect-language-testing.html:
+    get:
+      operationId: getBlogWashback
+      summary: The Washback Effect in Language Testing
+      description: Positive vs negative washback, test design.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/alternative-assessment-esl-classroom.html:
+    get:
+      operationId: getBlogAlternativeAssessment
+      summary: Alternative Assessment in ESL
+      description: Presentations, podcasts, performance-based rubrics.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 14: Inclusive & Diverse Classrooms
+  /blog/neurodiversity-esl-classroom.html:
+    get:
+      operationId: getBlogNeurodiversity
+      summary: Neurodiversity in the ESL Classroom
+      description: ADHD, autism, dyslexia accommodations.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/trauma-informed-teaching-esl.html:
+    get:
+      operationId: getBlogTraumaInformed
+      summary: Trauma-Informed Teaching in ESL
+      description: Safety, predictability, relationship-building.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/culturally-responsive-teaching-esl.html:
+    get:
+      operationId: getBlogCulturallyResponsive
+      summary: Culturally Responsive Teaching in ESL
+      description: Funds of knowledge, identity texts.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/gender-inclusive-language-esl.html:
+    get:
+      operationId: getBlogGenderInclusive
+      summary: Teaching Gender-Inclusive Language in ESL
+      description: Pronouns, titles, evolving norms.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/heritage-speakers-esl-classroom.html:
+    get:
+      operationId: getBlogHeritageSpeakers
+      summary: Heritage Speakers in the ESL Classroom
+      description: Bidialectal literacy, academic register.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 15: Curriculum & Course Design
+  /blog/syllabus-design-esl-courses.html:
+    get:
+      operationId: getBlogSyllabusDesign
+      summary: Syllabus Design for ESL Courses
+      description: Structural, notional-functional, and task-based syllabi.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/needs-analysis-esl-students.html:
+    get:
+      operationId: getBlogNeedsAnalysis
+      summary: Conducting Needs Analysis for ESL Students
+      description: Questionnaires, interviews, placement data.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/selecting-esl-textbooks-guide.html:
+    get:
+      operationId: getBlogTextbookSelection
+      summary: How to Select and Evaluate ESL Textbooks
+      description: Evaluation criteria, piloting strategies.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/course-evaluation-esl-programs.html:
+    get:
+      operationId: getBlogCourseEvaluation
+      summary: Evaluating ESL Course Effectiveness
+      description: Pre/post testing, student feedback, observation.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/lesson-sequencing-scaffolding-curriculum.html:
+    get:
+      operationId: getBlogLessonSequencing
+      summary: Lesson Sequencing and Scaffolding in Curriculum Design
+      description: Spiral curriculum, task complexity grading.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 15: Drama & Creative Arts
+  /blog/drama-techniques-esl-classroom.html:
+    get:
+      operationId: getBlogDramaTechniques
+      summary: Drama Techniques for the ESL Classroom
+      description: Hot-seating, freeze-frame, conscience alley.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/improvisation-activities-esl.html:
+    get:
+      operationId: getBlogImprovisation
+      summary: Improvisation Activities for ESL Students
+      description: Yes-and, status games, character switches.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/readers-theatre-esl-activities.html:
+    get:
+      operationId: getBlogReadersTheatre
+      summary: Reader's Theatre in ESL
+      description: Script selection, fluency practice, intonation.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/art-based-language-activities-esl.html:
+    get:
+      operationId: getBlogArtBased
+      summary: Art-Based Language Activities for ESL
+      description: Drawing dictation, gallery walks, visual storytelling.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/using-comics-graphic-novels-esl.html:
+    get:
+      operationId: getBlogComics
+      summary: Using Comics and Graphic Novels in ESL
+      description: Panel analysis, speech bubble writing.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 15: Cooperative Learning
+  /blog/cooperative-learning-structures-esl.html:
+    get:
+      operationId: getBlogCooperativeLearning
+      summary: Cooperative Learning Structures for ESL
+      description: Kagan structures, numbered heads, round robin.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/jigsaw-activities-esl-classroom.html:
+    get:
+      operationId: getBlogJigsaw
+      summary: Jigsaw Activities for the ESL Classroom
+      description: Expert groups, information sharing.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/think-pair-share-esl-variations.html:
+    get:
+      operationId: getBlogThinkPairShare
+      summary: Think-Pair-Share and Variations for ESL
+      description: Write-pair-share, think-pair-square.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/group-dynamics-esl-classroom.html:
+    get:
+      operationId: getBlogGroupDynamics
+      summary: Managing Group Dynamics in ESL
+      description: Role assignment, participation balancing.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/collaborative-writing-activities-esl.html:
+    get:
+      operationId: getBlogCollaborativeWriting
+      summary: Collaborative Writing Activities for ESL
+      description: Round-robin stories, wiki writing.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 15: SLA Theory
+  /blog/krashen-hypotheses-esl-teaching.html:
+    get:
+      operationId: getBlogKrashen
+      summary: Krashen's Hypotheses Applied to ESL Teaching
+      description: Input hypothesis, monitor model, affective filter.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/interlanguage-fossilization-esl.html:
+    get:
+      operationId: getBlogInterlanguage
+      summary: Interlanguage and Fossilization
+      description: Developmental stages, error analysis.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/input-output-hypotheses-classroom.html:
+    get:
+      operationId: getBlogInputOutput
+      summary: Input and Output Hypotheses in ESL
+      description: Comprehensible input, pushed output.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/critical-period-hypothesis-language.html:
+    get:
+      operationId: getBlogCriticalPeriod
+      summary: The Critical Period Hypothesis
+      description: Age effects, neuroplasticity, teaching implications.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/motivation-theories-language-learning.html:
+    get:
+      operationId: getBlogMotivationTheories
+      summary: Motivation Theories in Language Learning
+      description: Gardner to Dornyei, L2 Motivational Self System.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 15: Professional Development
+  /blog/action-research-esl-teachers.html:
+    get:
+      operationId: getBlogActionResearch
+      summary: Action Research for ESL Teachers
+      description: Research questions, data collection, analysis.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/reflective-practice-language-teaching.html:
+    get:
+      operationId: getBlogReflectivePractice
+      summary: Reflective Practice in Language Teaching
+      description: Reflective journals, critical incidents, Kolb's cycle.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/peer-observation-esl-teachers.html:
+    get:
+      operationId: getBlogPeerObservation
+      summary: Peer Observation for ESL Teachers
+      description: Pre-observation meetings, observation tools.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/mentoring-new-esl-teachers.html:
+    get:
+      operationId: getBlogMentoring
+      summary: Mentoring New ESL Teachers
+      description: Mentoring models, scaffolded autonomy.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/cpd-planning-esl-teachers.html:
+    get:
+      operationId: getBlogCPD
+      summary: CPD Planning for ESL Teachers
+      description: SMART goals, conference selection.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 15: Materials Development
+  /blog/adapting-textbooks-esl-classroom.html:
+    get:
+      operationId: getBlogAdaptingTextbooks
+      summary: Adapting Textbooks for ESL
+      description: Adding, deleting, modifying activities.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/creating-authentic-materials-esl.html:
+    get:
+      operationId: getBlogAuthenticMaterials
+      summary: Creating Authentic Materials for ESL
+      description: Realia, news articles, grading techniques.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/supplementing-coursebooks-activities.html:
+    get:
+      operationId: getBlogSupplementing
+      summary: Supplementing Coursebooks
+      description: When and how to go beyond the book.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/digital-resource-curation-esl.html:
+    get:
+      operationId: getBlogResourceCuration
+      summary: Digital Resource Curation for ESL
+      description: Organizing bookmarks, evaluating resources.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/materials-design-principles-elt.html:
+    get:
+      operationId: getBlogMaterialsDesign
+      summary: Materials Design Principles for ELT
+      description: Tomlinson's principles, task design.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 16: Pronunciation Advanced
+  /blog/teaching-word-stress-patterns-esl.html:
+    get:
+      operationId: getBlogWordStress
+      summary: Teaching Word Stress Patterns to ESL Students
+      description: Primary/secondary stress, compound nouns, drilling.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-rhythm-english-speech.html:
+    get:
+      operationId: getBlogRhythm
+      summary: Teaching Rhythm in English Speech
+      description: Stress timing, content vs function words.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-weak-forms-english.html:
+    get:
+      operationId: getBlogWeakForms
+      summary: Teaching Weak Forms in English
+      description: Schwa, reduced vowels, natural speech.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/phonemic-awareness-activities-esl.html:
+    get:
+      operationId: getBlogPhonemicAwareness
+      summary: Phonemic Awareness Activities for ESL
+      description: Sound discrimination, phoneme segmentation.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/accent-coaching-techniques-esl.html:
+    get:
+      operationId: getBlogAccentCoaching
+      summary: Accent Coaching Techniques for ESL
+      description: Individual coaching, intelligibility focus.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 16: Vocabulary Advanced
+  /blog/teaching-word-families-morphology-esl.html:
+    get:
+      operationId: getBlogWordFamilies
+      summary: Teaching Word Families and Morphology
+      description: Prefixes, suffixes, roots, word-building.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/phrasal-verbs-teaching-strategies.html:
+    get:
+      operationId: getBlogPhrasalVerbsStrategies
+      summary: Phrasal Verbs Teaching Strategies
+      description: Particle meaning, context-based teaching.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/lexical-approach-language-teaching.html:
+    get:
+      operationId: getBlogLexicalApproach
+      summary: The Lexical Approach in Language Teaching
+      description: Chunks, collocations, Lewis's framework.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/vocabulary-notebook-strategies-esl.html:
+    get:
+      operationId: getBlogVocabNotebook
+      summary: Vocabulary Notebook Strategies for ESL
+      description: Organization, example sentences, review cycles.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-abstract-vocabulary-esl.html:
+    get:
+      operationId: getBlogAbstractVocab
+      summary: Teaching Abstract Vocabulary to ESL Students
+      description: Concept mapping, context clues, metaphor.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 16: Grammar Advanced
+  /blog/teaching-aspect-english-grammar.html:
+    get:
+      operationId: getBlogAspect
+      summary: Teaching Aspect in English Grammar
+      description: Perfect and progressive, timeline visuals.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-modality-english-esl.html:
+    get:
+      operationId: getBlogModality
+      summary: Teaching Modality in English
+      description: Epistemic vs deontic, probability scale.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-relative-clauses-esl.html:
+    get:
+      operationId: getBlogRelativeClauses
+      summary: Teaching Relative Clauses to ESL Students
+      description: Defining vs non-defining, reduced relatives.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/consciousness-raising-grammar-tasks.html:
+    get:
+      operationId: getBlogConsciousnessRaising
+      summary: Consciousness-Raising Grammar Tasks
+      description: Discovery-based grammar, noticing activities.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-determiners-quantifiers-esl.html:
+    get:
+      operationId: getBlogDeterminers
+      summary: Teaching Determiners and Quantifiers
+      description: Articles, demonstratives, quantifiers.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 16: Listening Advanced
+  /blog/bottom-up-top-down-listening-esl.html:
+    get:
+      operationId: getBlogBottomUpTopDown
+      summary: Bottom-Up vs Top-Down Listening in ESL
+      description: Decoding skills, schema activation.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-note-taking-from-lectures.html:
+    get:
+      operationId: getBlogLectureNoteTaking
+      summary: Teaching Note-Taking from Lectures
+      description: Cornell method, abbreviation systems.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/podcast-based-listening-lessons-esl.html:
+    get:
+      operationId: getBlogPodcastLessons
+      summary: Podcast-Based Listening Lessons for ESL
+      description: Podcast selection, pre/while/post activities.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/dictogloss-technique-esl-teaching.html:
+    get:
+      operationId: getBlogDictogloss
+      summary: The Dictogloss Technique in ESL
+      description: Procedure, variations, grammar focus.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-listening-for-gist-detail.html:
+    get:
+      operationId: getBlogGistDetail
+      summary: Teaching Listening for Gist and Detail
+      description: Gist questions, detail scanning.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 16: Young Learners & Teens
+  /blog/teaching-english-preschoolers-guide.html:
+    get:
+      operationId: getBlogPreschoolers
+      summary: Teaching English to Preschoolers
+      description: Routine-based learning, songs, play.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/tpr-total-physical-response-activities.html:
+    get:
+      operationId: getBlogTPR
+      summary: Total Physical Response Activities
+      description: Action commands, TPR storytelling.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teen-engagement-strategies-esl.html:
+    get:
+      operationId: getBlogTeenEngagement
+      summary: Teen Engagement Strategies for ESL
+      description: Relevance, autonomy, social media.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/content-based-instruction-young-learners.html:
+    get:
+      operationId: getBlogCBI
+      summary: Content-Based Instruction for Young Learners
+      description: Theme-based units, cross-curricular planning.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/teaching-literacy-young-esl-learners.html:
+    get:
+      operationId: getBlogLiteracy
+      summary: Teaching Literacy to Young ESL Learners
+      description: Synthetic phonics, sight words, guided reading.
+      responses: { '200': { description: Blog article HTML } }
+  # Phase 16: Technology Integration
+  /blog/ai-powered-differentiation-esl.html:
+    get:
+      operationId: getBlogAIDifferentiation
+      summary: AI-Powered Differentiation in ESL
+      description: Adaptive worksheets, personalized learning paths.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/using-chatbots-language-practice.html:
+    get:
+      operationId: getBlogChatbots
+      summary: Using Chatbots for Language Practice
+      description: ChatGPT, custom bots for speaking and writing.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/screen-free-tech-activities-esl.html:
+    get:
+      operationId: getBlogScreenFree
+      summary: Screen-Free Technology Activities for ESL
+      description: QR hunts, audio journals, balanced tech.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/data-driven-learning-esl-corpora.html:
+    get:
+      operationId: getBlogDDL
+      summary: Data-Driven Learning with Corpora
+      description: Concordance lines, COCA/BNC, corpus investigation.
+      responses: { '200': { description: Blog article HTML } }
+  /blog/learning-management-systems-esl.html:
+    get:
+      operationId: getBlogLMS
+      summary: Choosing an LMS for ESL Teaching
+      description: Google Classroom, Moodle, Canvas comparison.
+      responses: { '200': { description: Blog article HTML } }

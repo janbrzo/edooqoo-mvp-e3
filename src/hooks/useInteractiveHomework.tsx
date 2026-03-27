@@ -52,18 +52,17 @@ export const useInteractiveHomework = ({
 
   const verifyStudentEmail = useCallback(async (homeworkId: string, email: string): Promise<boolean> => {
     try {
-      const { data: homework, error } = await supabase
-        .from('homework_assignments')
-        .select('student_id, students(student_email)')
-        .eq('id', homeworkId)
-        .single();
+      const { data, error } = await supabase.rpc('verify_homework_student_email', {
+        p_homework_id: homeworkId,
+        p_email: email
+      });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error verifying student email:', error);
+        return false;
+      }
 
-      // @ts-ignore - Supabase types for nested relations
-      const registeredEmail = homework?.students?.student_email;
-      
-      return registeredEmail === email;
+      return data === true;
     } catch (error) {
       console.error('Error verifying student email:', error);
       return false;

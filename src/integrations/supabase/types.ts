@@ -3281,6 +3281,10 @@ export type Database = {
         }
         Returns: string
       }
+      verify_homework_student_email: {
+        Args: { p_email: string; p_homework_id: string }
+        Returns: boolean
+      }
       verify_worksheet_student_email: {
         Args: { p_email: string; p_worksheet_id: string }
         Returns: boolean
