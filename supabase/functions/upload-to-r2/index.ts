@@ -96,11 +96,14 @@ serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
     
     // Allow service role key (used by other edge functions like generate-image, generate-audio)
     const isServiceRole = token === serviceRoleKey;
+    // Allow anon key (used by unauthenticated students in welcome test / homework speaking)
+    const isAnonKey = token === anonKey;
     
-    if (!isServiceRole) {
+    if (!isServiceRole && !isAnonKey) {
       // Validate as user JWT
       const supabase = createClient(
         Deno.env.get('SUPABASE_URL')!,
@@ -115,6 +118,8 @@ serve(async (req) => {
         });
       }
       console.log(`[UPLOAD-TO-R2] Authenticated user: ${user.id}`);
+    } else if (isAnonKey) {
+      console.log(`[UPLOAD-TO-R2] Anon key access (unauthenticated student upload)`);
     } else {
       console.log(`[UPLOAD-TO-R2] Service role access`);
     }
