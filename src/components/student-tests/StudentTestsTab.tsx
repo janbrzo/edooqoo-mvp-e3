@@ -42,7 +42,7 @@ export function StudentTestsTab({ studentId, teacherId, studentName }: StudentTe
           .from('students')
           .select('name')
           .eq('id', studentId)
-          .single();
+          .maybeSingle();
 
         testToPreview = await createTest({
           student_id: studentId,
