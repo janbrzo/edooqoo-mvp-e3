@@ -109,6 +109,59 @@ serve(async (req) => {
         const questionItems = context.questions || [];
         const effectiveTriggerSource = triggerSource || context.trigger_source || null;
         
+        // Fetch audio answers from the source table
+        let audioAnswers: Record<string, string> = {};
+        try {
+          const { data: answerRow } = await supabase
+            .from('worksheet_student_answers')
+            .select('audio_answers')
+            .eq('worksheet_id', pending.worksheet_id)
+            .eq('student_email', pending.student_email)
+            .eq('exercise_index', pending.exercise_index)
+            .maybeSingle();
+          
+          if (answerRow?.audio_answers && typeof answerRow.audio_answers === 'object') {
+            audioAnswers = answerRow.audio_answers as Record<string, string>;
+          }
+        } catch (e) {
+          console.error('[process-pending] Error fetching audio_answers:', e);
+        }
+
+        // Transcribe audio answers
+        const transcriptionMap: Record<number, { text: string; wordCount: number }> = {};
+        for (const [qIdxStr, audioUrl] of Object.entries(audioAnswers)) {
+          if (!audioUrl || typeof audioUrl !== 'string' || !audioUrl.startsWith('http')) continue;
+          const qIdx = parseInt(qIdxStr);
+          try {
+            const transcResponse = await fetch(`${supabaseUrl}/functions/v1/transcribe-audio`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`
+              },
+              body: JSON.stringify({ audio_url: audioUrl })
+            });
+            if (transcResponse.ok) {
+              const transcData = await transcResponse.json();
+              if (transcData.transcription) {
+                const words = transcData.transcription.split(/\s+/).filter((w: string) => w.length > 0);
+                transcriptionMap[qIdx] = {
+                  text: transcData.transcription,
+                  wordCount: words.length
+                };
+                console.log(`[process-pending] Transcribed q${qIdx}: ${words.length} words`);
+              }
+            } else {
+              const errText = await transcResponse.text();
+              console.error(`[process-pending] Transcription HTTP error for q${qIdx}:`, errText);
+            }
+          } catch (e) {
+            console.error(`[process-pending] Transcription failed for q${qIdx}:`, e);
+          }
+        }
+
+        console.log(`[process-pending] Transcriptions: ${Object.keys(transcriptionMap).length} audio questions transcribed`);
+
         // Build answersToVerify
         const answersToVerify = Object.entries(answers).map(([qIdxStr, answer]) => {
           const qIdx = parseInt(qIdxStr);
@@ -122,7 +175,12 @@ serve(async (req) => {
             question_text: questionText,
             student_answer: String(answer),
             suggested_answer: suggestedAnswer,
-            exercise_type: pending.exercise_type
+            exercise_type: pending.exercise_type,
+            // Add transcription if available for this question
+            ...(transcriptionMap[qIdx] ? {
+              audio_transcription: transcriptionMap[qIdx].text,
+              audio_word_count: transcriptionMap[qIdx].wordCount
+            } : {})
           };
         }).filter(a => a.student_answer && a.student_answer.trim() !== '');
 
@@ -167,13 +225,24 @@ serve(async (req) => {
           // Must handle both array and object formats (same as safeGetNanoSkill in frontend)
           let nanoSkill = questionItem?.nano_skill;
           if (Array.isArray(nanoSkill)) nanoSkill = nanoSkill[0];
+          // Use speaking_score for audio questions, writing_score for written, quality_score as fallback
+          let mastery: number;
+          if (transcriptionMap[qIdx] && e.speaking_score !== undefined) {
+            mastery = Math.round(e.speaking_score * 100);
+          } else if (e.writing_score !== undefined) {
+            mastery = Math.round(e.writing_score * 100);
+          } else {
+            mastery = Math.round((e.quality_score || 0.7) * 100);
+          }
+          
           return {
             question_index: qIdx,
             name: nanoSkill?.name || `question_${qIdx}`,
             reason: nanoSkill?.reason || '',
-            mastery: Math.round((e.quality_score || 0.7) * 100),
+            mastery,
             hasValue: true,
-            feedback: e.feedback || ''
+            feedback: e.feedback || '',
+            response_type: transcriptionMap[qIdx] ? 'audio' : 'written'
           };
         });
 
