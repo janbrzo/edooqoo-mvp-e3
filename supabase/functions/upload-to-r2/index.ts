@@ -118,6 +118,8 @@ serve(async (req) => {
         });
       }
       console.log(`[UPLOAD-TO-R2] Authenticated user: ${user.id}`);
+    } else if (isAnonKey) {
+      console.log(`[UPLOAD-TO-R2] Anon key access (unauthenticated student upload)`);
     } else {
       console.log(`[UPLOAD-TO-R2] Service role access`);
     }
