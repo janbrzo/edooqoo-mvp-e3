@@ -225,13 +225,24 @@ serve(async (req) => {
           // Must handle both array and object formats (same as safeGetNanoSkill in frontend)
           let nanoSkill = questionItem?.nano_skill;
           if (Array.isArray(nanoSkill)) nanoSkill = nanoSkill[0];
+          // Use speaking_score for audio questions, writing_score for written, quality_score as fallback
+          let mastery: number;
+          if (transcriptionMap[qIdx] && e.speaking_score !== undefined) {
+            mastery = Math.round(e.speaking_score * 100);
+          } else if (e.writing_score !== undefined) {
+            mastery = Math.round(e.writing_score * 100);
+          } else {
+            mastery = Math.round((e.quality_score || 0.7) * 100);
+          }
+          
           return {
             question_index: qIdx,
             name: nanoSkill?.name || `question_${qIdx}`,
             reason: nanoSkill?.reason || '',
-            mastery: Math.round((e.quality_score || 0.7) * 100),
+            mastery,
             hasValue: true,
-            feedback: e.feedback || ''
+            feedback: e.feedback || '',
+            response_type: transcriptionMap[qIdx] ? 'audio' : 'written'
           };
         });
 
