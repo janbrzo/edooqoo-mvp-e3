@@ -14,13 +14,6 @@ const OPEN_ENDED_EXERCISE_TYPES = [
   'paraphrasing', 'sentence-transformation'
 ];
 
-/**
- * Process pending AI evaluations for worksheet answers.
- * 
- * Two modes:
- * 1. Normal: process items already in pending_worksheet_ai_evaluations queue
- * 2. create_homework: auto-queue evaluations for ALL open-ended exercises first, then process
- */
 serve(async (req) => {
   console.log('[process-pending-ai-evaluations] Function invoked');
   
@@ -45,7 +38,7 @@ serve(async (req) => {
     
     console.log(`[process-pending] trigger_source: ${triggerSource}, worksheet_id: ${worksheetIdFilter}`);
 
-    // === PROBLEM 1A FIX: Auto-queue for create_homework ===
+    // === Auto-queue for create_homework ===
     if (triggerSource === 'create_homework' && worksheetIdFilter) {
       await autoQueueForCreateHomework(supabase, worksheetIdFilter);
     }
@@ -127,6 +120,8 @@ serve(async (req) => {
           console.error('[process-pending] Error fetching audio_answers:', e);
         }
 
+        console.log(`[process-pending] Written answers: ${Object.keys(answers).length}, Audio answers: ${Object.keys(audioAnswers).length}`);
+
         // Transcribe audio answers
         const transcriptionMap: Record<number, { text: string; wordCount: number }> = {};
         for (const [qIdxStr, audioUrl] of Object.entries(audioAnswers)) {
@@ -160,29 +155,63 @@ serve(async (req) => {
           }
         }
 
-        console.log(`[process-pending] Transcriptions: ${Object.keys(transcriptionMap).length} audio questions transcribed`);
+        console.log(`[process-pending] Transcriptions: ${Object.keys(transcriptionMap).length}/${Object.keys(audioAnswers).length} audio questions transcribed`);
 
-        // Build answersToVerify
-        const answersToVerify = Object.entries(answers).map(([qIdxStr, answer]) => {
-          const qIdx = parseInt(qIdxStr);
+        // Build union of all question indexes from written + audio answers
+        const allQuestionIndexes = new Set<number>();
+        for (const qIdxStr of Object.keys(answers)) {
+          allQuestionIndexes.add(parseInt(qIdxStr));
+        }
+        for (const qIdxStr of Object.keys(audioAnswers)) {
+          allQuestionIndexes.add(parseInt(qIdxStr));
+        }
+
+        // Build answersToVerify from the union
+        const answersToVerify: any[] = [];
+        let audioQuestionsSentToAi = 0;
+
+        for (const qIdx of allQuestionIndexes) {
+          const writtenAnswer = answers[String(qIdx)];
+          const transcription = transcriptionMap[qIdx];
+          const hasAudioForQuestion = audioAnswers[String(qIdx)] !== undefined;
+
+          // Effective answer: written text, or transcription if audio-only
+          const effectiveStudentAnswer = writtenAnswer 
+            ? String(writtenAnswer) 
+            : (transcription ? transcription.text : null);
+
+          if (!effectiveStudentAnswer || effectiveStudentAnswer.trim() === '') continue;
+
           const questionItem = questionItems[qIdx] || {};
           const questionText = questionItem?.question || questionItem?.text || questionItem?.prompt || questionItem?.expression || `Question ${qIdx + 1}`;
           const suggestedAnswer = questionItem?.answer || questionItem?.suggested_answer || questionItem?.paraphrase || '';
-          
-          return {
+
+          const entry: any = {
             exercise_index: pending.exercise_index,
             question_index: qIdx,
             question_text: questionText,
-            student_answer: String(answer),
+            student_answer: writtenAnswer ? String(writtenAnswer) : '',
             suggested_answer: suggestedAnswer,
             exercise_type: pending.exercise_type,
-            // Add transcription if available for this question
-            ...(transcriptionMap[qIdx] ? {
-              audio_transcription: transcriptionMap[qIdx].text,
-              audio_word_count: transcriptionMap[qIdx].wordCount
-            } : {})
           };
-        }).filter(a => a.student_answer && a.student_answer.trim() !== '');
+
+          // Add transcription data if available
+          if (transcription) {
+            entry.audio_transcription = transcription.text;
+            entry.audio_word_count = transcription.wordCount;
+            audioQuestionsSentToAi++;
+          }
+
+          answersToVerify.push(entry);
+        }
+
+        console.log(`[process-pending] answersToVerify: ${answersToVerify.length} total, ${audioQuestionsSentToAi} with audio transcription`);
+
+        // Guard: if audio answers exist but none were transcribed/sent, mark as failed
+        const audioCount = Object.keys(audioAnswers).length;
+        if (audioCount > 0 && audioQuestionsSentToAi === 0 && answersToVerify.length === 0) {
+          throw new Error(`Audio evaluation failed: ${audioCount} audio answers found but none could be transcribed or evaluated`);
+        }
 
         if (answersToVerify.length === 0) {
           console.log(`[process-pending] No valid answers for ${pending.id}`);
@@ -193,8 +222,6 @@ serve(async (req) => {
           skipped++;
           continue;
         }
-
-        console.log(`[process-pending] Verifying ${answersToVerify.length} answers for ${pending.id}`);
 
         // Call verify-open-answers
         const verifyResponse = await fetch(`${supabaseUrl}/functions/v1/verify-open-answers`, {
@@ -217,14 +244,13 @@ serve(async (req) => {
         const aiResult = await verifyResponse.json();
         console.log(`[process-pending] AI returned ${aiResult.evaluations?.length || 0} evaluations`);
         
-        // Build item_evaluations
+        // Build item_evaluations with proper mastery per response type
         const itemEvaluations = (aiResult.evaluations || []).map((e: any) => {
           const qIdx = e.question_index;
           const questionItem = questionItems[qIdx] || {};
-          // FIX: nano_skill is stored as array [{name, reason, confidence}] in JSONB
-          // Must handle both array and object formats (same as safeGetNanoSkill in frontend)
           let nanoSkill = questionItem?.nano_skill;
           if (Array.isArray(nanoSkill)) nanoSkill = nanoSkill[0];
+
           // Use speaking_score for audio questions, writing_score for written, quality_score as fallback
           let mastery: number;
           if (transcriptionMap[qIdx] && e.speaking_score !== undefined) {
@@ -250,7 +276,7 @@ serve(async (req) => {
           ? Math.round(itemEvaluations.reduce((sum: number, e: any) => sum + e.mastery, 0) / itemEvaluations.length)
           : null;
 
-        console.log(`[process-pending] Mastery: ${overallMastery}% for ${itemEvaluations.length} items`);
+        console.log(`[process-pending] Mastery: ${overallMastery}% for ${itemEvaluations.length} items (${audioQuestionsSentToAi} audio)`);
 
         // Update worksheet_student_answers with AI results
         const updateData: Record<string, unknown> = {
@@ -312,16 +338,12 @@ serve(async (req) => {
 });
 
 /**
- * PROBLEM 1A FIX: Auto-queue evaluations for all open-ended exercises
+ * Auto-queue evaluations for all open-ended exercises
  * when teacher clicks Create Homework.
- * 
- * Fetches all student answers for the worksheet, checks which open-ended
- * exercises need AI evaluation, and queues them.
  */
 async function autoQueueForCreateHomework(supabase: any, worksheetId: string) {
   console.log(`[auto-queue] Fetching answers for worksheet ${worksheetId}`);
   
-  // Get all student answers for this worksheet
   const { data: studentAnswers, error } = await supabase
     .from('worksheet_student_answers')
     .select('*')
@@ -340,10 +362,8 @@ async function autoQueueForCreateHomework(supabase: any, worksheetId: string) {
   let queued = 0;
   
   for (const answer of studentAnswers) {
-    // Only queue open-ended exercises
     if (!OPEN_ENDED_EXERCISE_TYPES.includes(answer.exercise_type)) continue;
     
-    // Check if AI evaluation is needed
     const { data: needsEval } = await supabase.rpc('needs_ai_evaluation', {
       p_worksheet_id: worksheetId,
       p_student_email: answer.student_email,
@@ -355,7 +375,6 @@ async function autoQueueForCreateHomework(supabase: any, worksheetId: string) {
       continue;
     }
     
-    // Delete any existing completed/failed queue entries to avoid unique constraint violation
     await supabase
       .from('pending_worksheet_ai_evaluations')
       .delete()
@@ -364,7 +383,6 @@ async function autoQueueForCreateHomework(supabase: any, worksheetId: string) {
       .eq('exercise_index', answer.exercise_index)
       .in('status', ['completed', 'failed']);
     
-    // Check if already queued (pending or processing)
     const { data: existing } = await supabase
       .from('pending_worksheet_ai_evaluations')
       .select('id')
@@ -379,7 +397,6 @@ async function autoQueueForCreateHomework(supabase: any, worksheetId: string) {
       continue;
     }
     
-    // Get worksheet data for context (title, questions)
     let context: Record<string, unknown> = { trigger_source: 'create_homework' };
     try {
       const { data: worksheet } = await supabase
@@ -403,7 +420,6 @@ async function autoQueueForCreateHomework(supabase: any, worksheetId: string) {
       console.error(`[auto-queue] Error parsing worksheet context:`, e);
     }
     
-    // Queue the evaluation
     const { error: insertError } = await supabase
       .from('pending_worksheet_ai_evaluations')
       .insert({

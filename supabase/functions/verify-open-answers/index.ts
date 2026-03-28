@@ -239,7 +239,10 @@ Return exactly ${answers.length} evaluation objects in a JSON array:
         qualityScore = Math.max(0, Math.min(1, qualityScore));
 
         // PROBLEM 3 FIX: Server-side non-answer detection - override AI score
-        const studentAnswer = answers[idx]?.student_answer?.toLowerCase().trim() || "";
+        // Use audio_transcription as fallback if student_answer is empty (audio-only questions)
+        const rawStudentAnswer = answers[idx]?.student_answer?.toLowerCase().trim() || "";
+        const audioTranscription = answers[idx]?.audio_transcription?.toLowerCase().trim() || "";
+        const studentAnswer = rawStudentAnswer || audioTranscription;
         const nonAnswerPatterns = [
           /^i\s*don'?t\s*know/i,
           /^idk$/i,

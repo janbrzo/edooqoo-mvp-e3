@@ -1,6 +1,8 @@
 /**
  * transcribe-audio - Edge function to transcribe audio URLs using OpenAI Whisper
  * Fetches audio binary from URL, sends to Whisper API for transcription
+ * 
+ * Auth: Accepts both user JWTs (frontend) and SUPABASE_SERVICE_ROLE_KEY (internal server-to-server calls)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -17,7 +19,7 @@ serve(async (req) => {
   }
 
   try {
-    // ── AUTH CHECK ──
+    // ── AUTH CHECK (dual-path: user JWT or service role key) ──
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Authentication required' }), {
@@ -25,17 +27,29 @@ serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const token = authHeader.replace('Bearer ', '');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    let callerInfo = 'unknown';
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid authentication token' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (token === serviceRoleKey) {
+      // Internal server-to-server call (e.g. from process-pending-ai-evaluations)
+      callerInfo = 'service-role-internal';
+      console.log('[transcribe-audio] Authorized via service role key (internal call)');
+    } else {
+      // Frontend call — validate user JWT
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: 'Invalid authentication token' }), {
+          status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      callerInfo = `user:${user.id}`;
     }
     // ── END AUTH CHECK ──
 
@@ -55,7 +69,7 @@ serve(async (req) => {
     }
 
     // Step 1: Fetch the audio file as binary
-    console.log('[transcribe-audio] Fetching audio from:', audio_url, 'user:', user.id);
+    console.log('[transcribe-audio] Fetching audio from:', audio_url, 'caller:', callerInfo);
     const audioResponse = await fetch(audio_url);
     if (!audioResponse.ok) {
       return new Response(JSON.stringify({ error: `Failed to fetch audio: ${audioResponse.status}` }), {
