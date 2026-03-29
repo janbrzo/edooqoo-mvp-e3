@@ -317,7 +317,8 @@ export const useInteractiveHomework = ({
               const qIdx = parseInt(qIdxStr);
               const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
               if (ans) {
-                const updatedAnswers = { ...(ans.answers || {}), [`_transcription_${qIdx}`]: transcription.text };
+                const existingAnswers = (typeof ans.answers === 'object' && ans.answers !== null) ? ans.answers : {};
+                const updatedAnswers = { ...existingAnswers, [`_transcription_${qIdx}`]: transcription.text } as Record<string, any>;
                 await supabase
                   .from('homework_student_answers')
                   .update({ answers: updatedAnswers })
