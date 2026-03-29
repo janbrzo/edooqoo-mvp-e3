@@ -340,7 +340,7 @@ export const useInteractiveHomework = ({
             
             // Use shared utility for building answers from union of written + audio
             const exerciseAnswers = buildAnswersToVerify({
-              savedAnswer: ans,
+              savedAnswer: { exercise_index: ans.exercise_index, exercise_type: ans.exercise_type, answers: (ans.answers || {}) as Record<string | number, any> },
               exerciseData,
               audioAnswers,
               transcriptionCache
