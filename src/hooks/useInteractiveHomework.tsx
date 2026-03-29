@@ -14,6 +14,7 @@ import {
   ItemEvaluation 
 } from '@/utils/masteryCalculator';
 import { devLog } from '@/utils/logger';
+import { transcribeAllAudio, buildAnswersToVerify } from '@/utils/audioEvalUtils';
 
 
 interface UseInteractiveHomeworkProps {
@@ -305,29 +306,29 @@ export const useInteractiveHomework = ({
           
           const answersToVerify: any[] = [];
           
-          const transcriptionCache: Record<string, { text: string; duration?: number; wordCount?: number }> = {};
-          for (const [exIdxStr, questionAudios] of Object.entries(audioAnswers)) {
-            for (const [qIdxStr, audioUrl] of Object.entries(questionAudios as Record<number, string>)) {
-              if (!audioUrl || !audioUrl.startsWith('http')) continue;
-              const cacheKey = `${exIdxStr}_${qIdxStr}`;
-              try {
-                devLog(`[submitHomework] Transcribing audio for exercise ${exIdxStr}, question ${qIdxStr}`);
-                const { data: transcResult, error: transcError } = await supabase.functions.invoke('transcribe-audio', {
-                  body: { audio_url: audioUrl }
-                });
-                if (!transcError && transcResult?.transcription) {
-                  const words = transcResult.transcription.split(/\s+/).filter((w: string) => w.length > 0);
-                  transcriptionCache[cacheKey] = {
-                    text: transcResult.transcription,
-                    wordCount: words.length,
-                    duration: undefined
-                  };
-                  devLog(`[submitHomework] Transcription success: ${words.length} words`);
-                }
-              } catch (err) {
-                console.error(`[submitHomework] Transcription failed for ${cacheKey}:`, err);
+          // Transcribe all audio using shared utility
+          const transcriptionCache = await transcribeAllAudio(audioAnswers, '[submitHomework]');
+          
+          // Persist transcriptions to homework_student_answers.answers
+          if (Object.keys(transcriptionCache).length > 0) {
+            for (const [cacheKey, transcription] of Object.entries(transcriptionCache)) {
+              const [exIdxStr, qIdxStr] = cacheKey.split('_');
+              const exIdx = parseInt(exIdxStr);
+              const qIdx = parseInt(qIdxStr);
+              const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
+              if (ans) {
+                const updatedAnswers = { ...(ans.answers || {}), [`_transcription_${qIdx}`]: transcription.text };
+                await supabase
+                  .from('homework_student_answers')
+                  .update({ answers: updatedAnswers })
+                  .eq('homework_id', homeworkId)
+                  .eq('student_email', studentEmail)
+                  .eq('exercise_index', exIdx);
+                // Also update the local savedAnswers for AI eval
+                ans.answers = updatedAnswers;
               }
             }
+            devLog('[submitHomework] Transcriptions persisted to DB');
           }
           
           for (const ans of savedAnswers.filter((a: any) => {
@@ -336,60 +337,15 @@ export const useInteractiveHomework = ({
             return isOpen;
           })) {
             const exerciseData = exercises[ans.exercise_index];
-            const studentAnswersForExercise = ans.answers || {};
             
-            const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || exerciseData?.items || [];
-            
-            // Build union of question indexes from written answers + audio answers
-            const allQuestionIndexes = new Set<number>();
-            Object.keys(studentAnswersForExercise).forEach(k => allQuestionIndexes.add(parseInt(k)));
-            const exerciseAudio = audioAnswers[ans.exercise_index] || {};
-            Object.keys(exerciseAudio).forEach(k => allQuestionIndexes.add(parseInt(k)));
-
-            for (const qIdx of allQuestionIndexes) {
-              const questionItem = questionItems[qIdx];
-              if (!questionItem) continue;
-              
-              const writtenAnswer = studentAnswersForExercise[qIdx];
-              const transcKey = `${ans.exercise_index}_${qIdx}`;
-              const transcription = transcriptionCache[transcKey];
-              
-              // Effective answer: written text, or transcription for audio-only
-              const hasWritten = writtenAnswer && String(writtenAnswer).trim() !== '';
-              const effectiveAnswer = hasWritten
-                ? String(writtenAnswer)
-                : (transcription ? transcription.text : null);
-              
-              if (!effectiveAnswer) continue;
-              
-              let questionText = '';
-              let suggestedAnswer = '';
-              
-              if (typeof questionItem === 'string') {
-                questionText = questionItem;
-              } else {
-                questionText = questionItem.text || questionItem.question || questionItem.prompt || questionItem.original || '';
-                suggestedAnswer = questionItem.suggested_answer || questionItem.answer || questionItem.correct_answer || questionItem.correct || questionItem.transformed || '';
-              }
-              
-              if (exerciseData?.instructions && qIdx === 0) {
-                questionText = `[Instructions: ${exerciseData.instructions}]\n\n${questionText}`;
-              }
-              
-              answersToVerify.push({
-                exercise_index: ans.exercise_index,
-                question_index: qIdx,
-                question_text: questionText,
-                student_answer: hasWritten ? String(writtenAnswer) : '',
-                suggested_answer: suggestedAnswer || undefined,
-                exercise_type: ans.exercise_type,
-                ...(transcription ? {
-                  audio_transcription: transcription.text,
-                  audio_word_count: transcription.wordCount,
-                  audio_duration_seconds: transcription.duration
-                } : {})
-              });
-            }
+            // Use shared utility for building answers from union of written + audio
+            const exerciseAnswers = buildAnswersToVerify({
+              savedAnswer: ans,
+              exerciseData,
+              audioAnswers,
+              transcriptionCache
+            });
+            answersToVerify.push(...exerciseAnswers);
           }
 
           if (answersToVerify.length > 0) {
