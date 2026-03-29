@@ -706,7 +706,9 @@ export default function HomeworkPage() {
                 isWaitingForAiEval={isWaitingForAiEval}
                 audioAnswers={audioAnswers[index]}
                 onAudioAnswerChange={
-                  finalIsSubmitted ? undefined : (qIndex: number, audioUrl: string) => updateAudioAnswer(index, qIndex, audioUrl)
+                  finalIsSubmitted 
+                    ? ((_qIndex: number, _audioUrl: string) => {})
+                    : (qIndex: number, audioUrl: string) => updateAudioAnswer(index, qIndex, audioUrl)
                 }
               />
             </div>

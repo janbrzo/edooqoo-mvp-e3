@@ -6,7 +6,13 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-13) - E2E Readiness & Production Hardening:**
+**Ostatnia aktualizacja (2026-03-29) - Fix: Audio-only evaluation in Homework:**
+- ✅ **Audio-only answers evaluated**: `useInteractiveHomework.tsx` now builds `answersToVerify` from union of written + audio question indexes (was: written-only)
+- ✅ **writing_score/speaking_score passed to DB**: `dbUpdates` now includes AI-returned `writing_score` and `speaking_score` for correct nano_skill mastery mapping
+- ✅ **Audio playback icons preserved after submit**: `onAudioAnswerChange` passes no-op function instead of `undefined` after submit, keeping `HomeworkSpeakingRecorder` visible in disabled/playback mode
+- ✅ **Audio-only as valid answer in mastery calc**: `buildItemEvaluations` now treats audio-only answers (`hasAudioAnswer`) as valid, preventing skip of audio-only questions
+
+**Poprzednia aktualizacja (2026-03-13) - E2E Readiness & Production Hardening:**
 - ✅ **Production logging**: `src/utils/logger.ts` z `devLog()`/`devWarn()` — wycisza `console.log` w produkcji
 - ✅ **13 hooków zrefaktorowanych**: `console.log` → `devLog` (useTokenSystem, useAuthFlow, useWorksheetGeneration, useWorksheetState, useStudentSelector, useExerciseRegeneration, useSectionRegeneration, useInteractiveHomework, useEventTracking, useProfile, useStudents, useDrawingCanvas, useHomeworkExerciseGeneration)
 - ✅ **Fix duplicate DOM ID**: Usunięte `id="worksheet-form"` z FormView.tsx
