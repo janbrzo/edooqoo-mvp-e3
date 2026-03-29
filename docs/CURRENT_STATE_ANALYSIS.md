@@ -6,11 +6,14 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-29) - Fix: Audio-only evaluation in Homework:**
-- ✅ **Audio-only answers evaluated**: `useInteractiveHomework.tsx` now builds `answersToVerify` from union of written + audio question indexes (was: written-only)
-- ✅ **writing_score/speaking_score passed to DB**: `dbUpdates` now includes AI-returned `writing_score` and `speaking_score` for correct nano_skill mastery mapping
-- ✅ **Audio playback icons preserved after submit**: `onAudioAnswerChange` passes no-op function instead of `undefined` after submit, keeping `HomeworkSpeakingRecorder` visible in disabled/playback mode
-- ✅ **Audio-only as valid answer in mastery calc**: `buildItemEvaluations` now treats audio-only answers (`hasAudioAnswer`) as valid, preventing skip of audio-only questions
+**Ostatnia aktualizacja (2026-03-29) - Fix: Audio evaluation pipeline + transcription persistence:**
+- ✅ **Shared `audioEvalUtils.ts`**: Unified `buildAnswersToVerify` and `transcribeAllAudio` used by both homework and shared worksheet
+- ✅ **Transcription persistence**: Transcriptions saved to `answers` field as `_transcription_N` keys in both `homework_student_answers` and `worksheet_student_answers`
+- ✅ **Edge function persistence**: `process-pending-ai-evaluations` now persists transcriptions to `worksheet_student_answers.answers` before AI eval
+- ✅ **Audio-only answers evaluated**: Union of written + audio question indexes ensures audio-only questions get AI evaluation
+- ✅ **writing_score/speaking_score propagation**: Correct mastery mapping for speaking nano_skills
+- ✅ **Audio playback after submit**: No-op function preserves `HomeworkSpeakingRecorder` visibility
+- ✅ **Audio-only valid in mastery calc**: `buildItemEvaluations` treats audio-only answers as valid
 
 **Poprzednia aktualizacja (2026-03-13) - E2E Readiness & Production Hardening:**
 - ✅ **Production logging**: `src/utils/logger.ts` z `devLog()`/`devWarn()` — wycisza `console.log` w produkcji
