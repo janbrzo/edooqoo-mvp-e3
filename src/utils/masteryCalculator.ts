@@ -447,12 +447,13 @@ export const buildItemEvaluations = (
     const allNanoSkills = safeGetAllNanoSkills(item);
     if (allNanoSkills.length === 0) return;
     
-    // Skip questions without student answers
+    // Skip questions without student answers (written or audio)
     const studentAnswer = answers[idx];
     const hasStudentAnswer = studentAnswer !== undefined && 
                              studentAnswer !== null && 
                              String(studentAnswer).trim() !== '';
-    if (!hasStudentAnswer) return;
+    const hasAudioAnswer = audioAnswers?.[idx] != null;
+    if (!hasStudentAnswer && !hasAudioAnswer) return;
     
     let itemMastery: number | null = null;
     const aiEval = aiEvaluations?.[idx];

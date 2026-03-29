@@ -340,11 +340,27 @@ export const useInteractiveHomework = ({
             
             const questionItems = exerciseData?.questions || exerciseData?.prompts || exerciseData?.sentences || exerciseData?.expressions || exerciseData?.items || [];
             
-            Object.entries(studentAnswersForExercise).forEach(([qIdxStr, studentAnswer]) => {
-              const qIdx = parseInt(qIdxStr);
+            // Build union of question indexes from written answers + audio answers
+            const allQuestionIndexes = new Set<number>();
+            Object.keys(studentAnswersForExercise).forEach(k => allQuestionIndexes.add(parseInt(k)));
+            const exerciseAudio = audioAnswers[ans.exercise_index] || {};
+            Object.keys(exerciseAudio).forEach(k => allQuestionIndexes.add(parseInt(k)));
+
+            for (const qIdx of allQuestionIndexes) {
               const questionItem = questionItems[qIdx];
+              if (!questionItem) continue;
               
-              if (!questionItem || !studentAnswer || String(studentAnswer).trim() === '') return;
+              const writtenAnswer = studentAnswersForExercise[qIdx];
+              const transcKey = `${ans.exercise_index}_${qIdx}`;
+              const transcription = transcriptionCache[transcKey];
+              
+              // Effective answer: written text, or transcription for audio-only
+              const hasWritten = writtenAnswer && String(writtenAnswer).trim() !== '';
+              const effectiveAnswer = hasWritten
+                ? String(writtenAnswer)
+                : (transcription ? transcription.text : null);
+              
+              if (!effectiveAnswer) continue;
               
               let questionText = '';
               let suggestedAnswer = '';
@@ -360,14 +376,11 @@ export const useInteractiveHomework = ({
                 questionText = `[Instructions: ${exerciseData.instructions}]\n\n${questionText}`;
               }
               
-              const transcKey = `${ans.exercise_index}_${qIdx}`;
-              const transcription = transcriptionCache[transcKey];
-              
               answersToVerify.push({
                 exercise_index: ans.exercise_index,
                 question_index: qIdx,
                 question_text: questionText,
-                student_answer: String(studentAnswer),
+                student_answer: hasWritten ? String(writtenAnswer) : '',
                 suggested_answer: suggestedAnswer || undefined,
                 exercise_type: ans.exercise_type,
                 ...(transcription ? {
@@ -376,7 +389,7 @@ export const useInteractiveHomework = ({
                   audio_duration_seconds: transcription.duration
                 } : {})
               });
-            });
+            }
           }
 
           if (answersToVerify.length > 0) {
@@ -416,6 +429,8 @@ export const useInteractiveHomework = ({
                   question_index: qIdx,
                   is_acceptable: evaluation.is_acceptable,
                   quality_score: evaluation.quality_score,
+                  writing_score: evaluation.writing_score,
+                  speaking_score: evaluation.speaking_score,
                   feedback: evaluation.feedback
                 });
               }
