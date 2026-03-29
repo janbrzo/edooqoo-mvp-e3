@@ -45,7 +45,11 @@ export async function transcribeAllAudio(
         const { data: transcResult, error: transcError } = await supabase.functions.invoke('transcribe-audio', {
           body: { audio_url: audioUrl }
         });
-        if (!transcError && transcResult?.transcription) {
+        if (transcError) {
+          console.error(`${logPrefix} Transcription invoke error for ${cacheKey}:`, transcError);
+          continue;
+        }
+        if (transcResult?.transcription) {
           const words = transcResult.transcription.split(/\s+/).filter((w: string) => w.length > 0);
           cache[cacheKey] = {
             text: transcResult.transcription,
@@ -53,6 +57,8 @@ export async function transcribeAllAudio(
             duration: undefined
           };
           devLog(`${logPrefix} Transcription success: ${words.length} words`);
+        } else {
+          console.warn(`${logPrefix} No transcription returned for ${cacheKey}`, transcResult);
         }
       } catch (err) {
         console.error(`${logPrefix} Transcription failed for ${cacheKey}:`, err);
@@ -81,7 +87,12 @@ export function buildAnswersToVerify(params: {
   
   // Build union of question indexes from written answers + audio answers
   const allQuestionIndexes = new Set<number>();
-  Object.keys(studentAnswersForExercise).forEach(k => allQuestionIndexes.add(parseInt(k)));
+  Object.keys(studentAnswersForExercise)
+    .filter(k => !k.startsWith('_'))
+    .forEach(k => {
+      const idx = parseInt(k);
+      if (!isNaN(idx)) allQuestionIndexes.add(idx);
+    });
   const exerciseAudio = audioAnswers[savedAnswer.exercise_index] || {};
   Object.keys(exerciseAudio).forEach(k => allQuestionIndexes.add(parseInt(k)));
 

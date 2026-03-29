@@ -29,14 +29,18 @@ serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
     let callerInfo = 'unknown';
 
     if (token === serviceRoleKey) {
-      // Internal server-to-server call (e.g. from process-pending-ai-evaluations)
       callerInfo = 'service-role-internal';
       console.log('[transcribe-audio] Authorized via service role key (internal call)');
+    } else if (token === anonKey) {
+      // Anonymous frontend call (e.g. student on homework via share link, not logged in)
+      callerInfo = 'anon-frontend';
+      console.log('[transcribe-audio] Authorized via anon key (anonymous frontend call)');
     } else {
-      // Frontend call — validate user JWT
+      // Frontend call with user JWT — validate
       const supabase = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_ANON_KEY')!,
