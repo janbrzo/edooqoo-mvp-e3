@@ -157,6 +157,36 @@ serve(async (req) => {
 
         console.log(`[process-pending] Transcriptions: ${Object.keys(transcriptionMap).length}/${Object.keys(audioAnswers).length} audio questions transcribed`);
 
+        // Persist transcriptions to worksheet_student_answers.answers so they survive across sessions
+        if (Object.keys(transcriptionMap).length > 0) {
+          try {
+            const { data: currentRow } = await supabase
+              .from('worksheet_student_answers')
+              .select('answers')
+              .eq('worksheet_id', pending.worksheet_id)
+              .eq('student_email', pending.student_email)
+              .eq('exercise_index', pending.exercise_index)
+              .maybeSingle();
+            
+            const existingAnswers = (currentRow?.answers && typeof currentRow.answers === 'object') ? currentRow.answers : {};
+            const updatedAnswers: Record<string, any> = { ...(existingAnswers as Record<string, any>) };
+            for (const [qIdx, trans] of Object.entries(transcriptionMap)) {
+              updatedAnswers[`_transcription_${qIdx}`] = trans.text;
+            }
+            
+            await supabase
+              .from('worksheet_student_answers')
+              .update({ answers: updatedAnswers })
+              .eq('worksheet_id', pending.worksheet_id)
+              .eq('student_email', pending.student_email)
+              .eq('exercise_index', pending.exercise_index);
+            
+            console.log(`[process-pending] Persisted ${Object.keys(transcriptionMap).length} transcriptions to DB`);
+          } catch (e) {
+            console.error('[process-pending] Error persisting transcriptions:', e);
+          }
+        }
+
         // Build union of all question indexes from written + audio answers
         const allQuestionIndexes = new Set<number>();
         for (const qIdxStr of Object.keys(answers)) {

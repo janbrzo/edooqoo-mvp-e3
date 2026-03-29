@@ -5,11 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 29, 2026) - Fix: Audio-only Evaluation in Homework Submit:**
-- **Union of written + audio question indexes**: `useInteractiveHomework.tsx` now builds `answersToVerify` from the union of text answers AND audio recordings, ensuring audio-only questions are sent to AI evaluation
-- **writing_score/speaking_score propagation**: `dbUpdates` now includes `writing_score` and `speaking_score` from AI response, enabling correct nano_skill mastery mapping in `buildItemEvaluations`
-- **Audio playback after submit**: `onAudioAnswerChange` passes no-op function instead of `undefined`, keeping `HomeworkSpeakingRecorder` rendered in disabled/playback mode
-- **Audio-only valid in mastery calculation**: `buildItemEvaluations` in `masteryCalculator.ts` now checks `hasAudioAnswer` alongside `hasStudentAnswer`, preventing audio-only questions from being skipped
+**Latest Update (March 29, 2026) - Fix: Audio Evaluation Pipeline + Transcription Persistence:**
+- **Shared `audioEvalUtils.ts`**: Created `src/utils/audioEvalUtils.ts` with `buildAnswersToVerify()` and `transcribeAllAudio()` — shared between `useInteractiveHomework` and future shared worksheet front-end eval paths
+- **Transcription persistence**: Transcriptions stored in `answers` JSONB field as `_transcription_0`, `_transcription_1` etc. keys in both `homework_student_answers` and `worksheet_student_answers` tables
+- **Edge function persistence**: `process-pending-ai-evaluations` persists transcriptions to `worksheet_student_answers.answers` before AI evaluation, eliminating need to re-transcribe on requeue
+- **Union of written + audio**: Both front-end hook and edge function build `answersToVerify` from union of text + audio question indexes
+- **writing_score/speaking_score**: Properly propagated through the full pipeline for nano_skill mastery mapping
+- **Audio playback post-submit**: `HomeworkSpeakingRecorder` rendered in disabled/playback mode after homework submission
 
 **Previous Update (March 13, 2026) - E2E Readiness & Production Hardening:**
 - **Production logging**: Created `src/utils/logger.ts` with `devLog()`/`devWarn()` — silences all `console.log` in production builds to prevent leaking user IDs, tokens, emails
