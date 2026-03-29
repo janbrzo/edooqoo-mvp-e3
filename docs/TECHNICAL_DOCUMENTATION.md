@@ -5,7 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 13, 2026) - E2E Readiness & Production Hardening:**
+**Latest Update (March 29, 2026) - Fix: Audio-only Evaluation in Homework Submit:**
+- **Union of written + audio question indexes**: `useInteractiveHomework.tsx` now builds `answersToVerify` from the union of text answers AND audio recordings, ensuring audio-only questions are sent to AI evaluation
+- **writing_score/speaking_score propagation**: `dbUpdates` now includes `writing_score` and `speaking_score` from AI response, enabling correct nano_skill mastery mapping in `buildItemEvaluations`
+- **Audio playback after submit**: `onAudioAnswerChange` passes no-op function instead of `undefined`, keeping `HomeworkSpeakingRecorder` rendered in disabled/playback mode
+- **Audio-only valid in mastery calculation**: `buildItemEvaluations` in `masteryCalculator.ts` now checks `hasAudioAnswer` alongside `hasStudentAnswer`, preventing audio-only questions from being skipped
+
+**Previous Update (March 13, 2026) - E2E Readiness & Production Hardening:**
 - **Production logging**: Created `src/utils/logger.ts` with `devLog()`/`devWarn()` — silences all `console.log` in production builds to prevent leaking user IDs, tokens, emails
 - **13 hooks refactored**: Replaced `console.log` → `devLog` in useTokenSystem, useAuthFlow, useWorksheetGeneration, useWorksheetState, useStudentSelector, useExerciseRegeneration, useSectionRegeneration, useInteractiveHomework, useEventTracking, useProfile, useStudents, useDrawingCanvas, useHomeworkExerciseGeneration
 - **Duplicate DOM ID fix**: Removed `id="worksheet-form"` from FormView.tsx (kept in Index.tsx) to fix HTML validity
