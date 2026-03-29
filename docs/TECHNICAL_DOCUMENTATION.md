@@ -6,7 +6,9 @@
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
 **Latest Update (March 29, 2026) - Fix: Audio Evaluation Pipeline + Transcription Persistence:**
+- **Triple-path auth in `transcribe-audio`**: Accepts service role key (server-to-server), anon key (anonymous students on share links), and user JWT (logged-in users) — fixes 401 errors for homework audio transcription
 - **Shared `audioEvalUtils.ts`**: Created `src/utils/audioEvalUtils.ts` with `buildAnswersToVerify()` and `transcribeAllAudio()` — shared between `useInteractiveHomework` and future shared worksheet front-end eval paths
+- **Internal key filtering**: `buildAnswersToVerify` filters out `_transcription_X` persistence keys from question index collection
 - **Transcription persistence**: Transcriptions stored in `answers` JSONB field as `_transcription_0`, `_transcription_1` etc. keys in both `homework_student_answers` and `worksheet_student_answers` tables
 - **Edge function persistence**: `process-pending-ai-evaluations` persists transcriptions to `worksheet_student_answers.answers` before AI evaluation, eliminating need to re-transcribe on requeue
 - **Union of written + audio**: Both front-end hook and edge function build `answersToVerify` from union of text + audio question indexes
