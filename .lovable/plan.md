@@ -1,112 +1,209 @@
 
-Cel: usunąć root-cause, przez który event `response_type: "audio"` ma `nano_skill_ratings: []`, bez naruszenia działających ścieżek written/homework.
 
-1) Co faktycznie jest zepsute (potwierdzone logami i kodem)
-- `process-pending-ai-evaluations` woła `transcribe-audio` z nagłówkiem `Authorization: Bearer SUPABASE_SERVICE_ROLE_KEY`.
-- `transcribe-audio` akceptuje wyłącznie JWT użytkownika (`supabase.auth.getUser()`), więc zwraca 401 `Invalid authentication token`.
-- W logach masz dokładnie to: `Transcription HTTP error for q1: {"error":"Invalid authentication token"}`.
-- Dodatkowo `process-pending-ai-evaluations` buduje `answersToVerify` tylko z `pending.answers` (tekst), więc pytania audio-only nie trafiają do AI-eval nawet jeśli audio istnieje.
-- Efekt końcowy: AI zwraca ewaluację tylko dla `question_index: 0` (written), trigger SQL nie ma czego wpisać do części audio i zapisuje `nano_skill_ratings: []`.
+# Plan: Naprawa oceny audio w Homework + ukryte ikony odtwarzania + AI Score
 
-2) Plan zmian (minimalne ryzyko, pełna kompatybilność)
+## Diagnoza — 4 problemy
 
-A. Poprawa autoryzacji transkrypcji dla wywołań serwer-serwer
-Plik: `supabase/functions/transcribe-audio/index.ts`
-- Dodać 2-ścieżkową autoryzację:
-  1) jak dziś: poprawny JWT użytkownika (frontend invoke),
-  2) nowa ścieżka internal: jeśli Bearer token == `SUPABASE_SERVICE_ROLE_KEY`, traktuj jako trusted internal call i pomiń `getUser()`.
-- Zachować obecną walidację `audio_url`, obsługę CORS i błędów.
-- Nie zmieniać formatu response (dalej `{ success, transcription }`), żeby nic nie psuć w istniejącym froncie.
+### Problem 1: Audio-only pytania nie są oceniane w Homework Submit
 
-B. Naprawa budowy payloadu do AI-eval dla mixed/audio-only
-Plik: `supabase/functions/process-pending-ai-evaluations/index.ts`
-- Zamiast iterować tylko po `Object.entries(answers)`, budować zbiór pytań:
-  - `union(question_indexes from answers + audioAnswers)`.
-- Dla każdego `question_index`:
-  - `writtenAnswer = answers[qIdx]` (jeśli jest),
-  - `transcription = transcriptionMap[qIdx]` (jeśli jest),
-  - `effectiveStudentAnswer = writtenAnswer || transcription`.
-- Do `answersToVerify` dodawać rekord także dla audio-only (gdy brak tekstu, ale jest transkrypcja).
-- Utrzymać przekazywanie:
-  - `audio_transcription`,
-  - `audio_word_count`.
-- Logika mapowania mastery zostaje, ale będzie miała dane dla pytań audio:
-  - `speaking_score` dla audio,
-  - `writing_score` dla tekstu,
-  - `quality_score` fallback.
+**Root cause:** W `useInteractiveHomework.tsx` linia 343, pętla budująca `answersToVerify` iteruje **wyłącznie** po `Object.entries(studentAnswersForExercise)` — czyli po `ans.answers` (tekst pisemny). Pytania, na które student odpowiedział TYLKO nagraniem audio (bez wpisywania tekstu), nie mają wpisu w `answers`, więc nigdy nie trafiają do `answersToVerify`.
 
-C. Guard przed „cichym sukcesem” bez audio oceny
-Plik: `supabase/functions/process-pending-ai-evaluations/index.ts`
-- Dodać walidację przed wywołaniem `verify-open-answers`:
-  - jeśli istnieją `audio_answers`, ale żadne audio pytanie nie trafiło do `answersToVerify`, traktować to jako błąd przetwarzania (status `failed` z czytelnym `error_message`), zamiast `completed`.
-- To zapobiega ponownemu pojawianiu się fałszywego „przetworzone” bez audio mastery.
+Transkrypcja jest wykonywana poprawnie (linie 308-331, `transcriptionCache` jest wypełniany), ale potem te transkrypcje nigdy nie są użyte, bo pętla pomija pytania bez tekstu.
 
-D. (Opcjonalne, ale zalecane) Uszczelnienie non-answer logic dla audio-only
-Plik: `supabase/functions/verify-open-answers/index.ts`
-- Obecnie server-side non-answer sprawdza tylko `student_answer`.
-- Dodać fallback: jeśli `student_answer` puste, ale jest `audio_transcription`, użyć transkrypcji do heurystyki non-answer.
-- Dzięki temu audio-only nie dostanie sztucznego 0.0 przez pusty tekst.
+Dodatkowo `buildItemEvaluations` w `masteryCalculator.ts` (linia 450-455) pomija pytania bez `studentAnswer` (tekstu pisanego), więc nawet gdyby AI zwróciło wyniki, nie powstałyby `item_evaluations`.
 
-3) Dlaczego to nie popsuje aplikacji
-- Nie zmieniamy schematu tabel ani kontraktów RPC.
-- Nie ruszamy triggerów DSLM (już poprawnie rozdzielają written/audio po `question_index`).
-- Nie zmieniamy frontowych interfejsów i payloadów (tylko rozszerzamy kompletność danych wejściowych w async pipeline).
-- Zachowujemy działanie obecnych ścieżek:
-  - submit homework (manualny),
-  - shared worksheet 10-min timer,
-  - create_homework batch eval.
+**Dlaczego "reading" zadziałało:** Student miał ZARÓWNO tekst pisany ORAZ nagranie audio na te same pytania (question_index 1 miał written answer), więc pytanie trafiło do `answersToVerify`.
 
-4) Plan wdrożenia krok po kroku (zero decyzji podczas implementacji)
-1. Edycja `transcribe-audio`:
-   - dodać internal auth branch (`service role`),
-   - zostawić user JWT branch bez zmian.
-2. Edycja `process-pending-ai-evaluations`:
-   - refactor budowy `answersToVerify` na union written+audio,
-   - audio-only -> pełnoprawny wpis do AI-eval,
-   - dodać guard na brak ocenionych pytań audio mimo obecnego audio.
-3. (Jeśli wdrażamy punkt D) edycja `verify-open-answers`:
-   - non-answer fallback do transkrypcji.
-4. Logi diagnostyczne (bez zmiany API):
-   - wypisać `audio_count`, `transcribed_count`, `answers_to_verify_count`, `audio_questions_sent_to_ai`.
-5. Smoke testy manualne E2E.
+### Problem 2: Ikony odtwarzania nagrań znikają po Submit
 
-5) Plan testów akceptacyjnych (must-pass)
-Scenariusz 1: Mixed written+audio (dokładnie Twój przypadek)
-- Q1 text, Q2 audio, trigger przez Homework na Live Session Worksheet.
-- Oczekiwane:
-  - log `Transcribed q1` (lub odpowiedni index),
-  - `verify-open-answers` dostaje rekord dla pytania audio z `audio_transcription`,
-  - `item_evaluations` zawiera wpis dla pytania audio,
-  - `student_events` dla `response_type: "audio"` ma niepuste `nano_skill_ratings` i poprawny `question_index`.
+**Root cause:** W `HomeworkPage.tsx` linia 708-709:
+```typescript
+onAudioAnswerChange={finalIsSubmitted ? undefined : ...}
+```
+Po submicie `onAudioAnswerChange` jest `undefined`. Wszystkie komponenty ćwiczeń renderują `HomeworkSpeakingRecorder` TYLKO gdy `onAudioAnswerChange` istnieje (`{onAudioAnswerChange && (<HomeworkSpeakingRecorder .../>)}`). Gdy jest `undefined`, komponent w ogóle się nie renderuje — razem z przyciskiem odtwarzania istniejącego nagrania.
 
-Scenariusz 2: Audio-only question
-- Brak tekstu, tylko nagranie.
-- Oczekiwane:
-  - pytanie trafia do AI-eval,
-  - `audio` event ma mastery i skill rating, nie `[]`.
+### Problem 3: AI Score nie pokazuje się dla "reading" po Submit
 
-Scenariusz 3: Brak transkrypcji (symulowany błąd)
-- Oczekiwane:
-  - rekord nie kończy jako fałszywe `completed` bez audio oceny,
-  - ma status `failed` z czytelnym powodem.
+**Root cause:** W `useInteractiveHomework.tsx` linie 415-420, dane AI ewaluacji zapisywane do `dbUpdates` zawierają TYLKO `quality_score` i `feedback`. Brakuje `writing_score` i `speaking_score`. Potem w liniach 429-438, `aiEvalLookup` próbuje odczytać te pola z `qEval` — ale ich tam nie ma. 
 
-Scenariusz 4: Written-only regression
-- Oczekiwane:
-  - brak zmian funkcjonalnych względem obecnego działania.
+W konsekwencji `buildItemEvaluations` widzi `writing_score: undefined` i `speaking_score: undefined`, a dla nano_skillów `.speaking.` ustawia `skillMastery = -1` (linia 496), co oznacza `hasValue: false`. To sprawia, że `item_evaluations` mają `mastery: -1`, a trigger SQL odrzuca takie wpisy przy budowie ratings.
 
-6) Jednorazowa naprawa danych historycznych (już zapisanych z `nano_skill_ratings: []`)
-- Po wdrożeniu kodu uruchomić ponowną ewaluację dla dotkniętych odpowiedzi:
-  - requeue pending dla ćwiczeń z `audio_answers != {}` i audio eventem z pustymi ratings,
-  - przetworzyć `process-pending-ai-evaluations`.
-- To nie wymaga zmian schematu; to operacja naprawcza na danych.
+Dodatkowo `groupedEvaluations` (linia 408-413) też nie zawiera `writing_score`/`speaking_score`, więc frontend UI (`AiEvaluationBadge`) nie ma pełnych danych.
 
-7) Dokumentacja do aktualizacji po implementacji
-- `docs/TECHNICAL_DOCUMENTATION.md`: opis nowego internal auth flow transkrypcji + audio-only path.
-- `docs/CURRENT_STATE_ANALYSIS.md`: root cause + status fix.
-- `docs/USER_GUIDE_SHORT.md` i `docs/USER_GUIDE_DETAILED.md`: jak działa ocena speaking w tle.
-- `docs/BUSINESS_ANALYSIS.md`: wpływ na jakość DSLM i wiarygodność mastery.
-- `docs/DEVELOPMENT_ROADMAP.md`: zamknięcie incydentu audio-eval.
-- `README.md`: krótka notka o async speaking evaluation pipeline.
+### Problem 4: Gdzie zapisywana jest transkrypcja
 
-8) Kryterium zakończenia
-Naprawa jest uznana za zamkniętą dopiero gdy w realnym przebiegu (Shared Worksheet + trigger Homework) event `response_type: "audio"` zawiera poprawne `nano_skill_ratings` dla indeksu pytania audio (nie written) i nie pojawia się już `Invalid authentication token` dla transkrypcji.
+**Odpowiedź:**
+- **Welcome Test:** transkrypcja jest trwale zapisywana w `student_test_questions.question_data.transcription`
+- **Homework Submit:** transkrypcja żyje TYLKO w pamięci (`transcriptionCache` w `useInteractiveHomework.tsx`) — nigdy nie trafia do bazy
+- **Shared Worksheet (process-pending):** transkrypcja żyje TYLKO w pamięci edge function — nigdy nie trafia do bazy
+- **Wniosek:** Transkrypcja w homework i worksheet NIGDY nie jest persystowana. Przy kolejnym AI-eval (np. requeue) trzeba transkrybować ponownie.
+
+---
+
+## Plan naprawy
+
+### Zmiana 1: Budowa `answersToVerify` z unii written + audio (useInteractiveHomework.tsx)
+
+**Plik:** `src/hooks/useInteractiveHomework.tsx`
+**Linie:** 333-380
+
+Obecna pętla iteruje tylko po `Object.entries(studentAnswersForExercise)`. Trzeba ją zmienić na unię indeksów pytań z tekstu + audio.
+
+**Dokładna zmiana:**
+
+Zamiast:
+```typescript
+Object.entries(studentAnswersForExercise).forEach(([qIdxStr, studentAnswer]) => {
+  const qIdx = parseInt(qIdxStr);
+  ...
+  if (!questionItem || !studentAnswer || String(studentAnswer).trim() === '') return;
+  ...
+});
+```
+
+Nowa logika:
+```typescript
+// Build union of question indexes from written + audio
+const allQuestionIndexes = new Set<number>();
+Object.keys(studentAnswersForExercise).forEach(k => allQuestionIndexes.add(parseInt(k)));
+const exerciseAudio = audioAnswers[ans.exercise_index] || {};
+Object.keys(exerciseAudio).forEach(k => allQuestionIndexes.add(parseInt(k)));
+
+for (const qIdx of allQuestionIndexes) {
+  const questionItem = questionItems[qIdx];
+  if (!questionItem) continue;
+  
+  const writtenAnswer = studentAnswersForExercise[qIdx];
+  const transcKey = `${ans.exercise_index}_${qIdx}`;
+  const transcription = transcriptionCache[transcKey];
+  
+  // Effective answer: written text, or transcription for audio-only
+  const effectiveAnswer = (writtenAnswer && String(writtenAnswer).trim() !== '')
+    ? String(writtenAnswer)
+    : (transcription ? transcription.text : null);
+  
+  if (!effectiveAnswer) continue;
+  
+  // ... build questionText, suggestedAnswer same as before ...
+  
+  answersToVerify.push({
+    exercise_index: ans.exercise_index,
+    question_index: qIdx,
+    question_text: questionText,
+    student_answer: (writtenAnswer && String(writtenAnswer).trim() !== '') ? String(writtenAnswer) : '',
+    suggested_answer: suggestedAnswer || undefined,
+    exercise_type: ans.exercise_type,
+    ...(transcription ? {
+      audio_transcription: transcription.text,
+      audio_word_count: transcription.wordCount,
+      audio_duration_seconds: transcription.duration
+    } : {})
+  });
+}
+```
+
+### Zmiana 2: `buildItemEvaluations` — audio-only jako valid answer (masteryCalculator.ts)
+
+**Plik:** `src/utils/masteryCalculator.ts`
+**Linie:** 450-455
+
+Obecna logika:
+```typescript
+const hasStudentAnswer = studentAnswer !== undefined && studentAnswer !== null && String(studentAnswer).trim() !== '';
+if (!hasStudentAnswer) return;
+```
+
+Nowa logika — uwzględnij audio jako valid answer:
+```typescript
+const hasStudentAnswer = studentAnswer !== undefined && studentAnswer !== null && String(studentAnswer).trim() !== '';
+const hasAudioAnswer = audioAnswers?.[idx] != null;
+if (!hasStudentAnswer && !hasAudioAnswer) return;
+```
+
+### Zmiana 3: Przekazanie `writing_score`/`speaking_score` do dbUpdates (useInteractiveHomework.tsx)
+
+**Plik:** `src/hooks/useInteractiveHomework.tsx`
+**Linie:** 415-420
+
+Obecna logika pomija `writing_score` i `speaking_score`:
+```typescript
+dbUpdates[exIdx].question_evaluations.push({
+  question_index: qIdx,
+  is_acceptable: evaluation.is_acceptable,
+  quality_score: evaluation.quality_score,
+  feedback: evaluation.feedback
+});
+```
+
+Nowa logika:
+```typescript
+dbUpdates[exIdx].question_evaluations.push({
+  question_index: qIdx,
+  is_acceptable: evaluation.is_acceptable,
+  quality_score: evaluation.quality_score,
+  writing_score: evaluation.writing_score,
+  speaking_score: evaluation.speaking_score,
+  feedback: evaluation.feedback
+});
+```
+
+### Zmiana 4: Ikony odtwarzania audio po submit (HomeworkPage.tsx)
+
+**Plik:** `src/pages/HomeworkPage.tsx`
+**Linia:** 708-709
+
+Obecna logika:
+```typescript
+onAudioAnswerChange={finalIsSubmitted ? undefined : (qIndex, audioUrl) => updateAudioAnswer(...)}
+```
+
+Nowa logika — po submicie przekaż no-op zamiast undefined, żeby `HomeworkSpeakingRecorder` się renderował w trybie `disabled`:
+```typescript
+onAudioAnswerChange={
+  finalIsSubmitted 
+    ? ((_qIndex: number, _audioUrl: string) => {})  // no-op: renders recorder in disabled/playback mode
+    : (qIndex: number, audioUrl: string) => updateAudioAnswer(index, qIndex, audioUrl)
+}
+```
+
+Ponieważ `disabled` jest już ustawiony na `true` po submit (linia 703), `HomeworkSpeakingRecorder` automatycznie zablokuje nagrywanie, ale nadal wyświetli przycisk odtwarzania dla istniejących nagrań.
+
+### Zmiana 5: Persystencja transkrypcji (opcjonalna, zalecana)
+
+**Nie wdrażamy teraz** — transkrypcja w pamięci jest wystarczająca dla obecnego flow. Przy `process-pending-ai-evaluations` transkrypcja jest robiona w edge function. Persystencja do bazy byłaby optymalizacją (mniej wywołań Whisper), ale dodaje złożoność. Zostawiamy na przyszłość.
+
+---
+
+## Zmieniane pliki
+
+| Plik | Zmiana |
+|------|--------|
+| `src/hooks/useInteractiveHomework.tsx` | (1) Union written+audio w `answersToVerify`, (2) przekazanie `writing_score`/`speaking_score` do dbUpdates |
+| `src/utils/masteryCalculator.ts` | `buildItemEvaluations` — audio-only jako valid answer |
+| `src/pages/HomeworkPage.tsx` | No-op zamiast `undefined` dla `onAudioAnswerChange` po submit |
+
+## Co NIE zmienia się
+
+- Edge functions (`verify-open-answers`, `process-pending-ai-evaluations`, `transcribe-audio`) — ostatnie poprawki są poprawne
+- Triggery SQL — rozdzielanie written/audio ratings działa poprawnie
+- Shared Worksheet — osobny hook, ale ma identyczny problem z budową `answersToVerify` w `useInteractiveSharedWorksheet.tsx`... Poczekaj.
+
+## UWAGA: Ten sam problem w Shared Worksheet
+
+`useInteractiveSharedWorksheet.tsx` ma dokładnie ten sam wzorzec: nie sprawdziłem jeszcze czy builduje `answersToVerify` z unii. Ale obecny flow Shared Worksheet nie robi transkrypcji na froncie (robi ją `process-pending-ai-evaluations`), więc problem 1 tam jest rozwiązany edge function'em. Ale `buildItemEvaluations` z brakującym audio-only traktowaniem dotyczy obu hooków.
+
+## Dokumentacja
+
+Aktualizacja w ramach implementacji:
+- `docs/TECHNICAL_DOCUMENTATION.md` — opis naprawy audio-only flow
+- `docs/CURRENT_STATE_ANALYSIS.md` — zamknięcie incydentu
+- `docs/DEVELOPMENT_ROADMAP.md` — status
+
+## Odpowiedź na pytanie 4
+
+**Transkrypcja nagrań:**
+- **Welcome Test** → `student_test_questions.question_data.transcription` (persystentna w bazie)
+- **Homework** → `transcriptionCache` w pamięci hooka (utracona po zamknięciu strony)
+- **Shared Worksheet** → pamięć edge function `process-pending-ai-evaluations` (utracona po zakończeniu request)
+- Nigdzie poza Welcome Test transkrypcja nie jest trwale zapisywana
+
