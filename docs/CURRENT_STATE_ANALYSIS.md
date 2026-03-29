@@ -7,7 +7,9 @@
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
 **Ostatnia aktualizacja (2026-03-29) - Fix: Audio evaluation pipeline + transcription persistence:**
+- ✅ **Triple-path auth `transcribe-audio`**: Anon key accepted — fixes 401 for anonymous students on homework share links
 - ✅ **Shared `audioEvalUtils.ts`**: Unified `buildAnswersToVerify` and `transcribeAllAudio` used by both homework and shared worksheet
+- ✅ **Internal key filtering**: `_transcription_X` keys filtered from question index collection in `buildAnswersToVerify`
 - ✅ **Transcription persistence**: Transcriptions saved to `answers` field as `_transcription_N` keys in both `homework_student_answers` and `worksheet_student_answers`
 - ✅ **Edge function persistence**: `process-pending-ai-evaluations` now persists transcriptions to `worksheet_student_answers.answers` before AI eval
 - ✅ **Audio-only answers evaluated**: Union of written + audio question indexes ensures audio-only questions get AI evaluation
