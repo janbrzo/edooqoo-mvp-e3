@@ -6,16 +6,19 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-29) - Fix: Audio evaluation pipeline + transcription persistence:**
+**Ostatnia aktualizacja (2026-03-30) - Fix: Homework audio eval — single DB write + dual AI Score badges:**
+- ✅ **Single DB write**: Transcription persistence merged with AI eval update — trigger fires ONCE with correct `item_evaluations`
+- ✅ **Dual AI Score badges**: `AiEvaluationBadge` shows separate ✍️ Writing and 🎤 Speaking scores when both exist
+- ✅ **`AiEvaluation` interface extended**: `writing_score?` and `speaking_score?` added to types and badge component
+- ✅ **Enhanced transcription diagnostics**: Full invoke response logging in `audioEvalUtils.ts` (catches SDK errors in `data` field)
+- ✅ **Fallback transcription persistence**: Non-AI-eval exercises with audio get transcriptions saved separately
+
+**Poprzednia aktualizacja (2026-03-29) - Fix: Audio evaluation pipeline + transcription persistence:**
 - ✅ **Triple-path auth `transcribe-audio`**: Anon key accepted — fixes 401 for anonymous students on homework share links
 - ✅ **Shared `audioEvalUtils.ts`**: Unified `buildAnswersToVerify` and `transcribeAllAudio` used by both homework and shared worksheet
 - ✅ **Internal key filtering**: `_transcription_X` keys filtered from question index collection in `buildAnswersToVerify`
 - ✅ **Transcription persistence**: Transcriptions saved to `answers` field as `_transcription_N` keys in both `homework_student_answers` and `worksheet_student_answers`
-- ✅ **Edge function persistence**: `process-pending-ai-evaluations` now persists transcriptions to `worksheet_student_answers.answers` before AI eval
 - ✅ **Audio-only answers evaluated**: Union of written + audio question indexes ensures audio-only questions get AI evaluation
-- ✅ **writing_score/speaking_score propagation**: Correct mastery mapping for speaking nano_skills
-- ✅ **Audio playback after submit**: No-op function preserves `HomeworkSpeakingRecorder` visibility
-- ✅ **Audio-only valid in mastery calc**: `buildItemEvaluations` treats audio-only answers as valid
 
 **Poprzednia aktualizacja (2026-03-13) - E2E Readiness & Production Hardening:**
 - ✅ **Production logging**: `src/utils/logger.ts` z `devLog()`/`devWarn()` — wycisza `console.log` w produkcji

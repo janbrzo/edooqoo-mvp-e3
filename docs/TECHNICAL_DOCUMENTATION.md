@@ -5,15 +5,17 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 29, 2026) - Fix: Audio Evaluation Pipeline + Transcription Persistence:**
-- **Triple-path auth in `transcribe-audio`**: Accepts service role key (server-to-server), anon key (anonymous students on share links), and user JWT (logged-in users) — fixes 401 errors for homework audio transcription
-- **Shared `audioEvalUtils.ts`**: Created `src/utils/audioEvalUtils.ts` with `buildAnswersToVerify()` and `transcribeAllAudio()` — shared between `useInteractiveHomework` and future shared worksheet front-end eval paths
-- **Internal key filtering**: `buildAnswersToVerify` filters out `_transcription_X` persistence keys from question index collection
-- **Transcription persistence**: Transcriptions stored in `answers` JSONB field as `_transcription_0`, `_transcription_1` etc. keys in both `homework_student_answers` and `worksheet_student_answers` tables
-- **Edge function persistence**: `process-pending-ai-evaluations` persists transcriptions to `worksheet_student_answers.answers` before AI evaluation, eliminating need to re-transcribe on requeue
-- **Union of written + audio**: Both front-end hook and edge function build `answersToVerify` from union of text + audio question indexes
-- **writing_score/speaking_score**: Properly propagated through the full pipeline for nano_skill mastery mapping
-- **Audio playback post-submit**: `HomeworkSpeakingRecorder` rendered in disabled/playback mode after homework submission
+**Latest Update (March 30, 2026) - Fix: Homework Audio Eval — Single DB Write + Dual AI Score Badges:**
+- **Single DB write for transcription + AI eval**: Removed separate `.update({ answers })` for transcription persistence — now merged into the same `.update()` call that writes `ai_evaluation`, `item_evaluations`, `mastery`, and `eval_trigger`. This prevents the SQL trigger `log_homework_answer_to_events` from firing prematurely with empty `nano_skill_ratings`.
+- **Dual AI Score badges**: `AiEvaluationBadge` now displays separate ✍️ Writing and 🎤 Speaking score badges when both `writing_score` and `speaking_score` are present. Falls back to single "AI Score" badge for backward compatibility.
+- **`AiEvaluation` interface extended**: Added `writing_score?: number` and `speaking_score?: number` to both `src/types/interactiveHomework.ts` and `src/components/homework/AiEvaluationBadge.tsx`
+- **Enhanced transcription diagnostics**: `transcribeAllAudio()` now logs full invoke response details (error presence, data keys, API-level errors in response body)
+- **Fallback transcription persistence**: Exercises with audio but no AI eval (non-open types) get transcriptions saved in a separate DB write after the main AI eval loop
+
+**Previous Update (March 29, 2026) - Fix: Audio Evaluation Pipeline + Transcription Persistence:**
+- **Triple-path auth in `transcribe-audio`**: Accepts service role key, anon key, and user JWT
+- **Shared `audioEvalUtils.ts`**: `buildAnswersToVerify()` and `transcribeAllAudio()` shared between homework and worksheet
+- **Transcription persistence**: Stored as `_transcription_N` keys in `answers` JSONB field
 
 **Previous Update (March 13, 2026) - E2E Readiness & Production Hardening:**
 - **Production logging**: Created `src/utils/logger.ts` with `devLog()`/`devWarn()` — silences all `console.log` in production builds to prevent leaking user IDs, tokens, emails
