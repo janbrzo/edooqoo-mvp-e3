@@ -370,6 +370,8 @@ export const useInteractiveHomework = ({
                 groupedEvaluations[exIdx][qIdx] = {
                   is_acceptable: evaluation.is_acceptable,
                   quality_score: evaluation.quality_score,
+                  writing_score: evaluation.writing_score,
+                  speaking_score: evaluation.speaking_score,
                   feedback: evaluation.feedback,
                   question_index: qIdx
                 };
