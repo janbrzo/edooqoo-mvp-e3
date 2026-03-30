@@ -45,10 +45,22 @@ export async function transcribeAllAudio(
         const { data: transcResult, error: transcError } = await supabase.functions.invoke('transcribe-audio', {
           body: { audio_url: audioUrl }
         });
+        
+        // Enhanced diagnostics
+        devLog(`${logPrefix} Invoke result for ${cacheKey}: error=${!!transcError}, data keys=${transcResult ? Object.keys(transcResult) : 'null'}`);
+        
         if (transcError) {
           console.error(`${logPrefix} Transcription invoke error for ${cacheKey}:`, transcError);
+          if (transcResult) console.error(`${logPrefix} Error response data:`, transcResult);
           continue;
         }
+        
+        // Check for error in response body (SDK sometimes puts errors in data, not error)
+        if (transcResult?.error) {
+          console.error(`${logPrefix} Transcription API error for ${cacheKey}:`, transcResult.error);
+          continue;
+        }
+        
         if (transcResult?.transcription) {
           const words = transcResult.transcription.split(/\s+/).filter((w: string) => w.length > 0);
           cache[cacheKey] = {

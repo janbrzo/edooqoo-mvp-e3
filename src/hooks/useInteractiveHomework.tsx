@@ -309,7 +309,7 @@ export const useInteractiveHomework = ({
           // Transcribe all audio using shared utility
           const transcriptionCache = await transcribeAllAudio(audioAnswers, '[submitHomework]');
           
-          // Persist transcriptions to homework_student_answers.answers
+          // Merge transcriptions into local savedAnswers for AI eval (NO DB writes yet — will persist with AI eval)
           if (Object.keys(transcriptionCache).length > 0) {
             for (const [cacheKey, transcription] of Object.entries(transcriptionCache)) {
               const [exIdxStr, qIdxStr] = cacheKey.split('_');
@@ -318,18 +318,10 @@ export const useInteractiveHomework = ({
               const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
               if (ans) {
                 const existingAnswers = (typeof ans.answers === 'object' && ans.answers !== null) ? ans.answers : {};
-                const updatedAnswers = { ...existingAnswers, [`_transcription_${qIdx}`]: transcription.text } as Record<string, any>;
-                await supabase
-                  .from('homework_student_answers')
-                  .update({ answers: updatedAnswers })
-                  .eq('homework_id', homeworkId)
-                  .eq('student_email', studentEmail)
-                  .eq('exercise_index', exIdx);
-                // Also update the local savedAnswers for AI eval
-                ans.answers = updatedAnswers;
+                ans.answers = { ...existingAnswers, [`_transcription_${qIdx}`]: transcription.text };
               }
             }
-            devLog('[submitHomework] Transcriptions persisted to DB');
+            devLog('[submitHomework] Transcriptions merged into local savedAnswers (DB write deferred)');
           }
           
           for (const ans of savedAnswers.filter((a: any) => {
@@ -378,6 +370,8 @@ export const useInteractiveHomework = ({
                 groupedEvaluations[exIdx][qIdx] = {
                   is_acceptable: evaluation.is_acceptable,
                   quality_score: evaluation.quality_score,
+                  writing_score: evaluation.writing_score,
+                  speaking_score: evaluation.speaking_score,
                   feedback: evaluation.feedback,
                   question_index: qIdx
                 };
@@ -420,9 +414,14 @@ export const useInteractiveHomework = ({
                   ? Math.round(itemEvals.reduce((sum, e) => sum + e.mastery, 0) / itemEvals.length)
                   : null;
                 
+                // Merge transcriptions into answers for this exercise (single DB write with AI eval)
+                const ansForEx = savedAnswers.find((a: any) => a.exercise_index === exIdx);
+                const mergedAnswers = (typeof ansForEx?.answers === 'object' && ansForEx?.answers !== null) ? { ...ansForEx.answers } : {};
+                
                 await supabase
                   .from('homework_student_answers')
                   .update({ 
+                    answers: mergedAnswers,
                     ai_evaluation: evalData,
                     item_evaluations: JSON.parse(JSON.stringify(itemEvals)),
                     mastery: overallMastery,
@@ -445,6 +444,50 @@ export const useInteractiveHomework = ({
               console.error('[submitHomework] AI verification error:', verifyError);
               setIsWaitingForAiEval(false);
             }
+          }
+          
+          // Persist transcriptions for exercises that had audio but NO AI eval
+          // (e.g. non-open exercise types with audio recordings, or when AI eval had no results for them)
+          if (Object.keys(transcriptionCache).length > 0) {
+            // Collect exercise indexes that already got a merged DB write above
+            const exercisesAlreadyPersisted = new Set<number>();
+            for (const [cacheKey] of Object.entries(transcriptionCache)) {
+              const exIdx = parseInt(cacheKey.split('_')[0]);
+              // Check if this exercise was part of the AI eval DB updates by looking at savedAnswers
+              // that already have _transcription_ keys merged (done in the dbUpdates loop)
+              const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
+              if (ans?.answers && typeof ans.answers === 'object') {
+                const keys = Object.keys(ans.answers);
+                if (keys.some(k => k.startsWith('_transcription_'))) {
+                  // Check if this exercise had an AI eval update (mergedAnswers was written)
+                  // We can detect this by checking if eval_trigger would have been set
+                  // Simple approach: check answersToVerify had entries for this exercise
+                  const hadAiEval = answersToVerify.some((a: any) => a.exercise_index === exIdx);
+                  if (hadAiEval) {
+                    exercisesAlreadyPersisted.add(exIdx);
+                  }
+                }
+              }
+            }
+            
+            for (const [cacheKey, transcription] of Object.entries(transcriptionCache)) {
+              const [exIdxStr, qIdxStr] = cacheKey.split('_');
+              const exIdx = parseInt(exIdxStr);
+              if (exercisesAlreadyPersisted.has(exIdx)) continue;
+              
+              const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
+              if (!ans) continue;
+              const existingAnswers = (typeof ans.answers === 'object' && ans.answers !== null) ? { ...ans.answers } : {};
+              existingAnswers[`_transcription_${qIdxStr}`] = transcription.text;
+              
+              await supabase
+                .from('homework_student_answers')
+                .update({ answers: existingAnswers })
+                .eq('homework_id', homeworkId)
+                .eq('student_email', studentEmail)
+                .eq('exercise_index', exIdx);
+            }
+            devLog('[submitHomework] Transcriptions persisted for non-AI-eval exercises');
           }
         }
       } catch (aiError) {
