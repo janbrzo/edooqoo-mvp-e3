@@ -414,9 +414,14 @@ export const useInteractiveHomework = ({
                   ? Math.round(itemEvals.reduce((sum, e) => sum + e.mastery, 0) / itemEvals.length)
                   : null;
                 
+                // Merge transcriptions into answers for this exercise (single DB write with AI eval)
+                const ansForEx = savedAnswers.find((a: any) => a.exercise_index === exIdx);
+                const mergedAnswers = (typeof ansForEx?.answers === 'object' && ansForEx?.answers !== null) ? { ...ansForEx.answers } : {};
+                
                 await supabase
                   .from('homework_student_answers')
                   .update({ 
+                    answers: mergedAnswers,
                     ai_evaluation: evalData,
                     item_evaluations: JSON.parse(JSON.stringify(itemEvals)),
                     mastery: overallMastery,
