@@ -309,7 +309,7 @@ export const useInteractiveHomework = ({
           // Transcribe all audio using shared utility
           const transcriptionCache = await transcribeAllAudio(audioAnswers, '[submitHomework]');
           
-          // Persist transcriptions to homework_student_answers.answers
+          // Merge transcriptions into local savedAnswers for AI eval (NO DB writes yet — will persist with AI eval)
           if (Object.keys(transcriptionCache).length > 0) {
             for (const [cacheKey, transcription] of Object.entries(transcriptionCache)) {
               const [exIdxStr, qIdxStr] = cacheKey.split('_');
@@ -318,18 +318,10 @@ export const useInteractiveHomework = ({
               const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
               if (ans) {
                 const existingAnswers = (typeof ans.answers === 'object' && ans.answers !== null) ? ans.answers : {};
-                const updatedAnswers = { ...existingAnswers, [`_transcription_${qIdx}`]: transcription.text } as Record<string, any>;
-                await supabase
-                  .from('homework_student_answers')
-                  .update({ answers: updatedAnswers })
-                  .eq('homework_id', homeworkId)
-                  .eq('student_email', studentEmail)
-                  .eq('exercise_index', exIdx);
-                // Also update the local savedAnswers for AI eval
-                ans.answers = updatedAnswers;
+                ans.answers = { ...existingAnswers, [`_transcription_${qIdx}`]: transcription.text };
               }
             }
-            devLog('[submitHomework] Transcriptions persisted to DB');
+            devLog('[submitHomework] Transcriptions merged into local savedAnswers (DB write deferred)');
           }
           
           for (const ans of savedAnswers.filter((a: any) => {
