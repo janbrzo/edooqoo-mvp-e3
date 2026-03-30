@@ -445,6 +445,30 @@ export const useInteractiveHomework = ({
               setIsWaitingForAiEval(false);
             }
           }
+          
+          // Persist transcriptions for exercises that had audio but NO AI eval
+          // (e.g. non-open exercise types with audio recordings)
+          if (Object.keys(transcriptionCache).length > 0) {
+            const exercisesWithAiEval = new Set(Object.keys(dbUpdates || {}).map(k => parseInt(k)));
+            for (const [cacheKey, transcription] of Object.entries(transcriptionCache)) {
+              const [exIdxStr, qIdxStr] = cacheKey.split('_');
+              const exIdx = parseInt(exIdxStr);
+              if (exercisesWithAiEval.has(exIdx)) continue; // Already persisted above
+              
+              const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
+              if (!ans) continue;
+              const existingAnswers = (typeof ans.answers === 'object' && ans.answers !== null) ? { ...ans.answers } : {};
+              existingAnswers[`_transcription_${qIdxStr}`] = transcription.text;
+              
+              await supabase
+                .from('homework_student_answers')
+                .update({ answers: existingAnswers })
+                .eq('homework_id', homeworkId)
+                .eq('student_email', studentEmail)
+                .eq('exercise_index', exIdx);
+            }
+            devLog('[submitHomework] Transcriptions persisted for non-AI-eval exercises');
+          }
         }
       } catch (aiError) {
         console.error('[submitHomework] AI verification failed (non-blocking):', aiError);

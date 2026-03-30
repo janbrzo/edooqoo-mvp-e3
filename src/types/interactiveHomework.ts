@@ -204,6 +204,8 @@ export interface AiEvaluation {
   quality_score: number;
   feedback: string;
   question_index?: number;
+  writing_score?: number;
+  speaking_score?: number;
 }
 
 /**
