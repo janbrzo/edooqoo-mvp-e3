@@ -1,154 +1,240 @@
 
 
-# Plan: Naprawa oceny audio w Homework — 3 problemy
+# Plan: Naprawa 3 problemów audio w Homework
 
-## Diagnoza główna
+## Diagnoza
 
-**Wszystkie 3 problemy mają JEDNĄ przyczynę źródłową:** transkrypcja audio z frontendu ZAWSZE kończy się błędem 401 dla studentów korzystających z homework via share link.
+### Problem 1: Nadpisywanie eventów po Submit
 
-### Dlaczego transkrypcja nie działa
+**Root cause:** W `useInteractiveHomework.tsx` linie 313-332, persystencja transkrypcji odbywa się jako osobny `supabase.update({ answers })` **PRZED** ewaluacją AI. Każdy taki update triggeruje `log_homework_answer_to_events()`, który:
+1. USUWA wszystkie eventy dla danego ćwiczenia (linia 187-189 triggera)
+2. Wstawia nowe eventy z bieżącym `item_evaluations` (które w tym momencie jest NULL bo AI eval jeszcze nie przeszedł)
 
-Student otwiera homework przez link `/homework/<share_token>` — **NIE jest zalogowany** (brak sesji auth). Gdy `transcribeAllAudio()` woła `supabase.functions.invoke('transcribe-audio', ...)`, klient Supabase wysyła w nagłówku `Authorization: Bearer <ANON_KEY>` (bo nie ma sesji użytkownika).
+Rezultat: eventy lądują z `nano_skill_ratings: []` po update transkrypcji, a potem (po AI eval) trigger ponownie je kasuje i wstawia poprawne. **ALE** jeśli transkrypcja nie działa (Problem 3) → AI eval nie ma audio answers do oceny → te ćwiczenia nie trafiają do AI → trigger z pustymi ratings jest finalny.
 
-W `transcribe-audio/index.ts`:
-1. Token = anon key
-2. `token === serviceRoleKey` → **false** (anon key ≠ service role key)
-3. Wchodzi w ścieżkę user JWT → `supabase.auth.getUser()` → **error** (anon key to nie jest JWT użytkownika)
-4. Zwraca **401 "Invalid authentication token"**
+Dodatkowo: po submit, gdy user odtwarza nagranie, sam playback NIE triggeruje żadnego zapisu (zweryfikowałem w kodzie `HomeworkSpeakingRecorder`). Ale efekt "nadpisywania" który widzisz wynika z tego, że submit flow uruchomił trigger BEZ ocen.
 
-**Skutki kaskadowe:**
-- `transcriptionCache` jest **pusty** → `buildAnswersToVerify` nie ma `effectiveAnswer` dla pytań audio-only → pomija je
-- Puste cache → nic nie zapisuje się do DB (`_transcription_X` keys nigdy nie powstają)
-- AI eval zwraca wyniki TYLKO dla pytań z odpowiedzią tekstową
-- `nano_skill_ratings: []` dla audio events
-- AI Score badge nie ma danych do wyświetlenia
+**Naprawa:** Przenieść persystencję transkrypcji do tego samego `.update()` co AI eval, żeby trigger nie strzelał dwukrotnie. Zamiast:
+- Krok A: `.update({ answers })` → trigger z pustymi ratings
+- Krok B: `.update({ ai_evaluation, item_evaluations })` → trigger z ratings
 
-### Dlaczego "reading" zadziałało
+Zrobić:
+- Jeden `.update({ answers: answersWithTranscriptions, ai_evaluation, item_evaluations, mastery, eval_trigger })` → trigger strzelą RAZ z poprawnymi ratings
 
-Ćwiczenie "reading" (exercise 5) miało PISEMNE odpowiedzi na question_index 1. Te trafiły do `answersToVerify` bez potrzeby transkrypcji. AI oceniło te odpowiedzi. Ale nawet tam — `nano_skill_ratings` mają TYLKO writing/reading skills, brak speaking (bo transkrypcja audio nie poszła).
+### Problem 2: Jeden AI Score zamiast dwóch
+
+**Root cause:** `AiEvaluationBadge` wyświetla JEDNĄ ocenę (`quality_score`) jako "AI Score: X%". Nie ma logiki na rozdzielenie `writing_score` i `speaking_score` w osobne badge'e.
+
+Ponadto `groupedEvaluations` (linie 378-383) zapisuje do stanu UI TYLKO `quality_score` i `feedback` — `writing_score` i `speaking_score` nie trafiają do obiektu `AiEvaluation` → nie są dostępne dla badge'a.
+
+**Naprawa:**
+1. Rozszerzyć interfejs `AiEvaluation` o `writing_score?` i `speaking_score?`
+2. Zapisywać te pola w `groupedEvaluations`
+3. Zmienić `AiEvaluationBadge` aby gdy oba scory istnieją, wyświetlał dwa badge'e:
+   - "✍️ Writing: X%" 
+   - "🎤 Speaking: Y%"
+   A gdy jest tylko jeden — wyświetlał jeden badge z etykietą odpowiedniego typu.
+
+### Problem 3: Transkrypcje nie zapisują się w DB
+
+**Root cause:** Kod persystencji istnieje (linie 313-332 w `useInteractiveHomework`), ale aby zadziałał, `transcribeAllAudio` musi zwrócić niepusty cache. Funkcja `transcribe-audio` ma poprawkę na anon key w kodzie, ale logi Edge Function są puste — co może oznaczać:
+- Funkcja nie została faktycznie wywołana (frontend error silencing)
+- Lub `supabase.functions.invoke` zwraca błąd którego nie logujemy wystarczająco głośno
+
+W `audioEvalUtils.ts` linia 48-50, jeśli `transcError` istnieje, logujemy `console.error` ale kontynuujemy. Jeśli nie ma errora ale `transcResult` nie ma `transcription`, logujemy `console.warn`. Potrzebujemy lepszej diagnostyki.
+
+Dodatkowa hipoteza: `supabase.functions.invoke` z klienta anonowego może zwracać error w `data` a nie w `error` field (zależy od wersji SDK). Trzeba to zweryfikować.
 
 ---
 
-## Plan naprawy — 3 zmiany
+## Plan naprawy — 4 zmiany
 
-### Zmiana 1: Akceptacja anon key w `transcribe-audio`
+### Zmiana 1: Połączenie persystencji transkrypcji z AI eval update
 
-**Plik:** `supabase/functions/transcribe-audio/index.ts`
-**Linie:** 30-53
+**Plik:** `src/hooks/useInteractiveHomework.tsx`
 
-Dodać trzecią ścieżkę autoryzacji: jeśli token === SUPABASE_ANON_KEY, traktuj jako authorized anonymous caller.
+Obecny flow w `submitHomework`:
+```
+1. submit_homework_answers RPC (is_submitted=true)    → trigger fires
+2. For each transcription: .update({ answers })        → trigger fires (premature!)  
+3. AI eval → .update({ ai_evaluation, item_evaluations }) → trigger fires (correct)
+```
 
-**Uzasadnienie bezpieczeństwa:** Anon key jest JUŻ publiczny (jest w `src/integrations/supabase/client.ts` w kodzie frontendowym). Funkcja `transcribe-audio` nie mutuje danych — tylko transkrybuje audio URL. Jedyne ryzyko to nadużycie (koszty OpenAI Whisper), ale to samo ryzyko istnieje dla zalogowanych użytkowników.
+Nowy flow:
+```
+1. submit_homework_answers RPC (is_submitted=true)    → trigger fires
+2. Transcribe all audio (no DB writes yet)
+3. AI eval
+4. Single .update({ answers+transcriptions, ai_evaluation, item_evaluations }) → trigger fires ONCE
+```
 
-**Dokładna zmiana:**
+**Dokładna zmiana w liniach 313-433:**
+
+Usunąć pętlę persystencji transkrypcji (linie 313-333). Zamiast tego, po AI eval (linie 395-433), w pętli `for (const [exIdxStr, evalData] of Object.entries(dbUpdates))` dodać logikę mergowania transkrypcji do `answers`:
 
 ```typescript
-const token = authHeader.replace('Bearer ', '');
-const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-let callerInfo = 'unknown';
-
-if (token === serviceRoleKey) {
-  callerInfo = 'service-role-internal';
-  console.log('[transcribe-audio] Authorized via service role key (internal call)');
-} else if (token === anonKey) {
-  // Anonymous frontend call (e.g. student on homework via share link, not logged in)
-  callerInfo = 'anon-frontend';
-  console.log('[transcribe-audio] Authorized via anon key (anonymous frontend call)');
-} else {
-  // Frontend call with user JWT — validate
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: authHeader } } }
-  );
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return new Response(JSON.stringify({ error: 'Invalid authentication token' }), {
-      status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+for (const [exIdxStr, evalData] of Object.entries(dbUpdates)) {
+  const exIdx = parseInt(exIdxStr);
+  // ... existing itemEvals calculation ...
+  
+  // Merge transcriptions into answers for this exercise
+  const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
+  const existingAnswers = (typeof ans?.answers === 'object' && ans?.answers !== null) ? { ...ans.answers } : {};
+  for (const [cacheKey, transcription] of Object.entries(transcriptionCache)) {
+    const [txExIdx, txQIdx] = cacheKey.split('_');
+    if (parseInt(txExIdx) === exIdx) {
+      existingAnswers[`_transcription_${txQIdx}`] = transcription.text;
+    }
   }
-  callerInfo = `user:${user.id}`;
+  
+  await supabase
+    .from('homework_student_answers')
+    .update({ 
+      answers: existingAnswers,  // ← includes transcriptions
+      ai_evaluation: evalData,
+      item_evaluations: JSON.parse(JSON.stringify(itemEvals)),
+      mastery: overallMastery,
+      eval_trigger: 'submit_homework'
+    })
+    .eq('homework_id', homeworkId)
+    .eq('student_email', studentEmail)
+    .eq('exercise_index', exIdx);
+}
+
+// Also persist transcriptions for exercises that had audio but NO AI eval
+// (e.g. non-open exercise types with audio recordings)
+for (const [cacheKey, transcription] of Object.entries(transcriptionCache)) {
+  const [exIdxStr, qIdxStr] = cacheKey.split('_');
+  const exIdx = parseInt(exIdxStr);
+  if (dbUpdates[exIdx]) continue; // Already handled above
+  
+  const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
+  if (!ans) continue;
+  const existingAnswers = (typeof ans.answers === 'object' && ans.answers !== null) ? { ...ans.answers } : {};
+  existingAnswers[`_transcription_${qIdxStr}`] = transcription.text;
+  
+  await supabase
+    .from('homework_student_answers')
+    .update({ answers: existingAnswers })
+    .eq('homework_id', homeworkId)
+    .eq('student_email', studentEmail)
+    .eq('exercise_index', exIdx);
 }
 ```
 
-Reszta funkcji bez zmian — walidacja `audio_url`, fetch, OpenAI Whisper API, format odpowiedzi.
+### Zmiana 2: Dwa AI Score badge'e (writing + speaking)
 
-### Zmiana 2: Filtrowanie `_transcription_X` kluczy w `buildAnswersToVerify`
+**Plik:** `src/components/homework/AiEvaluationBadge.tsx`
 
-**Plik:** `src/utils/audioEvalUtils.ts`
-**Linia:** 84
-
-Obecna linia:
+Rozszerzyć interfejs `AiEvaluation`:
 ```typescript
-Object.keys(studentAnswersForExercise).forEach(k => allQuestionIndexes.add(parseInt(k)));
+export interface AiEvaluation {
+  is_acceptable: boolean;
+  quality_score: number;
+  feedback: string;
+  question_index?: number;
+  writing_score?: number;   // ← NOWE
+  speaking_score?: number;  // ← NOWE
+}
 ```
 
-`parseInt("_transcription_0")` zwraca `NaN`, który trafia do Set. To jest nieszkodliwe (NaN → `questionItems[NaN]` = undefined → skip), ale brudne i może powodować edge case'y.
+Zmienić komponent `AiEvaluationBadge` aby renderował:
+- Jeśli `writing_score` i `speaking_score` oba istnieją → dwa oddzielne badge'e: "✍️ Writing: X%" i "🎤 Speaking: Y%"
+- Jeśli tylko `writing_score` → jeden badge "✍️ Writing: X%"
+- Jeśli tylko `speaking_score` → jeden badge "🎤 Speaking: Y%"
+- Jeśli żaden nie istnieje (backward compat) → obecny badge "AI Score: X%"
 
-**Nowa linia:**
+Feedback (`evaluation.feedback`) wyświetlany RAZ pod oboma badge'ami.
+
+**Plik:** `src/hooks/useInteractiveHomework.tsx` linie 378-383
+
+Dodać `writing_score` i `speaking_score` do `groupedEvaluations`:
 ```typescript
-Object.keys(studentAnswersForExercise)
-  .filter(k => !k.startsWith('_'))  // Exclude internal keys like _transcription_X
-  .forEach(k => {
-    const idx = parseInt(k);
-    if (!isNaN(idx)) allQuestionIndexes.add(idx);
-  });
+groupedEvaluations[exIdx][qIdx] = {
+  is_acceptable: evaluation.is_acceptable,
+  quality_score: evaluation.quality_score,
+  writing_score: evaluation.writing_score,    // ← NOWE
+  speaking_score: evaluation.speaking_score,  // ← NOWE
+  feedback: evaluation.feedback,
+  question_index: qIdx
+};
 ```
 
-### Zmiana 3: Dodanie logów diagnostycznych do `transcribeAllAudio`
+**Plik:** `src/types/interactiveHomework.ts` — zaktualizować interfejs `AiEvaluation` tutaj też (jeśli jest duplikat):
+```typescript
+export interface AiEvaluation {
+  is_acceptable: boolean;
+  quality_score: number;
+  feedback: string;
+  question_index?: number;
+  writing_score?: number;
+  speaking_score?: number;
+}
+```
+
+### Zmiana 3: Lepsza diagnostyka transkrypcji
 
 **Plik:** `src/utils/audioEvalUtils.ts`
-**Funkcja:** `transcribeAllAudio`, linia 48
 
-Po `supabase.functions.invoke`:
+W `transcribeAllAudio`, po `supabase.functions.invoke`, dodać logowanie pełnej odpowiedzi:
 ```typescript
+const { data: transcResult, error: transcError } = await supabase.functions.invoke('transcribe-audio', {
+  body: { audio_url: audioUrl }
+});
+
+// Enhanced diagnostics
+devLog(`${logPrefix} Invoke result for ${cacheKey}: error=${!!transcError}, data keys=${transcResult ? Object.keys(transcResult) : 'null'}`);
+
 if (transcError) {
   console.error(`${logPrefix} Transcription invoke error for ${cacheKey}:`, transcError);
-  continue;  // Skip this audio, don't crash
+  // Also log the data field which may contain error details
+  if (transcResult) console.error(`${logPrefix} Error response data:`, transcResult);
+  continue;
+}
+
+// Check for error in response body (SDK sometimes puts errors in data, not error)
+if (transcResult?.error) {
+  console.error(`${logPrefix} Transcription API error for ${cacheKey}:`, transcResult.error);
+  continue;
 }
 ```
 
-Dodać jawne logowanie statusu invoke (sukces/error) żeby w przyszłości natychmiast wiedzieć czy invoke się udaje.
+### Zmiana 4: Resetowanie homework do testów
+
+**Migracja SQL:** Resetowanie `homework_student_answers` dla share_token `c81caca1...`:
+```sql
+UPDATE homework_student_answers
+SET is_submitted = false, submitted_at = NULL, ai_evaluation = NULL, 
+    item_evaluations = NULL, eval_trigger = NULL, mastery = NULL
+WHERE homework_id = (SELECT id FROM homework_assignments WHERE share_token = 'c81caca14d21b916005ab3abe32a7a6a8d669350ae8f921fa2e440ff38a13a53');
+
+UPDATE homework_assignments
+SET completed_at = NULL, completed_by_teacher = false, reviewed_at = NULL, reviewed_by = NULL
+WHERE share_token = 'c81caca14d21b916005ab3abe32a7a6a8d669350ae8f921fa2e440ff38a13a53';
+```
 
 ---
-
-## Co się dzieje po tych zmianach
-
-1. Student klika "Send Homework"
-2. `transcribeAllAudio` woła `transcribe-audio` z anon key → **authorized** → transkrypcja działa
-3. `transcriptionCache` jest pełny → `buildAnswersToVerify` tworzy wpisy dla audio-only pytań
-4. `verify-open-answers` dostaje pełny payload z `audio_transcription` → zwraca `speaking_score` + `quality_score`
-5. `groupedEvaluations` i `dbUpdates` zawierają wyniki dla wszystkich pytań
-6. `AiEvaluationBadge` wyświetla AI Score
-7. `_transcription_X` klucze zapisują się do `homework_student_answers.answers`
-8. Trigger SQL buduje `nano_skill_ratings` z `item_evaluations` — poprawne wartości zamiast `[]`
 
 ## Zmieniane pliki
 
 | Plik | Zmiana |
 |------|--------|
-| `supabase/functions/transcribe-audio/index.ts` | Dodanie anon key jako trzeciej ścieżki auth |
-| `src/utils/audioEvalUtils.ts` | Filtrowanie `_transcription_X` kluczy + lepsze logi |
+| `src/hooks/useInteractiveHomework.tsx` | (1) Połączenie persystencji transkrypcji z AI eval update, (2) `writing_score`/`speaking_score` w `groupedEvaluations` |
+| `src/components/homework/AiEvaluationBadge.tsx` | Dwa badge'e: writing + speaking, rozszerzony interfejs |
+| `src/types/interactiveHomework.ts` | `AiEvaluation` z `writing_score?` i `speaking_score?` |
+| `src/utils/audioEvalUtils.ts` | Lepsza diagnostyka invoke errors |
+| Migracja SQL | Reset homework submission |
 
 ## Co NIE zmienia się
 
-- `useInteractiveHomework.tsx` — logika `buildAnswersToVerify` z unii jest poprawna (zaimplementowana wcześniej)
-- `masteryCalculator.ts` — `buildItemEvaluations` z audio-only jest poprawne (zaimplementowane wcześniej)  
-- `HomeworkPage.tsx` — no-op zamiast undefined jest poprawne (zaimplementowane wcześniej)
-- `process-pending-ai-evaluations` — async pipeline z service role key jest poprawny
-- `verify-open-answers` — prompt i scoring logic są poprawne
-- Triggery SQL — bez zmian
+- `transcribe-audio` Edge Function — poprawka anon key jest już wdrożona
+- `verify-open-answers` — zwraca `writing_score`/`speaking_score` poprawnie
+- SQL triggery — logika rozdzielania written/audio eventów jest poprawna
+- `HomeworkSpeakingRecorder` — playback nie triggeruje żadnych zapisów (potwierdzone)
+- `masteryCalculator.ts` — audio-only fix jest poprawny
 
-## Dokumentacja do aktualizacji
+## Dokumentacja
 
-- `docs/TECHNICAL_DOCUMENTATION.md` — opis 3-ścieżkowej autoryzacji transcribe-audio
-- `docs/CURRENT_STATE_ANALYSIS.md` — root cause fix
-
-## Test akceptacyjny
-
-Po wdrożeniu: ponownie zresetować homework submission → nagrać audio → Send Homework → sprawdzić:
-1. `homework_student_answers.answers` zawiera klucze `_transcription_X`
-2. `student_events.event_payload` dla `response_type: "audio"` ma niepuste `nano_skill_ratings`
-3. Na stronie homework po submit widać AI Score badge przy pytaniach audio
+- `docs/TECHNICAL_DOCUMENTATION.md`
+- `docs/CURRENT_STATE_ANALYSIS.md`
 
