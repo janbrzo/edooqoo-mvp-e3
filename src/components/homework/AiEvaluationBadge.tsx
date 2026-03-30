@@ -39,7 +39,7 @@ export function AiEvaluationBadge({
   exerciseType,
   teacherId
 }: AiEvaluationBadgeProps) {
-  const { is_acceptable, quality_score, feedback } = evaluation;
+  const { is_acceptable, quality_score, feedback, writing_score, speaking_score } = evaluation;
   const questionIndex = evaluation.question_index ?? 0;
   
   // Pending state: quality_score < 0 means waiting for AI evaluation
@@ -54,17 +54,19 @@ export function AiEvaluationBadge({
     );
   }
   
-  const scorePercent = Math.round(quality_score * 100);
+  const hasDualScores = writing_score !== undefined && speaking_score !== undefined;
+  const hasWritingOnly = writing_score !== undefined && speaking_score === undefined;
+  const hasSpeakingOnly = speaking_score !== undefined && writing_score === undefined;
   
-  const getBadgeColor = () => {
-    if (quality_score >= 0.8) return "bg-green-500 hover:bg-green-600";
-    if (quality_score >= 0.7) return "bg-emerald-500 hover:bg-emerald-600";
-    if (quality_score >= 0.5) return "bg-amber-500 hover:bg-amber-600";
+  const getBadgeColor = (score: number) => {
+    if (score >= 0.8) return "bg-green-500 hover:bg-green-600";
+    if (score >= 0.7) return "bg-emerald-500 hover:bg-emerald-600";
+    if (score >= 0.5) return "bg-amber-500 hover:bg-amber-600";
     return "bg-red-500 hover:bg-red-600";
   };
   
-  const getIcon = () => {
-    if (is_acceptable) {
+  const getIcon = (acceptable: boolean) => {
+    if (acceptable) {
       return <CheckCircle2 className="h-3 w-3 mr-1" />;
     }
     return <XCircle className="h-3 w-3 mr-1" />;
@@ -72,26 +74,64 @@ export function AiEvaluationBadge({
 
   const showThumbButtons = isLiveSession && worksheetId && exerciseIndex !== undefined && exerciseType && teacherId;
 
-  if (compact) {
+  // Helper to render a single score badge
+  const renderScoreBadge = (score: number, label: string, icon: string) => {
+    const scorePercent = Math.round(score * 100);
+    const acceptable = score >= 0.5;
     return (
-      <Badge className={`${getBadgeColor()} text-white text-xs`}>
-        {getIcon()}
-        {scorePercent}%
+      <Badge className={`${getBadgeColor(score)} text-white`}>
+        {getIcon(acceptable)}
+        {icon} {label}: {scorePercent}%
+      </Badge>
+    );
+  };
+
+  if (compact) {
+    if (hasDualScores) {
+      return (
+        <div className="flex gap-1">
+          <Badge className={`${getBadgeColor(writing_score!)} text-white text-xs`}>
+            ✍️ {Math.round(writing_score! * 100)}%
+          </Badge>
+          <Badge className={`${getBadgeColor(speaking_score!)} text-white text-xs`}>
+            🎤 {Math.round(speaking_score! * 100)}%
+          </Badge>
+        </div>
+      );
+    }
+    const scorePercent = Math.round(quality_score * 100);
+    return (
+      <Badge className={`${getBadgeColor(quality_score)} text-white text-xs`}>
+        {getIcon(is_acceptable)}
+        {hasWritingOnly ? '✍️' : hasSpeakingOnly ? '🎤' : ''} {scorePercent}%
       </Badge>
     );
   }
 
   return (
     <div className="mt-2 space-y-0.5">
-      <div className="flex items-center gap-2">
-        <Badge className={`${getBadgeColor()} text-white`}>
-          {getIcon()}
-          AI Score: {scorePercent}%
-        </Badge>
-        {is_acceptable ? (
-          <span className="text-xs text-green-600 dark:text-green-400">Acceptable</span>
+      <div className="flex items-center gap-2 flex-wrap">
+        {hasDualScores ? (
+          <>
+            {renderScoreBadge(writing_score!, 'Writing', '✍️')}
+            {renderScoreBadge(speaking_score!, 'Speaking', '🎤')}
+          </>
+        ) : hasWritingOnly ? (
+          renderScoreBadge(writing_score!, 'Writing', '✍️')
+        ) : hasSpeakingOnly ? (
+          renderScoreBadge(speaking_score!, 'Speaking', '🎤')
         ) : (
-          <span className="text-xs text-red-600 dark:text-red-400">Needs improvement</span>
+          <>
+            <Badge className={`${getBadgeColor(quality_score)} text-white`}>
+              {getIcon(is_acceptable)}
+              AI Score: {Math.round(quality_score * 100)}%
+            </Badge>
+            {is_acceptable ? (
+              <span className="text-xs text-green-600 dark:text-green-400">Acceptable</span>
+            ) : (
+              <span className="text-xs text-red-600 dark:text-red-400">Needs improvement</span>
+            )}
+          </>
         )}
         {/* Live Session: teacher feedback thumbs */}
         {showThumbButtons && (
