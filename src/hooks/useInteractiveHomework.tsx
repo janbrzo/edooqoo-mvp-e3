@@ -447,13 +447,33 @@ export const useInteractiveHomework = ({
           }
           
           // Persist transcriptions for exercises that had audio but NO AI eval
-          // (e.g. non-open exercise types with audio recordings)
+          // (e.g. non-open exercise types with audio recordings, or when AI eval had no results for them)
           if (Object.keys(transcriptionCache).length > 0) {
-            const exercisesWithAiEval = new Set(Object.keys(dbUpdates || {}).map(k => parseInt(k)));
+            // Collect exercise indexes that already got a merged DB write above
+            const exercisesAlreadyPersisted = new Set<number>();
+            for (const [cacheKey] of Object.entries(transcriptionCache)) {
+              const exIdx = parseInt(cacheKey.split('_')[0]);
+              // Check if this exercise was part of the AI eval DB updates by looking at savedAnswers
+              // that already have _transcription_ keys merged (done in the dbUpdates loop)
+              const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
+              if (ans?.answers && typeof ans.answers === 'object') {
+                const keys = Object.keys(ans.answers);
+                if (keys.some(k => k.startsWith('_transcription_'))) {
+                  // Check if this exercise had an AI eval update (mergedAnswers was written)
+                  // We can detect this by checking if eval_trigger would have been set
+                  // Simple approach: check answersToVerify had entries for this exercise
+                  const hadAiEval = answersToVerify.some((a: any) => a.exercise_index === exIdx);
+                  if (hadAiEval) {
+                    exercisesAlreadyPersisted.add(exIdx);
+                  }
+                }
+              }
+            }
+            
             for (const [cacheKey, transcription] of Object.entries(transcriptionCache)) {
               const [exIdxStr, qIdxStr] = cacheKey.split('_');
               const exIdx = parseInt(exIdxStr);
-              if (exercisesWithAiEval.has(exIdx)) continue; // Already persisted above
+              if (exercisesAlreadyPersisted.has(exIdx)) continue;
               
               const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
               if (!ans) continue;
