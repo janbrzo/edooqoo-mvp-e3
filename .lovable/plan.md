@@ -1,217 +1,128 @@
 
 
-# Plan: Naprawa 3 problemów audio w Homework
+# Plan: Naprawa 4 problemów DSLM + Readiness Checklist
 
-## Diagnoza
+## Problem 1: Wolne otwieranie Create Homework (~10s)
 
-### Problem 1: Nadpisywanie eventów po Submit
+**Root cause:** W `WorksheetDisplay.tsx` linia 714, kliknięcie "Create Homework" najpierw `await`-uje `supabase.functions.invoke('process-pending-ai-evaluations')` — czyli czeka na zakończenie pełnego pipeline'u AI evaluation ZANIM otworzy modal. To trwa ~10s gdy jest wiele pending evaluations, albo nawet gdy ich nie ma (cold start edge function).
 
-**Root cause:** W `useInteractiveHomework.tsx` linie 313-332, persystencja transkrypcji odbywa się jako osobny `supabase.update({ answers })` **PRZED** ewaluacją AI. Każdy taki update triggeruje `log_homework_answer_to_events()`, który:
-1. USUWA wszystkie eventy dla danego ćwiczenia (linia 187-189 triggera)
-2. Wstawia nowe eventy z bieżącym `item_evaluations` (które w tym momencie jest NULL bo AI eval jeszcze nie przeszedł)
+**Naprawa:** Odpalić `process-pending-ai-evaluations` w tle (fire-and-forget) i natychmiast otworzyć modal. AI eval powinien działać asynchronicznie — jego wyniki i tak trafiają do bazy i nie wpływają na tworzenie homework.
 
-Rezultat: eventy lądują z `nano_skill_ratings: []` po update transkrypcji, a potem (po AI eval) trigger ponownie je kasuje i wstawia poprawne. **ALE** jeśli transkrypcja nie działa (Problem 3) → AI eval nie ma audio answers do oceny → te ćwiczenia nie trafiają do AI → trigger z pustymi ratings jest finalny.
-
-Dodatkowo: po submit, gdy user odtwarza nagranie, sam playback NIE triggeruje żadnego zapisu (zweryfikowałem w kodzie `HomeworkSpeakingRecorder`). Ale efekt "nadpisywania" który widzisz wynika z tego, że submit flow uruchomił trigger BEZ ocen.
-
-**Naprawa:** Przenieść persystencję transkrypcji do tego samego `.update()` co AI eval, żeby trigger nie strzelał dwukrotnie. Zamiast:
-- Krok A: `.update({ answers })` → trigger z pustymi ratings
-- Krok B: `.update({ ai_evaluation, item_evaluations })` → trigger z ratings
-
-Zrobić:
-- Jeden `.update({ answers: answersWithTranscriptions, ai_evaluation, item_evaluations, mastery, eval_trigger })` → trigger strzelą RAZ z poprawnymi ratings
-
-### Problem 2: Jeden AI Score zamiast dwóch
-
-**Root cause:** `AiEvaluationBadge` wyświetla JEDNĄ ocenę (`quality_score`) jako "AI Score: X%". Nie ma logiki na rozdzielenie `writing_score` i `speaking_score` w osobne badge'e.
-
-Ponadto `groupedEvaluations` (linie 378-383) zapisuje do stanu UI TYLKO `quality_score` i `feedback` — `writing_score` i `speaking_score` nie trafiają do obiektu `AiEvaluation` → nie są dostępne dla badge'a.
-
-**Naprawa:**
-1. Rozszerzyć interfejs `AiEvaluation` o `writing_score?` i `speaking_score?`
-2. Zapisywać te pola w `groupedEvaluations`
-3. Zmienić `AiEvaluationBadge` aby gdy oba scory istnieją, wyświetlał dwa badge'e:
-   - "✍️ Writing: X%" 
-   - "🎤 Speaking: Y%"
-   A gdy jest tylko jeden — wyświetlał jeden badge z etykietą odpowiedniego typu.
-
-### Problem 3: Transkrypcje nie zapisują się w DB
-
-**Root cause:** Kod persystencji istnieje (linie 313-332 w `useInteractiveHomework`), ale aby zadziałał, `transcribeAllAudio` musi zwrócić niepusty cache. Funkcja `transcribe-audio` ma poprawkę na anon key w kodzie, ale logi Edge Function są puste — co może oznaczać:
-- Funkcja nie została faktycznie wywołana (frontend error silencing)
-- Lub `supabase.functions.invoke` zwraca błąd którego nie logujemy wystarczająco głośno
-
-W `audioEvalUtils.ts` linia 48-50, jeśli `transcError` istnieje, logujemy `console.error` ale kontynuujemy. Jeśli nie ma errora ale `transcResult` nie ma `transcription`, logujemy `console.warn`. Potrzebujemy lepszej diagnostyki.
-
-Dodatkowa hipoteza: `supabase.functions.invoke` z klienta anonowego może zwracać error w `data` a nie w `error` field (zależy od wersji SDK). Trzeba to zweryfikować.
-
----
-
-## Plan naprawy — 4 zmiany
-
-### Zmiana 1: Połączenie persystencji transkrypcji z AI eval update
-
-**Plik:** `src/hooks/useInteractiveHomework.tsx`
-
-Obecny flow w `submitHomework`:
-```
-1. submit_homework_answers RPC (is_submitted=true)    → trigger fires
-2. For each transcription: .update({ answers })        → trigger fires (premature!)  
-3. AI eval → .update({ ai_evaluation, item_evaluations }) → trigger fires (correct)
-```
-
-Nowy flow:
-```
-1. submit_homework_answers RPC (is_submitted=true)    → trigger fires
-2. Transcribe all audio (no DB writes yet)
-3. AI eval
-4. Single .update({ answers+transcriptions, ai_evaluation, item_evaluations }) → trigger fires ONCE
-```
-
-**Dokładna zmiana w liniach 313-433:**
-
-Usunąć pętlę persystencji transkrypcji (linie 313-333). Zamiast tego, po AI eval (linie 395-433), w pętli `for (const [exIdxStr, evalData] of Object.entries(dbUpdates))` dodać logikę mergowania transkrypcji do `answers`:
+**Dokładna zmiana w `src/components/WorksheetDisplay.tsx`:**
 
 ```typescript
-for (const [exIdxStr, evalData] of Object.entries(dbUpdates)) {
-  const exIdx = parseInt(exIdxStr);
-  // ... existing itemEvals calculation ...
+const handleCreateHomework = async () => {
+  if (!userId) { /* existing validation */ return; }
+  if (!worksheetId) { /* existing validation */ return; }
   
-  // Merge transcriptions into answers for this exercise
-  const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
-  const existingAnswers = (typeof ans?.answers === 'object' && ans?.answers !== null) ? { ...ans.answers } : {};
-  for (const [cacheKey, transcription] of Object.entries(transcriptionCache)) {
-    const [txExIdx, txQIdx] = cacheKey.split('_');
-    if (parseInt(txExIdx) === exIdx) {
-      existingAnswers[`_transcription_${txQIdx}`] = transcription.text;
-    }
-  }
+  // Fire-and-forget: trigger AI eval in background, don't block modal
+  supabase.functions.invoke('process-pending-ai-evaluations', {
+    body: { worksheet_id: worksheetId, trigger_source: 'create_homework' }
+  }).then(({ error }) => {
+    if (error) console.error('[WorksheetDisplay] Background AI eval error:', error);
+    else devLog('[WorksheetDisplay] Background AI eval completed');
+  }).catch(err => console.warn('[WorksheetDisplay] Background AI eval network error:', err));
   
-  await supabase
-    .from('homework_student_answers')
-    .update({ 
-      answers: existingAnswers,  // ← includes transcriptions
-      ai_evaluation: evalData,
-      item_evaluations: JSON.parse(JSON.stringify(itemEvals)),
-      mastery: overallMastery,
-      eval_trigger: 'submit_homework'
-    })
-    .eq('homework_id', homeworkId)
-    .eq('student_email', studentEmail)
-    .eq('exercise_index', exIdx);
-}
-
-// Also persist transcriptions for exercises that had audio but NO AI eval
-// (e.g. non-open exercise types with audio recordings)
-for (const [cacheKey, transcription] of Object.entries(transcriptionCache)) {
-  const [exIdxStr, qIdxStr] = cacheKey.split('_');
-  const exIdx = parseInt(exIdxStr);
-  if (dbUpdates[exIdx]) continue; // Already handled above
-  
-  const ans = savedAnswers.find((a: any) => a.exercise_index === exIdx);
-  if (!ans) continue;
-  const existingAnswers = (typeof ans.answers === 'object' && ans.answers !== null) ? { ...ans.answers } : {};
-  existingAnswers[`_transcription_${qIdxStr}`] = transcription.text;
-  
-  await supabase
-    .from('homework_student_answers')
-    .update({ answers: existingAnswers })
-    .eq('homework_id', homeworkId)
-    .eq('student_email', studentEmail)
-    .eq('exercise_index', exIdx);
-}
-```
-
-### Zmiana 2: Dwa AI Score badge'e (writing + speaking)
-
-**Plik:** `src/components/homework/AiEvaluationBadge.tsx`
-
-Rozszerzyć interfejs `AiEvaluation`:
-```typescript
-export interface AiEvaluation {
-  is_acceptable: boolean;
-  quality_score: number;
-  feedback: string;
-  question_index?: number;
-  writing_score?: number;   // ← NOWE
-  speaking_score?: number;  // ← NOWE
-}
-```
-
-Zmienić komponent `AiEvaluationBadge` aby renderował:
-- Jeśli `writing_score` i `speaking_score` oba istnieją → dwa oddzielne badge'e: "✍️ Writing: X%" i "🎤 Speaking: Y%"
-- Jeśli tylko `writing_score` → jeden badge "✍️ Writing: X%"
-- Jeśli tylko `speaking_score` → jeden badge "🎤 Speaking: Y%"
-- Jeśli żaden nie istnieje (backward compat) → obecny badge "AI Score: X%"
-
-Feedback (`evaluation.feedback`) wyświetlany RAZ pod oboma badge'ami.
-
-**Plik:** `src/hooks/useInteractiveHomework.tsx` linie 378-383
-
-Dodać `writing_score` i `speaking_score` do `groupedEvaluations`:
-```typescript
-groupedEvaluations[exIdx][qIdx] = {
-  is_acceptable: evaluation.is_acceptable,
-  quality_score: evaluation.quality_score,
-  writing_score: evaluation.writing_score,    // ← NOWE
-  speaking_score: evaluation.speaking_score,  // ← NOWE
-  feedback: evaluation.feedback,
-  question_index: qIdx
+  // Open modal immediately — no waiting
+  setShowHomeworkModal(true);
 };
 ```
 
-**Plik:** `src/types/interactiveHomework.ts` — zaktualizować interfejs `AiEvaluation` tutaj też (jeśli jest duplikat):
-```typescript
-export interface AiEvaluation {
-  is_acceptable: boolean;
-  quality_score: number;
-  feedback: string;
-  question_index?: number;
-  writing_score?: number;
-  speaking_score?: number;
-}
-```
+Usunąć `setIsAiEvalLoading(true/false)` — nie jest już potrzebny skoro nie blokujemy UI.
 
-### Zmiana 3: Lepsza diagnostyka transkrypcji
+---
 
-**Plik:** `src/utils/audioEvalUtils.ts`
+## Problem 2: Odtwarzanie nagrania nadpisuje eventy po Submit
 
-W `transcribeAllAudio`, po `supabase.functions.invoke`, dodać logowanie pełnej odpowiedzi:
-```typescript
-const { data: transcResult, error: transcError } = await supabase.functions.invoke('transcribe-audio', {
-  body: { audio_url: audioUrl }
-});
+**Root cause:** Przeanalizowałem głęboko i playback (`playAudio` w `HomeworkSpeakingRecorder`) NIE wywołuje `onAudioSaved`. Callback `onAudioAnswerChange` jest ustawiony na no-op po submit (linia 710 `HomeworkPage.tsx`).
 
-// Enhanced diagnostics
-devLog(`${logPrefix} Invoke result for ${cacheKey}: error=${!!transcError}, data keys=${transcResult ? Object.keys(transcResult) : 'null'}`);
+Natomiast problem „nadpisywania" (wpis z `nano_skill_ratings: []` i `student_learning_activity`) wynika z kodu persystencji transkrypcji na liniach 473-489 `useInteractiveHomework.tsx`. Ta pętla robi `.update({ answers: existingAnswers })` dla ćwiczeń z audio, które NIE miały AI eval. Ten update:
+1. Ustawia `answers` (nowa wartość z `_transcription_X`)  
+2. NIE ustawia `eval_trigger` → trigger widzi `eval_trigger = NULL` (lub wartość z poprzedniego update)
+3. Trigger robi DELETE + INSERT z `event_type = 'student_learning_activity'`
+4. `nano_skill_ratings` bierze z `NEW.item_evaluations` — ale jeśli `item_evaluations` zostały ustawione TYLKO dla ćwiczeń w `dbUpdates`, a ten update jest dla ćwiczeń POZA `dbUpdates`, to `item_evaluations` może być NULL
 
-if (transcError) {
-  console.error(`${logPrefix} Transcription invoke error for ${cacheKey}:`, transcError);
-  // Also log the data field which may contain error details
-  if (transcResult) console.error(`${logPrefix} Error response data:`, transcResult);
-  continue;
-}
+**Ale jest jeszcze głębszy problem:** Trigger strzelą na KAŻDY update `homework_student_answers`, nawet te po submit. To oznacza, że gdyby cokolwiek zrobiło update na tabelę po zakończeniu submit flow, eventy zostałyby nadpisane.
 
-// Check for error in response body (SDK sometimes puts errors in data, not error)
-if (transcResult?.error) {
-  console.error(`${logPrefix} Transcription API error for ${cacheKey}:`, transcResult.error);
-  continue;
-}
-```
+**Naprawa dwuetapowa:**
 
-### Zmiana 4: Resetowanie homework do testów
+### A) Guard w SQL trigger: nie nadpisuj eventów po submit
 
-**Migracja SQL:** Resetowanie `homework_student_answers` dla share_token `c81caca1...`:
+Dodać do triggera `log_homework_answer_to_events()` warunek: jeśli istnieją eventy z `event_type = 'submit_hw_AI_evaluation'` dla tego exercise_index, to NIE rób DELETE + INSERT. To zapobiega nadpisywaniu ocen po submit niezależnie od tego, co triggeruje update na tabelę.
+
 ```sql
-UPDATE homework_student_answers
-SET is_submitted = false, submitted_at = NULL, ai_evaluation = NULL, 
-    item_evaluations = NULL, eval_trigger = NULL, mastery = NULL
-WHERE homework_id = (SELECT id FROM homework_assignments WHERE share_token = 'c81caca14d21b916005ab3abe32a7a6a8d669350ae8f921fa2e440ff38a13a53');
-
-UPDATE homework_assignments
-SET completed_at = NULL, completed_by_teacher = false, reviewed_at = NULL, reviewed_by = NULL
-WHERE share_token = 'c81caca14d21b916005ab3abe32a7a6a8d669350ae8f921fa2e440ff38a13a53';
+-- Na początku triggera, po pobraniu v_student_id:
+-- Skip re-logging if this exercise already has submit-evaluated events
+-- (prevents transcription persistence from overwriting AI eval results)
+IF EXISTS (
+  SELECT 1 FROM student_events 
+  WHERE student_id = v_student_id 
+    AND source_id = NEW.homework_id
+    AND (event_payload->>'exercise_index')::int = NEW.exercise_index
+    AND event_type = 'submit_hw_AI_evaluation'
+) AND NEW.eval_trigger IS DISTINCT FROM 'submit_homework' THEN
+  RETURN NEW;
+END IF;
 ```
+
+### B) Guard w frontendzie: nie rób update po submit
+
+W pętli persystencji transkrypcji (linia 473), sprawdzić czy homework jest submitted i czy to ćwiczenie nie zostało już zaktualizowane z AI eval:
+
+Ale to jest mniej krytyczne bo guard SQL rozwiązuje problem niezależnie od frontendu.
+
+---
+
+## Problem 3: Mastery i skill_ids — wyjaśnienie + czy działa poprawnie
+
+**Co widzisz w `student_events`:**
+- `event_payload.nano_skill_ratings` → tablica z obiektami `{name, mastery, hasValue, ...}` — każdy nano-skill ma swoje INDYWIDUALNE mastery
+- `mastery` (kolumna) → ŚREDNIA z nano_skill_ratings → 75 = `(70 + 75) / 2` → tak, poprawnie
+- `skill_ids` → wyciągnięte nazwy nano-skilli z ratings → `["ns.B1.grammar.going_to_for_plans", "ns.B1.grammar.will_for_spontaneous_decision"]` → poprawnie
+
+**Jak to działa w Layer B:**
+1. Trigger na `student_events` (INSERT) wywołuje `compute_skill_metric()` dla KAŻDEGO skill_name z `skill_ids`
+2. `compute_skill_metric()` przeszukuje WSZYSTKIE eventy studenta, znajduje WSZYSTKIE nano_skill_ratings z danym `name` (np. `ns.B1.grammar.going_to_for_plans`)
+3. Oblicza weighted average (`exp(-0.03 * days_ago)`) — nowsze wyniki mają większą wagę
+4. Zapisuje/aktualizuje wiersz w `student_skill_metrics` z `current_mastery`, `trend`, `history`
+
+**Odpowiedź: TAK, działa poprawnie.** Kolumna `mastery` w `student_events` to agregat dla tego eventu, ale Layer B IGNORUJE ją — bezpośrednio czyta z `nano_skill_ratings[].mastery` wewnątrz payloadu, matchując po `name`. Każdy nano-skill dostaje SWOJĄ indywidualną mastery w `student_skill_metrics`.
+
+---
+
+## Problem 4: DSLM Layer A/B/C/D Readiness Checklist
+
+Na podstawie analizy kodu i migracji:
+
+### Layer A — Event Log ✅ (95% gotowy)
+- ✅ Tabela `student_events` z kanonicznymi typami
+- ✅ Triggery SQL automatycznie logują z homework, worksheet, flashcard, test
+- ✅ Separacja written/audio eventów z osobnym mastery
+- ✅ `nano_skill_ratings` z pełnym kontekstem (name, mastery, hasValue, response_type)
+- ✅ RPC `add_student_event()` z auto-ekstrakcją mastery
+- ⚠️ **Problem:** Po submit, transcription persistence może nadpisać eventy (Problem 2) → naprawa powyżej
+- ⚠️ **Problem:** Transkrypcje mogą nie być persystowane (zależy od sukcesu transcribe-audio)
+
+### Layer B — Metrics & Signals ✅ (90% gotowy)
+- ✅ Tabela `student_skill_metrics` z weighted average mastery
+- ✅ `compute_skill_metric()` z exponential decay (0.03/dzień)
+- ✅ `extract_micro_skill()` mapuje nano-skille na kanoniczne grupy
+- ✅ Trigger na `student_events` automatycznie rekomputuje metryki
+- ✅ View `student_category_metrics` agreguje po kategoriach
+- ⚠️ **Brak:** `compute_student_summary()` nie istnieje jeszcze (planowane w Layer C)
+
+### Layer C — Student Profiles 🟡 (30% gotowy)
+- ✅ `student_learning_profiles` tabela istnieje (Welcome Test profil)
+- ✅ `student_learning_elements` z celami nauczania
+- ❌ **Brak:** `compute_student_summary()` — dynamiczny profil z metryk Layer B
+- ❌ **Brak:** Kompaktowy JSON summary (mocne/słabe strony) do wstrzyknięcia w prompt AI
+- ❌ **Brak:** Integracja z generatorami (generate-timeline, generateWorksheet)
+
+### Layer D — Decision Engine 🔴 (10% gotowy)
+- ✅ `future_worksheet_suggestions` tabela istnieje
+- ❌ **Brak:** Automatyczna generacja sugestii z profilu Layer C
+- ❌ **Brak:** Zamknięta pętla feedback → content generation
+- ❌ **Brak:** Adaptywny dobór trudności na podstawie trendu mastery
 
 ---
 
@@ -219,22 +130,26 @@ WHERE share_token = 'c81caca14d21b916005ab3abe32a7a6a8d669350ae8f921fa2e440ff38a
 
 | Plik | Zmiana |
 |------|--------|
-| `src/hooks/useInteractiveHomework.tsx` | (1) Połączenie persystencji transkrypcji z AI eval update, (2) `writing_score`/`speaking_score` w `groupedEvaluations` |
-| `src/components/homework/AiEvaluationBadge.tsx` | Dwa badge'e: writing + speaking, rozszerzony interfejs |
-| `src/types/interactiveHomework.ts` | `AiEvaluation` z `writing_score?` i `speaking_score?` |
-| `src/utils/audioEvalUtils.ts` | Lepsza diagnostyka invoke errors |
-| Migracja SQL | Reset homework submission |
+| `src/components/WorksheetDisplay.tsx` | Fire-and-forget AI eval przy Create Homework |
+| SQL migration | Guard w `log_homework_answer_to_events()` — nie nadpisuj eventów po submit |
+| SQL migration | Reset homework submission dla testów |
+| `docs/CURRENT_STATE_ANALYSIS.md` | DSLM Readiness Checklist |
+| `docs/TECHNICAL_DOCUMENTATION.md` | Opis guarda SQL + fire-and-forget |
+| `docs/DEVELOPMENT_ROADMAP.md` | Checklist Layer C/D |
 
 ## Co NIE zmienia się
 
-- `transcribe-audio` Edge Function — poprawka anon key jest już wdrożona
-- `verify-open-answers` — zwraca `writing_score`/`speaking_score` poprawnie
-- SQL triggery — logika rozdzielania written/audio eventów jest poprawna
-- `HomeworkSpeakingRecorder` — playback nie triggeruje żadnych zapisów (potwierdzone)
-- `masteryCalculator.ts` — audio-only fix jest poprawny
+- `HomeworkSpeakingRecorder` — playback nie triggeruje zapisów (potwierdzone w kodzie)
+- `audioEvalUtils.ts` — logika buildAnswersToVerify jest poprawna
+- `AiEvaluationBadge` — dual score jest poprawny
+- `process-pending-ai-evaluations` — pipeline jest poprawny
+- `verify-open-answers` — scoring jest poprawny
+- `compute_skill_metric()` — Layer B metryki działają poprawnie
 
-## Dokumentacja
+## Test akceptacyjny
 
-- `docs/TECHNICAL_DOCUMENTATION.md`
-- `docs/CURRENT_STATE_ANALYSIS.md`
+1. Kliknij "Create Homework" w Live Session → modal otwiera się natychmiast (< 1s)
+2. Na homework po submit → eventy w `student_events` NIE zmieniają się przy odtwarzaniu nagrań
+3. `student_events.mastery` = średnia z `nano_skill_ratings[].mastery` → poprawne
+4. `student_skill_metrics` per nano-skill → poprawne indywidualne mastery
 
