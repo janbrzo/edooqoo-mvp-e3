@@ -6,7 +6,11 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-30) - Fix: Homework audio eval — single DB write + dual AI Score badges:**
+**Ostatnia aktualizacja (2026-03-31) - Fix: isSubmitted guard prevents event overwriting after homework submit:**
+- ✅ **`isSubmitted` guard**: `saveOnBlur`, `updateAudioAnswer`, `scheduleAutoSave` in `useInteractiveHomework.tsx` now return early when homework is already submitted — prevents `onBlur` from triggering `save_homework_answer` RPC and overwriting `student_events` with empty `nano_skill_ratings`
+- ✅ **Root cause**: Audio playback after submit caused focus shift → `onBlur` → `saveOnBlur()` → RPC → SQL trigger deleted correct AI evaluation events and re-inserted with empty ratings
+
+**Poprzednia aktualizacja (2026-03-30) - Fix: Homework audio eval — single DB write + dual AI Score badges:**
 - ✅ **Single DB write**: Transcription persistence merged with AI eval update — trigger fires ONCE with correct `item_evaluations`
 - ✅ **Dual AI Score badges**: `AiEvaluationBadge` shows separate ✍️ Writing and 🎤 Speaking scores when both exist
 - ✅ **`AiEvaluation` interface extended**: `writing_score?` and `speaking_score?` added to types and badge component
