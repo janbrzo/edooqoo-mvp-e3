@@ -5,7 +5,10 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 30, 2026) - Fix: Homework Audio Eval — Single DB Write + Dual AI Score Badges:**
+**Latest Update (March 31, 2026) - Fix: isSubmitted Guard Prevents Event Overwriting:**
+- **`isSubmitted` guard in `useInteractiveHomework.tsx`**: `saveOnBlur`, `updateAudioAnswer`, and `scheduleAutoSave` now check `isSubmitted` and return early if homework is already submitted. This prevents audio playback (which triggers `onBlur` focus events) from re-saving answers and firing the SQL trigger `log_homework_answer_to_events`, which would overwrite correct AI evaluation events with empty `nano_skill_ratings`.
+
+**Previous Update (March 30, 2026) - Fix: Homework Audio Eval — Single DB Write + Dual AI Score Badges:**
 - **Single DB write for transcription + AI eval**: Removed separate `.update({ answers })` for transcription persistence — now merged into the same `.update()` call that writes `ai_evaluation`, `item_evaluations`, `mastery`, and `eval_trigger`. This prevents the SQL trigger `log_homework_answer_to_events` from firing prematurely with empty `nano_skill_ratings`.
 - **Dual AI Score badges**: `AiEvaluationBadge` now displays separate ✍️ Writing and 🎤 Speaking score badges when both `writing_score` and `speaking_score` are present. Falls back to single "AI Score" badge for backward compatibility.
 - **`AiEvaluation` interface extended**: Added `writing_score?: number` and `speaking_score?: number` to both `src/types/interactiveHomework.ts` and `src/components/homework/AiEvaluationBadge.tsx`

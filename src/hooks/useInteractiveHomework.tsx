@@ -194,6 +194,8 @@ export const useInteractiveHomework = ({
   }, [homeworkId, studentEmail, getActiveTimeMs]);
 
   const scheduleAutoSave = useCallback((exerciseIndex: number, exerciseType: string, exerciseAnswers: ExerciseAnswers) => {
+    if (isSubmitted) return;
+
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -216,7 +218,7 @@ export const useInteractiveHomework = ({
     saveTimeoutRef.current = setTimeout(() => {
       saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);
     }, 1500);
-  }, [saveAnswer, exercises]);
+  }, [saveAnswer, exercises, isSubmitted]);
 
   const updateAnswer = useCallback((
     exerciseIndex: number, 
@@ -245,6 +247,8 @@ export const useInteractiveHomework = ({
   }, [scheduleAutoSave]);
 
   const saveOnBlur = useCallback((exerciseIndex: number, exerciseType: string) => {
+    if (isSubmitted) return;
+
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -257,7 +261,7 @@ export const useInteractiveHomework = ({
       const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType, null, audioAnswers[exerciseIndex] || null);
       saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);
     }
-  }, [answers, saveAnswer, exercises]);
+  }, [answers, saveAnswer, exercises, isSubmitted]);
 
   const submitHomework = useCallback(async () => {
     try {
@@ -612,6 +616,8 @@ export const useInteractiveHomework = ({
   }, []);
 
   const updateAudioAnswer = useCallback((exerciseIndex: number, questionIndex: number, audioUrl: string) => {
+    if (isSubmitted) return;
+
     const newAudioForExercise = { ...(audioAnswers[exerciseIndex] || {}), [questionIndex]: audioUrl };
     
     setAudioAnswers(prev => ({
@@ -631,7 +637,7 @@ export const useInteractiveHomework = ({
     saveAnswer(exerciseIndex, exerciseType, currentAnswers, mastery, itemEvals, newAudioForExercise);
     
     devLog('[useInteractiveHomework] Audio answer saved to DB:', { exerciseIndex, questionIndex, audioUrl: audioUrl.substring(0, 50) });
-  }, [answers, exercises, saveAnswer, sourceWorksheetId, homeworkId, audioAnswers]);
+  }, [answers, exercises, saveAnswer, sourceWorksheetId, homeworkId, audioAnswers, isSubmitted]);
 
   return {
     answers,
