@@ -616,6 +616,8 @@ export const useInteractiveHomework = ({
   }, []);
 
   const updateAudioAnswer = useCallback((exerciseIndex: number, questionIndex: number, audioUrl: string) => {
+    if (isSubmitted) return;
+
     const newAudioForExercise = { ...(audioAnswers[exerciseIndex] || {}), [questionIndex]: audioUrl };
     
     setAudioAnswers(prev => ({
@@ -635,7 +637,7 @@ export const useInteractiveHomework = ({
     saveAnswer(exerciseIndex, exerciseType, currentAnswers, mastery, itemEvals, newAudioForExercise);
     
     devLog('[useInteractiveHomework] Audio answer saved to DB:', { exerciseIndex, questionIndex, audioUrl: audioUrl.substring(0, 50) });
-  }, [answers, exercises, saveAnswer, sourceWorksheetId, homeworkId, audioAnswers]);
+  }, [answers, exercises, saveAnswer, sourceWorksheetId, homeworkId, audioAnswers, isSubmitted]);
 
   return {
     answers,
