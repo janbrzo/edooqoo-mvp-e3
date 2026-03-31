@@ -29,7 +29,7 @@ import { SelectWordMode } from "@/components/worksheet/SelectWordMode";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { Plus, TextSelect, Layers, Radio, StickyNote, Loader2 } from "lucide-react";
+import { Plus, TextSelect, Layers, Radio, StickyNote } from "lucide-react";
 import type { NewKnowledgeEntry, StudentKnowledgeEntry, UpdateKnowledgeEntry, KnowledgeCategory } from "@/types/studentKnowledge";
 import { LoginRequiredModal } from "@/components/LoginRequiredModal";
 import { KNOWLEDGE_CATEGORIES } from "@/types/studentKnowledge";
