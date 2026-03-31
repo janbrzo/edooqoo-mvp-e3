@@ -3,18 +3,16 @@
 
 ## Current Status: MVP v1.3 (Complete)
 
-### Recently Completed (Mar 31, 2026) - DSLM Event Integrity + UX Fix ✅
-- SQL Guard in `log_homework_answer_to_events()` — prevents event overwrite after submit
-- Fire-and-forget AI eval on "Create Homework" — modal opens instantly
-- Removed blocking loading overlay (`isAiEvalLoading`)
-- DSLM Readiness: Layer A 95%, Layer B 90%, Layer C 30%, Layer D 10%
-
-### Previously Completed (Mar 30, 2026) - Homework Audio Eval Fix ✅
-- Single DB write for transcription + AI eval (no premature trigger fires)
-- Dual AI Score badges (✍️ Writing + 🎤 Speaking)
-- Enhanced transcription diagnostics
-
-### Previously Completed (Mar 12, 2026) - SEO Phase 5: Google Search Dominance ✅
+### Recently Completed (Mar 12, 2026) - SEO Phase 5: Google Search Dominance ✅
+- 52 static HTML pages (was 35) — exercise, CEFR, use-case, comparison, blog pages
+- 70 sitemap entries (was 53) with `lastmod` and `priority`
+- 15 blog articles (1500-2500 words each) in `public/blog/`
+- 30+ GlobalFooter links in 4 columns (hidden on homepage via `useLocation`)
+- Static backups: `public/resources.html`, `public/blog.html` with JSON-LD
+- Key pages expanded from 300-500 to 1500-2500 words
+- `preconnect` + `dns-prefetch` for Supabase in `index.html`
+- `llms.txt` expanded, `openapi.yaml` +17 paths
+- UI: "No signup needed" badge on form, form width `max-w-6xl`, hero trust badges removed
 
 ### Previously Completed (Mar 9, 2026) - LLM Optimization Phase 2 ✅
 - FAQPage JSON-LD schema (10 questions) in `index.html`

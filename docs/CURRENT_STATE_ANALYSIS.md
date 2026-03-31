@@ -6,13 +6,12 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-31) - Fix: Event overwrite guard + instant Create Homework:**
-- ✅ **SQL Guard w triggerze**: `log_homework_answer_to_events()` nie nadpisuje eventów po submit — jeśli istnieją eventy `submit_hw_AI_evaluation` a bieżący update nie jest nowym submitem, trigger pomija DELETE+INSERT
-- ✅ **Fire-and-forget AI eval**: "Create Homework" otwiera modal natychmiast, `process-pending-ai-evaluations` odpala się w tle bez blokowania UI
-- ✅ **Usunięty loading modal**: Usunięty `isAiEvalLoading` state i overlay "Analyzing student progress..."
-- ✅ **DSLM Readiness Checklist**: Layer A (95%), Layer B (90%), Layer C (30%), Layer D (10%)
-
-**Poprzednia aktualizacja (2026-03-30) - Fix: Homework audio eval — single DB write + dual AI Score badges:**
+**Ostatnia aktualizacja (2026-03-30) - Fix: Homework audio eval — single DB write + dual AI Score badges:**
+- ✅ **Single DB write**: Transcription persistence merged with AI eval update — trigger fires ONCE with correct `item_evaluations`
+- ✅ **Dual AI Score badges**: `AiEvaluationBadge` shows separate ✍️ Writing and 🎤 Speaking scores when both exist
+- ✅ **`AiEvaluation` interface extended**: `writing_score?` and `speaking_score?` added to types and badge component
+- ✅ **Enhanced transcription diagnostics**: Full invoke response logging in `audioEvalUtils.ts` (catches SDK errors in `data` field)
+- ✅ **Fallback transcription persistence**: Non-AI-eval exercises with audio get transcriptions saved separately
 
 **Poprzednia aktualizacja (2026-03-29) - Fix: Audio evaluation pipeline + transcription persistence:**
 - ✅ **Triple-path auth `transcribe-audio`**: Anon key accepted — fixes 401 for anonymous students on homework share links
