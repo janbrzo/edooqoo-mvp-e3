@@ -235,7 +235,7 @@ export default function WorksheetDisplay({
   const MINI_LIST_PAGE_SIZE = 8;
   const [showHomeworkModal, setShowHomeworkModal] = useState(false);
   const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
-  const [isAiEvalLoading, setIsAiEvalLoading] = useState(false);
+  
   
   // Flashcard FAB buttons state (Problem 4)
   const [showQuickAddWordModal, setShowQuickAddWordModal] = useState(false);
