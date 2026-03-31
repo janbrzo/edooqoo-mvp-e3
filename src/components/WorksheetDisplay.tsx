@@ -705,25 +705,15 @@ export default function WorksheetDisplay({
       return;
     }
     
-    // Show loading modal while AI eval runs
-    setIsAiEvalLoading(true);
+    // Fire-and-forget: trigger AI eval in background, don't block modal
+    supabase.functions.invoke('process-pending-ai-evaluations', {
+      body: { worksheet_id: worksheetId, trigger_source: 'create_homework' }
+    }).then(({ error }) => {
+      if (error) console.error('[WorksheetDisplay] Background AI eval error:', error);
+      else console.log('[WorksheetDisplay] Background AI eval completed');
+    }).catch(err => console.warn('[WorksheetDisplay] Background AI eval network error:', err));
     
-    // Trigger AI evaluation BEFORE opening modal (Problem 1A fix)
-    try {
-      console.log('[WorksheetDisplay] Triggering AI eval before Create Homework modal, worksheetId:', worksheetId);
-      const { data, error } = await supabase.functions.invoke('process-pending-ai-evaluations', {
-        body: { worksheet_id: worksheetId, trigger_source: 'create_homework' }
-      });
-      if (error) {
-        console.error('[WorksheetDisplay] AI eval error:', error);
-      } else {
-        console.log('[WorksheetDisplay] AI eval result:', data);
-      }
-    } catch (err) {
-      console.warn('[WorksheetDisplay] AI eval network error:', err);
-    }
-    
-    setIsAiEvalLoading(false);
+    // Open modal immediately — no waiting
     setShowHomeworkModal(true);
   };
 
