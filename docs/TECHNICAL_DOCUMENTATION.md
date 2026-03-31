@@ -5,12 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (March 30, 2026) - Fix: Homework Audio Eval — Single DB Write + Dual AI Score Badges:**
-- **Single DB write for transcription + AI eval**: Removed separate `.update({ answers })` for transcription persistence — now merged into the same `.update()` call that writes `ai_evaluation`, `item_evaluations`, `mastery`, and `eval_trigger`. This prevents the SQL trigger `log_homework_answer_to_events` from firing prematurely with empty `nano_skill_ratings`.
-- **Dual AI Score badges**: `AiEvaluationBadge` now displays separate ✍️ Writing and 🎤 Speaking score badges when both `writing_score` and `speaking_score` are present. Falls back to single "AI Score" badge for backward compatibility.
-- **`AiEvaluation` interface extended**: Added `writing_score?: number` and `speaking_score?: number` to both `src/types/interactiveHomework.ts` and `src/components/homework/AiEvaluationBadge.tsx`
-- **Enhanced transcription diagnostics**: `transcribeAllAudio()` now logs full invoke response details (error presence, data keys, API-level errors in response body)
-- **Fallback transcription persistence**: Exercises with audio but no AI eval (non-open types) get transcriptions saved in a separate DB write after the main AI eval loop
+**Latest Update (March 31, 2026) - Fix: Event Overwrite Guard + Instant Create Homework:**
+- **SQL Guard in trigger**: `log_homework_answer_to_events()` now checks if `submit_hw_AI_evaluation` events already exist for the exercise. If so, and the current update is not a new submit (`eval_trigger IS DISTINCT FROM 'submit_homework'`), the trigger returns early — preventing transcription persistence or other post-submit updates from wiping correct AI evaluation results.
+- **Fire-and-forget AI eval**: `handleCreateHomework` in `WorksheetDisplay.tsx` no longer `await`s `process-pending-ai-evaluations`. The edge function runs in the background while the modal opens immediately.
+- **Removed loading overlay**: Removed `isAiEvalLoading` state and the "Analyzing student progress..." overlay modal.
+- **DSLM Layer readiness**: Layer A 95%, Layer B 90%, Layer C 30%, Layer D 10%.
+
+**Previous Update (March 30, 2026) - Fix: Homework Audio Eval — Single DB Write + Dual AI Score Badges:**
 
 **Previous Update (March 29, 2026) - Fix: Audio Evaluation Pipeline + Transcription Persistence:**
 - **Triple-path auth in `transcribe-audio`**: Accepts service role key, anon key, and user JWT
