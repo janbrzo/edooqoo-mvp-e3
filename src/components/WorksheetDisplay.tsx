@@ -1119,22 +1119,6 @@ export default function WorksheetDisplay({
         </>
       )}
       
-      {/* AI Evaluation Loading Modal */}
-      {isAiEvalLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg p-8 max-w-md mx-4 shadow-xl">
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="h-8 w-8 animate-spin text-worksheet-purple" />
-              <p className="text-center font-medium text-gray-700">
-                Analyzing student progress...
-              </p>
-              <p className="text-center text-sm text-gray-500">
-                AI is evaluating open-ended answers for more accurate homework setup.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
       
       {/* Homework Modal */}
       <CreateHomeworkModal
