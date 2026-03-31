@@ -194,6 +194,8 @@ export const useInteractiveHomework = ({
   }, [homeworkId, studentEmail, getActiveTimeMs]);
 
   const scheduleAutoSave = useCallback((exerciseIndex: number, exerciseType: string, exerciseAnswers: ExerciseAnswers) => {
+    if (isSubmitted) return;
+
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -216,7 +218,7 @@ export const useInteractiveHomework = ({
     saveTimeoutRef.current = setTimeout(() => {
       saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);
     }, 1500);
-  }, [saveAnswer, exercises]);
+  }, [saveAnswer, exercises, isSubmitted]);
 
   const updateAnswer = useCallback((
     exerciseIndex: number, 
