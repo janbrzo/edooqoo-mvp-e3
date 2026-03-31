@@ -247,6 +247,8 @@ export const useInteractiveHomework = ({
   }, [scheduleAutoSave]);
 
   const saveOnBlur = useCallback((exerciseIndex: number, exerciseType: string) => {
+    if (isSubmitted) return;
+
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -259,7 +261,7 @@ export const useInteractiveHomework = ({
       const itemEvaluations = buildItemEvaluations(exerciseData, exerciseAnswers as Record<string | number, any>, exerciseType, null, audioAnswers[exerciseIndex] || null);
       saveAnswer(exerciseIndex, exerciseType, exerciseAnswers, mastery, itemEvaluations);
     }
-  }, [answers, saveAnswer, exercises]);
+  }, [answers, saveAnswer, exercises, isSubmitted]);
 
   const submitHomework = useCallback(async () => {
     try {
