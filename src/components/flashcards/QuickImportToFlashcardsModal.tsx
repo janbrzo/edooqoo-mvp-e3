@@ -275,7 +275,7 @@ export function QuickImportToFlashcardsModal({
     try {
       const { data, error } = await supabase.functions.invoke('translate-flashcard', {
         body: {
-          text: item.word,  // ← FIX: Tłumaczyć term, nie definition
+          text: item.word,
           target_language: nativeLanguage,
         },
       });
@@ -283,9 +283,11 @@ export function QuickImportToFlashcardsModal({
       if (!error && data?.translation) {
         setTranslations(prev => ({ ...prev, [index]: data.translation }));
       }
+      if (data?.cefr_level) {
+        setCefrLevels(prev => ({ ...prev, [index]: data.cefr_level }));
+      }
     } catch (error) {
       console.error('Translation error for:', item.word, error);
-      // Fallback to original word
       setTranslations(prev => ({ ...prev, [index]: item.word }));
     }
   };
