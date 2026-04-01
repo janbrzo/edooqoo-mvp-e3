@@ -7,31 +7,31 @@ interface UseFlashcardDefinitionProps {
 
 export const useFlashcardDefinition = ({ enabled }: UseFlashcardDefinitionProps) => {
   const [definition, setDefinition] = useState('');
+  const [cefrLevel, setCefrLevel] = useState<string | null>(null);
   const [isLoadingDefinition, setIsLoadingDefinition] = useState(false);
 
-  // Use useRef for persistent cache across renders
-  const cacheRef = useRef<Map<string, string>>(new Map());
+  const cacheRef = useRef<Map<string, { definition: string; cefr_level: string }>>(new Map());
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchDefinition = useCallback(
     async (englishTerm: string) => {
       if (!enabled || !(englishTerm || '').trim()) {
         setDefinition('');
+        setCefrLevel(null);
         return;
       }
 
-      // Clear any existing debounce timer
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
 
-      // Debounce definition fetch by 800ms
       debounceTimerRef.current = setTimeout(async () => {
         const cacheKey = `def_${englishTerm.toLowerCase().trim()}`;
         
-        // Check cache first
         if (cacheRef.current.has(cacheKey)) {
-          setDefinition(cacheRef.current.get(cacheKey)!);
+          const cached = cacheRef.current.get(cacheKey)!;
+          setDefinition(cached.definition);
+          setCefrLevel(cached.cefr_level);
           return;
         }
 
@@ -48,22 +48,25 @@ export const useFlashcardDefinition = ({ enabled }: UseFlashcardDefinitionProps)
           if (error) throw error;
 
           const definitionText = data?.translation || '';
+          const level = data?.cefr_level || 'A2';
           setDefinition(definitionText);
-          cacheRef.current.set(cacheKey, definitionText);
+          setCefrLevel(level);
+          cacheRef.current.set(cacheKey, { definition: definitionText, cefr_level: level });
         } catch (error: any) {
           console.error('Definition fetch error:', error);
-          // Silently fail - just don't show definition
           setDefinition('');
+          setCefrLevel(null);
         } finally {
           setIsLoadingDefinition(false);
         }
-      }, 800); // 800ms debounce
+      }, 800);
     },
     [enabled]
   );
 
   const clearDefinition = useCallback(() => {
     setDefinition('');
+    setCefrLevel(null);
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -71,6 +74,7 @@ export const useFlashcardDefinition = ({ enabled }: UseFlashcardDefinitionProps)
 
   return {
     definition,
+    cefrLevel,
     isLoadingDefinition,
     fetchDefinition,
     clearDefinition,
