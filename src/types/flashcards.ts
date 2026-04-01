@@ -109,6 +109,7 @@ export interface CreateFlashcardCard {
   source_type?: 'manual' | 'vocabulary_sheet';
   source_worksheet_id?: string;
   card_position?: number;
+  cefr_level?: string;
 }
 
 export interface UpdateFlashcardCard {
