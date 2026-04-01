@@ -42,7 +42,8 @@ export function QuickImportToFlashcardsModal({
   const [importing, setImporting] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [translations, setTranslations] = useState<Record<number, string>>({});
-  const [translationsLoading, setTranslationsLoading] = useState(0); // NEW: Track pending translations
+  const [cefrLevels, setCefrLevels] = useState<Record<number, string>>({});
+  const [translationsLoading, setTranslationsLoading] = useState(0);
   const justOpened = useRef(false);
   
   // New set creation fields
