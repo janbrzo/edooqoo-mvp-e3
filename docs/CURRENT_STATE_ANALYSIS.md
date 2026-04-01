@@ -6,9 +6,14 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-03-31) - Fix: isSubmitted guard prevents event overwriting after homework submit:**
-- ✅ **`isSubmitted` guard**: `saveOnBlur`, `updateAudioAnswer`, `scheduleAutoSave` in `useInteractiveHomework.tsx` now return early when homework is already submitted — prevents `onBlur` from triggering `save_homework_answer` RPC and overwriting `student_events` with empty `nano_skill_ratings`
-- ✅ **Root cause**: Audio playback after submit caused focus shift → `onBlur` → `saveOnBlur()` → RPC → SQL trigger deleted correct AI evaluation events and re-inserted with empty ratings
+**Ostatnia aktualizacja (2026-04-01) - Flashcards DSLM: CEFR levels, unified skill_ids, difficulty multiplier:**
+- ✅ **`cefr_level` kolumna**: `flashcard_cards.cefr_level` (TEXT) — AI przypisuje poziom A1-C2 na podstawie częstotliwości, abstrakcyjności, złożoności morfologicznej
+- ✅ **`translate-flashcard` Edge Function**: Zwraca `{ translation, cefr_level }` w formacie JSON (`response_format: json_object`)
+- ✅ **Trigger `log_flashcard_review_event()`**: Generuje `skill_ids = ['ns.B1.vocabulary.definition_cuisine']` i `element_type = 'vocabulary'`. Mnożnik trudności: `definition` mode → 0.9x mastery, `translation` mode → 1.0x
+- ✅ **Frontend**: Wszystkie ścieżki tworzenia kart przekazują `cefr_level` do bazy (AddFlashcardModal, QuickAdd, QuickImport, ImportFromVocabulary)
+- ✅ **Backfill**: Istniejące karty i eventy zaktualizowane o `cefr_level`, `skill_ids`, `element_type`
+
+**Poprzednia aktualizacja (2026-03-31) - Fix: isSubmitted guard prevents event overwriting after homework submit:**
 
 **Poprzednia aktualizacja (2026-03-30) - Fix: Homework audio eval — single DB write + dual AI Score badges:**
 - ✅ **Single DB write**: Transcription persistence merged with AI eval update — trigger fires ONCE with correct `item_evaluations`
