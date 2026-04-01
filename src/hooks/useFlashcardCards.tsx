@@ -146,6 +146,7 @@ export const useFlashcardCards = (setId?: string) => {
         back_text: item.definition,
         source_type: 'vocabulary_sheet' as const,
         card_position: maxPosition + 1 + index,
+        cefr_level: item.cefr_level || null,
       }));
 
       const { error } = await supabase
