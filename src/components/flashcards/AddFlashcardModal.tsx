@@ -120,6 +120,7 @@ export function AddFlashcardModal({
         front_example: frontExample.trim() || undefined,
         back_text: backText.trim(),
         source_type: 'manual',
+        cefr_level: currentCefrLevel || undefined,
       });
     }
 

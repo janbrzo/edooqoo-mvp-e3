@@ -162,7 +162,8 @@ export const QuickAddWordToFlashcardsModal = ({
         front_text: word.trim(),
         back_text: translation.trim(),
         source_type: 'manual',
-        source_worksheet_id: worksheetId
+        source_worksheet_id: worksheetId,
+        cefr_level: cefrLevel || undefined,
       });
       
       toast.success('Word added to flashcards!');
