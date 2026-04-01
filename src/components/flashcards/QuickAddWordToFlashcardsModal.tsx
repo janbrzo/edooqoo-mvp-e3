@@ -36,6 +36,7 @@ export const QuickAddWordToFlashcardsModal = ({
   const [selectedSetBackType, setSelectedSetBackType] = useState<'translation' | 'definition'>('definition');
   const [word, setWord] = useState(initialWord);
   const [translation, setTranslation] = useState('');
+  const [cefrLevel, setCefrLevel] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
