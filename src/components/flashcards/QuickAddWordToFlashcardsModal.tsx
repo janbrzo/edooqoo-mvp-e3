@@ -82,14 +82,15 @@ export const QuickAddWordToFlashcardsModal = ({
         body: {
           text: wordToTranslate.trim(),
           target_language: backType === 'translation' ? nativeLanguage : 'English definition',
+          mode: backType === 'definition' ? 'definition' : 'translation',
         }
       });
       
       if (error) throw error;
       setTranslation(data?.translation || '');
+      setCefrLevel(data?.cefr_level || null);
     } catch (error) {
       console.error('Translation error:', error);
-      // Keep translation empty, user can fill manually
     } finally {
       setIsTranslating(false);
     }
