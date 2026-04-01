@@ -36,6 +36,7 @@ export const QuickAddWordToFlashcardsModal = ({
   const [selectedSetBackType, setSelectedSetBackType] = useState<'translation' | 'definition'>('definition');
   const [word, setWord] = useState(initialWord);
   const [translation, setTranslation] = useState('');
+  const [cefrLevel, setCefrLevel] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -81,14 +82,15 @@ export const QuickAddWordToFlashcardsModal = ({
         body: {
           text: wordToTranslate.trim(),
           target_language: backType === 'translation' ? nativeLanguage : 'English definition',
+          mode: backType === 'definition' ? 'definition' : 'translation',
         }
       });
       
       if (error) throw error;
       setTranslation(data?.translation || '');
+      setCefrLevel(data?.cefr_level || null);
     } catch (error) {
       console.error('Translation error:', error);
-      // Keep translation empty, user can fill manually
     } finally {
       setIsTranslating(false);
     }
@@ -160,7 +162,8 @@ export const QuickAddWordToFlashcardsModal = ({
         front_text: word.trim(),
         back_text: translation.trim(),
         source_type: 'manual',
-        source_worksheet_id: worksheetId
+        source_worksheet_id: worksheetId,
+        cefr_level: cefrLevel || undefined,
       });
       
       toast.success('Word added to flashcards!');

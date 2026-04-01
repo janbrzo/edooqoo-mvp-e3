@@ -32,6 +32,7 @@ export interface FlashcardCard {
   back_text: string;         // Translation/definition
   source_type: 'manual' | 'vocabulary_sheet';
   card_position: number;
+  cefr_level: string | null;
   created_at: string;
   deleted_at: string | null;
 }
@@ -108,6 +109,7 @@ export interface CreateFlashcardCard {
   source_type?: 'manual' | 'vocabulary_sheet';
   source_worksheet_id?: string;
   card_position?: number;
+  cefr_level?: string;
 }
 
 export interface UpdateFlashcardCard {
@@ -189,11 +191,17 @@ export function normalizeVocabularySheet(vocab: VocabularySheet | any) {
     return vocab.map(item => ({
       word: item.word || item.term || '',
       definition: item.definition || item.meaning || '',
-      example: item.example || undefined
+      example: item.example || undefined,
+      cefr_level: item.cefr_level || undefined
     }));
   } else if (vocab?.words) {
     // New format: { title, words: [{ word, definition, example }] }
-    return vocab.words;
+    return vocab.words.map((item: any) => ({
+      word: item.word || '',
+      definition: item.definition || '',
+      example: item.example || undefined,
+      cefr_level: item.cefr_level || undefined
+    }));
   }
   // Fallback for unexpected format
   return [];

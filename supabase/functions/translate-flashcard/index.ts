@@ -9,7 +9,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -26,12 +25,37 @@ serve(async (req) => {
 
     console.log(`[translate-flashcard] Mode: ${mode}, Processing "${text}" for ${target_language}`);
 
-    // Determine system prompt based on mode
     let systemPrompt = '';
     if (mode === 'definition') {
-      systemPrompt = `You are an English language teacher. Provide a clear, concise definition of the English word or phrase. Write the definition in simple English that an ESL student can understand. Provide ONLY the definition, nothing else. Keep it under 20 words.`;
+      systemPrompt = `You are an English language teacher and level assessor.
+1. Provide a clear, concise definition of the English word or phrase in simple English that an ESL student can understand. Keep it under 20 words.
+2. Assess the CEFR level (A1, A2, B1, B2, C1, or C2) of the word/phrase.
+
+Respond in JSON format: {"translation": "your definition here", "cefr_level": "B1"}
+
+CEFR guidelines for word difficulty:
+- A1: basic daily words (house, eat, big, go, water)
+- A2: common everyday (restaurant, improve, complaint, reservation)
+- B1: workplace/opinion (experience, suggestion, responsibility)
+- B2: abstract/formal (hypothesis, negotiate, comprehensive)
+- C1: academic/nuanced (mitigate, inherent, profound, ambiguity)
+- C2: rare/literary (obfuscate, ephemeral, misapprehension)
+Consider: frequency of use, abstractness, morphological complexity, collocational range.`;
     } else {
-      systemPrompt = `You are a professional translator. Translate the given English text to ${target_language}. Provide ONLY the translation, nothing else. Keep it natural and conversational.`;
+      systemPrompt = `You are a professional translator and English level assessor.
+1. Translate the given English text to ${target_language}. Provide a natural, conversational translation.
+2. Assess the CEFR level (A1, A2, B1, B2, C1, or C2) of the English word/phrase.
+
+Respond in JSON format: {"translation": "your translation here", "cefr_level": "B1"}
+
+CEFR guidelines for word difficulty:
+- A1: basic daily words (house, eat, big, go, water)
+- A2: common everyday (restaurant, improve, complaint, reservation)
+- B1: workplace/opinion (experience, suggestion, responsibility)
+- B2: abstract/formal (hypothesis, negotiate, comprehensive)
+- C1: academic/nuanced (mitigate, inherent, profound, ambiguity)
+- C2: rare/literary (obfuscate, ephemeral, misapprehension)
+Consider: frequency of use, abstractness, morphological complexity, collocational range.`;
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -43,17 +67,12 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: text
-          }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: text }
         ],
-        max_tokens: 100,
+        max_tokens: 150,
         temperature: 0.3,
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -64,12 +83,25 @@ serve(async (req) => {
       throw new Error(data.error?.message || 'OpenAI request failed');
     }
 
-    const translation = data.choices[0]?.message?.content?.trim() || '';
+    const content = data.choices[0]?.message?.content?.trim() || '';
+    
+    let translation = '';
+    let cefr_level = 'A2';
 
-    console.log(`[translate-flashcard] Result: "${translation}"`);
+    try {
+      const parsed = JSON.parse(content);
+      translation = parsed.translation || '';
+      cefr_level = parsed.cefr_level || 'A2';
+    } catch {
+      // Fallback: old format, plain text response
+      translation = content;
+      cefr_level = 'A2';
+    }
+
+    console.log(`[translate-flashcard] Result: "${translation}" (CEFR: ${cefr_level})`);
 
     return new Response(
-      JSON.stringify({ translation }),
+      JSON.stringify({ translation, cefr_level }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

@@ -42,7 +42,8 @@ export function QuickImportToFlashcardsModal({
   const [importing, setImporting] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [translations, setTranslations] = useState<Record<number, string>>({});
-  const [translationsLoading, setTranslationsLoading] = useState(0); // NEW: Track pending translations
+  const [cefrLevels, setCefrLevels] = useState<Record<number, string>>({});
+  const [translationsLoading, setTranslationsLoading] = useState(0);
   const justOpened = useRef(false);
   
   // New set creation fields
@@ -219,7 +220,8 @@ export function QuickImportToFlashcardsModal({
     setSelectedSetBackType('definition');
     setSelectedItems(new Set());
     setTranslations({});
-    setTranslationsLoading(0);  // Reset loading counter
+    setCefrLevels({});
+    setTranslationsLoading(0);
     setNewSetTitle('');
     setNewSetDescription('');
     setNewSetBackType('translation');
@@ -243,13 +245,16 @@ export function QuickImportToFlashcardsModal({
       try {
         const { data, error } = await supabase.functions.invoke('translate-flashcard', {
           body: {
-            text: item.word,  // ← FIX: Tłumaczyć term, nie definition
+            text: item.word,
             target_language: nativeLanguage,
           },
         });
 
         if (!error && data?.translation) {
           setTranslations(prev => ({ ...prev, [originalIndex]: data.translation }));
+        }
+        if (data?.cefr_level) {
+          setCefrLevels(prev => ({ ...prev, [originalIndex]: data.cefr_level }));
         }
       } catch (error) {
         console.error('Translation error for:', item.word, error);
@@ -270,7 +275,7 @@ export function QuickImportToFlashcardsModal({
     try {
       const { data, error } = await supabase.functions.invoke('translate-flashcard', {
         body: {
-          text: item.word,  // ← FIX: Tłumaczyć term, nie definition
+          text: item.word,
           target_language: nativeLanguage,
         },
       });
@@ -278,9 +283,11 @@ export function QuickImportToFlashcardsModal({
       if (!error && data?.translation) {
         setTranslations(prev => ({ ...prev, [index]: data.translation }));
       }
+      if (data?.cefr_level) {
+        setCefrLevels(prev => ({ ...prev, [index]: data.cefr_level }));
+      }
     } catch (error) {
       console.error('Translation error for:', item.word, error);
-      // Fallback to original word
       setTranslations(prev => ({ ...prev, [index]: item.word }));
     }
   };

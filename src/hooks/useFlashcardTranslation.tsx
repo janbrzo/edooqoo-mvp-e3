@@ -9,32 +9,32 @@ interface UseFlashcardTranslationProps {
 
 export const useFlashcardTranslation = ({ targetLanguage, enabled }: UseFlashcardTranslationProps) => {
   const [translation, setTranslation] = useState('');
+  const [cefrLevel, setCefrLevel] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const { toast } = useToast();
 
-  // Use useRef for persistent cache across renders
-  const cacheRef = useRef<Map<string, string>>(new Map());
+  const cacheRef = useRef<Map<string, { translation: string; cefr_level: string }>>(new Map());
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const translateText = useCallback(
     async (englishText: string) => {
       if (!enabled || !(englishText || '').trim()) {
         setTranslation('');
+        setCefrLevel(null);
         return;
       }
 
-      // Clear any existing debounce timer
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
 
-      // Debounce translation by 800ms
       debounceTimerRef.current = setTimeout(async () => {
         const cacheKey = `${englishText}_${targetLanguage}`;
         
-        // Check cache first
         if (cacheRef.current.has(cacheKey)) {
-          setTranslation(cacheRef.current.get(cacheKey)!);
+          const cached = cacheRef.current.get(cacheKey)!;
+          setTranslation(cached.translation);
+          setCefrLevel(cached.cefr_level);
           return;
         }
 
@@ -50,22 +50,25 @@ export const useFlashcardTranslation = ({ targetLanguage, enabled }: UseFlashcar
           if (error) throw error;
 
           const translatedText = data?.translation || '';
+          const level = data?.cefr_level || 'A2';
           setTranslation(translatedText);
-          cacheRef.current.set(cacheKey, translatedText);
+          setCefrLevel(level);
+          cacheRef.current.set(cacheKey, { translation: translatedText, cefr_level: level });
         } catch (error: any) {
           console.error('Translation error:', error);
-          // Don't show error toast for translation failures - just silently fail
           setTranslation('');
+          setCefrLevel(null);
         } finally {
           setIsTranslating(false);
         }
-      }, 800); // 800ms debounce
+      }, 800);
     },
     [targetLanguage, enabled, toast]
   );
 
   const clearTranslation = useCallback(() => {
     setTranslation('');
+    setCefrLevel(null);
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -73,6 +76,7 @@ export const useFlashcardTranslation = ({ targetLanguage, enabled }: UseFlashcar
 
   return {
     translation,
+    cefrLevel,
     isTranslating,
     translateText,
     clearTranslation,

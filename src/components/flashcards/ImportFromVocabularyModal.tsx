@@ -128,7 +128,7 @@ export function ImportFromVocabularyModal({
           try {
             const { data, error } = await supabase.functions.invoke('translate-flashcard', {
               body: {
-                text: item.word, // FIXED: Translate the word (term), not definition
+                text: item.word,
                 target_language: nativeLanguage,
               },
             });
@@ -137,11 +137,11 @@ export function ImportFromVocabularyModal({
             
             return {
               ...item,
-              definition: data?.translation || item.definition, // Back text is translation of the word
+              definition: data?.translation || item.definition,
+              cefr_level: data?.cefr_level || undefined,
             };
           } catch (error) {
             console.error('[ImportFromVocabularyModal] Translation error:', error);
-            // Fallback to original definition if translation fails
             return item;
           }
         });

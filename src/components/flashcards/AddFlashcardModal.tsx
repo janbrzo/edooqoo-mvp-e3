@@ -41,15 +41,18 @@ export function AddFlashcardModal({
   const isEditMode = !!editingCard;
 
   // Auto-translation hook (only for non-edit mode and translation type)
-  const { translation, isTranslating, translateText, clearTranslation } = useFlashcardTranslation({
+  const { translation, cefrLevel: translationCefrLevel, isTranslating, translateText, clearTranslation } = useFlashcardTranslation({
     targetLanguage: backType === 'translation' ? studentNativeLanguage : undefined,
     enabled: backType === 'translation' && !isEditMode && !!studentNativeLanguage,
   });
 
   // Auto-definition hook (only for non-edit mode and definition type)
-  const { definition, isLoadingDefinition, fetchDefinition, clearDefinition } = useFlashcardDefinition({
+  const { definition, cefrLevel: definitionCefrLevel, isLoadingDefinition, fetchDefinition, clearDefinition } = useFlashcardDefinition({
     enabled: backType === 'definition' && !isEditMode,
   });
+
+  // Get the current CEFR level from whichever hook is active
+  const currentCefrLevel = backType === 'translation' ? translationCefrLevel : definitionCefrLevel;
 
   // Reset form when modal opens/closes or editing card changes
   useEffect(() => {
@@ -117,6 +120,7 @@ export function AddFlashcardModal({
         front_example: frontExample.trim() || undefined,
         back_text: backText.trim(),
         source_type: 'manual',
+        cefr_level: currentCefrLevel || undefined,
       });
     }
 

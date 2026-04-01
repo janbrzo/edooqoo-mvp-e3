@@ -760,6 +760,7 @@ export type Database = {
         Row: {
           back_text: string
           card_position: number
+          cefr_level: string | null
           created_at: string | null
           deleted_at: string | null
           front_example: string | null
@@ -772,6 +773,7 @@ export type Database = {
         Insert: {
           back_text: string
           card_position?: number
+          cefr_level?: string | null
           created_at?: string | null
           deleted_at?: string | null
           front_example?: string | null
@@ -784,6 +786,7 @@ export type Database = {
         Update: {
           back_text?: string
           card_position?: number
+          cefr_level?: string | null
           created_at?: string | null
           deleted_at?: string | null
           front_example?: string | null
