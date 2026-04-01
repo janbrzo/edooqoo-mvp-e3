@@ -220,7 +220,8 @@ export function QuickImportToFlashcardsModal({
     setSelectedSetBackType('definition');
     setSelectedItems(new Set());
     setTranslations({});
-    setTranslationsLoading(0);  // Reset loading counter
+    setCefrLevels({});
+    setTranslationsLoading(0);
     setNewSetTitle('');
     setNewSetDescription('');
     setNewSetBackType('translation');
