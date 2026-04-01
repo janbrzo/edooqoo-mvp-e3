@@ -245,13 +245,16 @@ export function QuickImportToFlashcardsModal({
       try {
         const { data, error } = await supabase.functions.invoke('translate-flashcard', {
           body: {
-            text: item.word,  // ← FIX: Tłumaczyć term, nie definition
+            text: item.word,
             target_language: nativeLanguage,
           },
         });
 
         if (!error && data?.translation) {
           setTranslations(prev => ({ ...prev, [originalIndex]: data.translation }));
+        }
+        if (data?.cefr_level) {
+          setCefrLevels(prev => ({ ...prev, [originalIndex]: data.cefr_level }));
         }
       } catch (error) {
         console.error('Translation error for:', item.word, error);
