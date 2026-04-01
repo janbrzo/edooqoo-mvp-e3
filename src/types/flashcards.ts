@@ -32,6 +32,7 @@ export interface FlashcardCard {
   back_text: string;         // Translation/definition
   source_type: 'manual' | 'vocabulary_sheet';
   card_position: number;
+  cefr_level: string | null;
   created_at: string;
   deleted_at: string | null;
 }
