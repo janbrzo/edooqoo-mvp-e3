@@ -12,6 +12,7 @@ interface FlashcardSetCardProps {
   onDelete: () => void;
   onShare: () => Promise<string | null>;
   onAddCard?: () => void;
+  teacherCalendarToken?: string | null;
 }
 
 export function FlashcardSetCard({ set, onEdit, onDelete, onShare, onAddCard }: FlashcardSetCardProps) {
