@@ -40,6 +40,7 @@ export interface ItemEvaluation {
   reason: string;
   mastery: number;
   hasValue?: boolean;
+  confidence?: number;
 }
 
 export interface NanoSkillData {
