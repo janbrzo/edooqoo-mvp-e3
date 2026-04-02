@@ -15,6 +15,7 @@ interface FlashcardSetEditorProps {
   onUpdate: (setId: string, updates: Partial<FlashcardSet>) => Promise<void>;
   generateShareToken: (setId: string) => Promise<string | null>;
   studentNativeLanguage: string;
+  teacherCalendarToken?: string | null;
 }
 
 export function FlashcardSetEditor({
