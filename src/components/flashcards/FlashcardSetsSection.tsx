@@ -38,6 +38,7 @@ export function FlashcardSetsSection({
   studentNativeLanguage,
   initialEditingSetId,
   onSetChange,
+  teacherCalendarToken,
 }: FlashcardSetsSectionProps) {
   const { sets, loading, createSet, updateSet, deleteSet, generateShareToken, refetch } = useFlashcardSets(teacherId, studentId);
   const { students, updateStudent, loading: studentsLoading } = useStudents();
