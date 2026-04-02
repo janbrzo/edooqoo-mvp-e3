@@ -94,6 +94,26 @@ const StudentHubLessons = () => {
           <p className="text-sm text-muted-foreground mt-1">Book new lessons and view your upcoming schedule</p>
         </div>
 
+        {/* Your Classroom — universal meeting link */}
+        {settings && (settings as any).default_meeting_link && (
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm">Your Classroom</p>
+                  <p className="text-xs text-muted-foreground">Join your teacher's virtual meeting room</p>
+                </div>
+              </div>
+              <Button size="sm" onClick={() => window.open((settings as any).default_meeting_link, '_blank')}>
+                Join Lesson
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Available Slots Grid */}
         <Card>
           <CardContent className="p-4">

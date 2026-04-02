@@ -392,20 +392,32 @@ const CalendarSettingsPage = () => {
                 <CardDescription>Automatically generate video meeting links for lessons</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Auto-create Google Meet links</Label>
-                    <p className="text-xs text-muted-foreground">Disabled by default. Enable to auto-generate a unique Google Meet room for every booked lesson.</p>
+                <div>
+                  <Label>Default Meeting Room Link</Label>
+                  <p className="text-xs text-muted-foreground mb-2">A universal meeting room URL shared with all your students. They'll see a "Join Lesson" button in their Student Hub.</p>
+                  <Input
+                    type="url"
+                    placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                    value={(settings as any).default_meeting_link || ''}
+                    onChange={e => updateSettings({ default_meeting_link: e.target.value || null } as any)}
+                  />
+                </div>
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Auto-create Google Meet links</Label>
+                      <p className="text-xs text-muted-foreground">Disabled by default. Enable to auto-generate a unique Google Meet room for every booked lesson.</p>
+                    </div>
+                    <Switch checked={(settings as any).auto_create_meet_link || false} onCheckedChange={v => updateSettings({ auto_create_meet_link: v } as any)} />
                   </div>
-                  <Switch checked={(settings as any).auto_create_meet_link || false} onCheckedChange={v => updateSettings({ auto_create_meet_link: v } as any)} />
                 </div>
                 <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-2">
                   <p><strong>How it works:</strong></p>
                   <ul className="list-disc pl-4 space-y-1">
-                    <li>When enabled, every time a lesson is booked (by you or a student), a new Google Meet link is automatically created and attached to the lesson.</li>
-                    <li>The link appears in the lesson details modal, in student notification emails, and on the student's booking page.</li>
-                    <li>Requires Google Calendar to be connected. Meet links are generated through Google Calendar events.</li>
-                    <li>Each lesson gets its own unique Meet room. If you prefer a fixed meeting room per student, you can set a "Default Meeting Link" in each student's profile.</li>
+                    <li><strong>Default Meeting Room:</strong> Set a single meeting link (e.g., your permanent Google Meet room) that all students can access from their Hub.</li>
+                    <li><strong>Auto-create Meet links:</strong> When enabled, every booked lesson gets its own unique Google Meet link (requires Google Calendar connection).</li>
+                    <li>If both are set, the per-lesson auto-generated link takes priority. The default link serves as a fallback.</li>
+                    <li>Each student can also have a custom meeting link in their profile settings.</li>
                     <li>Students can join the meeting directly from their Student Hub dashboard or booking page.</li>
                   </ul>
                 </div>
