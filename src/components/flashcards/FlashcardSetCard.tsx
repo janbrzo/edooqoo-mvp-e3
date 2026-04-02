@@ -15,7 +15,7 @@ interface FlashcardSetCardProps {
   teacherCalendarToken?: string | null;
 }
 
-export function FlashcardSetCard({ set, onEdit, onDelete, onShare, onAddCard }: FlashcardSetCardProps) {
+export function FlashcardSetCard({ set, onEdit, onDelete, onShare, onAddCard, teacherCalendarToken }: FlashcardSetCardProps) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(set.share_token);
 
