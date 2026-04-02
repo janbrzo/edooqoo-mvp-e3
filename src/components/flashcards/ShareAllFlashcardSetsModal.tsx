@@ -132,7 +132,7 @@ export function ShareAllFlashcardSetsModal({
                 size="icon"
                 onClick={handleOpenInNewTab}
                 title="Open in new tab"
-                disabled={!studentEmail}
+                disabled={!teacherCalendarToken}
               >
                 <ExternalLink className="w-4 h-4" />
               </Button>
