@@ -13,6 +13,7 @@ interface ShareAllFlashcardSetsModalProps {
   studentEmail?: string;
   studentName: string;
   teacherName?: string;
+  teacherCalendarToken?: string | null;
 }
 
 export function ShareAllFlashcardSetsModal({
