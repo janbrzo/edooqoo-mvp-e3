@@ -77,6 +77,7 @@ export interface LearningCard {
   total_reviews: number;
   correct_count: number;
   incorrect_count: number;
+  cefr_level?: string | null;
   // Runtime state
   isNew?: boolean;
   isDueForReview?: boolean;
