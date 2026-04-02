@@ -202,6 +202,7 @@ export function FlashcardSetsSection({
               onDelete={() => handleDeleteClick(set)}
               onShare={() => generateShareToken(set.id)}
               onAddCard={() => setAddCardForSetId(set.id)}
+              teacherCalendarToken={teacherCalendarToken}
             />
           ))}
         </div>
