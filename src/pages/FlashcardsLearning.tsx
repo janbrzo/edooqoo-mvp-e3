@@ -87,8 +87,15 @@ export default function FlashcardsLearning() {
       window.location.href = returnTo;
       return;
     }
-    const studentEmail = setData?.student_email || learnerEmail;
-    window.location.href = `/my-flashcards/${encodeURIComponent(studentEmail)}`;
+    // Fallback
+    window.location.href = '/';
+  };
+
+  const getDashboardUrl = () => {
+    if (returnTo && returnTo.includes('/flashcards')) {
+      return returnTo.replace(/\/flashcards$/, '');
+    }
+    return null;
   };
 
   if (loading) {
