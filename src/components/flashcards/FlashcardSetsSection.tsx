@@ -115,6 +115,7 @@ export function FlashcardSetsSection({
           onUpdate={updateSet}
           generateShareToken={generateShareToken}
           studentNativeLanguage={currentLanguage || studentNativeLanguage}
+          teacherCalendarToken={teacherCalendarToken}
         />
       );
     }
