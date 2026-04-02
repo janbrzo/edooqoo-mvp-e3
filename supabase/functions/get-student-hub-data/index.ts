@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     // 1. Resolve token → teacher_id
     const { data: settingsData, error: settingsError } = await supabase
       .from('calendar_settings')
-      .select('teacher_id')
+      .select('teacher_id, default_meeting_link')
       .eq('public_calendar_token', token)
       .eq('public_calendar_enabled', true)
       .single();
