@@ -14,6 +14,7 @@ interface ShareFlashcardSetModalProps {
   setTitle: string;
   studentEmail?: string;
   teacherName?: string;
+  teacherCalendarToken?: string | null;
 }
 
 export function ShareFlashcardSetModal({
