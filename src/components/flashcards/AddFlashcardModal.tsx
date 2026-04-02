@@ -211,7 +211,12 @@ export function AddFlashcardModal({
           </div>
 
           <div className="bg-muted/50 p-3 rounded-lg">
-            <div className="text-sm font-medium mb-1">Preview:</div>
+            <div className="flex items-center gap-2 text-sm font-medium mb-1">
+              <span>Preview:</span>
+              {currentCefrLevel && (
+                <span className="px-1.5 py-0.5 rounded text-xs border font-medium bg-background">{currentCefrLevel}</span>
+              )}
+            </div>
             <div className="space-y-2 text-sm">
               <div>
                 <span className="text-muted-foreground">Front:</span>{' '}

@@ -33,7 +33,12 @@ export function FlashcardDisplay({ card, onReview, nativeLanguage }: FlashcardDi
         <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
           {!isFlipped ? (
             <div className="text-center space-y-4">
-              <div className="text-sm text-muted-foreground mb-2">{frontLabel}</div>
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-2">
+                <span>{frontLabel}</span>
+                {card.cefr_level && (
+                  <span className="px-1.5 py-0.5 rounded text-xs border font-medium">{card.cefr_level}</span>
+                )}
+              </div>
               <div className="text-3xl font-bold">{displayFront}</div>
               {frontExample && (
                 <div className="text-lg text-muted-foreground italic mt-4">
