@@ -935,6 +935,7 @@ const StudentPage = () => {
               studentNativeLanguage={student.native_language || 'Spanish'}
               initialEditingSetId={activeTab === 'flashcards' ? flashcardSetId : null}
               onSetChange={handleFlashcardSetChange}
+              teacherCalendarToken={teacherCalendarToken}
             />
           </TabsContent>
 

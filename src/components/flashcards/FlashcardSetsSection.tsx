@@ -247,6 +247,7 @@ export function FlashcardSetsSection({
         studentEmail={student?.student_email}
         studentName={studentName}
         teacherName={profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : ''}
+        teacherCalendarToken={teacherCalendarToken}
       />
     </div>
   );
