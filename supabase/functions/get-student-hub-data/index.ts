@@ -309,6 +309,7 @@ Deno.serve(async (req) => {
       sharedWorksheets: enrichedWorksheets,
       upcomingLessons: enrichedLessons,
       stats,
+      defaultMeetingLink: settingsData.default_meeting_link || null,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
