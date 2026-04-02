@@ -63,7 +63,7 @@ export function ShareAllFlashcardSetsModal({
   };
 
   const handleSendEmail = async () => {
-    if (!(email || '').trim() || !studentEmail) return;
+    if (!(email || '').trim() || !teacherCalendarToken) return;
 
     setSending(true);
     try {
