@@ -33,8 +33,8 @@ export function ShareAllFlashcardSetsModal({
     setEmail(studentEmail || '');
   }, [studentEmail, open]);
 
-  const portalUrl = studentEmail 
-    ? `${window.location.origin}/my-flashcards/${encodeURIComponent(studentEmail)}`
+  const portalUrl = teacherCalendarToken
+    ? `${window.location.origin}/my/${teacherCalendarToken}/flashcards`
     : '';
 
   const handleCopy = async () => {

@@ -35,8 +35,9 @@ export function ShareFlashcardSetModal({
     setEmail(studentEmail || '');
   }, [studentEmail, open]);
 
+  const returnToPath = teacherCalendarToken ? `/my/${teacherCalendarToken}/flashcards` : '';
   const shareUrl = shareToken 
-    ? `${window.location.origin}/flashcards/${shareToken}`
+    ? `${window.location.origin}/flashcards/${shareToken}${studentEmail || returnToPath ? '?' : ''}${studentEmail ? `email=${encodeURIComponent(studentEmail)}` : ''}${studentEmail && returnToPath ? '&' : ''}${returnToPath ? `returnTo=${encodeURIComponent(returnToPath)}` : ''}`
     : '';
 
   const handleCopy = async () => {

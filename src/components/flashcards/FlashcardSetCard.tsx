@@ -132,6 +132,7 @@ export function FlashcardSetCard({ set, onEdit, onDelete, onShare, onAddCard, te
         setTitle={set.title}
         studentEmail={set.student_email}
         teacherName={set.teacher_name}
+        teacherCalendarToken={teacherCalendarToken}
       />
     </>
   );
