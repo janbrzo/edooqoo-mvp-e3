@@ -28,6 +28,7 @@ interface FlashcardSetsSectionProps {
   studentNativeLanguage: string;
   initialEditingSetId?: string | null;
   onSetChange?: (setId: string | null) => void;
+  teacherCalendarToken?: string | null;
 }
 
 export function FlashcardSetsSection({
@@ -37,6 +38,7 @@ export function FlashcardSetsSection({
   studentNativeLanguage,
   initialEditingSetId,
   onSetChange,
+  teacherCalendarToken,
 }: FlashcardSetsSectionProps) {
   const { sets, loading, createSet, updateSet, deleteSet, generateShareToken, refetch } = useFlashcardSets(teacherId, studentId);
   const { students, updateStudent, loading: studentsLoading } = useStudents();
@@ -113,6 +115,7 @@ export function FlashcardSetsSection({
           onUpdate={updateSet}
           generateShareToken={generateShareToken}
           studentNativeLanguage={currentLanguage || studentNativeLanguage}
+          teacherCalendarToken={teacherCalendarToken}
         />
       );
     }
@@ -199,6 +202,7 @@ export function FlashcardSetsSection({
               onDelete={() => handleDeleteClick(set)}
               onShare={() => generateShareToken(set.id)}
               onAddCard={() => setAddCardForSetId(set.id)}
+              teacherCalendarToken={teacherCalendarToken}
             />
           ))}
         </div>
@@ -243,6 +247,7 @@ export function FlashcardSetsSection({
         studentEmail={student?.student_email}
         studentName={studentName}
         teacherName={profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : ''}
+        teacherCalendarToken={teacherCalendarToken}
       />
     </div>
   );

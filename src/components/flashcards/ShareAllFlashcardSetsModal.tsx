@@ -13,6 +13,7 @@ interface ShareAllFlashcardSetsModalProps {
   studentEmail?: string;
   studentName: string;
   teacherName?: string;
+  teacherCalendarToken?: string | null;
 }
 
 export function ShareAllFlashcardSetsModal({
@@ -21,6 +22,7 @@ export function ShareAllFlashcardSetsModal({
   studentEmail = '',
   studentName,
   teacherName = '',
+  teacherCalendarToken,
 }: ShareAllFlashcardSetsModalProps) {
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState(studentEmail || '');
@@ -31,8 +33,8 @@ export function ShareAllFlashcardSetsModal({
     setEmail(studentEmail || '');
   }, [studentEmail, open]);
 
-  const portalUrl = studentEmail 
-    ? `${window.location.origin}/my-flashcards/${encodeURIComponent(studentEmail)}`
+  const portalUrl = teacherCalendarToken
+    ? `${window.location.origin}/my/${teacherCalendarToken}/flashcards`
     : '';
 
   const handleCopy = async () => {
@@ -61,7 +63,7 @@ export function ShareAllFlashcardSetsModal({
   };
 
   const handleSendEmail = async () => {
-    if (!(email || '').trim() || !studentEmail) return;
+    if (!(email || '').trim() || !teacherCalendarToken) return;
 
     setSending(true);
     try {
@@ -108,7 +110,7 @@ export function ShareAllFlashcardSetsModal({
 
             <div className="flex gap-2">
               <Input
-                value={portalUrl || 'Student email not set'}
+                value={portalUrl || 'Calendar token not set'}
                 readOnly
                 className="font-mono text-sm"
               />
@@ -117,7 +119,7 @@ export function ShareAllFlashcardSetsModal({
                 size="icon"
                 onClick={handleCopy}
                 title="Copy link"
-                disabled={!studentEmail}
+                disabled={!teacherCalendarToken}
               >
                 {copied ? (
                   <Check className="w-4 h-4 text-green-600" />
@@ -130,7 +132,7 @@ export function ShareAllFlashcardSetsModal({
                 size="icon"
                 onClick={handleOpenInNewTab}
                 title="Open in new tab"
-                disabled={!studentEmail}
+                disabled={!teacherCalendarToken}
               >
                 <ExternalLink className="w-4 h-4" />
               </Button>

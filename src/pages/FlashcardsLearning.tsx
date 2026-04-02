@@ -87,8 +87,15 @@ export default function FlashcardsLearning() {
       window.location.href = returnTo;
       return;
     }
-    const studentEmail = setData?.student_email || learnerEmail;
-    window.location.href = `/my-flashcards/${encodeURIComponent(studentEmail)}`;
+    // Fallback
+    window.location.href = '/';
+  };
+
+  const getDashboardUrl = () => {
+    if (returnTo && returnTo.includes('/flashcards')) {
+      return returnTo.replace(/\/flashcards$/, '');
+    }
+    return null;
   };
 
   if (loading) {
@@ -156,9 +163,16 @@ export default function FlashcardsLearning() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold">{setData.title}</h1>
-            <Button variant="outline" onClick={handleQuit}>
-              <X className="w-4 h-4 mr-2" /> Back to Dashboard
-            </Button>
+            <div className="flex items-center gap-2">
+              {getDashboardUrl() && (
+                <Button variant="outline" onClick={() => window.location.href = getDashboardUrl()!}>
+                  <X className="w-4 h-4 mr-2" /> Back to Dashboard
+                </Button>
+              )}
+              <Button variant="outline" onClick={handleQuit}>
+                <X className="w-4 h-4 mr-2" /> {returnTo?.includes('/flashcards') ? 'Back to Flashcards' : 'Back to Dashboard'}
+              </Button>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {allCards.map((card) => (

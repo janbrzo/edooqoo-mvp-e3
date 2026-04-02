@@ -142,6 +142,20 @@ const StudentPage = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareWorksheetData, setShareWorksheetData] = useState<{id: string; title: string; shareToken?: string} | null>(null);
+  const [teacherCalendarToken, setTeacherCalendarToken] = useState<string | null>(null);
+
+  // Fetch teacher's public_calendar_token for share links
+  useEffect(() => {
+    if (student?.teacher_id) {
+      supabase.from('calendar_settings')
+        .select('public_calendar_token')
+        .eq('teacher_id', student.teacher_id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.public_calendar_token) setTeacherCalendarToken(data.public_calendar_token);
+        });
+    }
+  }, [student?.teacher_id]);
   
   // Rename worksheet state
   const [renameWorksheetData, setRenameWorksheetData] = useState<{id: string; title: string} | null>(null);
@@ -921,6 +935,7 @@ const StudentPage = () => {
               studentNativeLanguage={student.native_language || 'Spanish'}
               initialEditingSetId={activeTab === 'flashcards' ? flashcardSetId : null}
               onSetChange={handleFlashcardSetChange}
+              teacherCalendarToken={teacherCalendarToken}
             />
           </TabsContent>
 

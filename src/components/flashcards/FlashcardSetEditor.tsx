@@ -15,6 +15,7 @@ interface FlashcardSetEditorProps {
   onUpdate: (setId: string, updates: Partial<FlashcardSet>) => Promise<void>;
   generateShareToken: (setId: string) => Promise<string | null>;
   studentNativeLanguage: string;
+  teacherCalendarToken?: string | null;
 }
 
 export function FlashcardSetEditor({
@@ -22,6 +23,7 @@ export function FlashcardSetEditor({
   onBack,
   generateShareToken,
   studentNativeLanguage,
+  teacherCalendarToken,
 }: FlashcardSetEditorProps) {
   const { cards, addCard, updateCard, deleteCard, refetch } = useFlashcardCards(set.id);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -98,7 +100,14 @@ export function FlashcardSetEditor({
                   <GripVertical className="w-4 h-4 text-muted-foreground mt-1 flex-shrink-0" />
                   
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium">{card.front_text}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium">{card.front_text}</div>
+                      {card.cefr_level && (
+                        <Badge variant="outline" className="text-xs px-1.5 py-0">
+                          {card.cefr_level}
+                        </Badge>
+                      )}
+                    </div>
                     {card.front_example && (
                       <div className="text-sm text-muted-foreground italic mt-1">
                         {card.front_example}
@@ -168,6 +177,7 @@ export function FlashcardSetEditor({
         setTitle={set.title}
         studentEmail={set.student_email}
         teacherName={set.teacher_name}
+        teacherCalendarToken={teacherCalendarToken}
       />
     </div>
   );

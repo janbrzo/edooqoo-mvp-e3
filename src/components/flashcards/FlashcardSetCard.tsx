@@ -12,9 +12,10 @@ interface FlashcardSetCardProps {
   onDelete: () => void;
   onShare: () => Promise<string | null>;
   onAddCard?: () => void;
+  teacherCalendarToken?: string | null;
 }
 
-export function FlashcardSetCard({ set, onEdit, onDelete, onShare, onAddCard }: FlashcardSetCardProps) {
+export function FlashcardSetCard({ set, onEdit, onDelete, onShare, onAddCard, teacherCalendarToken }: FlashcardSetCardProps) {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareToken, setShareToken] = useState<string | null>(set.share_token);
 
@@ -131,6 +132,7 @@ export function FlashcardSetCard({ set, onEdit, onDelete, onShare, onAddCard }: 
         setTitle={set.title}
         studentEmail={set.student_email}
         teacherName={set.teacher_name}
+        teacherCalendarToken={teacherCalendarToken}
       />
     </>
   );

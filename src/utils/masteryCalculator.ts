@@ -40,6 +40,7 @@ export interface ItemEvaluation {
   reason: string;
   mastery: number;
   hasValue?: boolean;
+  confidence?: number;
 }
 
 export interface NanoSkillData {
@@ -505,7 +506,8 @@ export const buildItemEvaluations = (
         name: nanoSkill.name,
         reason: nanoSkill.reason,
         mastery: skillMastery !== null ? skillMastery : -1,
-        hasValue: skillMastery !== null && skillMastery >= 0
+        hasValue: skillMastery !== null && skillMastery >= 0,
+        confidence: nanoSkill.confidence,
       });
     });
   });
