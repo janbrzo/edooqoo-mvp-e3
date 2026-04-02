@@ -222,12 +222,24 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
 
   const listRef = React.useRef<HTMLDivElement>(null);
 
-  const scrollToToday = () => {
+  const scrollToToday = useCallback(() => {
     if (!listRef.current) return;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const todayEl = listRef.current.querySelector(`[data-date="${todayStr}"]`);
-    if (todayEl) todayEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  };
+    let targetEl: Element | null = listRef.current.querySelector(`[data-date="${todayStr}"]`);
+    if (!targetEl) {
+      const allDateEls = Array.from(listRef.current.querySelectorAll('[data-date]'));
+      targetEl = allDateEls.find(el => (el.getAttribute('data-date') || '') >= todayStr)
+        || allDateEls[allDateEls.length - 1] || null;
+    }
+    if (targetEl) targetEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, []);
+
+  // Auto-scroll to today/nearest after bookings load
+  useEffect(() => {
+    if (allBookings.length > 0 && !loading) {
+      setTimeout(scrollToToday, 100);
+    }
+  }, [allBookings.length, loading, scrollToToday]);
 
   if (!email || (bookings.length === 0 && !loading && !searched)) return null;
 

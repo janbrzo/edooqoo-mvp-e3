@@ -285,6 +285,7 @@ export type Database = {
           default_booking_mode: string
           default_lesson_duration_minutes: number
           default_lesson_price: number | null
+          default_meeting_link: string | null
           display_end_hour: number
           display_start_hour: number
           enforce_slot_limit: boolean
@@ -331,6 +332,7 @@ export type Database = {
           default_booking_mode?: string
           default_lesson_duration_minutes?: number
           default_lesson_price?: number | null
+          default_meeting_link?: string | null
           display_end_hour?: number
           display_start_hour?: number
           enforce_slot_limit?: boolean
@@ -377,6 +379,7 @@ export type Database = {
           default_booking_mode?: string
           default_lesson_duration_minutes?: number
           default_lesson_price?: number | null
+          default_meeting_link?: string | null
           display_end_hour?: number
           display_start_hour?: number
           enforce_slot_limit?: boolean
@@ -2840,6 +2843,13 @@ export type Database = {
       }
       extract_micro_skill: { Args: { skill_name: string }; Returns: string }
       extract_skill_category: { Args: { skill_name: string }; Returns: string }
+      find_student_by_email: {
+        Args: { p_email: string; p_teacher_id: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       generate_flashcard_share_token: {
         Args: {
           p_expires_hours?: number

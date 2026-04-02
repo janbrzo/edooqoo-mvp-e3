@@ -100,12 +100,13 @@ export function usePublicBooking(token?: string) {
 
       const normalizedEmail = studentEmail.toLowerCase().trim();
 
-      const { data: existingStudent } = await supabase
-        .from('students')
-        .select('id, name')
-        .eq('teacher_id', settings.teacher_id)
-        .ilike('student_email', normalizedEmail)
-        .maybeSingle();
+      // Use SECURITY DEFINER function to bypass RLS on students table
+      const { data: existingStudentRows } = await supabase
+        .rpc('find_student_by_email', {
+          p_teacher_id: settings.teacher_id,
+          p_email: normalizedEmail,
+        });
+      const existingStudent = existingStudentRows?.[0] || null;
 
       const studentId = existingStudent?.id || null;
       const resolvedName = existingStudent?.name || studentName;
@@ -130,7 +131,7 @@ export function usePublicBooking(token?: string) {
 
       if (err) throw err;
 
-      // Notification for teacher — new student
+      // Notification for teacher — new vs existing student
       if (!existingStudent) {
         try {
           await supabase.from('calendar_notifications').insert({
@@ -190,13 +191,16 @@ export function usePublicBooking(token?: string) {
             sharedWorksheetUrl = `${window.location.origin}/shared/${ws.share_token}`;
           }
         }
+
+        // Get default meeting link from settings
+        const meetingLink = (settings as any).default_meeting_link || (slot as any).meeting_link || undefined;
         
         supabase.functions.invoke('send-calendar-notification-email', {
           body: {
             type: autoConfirm ? 'booking_confirmation' : 'booking_pending',
             studentEmail: normalizedEmail, studentName: resolvedName, slotDate, slotTime,
             teacherName, teacherEmail, bookUrl, calendarUrl,
-            worksheetUrl, sharedWorksheetUrl,
+            worksheetUrl, sharedWorksheetUrl, meetingLink,
           },
         }).catch(console.error);
 

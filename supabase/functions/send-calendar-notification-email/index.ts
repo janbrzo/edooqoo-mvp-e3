@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
 
       case 'booking_pending':
         to = studentEmail;
-        subject = 'Booking request received';
+        subject = 'Booking request sent';
         html = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <h2 style="color: #1a1a1a;">Booking Request Sent ⏳</h2>
             <p>Hi ${studentName},</p>

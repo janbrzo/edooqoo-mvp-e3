@@ -5,10 +5,18 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (April 1, 2026) - Flashcards DSLM: CEFR Levels, Skill IDs, Difficulty Multiplier:**
+**Latest Update (April 2, 2026) - Fix: Student Identification, Email Subjects, Scroll-to-Today, Meeting Links:**
+- **`find_student_by_email()` SECURITY DEFINER function**: Bypasses RLS on `students` table safely — fixes existing student identification during public booking (RLS `auth.uid() = teacher_id` blocked unauthenticated lookups after March 18 security fix)
+- **`usePublicBooking.tsx`**: Replaced direct `.from('students')` query with `.rpc('find_student_by_email')` — students correctly identified, proper names in emails and notifications
+- **Email subject fix**: `booking_pending` email subject changed from "Booking request received" to "Booking request sent"
+- **Default meeting link**: New `calendar_settings.default_meeting_link` column — universal teacher meeting room URL. UI in CalendarSettingsPage, "Join Lesson" button in StudentHubLessons, fallback in StudentHubDashboard
+- **`get-student-hub-data`**: Returns `defaultMeetingLink` from `calendar_settings`
+- **scrollToToday fix**: `StudentBookingsSection` scrolls to closest future booking when no lesson today + auto-scroll on load
+
+**Previous Update (April 1, 2026) - Flashcards DSLM: CEFR Levels, Skill IDs, Difficulty Multiplier:**
 - **`cefr_level` column on `flashcard_cards`**: AI-assigned CEFR level (A1-C2) per card, based on word frequency, abstractness, morphological complexity. Existing cards backfilled from student's `english_level`.
 - **`translate-flashcard` Edge Function**: Now returns `{ translation, cefr_level }` in JSON format via `response_format: { type: "json_object" }`. System prompt includes CEFR classification guidelines.
-- **`log_flashcard_review_event()` trigger**: Generates `skill_ids = ['ns.{CEFR}.vocabulary.definition_{normalized_word}']` and `element_type = 'vocabulary'` automatically. Includes difficulty multiplier: `definition` mode (EN→EN) applies 0.9x to mastery, `translation` mode (EN→native) is 1.0x.
+- **`log_flashcard_review_event()` trigger**: Generates `skill_ids = ['ns.{CEFR}.vocabulary.definition_{normalized_word}']` and `element_type = 'vocabulary'` automatically. 3-scenario difficulty multiplier: direction 1 (sees EN term) → 0.70x, direction 2 + translation → 1.0x, direction 2 + definition → 1.1x.
 - **Event payload enriched**: `back_type`, `direction`, `cefr_level` included in `event_payload` for Layer B analytics.
 - **Frontend hooks**: `useFlashcardTranslation` and `useFlashcardDefinition` now return `cefrLevel`. All card creation paths (`AddFlashcardModal`, `QuickAddWordToFlashcardsModal`, `QuickImportToFlashcardsModal`, `ImportFromVocabularyModal`) pass `cefr_level` to database.
 - **Backfill**: Existing `flashcard_review` events updated with correct `skill_ids` and `element_type = 'vocabulary'`.

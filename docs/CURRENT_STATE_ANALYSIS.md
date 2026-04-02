@@ -6,10 +6,18 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-04-01) - Flashcards DSLM: CEFR levels, unified skill_ids, difficulty multiplier:**
+**Ostatnia aktualizacja (2026-04-02) - Fix: Student identification, email subjects, scroll-to-today, meeting links:**
+- ✅ **`find_student_by_email()` SECURITY DEFINER**: Nowa SQL function omijająca RLS — naprawia identyfikację istniejących studentów podczas publicznego bookingu (RLS `auth.uid() = teacher_id` blokował lookup niezalogowanych)
+- ✅ **`usePublicBooking.tsx`**: Zamiana `.from('students')` na `.rpc('find_student_by_email')` — student poprawnie rozpoznany, prawidłowe imię w mailach i powiadomieniach
+- ✅ **Email subject fix**: `booking_pending` email subject zmieniony z "Booking request received" na "Booking request sent"
+- ✅ **Meeting link**: Nowa kolumna `calendar_settings.default_meeting_link` — globalny link do pokoju nauczyciela. UI w CalendarSettingsPage, przycisk "Join Lesson" w StudentHubLessons, fallback w StudentHubDashboard
+- ✅ **`get-student-hub-data`**: Zwraca `defaultMeetingLink` z `calendar_settings`
+- ✅ **scrollToToday fix**: `StudentBookingsSection` scrolluje do najbliższego przyszłego wydarzenia jeśli dziś brak lekcji + auto-scroll po załadowaniu
+
+**Poprzednia aktualizacja (2026-04-01) - Flashcards DSLM: CEFR levels, unified skill_ids, difficulty multiplier:**
 - ✅ **`cefr_level` kolumna**: `flashcard_cards.cefr_level` (TEXT) — AI przypisuje poziom A1-C2 na podstawie częstotliwości, abstrakcyjności, złożoności morfologicznej
 - ✅ **`translate-flashcard` Edge Function**: Zwraca `{ translation, cefr_level }` w formacie JSON (`response_format: json_object`)
-- ✅ **Trigger `log_flashcard_review_event()`**: Generuje `skill_ids = ['ns.B1.vocabulary.definition_cuisine']` i `element_type = 'vocabulary'`. Mnożnik trudności: `definition` mode → 0.9x mastery, `translation` mode → 1.0x
+- ✅ **Trigger `log_flashcard_review_event()`**: Generuje `skill_ids = ['ns.B1.vocabulary.definition_cuisine']` i `element_type = 'vocabulary'`. 3-scenariuszowy mnożnik trudności: direction 1 (widzi EN term) → 0.70x, direction 2 + translation → 1.0x, direction 2 + definition → 1.1x
 - ✅ **Frontend**: Wszystkie ścieżki tworzenia kart przekazują `cefr_level` do bazy (AddFlashcardModal, QuickAdd, QuickImport, ImportFromVocabulary)
 - ✅ **Backfill**: Istniejące karty i eventy zaktualizowane o `cefr_level`, `skill_ids`, `element_type`
 
