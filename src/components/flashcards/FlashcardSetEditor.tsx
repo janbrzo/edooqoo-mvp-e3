@@ -23,6 +23,7 @@ export function FlashcardSetEditor({
   onBack,
   generateShareToken,
   studentNativeLanguage,
+  teacherCalendarToken,
 }: FlashcardSetEditorProps) {
   const { cards, addCard, updateCard, deleteCard, refetch } = useFlashcardCards(set.id);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
