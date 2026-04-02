@@ -24,6 +24,7 @@ export function ShareFlashcardSetModal({
   setTitle,
   studentEmail = '',
   teacherName = '',
+  teacherCalendarToken,
 }: ShareFlashcardSetModalProps) {
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState(studentEmail || '');
