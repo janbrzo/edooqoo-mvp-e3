@@ -28,6 +28,7 @@ interface FlashcardSetsSectionProps {
   studentNativeLanguage: string;
   initialEditingSetId?: string | null;
   onSetChange?: (setId: string | null) => void;
+  teacherCalendarToken?: string | null;
 }
 
 export function FlashcardSetsSection({
