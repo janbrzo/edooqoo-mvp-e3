@@ -119,7 +119,7 @@ export function ShareAllFlashcardSetsModal({
                 size="icon"
                 onClick={handleCopy}
                 title="Copy link"
-                disabled={!studentEmail}
+                disabled={!teacherCalendarToken}
               >
                 {copied ? (
                   <Check className="w-4 h-4 text-green-600" />
