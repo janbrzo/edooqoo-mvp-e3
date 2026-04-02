@@ -100,12 +100,13 @@ export function usePublicBooking(token?: string) {
 
       const normalizedEmail = studentEmail.toLowerCase().trim();
 
-      const { data: existingStudent } = await supabase
-        .from('students')
-        .select('id, name')
-        .eq('teacher_id', settings.teacher_id)
-        .ilike('student_email', normalizedEmail)
-        .maybeSingle();
+      // Use SECURITY DEFINER function to bypass RLS on students table
+      const { data: existingStudentRows } = await supabase
+        .rpc('find_student_by_email', {
+          p_teacher_id: settings.teacher_id,
+          p_email: normalizedEmail,
+        });
+      const existingStudent = existingStudentRows?.[0] || null;
 
       const studentId = existingStudent?.id || null;
       const resolvedName = existingStudent?.name || studentName;
