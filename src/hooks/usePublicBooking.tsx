@@ -131,7 +131,7 @@ export function usePublicBooking(token?: string) {
 
       if (err) throw err;
 
-      // Notification for teacher — new student
+      // Notification for teacher — new vs existing student
       if (!existingStudent) {
         try {
           await supabase.from('calendar_notifications').insert({
