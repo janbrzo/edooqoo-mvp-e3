@@ -110,7 +110,7 @@ export function ShareAllFlashcardSetsModal({
 
             <div className="flex gap-2">
               <Input
-                value={portalUrl || 'Student email not set'}
+                value={portalUrl || 'Calendar token not set'}
                 readOnly
                 className="font-mono text-sm"
               />
