@@ -191,13 +191,16 @@ export function usePublicBooking(token?: string) {
             sharedWorksheetUrl = `${window.location.origin}/shared/${ws.share_token}`;
           }
         }
+
+        // Get default meeting link from settings
+        const meetingLink = (settings as any).default_meeting_link || slot.meeting_link || undefined;
         
         supabase.functions.invoke('send-calendar-notification-email', {
           body: {
             type: autoConfirm ? 'booking_confirmation' : 'booking_pending',
             studentEmail: normalizedEmail, studentName: resolvedName, slotDate, slotTime,
             teacherName, teacherEmail, bookUrl, calendarUrl,
-            worksheetUrl, sharedWorksheetUrl,
+            worksheetUrl, sharedWorksheetUrl, meetingLink,
           },
         }).catch(console.error);
 
