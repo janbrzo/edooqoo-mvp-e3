@@ -193,7 +193,7 @@ export function usePublicBooking(token?: string) {
         }
 
         // Get default meeting link from settings
-        const meetingLink = (settings as any).default_meeting_link || slot.meeting_link || undefined;
+        const meetingLink = (settings as any).default_meeting_link || (slot as any).meeting_link || undefined;
         
         supabase.functions.invoke('send-calendar-notification-email', {
           body: {
