@@ -1,155 +1,299 @@
 
 
-# Plan: 4 naprawy — notyfikacje, lekcje, maile, meeting link
+# Plan: 7 napraw — Calendar badge, Meeting links, Book redirect, Lessons UX
 
-## Problem 1: Student rozpoznany jako nowy mimo że istnieje w bazie
+## Problem 1: Badge z liczbą powiadomień na przycisku 🗓️ Calendar
 
-**Root cause:** RLS policy na tabeli `students` to: `auth.uid() = teacher_id`. Gdy niezalogowany student (z publicznej strony /book lub /my) wykonuje zapytanie do `students`, `auth.uid()` jest NULL → RLS blokuje SELECT → `existingStudent` zwraca `null` → system traktuje go jako nowego.
+**Obecny stan:** `GCalStatusButton` to prosty przycisk bez żadnych danych o notyfikacjach. Badge z `unreadCount` jest tylko na dzwoneczku `CalendarNotificationBell` na stronie `/calendar`.
 
-To jest bezpośrednia konsekwencja fix security z 18 marca: zamiana otwartej polityki (`USING: true`) na `auth.uid() = teacher_id`.
+**Rozwiązanie:** `GCalStatusButton` musi pobierać `unreadCount` z hooka `useCalendarNotifications`. Hook wymaga `teacherId` — pobierzemy go z `useAuthFlow().user?.id`.
 
-**Rozwiązanie:** Przenieść lookup studenta z klienta (`usePublicBooking.tsx`) do Edge Function `get-student-bookings` (która używa `SERVICE_ROLE_KEY` i omija RLS). Alternatywnie — dodać dedykowaną RLS policy SELECT-only z `anon` role, ale to osłabia security fix.
+**Zmiana w `src/components/calendar/GCalStatusButton.tsx`:**
+- Import `useCalendarNotifications`
+- Import `Badge` z UI
+- Pobrać `user` z `useAuthFlow()` (już jest)
+- Wywołać `useCalendarNotifications(user?.id)` — dostajemy `unreadCount`
+- Dodać czerwony badge z liczbą obok tekstu "Calendar" (identyczny jak na dzwoneczku: `absolute -top-1.5 -right-1.5 ...`)
+- Przycisk musi mieć `relative` w className
 
-Najlepsze rozwiązanie: w `usePublicBooking.tsx` w `bookSlot`, zamiast bezpośredniego query do `students`, wywołać Edge Function. ALE — to duży refactor.
+```tsx
+export function GCalStatusButton() {
+  const { isRegisteredUser, user } = useAuthFlow();
+  const { unreadCount } = useCalendarNotifications(user?.id);
+  // ... w renderze:
+  <Button variant="outline" size="sm" className="text-xs h-8 relative" onClick={...}>
+    🗓️ Calendar
+    {unreadCount > 0 && (
+      <Badge className="absolute -top-1.5 -right-1.5 h-4 min-w-4 p-0 flex items-center justify-center text-[10px] bg-destructive text-destructive-foreground">
+        {unreadCount}
+      </Badge>
+    )}
+  </Button>
+```
 
-**Prostsze rozwiązanie:** Dodać SQL SECURITY DEFINER function `find_student_by_email(p_teacher_id UUID, p_email TEXT)` która zwraca `id, name` — omija RLS bo jest SECURITY DEFINER. Frontend wywołuje ją przez `.rpc()`.
+**Pliki:** `src/components/calendar/GCalStatusButton.tsx`
 
+---
+
+## Problem 2: Meeting link per-student (nie globalny)
+
+**Obecny stan:** `calendar_settings.default_meeting_link` to jeden globalny link dla WSZYSTKICH studentów. User chce żeby KAŻDY student miał swój unikatowy link.
+
+**Istniejąca infrastruktura:** Tabela `calendar_student_settings` JUŻ MA kolumnę `default_meeting_link` per-student. Na `StudentPage.tsx` jest `MeetingLinkField` który zapisuje do tej tabeli. Problem: ten per-student link nigdzie nie jest używany po stronie studenta.
+
+**Rozwiązanie:**
+1. **Usunąć globalny `default_meeting_link` z `CalendarSettingsPage.tsx`** — zamiast globalnego pola, wyświetlić info: "Meeting links are set per-student in each student's profile."
+2. **Edge function `get-student-hub-data`** — zmienić żeby zamiast `settingsData.default_meeting_link` pobierał `calendar_student_settings.default_meeting_link` dla danego studenta
+3. **Edge function `get-student-bookings`** — zwracać `meeting_link` ze slotu LUB fallback na per-student link z `calendar_student_settings`
+4. **`StudentHubLessons.tsx`** — "Your Classroom" card: używać per-student link (zwrócony z edge function jako `defaultMeetingLink`)
+5. **`StudentHubDashboard.tsx`** — przycisk Join: fallback na `defaultMeetingLink` (per-student)
+6. **Booking cards w `StudentBookingsSection`** — dodać fallback meeting_link z per-student settings
+7. **Emaile** — w `usePublicBooking.tsx`, pobierać per-student link przy bookSlot (RPC lub z calendar_student_settings)
+
+**Zmiany w `CalendarSettingsPage.tsx` (sekcja Google Meet):**
+- Usunąć pole "Default Meeting Room Link"
+- Zmienić opis: "Set a unique meeting room link for each student in their profile page. Students will see a 'Join Lesson' button in their Hub."
+- Zachować `auto_create_meet_link` toggle
+
+**Zmiany w `get-student-hub-data/index.ts`:**
+```typescript
+// Po znalezieniu studentId:
+const { data: studentSettings } = await supabaseAdmin
+  .from('calendar_student_settings')
+  .select('default_meeting_link')
+  .eq('student_id', studentId)
+  .eq('teacher_id', teacherId)
+  .maybeSingle();
+
+// W response:
+defaultMeetingLink: studentSettings?.default_meeting_link || settingsData?.default_meeting_link || null,
+```
+(Zachowujemy fallback na globalny link dla kompatybilności)
+
+**Zmiany w `usePublicBooking.tsx`** — przy `bookSlot`, po znalezieniu studenta (`find_student_by_email`), pobierać per-student meeting link i dołączać do emaila:
+```typescript
+// Po RPC find_student_by_email:
+if (existingStudent) {
+  const { data: studentSettings } = await supabase.functions.invoke('get-student-meeting-link', {
+    body: { teacherId: settings.teacher_id, studentId: existingStudent.id }
+  });
+  // ... meetingLink = studentSettings?.meeting_link || settings.default_meeting_link;
+}
+```
+Ale to wymaga nowej edge function. Prostsze rozwiązanie: dodać SQL SECURITY DEFINER function `get_student_meeting_link(p_teacher_id UUID, p_student_id UUID)` analogicznie do `find_student_by_email`:
 ```sql
-CREATE OR REPLACE FUNCTION public.find_student_by_email(p_teacher_id UUID, p_email TEXT)
-RETURNS TABLE(id UUID, name TEXT)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
+CREATE OR REPLACE FUNCTION public.get_student_meeting_link(p_teacher_id UUID, p_student_id UUID)
+RETURNS TEXT
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_link TEXT;
 BEGIN
-  RETURN QUERY
-  SELECT s.id, s.name
-  FROM public.students s
-  WHERE s.teacher_id = p_teacher_id
-    AND lower(s.student_email) = lower(trim(p_email))
-    AND s.deleted_at IS NULL
-  LIMIT 1;
+  SELECT default_meeting_link INTO v_link
+  FROM calendar_student_settings
+  WHERE teacher_id = p_teacher_id AND student_id = p_student_id;
+  RETURN v_link;
 END;
 $$;
 ```
 
-**Zmiana w `usePublicBooking.tsx`** (linie 103-108):
-```typescript
-// BEFORE: direct query blocked by RLS
-const { data: existingStudent } = await supabase
-  .from('students').select('id, name')...
-
-// AFTER: RPC call (SECURITY DEFINER, bypasses RLS)
-const { data: existingStudentRows } = await supabase
-  .rpc('find_student_by_email', { 
-    p_teacher_id: settings.teacher_id, 
-    p_email: normalizedEmail 
-  });
-const existingStudent = existingStudentRows?.[0] || null;
-```
-
-Reszta logiki (resolvedName, studentId, notification type) zostaje bez zmian — po prostu teraz `existingStudent` będzie poprawnie zwracać dane studenta.
+**Pliki:**
+- Migracja SQL — `get_student_meeting_link()` function
+- `src/pages/CalendarSettingsPage.tsx` — zmiana sekcji Google Meet
+- `supabase/functions/get-student-hub-data/index.ts` — per-student meeting link
+- `src/hooks/usePublicBooking.tsx` — pobieranie meeting link per-student
+- `supabase/functions/get-student-bookings/index.ts` — fallback meeting_link z student settings
 
 ---
 
-## Problem 2: Your Lessons nie pokazuje kart + Today nie scrolluje
+## Problem 3.1: Info o Meeting Link gdy nauczyciel nie ma GCal
 
-**Dwa podproblemy:**
+**Obecny stan:** `MeetingLinkField` w `StudentPage.tsx` linia 93 zawsze mówi: "This link will be auto-filled for new lessons with this student."
 
-**2A: Karty lekcji nie pojawiają się**
-`StudentBookingsSection` pobiera bookings przez `get-student-bookings` Edge Function. Ta edge function **działa z SERVICE_ROLE** więc RLS jej nie blokuje. Problem musi być w filtrach.
+**Rozwiązanie:** Zmienić tekst na: "Paste your meeting room link (e.g., Google Meet, Zoom). Students will see a 'Join Lesson' button." — uniwersalny, nie zakładający Google Meet.
 
-Sprawdźmy: edge function (linia 520) filtruje `student_notes ILIKE '%{email}%'` — bo `student_id` może być null (student nie znaleziony). Ale po fix RLS, `student_id` jest null bo booking z `usePublicBooking` nie mógł znaleźć studenta. Więc `student_id` w slocie jest null.
+**Plik:** `src/pages/StudentPage.tsx` linia 93
 
-Edge function (linia 518-530) szuka slotów po `student_id` LUB po `student_notes ILIKE`. Jeśli `student_id` jest null w slocie (bo RLS zablokował lookup), to szuka po `student_notes`. Student notes zawiera email, więc powinno znaleźć.
+---
 
-Muszę zobaczyć dokładny query...
+## Problem 3.2: Brak "Join Lesson" na stronie studenta
 
-Sprawdzę edge function:
+**Root cause:** `get-student-hub-data` zwraca `defaultMeetingLink` z `calendar_settings.default_meeting_link`, ale per-student link z `calendar_student_settings` nie jest sprawdzany. Fix w Problem 2 to rozwiązuje.
 
-Linia 518-530 `get-student-bookings`:
+**Dodatkowo:** email z potwierdzeniem nie zawiera meeting link — fix w `usePublicBooking.tsx` (Problem 2) dołączy per-student link do emaila.
+
+---
+
+## Problem 4: "Book" przycisk na Dashboard
+
+**Obecny stan:** Gdy `nextLesson` jest null, wyświetla się "None scheduled" bez żadnego CTA.
+
+**Zmiana w `StudentHubDashboard.tsx`:**
+
+A) Gdy brak `nextLesson`:
+```tsx
+{!nextLesson && (
+  <section>
+    <h2 className="text-lg font-semibold flex items-center gap-2 mb-3"><Calendar className="h-4 w-4" /> Next Lesson</h2>
+    <Card>
+      <CardContent className="p-6 text-center space-y-3">
+        <p className="text-sm text-muted-foreground">None scheduled</p>
+        <Button onClick={() => navigate(`/my/${teacherToken}/lessons`)}>
+          Book Your First Lesson
+        </Button>
+      </CardContent>
+    </Card>
+  </section>
+)}
 ```
-.select('id, slot_date, start_time, end_time, status, confirmed_at, student_notes, worksheet_id, notes, meeting_link...')
-.eq('teacher_id', teacherId)
-.in('status', ['booked', 'completed', 'needs_review', 'no_show'])
+
+B) Gdy jest `nextLesson` — dodać przycisk "Book" obok "View all":
+```tsx
+<div className="flex items-center gap-2">
+  <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate(`/my/${teacherToken}/lessons`)}>
+    Book <ArrowRight className="h-3 w-3 ml-1" />
+  </Button>
+</div>
 ```
-Ale jak filtruje po studencie? Muszę to sprawdzić.
 
-Potrzebuję zobaczyć pełen query.
+C) Zmiana nazwy zakładki "Lessons" → "Lessons & Booking" w `StudentHubLayout.tsx`:
+```tsx
+{ key: 'lessons', label: 'Lessons & Booking', icon: Calendar },
+```
 
-**2B: Today nie scrolluje na najbliższe wydarzenie**
-`scrollToToday` szuka elementu z `data-date="{dzisiaj}"`. Jeśli dziś nie ma lekcji — nic nie znajduje. Naprawa: jeśli nie ma elementu na dziś, scrollować do najbliższego przyszłego (lub ostatniego przeszłego).
+**Pliki:** `src/pages/StudentHubDashboard.tsx`, `src/components/student-hub/StudentHubLayout.tsx`
 
-**Zmiana w `StudentBookingsSection.tsx` (linia 225-230):**
-```typescript
-const scrollToToday = () => {
-  if (!listRef.current) return;
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-  // Try exact today first
-  let targetEl = listRef.current.querySelector(`[data-date="${todayStr}"]`);
-  if (!targetEl) {
-    // Find closest future booking
-    const allDateEls = Array.from(listRef.current.querySelectorAll('[data-date]'));
-    targetEl = allDateEls.find(el => (el.getAttribute('data-date') || '') >= todayStr) 
-      || allDateEls[allDateEls.length - 1]; // fallback to last
-  }
-  if (targetEl) targetEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+---
+
+## Problem 5: /book przekierowanie do /my jeśli student ma nauczyciela
+
+**Obecny stan:** `BookLandingPage` wpisuje email, szuka nauczycieli, i kieruje na `/book/:token`.
+
+**Rozwiązanie:** W `BookLandingPage`, po znalezieniu nauczycieli:
+- Jeśli 1 nauczyciel → sprawdzić czy student ma zapisany `teacherToken` w hub localStorage → redirect na `/my/{teacherToken}/lessons`
+- Jeśli więcej nauczycieli → pokazać listę, a po kliknięciu redirect na `/my/{teacherToken}/lessons`
+
+Ale skąd wiemy `teacherToken`? Edge function `find-teachers-by-student-email` zwraca `token` (= `public_calendar_token`). To jest ten sam `teacherToken` co w `/my/:teacherToken`.
+
+**Zmiana w `BookLandingPage.tsx`:**
+```tsx
+const handleSelectTeacher = (token: string) => {
+  // Save hub email too for seamless hub experience
+  saveHubEmail(email);  // from useStudentHubData
+  navigate(`/my/${token}/lessons`);
 };
 ```
 
-Ponadto — wywołać `scrollToToday` automatycznie po załadowaniu bookingów (useEffect po `allBookings`).
+I w `useEffect` po auto-znalezieniu 1 nauczyciela:
+```tsx
+useEffect(() => {
+  if (teachers.length === 1 && !loading) {
+    saveHubEmail(email);
+    navigate(`/my/${teachers[0].token}/lessons`);
+  }
+}, [teachers, loading]);
+```
+
+Trzeba zaimportować `saveHubEmail` z `@/hooks/useStudentHubData`.
+
+**Plik:** `src/pages/BookLandingPage.tsx`
 
 ---
 
-## Problem 3: Maile — zły subject i złe imię studenta
+## Problem 6: Unifikacja /book/:token i /my/:teacherToken/lessons
 
-**3A: Subject "Booking request received" → powinno być "Booking request sent"**
-W `send-calendar-notification-email` linia 93: `subject = 'Booking request received';`
-Zmienić na: `subject = 'Booking request sent';`
+**Obecny stan:** Dwa osobne komponenty:
+- `PublicBookingPage` (522 linii) — pełna strona z grid, email input, legendą statusów
+- `StudentHubLessons` (213 linii) — prostsza wersja w hubie, BEZ legendy
 
-**3B: "Hi j4n.brz0+10" → powinno być "Hi [imię studenta]"**
-Problem: `usePublicBooking.tsx` linia 197 wysyła `studentName: resolvedName`. Ale `resolvedName` to `existingStudent?.name || studentName`, a `studentName` to `email.split('@')[0]` (linia 51). Skoro `existingStudent` jest null (Problem 1), `resolvedName` = `j4n.brz0+10`.
+User chce: **jeden kod**, preferuje wersję z huba (`StudentHubLessons`), ale z legendą.
 
-**Fix Problem 1 automatycznie naprawi 3B** — bo po naprawie `existingStudent` będzie prawidłowo rozpoznany i `resolvedName` będzie prawdziwym imieniem.
+**Rozwiązanie:** 
+1. W `PublicBookingPage.tsx` — zamienić na wrapper który renderuje `StudentHubLessons` (lub redirect)
+2. Ale `PublicBookingPage` wymaga email input (student się identyfikuje), a `StudentHubLessons` ma email z huba.
 
-**3C: "Hi Student" w booking_confirmation**
-To samo — `studentName` jest wysyłane jako "Student" gdy student jest rozpoznany ale imię nie zostało poprawnie przekazane. Po fix Problem 1, `resolvedName` będzie prawidłowe.
+**Lepsze podejście:** Skoro Problem 5 kieruje z `/book` → `/my/{token}/lessons`, a `/book/:token` jest bezpośredni link, to:
+- `/book/:token` → sprawdzić czy student ma email w localStorage → jeśli tak, redirect na `/my/{token}/lessons`
+- Jeśli nie ma emaila → pokazać email input → po wpisaniu redirect na `/my/{token}/lessons`
 
-Ale jest drugie źródło: gdy nauczyciel ręcznie potwierdza booking, email wysyłany jest z `get-student-bookings` edge function. Sprawdźmy jak tam jest ustawiane `studentName` — linia 51: `const studentName = student?.name || email;`. To jest poprawne (bo edge function używa service_role).
+To oznacza że `PublicBookingPage` staje się thin wrapper:
+```tsx
+const PublicBookingPage = () => {
+  const { token } = useParams();
+  const navigate = useNavigate();
+  const hubEmail = getSavedHubEmail();
+  const bookEmail = getSavedValue(EMAIL_STORAGE_KEY);
+  
+  useEffect(() => {
+    const email = hubEmail || bookEmail;
+    if (email && token) {
+      saveHubEmail(email);
+      navigate(`/my/${token}/lessons`, { replace: true });
+    }
+  }, []);
+  
+  // Jeśli brak emaila — pokaż email form
+  // Po submit → saveHubEmail → navigate
+};
+```
+
+Dodać legendę do `StudentHubLessons.tsx`:
+```tsx
+<div className="flex gap-3 text-xs text-muted-foreground">
+  <div className="flex items-center gap-1">
+    <div className="w-3 h-3 rounded bg-green-100 border border-green-300" />
+    <span>Available</span>
+  </div>
+  <div className="flex items-center gap-1">
+    <div className="w-3 h-3 rounded bg-amber-100 border border-amber-300" />
+    <span>Pending</span>
+  </div>
+</div>
+```
+
+**Pliki:** `src/pages/PublicBookingPage.tsx` (uproszczenie do redirect), `src/pages/StudentHubLessons.tsx` (legenda)
 
 ---
 
-## Problem 4: Meeting link — brak "Join Lesson" na stronie /my i w emailach
+## Problem 7: Your Lessons — kolejność i Show Cancelled toggle
 
-**4A: Brak "Join Lesson" na stronie StudentHub (/my/{token}/lessons)**
+**7A: Odwrotna kolejność (najnowsze na górze)**
 
-Na stronie `StudentHubLessons.tsx` nie ma żadnego globalnego przycisku "Join Lesson". Komponent `StudentBookingsSection` ma przycisk "Join Meeting" per-booking (linia 312-314), ale tylko gdy `booking.meeting_link` jest ustawiony na danym slocie.
+W `StudentBookingsSection.tsx` linia 219:
+```tsx
+result.sort((a, b) => `${b.slot_date}${b.start_time}`.localeCompare(`${a.slot_date}${a.start_time}`));
+```
+(Zamiana `a` i `b` — descending zamiast ascending)
 
-Problem: nauczyciel ma `auto_create_meet_link` w `calendar_settings` ale to generuje link dopiero przy GCal sync (w `gcal-sync` edge function). Jeśli GCal sync nie został wykonany, `meeting_link` na slocie jest null.
+Przycisk "Today" ma scrollować na 3. kartę od góry. Po odwróceniu, karty od góry to najnowsze/przyszłe → "Today" powinien scrollować do dzisiejszej lub najbliższej przyszłej. Offset o 2 pozycje w górę:
+```tsx
+const scrollToToday = useCallback(() => {
+  if (!listRef.current) return;
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const allDateEls = Array.from(listRef.current.querySelectorAll('[data-date]'));
+  // W porządku desc, szukamy ostatniego elementu >= today (bo desc)
+  let targetEl = allDateEls.find(el => (el.getAttribute('data-date') || '') <= todayStr) || allDateEls[0];
+  // Offset — cofnij się 2 pozycje w górę
+  if (targetEl) {
+    const idx = allDateEls.indexOf(targetEl);
+    const offsetIdx = Math.max(0, idx - 2);
+    targetEl = allDateEls[offsetIdx];
+  }
+  if (targetEl) targetEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}, []);
+```
 
-Dodatkowo: na dashboardzie `StudentHubDashboard` przycisk "Join" wyświetla się tylko gdy `nextLesson.meeting_link` istnieje (linia 91). Edge function `get-student-hub-data` pobiera `meeting_link` z `calendar_slots`. Jeśli slot nie ma meeting_link — brak przycisku.
+**7B: Show Cancelled jako Switch/toggle**
 
-**Rozwiązanie:**
-1. Na stronie `/my/{token}/lessons` (StudentHubLessons) dodać sekcję "Your Classroom" z uniwersalnym linkiem do pokoju nauczyciela, pobranym z `calendar_settings.default_meeting_link`
-2. Gdy `calendar_settings` nie ma `default_meeting_link` ale ma `auto_create_meet_link` = true, i slot ma `meeting_link` → używać meeting_link ze slotu
-3. W edge function `get-student-hub-data` — zwracać `defaultMeetingLink` z `calendar_settings`
-4. W emailach (`usePublicBooking.tsx`) — pobierać `default_meeting_link` z `calendar_settings` i dołączać do emaila jako `meetingLink`
+Linia 459-465, zamienić `Button` na `Switch` + `Label` (identycznie jak `showPast`):
+```tsx
+<div className="flex items-center gap-1.5">
+  <Switch checked={showCancelled} onCheckedChange={setShowCancelled} id="show-cancelled" />
+  <Label htmlFor="show-cancelled" className="text-xs cursor-pointer">Show cancelled</Label>
+</div>
+```
 
-Sprawdźmy co jest w calendar_settings:
+Domyślnie `showCancelled` jest już `false` (linia 85) — OK.
 
-Kolumna `default_meeting_link` NIE istnieje w `calendar_settings`. Jest w `calendar_student_settings` (per-student setting). Ale to jest link ustawiony per-student przez nauczyciela, nie globalny.
-
-Ale widzę kolumnę `auto_create_meet_link` w `calendar_settings`. GCal sync (`gcal-sync` edge function) tworzy Meet link per-event.
-
-**Wniosek:** Brakuje kolumny `default_meeting_link` w `calendar_settings` (globalny link pokoju nauczyciela). Trzeba ją dodać.
-
-**Plan implementacji:**
-1. Dodać kolumnę `default_meeting_link TEXT` do `calendar_settings`
-2. Dodać UI w `CalendarSettingsPage.tsx` — pole input "Default Meeting Room Link" w sekcji Google Meet
-3. W `get-student-hub-data` — zwracać `defaultMeetingLink` z `calendar_settings`
-4. W `StudentHubLessons.tsx` i `StudentHubDashboard.tsx` — wyświetlać przycisk "Join Your Classroom" gdy jest `defaultMeetingLink`
-5. W `usePublicBooking.tsx` bookSlot — pobierać `default_meeting_link` z settings i dołączać do emaila
-6. W `send-calendar-notification-email` — meetingButton jest już obsługiwany (linia 62-64), wystarczy że `meetingLink` zostanie przekazane
+**Plik:** `src/components/calendar/StudentBookingsSection.tsx`
 
 ---
 
@@ -157,25 +301,24 @@ Ale widzę kolumnę `auto_create_meet_link` w `calendar_settings`. GCal sync (`g
 
 | Plik | Zmiana |
 |------|--------|
-| Migracja SQL | Nowa fn `find_student_by_email()` + kolumna `default_meeting_link` w `calendar_settings` |
-| `src/hooks/usePublicBooking.tsx` | Zamiana `.from('students')` na `.rpc('find_student_by_email')` + dodanie `meetingLink` do emaili |
-| `supabase/functions/send-calendar-notification-email/index.ts` | Subject "Booking request sent" zamiast "received" |
-| `supabase/functions/get-student-hub-data/index.ts` | Zwracać `defaultMeetingLink` z `calendar_settings` |
-| `src/pages/StudentHubLessons.tsx` | Sekcja "Your Classroom" z uniwersalnym Join Lesson |
-| `src/pages/StudentHubDashboard.tsx` | Fallback na `defaultMeetingLink` gdy slot nie ma meeting_link |
-| `src/components/calendar/StudentBookingsSection.tsx` | Fix scrollToToday — najbliższe przyszłe, auto-scroll po load |
-| `src/pages/CalendarSettingsPage.tsx` | Input "Default Meeting Room Link" w sekcji Meet |
-| Deploy Edge Functions | `send-calendar-notification-email`, `get-student-hub-data` |
-
-## Pliki które muszę jeszcze zbadać przed implementacją
-
-Muszę sprawdzić `get-student-bookings` linie ~510-540 żeby potwierdzić jak filtruje po studencie (czy Problem 2A to RLS czy inny bug). To zrobię w kroku implementacji.
+| `src/components/calendar/GCalStatusButton.tsx` | Badge z unreadCount z `useCalendarNotifications` |
+| Migracja SQL | `get_student_meeting_link()` SECURITY DEFINER function |
+| `src/pages/CalendarSettingsPage.tsx` | Usunąć globalny meeting link, info o per-student |
+| `supabase/functions/get-student-hub-data/index.ts` | Per-student meeting link z `calendar_student_settings` |
+| `supabase/functions/get-student-bookings/index.ts` | Fallback meeting_link z student settings |
+| `src/hooks/usePublicBooking.tsx` | Per-student meeting link w emailach |
+| `src/pages/StudentPage.tsx` | Zmiana opisu MeetingLinkField |
+| `src/pages/StudentHubDashboard.tsx` | "Book Your First Lesson" CTA + przycisk "Book" |
+| `src/components/student-hub/StudentHubLayout.tsx` | Zakładka "Lessons & Booking" |
+| `src/pages/BookLandingPage.tsx` | Redirect do `/my/{token}/lessons` |
+| `src/pages/PublicBookingPage.tsx` | Uproszczenie do redirect + email form |
+| `src/pages/StudentHubLessons.tsx` | Legenda Available/Pending |
+| `src/components/calendar/StudentBookingsSection.tsx` | Desc sort, Today offset, Show Cancelled toggle |
+| Deploy Edge Functions | `get-student-hub-data`, `get-student-bookings` |
 
 ## Co NIE zmienia się
-
+- Tabele DB (poza nowa function) — `calendar_student_settings.default_meeting_link` już istnieje
 - SM-2, flashcards, homework — bez zmian
-- Routing — bez zmian  
-- Inne Edge Functions — bez zmian
-- RLS na `students` — zostaje `auth.uid() = teacher_id` (security fix zachowany)
-- `calendar_student_settings.default_meeting_link` — to per-student, zostaje bez zmian, nowa kolumna jest w `calendar_settings` (globalna)
+- Routing w `App.tsx` — bez zmian (oba routes `/book` i `/book/:token` zostają, po prostu robią redirect)
+- RLS — bez zmian
 
