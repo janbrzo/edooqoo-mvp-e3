@@ -60,13 +60,18 @@ const StudentHubDashboard = () => {
         <StudentHubStats stats={data.stats} nextLesson={nextLesson} />
 
         {/* Next Lesson */}
-        {nextLesson && (
+        {nextLesson ? (
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold flex items-center gap-2"><Calendar className="h-4 w-4" /> Next Lesson</h2>
-              <Button variant="ghost" size="sm" className="text-xs" onClick={() => navigate(`/my/${teacherToken}/lessons`)}>
-                View all <ArrowRight className="h-3 w-3 ml-1" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="text-xs" onClick={() => navigate(`/my/${teacherToken}/lessons`)}>
+                  Book <ArrowRight className="h-3 w-3 ml-1" />
+                </Button>
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => navigate(`/my/${teacherToken}/lessons`)}>
+                  View all <ArrowRight className="h-3 w-3 ml-1" />
+                </Button>
+              </div>
             </div>
             <Card>
               <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
@@ -107,6 +112,18 @@ const StudentHubDashboard = () => {
                     📅 Add to GCal
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </section>
+        ) : (
+          <section>
+            <h2 className="text-lg font-semibold flex items-center gap-2 mb-3"><Calendar className="h-4 w-4" /> Next Lesson</h2>
+            <Card>
+              <CardContent className="p-6 text-center space-y-3">
+                <p className="text-sm text-muted-foreground">None scheduled</p>
+                <Button onClick={() => navigate(`/my/${teacherToken}/lessons`)}>
+                  Book Your First Lesson
+                </Button>
               </CardContent>
             </Card>
           </section>

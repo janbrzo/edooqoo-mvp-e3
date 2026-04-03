@@ -90,8 +90,18 @@ const StudentHubLessons = () => {
     <StudentHubLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Calendar className="h-5 w-5" /> Lessons</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2"><Calendar className="h-5 w-5" /> Lessons & Booking</h1>
           <p className="text-sm text-muted-foreground mt-1">Book new lessons and view your upcoming schedule</p>
+          <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-green-100 border border-green-300" />
+              <span>Available</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded bg-amber-100 border border-amber-300" />
+              <span>Pending</span>
+            </div>
+          </div>
         </div>
 
         {/* Your Classroom — universal meeting link */}

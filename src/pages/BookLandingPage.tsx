@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, ArrowRight, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { saveHubEmail, getSavedHubEmail } from '@/hooks/useStudentHubData';
 
 const STORAGE_KEY = 'book_landing_email';
 const TTL_DAYS = 7;
@@ -44,12 +45,20 @@ const BookLandingPage = () => {
   const [searched, setSearched] = useState(false);
 
   useEffect(() => {
-    const saved = getSavedEmail();
+    const saved = getSavedEmail() || getSavedHubEmail();
     if (saved) {
       setEmail(saved);
       findTeachers(saved);
     }
   }, []);
+
+  // Auto-redirect when exactly 1 teacher found
+  useEffect(() => {
+    if (teachers.length === 1 && !loading && searched) {
+      saveHubEmail(email.trim());
+      navigate(`/my/${teachers[0].token}/lessons`, { replace: true });
+    }
+  }, [teachers, loading, searched]);
 
   const findTeachers = async (emailToSearch: string) => {
     if (!emailToSearch.trim()) return;
@@ -77,11 +86,8 @@ const BookLandingPage = () => {
   };
 
   const handleSelectTeacher = (token: string) => {
-    // Save last teacher for convenience
-    try {
-      localStorage.setItem('book_last_teacher_token', token);
-    } catch {}
-    navigate(`/book/${token}`);
+    saveHubEmail(email.trim());
+    navigate(`/my/${token}/lessons`);
   };
 
   return (
@@ -116,7 +122,7 @@ const BookLandingPage = () => {
             </p>
           )}
 
-          {teachers.length > 0 && (
+          {teachers.length > 1 && (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Select your teacher:</p>
               {teachers.map((t, i) => (
