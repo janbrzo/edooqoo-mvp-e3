@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { key: 'flashcards', label: 'Flashcards', icon: BookOpen },
   { key: 'homework', label: 'Homework', icon: ClipboardList },
   { key: 'worksheets', label: 'Worksheets', icon: FileText },
-  { key: 'lessons', label: 'Lessons', icon: Calendar },
+  { key: 'lessons', label: 'Lessons & Booking', icon: Calendar },
   { key: 'settings', label: 'Settings', icon: Settings },
 ];
 

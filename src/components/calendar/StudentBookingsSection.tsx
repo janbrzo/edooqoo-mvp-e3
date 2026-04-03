@@ -216,7 +216,7 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
       }));
       result = [...result, ...cancelledMapped];
     }
-    result.sort((a: any, b: any) => `${a.slot_date}${a.start_time}`.localeCompare(`${b.slot_date}${b.start_time}`));
+    result.sort((a: any, b: any) => `${b.slot_date}${b.start_time}`.localeCompare(`${a.slot_date}${a.start_time}`));
     return result;
   }, [viewFilteredBookings, showCancelled, filteredCancelled]);
 
@@ -225,11 +225,14 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
   const scrollToToday = useCallback(() => {
     if (!listRef.current) return;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    let targetEl: Element | null = listRef.current.querySelector(`[data-date="${todayStr}"]`);
-    if (!targetEl) {
-      const allDateEls = Array.from(listRef.current.querySelectorAll('[data-date]'));
-      targetEl = allDateEls.find(el => (el.getAttribute('data-date') || '') >= todayStr)
-        || allDateEls[allDateEls.length - 1] || null;
+    const allDateEls = Array.from(listRef.current.querySelectorAll('[data-date]'));
+    // In descending order, find the first element with date <= today (closest to today from future side)
+    let targetEl: Element | null = allDateEls.find(el => (el.getAttribute('data-date') || '') <= todayStr) || allDateEls[0] || null;
+    // Offset 2 positions up for better context
+    if (targetEl) {
+      const idx = allDateEls.indexOf(targetEl);
+      const offsetIdx = Math.max(0, idx - 2);
+      targetEl = allDateEls[offsetIdx];
     }
     if (targetEl) targetEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, []);
@@ -456,13 +459,10 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
               <Switch checked={showPast} onCheckedChange={setShowPast} id="show-past" />
               <Label htmlFor="show-past" className="text-xs cursor-pointer">Show past</Label>
             </div>
-            <Button
-              variant={showCancelled ? 'default' : 'outline'}
-              size="sm" className="text-xs h-7"
-              onClick={() => setShowCancelled(!showCancelled)}
-            >
-              {showCancelled ? 'Hide Cancelled' : 'Show Cancelled'}
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Switch checked={showCancelled} onCheckedChange={setShowCancelled} id="show-cancelled" />
+              <Label htmlFor="show-cancelled" className="text-xs cursor-pointer">Show cancelled</Label>
+            </div>
           </div>
         </div>
         {/* Status filters */}

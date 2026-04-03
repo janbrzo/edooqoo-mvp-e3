@@ -297,6 +297,15 @@ Deno.serve(async (req) => {
       masteredFlashcards,
     };
 
+    // 10. Per-student meeting link
+    const { data: studentSettingsData } = await supabase
+      .from('calendar_student_settings')
+      .select('default_meeting_link')
+      .eq('student_id', studentId)
+      .eq('teacher_id', teacherId)
+      .maybeSingle();
+    const studentMeetingLink = studentSettingsData?.default_meeting_link || null;
+
     return new Response(JSON.stringify({
       teacherName,
       teacherEmail: teacherProfile?.email || null,
@@ -309,7 +318,7 @@ Deno.serve(async (req) => {
       sharedWorksheets: enrichedWorksheets,
       upcomingLessons: enrichedLessons,
       stats,
-      defaultMeetingLink: settingsData.default_meeting_link || null,
+      defaultMeetingLink: studentMeetingLink || settingsData.default_meeting_link || null,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

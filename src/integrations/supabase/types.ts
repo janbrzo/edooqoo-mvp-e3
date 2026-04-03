@@ -2958,6 +2958,10 @@ export type Database = {
           submitted_at: string
         }[]
       }
+      get_student_meeting_link: {
+        Args: { p_student_id: string; p_teacher_id: string }
+        Returns: string
+      }
       get_student_tags: {
         Args: { p_student_id: string; p_teacher_id: string }
         Returns: string[]
