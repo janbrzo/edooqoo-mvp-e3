@@ -6,13 +6,22 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-04-02) - Fix: Student identification, email subjects, scroll-to-today, meeting links:**
-- ✅ **`find_student_by_email()` SECURITY DEFINER**: Nowa SQL function omijająca RLS — naprawia identyfikację istniejących studentów podczas publicznego bookingu (RLS `auth.uid() = teacher_id` blokował lookup niezalogowanych)
-- ✅ **`usePublicBooking.tsx`**: Zamiana `.from('students')` na `.rpc('find_student_by_email')` — student poprawnie rozpoznany, prawidłowe imię w mailach i powiadomieniach
-- ✅ **Email subject fix**: `booking_pending` email subject zmieniony z "Booking request received" na "Booking request sent"
-- ✅ **Meeting link**: Nowa kolumna `calendar_settings.default_meeting_link` — globalny link do pokoju nauczyciela. UI w CalendarSettingsPage, przycisk "Join Lesson" w StudentHubLessons, fallback w StudentHubDashboard
-- ✅ **`get-student-hub-data`**: Zwraca `defaultMeetingLink` z `calendar_settings`
-- ✅ **scrollToToday fix**: `StudentBookingsSection` scrolluje do najbliższego przyszłego wydarzenia jeśli dziś brak lekcji + auto-scroll po załadowaniu
+**Ostatnia aktualizacja (2026-04-03) - Meeting links per-student, Calendar badge, /book redirect, Lessons UX:**
+- ✅ **Calendar badge**: `GCalStatusButton` wyświetla czerwony badge z liczbą nieodczytanych powiadomień kalendarza
+- ✅ **Per-student meeting links**: Globalne pole `default_meeting_link` w CalendarSettingsPage zastąpione per-student linkami z `calendar_student_settings`. Nowa SQL function `get_student_meeting_link()` (SECURITY DEFINER). Edge function `get-student-hub-data` pobiera per-student link z fallbackiem na globalny
+- ✅ **StudentPage description**: Opis meeting link zmieniony na uniwersalny ("Paste your meeting room link...")
+- ✅ **Dashboard CTA**: "Book Your First Lesson" gdy brak lekcji + przycisk "Book" obok "View all"
+- ✅ **Tab rename**: "Lessons" → "Lessons & Booking" w StudentHubLayout
+- ✅ **/book redirect**: BookLandingPage i PublicBookingPage przekierowują do `/my/{token}/lessons` gdy student ma email
+- ✅ **PublicBookingPage uproszczenie**: Thin wrapper z email form → redirect do hub
+- ✅ **Legenda**: Available/Pending indicators w StudentHubLessons
+- ✅ **Lessons UX**: Odwrotna kolejność (najnowsze na górze), Today scroll z offsetem, Show Cancelled jako Switch/toggle
+- ✅ **usePublicBooking**: Per-student meeting link w emailach (priorytet: per-student > slot > global)
+
+**Poprzednia aktualizacja (2026-04-02) - Fix: Student identification, email subjects, scroll-to-today, meeting links:**
+- ✅ **`find_student_by_email()` SECURITY DEFINER**: Nowa SQL function omijająca RLS
+- ✅ **Email subject fix**: `booking_pending` subject zmieniony z "received" na "sent"
+- ✅ **scrollToToday fix**: auto-scroll do najbliższego przyszłego wydarzenia
 
 **Poprzednia aktualizacja (2026-04-01) - Flashcards DSLM: CEFR levels, unified skill_ids, difficulty multiplier:**
 - ✅ **`cefr_level` kolumna**: `flashcard_cards.cefr_level` (TEXT) — AI przypisuje poziom A1-C2 na podstawie częstotliwości, abstrakcyjności, złożoności morfologicznej
