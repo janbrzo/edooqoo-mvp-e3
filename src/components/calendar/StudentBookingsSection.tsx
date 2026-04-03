@@ -216,7 +216,7 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
       }));
       result = [...result, ...cancelledMapped];
     }
-    result.sort((a: any, b: any) => `${a.slot_date}${a.start_time}`.localeCompare(`${b.slot_date}${b.start_time}`));
+    result.sort((a: any, b: any) => `${b.slot_date}${b.start_time}`.localeCompare(`${a.slot_date}${a.start_time}`));
     return result;
   }, [viewFilteredBookings, showCancelled, filteredCancelled]);
 
