@@ -459,13 +459,10 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
               <Switch checked={showPast} onCheckedChange={setShowPast} id="show-past" />
               <Label htmlFor="show-past" className="text-xs cursor-pointer">Show past</Label>
             </div>
-            <Button
-              variant={showCancelled ? 'default' : 'outline'}
-              size="sm" className="text-xs h-7"
-              onClick={() => setShowCancelled(!showCancelled)}
-            >
-              {showCancelled ? 'Hide Cancelled' : 'Show Cancelled'}
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Switch checked={showCancelled} onCheckedChange={setShowCancelled} id="show-cancelled" />
+              <Label htmlFor="show-cancelled" className="text-xs cursor-pointer">Show cancelled</Label>
+            </div>
           </div>
         </div>
         {/* Status filters */}

@@ -90,7 +90,7 @@ function MeetingLinkField({ studentId, teacherId }: { studentId: string; teacher
         />
         {saved && <span className="text-xs text-green-600 whitespace-nowrap">✓ Saved</span>}
       </div>
-      <p className="text-xs text-muted-foreground mt-1">This link will be auto-filled for new lessons with this student.</p>
+      <p className="text-xs text-muted-foreground mt-1">Paste your meeting room link (e.g., Google Meet, Zoom). Students will see a "Join Lesson" button.</p>
     </div>
   );
 }

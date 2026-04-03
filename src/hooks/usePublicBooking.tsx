@@ -192,8 +192,18 @@ export function usePublicBooking(token?: string) {
           }
         }
 
-        // Get default meeting link from settings
-        const meetingLink = (settings as any).default_meeting_link || (slot as any).meeting_link || undefined;
+        // Get per-student meeting link (priority: per-student > slot > global settings)
+        let meetingLink: string | undefined;
+        if (existingStudent) {
+          const { data: studentMeetingLink } = await supabase
+            .rpc('get_student_meeting_link', {
+              p_teacher_id: settings.teacher_id,
+              p_student_id: existingStudent.id,
+            });
+          meetingLink = studentMeetingLink || (slot as any).meeting_link || (settings as any).default_meeting_link || undefined;
+        } else {
+          meetingLink = (slot as any).meeting_link || (settings as any).default_meeting_link || undefined;
+        }
         
         supabase.functions.invoke('send-calendar-notification-email', {
           body: {
