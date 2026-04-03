@@ -225,11 +225,14 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
   const scrollToToday = useCallback(() => {
     if (!listRef.current) return;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    let targetEl: Element | null = listRef.current.querySelector(`[data-date="${todayStr}"]`);
-    if (!targetEl) {
-      const allDateEls = Array.from(listRef.current.querySelectorAll('[data-date]'));
-      targetEl = allDateEls.find(el => (el.getAttribute('data-date') || '') >= todayStr)
-        || allDateEls[allDateEls.length - 1] || null;
+    const allDateEls = Array.from(listRef.current.querySelectorAll('[data-date]'));
+    // In descending order, find the first element with date <= today (closest to today from future side)
+    let targetEl: Element | null = allDateEls.find(el => (el.getAttribute('data-date') || '') <= todayStr) || allDateEls[0] || null;
+    // Offset 2 positions up for better context
+    if (targetEl) {
+      const idx = allDateEls.indexOf(targetEl);
+      const offsetIdx = Math.max(0, idx - 2);
+      targetEl = allDateEls[offsetIdx];
     }
     if (targetEl) targetEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, []);
