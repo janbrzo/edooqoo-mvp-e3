@@ -50,7 +50,7 @@ import { StudentSwitcherPopover } from '@/components/StudentSwitcherPopover';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 
-function MeetingLinkField({ studentId, teacherId }: { studentId: string; teacherId: string }) {
+function MeetingLinkField({ studentId, teacherId, hasGcal }: { studentId: string; teacherId: string; hasGcal?: boolean }) {
   const [link, setLink] = useState('');
   const [saved, setSaved] = useState(false);
 
