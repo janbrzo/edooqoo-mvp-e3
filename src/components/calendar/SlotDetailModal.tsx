@@ -510,7 +510,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       }
       toast.success(`Rejected ${batchSlotIds.length} bookings`);
       const canSend = await shouldSendEmail('notify_email_on_rejection');
-      if (canSend) await sendCalendarEmail('booking_rejected');
+      if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
     } else {
       await onUpdate(slot.id, {
         status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
