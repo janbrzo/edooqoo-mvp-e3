@@ -517,7 +517,7 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().split('T')[0];
     let query = supabase
       .from('calendar_slots')
-      .select('id, slot_date, start_time, end_time, status, confirmed_at, student_notes, worksheet_id, notes, meeting_link, reschedule_request_from_slot_id, reschedule_request_to_slot_id')
+      .select('id, slot_date, start_time, end_time, status, confirmed_at, student_notes, worksheet_id, notes, meeting_link, discount_percent, reschedule_request_from_slot_id, reschedule_request_to_slot_id')
       .eq('teacher_id', teacherId)
       .in('status', ['booked', 'completed', 'needs_review', 'no_show'])
       .order('slot_date')
