@@ -589,6 +589,19 @@ export function UnifiedSlotModal({
             </div>
           )}
 
+          {/* Discount — available slot single mode only */}
+          {slotType === 'available' && mode === 'single' && (
+            <div>
+              <Label className="text-xs">Discount % (optional)</Label>
+              <Input
+                type="number" min="0" max="100" value={discountPercent}
+                onChange={e => setDiscountPercent(e.target.value)}
+                placeholder="e.g. 10"
+                className="h-9 w-32"
+              />
+            </div>
+          )}
+
           {/* Location + Notes (all modes except batch) */}
           {mode !== 'batch' && (
             <>
