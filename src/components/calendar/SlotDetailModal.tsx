@@ -504,21 +504,32 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         toast.error(err.message || 'Failed to reject reschedule');
       }
     } else if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
-      for (const sid of batchSlotIds) {
-        await onUpdate(sid, {
+      try {
+        for (const sid of batchSlotIds) {
+          await onUpdate(sid, {
+            status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
+          } as any);
+        }
+        toast.success(`Rejected ${batchSlotIds.length} bookings`);
+        const canSend = await shouldSendEmail('notify_email_on_rejection');
+        if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
+      } catch (err: any) {
+        console.error('Batch reject failed:', err);
+        toast.error('Failed to reject some bookings');
+      }
+    } else {
+      try {
+        await onUpdate(slot.id, {
           status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
         } as any);
+        const canSend = await shouldSendEmail('notify_email_on_rejection');
+        if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
+        toast.success('Booking rejected, slot is available again');
+      } catch (err: any) {
+        console.error('Reject failed:', err);
+        toast.error('Failed to reject booking');
+        return; // Don't close modal on error
       }
-      toast.success(`Rejected ${batchSlotIds.length} bookings`);
-      const canSend = await shouldSendEmail('notify_email_on_rejection');
-      if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
-    } else {
-      await onUpdate(slot.id, {
-        status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
-      } as any);
-      const canSend = await shouldSendEmail('notify_email_on_rejection');
-      if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
-      toast.success('Booking rejected, slot is available again');
     }
 
     try {

@@ -50,7 +50,7 @@ import { StudentSwitcherPopover } from '@/components/StudentSwitcherPopover';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 
-function MeetingLinkField({ studentId, teacherId }: { studentId: string; teacherId: string }) {
+function MeetingLinkField({ studentId, teacherId, hasGcal }: { studentId: string; teacherId: string; hasGcal?: boolean }) {
   const [link, setLink] = useState('');
   const [saved, setSaved] = useState(false);
 
@@ -93,7 +93,9 @@ function MeetingLinkField({ studentId, teacherId }: { studentId: string; teacher
       <p className="text-xs text-muted-foreground mt-1">
         {link 
           ? "Your meeting room link. Students will see a 'Join Lesson' button. Paste a different link to override."
-          : "Paste your meeting room link (e.g., Google Meet, Zoom). Students will see a 'Join Lesson' button."
+          : hasGcal
+            ? "A Google Meet link can be set here. Students will see a 'Join Lesson' button."
+            : "Connect Google Meet or paste your meeting room link (e.g., Google Meet, Zoom). Students will see a 'Join Lesson' button."
         }
       </p>
     </div>
@@ -148,16 +150,18 @@ const StudentPage = () => {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareWorksheetData, setShareWorksheetData] = useState<{id: string; title: string; shareToken?: string} | null>(null);
   const [teacherCalendarToken, setTeacherCalendarToken] = useState<string | null>(null);
+  const [gcalEnabled, setGcalEnabled] = useState(false);
 
-  // Fetch teacher's public_calendar_token for share links
+  // Fetch teacher's public_calendar_token and gcal status for share links
   useEffect(() => {
     if (student?.teacher_id) {
       supabase.from('calendar_settings')
-        .select('public_calendar_token')
+        .select('public_calendar_token, gcal_integration_enabled')
         .eq('teacher_id', student.teacher_id)
         .maybeSingle()
         .then(({ data }) => {
           if (data?.public_calendar_token) setTeacherCalendarToken(data.public_calendar_token);
+          setGcalEnabled(!!data?.gcal_integration_enabled);
         });
     }
   }, [student?.teacher_id]);
@@ -356,6 +360,16 @@ const StudentPage = () => {
               studentName={student.name}
               studentEmail={student.student_email}
             />
+            {student.student_email && (
+              <div className="bg-muted/50 border border-border rounded-md p-3 text-sm mb-4 flex items-start gap-3">
+                <BookOpen className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <p className="text-muted-foreground text-xs">
+                  This student can access their worksheets, homework, flashcards & lessons at{' '}
+                  <a href="https://edooqoo.com/my" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">edooqoo.com/my</a>
+                  {' '}— no login needed, just their email.
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Student Details */}
               <Card>
@@ -465,7 +479,7 @@ const StudentPage = () => {
                   </div>
                 </div>
                 {/* Default Meeting Link */}
-                <MeetingLinkField studentId={student.id} teacherId={student.teacher_id} />
+                <MeetingLinkField studentId={student.id} teacherId={student.teacher_id} hasGcal={gcalEnabled} />
               </CardContent>
             </Card>
 

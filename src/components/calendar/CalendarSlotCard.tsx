@@ -89,6 +89,13 @@ export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, stu
         </div>
       )}
 
+      {/* Discount badge */}
+      {(slot as any).discount_percent > 0 && !showBadgeC && (
+        <span className="absolute top-0 right-0 text-[8px] font-bold text-red-600 bg-red-50 dark:bg-red-950 dark:text-red-400 rounded-bl px-0.5 z-10">
+          -{(slot as any).discount_percent}%
+        </span>
+      )}
+
       {/* Selection checkbox overlay */}
       {selectionMode && !slot.student_id && (
         <div className="absolute top-0.5 right-0.5 z-10">

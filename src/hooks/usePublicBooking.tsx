@@ -124,7 +124,16 @@ export function usePublicBooking(token?: string) {
       const resolvedName = existingStudent?.name || studentName;
       const autoConfirm = settings.default_booking_mode === 'auto_confirm';
 
-      const slot = slots.find(s => s.id === slotId);
+      let slot = slots.find(s => s.id === slotId);
+      // Slot might be from a different week (recurring booking) — fetch directly from DB
+      if (!slot) {
+        const { data: dbSlot } = await supabase
+          .from('calendar_slots')
+          .select('id, slot_date, start_time, end_time, worksheet_id, meeting_link')
+          .eq('id', slotId)
+          .single();
+        if (dbSlot) slot = dbSlot as any;
+      }
 
       const { error: err } = await supabase
         .from('calendar_slots')
