@@ -33,7 +33,7 @@ export const OnboardingChecklist = () => {
     }
   }, [progress.completed, completionAnimation]);
 
-  if (loading || !shouldShow() || isTemporarilyDismissed) {
+  if (loading || !shouldShow() || isTemporarilyDismissed || location.pathname.startsWith('/my')) {
     return null;
   }
 

@@ -272,6 +272,37 @@ const CalendarSettingsPage = () => {
                     </Button>
                   </div>
                 )}
+                {settings.public_calendar_enabled && (
+                  <>
+                    <div>
+                      <Label className="text-xs">Custom booking URL (optional)</Label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">{window.location.origin}/book/</span>
+                        <Input
+                          value={(settings as any).public_calendar_slug || ''}
+                          onChange={e => {
+                            const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 50);
+                            updateSettings({ public_calendar_slug: val || null } as any);
+                          }}
+                          placeholder="john-smith"
+                          className="h-8 text-sm max-w-48"
+                        />
+                      </div>
+                      {(settings as any).public_calendar_slug && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Input value={`${window.location.origin}/book/${(settings as any).public_calendar_slug}`} readOnly className="text-xs" />
+                          <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/book/${(settings as any).public_calendar_slug}`); toast.success('Custom link copied!'); }}>
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Lowercase letters, numbers, and hyphens only (3-50 characters)</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground">
+                      💡 Share the booking link above with students, or direct them to <strong>{window.location.origin}/my</strong> — they can enter their email to access their Student Hub (lessons, flashcards, homework).
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 

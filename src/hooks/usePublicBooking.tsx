@@ -190,7 +190,7 @@ export function usePublicBooking(token?: string) {
         const { data: teacherProfile } = await supabase.from('profiles').select('email, first_name, last_name').eq('id', settings.teacher_id).maybeSingle();
         const teacherName = [teacherProfile?.first_name, teacherProfile?.last_name].filter(Boolean).join(' ') || 'Your Teacher';
         const teacherEmail = teacherProfile?.email || '';
-        const bookUrl = `${window.location.origin}/book/${settings.public_calendar_token}`;
+        const bookUrl = `${window.location.origin}/my/${settings.public_calendar_token}/lessons`;
         const calendarUrl = `${window.location.origin}/calendar`;
 
         // Get worksheet shared link if available
