@@ -939,5 +939,21 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         </DraggableDialogFooter>
       </DraggableDialogContent>
     </DraggableDialog>
+
+    {/* Reject Dialog */}
+    <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>Reject Booking</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Add an optional note for the student:</p>
+          <AutoResizeTextarea value={rejectComment} onChange={e => setRejectComment(e.target.value)} placeholder="e.g., This time doesn't work, please try Thursday..." rows={2} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowRejectDialog(false)}>Cancel</Button>
+          <Button variant="destructive" onClick={() => { setShowRejectDialog(false); handleReject(); }}>Reject</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

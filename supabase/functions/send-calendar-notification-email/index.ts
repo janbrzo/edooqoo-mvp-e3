@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, endTime, teacherEmail, teacherName, oldSlotDate, oldSlotTime, calendarUrl, bookUrl, worksheetUrl, sharedWorksheetUrl, meetingLink, timezone } = await req.json();
+    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, endTime, teacherEmail, teacherName, oldSlotDate, oldSlotTime, calendarUrl, bookUrl, worksheetUrl, sharedWorksheetUrl, meetingLink, timezone, rejectionReason } = await req.json();
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) {
