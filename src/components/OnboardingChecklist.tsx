@@ -5,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { ChevronUp, ChevronDown, Check, User, FileText, Share2, X, BookOpen } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Confetti from 'react-confetti';
 import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
 
