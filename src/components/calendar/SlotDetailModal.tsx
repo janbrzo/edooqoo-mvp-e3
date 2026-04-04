@@ -211,6 +211,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       slot_date: editDate, start_time: editStartTime, end_time: editEndTime, notes: editNotes || null,
       meeting_link: editMeetingLink || null,
       worksheet_id: editWorksheetId !== 'none' ? editWorksheetId : null,
+      discount_percent: editDiscountPercent ? Number(editDiscountPercent) : null,
     };
 
     let logActionName = 'updated';
