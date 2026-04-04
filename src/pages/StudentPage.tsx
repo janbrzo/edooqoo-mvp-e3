@@ -93,7 +93,9 @@ function MeetingLinkField({ studentId, teacherId, hasGcal }: { studentId: string
       <p className="text-xs text-muted-foreground mt-1">
         {link 
           ? "Your meeting room link. Students will see a 'Join Lesson' button. Paste a different link to override."
-          : "Paste your meeting room link (e.g., Google Meet, Zoom). Students will see a 'Join Lesson' button."
+          : hasGcal
+            ? "A Google Meet link can be set here. Students will see a 'Join Lesson' button."
+            : "Connect Google Meet or paste your meeting room link (e.g., Google Meet, Zoom). Students will see a 'Join Lesson' button."
         }
       </p>
     </div>
