@@ -237,6 +237,9 @@ const StudentHubLessons = () => {
                 <div>
                   <Label className="text-xs">Until date</Label>
                   <Input type="date" value={untilDate} onChange={e => setUntilDate(e.target.value)} className="h-9" />
+                  {recurringCount > 1 && (
+                    <p className="text-xs text-muted-foreground mt-1">This will book up to {recurringCount} lessons (weekly)</p>
+                  )}
                 </div>
               )}
             </div>
