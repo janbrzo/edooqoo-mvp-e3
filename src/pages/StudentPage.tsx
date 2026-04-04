@@ -150,16 +150,18 @@ const StudentPage = () => {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareWorksheetData, setShareWorksheetData] = useState<{id: string; title: string; shareToken?: string} | null>(null);
   const [teacherCalendarToken, setTeacherCalendarToken] = useState<string | null>(null);
+  const [gcalEnabled, setGcalEnabled] = useState(false);
 
-  // Fetch teacher's public_calendar_token for share links
+  // Fetch teacher's public_calendar_token and gcal status for share links
   useEffect(() => {
     if (student?.teacher_id) {
       supabase.from('calendar_settings')
-        .select('public_calendar_token')
+        .select('public_calendar_token, gcal_integration_enabled')
         .eq('teacher_id', student.teacher_id)
         .maybeSingle()
         .then(({ data }) => {
           if (data?.public_calendar_token) setTeacherCalendarToken(data.public_calendar_token);
+          setGcalEnabled(!!data?.gcal_integration_enabled);
         });
     }
   }, [student?.teacher_id]);
