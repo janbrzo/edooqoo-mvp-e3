@@ -23,6 +23,7 @@ interface Booking {
   share_token?: string | null;
   notes?: string | null;
   meeting_link?: string | null;
+  discount_percent?: number | null;
   reschedule_to?: { slot_date: string; start_time: string; end_time: string } | null;
   reschedule_from?: { slot_date: string; start_time: string; end_time: string } | null;
 }
