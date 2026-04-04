@@ -20,12 +20,24 @@ export function usePublicBooking(token?: string) {
   const fetchSettings = useCallback(async () => {
     if (!token) return;
     try {
-      const { data, error: err } = await supabase
+      // Try token first, then slug
+      let { data, error: err } = await supabase
         .from('calendar_settings')
         .select('*')
         .eq('public_calendar_token', token)
         .eq('public_calendar_enabled', true)
         .maybeSingle();
+
+      if (!data && !err) {
+        const slugResult = await supabase
+          .from('calendar_settings')
+          .select('*')
+          .eq('public_calendar_slug', token)
+          .eq('public_calendar_enabled', true)
+          .maybeSingle();
+        data = slugResult.data;
+        err = slugResult.error;
+      }
 
       if (err) throw err;
       if (!data) { setError('Calendar not found or not public.'); setLoading(false); return; }
