@@ -111,6 +111,7 @@ export function UnifiedSlotModal({
   const [recurFrom, setRecurFrom] = useState('');
   const [recurTo, setRecurTo] = useState('');
 
+  const [discountPercent, setDiscountPercent] = useState('');
   const [saving, setSaving] = useState(false);
   const [conflicts, setConflicts] = useState<ConflictInfo[]>([]);
   const [conflictBlocked, setConflictBlocked] = useState(false);
