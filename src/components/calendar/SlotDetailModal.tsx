@@ -373,7 +373,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       const teacherName = [teacherProfile?.first_name, teacherProfile?.last_name].filter(Boolean).join(' ') || 'Your Teacher';
       const teacherEmail = teacherProfile?.email || '';
       const { data: calSettings } = await supabase.from('calendar_settings').select('public_calendar_token').eq('teacher_id', slot.teacher_id).maybeSingle();
-      const bookUrl = calSettings?.public_calendar_token ? `${window.location.origin}/book/${calSettings.public_calendar_token}` : '';
+      const bookUrl = calSettings?.public_calendar_token ? `${window.location.origin}/my/${calSettings.public_calendar_token}/lessons` : '';
       const calendarUrl = `${window.location.origin}/calendar`;
 
       let worksheetUrl: string | undefined;
@@ -386,13 +386,25 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         }
       }
 
+      // Get meeting link: slot > per-student > none
+      let meetingLink: string | undefined = (slot as any).meeting_link || undefined;
+      if (!meetingLink && slot.student_id) {
+        const { data: studentSettings } = await supabase
+          .from('calendar_student_settings')
+          .select('default_meeting_link')
+          .eq('student_id', slot.student_id)
+          .eq('teacher_id', slot.teacher_id)
+          .maybeSingle();
+        meetingLink = studentSettings?.default_meeting_link || undefined;
+      }
+
       supabase.functions.invoke('send-calendar-notification-email', {
         body: {
           type, studentEmail, studentName: studentName || 'Student',
           slotDate: extraParams.slotDate || slot.slot_date, slotTime: extraParams.slotTime || slot.start_time.slice(0, 5),
           endTime: extraParams.endTime || slot.end_time.slice(0, 5),
           teacherName, teacherEmail, bookUrl, calendarUrl,
-          worksheetUrl, sharedWorksheetUrl,
+          worksheetUrl, sharedWorksheetUrl, meetingLink,
           ...extraParams,
         },
       }).catch(console.error);
