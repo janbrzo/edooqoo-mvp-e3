@@ -45,20 +45,47 @@ const StudentHubLessons = () => {
 
   const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
 
+  const recurringCount = useMemo(() => {
+    if (!bookWeekly || !untilDate || !selectedSlot) return 0;
+    let d = addWeeks(parseISO(selectedSlot.slot_date), 1);
+    const end = parseISO(untilDate);
+    let count = 1;
+    while (!isBefore(end, d)) { count++; d = addWeeks(d, 1); }
+    return count;
+  }, [bookWeekly, untilDate, selectedSlot]);
+
   const handleBook = async () => {
-    if (!selectedSlot || !email) return;
+    if (!selectedSlot || !email || !settings) return;
     setBooking(true);
     const name = email.split('@')[0];
     const success = await bookSlot(selectedSlot.id, name, email);
     if (success && bookWeekly && untilDate) {
       let d = addWeeks(parseISO(selectedSlot.slot_date), 1);
       const end = parseISO(untilDate);
+      let bookedCount = 1;
+      let skippedCount = 0;
       while (!isBefore(end, d)) {
         const dateStr = format(d, 'yyyy-MM-dd');
-        const daySlots = getSlotsForDay(d);
-        const match = daySlots.find(s => s.start_time.slice(0, 5) === selectedSlot.start_time.slice(0, 5) && s.status === 'available');
-        if (match) await bookSlot(match.id, name, email);
+        // Query directly from DB for this specific date — fixes recurring booking across weeks
+        const { data: daySlots } = await supabase
+          .from('calendar_slots')
+          .select('id, start_time, status, student_id')
+          .eq('teacher_id', settings.teacher_id)
+          .eq('slot_date', dateStr)
+          .eq('status', 'available')
+          .is('student_id', null);
+        const match = (daySlots || []).find(s => s.start_time.slice(0, 5) === selectedSlot.start_time.slice(0, 5));
+        if (match) {
+          const ok = await bookSlot(match.id, name, email);
+          if (ok) bookedCount++;
+          else skippedCount++;
+        } else {
+          skippedCount++;
+        }
         d = addWeeks(d, 1);
+      }
+      if (bookedCount > 1 || skippedCount > 0) {
+        // Toast is handled by individual bookSlot calls, show summary
       }
     }
     setBooking(false);
