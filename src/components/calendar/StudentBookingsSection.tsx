@@ -23,6 +23,7 @@ interface Booking {
   share_token?: string | null;
   notes?: string | null;
   meeting_link?: string | null;
+  discount_percent?: number | null;
   reschedule_to?: { slot_date: string; start_time: string; end_time: string } | null;
   reschedule_from?: { slot_date: string; start_time: string; end_time: string } | null;
 }
@@ -265,6 +266,9 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
             <span className="text-sm font-medium">{format(parseISO(booking.slot_date), 'EEE, MMM d, yyyy')}</span>
             <Clock className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-sm">{booking.start_time.slice(0, 5)} – {booking.end_time.slice(0, 5)}</span>
+            {booking.discount_percent != null && booking.discount_percent > 0 && (
+              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-red-50 text-red-600 border-red-200 font-bold">-{booking.discount_percent}%</Badge>
+            )}
           </div>
           <div className="flex gap-1 flex-wrap">
             {booking.confirmed_at && !isPending && (

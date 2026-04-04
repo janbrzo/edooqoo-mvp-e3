@@ -111,6 +111,7 @@ export function UnifiedSlotModal({
   const [recurFrom, setRecurFrom] = useState('');
   const [recurTo, setRecurTo] = useState('');
 
+  const [discountPercent, setDiscountPercent] = useState('');
   const [saving, setSaving] = useState(false);
   const [conflicts, setConflicts] = useState<ConflictInfo[]>([]);
   const [conflictBlocked, setConflictBlocked] = useState(false);
@@ -147,6 +148,7 @@ export function UnifiedSlotModal({
       setEndTime(computeEndTime(st, dur));
       setNotes('');
       setLocation('');
+      setDiscountPercent('');
       setStudentId('none');
       setWorksheetId('none');
       setConflicts([]);
@@ -288,7 +290,7 @@ export function UnifiedSlotModal({
         const { blocked, replaceable, info } = checkConflicts(newSlots);
         if (blocked) { setConflicts(info); setConflictBlocked(true); setSaving(false); return; }
         for (const r of replaceable) await onDeleteSlot(r.id);
-        const result = await onCreateSingle({ slot_date: date, start_time: startTime, end_time: endTime, notes: notes || undefined });
+        const result = await onCreateSingle({ slot_date: date, start_time: startTime, end_time: endTime, notes: notes || undefined, discount_percent: discountPercent ? Number(discountPercent) : undefined } as any);
         if (!result) { setSaving(false); return; }
       } else if (slotType === 'available' && availableMode === 'batch') {
         if (batchSlots.length === 0) { setSaving(false); return; }
@@ -584,6 +586,19 @@ export function UnifiedSlotModal({
             <div className="bg-muted/50 border border-border rounded-md px-3 py-2 text-xs text-muted-foreground">
               <Lock className="h-3 w-3 inline mr-1" />
               Private block — only visible to you. Prevents adding slots or lessons in this time range.
+            </div>
+          )}
+
+          {/* Discount — available slot single mode only */}
+          {slotType === 'available' && mode === 'single' && (
+            <div>
+              <Label className="text-xs">Discount % (optional)</Label>
+              <Input
+                type="number" min="0" max="100" value={discountPercent}
+                onChange={e => setDiscountPercent(e.target.value)}
+                placeholder="e.g. 10"
+                className="h-9 w-32"
+              />
             </div>
           )}
 

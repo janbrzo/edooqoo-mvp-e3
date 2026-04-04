@@ -6,7 +6,19 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-04-03) - Meeting links per-student, Calendar badge, /book redirect, Lessons UX:**
+**Ostatnia aktualizacja (2026-04-04) - Slugs, Discounts, Recurring fix, Reject comments, Scroll fix, Student Hub info:**
+- ✅ **Custom booking slugs**: Nauczyciele mogą ustawić ładny URL `/book/jan-kowalski` (kolumna `public_calendar_slug`). `usePublicBooking` szuka po slug OR token
+- ✅ **Slot discounts**: Kolumna `discount_percent` w `calendar_slots`. Pole w UnifiedSlotModal (tworzenie) i SlotDetailModal (edycja). Badge `-X%` na grid i kartach lekcji
+- ✅ **Recurring booking fix**: `handleBook` w StudentHubLessons query bezpośrednio do DB dla przyszłych tygodni zamiast polegania na załadowanych slotach
+- ✅ **Reject comment**: Dialog z textarea przy odrzucaniu bookingu. `rejectionReason` wysyłany w emailu `booking_rejected`
+- ✅ **Meeting link w emailach**: `meetingButton` dodany do `booking_pending` template. `sendCalendarEmail` pobiera per-student meeting link
+- ✅ **View Bookings link**: Zmieniony z `/book/{token}` na `/my/{token}/lessons`
+- ✅ **Scroll fix**: `scrollToToday` naprawiony dla desc order (szuka ostatniego elementu >= today)
+- ✅ **Onboarding ukryty**: `OnboardingChecklist` nie renderuje się na ścieżkach `/my/*`
+- ✅ **Student Hub info**: Info card na Dashboard o `edooqoo.com/my` dla nauczycieli
+- ✅ **CalendarSettingsPage**: Info o Student Hub + pole slug URL + opis sekcji Google Meet
+
+**Poprzednia aktualizacja (2026-04-03) - Meeting links per-student, Calendar badge, /book redirect, Lessons UX:**
 - ✅ **Calendar badge**: `GCalStatusButton` wyświetla czerwony badge z liczbą nieodczytanych powiadomień kalendarza
 - ✅ **Per-student meeting links**: Globalne pole `default_meeting_link` w CalendarSettingsPage zastąpione per-student linkami z `calendar_student_settings`. Nowa SQL function `get_student_meeting_link()` (SECURITY DEFINER). Edge function `get-student-hub-data` pobiera per-student link z fallbackiem na globalny
 - ✅ **StudentPage description**: Opis meeting link zmieniony na uniwersalny ("Paste your meeting room link...")
