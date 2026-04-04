@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
             <p>Hi ${studentName},</p>
             <p>Your booking request for ${lessonInfo} has been sent to the teacher.</p>
             <p>You will receive a confirmation once the teacher approves your booking.</p>
+            ${meetingButton}
             ${studentButton}
           </div>`;
         break;
