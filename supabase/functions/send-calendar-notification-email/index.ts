@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
             <h2 style="color: #1a1a1a;">Booking Declined ❌</h2>
             <p>Hi ${studentName},</p>
             <p>Unfortunately, your booking request for ${lessonInfo} was not approved.</p>
+            ${rejectionReason ? `<div style="background: #fef2f2; padding: 12px; border-radius: 8px; margin: 12px 0; border-left: 3px solid #ef4444;"><p style="margin: 0; font-weight: 500;">Teacher's note:</p><p style="margin: 4px 0 0;">${rejectionReason}</p></div>` : ''}
             <p>Please check the booking page for other available times.</p>
             ${studentButton}
           </div>`;

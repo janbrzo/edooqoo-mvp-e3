@@ -683,6 +683,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const selectedStudentName = students.find(s => s.id === editStudentId)?.name || '';
 
   return (
+    <>
     <DraggableDialog open={open} onOpenChange={onOpenChange}>
       <DraggableDialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DraggableDialogHeader>
