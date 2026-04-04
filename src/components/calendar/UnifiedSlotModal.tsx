@@ -290,7 +290,7 @@ export function UnifiedSlotModal({
         const { blocked, replaceable, info } = checkConflicts(newSlots);
         if (blocked) { setConflicts(info); setConflictBlocked(true); setSaving(false); return; }
         for (const r of replaceable) await onDeleteSlot(r.id);
-        const result = await onCreateSingle({ slot_date: date, start_time: startTime, end_time: endTime, notes: notes || undefined });
+        const result = await onCreateSingle({ slot_date: date, start_time: startTime, end_time: endTime, notes: notes || undefined, discount_percent: discountPercent ? Number(discountPercent) : undefined } as any);
         if (!result) { setSaving(false); return; }
       } else if (slotType === 'available' && availableMode === 'batch') {
         if (batchSlots.length === 0) { setSaving(false); return; }
