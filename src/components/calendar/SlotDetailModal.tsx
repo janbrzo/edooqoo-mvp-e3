@@ -169,7 +169,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     editEndTime !== safeSlot.end_time.slice(0, 5) ||
     editNotes !== (safeSlot.notes || '') ||
     editStudentId !== (safeSlot.student_id || 'none') ||
-    editWorksheetId !== (safeSlot.worksheet_id || 'none');
+    editWorksheetId !== (safeSlot.worksheet_id || 'none') ||
+    editDiscountPercent !== ((safeSlot as any).discount_percent != null ? String((safeSlot as any).discount_percent) : '');
 
   // CRITICAL: early return AFTER all hooks
   if (!slot) return null;
