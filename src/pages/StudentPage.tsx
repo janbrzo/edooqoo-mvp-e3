@@ -360,6 +360,16 @@ const StudentPage = () => {
               studentName={student.name}
               studentEmail={student.student_email}
             />
+            {student.student_email && (
+              <div className="bg-muted/50 border border-border rounded-md p-3 text-sm mb-4 flex items-start gap-3">
+                <BookOpen className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <p className="text-muted-foreground text-xs">
+                  This student can access their worksheets, homework, flashcards & lessons at{' '}
+                  <a href="https://edooqoo.com/my" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">edooqoo.com/my</a>
+                  {' '}— no login needed, just their email.
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Student Details */}
               <Card>
