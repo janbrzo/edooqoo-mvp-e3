@@ -185,8 +185,11 @@ const StudentHubLessons = () => {
                         {daySlots.map(slot => {
                           const time = formatSlotTime(slot);
                           return (
-                            <button key={slot.id} className="w-full text-xs bg-green-100 hover:bg-green-200 text-green-800 rounded px-1 py-0.5 text-center transition-colors" onClick={() => !isPast && setSelectedSlot(slot)} disabled={isPast}>
+                            <button key={slot.id} className="w-full text-xs bg-green-100 hover:bg-green-200 text-green-800 rounded px-1 py-0.5 text-center transition-colors relative" onClick={() => !isPast && setSelectedSlot(slot)} disabled={isPast}>
                               {time.primary}
+                              {(slot as any).discount_percent > 0 && (
+                                <span className="absolute -top-1 -right-1 text-[9px] font-bold text-red-600 bg-red-50 rounded px-0.5">-{(slot as any).discount_percent}%</span>
+                              )}
                             </button>
                           );
                         })}
