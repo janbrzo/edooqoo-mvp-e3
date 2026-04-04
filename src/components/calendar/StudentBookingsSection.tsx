@@ -227,18 +227,27 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
     if (!listRef.current) return;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     const allDateEls = Array.from(listRef.current.querySelectorAll('[data-date]'));
-    // In desc order: future dates first, past dates last
-    // Find the last element with date >= today (= today or nearest future)
-    let targetIdx = -1;
+    if (allDateEls.length === 0) return;
+    // In desc order: future dates first (top), past dates last (bottom)
+    // We want to scroll to the element closest to today
+    // Find: last element with date >= today (= today or nearest future)
+    let todayIdx = -1;
     for (let i = 0; i < allDateEls.length; i++) {
       const d = allDateEls[i].getAttribute('data-date') || '';
-      if (d >= todayStr) targetIdx = i;
-      else break; // past dates start here
+      if (d >= todayStr) {
+        todayIdx = i;
+      } else {
+        break; // past dates start here in desc order
+      }
     }
-    if (targetIdx === -1) targetIdx = 0; // all past, go to top
-    // Offset 2 up for context
-    const offsetIdx = Math.max(0, targetIdx - 2);
-    const targetEl = allDateEls[offsetIdx];
+    // If all dates are past, scroll to top (most recent past)
+    if (todayIdx === -1) {
+      allDateEls[0]?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      return;
+    }
+    // Show today element with 1-2 future lessons above for context
+    const scrollIdx = Math.max(0, todayIdx - 1);
+    const targetEl = allDateEls[scrollIdx];
     if (targetEl) targetEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, []);
 

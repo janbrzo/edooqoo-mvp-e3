@@ -469,7 +469,7 @@ const StudentPage = () => {
                   </div>
                 </div>
                 {/* Default Meeting Link */}
-                <MeetingLinkField studentId={student.id} teacherId={student.teacher_id} />
+                <MeetingLinkField studentId={student.id} teacherId={student.teacher_id} hasGcal={gcalEnabled} />
               </CardContent>
             </Card>
 
