@@ -232,6 +232,21 @@ const Dashboard = () => {
           </Card>
         </div>
 
+        {/* Student Hub Info */}
+        <Card className="mb-8 border-primary/20 bg-primary/5">
+          <CardContent className="p-4 flex items-start gap-3">
+            <BookOpen className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <div className="text-sm">
+              <p className="font-medium mb-1">📚 Student Hub — No login required!</p>
+              <p className="text-muted-foreground">
+                Your students can access their worksheets, homework, flashcards, and lesson bookings at{' '}
+                <a href="https://edooqoo.com/my" target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">edooqoo.com/my</a>
+                {' '}— they just enter their email. Share this link with your students!
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Students Section */}
