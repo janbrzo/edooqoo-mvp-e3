@@ -516,7 +516,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
       } as any);
       const canSend = await shouldSendEmail('notify_email_on_rejection');
-      if (canSend) await sendCalendarEmail('booking_rejected');
+      if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
       toast.success('Booking rejected, slot is available again');
     }
 
