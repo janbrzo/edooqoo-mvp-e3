@@ -104,6 +104,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       setEditStudentId(slot.student_id || 'none');
       setEditMeetingLink((slot as any).meeting_link || '');
       setEditWorksheetId(slot.worksheet_id || 'none');
+      setEditDiscountPercent((slot as any).discount_percent != null ? String((slot as any).discount_percent) : '');
       setShowStudentSelect(false);
       setConfirming(false);
       supabase.from('calendar_slot_logs').select('*').eq('slot_id', slot.id).order('created_at', { ascending: false }).limit(20)
