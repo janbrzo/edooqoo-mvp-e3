@@ -318,6 +318,7 @@ export type Database = {
           notify_student_reminder_hours: number | null
           payment_tracking_enabled: boolean
           public_calendar_enabled: boolean
+          public_calendar_slug: string | null
           public_calendar_token: string | null
           teacher_id: string
           timezone: string
@@ -365,6 +366,7 @@ export type Database = {
           notify_student_reminder_hours?: number | null
           payment_tracking_enabled?: boolean
           public_calendar_enabled?: boolean
+          public_calendar_slug?: string | null
           public_calendar_token?: string | null
           teacher_id: string
           timezone?: string
@@ -412,6 +414,7 @@ export type Database = {
           notify_student_reminder_hours?: number | null
           payment_tracking_enabled?: boolean
           public_calendar_enabled?: boolean
+          public_calendar_slug?: string | null
           public_calendar_token?: string | null
           teacher_id?: string
           timezone?: string
@@ -467,6 +470,7 @@ export type Database = {
           cancelled_by: string | null
           confirmed_at: string | null
           created_at: string
+          discount_percent: number | null
           end_time: string
           gcal_event_id: string | null
           id: string
@@ -496,6 +500,7 @@ export type Database = {
           cancelled_by?: string | null
           confirmed_at?: string | null
           created_at?: string
+          discount_percent?: number | null
           end_time: string
           gcal_event_id?: string | null
           id?: string
@@ -525,6 +530,7 @@ export type Database = {
           cancelled_by?: string | null
           confirmed_at?: string | null
           created_at?: string
+          discount_percent?: number | null
           end_time?: string
           gcal_event_id?: string | null
           id?: string
