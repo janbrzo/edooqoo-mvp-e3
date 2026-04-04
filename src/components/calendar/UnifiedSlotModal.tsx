@@ -148,6 +148,7 @@ export function UnifiedSlotModal({
       setEndTime(computeEndTime(st, dur));
       setNotes('');
       setLocation('');
+      setDiscountPercent('');
       setStudentId('none');
       setWorksheetId('none');
       setConflicts([]);
