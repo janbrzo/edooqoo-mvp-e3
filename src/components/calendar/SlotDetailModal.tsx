@@ -803,6 +803,11 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
 
           <div><Label className="text-xs">Notes</Label><AutoResizeTextarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={1} className="min-h-[36px]" /></div>
 
+          <div>
+            <Label className="text-xs">Discount %</Label>
+            <Input type="number" min="0" max="100" value={editDiscountPercent} onChange={e => setEditDiscountPercent(e.target.value)} placeholder="e.g. 10" className="h-9 text-xs w-24" />
+          </div>
+
           {!isBlock && hasStudent && (
             <div>
               <Label className="text-xs flex items-center gap-1">Meeting Link</Label>
