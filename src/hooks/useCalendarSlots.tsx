@@ -29,6 +29,8 @@ export interface CalendarSlot {
   created_at: string;
   updated_at: string;
   slot_type?: string; // 'slot' | 'block'
+  discount_percent?: number | null;
+  meeting_link?: string | null;
 }
 
 export interface CreateSlotInput {

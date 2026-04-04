@@ -20,12 +20,24 @@ export function usePublicBooking(token?: string) {
   const fetchSettings = useCallback(async () => {
     if (!token) return;
     try {
-      const { data, error: err } = await supabase
+      // Try token first, then slug
+      let { data, error: err } = await supabase
         .from('calendar_settings')
         .select('*')
         .eq('public_calendar_token', token)
         .eq('public_calendar_enabled', true)
         .maybeSingle();
+
+      if (!data && !err) {
+        const slugResult = await supabase
+          .from('calendar_settings')
+          .select('*')
+          .eq('public_calendar_slug', token)
+          .eq('public_calendar_enabled', true)
+          .maybeSingle();
+        data = slugResult.data;
+        err = slugResult.error;
+      }
 
       if (err) throw err;
       if (!data) { setError('Calendar not found or not public.'); setLoading(false); return; }
@@ -178,7 +190,7 @@ export function usePublicBooking(token?: string) {
         const { data: teacherProfile } = await supabase.from('profiles').select('email, first_name, last_name').eq('id', settings.teacher_id).maybeSingle();
         const teacherName = [teacherProfile?.first_name, teacherProfile?.last_name].filter(Boolean).join(' ') || 'Your Teacher';
         const teacherEmail = teacherProfile?.email || '';
-        const bookUrl = `${window.location.origin}/book/${settings.public_calendar_token}`;
+        const bookUrl = `${window.location.origin}/my/${settings.public_calendar_token}/lessons`;
         const calendarUrl = `${window.location.origin}/calendar`;
 
         // Get worksheet shared link if available

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DraggableDialog, DraggableDialogContent, DraggableDialogHeader, DraggableDialogTitle, DraggableDialogFooter } from '@/components/ui/draggable-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -91,6 +92,9 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const [paymentTrackingEnabled, setPaymentTrackingEnabled] = useState(false);
   const [defaultLessonPrice, setDefaultLessonPrice] = useState<number | null>(null);
   const [currency, setCurrency] = useState('USD');
+  const [editDiscountPercent, setEditDiscountPercent] = useState<string>('');
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectComment, setRejectComment] = useState('');
 
   useEffect(() => {
     if (slot) {
@@ -101,6 +105,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       setEditStudentId(slot.student_id || 'none');
       setEditMeetingLink((slot as any).meeting_link || '');
       setEditWorksheetId(slot.worksheet_id || 'none');
+      setEditDiscountPercent((slot as any).discount_percent != null ? String((slot as any).discount_percent) : '');
       setShowStudentSelect(false);
       setConfirming(false);
       supabase.from('calendar_slot_logs').select('*').eq('slot_id', slot.id).order('created_at', { ascending: false }).limit(20)
@@ -165,7 +170,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     editEndTime !== safeSlot.end_time.slice(0, 5) ||
     editNotes !== (safeSlot.notes || '') ||
     editStudentId !== (safeSlot.student_id || 'none') ||
-    editWorksheetId !== (safeSlot.worksheet_id || 'none');
+    editWorksheetId !== (safeSlot.worksheet_id || 'none') ||
+    editDiscountPercent !== ((safeSlot as any).discount_percent != null ? String((safeSlot as any).discount_percent) : '');
 
   // CRITICAL: early return AFTER all hooks
   if (!slot) return null;
@@ -206,6 +212,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       slot_date: editDate, start_time: editStartTime, end_time: editEndTime, notes: editNotes || null,
       meeting_link: editMeetingLink || null,
       worksheet_id: editWorksheetId !== 'none' ? editWorksheetId : null,
+      discount_percent: editDiscountPercent ? Number(editDiscountPercent) : null,
     };
 
     let logActionName = 'updated';
@@ -367,7 +374,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       const teacherName = [teacherProfile?.first_name, teacherProfile?.last_name].filter(Boolean).join(' ') || 'Your Teacher';
       const teacherEmail = teacherProfile?.email || '';
       const { data: calSettings } = await supabase.from('calendar_settings').select('public_calendar_token').eq('teacher_id', slot.teacher_id).maybeSingle();
-      const bookUrl = calSettings?.public_calendar_token ? `${window.location.origin}/book/${calSettings.public_calendar_token}` : '';
+      const bookUrl = calSettings?.public_calendar_token ? `${window.location.origin}/my/${calSettings.public_calendar_token}/lessons` : '';
       const calendarUrl = `${window.location.origin}/calendar`;
 
       let worksheetUrl: string | undefined;
@@ -380,13 +387,25 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         }
       }
 
+      // Get meeting link: slot > per-student > none
+      let meetingLink: string | undefined = (slot as any).meeting_link || undefined;
+      if (!meetingLink && slot.student_id) {
+        const { data: studentSettings } = await supabase
+          .from('calendar_student_settings')
+          .select('default_meeting_link')
+          .eq('student_id', slot.student_id)
+          .eq('teacher_id', slot.teacher_id)
+          .maybeSingle();
+        meetingLink = studentSettings?.default_meeting_link || undefined;
+      }
+
       supabase.functions.invoke('send-calendar-notification-email', {
         body: {
           type, studentEmail, studentName: studentName || 'Student',
           slotDate: extraParams.slotDate || slot.slot_date, slotTime: extraParams.slotTime || slot.start_time.slice(0, 5),
           endTime: extraParams.endTime || slot.end_time.slice(0, 5),
           teacherName, teacherEmail, bookUrl, calendarUrl,
-          worksheetUrl, sharedWorksheetUrl,
+          worksheetUrl, sharedWorksheetUrl, meetingLink,
           ...extraParams,
         },
       }).catch(console.error);
@@ -492,13 +511,13 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       }
       toast.success(`Rejected ${batchSlotIds.length} bookings`);
       const canSend = await shouldSendEmail('notify_email_on_rejection');
-      if (canSend) await sendCalendarEmail('booking_rejected');
+      if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
     } else {
       await onUpdate(slot.id, {
         status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
       } as any);
       const canSend = await shouldSendEmail('notify_email_on_rejection');
-      if (canSend) await sendCalendarEmail('booking_rejected');
+      if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
       toast.success('Booking rejected, slot is available again');
     }
 
@@ -665,6 +684,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const selectedStudentName = students.find(s => s.id === editStudentId)?.name || '';
 
   return (
+    <>
     <DraggableDialog open={open} onOpenChange={onOpenChange}>
       <DraggableDialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DraggableDialogHeader>
@@ -785,6 +805,11 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
 
           <div><Label className="text-xs">Notes</Label><AutoResizeTextarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={1} className="min-h-[36px]" /></div>
 
+          <div>
+            <Label className="text-xs">Discount %</Label>
+            <Input type="number" min="0" max="100" value={editDiscountPercent} onChange={e => setEditDiscountPercent(e.target.value)} placeholder="e.g. 10" className="h-9 text-xs w-24" />
+          </div>
+
           {!isBlock && hasStudent && (
             <div>
               <Label className="text-xs flex items-center gap-1">Meeting Link</Label>
@@ -860,7 +885,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
                 <Button size="sm" onClick={handleConfirm} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
                   <Check className="h-3 w-3 mr-1" /> Confirm
                 </Button>
-                <Button size="sm" variant="outline" onClick={handleReject} className="text-destructive text-xs h-7">
+                <Button size="sm" variant="outline" onClick={() => { setRejectComment(''); setShowRejectDialog(true); }} className="text-destructive text-xs h-7">
                   <Ban className="h-3 w-3 mr-1" /> Reject
                 </Button>
               </>
@@ -916,5 +941,21 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         </DraggableDialogFooter>
       </DraggableDialogContent>
     </DraggableDialog>
+
+    {/* Reject Dialog */}
+    <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>Reject Booking</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Add an optional note for the student:</p>
+          <AutoResizeTextarea value={rejectComment} onChange={e => setRejectComment(e.target.value)} placeholder="e.g., This time doesn't work, please try Thursday..." rows={2} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowRejectDialog(false)}>Cancel</Button>
+          <Button variant="destructive" onClick={() => { setShowRejectDialog(false); handleReject(); }}>Reject</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

@@ -226,14 +226,18 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
     if (!listRef.current) return;
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     const allDateEls = Array.from(listRef.current.querySelectorAll('[data-date]'));
-    // In descending order, find the first element with date <= today (closest to today from future side)
-    let targetEl: Element | null = allDateEls.find(el => (el.getAttribute('data-date') || '') <= todayStr) || allDateEls[0] || null;
-    // Offset 2 positions up for better context
-    if (targetEl) {
-      const idx = allDateEls.indexOf(targetEl);
-      const offsetIdx = Math.max(0, idx - 2);
-      targetEl = allDateEls[offsetIdx];
+    // In desc order: future dates first, past dates last
+    // Find the last element with date >= today (= today or nearest future)
+    let targetIdx = -1;
+    for (let i = 0; i < allDateEls.length; i++) {
+      const d = allDateEls[i].getAttribute('data-date') || '';
+      if (d >= todayStr) targetIdx = i;
+      else break; // past dates start here
     }
+    if (targetIdx === -1) targetIdx = 0; // all past, go to top
+    // Offset 2 up for context
+    const offsetIdx = Math.max(0, targetIdx - 2);
+    const targetEl = allDateEls[offsetIdx];
     if (targetEl) targetEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, []);
 
