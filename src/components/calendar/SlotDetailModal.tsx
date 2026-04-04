@@ -91,6 +91,9 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const [paymentTrackingEnabled, setPaymentTrackingEnabled] = useState(false);
   const [defaultLessonPrice, setDefaultLessonPrice] = useState<number | null>(null);
   const [currency, setCurrency] = useState('USD');
+  const [editDiscountPercent, setEditDiscountPercent] = useState<string>('');
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectComment, setRejectComment] = useState('');
 
   useEffect(() => {
     if (slot) {
