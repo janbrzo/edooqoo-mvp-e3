@@ -878,7 +878,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
                 <Button size="sm" onClick={handleConfirm} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
                   <Check className="h-3 w-3 mr-1" /> Confirm
                 </Button>
-                <Button size="sm" variant="outline" onClick={handleReject} className="text-destructive text-xs h-7">
+                <Button size="sm" variant="outline" onClick={() => { setRejectComment(''); setShowRejectDialog(true); }} className="text-destructive text-xs h-7">
                   <Ban className="h-3 w-3 mr-1" /> Reject
                 </Button>
               </>
