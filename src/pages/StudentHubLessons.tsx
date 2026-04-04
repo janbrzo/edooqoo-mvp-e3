@@ -16,6 +16,7 @@ import { ChevronLeft, ChevronRight, Calendar, Clock, AlertTriangle, Palmtree, Lo
 import { format, addDays, parseISO, isToday, isBefore, addWeeks, isSameDay } from 'date-fns';
 import { toStudentLocalTimeRange, getStudentTimeZone } from '@/utils/timezoneUtils';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const StudentHubLessons = () => {
   const { teacherToken } = useParams<{ teacherToken: string }>();
