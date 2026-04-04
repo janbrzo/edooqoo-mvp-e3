@@ -17,6 +17,7 @@ export const OnboardingChecklist = () => {
   const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
   const { progress, loading, dismissOnboarding, getCompletionPercentage, shouldShow, refreshProgress } = useOnboardingProgress();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const tempDismissed = sessionStorage.getItem('onboarding-temp-dismissed') === 'true';
