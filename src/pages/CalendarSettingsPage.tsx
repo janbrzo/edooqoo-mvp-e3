@@ -419,32 +419,65 @@ const CalendarSettingsPage = () => {
             {/* Google Meet */}
             <Card id="google-meet">
               <CardHeader>
-                <CardTitle className="text-lg">Google Meet Integration</CardTitle>
+                <CardTitle className="text-lg">Meeting Links</CardTitle>
                 <CardDescription>Video meeting links for online lessons</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-2">
-                  <p><strong>Per-student meeting links:</strong> Set a unique meeting room link for each student in their profile page (Student → Default Meeting Link). Students will see a "Join Lesson" button in their Hub.</p>
-                  <p>You can use any meeting platform: Google Meet, Zoom, Microsoft Teams, etc.</p>
-                </div>
-                <div className="border-t pt-4">
+                <div className="border-b pb-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label>Auto-create Google Meet links</Label>
-                      <p className="text-xs text-muted-foreground">Disabled by default. Enable to auto-generate a unique Google Meet room for every booked lesson.</p>
+                      <Label>Auto-create permanent student meeting links</Label>
+                      <p className="text-xs text-muted-foreground">Automatically generate one permanent meeting link per student. All lessons for that student will use the same room.</p>
                     </div>
-                    <Switch checked={(settings as any).auto_create_meet_link || false} onCheckedChange={v => updateSettings({ auto_create_meet_link: v } as any)} />
+                    <Switch checked={(settings as any).auto_create_student_meeting_link || false} onCheckedChange={async (v) => {
+                      await updateSettings({ auto_create_student_meeting_link: v } as any);
+                      if (v && user?.id) {
+                        // Batch-generate links for existing students without one
+                        try {
+                          const { data: students } = await supabase.from('students').select('id').eq('teacher_id', user.id).is('deleted_at', null);
+                          if (students) {
+                            for (const s of students) {
+                              const { data: existing } = await supabase.from('calendar_student_settings')
+                                .select('id, default_meeting_link').eq('student_id', s.id).eq('teacher_id', user.id).maybeSingle();
+                              if (existing?.default_meeting_link) continue;
+                              const link = `https://meet.google.com/lookup/${btoa(`${user.id}-${s.id}`).replace(/[^a-zA-Z0-9]/g, '').slice(0, 12).toLowerCase()}`;
+                              if (existing) {
+                                await supabase.from('calendar_student_settings').update({ default_meeting_link: link, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
+                              } else {
+                                await supabase.from('calendar_student_settings').insert({ student_id: s.id, teacher_id: user.id, default_meeting_link: link } as any);
+                              }
+                              // Propagate to future slots
+                              const today = new Date().toISOString().split('T')[0];
+                              await supabase.from('calendar_slots').update({ meeting_link: link } as any)
+                                .eq('teacher_id', user.id).eq('student_id', s.id).gte('slot_date', today)
+                                .not('status', 'in', '("completed","deleted")');
+                            }
+                            toast.success('Permanent meeting links generated for all students');
+                          }
+                        } catch (err) { console.error('Batch link generation error:', err); }
+                      }
+                    }} />
                   </div>
                 </div>
                 <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-2">
                   <p><strong>How it works:</strong></p>
                   <ul className="list-disc pl-4 space-y-1">
-                    <li><strong>Per-student Meeting Link:</strong> Set a unique link for each student in their profile. Students see a "Join Lesson" button in their Hub.</li>
-                    <li><strong>Auto-create Meet links:</strong> When enabled, every booked lesson gets its own unique Google Meet link (requires Google Calendar connection).</li>
-                    <li>If both are set, the per-lesson auto-generated link takes priority. The per-student link serves as a fallback.</li>
-                    <li>Students can join the meeting directly from their Student Hub dashboard or booking page.</li>
+                    <li><strong>Permanent Student Link (recommended):</strong> Each student gets one permanent meeting room. All lessons use the same link — simple for students.</li>
+                    <li>You can manually override any student's link in their profile page.</li>
+                    <li>Students see a "Join Lesson" button in their Hub.</li>
                   </ul>
                 </div>
+                {gcalConnected && (
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Legacy: Auto-create per-lesson Meet links</Label>
+                        <p className="text-xs text-muted-foreground">Creates a different Google Meet link for every lesson. Not recommended if permanent student links are enabled.</p>
+                      </div>
+                      <Switch checked={(settings as any).auto_create_meet_link || false} onCheckedChange={v => updateSettings({ auto_create_meet_link: v } as any)} />
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
