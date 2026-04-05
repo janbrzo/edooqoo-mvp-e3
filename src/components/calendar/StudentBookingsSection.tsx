@@ -217,8 +217,13 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
       }));
       result = [...result, ...cancelledMapped];
     }
-    result.sort((a: any, b: any) => `${b.slot_date}${b.start_time}`.localeCompare(`${a.slot_date}${a.start_time}`));
-    return result;
+    // Smart sort: upcoming/today first (ascending), then past (descending)
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const upcoming = result.filter(b => `${b.slot_date}${b.start_time}` >= `${todayStr}00:00`);
+    const past = result.filter(b => `${b.slot_date}${b.start_time}` < `${todayStr}00:00`);
+    upcoming.sort((a: any, b: any) => `${a.slot_date}${a.start_time}`.localeCompare(`${b.slot_date}${b.start_time}`));
+    past.sort((a: any, b: any) => `${b.slot_date}${b.start_time}`.localeCompare(`${a.slot_date}${a.start_time}`));
+    return [...upcoming, ...past];
   }, [viewFilteredBookings, showCancelled, filteredCancelled]);
 
   const listRef = React.useRef<HTMLDivElement>(null);
