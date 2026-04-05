@@ -1,299 +1,467 @@
 
+# Plan: 6 napraw — stały link meeting, jedno powiadomienie recurring, komentarze Confirm/Reject, freeze po Reject, Today scroll, zapis Discount w Add Slot
 
-# Plan: 9 napraw — Info, Meeting, MeetingField, Recurring, Reject, Scroll, GCal, Discount
+## Najważniejsza decyzja architektoniczna
 
-## Problem 1: Info o Student Hub na /dashboard i /student
+Przestajemy mieszać dwa modele meetingów. Finalny model ma być jeden:
 
-**Co:** Dodać info-box na obu stronach kierujący nauczycieli do `edooqoo.com/my`.
+- **jedyne źródło prawdy dla ucznia = `calendar_student_settings.default_meeting_link`**
+- dla danego ucznia to ma być **jeden stały link**, używany wszędzie:
+  - w lesson tiles
+  - w Student Hub dashboard
+  - w mailach
+  - przy ręcznie dodanych lekcjach
+  - przy recurring
+  - przy confirm/reject flow
+- link per-slot (`calendar_slots.meeting_link`) zostaje tylko jako **legacy/migracyjny fallback**, ale nie może już wygrywać z linkiem per-student
 
-**Dashboard.tsx** — pod tytułem strony lub w sekcji studentów, dodać:
-```tsx
-<div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm">
-  <p className="font-medium">💡 Student Hub</p>
-  <p className="text-muted-foreground text-xs mt-1">
-    Share <strong>edooqoo.com/my</strong> with your students — they can access their lessons, flashcards, homework & worksheets by entering their email. No login needed.
-  </p>
-</div>
-```
-
-**StudentPage.tsx** — pod nagłówkiem profilu studenta, analogiczny info-box.
-
-**Pliki:** `src/pages/Dashboard.tsx`, `src/pages/StudentPage.tsx`
+To jest krytyczne, bo teraz system nadal ma kilka ścieżek, które potrafią pokazać różne linki dla tego samego ucznia.
 
 ---
 
-## Problem 2: Meeting link — jeden per-student, prosty
+## 1. Meeting: jeden stały link per student, bez wyjątków
 
-**Obecny stan:** Infrastruktura per-student (`calendar_student_settings.default_meeting_link`) ISTNIEJE i działa. Problem: nauczyciel musi ręcznie wkleić link w profilu każdego studenta osobno.
+### Root cause
+Obecny kod ma już tabelę per-student, ale nadal część widoków i logiki korzysta z:
+- `slot.meeting_link`
+- `calendar_settings.default_meeting_link`
+- różnych fallbacków w różnych miejscach
 
-**Co zmienić:**
-- W `CalendarSettingsPage.tsx` sekcja Google Meet — zostawić pole "Default Meeting Link for new students" (globalny fallback) + przycisk "Apply to all students without a link" (batch update). To JUŻ JEST zaimplementowane w poprzedniej wersji.
-- Upewnić się że `get-student-hub-data` i `get-student-bookings` edge functions zwracają per-student meeting link (sprawdzić czy edge functions to robią — z poprzedniej implementacji powinny).
-- W `usePublicBooking.tsx` bookSlot — meeting link jest już pobierany per-student (linia 209-218).
+To powoduje chaos i brak gwarancji „jeden uczeń = jeden pokój”.
 
-**Wniosek:** Problem 2 jest w dużej mierze rozwiązany w poprzednich commitach. Trzeba ZWERYFIKOWAĆ że:
-1. Edge function `get-student-hub-data` zwraca `defaultMeetingLink` z `calendar_student_settings`
-2. Edge function `get-student-bookings` zwraca `meeting_link` per-booking z fallbackiem na per-student
-3. Emaile zawierają meeting link (sprawdzone w `usePublicBooking.tsx` linia 225)
+### Docelowe zachowanie
+Dla ucznia obowiązuje jedna reguła:
 
-Jedyny brakujący element: przycisk "Apply to all students without a link" w CalendarSettingsPage. Trzeba go dodać jeśli nie istnieje.
+```text
+effectiveMeetingLink =
+calendar_student_settings.default_meeting_link
+|| calendar_slots.meeting_link   // tylko fallback dla starych danych
+|| calendar_settings.default_meeting_link // tylko fallback kompatybilności
+```
 
-**Pliki:** `src/pages/CalendarSettingsPage.tsx` (sprawdzić/dodać batch apply button)
+Ale w nowym flow:
+- **student-facing UI zawsze najpierw bierze per-student**
+- przy tworzeniu lekcji dla konkretnego studenta system **kopiuje ten sam link także do slotu**, żeby stare miejsca nadal działały spójnie
+- zmiana linku w profilu ucznia ma opcjonalnie/automatycznie ujednolicać przyszłe sloty tego ucznia
+
+### Konkretne zmiany
+#### A. `src/pages/StudentPage.tsx`
+- zostawić `MeetingLinkField` jako główne miejsce edycji linku ucznia
+- poprawić copy tak, żeby jasno komunikowało stały pokój dla tego ucznia
+- gdy nauczyciel ma GCal:
+  - tekst ma mówić, że to **Google Meet room link**
+  - ale nadal można go ręcznie nadpisać własnym linkiem
+- gdy nauczyciel nie ma GCal:
+  - tekst ma mówić: paste your meeting room link (Google Meet, Zoom itd.)
+
+#### B. `src/pages/StudentPage.tsx` / `MeetingLinkField`
+Po zapisaniu linku ucznia:
+- poza update `calendar_student_settings`
+- wykonać także update wszystkich **przyszłych** slotów tego ucznia, które nie są `completed` / `deleted`, ustawiając im `meeting_link = nowy_link`
+- dzięki temu cały kalendarz, hub i stare komponenty będą od razu spójne
+
+To jest ważniejsze niż „ładny kod”, bo eliminuje rozjazdy danych.
+
+#### C. `src/hooks/useCalendarSlots.tsx`
+W `createSlot()`:
+- już dziś jest pobieranie `calendar_student_settings.default_meeting_link`
+- trzeba dopilnować, żeby ten link był realnie zapisywany jako `meeting_link` dla slotu z uczniem
+- to ma działać dla ręcznego tworzenia lesson przez nauczyciela
+
+W `createSlotsBatch()`:
+- dziś batch insert **nie kopiuje** per-student meeting linku
+- trzeba dodać ten sam mechanizm dla batch/series tworzonych przez nauczyciela
+
+#### D. `src/pages/StudentHubDashboard.tsx`
+Na Next Lesson:
+- zmienić kolejność z:
+  `nextLesson.meeting_link || defaultMeetingLink`
+- na:
+  `defaultMeetingLink || nextLesson.meeting_link`
+  
+Bo student ma zawsze widzieć swój stały pokój.
+
+#### E. `src/pages/StudentHubLessons.tsx`
+Your Classroom card:
+- ma dalej używać `defaultMeetingLink` z hub data
+- to jest poprawne, ale trzeba utrzymać jako główny przycisk
+
+#### F. `src/hooks/usePublicBooking.tsx`
+Przy mailach po bookingu:
+- utrzymać per-student lookup
+- ale uprościć regułę tak, by per-student link zawsze miał priorytet nad per-slot
+
+#### G. `supabase/functions/get-student-hub-data/index.ts`
+Już zwraca per-student link.
+Trzeba tylko **nie zmieniać tej logiki w innym kierunku** i traktować ją jako oficjalne źródło dla Student Hub.
+
+#### H. `supabase/functions/get-student-bookings/index.ts`
+Przy zwracaniu bookingów dla ucznia:
+- dodać fallback per-student meeting link, jeśli slot nie ma własnego linku
+- dzięki temu Join Meeting będzie spójny także na liście lekcji
+
+### Co świadomie NIE robimy
+- nie budujemy teraz automatycznego generatora unikatowych Google Meet rooms per student
+- nie usuwamy kolumn legacy z DB
+- nie przebudowujemy całego GCal sync
+
+To byłoby ryzykowne i niepotrzebne. Stabilna naprawa to: **jedna reguła priorytetu + propagacja do slotów**.
 
 ---
 
-## Problem 3: MeetingLinkField — dynamiczny opis zależny od GCal
+## 2. Book weekly recurring ma znowu tworzyć jedno powiadomienie i jedną akcję Confirm/Reject
 
-**Obecny stan (linia 93-97 StudentPage.tsx):**
-```tsx
-{link 
-  ? "Your meeting room link. Students will see a 'Join Lesson' button..."
-  : "Paste your meeting room link (e.g., Google Meet, Zoom)..."
-}
-```
+### Root cause
+Frontend `StudentHubLessons.tsx` robi recurring przez pętlę:
+- wyszukuje sloty tydzień po tygodniu
+- dla każdego wywołuje `bookSlot()`
 
-**Co zmienić:** Dodać prop `hasGcal` do `MeetingLinkField`. W `StudentPage.tsx` pobrać `gcal_integration_enabled` z `calendar_settings` i przekazać.
+To tworzy:
+- osobne notyfikacje
+- osobne maile
+- brak `metadata.slot_ids`
+- rozjazd względem starego działającego flow batchowego
 
-```tsx
-function MeetingLinkField({ studentId, teacherId, hasGcal }: { studentId: string; teacherId: string; hasGcal?: boolean }) {
-  // ...
-  <p className="text-xs text-muted-foreground mt-1">
-    {link 
-      ? "Your meeting room link. Students will see a 'Join Lesson' button. Paste a different link to override."
-      : hasGcal
-        ? "A Google Meet link can be set here. Students will see a 'Join Lesson' button."
-        : "Connect Google Meet or paste your meeting room link (e.g., Google Meet, Zoom). Students will see a 'Join Lesson' button."
-    }
-  </p>
-```
+Tymczasem w backendzie już istnieje gotowy batch flow w:
+- `supabase/functions/get-student-bookings/index.ts`
+- action: **`book_batch`**
 
-W `StudentPage.tsx`: pobrać `calendar_settings.gcal_integration_enabled` i przekazać `hasGcal={gcalEnabled}`.
+Ta funkcja już:
+- bookuje wiele slotów
+- tworzy **jedno** `booking_pending`
+- zapisuje `metadata.slot_ids`
+- przygotowuje serię pod zbiorczy Confirm/Reject
 
-**Pliki:** `src/pages/StudentPage.tsx`
+### Docelowe rozwiązanie
+Recurring w Student Hub przestaje robić wiele `bookSlot()`.
 
----
+Nowy flow:
+1. Frontend liczy listę pasujących slotów w kolejnych tygodniach
+2. Zbiera ich `slotIds`
+3. Wywołuje **jedną** edge function `get-student-bookings` z:
+   - `action: 'book_batch'`
+   - `slotIds`
+   - `email`
+   - `studentName`
+4. Backend robi cały batch i tworzy jedno powiadomienie
 
-## Problem 4: Recurring booking — "undefined at undefined–undefined"
+### Konkretne zmiany
+#### A. `src/pages/StudentHubLessons.tsx`
+W `handleBook()`:
+- dla single booking:
+  - można zostawić obecny `bookSlot()` żeby nie ruszać stabilnego flow
+- dla recurring:
+  - najpierw zebrać wszystkie pasujące sloty
+  - jeśli `slotIds.length > 1`, wywołać edge function `get-student-bookings` zamiast wielu `bookSlot()`
+  - jeden toast podsumowujący: ile zarezerwowano / ile pominięto
 
-**Root cause:** W `usePublicBooking.tsx` linia 127: `const slot = slots.find(s => s.id === slotId)`. Przy recurring booking, `handleBook` w `StudentHubLessons.tsx` pobiera sloty bezpośrednio z DB (linia 70-76) i wywołuje `bookSlot(match.id, name, email)`. Ale `match` pochodzi z bezpośredniego query do `calendar_slots`, nie z `slots` w hooku. Więc `slots.find(s => s.id === match.id)` zwraca `undefined` → powiadomienie ma `undefined at undefined–undefined`.
+Dodatkowo:
+- pod datą końcową zostawić licznik preview
+- ale licznik ma pokazywać **rzeczywistą liczbę znalezionych slotów**, a nie samą liczbę tygodni, jeśli chcemy pełną precyzję
+- minimalna bezpieczna wersja: zostawić „up to X lessons”, ale po submit pokazać dokładny wynik z backendu
 
-**Rozwiązanie:** W `usePublicBooking.tsx` `bookSlot`, gdy `slot` z `slots.find()` jest null, pobrać dane slotu bezpośrednio z DB:
+#### B. `supabase/functions/get-student-bookings/index.ts`
+Batch flow już istnieje, ale trzeba go dopracować:
+- dopilnować, żeby message był czytelny
+- utrzymać `metadata.slot_ids`
+- dopisać ewentualnie `first_slot_date`, `start_time`, `end_time`, `count` dla wygodniejszego UI i maili
 
-```typescript
-let slot = slots.find(s => s.id === slotId);
-if (!slot) {
-  // Slot might be from a different week (recurring booking) — fetch directly
-  const { data: dbSlot } = await supabase
-    .from('calendar_slots')
-    .select('slot_date, start_time, end_time, worksheet_id, meeting_link')
-    .eq('id', slotId)
-    .single();
-  if (dbSlot) slot = dbSlot as any;
-}
-```
-
-Dodatkowo: po zarezerwowaniu wszystkich slotów w recurring, wysłać jedno zbiorcze powiadomienie z `slot_ids` w metadata (żeby nauczyciel mógł potwierdzić/odrzucić wszystkie naraz):
-
-W `StudentHubLessons.tsx` `handleBook`, po pętli while, dodać zbiorcze powiadomienie:
-```typescript
-if (bookedCount > 1) {
-  // The individual bookSlot calls already created per-slot notifications
-  // But for batch confirm/reject, update the FIRST notification's metadata with all slot_ids
-  // This is how batch confirm/reject works in SlotDetailModal
-}
-```
-
-Ale wait — każde wywołanie `bookSlot` tworzy osobne powiadomienie z osobnym `slot_id`. Batch confirm/reject w `SlotDetailModal` szuka notyfikacji z `metadata.slot_ids`. Problem: obecne powiadomienia nie mają `slot_ids` w metadata.
-
-**Fix:** Po pętli recurring w `handleBook`, jeśli `bookedCount > 1`:
-1. Zebrać wszystkie zarezerwowane `slotIds`
-2. Usunąć indywidualne powiadomienia `booking_pending` (bo są z "undefined")
-3. Wstawić jedno zbiorcze powiadomienie z `slot_ids` w metadata
-
-```typescript
-// Po pętli:
-if (bookedSlotIds.length > 1) {
-  // Delete individual notifications (they have bad "undefined" messages)
-  await supabase.from('calendar_notifications')
-    .delete() // Can't delete — RLS blocks DELETE on calendar_notifications!
-```
-
-RLS na `calendar_notifications` nie pozwala na DELETE (brak policy). Więc zamiast usuwać, **zapobiegamy** tworzeniu powiadomień per-slot w recurring. 
-
-**Lepsze rozwiązanie:** W `bookSlot`, dodać opcjonalny parametr `skipNotification?: boolean`. Gdy `true`, pomiń tworzenie powiadomień. `handleBook` w `StudentHubLessons.tsx`:
-1. Pierwszy slot — `bookSlot(selectedSlot.id, name, email)` — normalnie (tworzy powiadomienie)
-2. Kolejne sloty — `bookSlot(match.id, name, email, true)` — bez powiadomienia
-3. Po pętli — ręcznie update metadata pierwszego powiadomienia żeby dodać `slot_ids`
-
-Ale `bookSlot` nie ma parametru `skipNotification`. Trzeba go dodać.
-
-**Jeszcze lepsze rozwiązanie:** Zmienić logikę w `handleBook` żeby:
-1. Bookować wszystkie sloty (z `bookSlot`)
-2. Pierwsze wywołanie bookSlot tworzy powiadomienie normalnie
-3. Kolejne bookSlot wywołania z flagą `{ skipNotification: true }`
-4. Po pętli: update metadata pierwszego powiadomienia żeby zawierał `slot_ids: [firstSlotId, ...otherSlotIds]`
-
-**Zmiany w `usePublicBooking.tsx`:**
-- `bookSlot` sygnatura: dodać 4. parametr `options?: { skipNotification?: boolean }`
-- Gdy `options?.skipNotification === true`, pominąć sekcje tworzenia notification i wysyłania emaili
-- Dodać do `bookSlot` zwracanie obiektu `{ success: boolean, slotId: string }` zamiast `boolean`
-
-To jest zbyt duży refactor. **Najprostrsze rozwiązanie:**
-
-1. Fix "undefined" — w `bookSlot`, po `const slot = slots.find(...)`, jeśli null → fetch z DB (jak wyżej)
-2. Batch notification — po pętli recurring w `handleBook`, update metadata pierwszego powiadomienia:
-```typescript
-if (bookedSlotIds.length > 1) {
-  const firstNotif = await supabase.from('calendar_notifications')
-    .select('id')
-    .eq('slot_id', selectedSlot.id)
-    .eq('teacher_id', settings.teacher_id)
-    .eq('notification_type', 'booking_pending')
-    .eq('is_resolved', false)
-    .maybeSingle();
-  if (firstNotif?.data) {
-    await supabase.from('calendar_notifications')
-      .update({ 
-        metadata: { slot_ids: bookedSlotIds, ...metadata },
-        message: `${resolvedName} requested ${bookedSlotIds.length} weekly lessons starting ${selectedSlot.slot_date} at ${selectedSlot.start_time.slice(0,5)}–${selectedSlot.end_time.slice(0,5)} — awaiting confirmation`
-      })
-      .eq('id', firstNotif.data.id);
-  }
-}
-```
-
-Ale RLS na `calendar_notifications` UPDATE wymaga `auth.uid() = teacher_id`, a student nie jest zalogowany → UPDATE zablokowany.
-
-**Najprostszy fix:** Po prostu naprawić "undefined" w bookSlot (point 1 wyżej). Każdy slot dostanie osobne poprawne powiadomienie. Nauczyciel potwierdza/odrzuca każdy osobno. Nie idealne ale działa.
-
-**Pliki:** `src/hooks/usePublicBooking.tsx` (fix slot lookup)
+### Efekt
+- jedno powiadomienie
+- jedno kliknięcie Confirm/Reject
+- brak regresji do wielu pendingów
+- zgodność z wcześniejszym działającym modelem
 
 ---
 
-## Problem 5: Reject — komentarz + blokada slotów
+## 3. Confirm i Reject mają mieć komentarz i ten komentarz ma iść do maila
 
-### 5A: Komentarz do Reject
-Sprawdziłem — `showRejectDialog` i `rejectComment` state JUŻ SĄ w SlotDetailModal (linia 96-97). `handleReject` już wysyła `rejectionReason: rejectComment` (linia 514, 520). Trzeba sprawdzić czy **dialog z textarea jest renderowany** w JSX.
+### Root cause
+- jest tylko dialog Reject
+- nie ma dialogu Confirm
+- mail ma obsługę `rejectionReason`, ale nie ma pełnego flow dla komentarza przy Confirm
+- dodatkowo dialogi nie mają `DialogDescription`, stąd warningi accessibility
 
-Muszę zobaczyć render część SlotDetailModal.
+### Docelowe zachowanie
+Przy `Lesson Pending`:
+- kliknięcie **Confirm** otwiera modal z opcjonalnym komentarzem
+- kliknięcie **Reject** otwiera modal z opcjonalnym komentarzem
+- komentarz trafia do maila dla ucznia
+- dla batch recurring komentarz ma dotyczyć całej serii
 
-### 5B: Blokada slotów po Reject
-Logi pokazują `PATCH calendar_slots?id=in.(...) 400`. To jest batch update z 4 slotami. `handleReject` linia 506-511 robi pętlę `for (const sid of batchSlotIds)` — ale każdy `onUpdate` to osobne wywołanie, nie batch. Więc `id=in.(...)` NIE pochodzi z `handleReject`.
+### Konkretne zmiany
+#### A. `src/components/calendar/SlotDetailModal.tsx`
+Dodać:
+- `showConfirmDialog`
+- `confirmComment`
+- osobny confirm dialog analogiczny do reject dialog
+- oba dialogi z:
+  - `DialogTitle`
+  - `DialogDescription`
+  - textarea
+  - Cancel / Confirm action
 
-Wracając do logów: `onOpenChange` jest wywoływane, co re-renderuje CalendarPage. CalendarPage może mieć swój own batch update po zamknięciu modala.
+#### B. `handleConfirm()`
+- nie wykonywać akcji od razu z przycisku
+- przycisk ma otwierać confirm dialog
+- właściwe potwierdzenie dopiero po zatwierdzeniu modala
+- komentarz przekazać do maila
 
-Bardziej prawdopodobne: `batchSlotIds` z metadata powiadomienia zawiera slot IDs które nie należą do tego nauczyciela (bo metadata zapisano z anon/public role). Albo problem jest w tym że `batchSlotIds` w metadata są undefined/invalid.
+#### C. `handleReject()`
+- zostawić dialog reject, ale dopiąć go w pełni
+- komentarz przekazać do maila
+- dodać poprawny opis dialogu, żeby zniknęły warningi
 
-**Root cause** powiązany z Problem 4: recurring booking tworzy powiadomienia z `undefined` metadata (bo `slot` jest undefined). Więc `metadata.slot_ids` nie istnieje, ale `batchNotif?.metadata?.slot_ids` zwraca `undefined`. Wtedy `handleReject` wchodzi w branch `else` (single reject, linia 515-521), który powinien działać.
+#### D. `supabase/functions/send-calendar-notification-email/index.ts`
+Rozszerzyć payload o:
+- `confirmationComment`
+- zachować `rejectionReason`
 
-Ale w logach widzę batch PATCH z 4 ID — to nie pochodzi z reject. To może być z czegoś innego (GCal sync? CalendarPage auto-refetch?).
+Dodać render komentarza:
+- w `booking_confirmation`
+- w `booking_rejected`
 
-**Fix:** Po fix Problem 4 (slot lookup), powiadomienia będą miały poprawne dane. Jeśli reject nadal blokuje:
-- Sprawdzić czy `onOpenChange(false)` w `handleReject` prawidłowo zamyka modal
-- Sprawdzić czy error w `onUpdate` jest łapany (brak try-catch wokół pętli w handleReject)
+Jeżeli zatwierdzamy/odrzucamy batch recurring:
+- najlepiej dodać osobne typy maili:
+  - `batch_booking_confirmed`
+  - `batch_booking_rejected`
+- z jednym mailem podsumowującym serię i komentarzem nauczyciela
 
-Dodać try-catch wokół reject:
-```typescript
-try {
-  await onUpdate(slot.id, { status: 'available', ... });
-} catch (err) {
-  console.error('Reject update failed:', err);
-  toast.error('Failed to reject booking');
-  return; // Don't close modal on error
-}
-```
-
-**Pliki:** `src/components/calendar/SlotDetailModal.tsx`
-
----
-
-## Problem 6: Scroll Today — scrolluje na dół
-
-**Root cause:** `scrollToToday` linia 226-243 w `StudentBookingsSection.tsx`:
-```typescript
-for (let i = 0; i < allDateEls.length; i++) {
-  const d = allDateEls[i].getAttribute('data-date') || '';
-  if (d >= todayStr) targetIdx = i;
-  else break;
-}
-```
-
-W desc order: elementy na górze mają PRZYSZŁE daty (największe), na dole PRZESZŁE (najmniejsze). Iteracja od 0 (góra). Pierwszy element ma datę np. 2026-04-15 >= 2026-04-04 → `targetIdx = 0`. Potem 2026-04-10 >= 2026-04-04 → `targetIdx = 1`. Itd. aż trafimy na datę < today → `break`.
-
-Więc `targetIdx` to OSTATNI element z datą >= today = najbliższy do "today" ale w przyszłości. Potem `offsetIdx = max(0, targetIdx - 2)`.
-
-**Problem:** Jeśli jest dużo przyszłych dat, `targetIdx` może być duży. Ale logika wydaje się poprawna — szukamy granicy today/past. 
-
-ALE: `else break` jest problematyczny. W desc order, daty powinny iść 2026-04-15, 2026-04-12, 2026-04-10, 2026-04-05, **2026-04-04** (today), 2026-04-01. Loop: idx=0 (04-15 >= 04-04 ✓, targetIdx=0), idx=1 (04-12 >= ✓, targetIdx=1), ... idx=4 (04-04 >= ✓, targetIdx=4), idx=5 (04-01 < 04-04 → break). Więc targetIdx=4, offsetIdx=2. Element [2] to np. 2026-04-10. scrollIntoView block:'start' — scrolluje element na górę widoku.
-
-To powinno działać poprawnie... Chyba że `allDateEls` nie ma atrybutu `data-date` lub elementy nie mają prawidłowych dat.
-
-Sprawdźmy jak karty są renderowane:
-
-Muszę zobaczyć render booking card z `data-date`:
-
-**Pliki:** `src/components/calendar/StudentBookingsSection.tsx` (sprawdzę render)
+To jest lepsze niż wysyłanie maila „o jednej lekcji”, gdy nauczyciel potwierdził 6 terminów naraz.
 
 ---
 
-## Problem 7: Google Calendar OAuth — "nie zweryfikowana przez Google"
+## 4. Reject zawiesza calendar i blokuje otwieranie slotów
 
-**To NIE jest bug w kodzie.** To jest status weryfikacji w Google Cloud Console. Redirect URI jest już dodany (problem 8 z poprzedniego planu). Teraz trzeba zweryfikować aplikację.
+### Root cause
+Tu są dwa realne problemy jednocześnie:
 
-**Instrukcja:**
-1. Google Cloud Console → APIs & Services → OAuth consent screen
-2. Uzupełnij: App name = "Edooqoo", Support email, Logo
-3. Dodaj Privacy Policy: `https://edooqoo.com/privacy`
-4. Dodaj Terms of Service: `https://edooqoo.com/terms`  
-5. Kliknij "Submit for Verification"
+### Problem A — błędny batch branch
+`SlotDetailModal` wykrywa batch po `metadata.slot_ids`.
+Jeśli metadata są stare/uszkodzone/albo flow nie był prawidłowo batchowy, modal może wejść w batch branch mimo że dane są niespójne.
 
-**Wymagane strony w aplikacji:** Trzeba stworzyć `/privacy` i `/terms` (proste strony statyczne). Bez nich Google nie zaakceptuje weryfikacji.
+### Problem B — obsługa błędu jest zbyt miękka
+W `handleReject()`:
+- przy błędzie batch update kod nadal schodzi niżej
+- loguje `calendar_slot_logs`
+- resolve’uje notyfikacje
+- zamyka modal
 
-**Pliki:** Nowe: `src/pages/PrivacyPolicy.tsx`, `src/pages/TermsOfService.tsx`, + routing w `App.tsx`
+To może zostawić UI w stanie „pozornie zamknięte, ale logicznie zepsute”.
+
+### Problem C — warningi dialogu
+Brak `DialogDescription` generuje spam warningów, który utrudnia diagnozę, choć sam nie jest główną przyczyną freeze.
+
+### Docelowe rozwiązanie
+#### A. Uodpornić batch detection
+W `SlotDetailModal`:
+- `batchSlotIds` uznać za prawidłowe tylko jeśli:
+  - to tablica
+  - wszystkie elementy są stringami
+  - zawiera aktualny `slot.id`
+  - długość > 1
+
+Jeśli nie:
+- fallback do single-slot confirm/reject
+
+#### B. Twarde przerwanie flow przy błędzie
+W `handleReject()` i `handleConfirm()`:
+- cały batch branch w `try/catch`
+- na błędzie:
+  - `toast.error(...)`
+  - **return**
+  - bez resolve notifications
+  - bez `onOpenChange(false)`
+
+To jest kluczowe. Teraz kod po błędzie idzie dalej, a nie powinien.
+
+#### C. Jeden wspólny helper do batch updates
+Warto wydzielić lokalnie helper:
+- `applyBatchSlotUpdate(slotIds, updates)`
+- waliduje wejście
+- wykonuje aktualizacje sekwencyjnie
+- jeśli cokolwiek padnie, przerywa i zwraca błąd
+
+#### D. Nie zamykać modala przed sukcesem
+Dialog Confirm/Reject zamykać dopiero po:
+- udanym update slotów
+- udanym resolve notifications
+- odpaleniu maila (asynchronicznie może zostać fire-and-forget, ale update i resolve muszą przejść)
+
+#### E. Dodać `DialogDescription`
+Do confirm/reject dialogów, żeby wyczyścić warningi.
+
+### Dodatkowe utwardzenie
+W `src/hooks/useCalendarSlots.tsx`:
+- przejrzeć wszystkie batch update `.in('id', ids)` i zabezpieczyć przed pustą / błędną tablicą
+- szczególnie side-effect auto-mark `needs_review` nie może nigdy destabilizować kalendarza po zamknięciu modala
+
+Nie zmieniamy logiki biznesowej kalendarza — tylko usuwamy możliwość rozjechania stanu UI.
 
 ---
 
-## Problem 9: Discount % w UnifiedSlotModal
+## 5. Today scroll ma przestać przewijać stronę na dół
 
-**Obecny stan:** Pole "Discount %" jest renderowane TYLKO dla `slotType === 'available' && mode === 'single'` (linia 592-603). To JEST w Add Slot. Ale na stronie nauczyciela `/calendar` w `CalendarSlotCard` nie ma wizualnego badge z discount.
+### Root cause
+Błąd nie jest tylko w wyborze targetu.
+Główne problemy są dwa:
 
-**Co dodać w CalendarSlotCard.tsx:**
-```tsx
-{/* Discount badge */}
-{(slot as any).discount_percent > 0 && (
-  <span className="absolute top-0 right-0 text-[8px] font-bold text-red-600 bg-red-50 rounded-bl px-0.5 z-10">
-    -{(slot as any).discount_percent}%
-  </span>
-)}
-```
+1. **auto-scroll na wejściu**
+   - `useEffect(... setTimeout(scrollToToday, 100))`
+   - powoduje samoczynne zjazdy po wejściu na `/my/.../lessons`
 
-Dodać po selection checkbox overlay (linia 101).
+2. **`scrollIntoView()` przewija nie tylko listę, ale potrafi ruszyć całą stronę**
+   - dlatego po kliknięciu Today potrafi lecieć cały page layout
 
-**Pliki:** `src/components/calendar/CalendarSlotCard.tsx`
+### Docelowe zachowanie
+- po wejściu na `/lessons` strona ma stać normalnie od góry:
+  - tytuł
+  - “Book new lessons and view your upcoming schedule”
+  - legenda
+- przycisk **Today** ma przewijać tylko wewnętrzną listę “Your Lessons”
+- nie może ruszać całej strony
+
+### Konkretne zmiany
+#### A. `src/components/calendar/StudentBookingsSection.tsx`
+Usunąć auto-scroll on load:
+- skasować `useEffect`, który odpala `scrollToToday()` po załadowaniu bookingów
+
+#### B. Zmienić implementację `scrollToToday()`
+Zamiast:
+- `targetEl.scrollIntoView(...)`
+
+użyć:
+- obliczenia pozycji elementu względem kontenera `listRef`
+- `listRef.current.scrollTo({ top, behavior: 'smooth' })`
+
+Czyli scrollujemy **kontener listy**, a nie dokument.
+
+#### C. Logika targetu
+W schedule view z desc sort:
+- znaleźć pierwszą sensowną granicę dla dziś / najbliższej przyszłości
+- ale bez offsetu, który spycha za daleko
+- offset ma być mały i liczony w obrębie kontenera, nie przez `scrollIntoView`
+
+To da przewidywalne zachowanie:
+- zero auto-scroll na wejściu
+- Today działa tylko wewnątrz listy
 
 ---
 
-## Podsumowanie zmian
+## 6. Discount z Add Slot jest wpisywany, ale nie zapisuje się do bazy
 
-| Plik | Zmiana |
-|------|--------|
-| `src/pages/Dashboard.tsx` | Info-box o Student Hub |
-| `src/pages/StudentPage.tsx` | Info-box o Student Hub + `hasGcal` prop dla MeetingLinkField + fetch gcal status |
-| `src/hooks/usePublicBooking.tsx` | Fix slot lookup (fetch z DB gdy nie w `slots`) |
-| `src/components/calendar/SlotDetailModal.tsx` | Try-catch w handleReject, sprawdzić render reject dialog |
-| `src/components/calendar/StudentBookingsSection.tsx` | Debug/fix scrollToToday |
-| `src/components/calendar/CalendarSlotCard.tsx` | Discount badge |
-| `src/pages/PrivacyPolicy.tsx` | NOWY — strona Privacy Policy |
-| `src/pages/TermsOfService.tsx` | NOWY — strona Terms of Service |
-| `src/App.tsx` | Routes dla /privacy i /terms |
+### Root cause
+UI przekazuje `discount_percent` z `UnifiedSlotModal`, ale hook zapisujący slot go nie obsługuje:
 
-## Co NIE jest zmianą w kodzie
-- Problem 7: weryfikacja Google wymaga ręcznej akcji w Google Cloud Console + dodania stron /privacy i /terms
-- Problem 2: w dużej mierze rozwiązany w poprzednich commitach, wymaga weryfikacji
+- `UnifiedSlotModal` wysyła `discount_percent`
+- `CreateSlotInput` w `useCalendarSlots.tsx` **nie ma tego pola**
+- `createSlot()` **nie insertuje** `discount_percent`
+- `createSlotsBatch()` też go nie insertuje
 
-## Co NIE zmienia się
-- SM-2, flashcards, homework — bez zmian
-- RLS — bez zmian
-- Tabele DB — bez zmian
-- Edge Functions — bez zmian (chyba że weryfikacja wykaże brak meeting link)
+Czyli pole jest w UI, ale backend hook je gubi.
 
+### Konkretne zmiany
+#### A. `src/hooks/useCalendarSlots.tsx`
+Rozszerzyć `CreateSlotInput` o:
+- `discount_percent?: number | null`
+
+#### B. `createSlot()`
+W `.insert(...)` dopisać:
+- `discount_percent: input.discount_percent ?? null`
+
+#### C. `createSlotsBatch()`
+W mapowaniu `rows` dopisać:
+- `discount_percent: input.discount_percent ?? null`
+
+To daje pełną zgodność:
+- Add Slot single
+- batch create
+- ewentualne przyszłe reuse tego samego inputu
+
+#### D. Display
+Wyświetlanie badge już w większości istnieje:
+- Student Hub slot grid
+- Student bookings
+- teacher `CalendarSlotCard`
+
+Po naprawie zapisu badge po prostu zaczną działać także dla slotów tworzonych przez Add Slot.
+
+---
+
+## Pliki do zmiany
+
+### Meeting / spójność linku
+- `src/pages/StudentPage.tsx`
+- `src/hooks/useCalendarSlots.tsx`
+- `src/hooks/usePublicBooking.tsx`
+- `src/pages/StudentHubDashboard.tsx`
+- `supabase/functions/get-student-bookings/index.ts`
+- opcjonalnie: `src/components/dashboard/StudentPaymentMeetingCard.tsx` tylko jeśli chcemy utrzymać spójny wording
+
+### Recurring batch notification
+- `src/pages/StudentHubLessons.tsx`
+- `supabase/functions/get-student-bookings/index.ts`
+
+### Confirm/Reject comments + freeze fix
+- `src/components/calendar/SlotDetailModal.tsx`
+- `supabase/functions/send-calendar-notification-email/index.ts`
+
+### Today scroll
+- `src/components/calendar/StudentBookingsSection.tsx`
+
+### Discount save
+- `src/hooks/useCalendarSlots.tsx`
+
+---
+
+## Co wdrażamy świadomie, a czego nie ruszamy
+
+### Wdrażamy
+- stały, jeden link per student
+- recurring jako prawdziwy batch
+- komentarze dla Confirm i Reject
+- twarde zabezpieczenie przed freeze po błędzie
+- brak auto-scroll na wejściu
+- zapis `discount_percent` z Add Slot
+
+### Nie ruszamy
+- innych funkcji calendar poza tym promptem
+- schema DB
+- promptów AI / innych modułów
+- pełnego refaktoru całego booking flow single booking
+- generatora Google Meet rooms
+
+---
+
+## Dokumentacja do aktualizacji po implementacji
+Po wdrożeniu trzeba zaktualizować:
+- `docs/TECHNICAL_DOCUMENTATION.md`
+- `docs/USER_GUIDE_SHORT.md`
+- `docs/USER_GUIDE_DETAILED.md`
+- `docs/BUSINESS_ANALYSIS.md`
+- `docs/DEVELOPMENT_ROADMAP.md`
+- `docs/CURRENT_STATE_ANALYSIS.md`
+- `README.md`
+
+Zakres opisu w dokumentacji:
+- finalna zasada „one student = one permanent meeting link”
+- recurring batch notification flow
+- confirm/reject comments
+- Today button behavior
+- Add Slot discount persistence
+
+---
+
+## Kolejność wdrożenia, żeby niczego nie popsuć
+1. Naprawa `discount_percent` persistence w `useCalendarSlots`
+2. Wyłączenie auto-scroll i zmiana Today na scroll kontenera
+3. Twarde zabezpieczenie `SlotDetailModal` (batch validation + early return on error + dialogs)
+4. Dodanie confirm comment + mail templates
+5. Przełączenie recurring z wielu `bookSlot()` na jedno `book_batch`
+6. Ujednolicenie meeting link rule i propagacja per-student linku do przyszłych slotów
+
+Taka kolejność minimalizuje ryzyko regresji:
+- najpierw prosty zapis danych
+- potem lokalny UX
+- potem krytyczne akcje modalowe
+- na końcu batch booking i meeting model
