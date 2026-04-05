@@ -95,6 +95,9 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const [editDiscountPercent, setEditDiscountPercent] = useState<string>('');
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectComment, setRejectComment] = useState('');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmComment, setConfirmComment] = useState('');
+  const [actionInProgress, setActionInProgress] = useState(false);
 
   useEffect(() => {
     if (slot) {
