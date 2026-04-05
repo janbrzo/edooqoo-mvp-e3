@@ -5,15 +5,13 @@
 
 The English Worksheet Generator is a full-featured SaaS platform built on React, TypeScript, and Supabase. After completing ETAP 2 and adding advanced exercise management, the application provides comprehensive account management, student organization, subscription-based worksheet generation, and advanced exercise manipulation capabilities for English teachers.
 
-**Latest Update (April 2, 2026) - Fix: Student Identification, Email Subjects, Scroll-to-Today, Meeting Links:**
-- **`find_student_by_email()` SECURITY DEFINER function**: Bypasses RLS on `students` table safely — fixes existing student identification during public booking (RLS `auth.uid() = teacher_id` blocked unauthenticated lookups after March 18 security fix)
-- **`usePublicBooking.tsx`**: Replaced direct `.from('students')` query with `.rpc('find_student_by_email')` — students correctly identified, proper names in emails and notifications
-- **Email subject fix**: `booking_pending` email subject changed from "Booking request received" to "Booking request sent"
-- **Default meeting link**: New `calendar_settings.default_meeting_link` column — universal teacher meeting room URL. UI in CalendarSettingsPage, "Join Lesson" button in StudentHubLessons, fallback in StudentHubDashboard
-- **`get-student-hub-data`**: Returns `defaultMeetingLink` from `calendar_settings`
-- **scrollToToday fix**: `StudentBookingsSection` scrolls to closest future booking when no lesson today + auto-scroll on load
+**Latest Update (April 5, 2026) - 4 Fixes: Permanent Meeting Links, Reject Comment, Confirm/Reject Freeze, Lessons Sorting:**
+- **Permanent student meeting links**: New `auto_create_student_meeting_link` column in `calendar_settings`. Toggle in settings auto-generates deterministic permanent links (based on teacherId+studentId hash) for all students. New students get auto-link on creation. `createSlotsBatch` inherits student link. `gcal-sync` blocked from overwriting permanent links with per-event Google Meet links.
+- **Reject comment fix**: `SlotDetailModal` reject dialog now uses `DialogDescription` (accessibility fix), keeps dialog open until DB+email succeeds, passes `rejectionReason` to notification email.
+- **Confirm/Reject freeze fix (400 error)**: Replaced sequential `onUpdate` loop with single atomic `supabase.from('calendar_slots').update(...).in('id', batchSlotIds)`. `getValidBatchSlotIds` now validates all slots exist, belong to same teacher, and are pending.
+- **Lessons sorting**: `StudentBookingsSection` now shows upcoming/today first (ascending), then past (descending) — mimics "Today" button behavior on page load.
 
-**Previous Update (April 1, 2026) - Flashcards DSLM: CEFR Levels, Skill IDs, Difficulty Multiplier:**
+**Previous Update (April 2, 2026) - Fix: Student Identification, Email Subjects, Scroll-to-Today, Meeting Links:**
 - **`cefr_level` column on `flashcard_cards`**: AI-assigned CEFR level (A1-C2) per card, based on word frequency, abstractness, morphological complexity. Existing cards backfilled from student's `english_level`.
 - **`translate-flashcard` Edge Function**: Now returns `{ translation, cefr_level }` in JSON format via `response_format: { type: "json_object" }`. System prompt includes CEFR classification guidelines.
 - **`log_flashcard_review_event()` trigger**: Generates `skill_ids = ['ns.{CEFR}.vocabulary.definition_{normalized_word}']` and `element_type = 'vocabulary'` automatically. 3-scenario difficulty multiplier: direction 1 (sees EN term) → 0.70x, direction 2 + translation → 1.0x, direction 2 + definition → 1.1x.

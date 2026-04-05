@@ -6,16 +6,13 @@
 **Nazwa:** English Worksheet Generator  
 **Cel:** Tworzenie edytowalnych worksheetów dla nauczycieli angielskiego uczących dorosłych 1 na 1  
 **Status:** MVP+ - Dodane zaawansowane zarządzanie zadaniami (Exercise Management)  
-**Ostatnia aktualizacja (2026-04-04b) - MeetingField GCal, Recurring fix, Reject try-catch, Scroll fix v2, Discount badge, Terms page:**
-- ✅ **MeetingLinkField dynamic desc**: Opis w profilu studenta zmienia się w zależności od `gcal_integration_enabled` (3 warianty: link exists / hasGcal / no gcal)
-- ✅ **Recurring booking "undefined" fix**: `bookSlot` w `usePublicBooking` teraz fetchuje slot z DB gdy nie znaleziony w lokalnym state (dla slotów z przyszłych tygodni)
-- ✅ **Reject try-catch**: `handleReject` w SlotDetailModal opakowany w try-catch — błąd nie blokuje już otwierania innych slotów
-- ✅ **scrollToToday v2**: Poprawiona logika — scrolluje do elementu tuż przed granicą today/past (1 przyszła lekcja jako kontekst)
-- ✅ **Discount badge na CalendarSlotCard**: Badge `-X%` w prawym górnym rogu slotu na kalendarzu nauczyciela
-- ✅ **Terms of Service**: Nowa strona `/terms` (TermsOfService.tsx). Route `/privacy` jako alias do `/privacy-policy`
-- ✅ **Student Hub info na StudentPage**: Info-box w overview tab z linkiem do edooqoo.com/my
+**Ostatnia aktualizacja (2026-04-05) - Permanent Meeting Links, Reject Comment, Confirm/Reject Freeze, Lessons Sorting:**
+- ✅ **Permanent meeting links**: Nowy toggle `auto_create_student_meeting_link` w `calendar_settings`. Auto-generowanie stałego linku per student (hash teacherId+studentId). Batch generation w settings, auto-link przy dodaniu studenta, `createSlotsBatch` dziedziczy link, `gcal-sync` nie nadpisuje stałego linku.
+- ✅ **Reject comment fix**: Dialog z `DialogDescription`, zamykanie dopiero po sukcesie DB+email, `rejectionReason` w mailu.
+- ✅ **Confirm/Reject freeze fix**: Atomowy batch update zamiast sekwencyjnej pętli. `getValidBatchSlotIds` weryfikuje istnienie slotów, przynależność do nauczyciela, status pending.
+- ✅ **Lessons sorting**: Upcoming/today rosnąco na górze, past malejąco na dole — domyślny widok jak po kliknięciu Today.
 
-**Poprzednia aktualizacja (2026-04-04) - Slugs, Discounts, Recurring fix, Reject comments, Scroll fix, Student Hub info:**
+**Poprzednia aktualizacja (2026-04-04b) - MeetingField GCal, Recurring fix, Reject try-catch, Scroll fix v2, Discount badge, Terms page:**
 - ✅ **Custom booking slugs**: Nauczyciele mogą ustawić ładny URL `/book/jan-kowalski` (kolumna `public_calendar_slug`). `usePublicBooking` szuka po slug OR token
 - ✅ **Slot discounts**: Kolumna `discount_percent` w `calendar_slots`. Pole w UnifiedSlotModal (tworzenie) i SlotDetailModal (edycja). Badge `-X%` na grid i kartach lekcji
 - ✅ **Recurring booking fix**: `handleBook` w StudentHubLessons query bezpośrednio do DB dla przyszłych tygodni zamiast polegania na załadowanych slotach

@@ -3,11 +3,13 @@
 
 AI-powered platform for creating personalized English worksheets for adult learners. Designed specifically for teachers working in one-on-one educational settings.
 
-## Latest: E2E Readiness & Production Hardening (March 13, 2026)
-- **Production logging**: `src/utils/logger.ts` with `devLog()`/`devWarn()` — silences `console.log` in production
-- **13 hooks refactored**: `console.log` → `devLog` across all major hooks
-- **Duplicate DOM ID fix**: Removed duplicate `id="worksheet-form"` from FormView.tsx
-- **PRE_LAUNCH_CHECKLIST.md**: Updated with SEO Phase 5 items and 5 critical test flows
+## Latest: Permanent Meeting Links + Calendar Stability (April 5, 2026)
+- **Permanent meeting links**: Each student auto-gets one permanent meeting room link, reused for all lessons
+- **Reject comment**: Teachers can add a note when rejecting bookings — included in student email
+- **Calendar freeze fix**: Confirm/Reject no longer causes 400 errors or freezes
+- **Lessons sorting**: Student Hub shows upcoming lessons first by default
+
+## Previous: E2E Readiness & Production Hardening (March 13, 2026)
 
 ## Previous: SEO Phase 5 — Google Search Dominance (March 12, 2026)
 - **52 static HTML pages** — exercise, CEFR, use-case, comparison, blog content
