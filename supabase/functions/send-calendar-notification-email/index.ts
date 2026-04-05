@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, endTime, teacherEmail, teacherName, oldSlotDate, oldSlotTime, calendarUrl, bookUrl, worksheetUrl, sharedWorksheetUrl, meetingLink, timezone, rejectionReason } = await req.json();
+    const { type, teacherId, studentEmail, studentName, slotDate, slotTime, endTime, teacherEmail, teacherName, oldSlotDate, oldSlotTime, calendarUrl, bookUrl, worksheetUrl, sharedWorksheetUrl, meetingLink, timezone, rejectionReason, confirmationComment } = await req.json();
 
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) {
@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
               <p style="margin: 4px 0;"><strong>Date:</strong> ${slotDate}</p>
               <p style="margin: 4px 0;"><strong>Time:</strong> ${slotTime}</p>
             </div>
+            ${confirmationComment ? `<div style="background: #f0fdf4; padding: 12px; border-radius: 8px; margin: 12px 0; border-left: 3px solid #22c55e;"><p style="margin: 0; font-weight: 500;">Teacher's note:</p><p style="margin: 4px 0 0;">${confirmationComment}</p></div>` : ''}
             <p>See you there!</p>
             ${meetingButton}
             ${studentWorksheetButton}

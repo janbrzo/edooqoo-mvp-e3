@@ -95,6 +95,9 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const [editDiscountPercent, setEditDiscountPercent] = useState<string>('');
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectComment, setRejectComment] = useState('');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmComment, setConfirmComment] = useState('');
+  const [actionInProgress, setActionInProgress] = useState(false);
 
   useEffect(() => {
     if (slot) {
@@ -419,9 +422,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     } catch { return true; }
   };
 
-  const handleConfirm = async () => {
-    const isReschedule = !!(slot as any).reschedule_request_from_slot_id;
-    
+  // Validate batch slot IDs — must be array of strings, contain current slot, length > 1
+  const getValidBatchSlotIds = async (): Promise<string[] | null> => {
     const { data: batchNotif } = await supabase
       .from('calendar_notifications')
       .select('metadata')
@@ -431,80 +433,76 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       .in('notification_type', ['booking_pending'])
       .maybeSingle();
     
-    const batchSlotIds = (batchNotif?.metadata as any)?.slot_ids;
+    const ids = (batchNotif?.metadata as any)?.slot_ids;
+    if (!Array.isArray(ids) || ids.length <= 1) return null;
+    if (!ids.every((id: any) => typeof id === 'string')) return null;
+    if (!ids.includes(slot.id)) return null;
+    return ids;
+  };
 
-    if (isReschedule) {
-      try {
-        const { data: session } = await supabase.auth.getSession();
-        const token = session?.session?.access_token;
-        if (!token) { toast.error('Not authenticated'); return; }
-        
-        const { data, error } = await supabase.functions.invoke('calendar-handle-reschedule-decision', {
+  const handleConfirm = async () => {
+    setActionInProgress(true);
+    try {
+      const isReschedule = !!(slot as any).reschedule_request_from_slot_id;
+      const batchSlotIds = await getValidBatchSlotIds();
+
+      if (isReschedule) {
+        const { error } = await supabase.functions.invoke('calendar-handle-reschedule-decision', {
           body: { action: 'confirm', newSlotId: slot.id },
         });
         if (error) throw error;
         toast.success('Reschedule confirmed');
-      } catch (err: any) {
-        toast.error(err.message || 'Failed to confirm reschedule');
+      } else if (batchSlotIds) {
+        for (const sid of batchSlotIds) {
+          await onUpdate(sid, { confirmed_at: new Date().toISOString() } as any);
+        }
+        toast.success(`Confirmed ${batchSlotIds.length} lessons`);
+        const canSend = await shouldSendEmail('notify_email_on_confirmation');
+        if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: confirmComment || undefined });
+      } else {
+        await onUpdate(slot.id, { confirmed_at: new Date().toISOString() } as any);
+        const canSend = await shouldSendEmail('notify_email_on_confirmation');
+        if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: confirmComment || undefined });
       }
-    } else if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
-      for (const sid of batchSlotIds) {
-        await onUpdate(sid, { confirmed_at: new Date().toISOString() } as any);
-      }
-      toast.success(`Confirmed ${batchSlotIds.length} lessons`);
-      const canSend = await shouldSendEmail('notify_email_on_confirmation');
-      if (canSend) await sendCalendarEmail('booking_confirmation');
-    } else {
-      await onUpdate(slot.id, { confirmed_at: new Date().toISOString() } as any);
-      const canSend = await shouldSendEmail('notify_email_on_confirmation');
-      if (canSend) await sendCalendarEmail('booking_confirmation');
-    }
 
-    try {
-      await supabase.from('calendar_slot_logs').insert({
-        slot_id: slot.id, teacher_id: slot.teacher_id, action: 'confirmed', actor: 'teacher',
-        details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, source: isReschedule ? 'reschedule_confirm' : 'booking_confirm', batch: batchSlotIds?.length > 1 ? batchSlotIds.length : undefined },
-      } as any);
-    } catch (_) {}
+      try {
+        await supabase.from('calendar_slot_logs').insert({
+          slot_id: slot.id, teacher_id: slot.teacher_id, action: 'confirmed', actor: 'teacher',
+          details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, source: isReschedule ? 'reschedule_confirm' : 'booking_confirm', batch: batchSlotIds ? batchSlotIds.length : undefined, comment: confirmComment || undefined },
+        } as any);
+      } catch (_) {}
 
-    if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
-      for (const sid of batchSlotIds) {
-        await resolveNotifications(sid, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
+      if (batchSlotIds) {
+        for (const sid of batchSlotIds) {
+          await resolveNotifications(sid, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
+        }
+      } else {
+        await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
       }
-    } else {
-      await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
+      
+      setTimeout(() => onNotificationsChanged?.(), 300);
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error('Confirm failed:', err);
+      toast.error(err.message || 'Failed to confirm booking');
+    } finally {
+      setActionInProgress(false);
     }
-    
-    setTimeout(() => onNotificationsChanged?.(), 300);
-    onOpenChange(false);
   };
 
   const handleReject = async () => {
-    const isReschedule = !!(slot as any).reschedule_request_from_slot_id;
+    setActionInProgress(true);
+    try {
+      const isReschedule = !!(slot as any).reschedule_request_from_slot_id;
+      const batchSlotIds = await getValidBatchSlotIds();
 
-    const { data: batchNotif } = await supabase
-      .from('calendar_notifications')
-      .select('metadata')
-      .eq('slot_id', slot.id)
-      .eq('teacher_id', slot.teacher_id)
-      .eq('is_resolved', false)
-      .in('notification_type', ['booking_pending'])
-      .maybeSingle();
-    
-    const batchSlotIds = (batchNotif?.metadata as any)?.slot_ids;
-
-    if (isReschedule) {
-      try {
-        const { data, error } = await supabase.functions.invoke('calendar-handle-reschedule-decision', {
+      if (isReschedule) {
+        const { error } = await supabase.functions.invoke('calendar-handle-reschedule-decision', {
           body: { action: 'reject', newSlotId: slot.id },
         });
         if (error) throw error;
         toast.success('Reschedule rejected');
-      } catch (err: any) {
-        toast.error(err.message || 'Failed to reject reschedule');
-      }
-    } else if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
-      try {
+      } else if (batchSlotIds) {
         for (const sid of batchSlotIds) {
           await onUpdate(sid, {
             status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
@@ -513,42 +511,38 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         toast.success(`Rejected ${batchSlotIds.length} bookings`);
         const canSend = await shouldSendEmail('notify_email_on_rejection');
         if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
-      } catch (err: any) {
-        console.error('Batch reject failed:', err);
-        toast.error('Failed to reject some bookings');
-      }
-    } else {
-      try {
+      } else {
         await onUpdate(slot.id, {
           status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
         } as any);
         const canSend = await shouldSendEmail('notify_email_on_rejection');
         if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
         toast.success('Booking rejected, slot is available again');
-      } catch (err: any) {
-        console.error('Reject failed:', err);
-        toast.error('Failed to reject booking');
-        return; // Don't close modal on error
       }
-    }
 
-    try {
-      await supabase.from('calendar_slot_logs').insert({
-        slot_id: slot.id, teacher_id: slot.teacher_id, action: 'rejected', actor: 'teacher',
-        details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time },
-      } as any);
-    } catch (_) {}
+      try {
+        await supabase.from('calendar_slot_logs').insert({
+          slot_id: slot.id, teacher_id: slot.teacher_id, action: 'rejected', actor: 'teacher',
+          details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, comment: rejectComment || undefined },
+        } as any);
+      } catch (_) {}
 
-    if (batchSlotIds && Array.isArray(batchSlotIds) && batchSlotIds.length > 1) {
-      for (const sid of batchSlotIds) {
-        await resolveNotifications(sid, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
+      if (batchSlotIds) {
+        for (const sid of batchSlotIds) {
+          await resolveNotifications(sid, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
+        }
+      } else {
+        await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
       }
-    } else {
-      await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
-    }
 
-    setTimeout(() => onNotificationsChanged?.(), 300);
-    onOpenChange(false);
+      setTimeout(() => onNotificationsChanged?.(), 300);
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error('Reject failed:', err);
+      toast.error(err.message || 'Failed to reject booking');
+    } finally {
+      setActionInProgress(false);
+    }
   };
 
   const handleUndoCancel = async () => {
@@ -893,10 +887,10 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             )}
             {isPending && (
               <>
-                <Button size="sm" onClick={handleConfirm} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
+                <Button size="sm" onClick={() => { setConfirmComment(''); setShowConfirmDialog(true); }} disabled={actionInProgress} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
                   <Check className="h-3 w-3 mr-1" /> Confirm
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => { setRejectComment(''); setShowRejectDialog(true); }} className="text-destructive text-xs h-7">
+                <Button size="sm" variant="outline" onClick={() => { setRejectComment(''); setShowRejectDialog(true); }} disabled={actionInProgress} className="text-destructive text-xs h-7">
                   <Ban className="h-3 w-3 mr-1" /> Reject
                 </Button>
               </>
@@ -953,17 +947,42 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       </DraggableDialogContent>
     </DraggableDialog>
 
+    {/* Confirm Dialog */}
+    <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Confirm Booking</DialogTitle>
+          <p className="text-sm text-muted-foreground">This lesson will be confirmed and the student notified.</p>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Add an optional message for the student:</p>
+          <AutoResizeTextarea value={confirmComment} onChange={e => setConfirmComment(e.target.value)} placeholder="e.g., See you then! Don't forget your homework..." rows={2} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>Cancel</Button>
+          <Button className="bg-green-600 hover:bg-green-700 text-white" disabled={actionInProgress} onClick={() => { setShowConfirmDialog(false); handleConfirm(); }}>
+            {actionInProgress ? 'Confirming...' : 'Confirm'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     {/* Reject Dialog */}
     <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>Reject Booking</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Reject Booking</DialogTitle>
+          <p className="text-sm text-muted-foreground">The slot will become available again and the student will be notified.</p>
+        </DialogHeader>
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">Add an optional note for the student:</p>
           <AutoResizeTextarea value={rejectComment} onChange={e => setRejectComment(e.target.value)} placeholder="e.g., This time doesn't work, please try Thursday..." rows={2} />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setShowRejectDialog(false)}>Cancel</Button>
-          <Button variant="destructive" onClick={() => { setShowRejectDialog(false); handleReject(); }}>Reject</Button>
+          <Button variant="destructive" disabled={actionInProgress} onClick={() => { setShowRejectDialog(false); handleReject(); }}>
+            {actionInProgress ? 'Rejecting...' : 'Reject'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
