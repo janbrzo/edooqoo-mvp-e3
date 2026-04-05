@@ -887,10 +887,10 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             )}
             {isPending && (
               <>
-                <Button size="sm" onClick={handleConfirm} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
+                <Button size="sm" onClick={() => { setConfirmComment(''); setShowConfirmDialog(true); }} disabled={actionInProgress} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
                   <Check className="h-3 w-3 mr-1" /> Confirm
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => { setRejectComment(''); setShowRejectDialog(true); }} className="text-destructive text-xs h-7">
+                <Button size="sm" variant="outline" onClick={() => { setRejectComment(''); setShowRejectDialog(true); }} disabled={actionInProgress} className="text-destructive text-xs h-7">
                   <Ban className="h-3 w-3 mr-1" /> Reject
                 </Button>
               </>
