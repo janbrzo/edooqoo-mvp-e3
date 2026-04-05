@@ -279,6 +279,7 @@ export type Database = {
         Row: {
           allow_student_reschedule: boolean
           auto_create_meet_link: boolean | null
+          auto_create_student_meeting_link: boolean
           buffer_minutes: number
           created_at: string
           currency: string | null
@@ -327,6 +328,7 @@ export type Database = {
         Insert: {
           allow_student_reschedule?: boolean
           auto_create_meet_link?: boolean | null
+          auto_create_student_meeting_link?: boolean
           buffer_minutes?: number
           created_at?: string
           currency?: string | null
@@ -375,6 +377,7 @@ export type Database = {
         Update: {
           allow_student_reschedule?: boolean
           auto_create_meet_link?: boolean | null
+          auto_create_student_meeting_link?: boolean
           buffer_minutes?: number
           created_at?: string
           currency?: string | null
