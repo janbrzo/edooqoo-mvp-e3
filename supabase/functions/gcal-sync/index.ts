@@ -182,8 +182,15 @@ Deno.serve(async (req) => {
         reminders,
       };
 
-      // Google Meet auto-creation
-      if (settings?.auto_create_meet_link && slot.student_id && !isTerminalStatus) {
+      // Google Meet auto-creation — skip if student has a permanent meeting link
+      let hasPermStudentLink = false;
+      if (slot.student_id) {
+        const { data: studentSettings } = await supabase.from('calendar_student_settings')
+          .select('default_meeting_link').eq('student_id', slot.student_id).eq('teacher_id', teacherId).maybeSingle();
+        if (studentSettings?.default_meeting_link) hasPermStudentLink = true;
+      }
+
+      if (settings?.auto_create_meet_link && slot.student_id && !isTerminalStatus && !hasPermStudentLink) {
         event.conferenceData = {
           createRequest: {
             requestId: slotId,

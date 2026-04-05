@@ -353,6 +353,21 @@ export function useCalendarSlots(teacherId?: string) {
         }
       }
 
+      // Fetch per-student meeting links for batch
+      const studentIds = [...new Set(inputs.filter(i => i.student_id).map(i => i.student_id!))];
+      const studentMeetingLinks: Record<string, string> = {};
+      if (studentIds.length > 0) {
+        const { data: studentSettings } = await supabase.from('calendar_student_settings')
+          .select('student_id, default_meeting_link')
+          .in('student_id', studentIds)
+          .eq('teacher_id', teacherId);
+        if (studentSettings) {
+          for (const ss of studentSettings) {
+            if (ss.default_meeting_link) studentMeetingLinks[ss.student_id] = ss.default_meeting_link;
+          }
+        }
+      }
+
       const rows = inputs.map(input => ({
         teacher_id: teacherId,
         slot_date: input.slot_date,
@@ -369,6 +384,7 @@ export function useCalendarSlots(teacherId?: string) {
         booked_by: input.student_id ? 'teacher' : null,
         slot_type: input.slot_type || 'slot',
         discount_percent: input.discount_percent ?? null,
+        meeting_link: input.student_id ? (studentMeetingLinks[input.student_id] || null) : null,
       }));
 
       const { error } = await supabase.from('calendar_slots').insert(rows as any);
