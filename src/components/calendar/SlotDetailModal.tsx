@@ -474,9 +474,12 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         if (error) throw error;
         toast.success('Reschedule confirmed');
       } else if (batchSlotIds) {
-        for (const sid of batchSlotIds) {
-          await onUpdate(sid, { confirmed_at: new Date().toISOString() } as any);
-        }
+        // Direct batch update instead of looping onUpdate to avoid race conditions
+        const { error } = await supabase.from('calendar_slots')
+          .update({ confirmed_at: new Date().toISOString() } as any)
+          .in('id', batchSlotIds)
+          .eq('teacher_id', slot.teacher_id);
+        if (error) throw error;
         toast.success(`Confirmed ${batchSlotIds.length} lessons`);
         const canSend = await shouldSendEmail('notify_email_on_confirmation');
         if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: confirmComment || undefined });
@@ -501,11 +504,14 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
       }
       
+      setShowConfirmDialog(false);
+      setConfirmComment('');
       setTimeout(() => onNotificationsChanged?.(), 300);
       onOpenChange(false);
     } catch (err: any) {
       console.error('Confirm failed:', err);
       toast.error(err.message || 'Failed to confirm booking');
+      // Do NOT close dialogs on error — let user retry
     } finally {
       setActionInProgress(false);
     }
@@ -516,6 +522,9 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     try {
       const isReschedule = !!(slot as any).reschedule_request_from_slot_id;
       const batchSlotIds = await getValidBatchSlotIds();
+      const rejectUpdates = {
+        status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
+      };
 
       if (isReschedule) {
         const { error } = await supabase.functions.invoke('calendar-handle-reschedule-decision', {
@@ -524,18 +533,17 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         if (error) throw error;
         toast.success('Reschedule rejected');
       } else if (batchSlotIds) {
-        for (const sid of batchSlotIds) {
-          await onUpdate(sid, {
-            status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
-          } as any);
-        }
+        // Direct batch update instead of looping onUpdate
+        const { error } = await supabase.from('calendar_slots')
+          .update(rejectUpdates as any)
+          .in('id', batchSlotIds)
+          .eq('teacher_id', slot.teacher_id);
+        if (error) throw error;
         toast.success(`Rejected ${batchSlotIds.length} bookings`);
         const canSend = await shouldSendEmail('notify_email_on_rejection');
         if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
       } else {
-        await onUpdate(slot.id, {
-          status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null,
-        } as any);
+        await onUpdate(slot.id, rejectUpdates as any);
         const canSend = await shouldSendEmail('notify_email_on_rejection');
         if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
         toast.success('Booking rejected, slot is available again');
@@ -556,11 +564,14 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
       }
 
+      setShowRejectDialog(false);
+      setRejectComment('');
       setTimeout(() => onNotificationsChanged?.(), 300);
       onOpenChange(false);
     } catch (err: any) {
       console.error('Reject failed:', err);
       toast.error(err.message || 'Failed to reject booking');
+      // Do NOT close dialogs on error
     } finally {
       setActionInProgress(false);
     }
