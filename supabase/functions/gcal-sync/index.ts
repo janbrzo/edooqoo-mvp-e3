@@ -213,7 +213,8 @@ Deno.serve(async (req) => {
         if (res.ok) {
           const updated = await res.json();
           const meetLink = updated.hangoutLink || null;
-          if (meetLink && meetLink !== slot.meeting_link) {
+          // Never overwrite slot meeting_link if student has a permanent link
+          if (meetLink && meetLink !== slot.meeting_link && !hasPermStudentLink) {
             await supabase.from('calendar_slots').update({ meeting_link: meetLink }).eq('id', slotId);
           }
         }
@@ -230,9 +231,10 @@ Deno.serve(async (req) => {
         if (res.ok) {
           const created = await res.json();
           const meetLink = created.hangoutLink || null;
+          // Never overwrite slot meeting_link if student has a permanent link
           await supabase.from('calendar_slots').update({
             gcal_event_id: created.id,
-            ...(meetLink ? { meeting_link: meetLink } : {}),
+            ...((meetLink && !hasPermStudentLink) ? { meeting_link: meetLink } : {}),
           }).eq('id', slotId);
           console.log('GCal created:', created.id, meetLink ? `Meet: ${meetLink}` : '');
         } else {

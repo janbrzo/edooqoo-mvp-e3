@@ -1,7 +1,9 @@
 
 # English Worksheet Generator - Complete User Guide
 
-**Latest Update (March 12, 2026):** SEO Phase 5 — 52 static HTML pages (exercise, CEFR, use-case, blog), 70 sitemap entries, 15 blog articles (1500-2500 words each). Footer with 30+ links hidden on homepage. "No signup needed" badge on form. Form width expanded. Performance: preconnect/dns-prefetch for Supabase.
+**Latest Update (April 5, 2026):** Permanent Meeting Links — each student auto-gets one permanent meeting room link reused across all lessons. Reject comment — teachers write optional note when rejecting bookings, included in email. Confirm/Reject stability — fixed 400 error and calendar freeze. Lessons sorting — upcoming lessons shown first by default in Student Hub.
+
+**Previous Update (March 12, 2026):** SEO Phase 5 — 52 static HTML pages (exercise, CEFR, use-case, blog), 70 sitemap entries, 15 blog articles (1500-2500 words each). Footer with 30+ links hidden on homepage. "No signup needed" badge on form. Form width expanded. Performance: preconnect/dns-prefetch for Supabase.
 
 **Previous Update (March 9, 2026):** LLM Optimization & About Page — New `/about` page with complete product description, all 29 exercise types, FAQ, competitor comparison table, and how-it-works guide. Footer now includes About link.
 

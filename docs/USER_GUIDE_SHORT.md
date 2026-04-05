@@ -4,7 +4,9 @@
 ## What is it?
 AI-powered tool that creates personalized English worksheets for teachers working with adult students one-on-one.
 
-**Latest Update:** **SEO Phase 5 (March 12, 2026)** — 52 static HTML pages, 70 sitemap entries, 15 blog articles, 30+ footer links (hidden on homepage). Key pages expanded to 1500-2500 words. Performance: preconnect for Supabase. "No signup needed" badge on form. Form widened for single-line labels.
+**Latest Update (April 5, 2026):** **Permanent Meeting Links** — Each student automatically gets one permanent meeting room link (same link for all lessons). **Reject Comment** — Teachers can add a comment when rejecting a booking request; comment included in student email. **Confirm/Reject Stability** — Fixed calendar freeze after confirming/rejecting pending lessons. **Lessons View** — Student Hub lessons page now shows upcoming lessons first by default.
+
+**Previous Update:** **SEO Phase 5 (March 12, 2026)** — 52 static HTML pages, 70 sitemap entries, 15 blog articles, 30+ footer links (hidden on homepage). Key pages expanded to 1500-2500 words. Performance: preconnect for Supabase. "No signup needed" badge on form. Form widened for single-line labels.
 
 **Previous Update:** **LLM Optimization / About Page (March 9, 2026)** — New `/about` page with full product description, 29 exercise types, FAQ, competitor comparison. AI discovery files (llms.txt, llms-full.txt) and structured data (JSON-LD) added for search engine and AI crawler visibility.
 
