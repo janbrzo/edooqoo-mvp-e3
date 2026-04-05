@@ -240,23 +240,23 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
         break; // past dates start here in desc order
       }
     }
-    // If all dates are past, scroll to top (most recent past)
+    // If all dates are past, scroll container to top
     if (todayIdx === -1) {
-      allDateEls[0]?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      listRef.current.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    // Show today element with 1-2 future lessons above for context
+    // Scroll within the container only — don't move the whole page
     const scrollIdx = Math.max(0, todayIdx - 1);
-    const targetEl = allDateEls[scrollIdx];
-    if (targetEl) targetEl.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    const targetEl = allDateEls[scrollIdx] as HTMLElement;
+    if (targetEl && listRef.current) {
+      const containerTop = listRef.current.getBoundingClientRect().top;
+      const elTop = targetEl.getBoundingClientRect().top;
+      const offset = elTop - containerTop + listRef.current.scrollTop;
+      listRef.current.scrollTo({ top: offset, behavior: 'smooth' });
+    }
   }, []);
 
-  // Auto-scroll to today/nearest after bookings load
-  useEffect(() => {
-    if (allBookings.length > 0 && !loading) {
-      setTimeout(scrollToToday, 100);
-    }
-  }, [allBookings.length, loading, scrollToToday]);
+  // No auto-scroll on load — page should stay at top naturally
 
   if (!email || (bookings.length === 0 && !loading && !searched)) return null;
 

@@ -44,6 +44,7 @@ export interface CreateSlotInput {
   status?: string;
   worksheet_id?: string | null;
   slot_type?: string;
+  discount_percent?: number | null;
 }
 
 export function useCalendarSlots(teacherId?: string) {
@@ -225,6 +226,7 @@ export function useCalendarSlots(teacherId?: string) {
           booked_by: input.student_id ? 'teacher' : null,
           slot_type: input.slot_type || 'slot',
           meeting_link: autoMeetingLink,
+          discount_percent: input.discount_percent ?? null,
         } as any)
         .select()
         .single();
@@ -366,6 +368,7 @@ export function useCalendarSlots(teacherId?: string) {
         booked_at: input.student_id ? new Date().toISOString() : null,
         booked_by: input.student_id ? 'teacher' : null,
         slot_type: input.slot_type || 'slot',
+        discount_percent: input.discount_percent ?? null,
       }));
 
       const { error } = await supabase.from('calendar_slots').insert(rows as any);
