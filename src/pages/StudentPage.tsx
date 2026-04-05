@@ -72,6 +72,18 @@ function MeetingLinkField({ studentId, teacherId, hasGcal }: { studentId: string
     } else {
       await supabase.from('calendar_student_settings').insert({ student_id: studentId, teacher_id: teacherId, default_meeting_link: link || null } as any);
     }
+    // Propagate to all future slots for this student
+    if (link) {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        await supabase.from('calendar_slots')
+          .update({ meeting_link: link } as any)
+          .eq('teacher_id', teacherId)
+          .eq('student_id', studentId)
+          .gte('slot_date', today)
+          .not('status', 'in', '("completed","deleted")');
+      } catch (_) {}
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

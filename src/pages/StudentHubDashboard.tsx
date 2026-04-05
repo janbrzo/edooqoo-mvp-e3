@@ -93,8 +93,8 @@ const StudentHubDashboard = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {(nextLesson.meeting_link || (data as any).defaultMeetingLink) && (
-                    <Button size="sm" variant="outline" className="text-xs" onClick={() => window.open(nextLesson.meeting_link || (data as any).defaultMeetingLink, '_blank')}>
+                  {((data as any).defaultMeetingLink || nextLesson.meeting_link) && (
+                    <Button size="sm" variant="outline" className="text-xs" onClick={() => window.open((data as any).defaultMeetingLink || nextLesson.meeting_link, '_blank')}>
                       <Video className="h-3 w-3 mr-1" /> Join
                     </Button>
                   )}

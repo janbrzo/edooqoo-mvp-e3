@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { useParams, useNavigate } from 'react-router-dom';
 import { StudentHubLayout } from '@/components/student-hub/StudentHubLayout';
 import { getSavedHubEmail } from '@/hooks/useStudentHubData';
@@ -58,40 +59,63 @@ const StudentHubLessons = () => {
     if (!selectedSlot || !email || !settings) return;
     setBooking(true);
     const name = email.split('@')[0];
-    const success = await bookSlot(selectedSlot.id, name, email);
-    if (success && bookWeekly && untilDate) {
+
+    if (bookWeekly && untilDate) {
+      // Collect all matching slot IDs for batch booking
+      const allSlotIds: string[] = [selectedSlot.id];
       let d = addWeeks(parseISO(selectedSlot.slot_date), 1);
       const end = parseISO(untilDate);
-      let bookedCount = 1;
-      let skippedCount = 0;
       while (!isBefore(end, d)) {
         const dateStr = format(d, 'yyyy-MM-dd');
-        // Query directly from DB for this specific date — fixes recurring booking across weeks
         const { data: daySlots } = await supabase
           .from('calendar_slots')
-          .select('id, start_time, status, student_id')
+          .select('id, start_time')
           .eq('teacher_id', settings.teacher_id)
           .eq('slot_date', dateStr)
           .eq('status', 'available')
           .is('student_id', null);
         const match = (daySlots || []).find(s => s.start_time.slice(0, 5) === selectedSlot.start_time.slice(0, 5));
-        if (match) {
-          const ok = await bookSlot(match.id, name, email);
-          if (ok) bookedCount++;
-          else skippedCount++;
-        } else {
-          skippedCount++;
-        }
+        if (match) allSlotIds.push(match.id);
         d = addWeeks(d, 1);
       }
-      if (bookedCount > 1 || skippedCount > 0) {
-        // Toast is handled by individual bookSlot calls, show summary
+
+      if (allSlotIds.length > 1) {
+        // Use batch booking via edge function — creates one notification
+        try {
+          const { data, error } = await supabase.functions.invoke('get-student-bookings', {
+            body: {
+              token: teacherToken,
+              email: email.trim(),
+              action: 'book_batch',
+              slotIds: allSlotIds,
+              studentName: name,
+            },
+          });
+          if (error) throw error;
+          const booked = data?.booked || 0;
+          const failed = data?.failed || 0;
+          if (booked > 0) {
+            toast({ title: `Booked ${booked} lesson${booked > 1 ? 's' : ''}${failed > 0 ? ` (${failed} unavailable)` : ''}` });
+          } else {
+            toast({ title: 'No slots could be booked', variant: 'destructive' });
+          }
+        } catch (err: any) {
+          toast({ title: 'Booking failed', description: err.message, variant: 'destructive' });
+        }
+      } else {
+        // Only the first slot — use single booking
+        await bookSlot(selectedSlot.id, name, email);
       }
+    } else {
+      // Single booking
+      await bookSlot(selectedSlot.id, name, email);
     }
+
     setBooking(false);
     setSelectedSlot(null);
     setBookWeekly(false);
     setUntilDate('');
+    refetchSlots();
   };
 
   if (!email || !teacherToken) return null;
