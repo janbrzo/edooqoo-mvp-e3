@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
 const StudentHubLessons = () => {
+  const { toast } = useToast();
   const { teacherToken } = useParams<{ teacherToken: string }>();
   const navigate = useNavigate();
   const email = getSavedHubEmail();
