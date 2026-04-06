@@ -20,26 +20,47 @@
 - `needs_review` auto-update guards: `student_id IS NOT NULL` filter + error handler
 - Zombie slots (booked + no student) cleaned via migration
 - Confirm/Reject uses inline comment (no sub-dialogs) — `showInlineComment` + `inlineComment` state
-- **Bulk Actions** (v2): replaces "Bulk Delete". Selection restricted to one slot type (`selectionType` state). Actions: Delete (available), Confirm/Reject (pending), Complete/No Show (booked/needs_review). Uses atomic `.update().in('id', ids)`.
+- **Bulk Actions** (v2): replaces "Bulk Delete". Selection restricted to one slot type (`selectionType` state). Actions: Delete (available), Confirm/Reject (pending), Complete/No Show (booked/needs_review). Uses atomic `.update().in('id', ids)`. All batch actions fire `gcal-sync` per slot.
+
+### Reschedule Badge
+- Rescheduled slots (`cancelled_by='system'` + reason contains 'Rescheduled') show "R" badge (indigo) instead of TC
+- SlotDetailModal: "Previous lesson was rescheduled" text + indigo bg
+- GCal suffix: " — Rescheduled"
+- Legend filter: `rescheduled`
+
+### Recurring Booking Modal
+- `RecurringBookingModal.tsx`: dedicated modal for batch confirm/reject of recurring bookings from notifications
+- `handleNotificationClick` routes `booking_pending` with `slot_ids.length > 1` to RecurringBookingModal
+- SlotDetailModal `getValidBatchSlotIds` always returns null — calendar clicks = single slot only
 
 ### Student Hub
 - Lesson list: unified descending sort (newest first), auto-scroll to Today
-- Reschedule: `StudentHubLessons` wires `onRescheduleStart`/`rescheduleBookingId` to `StudentBookingsSection`. Reschedule mode highlights slots blue, calls edge function on click.
+- Reschedule: `StudentHubLessons` wires `onRescheduleStart`/`rescheduleBookingId` to `StudentBookingsSection`
 - Email displayed next to Log out in header
 - SlotDetailModal: compact layout (Date+Time grid-cols-4, Worksheet+Discount, Notes+MeetingLink side by side)
 
+### Student GCal Sync
+- `student-gcal-sync`: per-status colors (Grape/Banana/Basil/Tangerine defaults), status suffixes in summary
+- Sync toggles: `sync_booked`, `sync_pending` in student JSONB settings
+- Meeting link added to `description` + `location` fields
+- "Sync all existing lessons" via `get-student-hub-data` action `sync_all_lessons_gcal`
+- `StudentHubSettings.tsx`: per-status color selectors, sync toggles, sync-all button
+
 ## Edge Functions
-- `gcal-sync`: Actions: `upsert`, `delete`, `cancel`, `create_permanent_room`
-- `student-gcal-sync`: Student calendar sync with token refresh
+- `gcal-sync`: Actions: `upsert`, `delete`, `cancel`, `create_permanent_room`. Rescheduled suffix support.
+- `student-gcal-sync`: Student calendar sync with token refresh, per-status colors, meeting link, sync toggles
 - `send-calendar-notification-email`: Booking/rejection/confirmation emails with optional teacher comments
+- `get-student-hub-data`: Student data aggregation + `sync_all_lessons_gcal` action
 
 ## File Map
 - `src/utils/meetingLinkUtils.ts` — Legacy link detection (no generation)
 - `src/hooks/useCalendarSlots.tsx` — Calendar data + realtime + auto needs_review
-- `src/components/calendar/SlotDetailModal.tsx` — Slot editing, confirm/reject with inline comment
+- `src/components/calendar/SlotDetailModal.tsx` — Slot editing, confirm/reject (single slot only)
+- `src/components/calendar/RecurringBookingModal.tsx` — Batch confirm/reject for recurring bookings
 - `src/components/calendar/StudentBookingsSection.tsx` — Student lesson list with auto-scroll
 - `src/pages/StudentPage.tsx` — Student profile, MeetingLinkField component
+- `src/pages/StudentHubSettings.tsx` — Student GCal settings, per-status colors, sync toggles
 - `src/pages/CalendarSettingsPage.tsx` — Calendar settings, meeting link toggles
 
 ## RAG Keywords
-meeting link, Google Meet, permanent room, per-student link, video call, Jitsi, auto-create, calendar student settings, generated_meeting_link, meeting_link_mode, create_permanent_room, ghost event, hangoutLink
+meeting link, Google Meet, permanent room, per-student link, video call, Jitsi, auto-create, calendar student settings, generated_meeting_link, meeting_link_mode, create_permanent_room, ghost event, hangoutLink, reschedule badge, recurring modal, batch confirm, student gcal sync, per-status color, sync toggle

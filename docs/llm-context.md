@@ -100,13 +100,69 @@ slot detail modal, compact layout, lesson modal, modal height
 "Bulk Delete" only allowed deleting available slots. No batch confirm/reject/complete/no-show.
 
 ### Edooqoo Solution
-Renamed to "Bulk Actions". Selection restricted to one slot type at a time (`selectionType` state). Dynamic action buttons appear based on selected type: Delete (available), Confirm/Reject (pending), Complete/No Show (booked, needs_review).
+Renamed to "Bulk Actions". Selection restricted to one slot type at a time (`selectionType` state). Dynamic action buttons appear based on selected type: Delete (available), Confirm/Reject (pending), Complete/No Show (booked, needs_review). All batch actions now fire `gcal-sync` per slot (fire-and-forget).
 
 ### Technical Mechanics
-- `src/pages/CalendarPage.tsx`: `getSlotSelectionType()` classifies slots. `selectionType` locks on first selection, resets when empty. `handleBatchConfirm`, `handleBatchReject`, `handleBatchStatusChange` use atomic `.update().in('id', ids)`.
+- `src/pages/CalendarPage.tsx`: `getSlotSelectionType()` classifies slots. `selectionType` locks on first selection, resets when empty. `handleBatchConfirm`, `handleBatchReject`, `handleBatchStatusChange` use atomic `.update().in('id', ids)` + loop `gcal-sync` invocations.
 
 ### RAG Keywords
-bulk actions, batch confirm, batch reject, bulk delete, calendar toolbar, selection mode, slot type filter
+bulk actions, batch confirm, batch reject, bulk delete, calendar toolbar, selection mode, slot type filter, gcal sync batch
+
+---
+
+## Reschedule Badge & GCal Label
+### Problem
+Rescheduled slots showed "cancelled" badge (TC) and "Previous lesson was cancelled" text. GCal showed "Teacher Cancellation" suffix.
+
+### Edooqoo Solution
+New "R" badge (indigo) for rescheduled slots (`cancelled_by === 'system'` + `cancellation_reason` contains "Rescheduled"). SlotDetailModal shows "Previous lesson was rescheduled" with indigo background. GCal suffix: "— Rescheduled". Legend filter added.
+
+### Technical Mechanics
+- `CalendarSlotCard.tsx`: `isRescheduled` check before SC/TC badge logic.
+- `SlotDetailModal.tsx`: dynamic text + color in cancellation info section.
+- `gcal-sync/index.ts`: rescheduled suffix in available+cancelled_by branch.
+- `CalendarPage.tsx`: `LEGEND_ITEMS` includes `rescheduled` entry; `filteredSlots` handles filter.
+
+### RAG Keywords
+reschedule badge, rescheduled slot, indigo badge, calendar legend, rescheduled gcal, system cancellation
+
+---
+
+## Recurring Booking Modal
+### Problem
+Batch confirm/reject from notifications was hidden in SlotDetailModal. Teacher couldn't tell if action applies to one slot or entire series.
+
+### Edooqoo Solution
+Dedicated `RecurringBookingModal` for notifications with `slot_ids.length > 1`. Shows all slots in list, count, student info. "Confirm All" / "Reject All" with inline comment. SlotDetailModal `getValidBatchSlotIds` always returns null — clicking any slot in calendar = single slot action only.
+
+### Technical Mechanics
+- `RecurringBookingModal.tsx`: fetches slots by IDs, filters pending, atomic batch update + GCal sync + email.
+- `CalendarPage.tsx`: `handleNotificationClick` routes recurring to modal, single to SlotDetailModal.
+- `SlotDetailModal.tsx`: `getValidBatchSlotIds` returns null.
+
+### RAG Keywords
+recurring booking, batch confirm, recurring modal, book weekly, notification routing, series booking
+
+---
+
+## Student GCal Sync — Per-Status Colors & Toggles
+### Problem
+Student calendar events had static summary ("English Lesson with Teacher") and single color. No meeting link in events. No way to sync existing lessons.
+
+### Edooqoo Solution
+- Status suffixes: " — Booked", " — Pending", " — Completed", " — No Show", " — Student/Teacher Cancellation", " — Rescheduled".
+- Per-status colors stored in JSONB `settings` of `student_gcal_tokens`: `color_booked` (default Grape/3), `color_pending` (Banana/5), `color_completed` (Basil/10), `color_no_show` (Tangerine/6).
+- Meeting link added to `description` and `location` fields. Falls back to `calendar_student_settings.default_meeting_link`.
+- Sync toggles: `sync_booked`, `sync_pending` — skip events when disabled.
+- "Sync all existing lessons" button calls `get-student-hub-data` action `sync_all_lessons_gcal`.
+
+### Technical Mechanics
+- `student-gcal-sync/index.ts`: dynamic summary, per-status color map, meeting link in eventBody, toggle checks.
+- `StudentHubSettings.tsx`: per-status color selectors, sync toggles, sync-all button.
+- `get-student-hub-data/index.ts`: `sync_all_lessons_gcal` action fetches all student slots and calls `student-gcal-sync` per slot.
+
+### RAG Keywords
+student gcal, per-status color, sync toggle, sync all lessons, meeting link gcal, student calendar, color booked, color pending
 
 ---
 
