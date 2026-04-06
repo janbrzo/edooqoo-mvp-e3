@@ -502,8 +502,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
       }
       
-      setShowConfirmDialog(false);
-      setConfirmComment('');
+      setShowInlineComment(false);
+      setInlineComment('');
       setTimeout(() => onNotificationsChanged?.(), 300);
       onOpenChange(false);
     } catch (err: any) {
@@ -539,18 +539,18 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         if (error) throw error;
         toast.success(`Rejected ${batchSlotIds.length} bookings`);
         const canSend = await shouldSendEmail('notify_email_on_rejection');
-        if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
+        if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: inlineComment || undefined });
       } else {
         await onUpdate(slot.id, rejectUpdates as any);
         const canSend = await shouldSendEmail('notify_email_on_rejection');
-        if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
+        if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: inlineComment || undefined });
         toast.success('Booking rejected, slot is available again');
       }
 
       try {
         await supabase.from('calendar_slot_logs').insert({
           slot_id: slot.id, teacher_id: slot.teacher_id, action: 'rejected', actor: 'teacher',
-          details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, comment: rejectComment || undefined },
+          details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, comment: inlineComment || undefined },
         } as any);
       } catch (_) {}
 
@@ -562,8 +562,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
       }
 
-      setShowRejectDialog(false);
-      setRejectComment('');
+      setShowInlineComment(false);
+      setInlineComment('');
       setTimeout(() => onNotificationsChanged?.(), 300);
       onOpenChange(false);
     } catch (err: any) {
