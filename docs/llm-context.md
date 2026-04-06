@@ -63,16 +63,77 @@ calendar freeze, 400 error, zombie slot, needs review, batch update, calendar st
 
 ---
 
-## Student Hub Lesson Sorting & Auto-Scroll
+## Student Hub Lesson Sorting & Auto-Scroll (v2)
 ### Problem
-Lesson cards showed upcoming ascending then past descending (correct logic), but page didn't auto-position to "Today" on load.
+Original sort: upcoming ascending then past descending. User expected newest-first (descending). Reschedule button visible but non-functional (missing props).
 
 ### Edooqoo Solution
-Added `useEffect` that triggers `scrollToToday()` after bookings load, scrolling only the list container (not the whole page). 150ms delay ensures DOM is ready.
+- Unified descending sort (newest first). Auto-scroll to Today still works via `data-date` attribute scan (reversed logic for descending order).
+- `StudentHubLessons.tsx` now wires `onRescheduleStart` and `rescheduleBookingId` props to `StudentBookingsSection`. Reschedule mode highlights available slots in blue; clicking a slot calls edge function `get-student-bookings` with `action: 'reschedule'`.
 
 ### Technical Mechanics
-- `src/components/calendar/StudentBookingsSection.tsx`: `useEffect` on `allBookings.length > 0 && !loading`
-- `scrollToToday()` uses `listRef.current.scrollTo()` — container-only scroll
+- `StudentBookingsSection.tsx`: single `result.sort()` descending by `${slot_date}${start_time}`. `scrollToToday()` finds first element with `date <= todayStr`.
+- `StudentHubLessons.tsx`: `rescheduleBookingId` state, `handleReschedule()` invokes edge function, `handleSlotClick()` routes to reschedule or booking dialog.
 
 ### RAG Keywords
-lesson list, student hub, today scroll, auto scroll, lesson sorting, booking list
+lesson list, student hub, today scroll, auto scroll, lesson sorting, booking list, reschedule, descending sort
+
+---
+
+## Compact SlotDetailModal Layout
+### Problem
+Modal too tall for 754px viewport, required scrolling.
+
+### Edooqoo Solution
+Combined rows: Date+Start+End+Duration in `grid-cols-4`, Worksheet+Discount in `grid-cols-[1fr_80px]`, Notes+Meeting Link in `grid-cols-2`. Reduced spacing from `space-y-3` to `space-y-2`, inputs from `h-9` to `h-8`. ~25% height savings.
+
+### Technical Mechanics
+- `src/components/calendar/SlotDetailModal.tsx`: `max-h-[85vh] overflow-y-auto` on content.
+
+### RAG Keywords
+slot detail modal, compact layout, lesson modal, modal height
+
+---
+
+## Bulk Actions (replacing Bulk Delete)
+### Problem
+"Bulk Delete" only allowed deleting available slots. No batch confirm/reject/complete/no-show.
+
+### Edooqoo Solution
+Renamed to "Bulk Actions". Selection restricted to one slot type at a time (`selectionType` state). Dynamic action buttons appear based on selected type: Delete (available), Confirm/Reject (pending), Complete/No Show (booked, needs_review).
+
+### Technical Mechanics
+- `src/pages/CalendarPage.tsx`: `getSlotSelectionType()` classifies slots. `selectionType` locks on first selection, resets when empty. `handleBatchConfirm`, `handleBatchReject`, `handleBatchStatusChange` use atomic `.update().in('id', ids)`.
+
+### RAG Keywords
+bulk actions, batch confirm, batch reject, bulk delete, calendar toolbar, selection mode, slot type filter
+
+---
+
+## Meeting Link Dynamic Label
+### Problem
+Label always showed "Default Meeting Link" regardless of mode.
+
+### Edooqoo Solution
+Label dynamically shows "Meeting Link" (no GCal), "Default Meeting Link" (default mode), or "Custom Meeting Link" (custom mode).
+
+### Technical Mechanics
+- `src/pages/StudentPage.tsx`: conditional label based on `autoLinkEnabled` and `mode`.
+
+### RAG Keywords
+meeting link label, custom meeting link, default meeting link, student page
+
+---
+
+## Student Hub Email Display
+### Problem
+No indication which email is logged in on `/my/` pages.
+
+### Edooqoo Solution
+Email shown next to "Log out" button in `StudentHubLayout` header (hidden on mobile).
+
+### Technical Mechanics
+- `src/components/student-hub/StudentHubLayout.tsx`: `getSavedHubEmail()` displayed in `<span>`.
+
+### RAG Keywords
+student hub, logged in email, hub layout, student identity
