@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { BookOpen, ClipboardList, FileText, Calendar, LayoutDashboard, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { clearHubEmail } from '@/hooks/useStudentHubData';
+import { clearHubEmail, getSavedHubEmail } from '@/hooks/useStudentHubData';
 
 interface StudentHubLayoutProps {
   children: React.ReactNode;
@@ -47,9 +47,12 @@ export function StudentHubLayout({ children, studentName, teacherName }: Student
               </span>
             )}
           </div>
-          <Button variant="ghost" size="sm" className="text-xs" onClick={handleLogout}>
-            <LogOut className="h-3.5 w-3.5 mr-1" /> Log out
-          </Button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground hidden sm:inline">{getSavedHubEmail()}</span>
+            <Button variant="ghost" size="sm" className="text-xs" onClick={handleLogout}>
+              <LogOut className="h-3.5 w-3.5 mr-1" /> Log out
+            </Button>
+          </div>
         </div>
 
         {/* Tab navigation */}

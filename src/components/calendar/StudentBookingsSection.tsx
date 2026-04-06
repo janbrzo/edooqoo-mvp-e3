@@ -217,13 +217,11 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
       }));
       result = [...result, ...cancelledMapped];
     }
-    // Smart sort: upcoming/today first (ascending), then past (descending)
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const upcoming = result.filter(b => `${b.slot_date}${b.start_time}` >= `${todayStr}00:00`);
-    const past = result.filter(b => `${b.slot_date}${b.start_time}` < `${todayStr}00:00`);
-    upcoming.sort((a: any, b: any) => `${a.slot_date}${a.start_time}`.localeCompare(`${b.slot_date}${b.start_time}`));
-    past.sort((a: any, b: any) => `${b.slot_date}${b.start_time}`.localeCompare(`${a.slot_date}${a.start_time}`));
-    return [...upcoming, ...past];
+    // Single descending sort — newest first
+    result.sort((a: any, b: any) => 
+      `${b.slot_date}${b.start_time}`.localeCompare(`${a.slot_date}${a.start_time}`)
+    );
+    return result;
   }, [viewFilteredBookings, showCancelled, filteredCancelled]);
 
   const listRef = React.useRef<HTMLDivElement>(null);
@@ -233,25 +231,17 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     const allDateEls = Array.from(listRef.current.querySelectorAll('[data-date]'));
     if (allDateEls.length === 0) return;
-    // In desc order: future dates first (top), past dates last (bottom)
-    // We want to scroll to the element closest to today
-    // Find: last element with date >= today (= today or nearest future)
-    let todayIdx = -1;
+    // Descending: find first element with date <= today
+    let targetIdx = -1;
     for (let i = 0; i < allDateEls.length; i++) {
       const d = allDateEls[i].getAttribute('data-date') || '';
-      if (d >= todayStr) {
-        todayIdx = i;
-      } else {
-        break; // past dates start here in desc order
-      }
+      if (d <= todayStr) { targetIdx = i; break; }
     }
-    // If all dates are past, scroll container to top
-    if (todayIdx === -1) {
-      listRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    if (targetIdx === -1) {
+      listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
       return;
     }
-    // Scroll within the container only — don't move the whole page
-    const scrollIdx = Math.max(0, todayIdx - 1);
+    const scrollIdx = Math.max(0, targetIdx - 1);
     const targetEl = allDateEls[scrollIdx] as HTMLElement;
     if (targetEl && listRef.current) {
       const containerTop = listRef.current.getBoundingClientRect().top;
