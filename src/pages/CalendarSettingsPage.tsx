@@ -440,7 +440,8 @@ const CalendarSettingsPage = () => {
                               const { data: existing } = await supabase.from('calendar_student_settings')
                                 .select('id, default_meeting_link').eq('student_id', s.id).eq('teacher_id', user.id).maybeSingle();
                               if (existing?.default_meeting_link) continue;
-                              const link = `https://meet.google.com/lookup/${btoa(`${user.id}-${s.id}`).replace(/[^a-zA-Z0-9]/g, '').slice(0, 12).toLowerCase()}`;
+                              const { generateFallbackMeetingLink } = await import('@/utils/meetingLinkUtils');
+                              const link = generateFallbackMeetingLink(user.id, s.id);
                               if (existing) {
                                 await supabase.from('calendar_student_settings').update({ default_meeting_link: link, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
                               } else {
@@ -474,7 +475,14 @@ const CalendarSettingsPage = () => {
                         <Label>Legacy: Auto-create per-lesson Meet links</Label>
                         <p className="text-xs text-muted-foreground">Creates a different Google Meet link for every lesson. Not recommended if permanent student links are enabled.</p>
                       </div>
-                      <Switch checked={(settings as any).auto_create_meet_link || false} onCheckedChange={v => updateSettings({ auto_create_meet_link: v } as any)} />
+                      <Switch 
+                        checked={(settings as any).auto_create_meet_link || false} 
+                        onCheckedChange={v => updateSettings({ auto_create_meet_link: v } as any)}
+                        disabled={!!(settings as any).auto_create_student_meeting_link}
+                      />
+                      {(settings as any).auto_create_student_meeting_link && (
+                        <p className="text-xs text-amber-600 mt-1">Disabled — permanent student links are active.</p>
+                      )}
                     </div>
                   </div>
                 )}

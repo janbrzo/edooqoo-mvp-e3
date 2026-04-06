@@ -91,7 +91,8 @@ export const useStudents = () => {
         const { data: calSettings } = await supabase.from('calendar_settings')
           .select('auto_create_student_meeting_link').eq('teacher_id', user.id).maybeSingle();
         if ((calSettings as any)?.auto_create_student_meeting_link) {
-          const link = `https://meet.google.com/lookup/${btoa(`${user.id}-${data.id}`).replace(/[^a-zA-Z0-9]/g, '').slice(0, 12).toLowerCase()}`;
+          const { generateFallbackMeetingLink } = await import('@/utils/meetingLinkUtils');
+          const link = generateFallbackMeetingLink(user.id, data.id);
           await supabase.from('calendar_student_settings').insert({
             student_id: data.id, teacher_id: user.id, default_meeting_link: link,
           } as any);
