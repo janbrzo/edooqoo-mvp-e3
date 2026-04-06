@@ -590,8 +590,10 @@ export type Database = {
           booking_mode_override: string | null
           created_at: string
           default_meeting_link: string | null
+          generated_meeting_link: string | null
           id: string
           lesson_price_override: number | null
+          meeting_link_mode: string
           prepaid_lessons_remaining: number
           student_id: string
           teacher_id: string
@@ -601,8 +603,10 @@ export type Database = {
           booking_mode_override?: string | null
           created_at?: string
           default_meeting_link?: string | null
+          generated_meeting_link?: string | null
           id?: string
           lesson_price_override?: number | null
+          meeting_link_mode?: string
           prepaid_lessons_remaining?: number
           student_id: string
           teacher_id: string
@@ -612,8 +616,10 @@ export type Database = {
           booking_mode_override?: string | null
           created_at?: string
           default_meeting_link?: string | null
+          generated_meeting_link?: string | null
           id?: string
           lesson_price_override?: number | null
+          meeting_link_mode?: string
           prepaid_lessons_remaining?: number
           student_id?: string
           teacher_id?: string

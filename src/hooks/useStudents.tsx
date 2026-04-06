@@ -86,16 +86,20 @@ export const useStudents = () => {
 
       setStudents(prevStudents => [data, ...prevStudents]);
 
-      // Auto-generate permanent meeting link if setting is enabled
+      // Auto-generate permanent Google Meet link if setting is enabled and GCal is connected
       try {
         const { data: calSettings } = await supabase.from('calendar_settings')
           .select('auto_create_student_meeting_link').eq('teacher_id', user.id).maybeSingle();
         if ((calSettings as any)?.auto_create_student_meeting_link) {
-          const { generateFallbackMeetingLink } = await import('@/utils/meetingLinkUtils');
-          const link = generateFallbackMeetingLink(user.id, data.id);
-          await supabase.from('calendar_student_settings').insert({
-            student_id: data.id, teacher_id: user.id, default_meeting_link: link,
-          } as any);
+          // Check if teacher has GCal connected
+          const { data: gcalToken } = await supabase.from('calendar_gcal_tokens')
+            .select('id').eq('teacher_id', user.id).maybeSingle();
+          if (gcalToken) {
+            // Call edge function to create real Google Meet room
+            await supabase.functions.invoke('gcal-sync', {
+              body: { teacherId: user.id, studentId: data.id, action: 'create_permanent_room', slotId: data.id },
+            });
+          }
         }
       } catch (_) {}
       

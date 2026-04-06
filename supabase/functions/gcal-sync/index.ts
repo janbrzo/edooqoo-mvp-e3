@@ -130,6 +130,25 @@ Deno.serve(async (req) => {
         console.log('GCal cancel-update:', res.status);
       }
     } else if (action === 'create_permanent_room') {
+      // Create a permanent Google Meet room for a teacher-student pair
+      const studentId = (await req.clone().json()).studentId;
+      if (!studentId) {
+        return new Response(JSON.stringify({ error: 'studentId is required' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Check if a generated link already exists
+      const { data: existingSettings } = await supabase.from('calendar_student_settings')
+        .select('generated_meeting_link')
+        .eq('student_id', studentId).eq('teacher_id', teacherId).maybeSingle();
+
+      if (existingSettings?.generated_meeting_link) {
+        return new Response(JSON.stringify({ success: true, meetLink: existingSettings.generated_meeting_link }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       // Create a temporary event to get a real Google Meet link, then delete the event
       const tempEvent = {
         summary: 'Edooqoo Room Setup (auto-delete)',
@@ -137,7 +156,7 @@ Deno.serve(async (req) => {
         end: { dateTime: new Date(Date.now() + 3600000).toISOString(), timeZone: timezone },
         conferenceData: {
           createRequest: {
-            requestId: `perm-${slotId}-${Date.now()}`,
+            requestId: `perm-${teacherId}-${studentId}-${Date.now()}`,
             conferenceSolutionKey: { type: 'hangoutsMeet' },
           },
         },
@@ -169,6 +188,28 @@ Deno.serve(async (req) => {
           `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${created.id}`,
           { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
         );
+      }
+
+      // Save the generated link to calendar_student_settings
+      if (meetLink) {
+        const { data: css } = await supabase.from('calendar_student_settings')
+          .select('id, meeting_link_mode').eq('student_id', studentId).eq('teacher_id', teacherId).maybeSingle();
+        
+        const updateData: any = { generated_meeting_link: meetLink };
+        // Only update default_meeting_link if mode is 'default' or no link exists yet
+        if (!css || css.meeting_link_mode === 'default') {
+          updateData.default_meeting_link = meetLink;
+          updateData.meeting_link_mode = 'default';
+        }
+
+        if (css) {
+          await supabase.from('calendar_student_settings').update({ ...updateData, updated_at: new Date().toISOString() }).eq('id', css.id);
+        } else {
+          await supabase.from('calendar_student_settings').insert({
+            student_id: studentId, teacher_id: teacherId,
+            ...updateData,
+          });
+        }
       }
 
       return new Response(JSON.stringify({ success: true, meetLink }), {
