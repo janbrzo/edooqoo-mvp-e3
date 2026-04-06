@@ -80,9 +80,10 @@ const CalendarPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [legendFilter, setLegendFilter] = useState<string | null>(null);
 
-  // Multi-select for batch delete
+  // Multi-select for batch actions
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedSlotIds, setSelectedSlotIds] = useState<Set<string>>(new Set());
+  const [selectionType, setSelectionType] = useState<string | null>(null);
 
   // Unpaid counter
   const unpaidCount = useMemo(() => slots.filter(s =>
