@@ -1,80 +1,65 @@
 
+# Plan: Naprawa batch generation meeting linków
 
-# Plan: Naprawa Meeting Link — deploy edge function + fix logiki create_permanent_room
+## Problem
+Migracja ustawiła `meeting_link_mode = 'custom'` dla wszystkich istniejących rekordów w `calendar_student_settings`. Batch generation pomija studentów z `mode = 'custom'`, nawet jeśli NIE mają żadnego linku. Efekt: "Google Meet rooms created for 0 students".
 
-## Diagnoza
+## Rozwiązanie
 
-Znaleziono 3 bugi, które razem powodują, że generowanie meeting linków w ogóle nie działa:
+### Zmiana w `src/pages/CalendarSettingsPage.tsx`, linia 448
 
-### Bug 1: Edge function `gcal-sync` nie jest zdeployowana
-Konsola pokazuje `POST .../functions/v1/gcal-sync 404 (Not Found)`. Funkcja istnieje w kodzie, ale nie została zdeployowana po ostatnich zmianach. Trzeba ją zdeployować.
-
-### Bug 2: Slot fetch blokuje `create_permanent_room`
-W `supabase/functions/gcal-sync/index.ts` linie 72-82:
-```
-const { data: slot } = await supabase.from('calendar_slots')
-  .select('*').eq('id', slotId).single();
-if (!slot) return 404 "Slot not found"
-```
-Ten kod wykonuje się **PRZED** sprawdzeniem `action`. Dla `create_permanent_room` frontend wysyła `slotId: studentId` (bo nie ma prawdziwego slota). Student ID nie jest slotem, więc zapytanie zwraca null i funkcja zwraca 404 zanim w ogóle dojdzie do logiki tworzenia roomu.
-
-### Bug 3: `studentId` nigdy nie jest odczytany
-Linia 58: `const { teacherId, slotId, action, colorOverride } = await req.json();` — brak `studentId` w destrukturyzacji.
-Linia 134: `const studentId = (await req.clone().json()).studentId;` — `req.body` już skonsumowane na linii 58, `clone()` po konsumpcji nie zadziała poprawnie.
-
-## Rozwiazanie
-
-### Zmiana 1: Fix `gcal-sync/index.ts` — restrukturyzacja flow
-
-Linia 58 — dodac `studentId` do destrukturyzacji:
+**Obecny kod:**
 ```ts
-const { teacherId, slotId, action, colorOverride, studentId } = await req.json();
+if ((existing as any)?.meeting_link_mode === 'custom') continue;
 ```
 
-Przenieść check `action === 'create_permanent_room'` **PRZED** fetch slota (linia 72). Ten action nie potrzebuje slota, potrzebuje tylko `teacherId`, `studentId` i tokenu GCal.
-
-Nowa struktura (pseudokod):
-```
-parse body → { teacherId, slotId, action, colorOverride, studentId }
-create supabase client
-get GCal token (early return if missing)
-
-IF action === 'create_permanent_room':
-  → validate studentId
-  → check existing generated_meeting_link
-  → create ghost event → get hangoutLink → delete event
-  → save to calendar_student_settings
-  → return { success, meetLink }
-
-// Reszta akcji (upsert, delete, cancel) wymaga slota:
-fetch slot by slotId
-if (!slot) return 404
-fetch settings
-... reszta logiki bez zmian
+**Nowy kod:**
+```ts
+if ((existing as any)?.meeting_link_mode === 'custom' && (existing as any)?.default_meeting_link) continue;
 ```
 
-Usunąć linię 134 (`req.clone().json()`).
+Logika: pomijamy studenta TYLKO gdy jest w trybie custom **I** ma ustawiony jakiś link. Jeśli jest w custom ale link jest pusty — to znaczy, że to legacy z migracji i powinien dostać wygenerowany Google Meet room.
 
-### Zmiana 2: Deploy edge function
-Po zmianie kodu — zdeployować `gcal-sync`.
+### Dodatkowa zmiana: po wygenerowaniu linku, ustaw `meeting_link_mode = 'default'`
 
-### Zmiana 3: Weryfikacja
-Przetestować edge function curlem z akcją `create_permanent_room`.
+Obecnie edge function `gcal-sync` (`create_permanent_room`) przy tworzeniu nowego rekordu `calendar_student_settings` nie ustawia jawnie `meeting_link_mode`. Trzeba upewnić się, że po batch generation student jest w trybie `default`.
+
+To już jest obsłużone w edge function (linia w bloku `if (!css)` — insert z `meeting_link_mode: 'default'`). Ale dla istniejących rekordów z `mode = 'custom'` i pustym linkiem, edge function robi update i NIE zmienia `meeting_link_mode`. 
+
+**Fix w edge function `gcal-sync/index.ts`**, w bloku `create_permanent_room`, po sekcji gdzie `css` istnieje i robimy update — dodać `meeting_link_mode: 'default'` do `updateData` gdy obecny mode to `'custom'` i brak `default_meeting_link`:
+
+**Obecny kod (linia ~146-148 w edge function):**
+```ts
+const updateData: any = { generated_meeting_link: meetLink };
+if (!css || css.meeting_link_mode === 'default') {
+  updateData.default_meeting_link = meetLink;
+  updateData.meeting_link_mode = 'default';
+}
+```
+
+**Nowy kod:**
+```ts
+const updateData: any = { generated_meeting_link: meetLink };
+if (!css || css.meeting_link_mode === 'default' || !css.default_meeting_link) {
+  updateData.default_meeting_link = meetLink;
+  updateData.meeting_link_mode = 'default';
+}
+```
+
+Dodane `|| !css.default_meeting_link` — jeśli student jest w custom ale nie ma żadnego linku, traktujemy to jako "brak wyboru" i ustawiamy default z wygenerowanym linkiem.
 
 ## Pliki do zmiany
+| Plik | Linia | Zmiana |
+|------|-------|--------|
+| `src/pages/CalendarSettingsPage.tsx` | 448 | Dodać `&& (existing as any)?.default_meeting_link` do warunku skip |
+| `supabase/functions/gcal-sync/index.ts` | ~146 | Dodać `\|\| !css.default_meeting_link` do warunku ustawiania default |
 
-| Plik | Co |
-|------|-----|
-| `supabase/functions/gcal-sync/index.ts` | Dodac `studentId` do destrukturyzacji, przeniesc `create_permanent_room` przed slot fetch, usunac `req.clone()` |
+## Pliki do aktualizacji docs
+- `docs/llm-context.md` — dodać info o logice batch skip
+- `llms.txt` — j.w.
 
-### Zakres zmian — NIE ruszamy:
-- Logiki `upsert`, `delete`, `cancel` (działają poprawnie)
-- Frontendu (`StudentPage.tsx`, `CalendarSettingsPage.tsx`) — wywołania są poprawne, problem jest po stronie edge function
+## Czego NIE ruszamy
+- Logiki upsert/delete/cancel w gcal-sync
+- StudentPage.tsx (przełączanie Default/Custom działa)
+- Żadnych migracji DB
 - Żadnych innych plików
-
-## Kolejnosc implementacji
-1. Fix `gcal-sync/index.ts`
-2. Deploy `gcal-sync`
-3. Test curlem z `create_permanent_room`
-4. Update `docs/llm-context.md` i `llms.txt`
-
