@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { teacherId, slotId, action, colorOverride } = await req.json();
+    const { teacherId, slotId, action, colorOverride, studentId } = await req.json();
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -69,74 +69,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: slot } = await supabase
-      .from('calendar_slots')
-      .select('*')
-      .eq('id', slotId)
-      .single();
-
-    if (!slot) {
-      return new Response(JSON.stringify({ error: 'Slot not found' }), {
-        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { data: settings } = await supabase
-      .from('calendar_settings')
-      .select('gcal_default_color, gcal_default_reminder_minutes, timezone, gcal_on_cancel_action, gcal_color_booked, gcal_color_available, gcal_color_pending, gcal_color_completed, gcal_color_no_show, gcal_sync_mode, auto_create_meet_link')
-      .eq('teacher_id', teacherId)
-      .single();
-
-    const timezone = settings?.timezone || 'Europe/Warsaw';
-    const calendarId = 'primary';
-
-    if (action === 'delete' && slot.gcal_event_id) {
-      const res = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}`,
-        { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.ok || res.status === 404) {
-        await supabase.from('calendar_slots').update({ gcal_event_id: null }).eq('id', slotId);
-      }
-      console.log('GCal delete:', res.status);
-    } else if (action === 'cancel' && slot.gcal_event_id) {
-      const cancelAction = settings?.gcal_on_cancel_action || 'update';
-      if (cancelAction === 'delete') {
-        const res = await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}`,
-          { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (res.ok || res.status === 404) {
-          await supabase.from('calendar_slots').update({ gcal_event_id: null }).eq('id', slotId);
-        }
-        console.log('GCal cancel-delete:', res.status);
-      } else {
-        const cancelSuffix = slot.cancelled_by === 'student' ? ' — Student Cancellation' : ' — Teacher Cancellation';
-        const event = {
-          summary: `Available Slot — English Lesson${cancelSuffix}`,
-          colorId: settings?.gcal_color_available || '2',
-          reminders: { useDefault: false, overrides: [] },
-          start: { dateTime: `${slot.slot_date}T${slot.start_time}`, timeZone: timezone },
-          end: { dateTime: `${slot.slot_date}T${slot.end_time}`, timeZone: timezone },
-        };
-        const res = await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}`,
-          {
-            method: 'PUT',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(event),
-          }
-        );
-        console.log('GCal cancel-update:', res.status);
-      }
-    } else if (action === 'create_permanent_room') {
-      // Create a permanent Google Meet room for a teacher-student pair
-      const studentId = (await req.clone().json()).studentId;
+    // Handle create_permanent_room BEFORE slot fetch — it doesn't need a slot
+    if (action === 'create_permanent_room') {
       if (!studentId) {
         return new Response(JSON.stringify({ error: 'studentId is required' }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+
+      const { data: settings } = await supabase
+        .from('calendar_settings')
+        .select('timezone')
+        .eq('teacher_id', teacherId)
+        .single();
+
+      const timezone = settings?.timezone || 'Europe/Warsaw';
+      const calendarId = 'primary';
 
       // Check if a generated link already exists
       const { data: existingSettings } = await supabase.from('calendar_student_settings')
@@ -196,7 +144,6 @@ Deno.serve(async (req) => {
           .select('id, meeting_link_mode').eq('student_id', studentId).eq('teacher_id', teacherId).maybeSingle();
         
         const updateData: any = { generated_meeting_link: meetLink };
-        // Only update default_meeting_link if mode is 'default' or no link exists yet
         if (!css || css.meeting_link_mode === 'default') {
           updateData.default_meeting_link = meetLink;
           updateData.meeting_link_mode = 'default';
@@ -212,10 +159,35 @@ Deno.serve(async (req) => {
         }
       }
 
+      console.log('GCal create_permanent_room:', meetLink ? 'success' : 'no hangoutLink');
       return new Response(JSON.stringify({ success: true, meetLink }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-    } else if (action === 'upsert') {
+    }
+
+    // All other actions require a slot
+    const { data: slot } = await supabase
+      .from('calendar_slots')
+      .select('*')
+      .eq('id', slotId)
+      .single();
+
+    if (!slot) {
+      return new Response(JSON.stringify({ error: 'Slot not found' }), {
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { data: settings } = await supabase
+      .from('calendar_settings')
+      .select('gcal_default_color, gcal_default_reminder_minutes, timezone, gcal_on_cancel_action, gcal_color_booked, gcal_color_available, gcal_color_pending, gcal_color_completed, gcal_color_no_show, gcal_sync_mode, auto_create_meet_link')
+      .eq('teacher_id', teacherId)
+      .single();
+
+    const timezone = settings?.timezone || 'Europe/Warsaw';
+    const calendarId = 'primary';
+
+    if (action === 'delete' && slot.gcal_event_id) {
       let summary = slot.title || 'English Lesson';
       if (slot.student_id) {
         const { data: student } = await supabase.from('students').select('name').eq('id', slot.student_id).maybeSingle();
