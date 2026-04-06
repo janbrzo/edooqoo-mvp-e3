@@ -93,10 +93,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const [defaultLessonPrice, setDefaultLessonPrice] = useState<number | null>(null);
   const [currency, setCurrency] = useState('USD');
   const [editDiscountPercent, setEditDiscountPercent] = useState<string>('');
-  const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [rejectComment, setRejectComment] = useState('');
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [confirmComment, setConfirmComment] = useState('');
+  const [showInlineComment, setShowInlineComment] = useState(false);
+  const [inlineComment, setInlineComment] = useState('');
   const [actionInProgress, setActionInProgress] = useState(false);
 
   useEffect(() => {
@@ -482,17 +480,17 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         if (error) throw error;
         toast.success(`Confirmed ${batchSlotIds.length} lessons`);
         const canSend = await shouldSendEmail('notify_email_on_confirmation');
-        if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: confirmComment || undefined });
+        if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: inlineComment || undefined });
       } else {
         await onUpdate(slot.id, { confirmed_at: new Date().toISOString() } as any);
         const canSend = await shouldSendEmail('notify_email_on_confirmation');
-        if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: confirmComment || undefined });
+        if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: inlineComment || undefined });
       }
 
       try {
         await supabase.from('calendar_slot_logs').insert({
           slot_id: slot.id, teacher_id: slot.teacher_id, action: 'confirmed', actor: 'teacher',
-          details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, source: isReschedule ? 'reschedule_confirm' : 'booking_confirm', batch: batchSlotIds ? batchSlotIds.length : undefined, comment: confirmComment || undefined },
+          details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, source: isReschedule ? 'reschedule_confirm' : 'booking_confirm', batch: batchSlotIds ? batchSlotIds.length : undefined, comment: inlineComment || undefined },
         } as any);
       } catch (_) {}
 
@@ -504,8 +502,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'approved');
       }
       
-      setShowConfirmDialog(false);
-      setConfirmComment('');
+      setShowInlineComment(false);
+      setInlineComment('');
       setTimeout(() => onNotificationsChanged?.(), 300);
       onOpenChange(false);
     } catch (err: any) {
@@ -541,18 +539,18 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         if (error) throw error;
         toast.success(`Rejected ${batchSlotIds.length} bookings`);
         const canSend = await shouldSendEmail('notify_email_on_rejection');
-        if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
+        if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: inlineComment || undefined });
       } else {
         await onUpdate(slot.id, rejectUpdates as any);
         const canSend = await shouldSendEmail('notify_email_on_rejection');
-        if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: rejectComment || undefined });
+        if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: inlineComment || undefined });
         toast.success('Booking rejected, slot is available again');
       }
 
       try {
         await supabase.from('calendar_slot_logs').insert({
           slot_id: slot.id, teacher_id: slot.teacher_id, action: 'rejected', actor: 'teacher',
-          details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, comment: rejectComment || undefined },
+          details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, comment: inlineComment || undefined },
         } as any);
       } catch (_) {}
 
@@ -564,8 +562,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         await resolveNotifications(slot.id, ['booking_pending', 'reschedule_request', 'reschedule'], 'rejected');
       }
 
-      setShowRejectDialog(false);
-      setRejectComment('');
+      setShowInlineComment(false);
+      setInlineComment('');
       setTimeout(() => onNotificationsChanged?.(), 300);
       onOpenChange(false);
     } catch (err: any) {
@@ -918,14 +916,23 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
               <Button size="sm" variant="outline" onClick={handleUndoCancel} className="text-xs h-7"><Undo2 className="h-3 w-3 mr-1" /> Undo Cancel</Button>
             )}
             {isPending && (
-              <>
-                <Button size="sm" onClick={() => { setConfirmComment(''); setShowConfirmDialog(true); }} disabled={actionInProgress} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
-                  <Check className="h-3 w-3 mr-1" /> Confirm
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => { setRejectComment(''); setShowRejectDialog(true); }} disabled={actionInProgress} className="text-destructive text-xs h-7">
-                  <Ban className="h-3 w-3 mr-1" /> Reject
-                </Button>
-              </>
+              <div className="w-full space-y-2">
+                <div className="flex gap-1">
+                  <Button size="sm" onClick={handleConfirm} disabled={actionInProgress} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
+                    <Check className="h-3 w-3 mr-1" /> {actionInProgress ? 'Processing...' : 'Confirm'}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleReject} disabled={actionInProgress} className="text-destructive text-xs h-7">
+                    <Ban className="h-3 w-3 mr-1" /> Reject
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="inline-comment-check" checked={showInlineComment} onChange={e => setShowInlineComment(e.target.checked)} className="h-3.5 w-3.5 rounded border-border" />
+                  <label htmlFor="inline-comment-check" className="text-xs text-muted-foreground cursor-pointer">Add comment</label>
+                </div>
+                {showInlineComment && (
+                  <AutoResizeTextarea value={inlineComment} onChange={e => setInlineComment(e.target.value)} placeholder="Optional note for the student..." rows={2} className="text-xs" />
+                )}
+              </div>
             )}
             {((slot.status === 'booked' && slot.confirmed_at) || isNeedsReview) && (
               <>
@@ -979,45 +986,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       </DraggableDialogContent>
     </DraggableDialog>
 
-    {/* Confirm Dialog */}
-    <Dialog open={showConfirmDialog} onOpenChange={(v) => { if (!actionInProgress) setShowConfirmDialog(v); }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Confirm Booking</DialogTitle>
-          <DialogDescription>This lesson will be confirmed and the student notified.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">Add an optional message for the student:</p>
-          <AutoResizeTextarea value={confirmComment} onChange={e => setConfirmComment(e.target.value)} placeholder="e.g., See you then! Don't forget your homework..." rows={2} />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={actionInProgress}>Cancel</Button>
-          <Button className="bg-green-600 hover:bg-green-700 text-white" disabled={actionInProgress} onClick={handleConfirm}>
-            {actionInProgress ? 'Confirming...' : 'Confirm'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    {/* Reject Dialog */}
-    <Dialog open={showRejectDialog} onOpenChange={(v) => { if (!actionInProgress) setShowRejectDialog(v); }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Reject Booking</DialogTitle>
-          <DialogDescription>The slot will become available again and the student will be notified.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">Add an optional note for the student:</p>
-          <AutoResizeTextarea value={rejectComment} onChange={e => setRejectComment(e.target.value)} placeholder="e.g., This time doesn't work, please try Thursday..." rows={2} />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowRejectDialog(false)} disabled={actionInProgress}>Cancel</Button>
-          <Button variant="destructive" disabled={actionInProgress} onClick={handleReject}>
-            {actionInProgress ? 'Rejecting...' : 'Reject'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
     </>
   );
 }

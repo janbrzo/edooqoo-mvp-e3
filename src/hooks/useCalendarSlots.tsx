@@ -101,15 +101,19 @@ export function useCalendarSlots(teacherId?: string) {
       if (error) throw error;
       
       // Auto-mark past booked+confirmed lessons as needs_review
+      // Guard: only slots with student_id (zombie slots without student cause 400 errors)
       const now = new Date();
       const pastBooked = (data || []).filter((s: any) => {
-        if (s.status !== 'booked' || !s.confirmed_at) return false;
+        if (s.status !== 'booked' || !s.confirmed_at || !s.student_id) return false;
         const slotEnd = new Date(`${s.slot_date}T${s.end_time}`);
         return slotEnd < now;
       });
       if (pastBooked.length > 0) {
         const ids = pastBooked.map((s: any) => s.id);
-        supabase.from('calendar_slots').update({ status: 'needs_review' } as any).in('id', ids).then(() => {});
+        supabase.from('calendar_slots')
+          .update({ status: 'needs_review' } as any)
+          .in('id', ids)
+          .then(() => {}, (err: any) => console.error('needs_review auto-update failed:', err));
         const updatedData = (data || []).map((s: any) => ids.includes(s.id) ? { ...s, status: 'needs_review' } : s);
         setSlots(updatedData as unknown as CalendarSlot[]);
       } else {

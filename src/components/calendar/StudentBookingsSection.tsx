@@ -261,7 +261,14 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
     }
   }, []);
 
-  // No auto-scroll on load — page should stay at top naturally
+  // Auto-scroll to today on initial load
+  useEffect(() => {
+    if (allBookings.length > 0 && !loading) {
+      // Small delay to ensure DOM is rendered
+      const timer = setTimeout(() => scrollToToday(), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [allBookings.length > 0 && !loading]); // only trigger once when bookings first load
 
   if (!email || (bookings.length === 0 && !loading && !searched)) return null;
 
