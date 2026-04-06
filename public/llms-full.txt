@@ -238,6 +238,21 @@ AI automatically evaluates open-ended student answers — such as sentence trans
 ### What is Google Calendar integration?
 Teachers can connect their Google Calendar to automatically sync lesson bookings, cancellations, and reschedules. Students can also connect their own Google Calendar via the Student Hub. The integration supports Google Meet link auto-generation for online lessons, customizable calendar event colors by status (available, booked, completed, no-show), and configurable sync preferences — all managed in Calendar Settings.
 
+### What is Live Session mode?
+Live Session mode allows teachers to conduct real-time lessons using any worksheet. Teachers see all student answers as they type, can add exercises on-the-fly (up to 12 per session), and rate nano-skill mastery per exercise. AI evaluation assists with scoring open-ended exercises like paraphrasing and discussion questions. Students access the worksheet via a shared permanent link.
+
+### What is the Drawing Canvas?
+The Draw on Worksheet feature provides an in-browser drawing overlay for annotating worksheets during lessons. Teachers can highlight text, circle answers, draw diagrams, and add visual notes. Works with any worksheet — no external whiteboard tool needed.
+
+### How do meeting links work?
+Edooqoo auto-generates real Google Meet links per student via Google Calendar API (ghost event → hangoutLink extraction → event deletion). Each student gets a unique, permanent meeting link. Teachers can also set custom meeting links per student. Meeting links appear in calendar events (teacher + student), booking confirmation emails, and the Student Hub lesson view.
+
+### How does reschedule work?
+Students can request to reschedule a booked lesson via the Student Hub. The system creates a new pending slot and notifies the teacher. Teachers confirm or reject via notification or calendar modal. On confirm: old slot freed, new slot confirmed, both Google Calendars updated. On reject: pending slot removed from both calendars. Reschedule confirmation emails include the meeting link.
+
+### What are Bulk Actions?
+Teachers can select multiple calendar slots and perform batch operations: Delete (available slots), Confirm/Reject (pending slots), Complete/No Show (booked/needs_review slots). All batch actions sync to Google Calendar automatically.
+
 ---
 
 ## Comparison with Alternatives

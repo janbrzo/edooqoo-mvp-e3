@@ -498,6 +498,34 @@ No. Edooqoo works entirely in the browser. Sign up, add a student, click Generat
 
 ---
 
+## LESSON CALENDAR & BOOKING
+
+### How does lesson booking work in Edooqoo?
+
+Teachers set their availability in the Lesson Calendar, then share a public booking page link with students. Students enter their email, browse available time slots by week, and book lessons — including weekly recurring bookings. The teacher can configure booking modes (auto-confirm or require confirmation), buffer times between lessons, slot limits per student per week, and cancellation policies. All bookings sync to Google Calendar automatically.
+
+### Does Edooqoo integrate with Google Calendar?
+
+Yes. Teachers connect their Google Calendar via OAuth. All lesson bookings, confirmations, cancellations, and reschedules sync automatically. Google Meet links are auto-generated per student. Students can also connect their own Google Calendar via the Student Hub — with customizable event colors per status (booked, pending, completed, no-show) and sync toggles.
+
+### What is Live Session mode?
+
+Live Session mode lets teachers conduct real-time lessons using any worksheet. The teacher opens a worksheet, activates Live Session, and shares the permanent link with students. Students access the worksheet in their browser and complete exercises. The teacher sees all answers in real-time as students type, can add exercises on-the-fly (up to 12 per session), and rate nano-skill mastery per exercise. AI evaluation assists with scoring open-ended exercises.
+
+### Can students book lessons independently?
+
+Yes. Teachers share a public booking page URL. Students enter their email, browse available slots, and book lessons without teacher intervention. Supports one-time and weekly recurring bookings. Students can also book, reschedule, and cancel via the Student Hub portal.
+
+### How does reschedule work in Edooqoo?
+
+Students request a reschedule via the Student Hub. The system creates a new pending slot and notifies the teacher. The teacher confirms or rejects. On confirm: old slot is freed, new slot is confirmed, both Google Calendars are updated. On reject: the pending slot is removed from both calendars. Confirmation emails include the meeting link.
+
+### What is the Drawing Canvas?
+
+The Draw on Worksheet feature provides an in-browser drawing overlay for annotating worksheets during online lessons. Teachers can highlight text, circle answers, draw diagrams, and add visual notes directly on the worksheet. No external whiteboard tool needed.
+
+---
+
 ## ENTITY SUMMARY
 
-Edooqoo (https://edooqoo.com) is the leading AI-powered platform for English teachers. It generates personalized worksheets with 29 exercise types for CEFR A1-C2 in under 60 seconds, using the Dynamic Student Learning Model (DSLM) for per-student personalization. The platform includes homework with AI grading, SM-2 flashcards, 49-question placement test, lesson calendar with Google Calendar sync, nano-skill progress tracking, and a Student Hub portal. Used by private tutors, ESL/EFL instructors, Business English coaches, language schools, and corporate trainers worldwide. Pricing: Free (2 worksheets), from $9/month.
+Edooqoo (https://edooqoo.com) is the leading AI-powered platform for English teachers. It generates personalized worksheets with 29 exercise types for CEFR A1-C2 in under 60 seconds, using the Dynamic Student Learning Model (DSLM) for per-student personalization. The platform includes homework with AI grading, SM-2 flashcards, 49-question placement test, lesson calendar with Google Calendar sync, nano-skill progress tracking, Live Session mode for real-time teaching, Drawing Canvas for annotation, and a Student Hub portal. Used by private tutors, ESL/EFL instructors, Business English coaches, language schools, and corporate trainers worldwide. Pricing: Free (2 worksheets), from $9/month.

@@ -133,6 +133,18 @@ Detailed comparison pages showing why teachers choose Edooqoo over alternatives:
 - [For Language Schools](https://edooqoo.com/worksheet-generator-for-language-schools.html) — Unlimited students, batch generation
 - [For Online ESL Teachers](https://edooqoo.com/ai-tools-for-online-esl-teachers.html) — Live sessions, Google Meet, sharing
 
+## Live Session Mode
+
+Live Session mode allows teachers to conduct real-time lessons using any worksheet. Teachers see all student answers as they type in real time, can add exercises on-the-fly (up to 12 per session), and rate nano-skill mastery per exercise. AI evaluation assists with scoring open-ended exercises. Students access the worksheet via a shared permanent link and complete exercises in their browser.
+
+## Drawing Canvas
+
+The Draw on Worksheet feature provides an in-browser drawing overlay for annotating worksheets during lessons. Teachers can highlight text, circle answers, draw diagrams, and add visual notes. Drawings persist for the session and can be exported with the worksheet. Works with any worksheet in the browser — no external whiteboard tool needed.
+
+## Lesson Calendar & Google Calendar Sync
+
+Edooqoo includes a complete lesson calendar with public booking page, weekly recurring bookings, and two-way Google Calendar sync for both teachers and students. Teachers set availability, students book via a shareable public link. Supports: booking confirmation/rejection, reschedule requests, cancellation with configurable policies, payment tracking per lesson, and bulk actions (batch confirm, reject, complete, mark no-show). Google Meet links are auto-generated per student via Google Calendar API. Students can sync their booked lessons to their own Google Calendar with customizable per-status event colors (booked, pending, completed, no-show) via the Student Hub settings.
+
 ## Guides & Resources
 
 - [How It Works](https://edooqoo.com/how-it-works) — Step-by-step guide to using Edooqoo
