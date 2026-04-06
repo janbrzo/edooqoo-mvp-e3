@@ -5,9 +5,10 @@
 ## Key Architecture Decisions (April 2026)
 
 ### Meeting Links — GCal-Only Model (v3)
-- **Problem**: Jitsi fallback links identical across students; edge function `create_permanent_room` blocked by slot fetch (studentId treated as slotId → 404); `studentId` not destructured from body.
+- **Problem**: Jitsi fallback links identical across students; edge function `create_permanent_room` blocked by slot fetch (studentId treated as slotId → 404); `studentId` not destructured from body. Batch generation skipped students with `meeting_link_mode='custom'` from migration even if they had no link.
 - **Solution**: Auto-generated permanent links = only real Google Meet via Google Calendar API. No Jitsi, no deterministic hashes, no lookup URLs.
 - **Critical fix (v3)**: `create_permanent_room` action moved BEFORE slot fetch in `gcal-sync/index.ts`. `studentId` added to top-level destructuring. Removed broken `req.clone().json()`.
+- **Batch fix (v4)**: Batch skip logic changed: skip student only if `meeting_link_mode='custom' AND default_meeting_link IS NOT NULL`. Edge function also sets `meeting_link_mode='default'` when existing record has no `default_meeting_link` (legacy migration state).
 - **Technical Mechanics**:
   - `calendar_student_settings` has `generated_meeting_link` (auto from GCal), `meeting_link_mode` ('default'|'custom'), `default_meeting_link` (canonical effective link)
   - `gcal-sync` edge function: parse body → get token → if `create_permanent_room` handle+return → else fetch slot → `delete`/`cancel`/`upsert`

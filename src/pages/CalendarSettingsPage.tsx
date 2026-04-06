@@ -445,7 +445,7 @@ const CalendarSettingsPage = () => {
                                   .select('id, generated_meeting_link, meeting_link_mode').eq('student_id', s.id).eq('teacher_id', user.id).maybeSingle();
                                 // Skip if already has a generated link or is in custom mode
                                 if ((existing as any)?.generated_meeting_link) continue;
-                                if ((existing as any)?.meeting_link_mode === 'custom') continue;
+                                if ((existing as any)?.meeting_link_mode === 'custom' && (existing as any)?.default_meeting_link) continue;
                                 // Call edge function to create real Google Meet room
                                 const { data: result } = await supabase.functions.invoke('gcal-sync', {
                                   body: { teacherId: user.id, studentId: s.id, action: 'create_permanent_room', slotId: s.id },
