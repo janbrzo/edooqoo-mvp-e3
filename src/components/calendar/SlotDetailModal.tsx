@@ -986,45 +986,6 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
       </DraggableDialogContent>
     </DraggableDialog>
 
-    {/* Confirm Dialog */}
-    <Dialog open={showConfirmDialog} onOpenChange={(v) => { if (!actionInProgress) setShowConfirmDialog(v); }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Confirm Booking</DialogTitle>
-          <DialogDescription>This lesson will be confirmed and the student notified.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">Add an optional message for the student:</p>
-          <AutoResizeTextarea value={confirmComment} onChange={e => setConfirmComment(e.target.value)} placeholder="e.g., See you then! Don't forget your homework..." rows={2} />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={actionInProgress}>Cancel</Button>
-          <Button className="bg-green-600 hover:bg-green-700 text-white" disabled={actionInProgress} onClick={handleConfirm}>
-            {actionInProgress ? 'Confirming...' : 'Confirm'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    {/* Reject Dialog */}
-    <Dialog open={showRejectDialog} onOpenChange={(v) => { if (!actionInProgress) setShowRejectDialog(v); }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Reject Booking</DialogTitle>
-          <DialogDescription>The slot will become available again and the student will be notified.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">Add an optional note for the student:</p>
-          <AutoResizeTextarea value={rejectComment} onChange={e => setRejectComment(e.target.value)} placeholder="e.g., This time doesn't work, please try Thursday..." rows={2} />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowRejectDialog(false)} disabled={actionInProgress}>Cancel</Button>
-          <Button variant="destructive" disabled={actionInProgress} onClick={handleReject}>
-            {actionInProgress ? 'Rejecting...' : 'Reject'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
     </>
   );
 }
