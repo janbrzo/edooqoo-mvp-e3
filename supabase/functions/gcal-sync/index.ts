@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Handle create_permanent_room BEFORE slot fetch — it doesn't need a slot
+    // === create_permanent_room: does NOT need a slot ===
     if (action === 'create_permanent_room') {
       if (!studentId) {
         return new Response(JSON.stringify({ error: 'studentId is required' }), {
@@ -77,14 +77,13 @@ Deno.serve(async (req) => {
         });
       }
 
-      const { data: settings } = await supabase
+      const { data: settingsData } = await supabase
         .from('calendar_settings')
         .select('timezone')
         .eq('teacher_id', teacherId)
         .single();
 
-      const timezone = settings?.timezone || 'Europe/Warsaw';
-      const calendarId = 'primary';
+      const tz = settingsData?.timezone || 'Europe/Warsaw';
 
       // Check if a generated link already exists
       const { data: existingSettings } = await supabase.from('calendar_student_settings')
@@ -100,8 +99,8 @@ Deno.serve(async (req) => {
       // Create a temporary event to get a real Google Meet link, then delete the event
       const tempEvent = {
         summary: 'Edooqoo Room Setup (auto-delete)',
-        start: { dateTime: new Date().toISOString(), timeZone: timezone },
-        end: { dateTime: new Date(Date.now() + 3600000).toISOString(), timeZone: timezone },
+        start: { dateTime: new Date().toISOString(), timeZone: tz },
+        end: { dateTime: new Date(Date.now() + 3600000).toISOString(), timeZone: tz },
         conferenceData: {
           createRequest: {
             requestId: `perm-${teacherId}-${studentId}-${Date.now()}`,
@@ -111,7 +110,7 @@ Deno.serve(async (req) => {
       };
 
       const createRes = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?conferenceDataVersion=1`,
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1`,
         {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -133,7 +132,7 @@ Deno.serve(async (req) => {
       // Delete the temp event immediately
       if (created.id) {
         await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${created.id}`,
+          `https://www.googleapis.com/calendar/v3/calendars/primary/events/${created.id}`,
           { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
         );
       }
@@ -142,7 +141,7 @@ Deno.serve(async (req) => {
       if (meetLink) {
         const { data: css } = await supabase.from('calendar_student_settings')
           .select('id, meeting_link_mode').eq('student_id', studentId).eq('teacher_id', teacherId).maybeSingle();
-        
+
         const updateData: any = { generated_meeting_link: meetLink };
         if (!css || css.meeting_link_mode === 'default') {
           updateData.default_meeting_link = meetLink;
@@ -159,13 +158,13 @@ Deno.serve(async (req) => {
         }
       }
 
-      console.log('GCal create_permanent_room:', meetLink ? 'success' : 'no hangoutLink');
+      console.log('GCal create_permanent_room:', meetLink ? `success ${meetLink}` : 'no hangoutLink');
       return new Response(JSON.stringify({ success: true, meetLink }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // All other actions require a slot
+    // === All other actions require a slot ===
     const { data: slot } = await supabase
       .from('calendar_slots')
       .select('*')
@@ -188,6 +187,45 @@ Deno.serve(async (req) => {
     const calendarId = 'primary';
 
     if (action === 'delete' && slot.gcal_event_id) {
+      const res = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}`,
+        { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.ok || res.status === 404) {
+        await supabase.from('calendar_slots').update({ gcal_event_id: null }).eq('id', slotId);
+      }
+      console.log('GCal delete:', res.status);
+    } else if (action === 'cancel' && slot.gcal_event_id) {
+      const cancelAction = settings?.gcal_on_cancel_action || 'update';
+      if (cancelAction === 'delete') {
+        const res = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}`,
+          { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (res.ok || res.status === 404) {
+          await supabase.from('calendar_slots').update({ gcal_event_id: null }).eq('id', slotId);
+        }
+        console.log('GCal cancel-delete:', res.status);
+      } else {
+        const cancelSuffix = slot.cancelled_by === 'student' ? ' — Student Cancellation' : ' — Teacher Cancellation';
+        const event = {
+          summary: `Available Slot — English Lesson${cancelSuffix}`,
+          colorId: settings?.gcal_color_available || '2',
+          reminders: { useDefault: false, overrides: [] },
+          start: { dateTime: `${slot.slot_date}T${slot.start_time}`, timeZone: timezone },
+          end: { dateTime: `${slot.slot_date}T${slot.end_time}`, timeZone: timezone },
+        };
+        const res = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${slot.gcal_event_id}`,
+          {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(event),
+          }
+        );
+        console.log('GCal cancel-update:', res.status);
+      }
+    } else if (action === 'upsert') {
       let summary = slot.title || 'English Lesson';
       if (slot.student_id) {
         const { data: student } = await supabase.from('students').select('name').eq('id', slot.student_id).maybeSingle();
@@ -222,8 +260,8 @@ Deno.serve(async (req) => {
           no_show: settings?.gcal_color_no_show || '6',
         };
         const isPending = slot.status === 'booked' && !slot.confirmed_at;
-        const effectiveStatus = isPending ? 'pending' : (slot.status === 'needs_review' ? 'booked' : slot.status);
-        eventColorId = statusColorMap[effectiveStatus] || eventColorId;
+        const effectiveStatusForColor = isPending ? 'pending' : (slot.status === 'needs_review' ? 'booked' : slot.status);
+        eventColorId = statusColorMap[effectiveStatusForColor] || eventColorId;
       }
 
       // Determine reminders
@@ -271,7 +309,6 @@ Deno.serve(async (req) => {
         if (res.ok) {
           const updated = await res.json();
           const meetLink = updated.hangoutLink || null;
-          // Never overwrite slot meeting_link if student has a permanent link
           if (meetLink && meetLink !== slot.meeting_link && !hasPermStudentLink) {
             await supabase.from('calendar_slots').update({ meeting_link: meetLink }).eq('id', slotId);
           }
@@ -289,7 +326,6 @@ Deno.serve(async (req) => {
         if (res.ok) {
           const created = await res.json();
           const meetLink = created.hangoutLink || null;
-          // Never overwrite slot meeting_link if student has a permanent link
           await supabase.from('calendar_slots').update({
             gcal_event_id: created.id,
             ...((meetLink && !hasPermStudentLink) ? { meeting_link: meetLink } : {}),
