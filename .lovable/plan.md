@@ -1,267 +1,80 @@
 
-# Plan: naprawa Meeting Link bez regresji
 
-## Problem
-Obecny model jest niespójny i dlatego daje zły efekt:
-1. aplikacja nadal ma fallback Jitsi (`generateFallbackMeetingLink`) mimo że docelowo chcesz tylko prawdziwy Google Meet dla nauczycieli połączonych z Google Calendar,
-2. generator Jitsi jest wadliwy: bierze `btoa(teacherId-studentId)` i ucina początek stringa (`slice(0,16)`), więc dla jednego nauczyciela początek jest praktycznie taki sam dla wielu studentów — stąd identyczne linki,
-3. frontend w ogóle nie wywołuje `gcal-sync` z akcją `create_permanent_room` przy tworzeniu domyślnego linku,
-4. część student-facing flow nadal fallbackuje do globalnego `calendar_settings.default_meeting_link`, więc nawet przy per-student modelu może wyciekać wspólny link.
+# Plan: Naprawa Meeting Link — deploy edge function + fix logiki create_permanent_room
 
-## Edooqoo.com Solution
-Przyjmujemy jeden twardy model:
+## Diagnoza
 
-- brak Jitsi,
-- brak `meet.google.com/lookup/...`,
-- brak „deterministycznego” pseudo-room,
-- **domyślny per-student link = tylko prawdziwy Google Meet wygenerowany przez Google Calendar API**
-- działa wyłącznie wtedy, gdy nauczyciel ma aktywne połączenie z Google Calendar,
-- custom link nadal zostaje jako ręczny override nauczyciela.
+Znaleziono 3 bugi, które razem powodują, że generowanie meeting linków w ogóle nie działa:
 
-Czyli finalnie:
-- **teacher connected to GCal + auto-create ON** → system tworzy i zapisuje realny Google Meet room per student,
-- **teacher not connected to GCal** → brak auto-default linku; nauczyciel może tylko wkleić własny custom link,
-- **student-facing UI** ma używać tylko efektywnego linku per student / per slot, bez globalnego wspólnego fallbacku.
+### Bug 1: Edge function `gcal-sync` nie jest zdeployowana
+Konsola pokazuje `POST .../functions/v1/gcal-sync 404 (Not Found)`. Funkcja istnieje w kodzie, ale nie została zdeployowana po ostatnich zmianach. Trzeba ją zdeployować.
 
-## Technical Mechanics
+### Bug 2: Slot fetch blokuje `create_permanent_room`
+W `supabase/functions/gcal-sync/index.ts` linie 72-82:
+```
+const { data: slot } = await supabase.from('calendar_slots')
+  .select('*').eq('id', slotId).single();
+if (!slot) return 404 "Slot not found"
+```
+Ten kod wykonuje się **PRZED** sprawdzeniem `action`. Dla `create_permanent_room` frontend wysyła `slotId: studentId` (bo nie ma prawdziwego slota). Student ID nie jest slotem, więc zapytanie zwraca null i funkcja zwraca 404 zanim w ogóle dojdzie do logiki tworzenia roomu.
 
-### 1) Zmiana modelu danych — bez psucia obecnych odczytów
-Żeby UI mogło odróżnić „Default” od „Custom” bez zgadywania po URL, trzeba dodać jawne metadane do `calendar_student_settings`.
+### Bug 3: `studentId` nigdy nie jest odczytany
+Linia 58: `const { teacherId, slotId, action, colorOverride } = await req.json();` — brak `studentId` w destrukturyzacji.
+Linia 134: `const studentId = (await req.clone().json()).studentId;` — `req.body` już skonsumowane na linii 58, `clone()` po konsumpcji nie zadziała poprawnie.
 
-### Dodać do `calendar_student_settings`:
-- `generated_meeting_link text null`
-- `meeting_link_mode text not null default 'default'`
+## Rozwiazanie
 
-Znaczenie:
-- `generated_meeting_link` = auto-wygenerowany prawdziwy Google Meet,
-- `meeting_link_mode = 'default' | 'custom'`
-- `default_meeting_link` zostaje jako **kanoniczny efektywny link** używany przez resztę aplikacji dla kompatybilności.
+### Zmiana 1: Fix `gcal-sync/index.ts` — restrukturyzacja flow
 
-Dzięki temu:
-- istniejący kod, który czyta `default_meeting_link`, nadal działa,
-- UI przestaje zgadywać, czy link jest auto czy custom,
-- nie musimy przepisywać całej aplikacji na nową strukturę.
+Linia 58 — dodac `studentId` do destrukturyzacji:
+```ts
+const { teacherId, slotId, action, colorOverride, studentId } = await req.json();
+```
 
-### Zasada zapisu:
-- gdy system wygeneruje Google Meet:
-  - `generated_meeting_link = meetUrl`
-  - jeśli `meeting_link_mode = 'default'` albo `default_meeting_link IS NULL`, to:
-    - `default_meeting_link = meetUrl`
-- gdy nauczyciel wybierze Custom:
-  - `meeting_link_mode = 'custom'`
-  - `default_meeting_link = pastedUrl`
-- gdy nauczyciel wróci na Default:
-  - `meeting_link_mode = 'default'`
-  - `default_meeting_link = generated_meeting_link`
-- gdy custom zostanie wyczyszczony:
-  - jeśli istnieje `generated_meeting_link`, wracamy do default,
-  - jeśli nie istnieje, `default_meeting_link = null`
+Przenieść check `action === 'create_permanent_room'` **PRZED** fetch slota (linia 72). Ten action nie potrzebuje slota, potrzebuje tylko `teacherId`, `studentId` i tokenu GCal.
 
----
+Nowa struktura (pseudokod):
+```
+parse body → { teacherId, slotId, action, colorOverride, studentId }
+create supabase client
+get GCal token (early return if missing)
 
-### 2) Edge function `gcal-sync` — użyć istniejącego `create_permanent_room`, ale poprawić kontrakt
-Aktualnie funkcja istnieje, ale frontend jej nie używa do per-student default linków.
+IF action === 'create_permanent_room':
+  → validate studentId
+  → check existing generated_meeting_link
+  → create ghost event → get hangoutLink → delete event
+  → save to calendar_student_settings
+  → return { success, meetLink }
 
-### Docelowo `create_permanent_room` ma działać tak:
-wejście:
-- `teacherId`
-- `studentId`
+// Reszta akcji (upsert, delete, cancel) wymaga slota:
+fetch slot by slotId
+if (!slot) return 404
+fetch settings
+... reszta logiki bez zmian
+```
 
-logika:
-1. sprawdź, czy nauczyciel ma aktywny token w `calendar_gcal_tokens`,
-2. jeśli w `calendar_student_settings.generated_meeting_link` już istnieje link dla tego studenta → zwróć go bez tworzenia nowego roomu,
-3. jeśli nie istnieje:
-   - utwórz tymczasowe wydarzenie z `conferenceData.createRequest`,
-   - pobierz `hangoutLink`,
-   - usuń tymczasowe wydarzenie,
-   - zwróć realny link `https://meet.google.com/...`
-4. edge function nie dotyka `calendar_slots`,
-5. edge function nie przyjmuje już semantycznie `slotId` do tego flow.
+Usunąć linię 134 (`req.clone().json()`).
 
-### Dlaczego tak:
-To minimalizuje ryzyko regresji:
-- nie mieszamy per-student room z logiką slotów,
-- nie generujemy duplikatów,
-- nie nadpisujemy nic przypadkiem przy zwykłym syncu lekcji.
+### Zmiana 2: Deploy edge function
+Po zmianie kodu — zdeployować `gcal-sync`.
 
----
+### Zmiana 3: Weryfikacja
+Przetestować edge function curlem z akcją `create_permanent_room`.
 
-### 3) Usunąć Jitsi z całego flow auto-linków
-To jest krytyczne. Nie wystarczy poprawić jeden ekran.
+## Pliki do zmiany
 
-### Do usunięcia / zastąpienia:
-- `src/utils/meetingLinkUtils.ts`
-  - usunąć `generateFallbackMeetingLink()` z użycia w auto-flow,
-  - `isAutoGeneratedLink()` przestaje rozpoznawać Jitsi/lookup i powinien zostać zastąpiony logiką opartą o `meeting_link_mode`
+| Plik | Co |
+|------|-----|
+| `supabase/functions/gcal-sync/index.ts` | Dodac `studentId` do destrukturyzacji, przeniesc `create_permanent_room` przed slot fetch, usunac `req.clone()` |
 
-- `src/hooks/useStudents.tsx`
-  - przy dodaniu nowego studenta:
-    - jeśli `auto_create_student_meeting_link = true` i teacher ma aktywne GCal → wywołać tworzenie prawdziwego Google Meet,
-    - jeśli teacher nie ma GCal → nie zapisujemy żadnego auto-linku
+### Zakres zmian — NIE ruszamy:
+- Logiki `upsert`, `delete`, `cancel` (działają poprawnie)
+- Frontendu (`StudentPage.tsx`, `CalendarSettingsPage.tsx`) — wywołania są poprawne, problem jest po stronie edge function
+- Żadnych innych plików
 
-- `src/pages/CalendarSettingsPage.tsx`
-  - batch generation dla istniejących studentów ma używać edge function do tworzenia realnych Google Meet roomów,
-  - nie może już generować Jitsi,
-  - nie może nic robić lokalnie przez hash.
+## Kolejnosc implementacji
+1. Fix `gcal-sync/index.ts`
+2. Deploy `gcal-sync`
+3. Test curlem z `create_permanent_room`
+4. Update `docs/llm-context.md` i `llms.txt`
 
----
-
-### 4) Calendar Settings — bezpieczne zasady działania
-#### Auto-create permanent student meeting links
-Ta opcja ma być aktywna tylko wtedy, gdy nauczyciel naprawdę ma Google Calendar połączony.
-
-### Zasada:
-- jeśli `gcalConnected = false` albo brak `calendar_gcal_tokens`:
-  - toggle disabled,
-  - helper text: permanent default Google Meet rooms require Google Calendar connection
-- jeśli teacher się połączy:
-  - toggle można włączyć
-- po włączeniu:
-  - batch-generate link tylko dla studentów, którzy nie mają `generated_meeting_link`
-  - nie nadpisywać custom linków
-  - jeśli student jest w trybie default, przepisać nowy link do `default_meeting_link`
-  - przepisać link do przyszłych slotów tego studenta
-
-#### Legacy: Auto-create per-lesson Meet links
-Zostaje zablokowane, gdy permanent student links są aktywne — to już jest dobry kierunek i trzeba go utrzymać.
-
----
-
-### 5) Student Page — `Default / Custom` ma działać z realnym stanem, nie z heurystyką URL
-`MeetingLinkField` teraz zgaduje po tym, czy link wygląda jak Jitsi/lookup. To trzeba usunąć.
-
-### Nowy odczyt:
-przy ładowaniu pobrać z `calendar_student_settings`:
-- `default_meeting_link`
-- `generated_meeting_link`
-- `meeting_link_mode`
-
-oraz z `calendar_settings`:
-- `auto_create_student_meeting_link`
-- `gcal_integration_enabled`
-
-### UI:
-#### gdy teacher ma GCal i auto-create ON:
-pokazać:
-- toggle `Default / Custom`
-- `Default`:
-  - input disabled
-  - value = `generated_meeting_link`
-  - przycisk external-link
-- `Custom`:
-  - input editable
-  - value = lokalny custom draft / `default_meeting_link` jeśli mode=`custom`
-
-#### gdy teacher nie ma GCal albo auto-create OFF:
-- nie pokazujemy „fałszywego defaultu”
-- zwykły editable input dla custom linku
-- helper text: connect Google Meet or paste your own meeting room link
-
-### Zapis:
-- `onBlur` / save nie może blokować pustej wartości
-- wyczyszczenie custom linku:
-  - jeśli jest `generated_meeting_link` → wróć do mode=`default`
-  - jeśli nie ma → zapisz `default_meeting_link = null`
-
-### Ważne:
-StudentPage nie może już lokalnie generować żadnego linku „na wszelki wypadek”.
-
----
-
-### 6) Student-facing flows — usunąć globalny wspólny fallback tam, gdzie ma działać per-student
-To jest drugi główny powód, dla którego system może dalej pokazywać wspólny link.
-
-### Do poprawy:
-- `supabase/functions/get-student-hub-data/index.ts`
-- `src/hooks/usePublicBooking.tsx`
-- `src/pages/StudentHubLessons.tsx`
-- `src/pages/StudentHubDashboard.tsx`
-- miejsca wysyłające maile / przyciski Join / meeting CTA
-
-### Nowa kolejność źródła linku:
-1. `slot.meeting_link` jeśli lekcja ma już przypisany link,
-2. `calendar_student_settings.default_meeting_link` jako efektywny per-student link,
-3. globalny `calendar_settings.default_meeting_link` tylko jako **legacy fallback**, ale wyłącznie gdy `auto_create_student_meeting_link = false`
-
-### Krytyczna zasada:
-Jeśli per-student system jest aktywny, student-facing flow nie może pokazać globalnego wspólnego linku.
-
----
-
-### 7) Propagacja do przyszłych lekcji
-Samo zapisanie linku w student settings nie wystarczy.
-
-### Przy każdej zmianie trybu/linku:
-- zaktualizować przyszłe `calendar_slots.meeting_link` dla danego teacher+student,
-- nie ruszać:
-  - `completed`
-  - `deleted`
-- przy przejściu na default:
-  - wpisać `generated_meeting_link`
-- przy przejściu na custom:
-  - wpisać custom link
-- przy wyczyszczeniu custom i braku generated link:
-  - ustawić `meeting_link = null` dla przyszłych slotów
-
----
-
-### 8) Migracja danych istniejących rekordów
-Trzeba zachować kompatybilność z tym, co już jest w bazie.
-
-### Migracja:
-1. dodać nowe kolumny do `calendar_student_settings`
-2. ustawić:
-   - `meeting_link_mode = 'custom'` dla istniejących rekordów jako bezpieczny default
-3. nie próbować automatycznie mapować starych Jitsi linków na default Google Meet
-4. starych Jitsi linków nie kasować od razu migracją
-5. nowy kod ma je traktować jako legacy custom values
-6. po włączeniu auto-create i wybraniu przez nauczyciela `Default`, system wygeneruje prawdziwy Google Meet i zastąpi legacy stan
-
-To jest najbezpieczniejsze, bo nie nadpisujemy danych masowo bez intencji użytkownika.
-
----
-
-### 9) Konkretne pliki do zmiany
-- `supabase/functions/gcal-sync/index.ts`
-- `src/hooks/useStudents.tsx`
-- `src/pages/CalendarSettingsPage.tsx`
-- `src/pages/StudentPage.tsx`
-- `src/hooks/usePublicBooking.tsx`
-- `supabase/functions/get-student-hub-data/index.ts`
-- `src/pages/StudentHubLessons.tsx`
-- `src/pages/StudentHubDashboard.tsx`
-- `src/utils/meetingLinkUtils.ts`
-- nowa migracja SQL dla `calendar_student_settings`
-- `docs/llm-context.md`
-- `llms.txt`
-
----
-
-## Zasady bezpieczeństwa i anty-regresja
-1. Nie ruszać worksheet engine.
-2. Nie zmieniać logiki GCal sync dla zwykłych slotów poza akcją `create_permanent_room`.
-3. Zachować `default_meeting_link` jako efektywny kanoniczny link, żeby nie połamać istniejących odczytów.
-4. Nie generować automatycznie niczego, jeśli teacher nie ma potwierdzonego połączenia GCal.
-5. Nie nadpisywać custom linków batch-generacją.
-6. Nie używać URL pattern detection do określania mode — tylko jawne pole w bazie.
-7. Nie fallbackować do globalnego linku, gdy aktywny jest model per-student.
-
----
-
-## Kolejność implementacji
-1. Migracja DB: `generated_meeting_link`, `meeting_link_mode`
-2. Poprawa `gcal-sync create_permanent_room` pod `teacherId + studentId`
-3. Usunięcie Jitsi z `useStudents` i `CalendarSettingsPage`
-4. Przebudowa `MeetingLinkField` w `StudentPage`
-5. Poprawa student-facing odczytu linku (`get-student-hub-data`, dashboard, lessons, booking/email flows)
-6. Propagacja zmian do przyszłych slotów
-7. Aktualizacja `docs/llm-context.md` i `llms.txt` w formacie:
-   - Problem
-   - Edooqoo.com Solution
-   - Technical Mechanics
-   - RAG Keywords
-
-## Ostateczna decyzja architektoniczna
-Nie utrzymujemy już żadnego automatycznego fallbacku Jitsi.  
-Auto-generated permanent meeting link = tylko realny Google Meet z Google Calendar API.  
-Jeśli nauczyciel nie ma połączenia z Google Calendar, system nie „udaje” defaultu — zostawia tylko custom link.
