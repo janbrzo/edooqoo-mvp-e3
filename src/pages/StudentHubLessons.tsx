@@ -34,6 +34,7 @@ const StudentHubLessons = () => {
   const [booking, setBooking] = useState(false);
   const [bookWeekly, setBookWeekly] = useState(false);
   const [untilDate, setUntilDate] = useState('');
+  const [rescheduleBookingId, setRescheduleBookingId] = useState<string | null>(null);
 
   const studentTz = useMemo(() => getStudentTimeZone(), []);
   const teacherTz = settings?.timezone || 'Europe/Warsaw';
@@ -56,13 +57,47 @@ const StudentHubLessons = () => {
     return count;
   }, [bookWeekly, untilDate, selectedSlot]);
 
+  const handleSlotClick = (slot: CalendarSlot) => {
+    if (rescheduleBookingId) {
+      handleReschedule(rescheduleBookingId, slot.id);
+      return;
+    }
+    setSelectedSlot(slot);
+  };
+
+  const handleReschedule = async (oldSlotId: string, newSlotId: string) => {
+    if (!email || !teacherToken) return;
+    try {
+      const { data, error } = await supabase.functions.invoke('get-student-bookings', {
+        body: {
+          token: teacherToken,
+          email: email.trim(),
+          action: 'reschedule',
+          slotId: oldSlotId,
+          newSlotId,
+        },
+      });
+      if (error) throw error;
+      if (data?.autoRescheduled) {
+        toast({ title: 'Lesson rescheduled successfully' });
+      } else if (data?.success) {
+        toast({ title: 'Reschedule request sent — awaiting teacher confirmation' });
+      } else {
+        toast({ title: data?.error || 'Could not reschedule', variant: 'destructive' });
+      }
+    } catch (err: any) {
+      toast({ title: 'Reschedule failed', description: err.message, variant: 'destructive' });
+    }
+    setRescheduleBookingId(null);
+    refetchSlots();
+  };
+
   const handleBook = async () => {
     if (!selectedSlot || !email || !settings) return;
     setBooking(true);
     const name = email.split('@')[0];
 
     if (bookWeekly && untilDate) {
-      // Collect all matching slot IDs for batch booking
       const allSlotIds: string[] = [selectedSlot.id];
       let d = addWeeks(parseISO(selectedSlot.slot_date), 1);
       const end = parseISO(untilDate);
@@ -81,7 +116,6 @@ const StudentHubLessons = () => {
       }
 
       if (allSlotIds.length > 1) {
-        // Use batch booking via edge function — creates one notification
         try {
           const { data, error } = await supabase.functions.invoke('get-student-bookings', {
             body: {
@@ -104,11 +138,9 @@ const StudentHubLessons = () => {
           toast({ title: 'Booking failed', description: err.message, variant: 'destructive' });
         }
       } else {
-        // Only the first slot — use single booking
         await bookSlot(selectedSlot.id, name, email);
       }
     } else {
-      // Single booking
       await bookSlot(selectedSlot.id, name, email);
     }
 
@@ -177,6 +209,14 @@ const StudentHubLessons = () => {
           </Card>
         )}
 
+        {/* Reschedule banner */}
+        {rescheduleBookingId && (
+          <div className="bg-primary/10 border border-primary/30 rounded-md p-2 flex items-center justify-between text-sm">
+            <span>Select a new time slot to reschedule your lesson</span>
+            <Button variant="ghost" size="sm" onClick={() => setRescheduleBookingId(null)}>Cancel</Button>
+          </div>
+        )}
+
         {/* Available Slots Grid */}
         <Card>
           <CardContent className="p-4">
@@ -210,7 +250,7 @@ const StudentHubLessons = () => {
                         {daySlots.map(slot => {
                           const time = formatSlotTime(slot);
                           return (
-                            <button key={slot.id} className="w-full text-xs bg-green-100 hover:bg-green-200 text-green-800 rounded px-1 py-0.5 text-center transition-colors relative" onClick={() => !isPast && setSelectedSlot(slot)} disabled={isPast}>
+                            <button key={slot.id} className={cn("w-full text-xs rounded px-1 py-0.5 text-center transition-colors relative", rescheduleBookingId ? "bg-blue-100 hover:bg-blue-200 text-blue-800 ring-1 ring-blue-300" : "bg-green-100 hover:bg-green-200 text-green-800")} onClick={() => !isPast && handleSlotClick(slot)} disabled={isPast}>
                               {time.primary}
                               {(slot as any).discount_percent > 0 && (
                                 <span className="absolute -top-1 -right-1 text-[9px] font-bold text-red-600 bg-red-50 rounded px-0.5">-{(slot as any).discount_percent}%</span>
@@ -238,6 +278,8 @@ const StudentHubLessons = () => {
             availableSlots={availableSlots}
             onBookingChanged={() => refetchSlots()}
             defaultEmail={email}
+            onRescheduleStart={(bookingId) => setRescheduleBookingId(bookingId)}
+            rescheduleBookingId={rescheduleBookingId}
           />
         )}
       </div>

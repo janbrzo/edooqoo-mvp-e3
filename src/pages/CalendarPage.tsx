@@ -80,9 +80,10 @@ const CalendarPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [legendFilter, setLegendFilter] = useState<string | null>(null);
 
-  // Multi-select for batch delete
+  // Multi-select for batch actions
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedSlotIds, setSelectedSlotIds] = useState<Set<string>>(new Set());
+  const [selectionType, setSelectionType] = useState<string | null>(null);
 
   // Unpaid counter
   const unpaidCount = useMemo(() => slots.filter(s =>
@@ -159,12 +160,29 @@ const CalendarPage = () => {
     setAddModalOpen(true);
   };
 
+  const getSlotSelectionType = (slot: CalendarSlot): string => {
+    if ((slot.status as any) === 'needs_review') return 'needs_review';
+    if (slot.status === 'booked' && !slot.confirmed_at) return 'pending';
+    if (slot.status === 'booked' && slot.confirmed_at) return 'booked';
+    if (slot.status === 'available') return 'available';
+    if (slot.status === 'completed') return 'completed';
+    if (slot.status === 'no_show') return 'no_show';
+    return slot.status;
+  };
+
   const handleSlotClick = (slot: CalendarSlot) => {
     if (selectionMode) {
-      if (slot.student_id) return;
+      const slotType = getSlotSelectionType(slot);
+      if (selectionType && slotType !== selectionType) return;
       setSelectedSlotIds(prev => {
         const next = new Set(prev);
-        if (next.has(slot.id)) next.delete(slot.id); else next.add(slot.id);
+        if (next.has(slot.id)) {
+          next.delete(slot.id);
+          if (next.size === 0) setSelectionType(null);
+        } else {
+          next.add(slot.id);
+          if (!selectionType) setSelectionType(slotType);
+        }
         return next;
       });
       return;
@@ -237,6 +255,46 @@ const CalendarPage = () => {
   const exitSelectionMode = () => {
     setSelectionMode(false);
     setSelectedSlotIds(new Set());
+    setSelectionType(null);
+  };
+
+  const handleBatchConfirm = async () => {
+    if (selectedSlotIds.size === 0) return;
+    if (!window.confirm(`Confirm ${selectedSlotIds.size} pending bookings?`)) return;
+    const ids = Array.from(selectedSlotIds);
+    await supabase.from('calendar_slots')
+      .update({ confirmed_at: new Date().toISOString() } as any)
+      .in('id', ids);
+    for (const id of ids) {
+      supabase.from('calendar_slot_logs').insert({
+        slot_id: id, teacher_id: user?.id, action: 'confirmed', actor: 'teacher', details: { batch: true },
+      } as any).then(() => {});
+    }
+    toast.success(`Confirmed ${ids.length} bookings`);
+    exitSelectionMode();
+    refetch();
+  };
+
+  const handleBatchReject = async () => {
+    if (selectedSlotIds.size === 0) return;
+    if (!window.confirm(`Reject ${selectedSlotIds.size} pending bookings?`)) return;
+    const ids = Array.from(selectedSlotIds);
+    await supabase.from('calendar_slots')
+      .update({ status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null } as any)
+      .in('id', ids);
+    toast.success(`Rejected ${ids.length} bookings`);
+    exitSelectionMode();
+    refetch();
+  };
+
+  const handleBatchStatusChange = async (status: string) => {
+    if (selectedSlotIds.size === 0) return;
+    if (!window.confirm(`Mark ${selectedSlotIds.size} slots as ${status}?`)) return;
+    const ids = Array.from(selectedSlotIds);
+    await supabase.from('calendar_slots').update({ status } as any).in('id', ids);
+    toast.success(`${ids.length} slots marked as ${status}`);
+    exitSelectionMode();
+    refetch();
   };
 
   const handleUnifiedModalLinkWorksheet = (studentId: string | null) => {
@@ -309,13 +367,38 @@ const CalendarPage = () => {
             </Button>
             {!selectionMode ? (
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSelectionMode(true)}>
-                Bulk Delete
+                Bulk Actions
               </Button>
             ) : (
               <div className="flex items-center gap-1">
-                <Button variant="destructive" size="sm" className="h-8 text-xs" onClick={handleBatchDelete} disabled={selectedSlotIds.size === 0}>
-                  Delete ({selectedSlotIds.size})
-                </Button>
+                {(!selectionType || selectionType === 'available') && (
+                  <Button variant="destructive" size="sm" className="h-8 text-xs" onClick={handleBatchDelete} disabled={selectedSlotIds.size === 0}>
+                    Delete ({selectedSlotIds.size})
+                  </Button>
+                )}
+                {selectionType === 'pending' && (
+                  <>
+                    <Button size="sm" className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={handleBatchConfirm} disabled={selectedSlotIds.size === 0}>
+                      Confirm ({selectedSlotIds.size})
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 text-xs text-destructive" onClick={handleBatchReject} disabled={selectedSlotIds.size === 0}>
+                      Reject ({selectedSlotIds.size})
+                    </Button>
+                  </>
+                )}
+                {(selectionType === 'needs_review' || selectionType === 'booked') && (
+                  <>
+                    <Button size="sm" className="h-8 text-xs" onClick={() => handleBatchStatusChange('completed')} disabled={selectedSlotIds.size === 0}>
+                      Complete ({selectedSlotIds.size})
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => handleBatchStatusChange('no_show')} disabled={selectedSlotIds.size === 0}>
+                      No Show ({selectedSlotIds.size})
+                    </Button>
+                  </>
+                )}
+                {selectedSlotIds.size > 0 && selectionType && (
+                  <span className="text-xs text-muted-foreground ml-1">{selectionType}</span>
+                )}
                 <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exitSelectionMode}>
                   Cancel
                 </Button>

@@ -5,10 +5,9 @@
 ## Key Architecture Decisions (April 2026)
 
 ### Meeting Links — GCal-Only Model (v3)
-- **Problem**: Jitsi fallback links identical across students; edge function `create_permanent_room` blocked by slot fetch (studentId treated as slotId → 404); `studentId` not destructured from body. Batch generation skipped students with `meeting_link_mode='custom'` from migration even if they had no link.
-- **Solution**: Auto-generated permanent links = only real Google Meet via Google Calendar API. No Jitsi, no deterministic hashes, no lookup URLs.
-- **Critical fix (v3)**: `create_permanent_room` action moved BEFORE slot fetch in `gcal-sync/index.ts`. `studentId` added to top-level destructuring. Removed broken `req.clone().json()`.
-- **Batch fix (v4)**: Batch skip logic changed: skip student only if `meeting_link_mode='custom' AND default_meeting_link IS NOT NULL`. Edge function also sets `meeting_link_mode='default'` when existing record has no `default_meeting_link` (legacy migration state).
+- **Problem**: Jitsi fallback links identical across students; edge function `create_permanent_room` blocked by slot fetch (studentId treated as slotId → 404); `studentId` not destructured from body. Batch generation skipped students with `meeting_link_mode='custom'` from migration even if they had no link. Label always showed "Default Meeting Link".
+- **Solution**: Auto-generated permanent links = only real Google Meet via Google Calendar API. No Jitsi, no deterministic hashes, no lookup URLs. Label dynamically shows Default/Custom/Meeting Link based on mode and GCal status.
+- **Batch fix (v4)**: Batch skip logic: skip student only if `meeting_link_mode='custom' AND default_meeting_link IS NOT NULL`. Edge function sets `meeting_link_mode='default'` when existing record has no `default_meeting_link`.
 - **Technical Mechanics**:
   - `calendar_student_settings` has `generated_meeting_link` (auto from GCal), `meeting_link_mode` ('default'|'custom'), `default_meeting_link` (canonical effective link)
   - `gcal-sync` edge function: parse body → get token → if `create_permanent_room` handle+return → else fetch slot → `delete`/`cancel`/`upsert`
@@ -17,14 +16,17 @@
   - Student-facing flows use: `slot.meeting_link` > `student_settings.default_meeting_link` (no global fallback when per-student active)
   - `src/utils/meetingLinkUtils.ts` — only legacy detection helper, no generation functions
 
-### Calendar Stability
+### Calendar Stability & Bulk Actions
 - `needs_review` auto-update guards: `student_id IS NOT NULL` filter + error handler
 - Zombie slots (booked + no student) cleaned via migration
 - Confirm/Reject uses inline comment (no sub-dialogs) — `showInlineComment` + `inlineComment` state
+- **Bulk Actions** (v2): replaces "Bulk Delete". Selection restricted to one slot type (`selectionType` state). Actions: Delete (available), Confirm/Reject (pending), Complete/No Show (booked/needs_review). Uses atomic `.update().in('id', ids)`.
 
 ### Student Hub
-- Lesson list: upcoming ascending, past descending
-- Auto-scroll container to Today on load (150ms delay, container-only)
+- Lesson list: unified descending sort (newest first), auto-scroll to Today
+- Reschedule: `StudentHubLessons` wires `onRescheduleStart`/`rescheduleBookingId` to `StudentBookingsSection`. Reschedule mode highlights slots blue, calls edge function on click.
+- Email displayed next to Log out in header
+- SlotDetailModal: compact layout (Date+Time grid-cols-4, Worksheet+Discount, Notes+MeetingLink side by side)
 
 ## Edge Functions
 - `gcal-sync`: Actions: `upsert`, `delete`, `cancel`, `create_permanent_room`

@@ -157,7 +157,9 @@ function MeetingLinkField({ studentId, teacherId, hasGcal }: { studentId: string
 
   return (
     <div>
-      <label className="text-sm font-medium text-muted-foreground">Default Meeting Link</label>
+      <label className="text-sm font-medium text-muted-foreground">
+        {!autoLinkEnabled ? 'Meeting Link' : mode === 'custom' ? 'Custom Meeting Link' : 'Default Meeting Link'}
+      </label>
       {autoLinkEnabled && (
         <div className="flex items-center gap-2 mt-1 mb-1">
           <button

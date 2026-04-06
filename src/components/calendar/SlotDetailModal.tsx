@@ -721,7 +721,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   return (
     <>
     <DraggableDialog open={open} onOpenChange={onOpenChange}>
-      <DraggableDialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DraggableDialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DraggableDialogHeader>
           <DraggableDialogTitle className="text-lg font-semibold leading-none tracking-tight flex items-center gap-2 flex-wrap">
             {isBlock ? '🔒 Block' : hasStudent ? 'Lesson' : 'Available Slot'}
@@ -732,7 +732,7 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
           </DraggableDialogTitle>
         </DraggableDialogHeader>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {!isBlock && (
             <>
               {hasStudent && !showStudentSelect ? (
@@ -791,14 +791,14 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </>
           )}
 
-          <div><Label className="text-xs">Date</Label><Input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="h-9" /></div>
-          <div className="grid grid-cols-3 gap-2">
-            <div><Label className="text-xs">Start</Label><Input type="time" value={editStartTime} onChange={e => handleStartTimeChange(e.target.value)} className="h-9" /></div>
-            <div><Label className="text-xs">End</Label><Input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)} className="h-9" /></div>
+          <div className="grid grid-cols-4 gap-2">
+            <div><Label className="text-xs">Date</Label><Input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="h-8 text-xs" /></div>
+            <div><Label className="text-xs">Start</Label><Input type="time" value={editStartTime} onChange={e => handleStartTimeChange(e.target.value)} className="h-8 text-xs" /></div>
+            <div><Label className="text-xs">End</Label><Input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)} className="h-8 text-xs" /></div>
             <div>
               <Label className="text-xs">Duration</Label>
               <Select value={String(durationMinutes)} onValueChange={handleDurationChange}>
-                <SelectTrigger className="h-9 text-xs">
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Duration" />
                 </SelectTrigger>
                 <SelectContent>
@@ -811,51 +811,53 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
           </div>
 
           {!isBlock && (
-            <div>
-              <Label className="text-xs">Worksheet</Label>
-              {hasStudent ? (
-                <div className="flex items-center gap-2">
-                  <Select value={editWorksheetId} onValueChange={setEditWorksheetId}>
-                    <SelectTrigger className="h-9 text-xs flex-1">
-                      <SelectValue placeholder="No worksheet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No worksheet</SelectItem>
-                      {studentWorksheets.map(w => (
-                        <SelectItem key={w.id} value={w.id}>{w.title || 'Untitled'}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {editWorksheetId !== 'none' && (
-                    <Button variant="ghost" size="sm" className="h-9 px-2" onClick={() => window.open(`/worksheet/${editWorksheetId}`, '_blank')}>
-                      <ExternalLink className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground mt-1">Select a student first</p>
-              )}
+            <div className="grid grid-cols-[1fr_80px] gap-2">
+              <div>
+                <Label className="text-xs">Worksheet</Label>
+                {hasStudent ? (
+                  <div className="flex items-center gap-2">
+                    <Select value={editWorksheetId} onValueChange={setEditWorksheetId}>
+                      <SelectTrigger className="h-8 text-xs flex-1">
+                        <SelectValue placeholder="No worksheet" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No worksheet</SelectItem>
+                        {studentWorksheets.map(w => (
+                          <SelectItem key={w.id} value={w.id}>{w.title || 'Untitled'}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {editWorksheetId !== 'none' && (
+                      <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => window.open(`/worksheet/${editWorksheetId}`, '_blank')}>
+                        <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1">Select a student first</p>
+                )}
+              </div>
+              <div>
+                <Label className="text-xs">Discount %</Label>
+                <Input type="number" min="0" max="100" value={editDiscountPercent} onChange={e => setEditDiscountPercent(e.target.value)} placeholder="e.g. 10" className="h-8 text-xs" />
+              </div>
             </div>
           )}
 
-          <div><Label className="text-xs">Notes</Label><AutoResizeTextarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={1} className="min-h-[36px]" /></div>
-
-          <div>
-            <Label className="text-xs">Discount %</Label>
-            <Input type="number" min="0" max="100" value={editDiscountPercent} onChange={e => setEditDiscountPercent(e.target.value)} placeholder="e.g. 10" className="h-9 text-xs w-24" />
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label className="text-xs">Notes</Label><AutoResizeTextarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={1} className="min-h-[32px] text-xs" /></div>
+            {!isBlock && hasStudent && (
+              <div>
+                <Label className="text-xs">Meeting Link</Label>
+                <Input value={editMeetingLink} onChange={e => setEditMeetingLink(e.target.value)} placeholder="https://meet.google.com/..." className="h-8 text-xs" />
+                {editMeetingLink && (
+                  <Button variant="link" size="sm" className="h-5 p-0 text-xs mt-0.5" onClick={() => window.open(editMeetingLink, '_blank')}>
+                    Join ↗
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
-
-          {!isBlock && hasStudent && (
-            <div>
-              <Label className="text-xs flex items-center gap-1">Meeting Link</Label>
-              <Input value={editMeetingLink} onChange={e => setEditMeetingLink(e.target.value)} placeholder="https://meet.google.com/..." className="h-9 text-xs" />
-              {editMeetingLink && (
-                <Button variant="link" size="sm" className="h-6 p-0 text-xs mt-1" onClick={() => window.open(editMeetingLink, '_blank')}>
-                  Join Meeting ↗
-                </Button>
-              )}
-            </div>
-          )}
 
           {slot.student_notes && (
             <div className="bg-muted/50 rounded-md px-3 py-2">
