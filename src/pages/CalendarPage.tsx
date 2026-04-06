@@ -271,6 +271,9 @@ const CalendarPage = () => {
       supabase.from('calendar_slot_logs').insert({
         slot_id: id, teacher_id: user?.id, action: 'confirmed', actor: 'teacher', details: { batch: true },
       } as any).then(() => {});
+      supabase.functions.invoke('gcal-sync', {
+        body: { teacherId: user?.id, slotId: id, action: 'upsert' },
+      }).catch(console.error);
     }
     toast.success(`Confirmed ${ids.length} bookings`);
     exitSelectionMode();
@@ -284,6 +287,11 @@ const CalendarPage = () => {
     await supabase.from('calendar_slots')
       .update({ status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null } as any)
       .in('id', ids);
+    for (const id of ids) {
+      supabase.functions.invoke('gcal-sync', {
+        body: { teacherId: user?.id, slotId: id, action: 'cancel' },
+      }).catch(console.error);
+    }
     toast.success(`Rejected ${ids.length} bookings`);
     exitSelectionMode();
     refetch();
@@ -294,6 +302,11 @@ const CalendarPage = () => {
     if (!window.confirm(`Mark ${selectedSlotIds.size} slots as ${status}?`)) return;
     const ids = Array.from(selectedSlotIds);
     await supabase.from('calendar_slots').update({ status } as any).in('id', ids);
+    for (const id of ids) {
+      supabase.functions.invoke('gcal-sync', {
+        body: { teacherId: user?.id, slotId: id, action: 'upsert' },
+      }).catch(console.error);
+    }
     toast.success(`${ids.length} slots marked as ${status}`);
     exitSelectionMode();
     refetch();
