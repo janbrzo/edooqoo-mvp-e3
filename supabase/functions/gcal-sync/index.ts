@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
           .select('id, meeting_link_mode').eq('student_id', studentId).eq('teacher_id', teacherId).maybeSingle();
 
         const updateData: any = { generated_meeting_link: meetLink };
-        if (!css || css.meeting_link_mode === 'default') {
+        if (!css || css.meeting_link_mode === 'default' || !css.default_meeting_link) {
           updateData.default_meeting_link = meetLink;
           updateData.meeting_link_mode = 'default';
         }
