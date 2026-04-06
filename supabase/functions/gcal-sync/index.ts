@@ -129,6 +129,51 @@ Deno.serve(async (req) => {
         );
         console.log('GCal cancel-update:', res.status);
       }
+    } else if (action === 'create_permanent_room') {
+      // Create a temporary event to get a real Google Meet link, then delete the event
+      const tempEvent = {
+        summary: 'Edooqoo Room Setup (auto-delete)',
+        start: { dateTime: new Date().toISOString(), timeZone: timezone },
+        end: { dateTime: new Date(Date.now() + 3600000).toISOString(), timeZone: timezone },
+        conferenceData: {
+          createRequest: {
+            requestId: `perm-${slotId}-${Date.now()}`,
+            conferenceSolutionKey: { type: 'hangoutsMeet' },
+          },
+        },
+      };
+
+      const createRes = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?conferenceDataVersion=1`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(tempEvent),
+        }
+      );
+
+      if (!createRes.ok) {
+        const errText = await createRes.text();
+        console.error('Failed to create temp event for permanent room:', errText);
+        return new Response(JSON.stringify({ error: 'Failed to create Meet room' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const created = await createRes.json();
+      const meetLink = created.hangoutLink || null;
+
+      // Delete the temp event immediately
+      if (created.id) {
+        await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${created.id}`,
+          { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      return new Response(JSON.stringify({ success: true, meetLink }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     } else if (action === 'upsert') {
       let summary = slot.title || 'English Lesson';
       if (slot.student_id) {
