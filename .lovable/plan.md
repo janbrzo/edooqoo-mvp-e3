@@ -1,342 +1,149 @@
+# Implementation Plan — 4 fixes (APPROVED, READY TO IMPLEMENT)
 
-# Plan: 4 naprawy — automatyczny stały meeting link per student, prawdziwy Reject comment, freeze po Confirm/Reject, domyślny układ Lessons jak po Today
+## Task 1: Clean zombie slots + fix needs_review
 
-## Najważniejsza decyzja
-Tu problemem nie jest pojedynczy bug, tylko konflikt modeli. Obecnie aplikacja nadal miesza:
-- stały link per student
-- link generowany per lesson przez GCal
-- fallbacki z kilku miejsc
-
-To właśnie rozwala przewidywalność. Jeśli chcesz prostoty dla ucznia, system musi mieć jedną twardą regułę:
-
-```text
-1 student = 1 permanent meeting room link
+### Migration SQL
+```sql
+-- Clean zombie slots: booked with no student
+UPDATE calendar_slots 
+SET status = 'available', confirmed_at = NULL, booked_at = NULL, booked_by = NULL, student_notes = NULL
+WHERE status = 'booked' AND student_id IS NULL;
 ```
 
-I ta reguła musi być ważniejsza niż auto-generated per-lesson Meet link.
+### useCalendarSlots.tsx line 105
+Add `if (!s.student_id) return false;` after `if (s.status !== 'booked' || !s.confirmed_at) return false;`
+Add `.catch((err) => console.error('needs_review auto-update failed:', err))` after `.then(() => {})`
 
----
+## Task 2: SlotDetailModal — inline comments, remove sub-dialogs
 
-## 1. Meeting: automatycznie tworzony jeden stały link per student
+### Remove states
+Remove: `showRejectDialog`, `rejectComment`, `showConfirmDialog`, `confirmComment`
+Add: `showInlineComment` (boolean), `inlineComment` (string)
 
-### Co jest dziś źle
-Masz rację: obecna implementacja nie spełnia założenia.
-Kod nadal ma włączoną opcję `auto_create_meet_link`, która w `gcal-sync` generuje link per event i zapisuje go do `calendar_slots.meeting_link`.
-To powoduje dwa skutki uboczne:
-- student bez ręcznie wpisanego linku nie dostaje automatycznie stałego pokoju
-- nowe lekcje dalej potrafią dostać inny link niż stary student link
-
-### Finalne zachowanie
-Wprowadzamy jeden docelowy model:
-
-```text
-Permanent student meeting link = canonical source
-calendar_student_settings.default_meeting_link
+### Lines 920-928: Replace buttons with inline flow
+```tsx
+{isPending && (
+  <>
+    <Button size="sm" onClick={handleConfirm} disabled={actionInProgress} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
+      <Check className="h-3 w-3 mr-1" /> {actionInProgress ? 'Processing...' : 'Confirm'}
+    </Button>
+    <Button size="sm" variant="outline" onClick={handleReject} disabled={actionInProgress} className="text-destructive text-xs h-7">
+      <Ban className="h-3 w-3 mr-1" /> Reject
+    </Button>
+    <div className="flex items-center gap-2 w-full">
+      <Checkbox checked={showInlineComment} onCheckedChange={(v) => setShowInlineComment(!!v)} id="add-comment" />
+      <Label htmlFor="add-comment" className="text-xs cursor-pointer">Add comment</Label>
+    </div>
+    {showInlineComment && (
+      <AutoResizeTextarea value={inlineComment} onChange={e => setInlineComment(e.target.value)} placeholder="Optional note for the student..." rows={2} className="text-xs w-full" />
+    )}
+  </>
+)}
 ```
 
-Dla każdego studenta:
-- link tworzy się automatycznie po włączeniu tej opcji dla nauczyciela
-- link tworzy się automatycznie przy dodaniu nowego studenta, jeśli opcja jest już włączona
-- wszystkie nowe lesson slots tego studenta dostają dokładnie ten sam link
-- wszystkie przyszłe istniejące slots tego studenta są synchronizowane do tego samego linku
-- GCal nie może już nadpisywać tego linku innym per-event meet linkiem
+### handleConfirm: use `inlineComment` instead of `confirmComment`
+### handleReject: use `inlineComment` instead of `rejectComment`
+### After success: `setShowInlineComment(false); setInlineComment('');`
+### Remove lines 982-1020 (both sub-dialogs)
+### Add import: `import { Checkbox } from '@/components/ui/checkbox';`
 
-### Jak to wdrożyć
-#### A. `calendar_settings`
-Dodać lub wykorzystać osobny toggle dla tego modelu, zamiast używać obecnego `auto_create_meet_link` w jego obecnym znaczeniu.
-Najbezpieczniej:
-- zostawić stary `auto_create_meet_link` dla kompatybilności
-- dodać nową logikę UI i kodu opisującą ją jako:
-  - `Auto-create permanent student meeting links`
+## Task 3: Lessons auto-scroll on load
 
-Jeśli nie chcesz nowej kolumny, można przepiąć znaczenie obecnego toggle, ale to jest bardziej ryzykowne, bo dziś ten toggle steruje `gcal-sync` dla per-event Meet. Bezpieczniejszy plan:
-- nowa kolumna boolean w `calendar_settings`, np. `auto_create_student_meeting_link`
-- nie ruszać starego toggle biznesowo, tylko go wygasić w UI albo opisać jako legacy
-- nowy toggle steruje wyłącznie stałym linkiem per student
-
-#### B. Generowanie linku
-Nie generujemy prawdziwego Google Meet room przez event-per-slot, bo to z definicji tworzy różne linki.
-Są tylko dwa sensowne warianty:
-1. generować Edooqoo permanent room URL
-2. generować link z własnego wzorca konfiguracyjnego
-
-Ponieważ w aplikacji nie ma własnego systemu video room backendowego, najbezpieczniejszy kompatybilny plan to:
-- generować **deterministyczny permanent meeting URL** w domenie Edooqoo lub neutralny permanent room path, np. oparty o teacherId + studentId + sekret/hash
-- ten URL jest stały dla pary teacher-student
-- zapisujemy go do `calendar_student_settings.default_meeting_link`
-
-To rozwiązuje dokładnie Twój problem: zawsze ten sam link.
-
-#### C. Miejsca, które muszą tworzyć link automatycznie
-1. **Po włączeniu opcji w Calendar Settings**
-   - batch dla wszystkich istniejących studentów bez linku
-   - nie ruszać studentów, którzy już mają ręczny link
-2. **Przy dodaniu nowego studenta**
-   - `useStudents.addStudent`
-   - po insert studenta sprawdzić settings nauczyciela
-   - jeśli auto-opcja włączona, utworzyć rekord `calendar_student_settings`
-3. **Przy ręcznym usunięciu pustego linku przez nauczyciela**
-   - jeśli auto-opcja jest on, system powinien odtworzyć link albo nie pozwalać zostawić pustego pola bez świadomego wyboru
-   - najbezpieczniej: zostawić możliwość manual override, ale przy pustym polu pokazać “Generate permanent link”
-
-#### D. Propagacja do slotów
-Po wygenerowaniu lub zmianie student linku:
-- update wszystkich przyszłych slotów ucznia:
-  - `teacher_id = teacher`
-  - `student_id = student`
-  - `slot_date >= today`
-  - status nie w `completed`, `deleted`
-- ustawić `meeting_link = default_meeting_link`
-
-#### E. Tworzenie nowych slotów
-W `useCalendarSlots.tsx`:
-- `createSlot()` już próbuje pobierać link per-student
-- `createSlotsBatch()` obecnie **nie kopiuje** meeting linku dla studentów
-- trzeba to naprawić, bo to jest jedna z przyczyn „stare miały jeden link, nowe inny albo pusty”
-
-Plan:
-- przed budową `rows` zebrać unique `student_id`
-- pobrać ich `default_meeting_link`
-- podczas mapowania rows ustawić `meeting_link` dla każdego lesson row z uczniem
-
-#### F. GCal sync
-To jest krytyczne: obecnie `gcal-sync/index.ts` zapisuje `hangoutLink` do `calendar_slots.meeting_link`.
-To łamie model „1 student = 1 link”.
-
-Trzeba zmienić regułę:
-- jeśli student ma `calendar_student_settings.default_meeting_link`, to **nie nadpisujemy** `calendar_slots.meeting_link` linkiem z Google
-- opcja auto-create per-event Meet nie może wygrywać z permanent student link
-- najlepiej:
-  - gdy istnieje permanent student link: nie twórz `conferenceData` dla tego eventu
-  - albo twórz event bez nadpisywania slot linku
-- docelowo student-facing UI ma zawsze brać permanent link per student
-
-#### G. UI / copy
-`CalendarSettingsPage.tsx` dziś komunikuje złą logikę:
-- mówi, że auto-create robi unikatowy link dla każdej booked lesson
-- to jest dokładnie odwrotność Twojego celu
-
-Nowy wording:
-- “Automatically create one permanent meeting link per student”
-- “All lessons for that student will use the same room”
-- “This permanent link is reused across all dates and times”
-
-### Pliki do zmiany
-- `src/pages/CalendarSettingsPage.tsx`
-- `src/hooks/useStudents.tsx`
-- `src/pages/StudentPage.tsx`
-- `src/hooks/useCalendarSlots.tsx`
-- `src/hooks/usePublicBooking.tsx`
-- `src/pages/StudentHubDashboard.tsx`
-- `supabase/functions/get-student-bookings/index.ts`
-- `supabase/functions/get-student-hub-data/index.ts`
-- `supabase/functions/gcal-sync/index.ts`
-- migracja SQL dla nowego toggle / ewentualnej helper function
-
----
-
-## 2. Reject comment nadal nie działa realnie
-
-### Co znalazłem
-UI ma już state:
-- `showRejectDialog`
-- `rejectComment`
-
-i renderuje dialog Reject na dole `SlotDetailModal.tsx`.
-
-Ale dialog jest zrobiony połowicznie:
-- używa zwykłego `<p>` zamiast `DialogDescription`, więc stąd warningi
-- zamyka dialog **przed** wykonaniem `handleReject()`
-- flow błędu jest niestabilny
-- wygląda na to, że user experience sprawia wrażenie „braku komentarza”, bo dialog nie jest domknięty poprawnie i akcja się sypie
-
-### Finalne zachowanie
-- kliknięcie Reject otwiera modal
-- nauczyciel wpisuje optional comment
-- dopiero kliknięcie finalnego Reject wykonuje akcję
-- komentarz trafia do emaila `booking_rejected`
-- modal nie zamyka się przy błędzie
-
-### Konkretna poprawka
-#### A. W JSX dialogu
-Zamienić opis z:
-- zwykły `<p>`
-na:
-- `DialogDescription`
-
-#### B. Akcja przycisku
-Zamiast:
-- `setShowRejectDialog(false); handleReject();`
-
-ma być:
-- `handleReject()` steruje zamknięciem dopiero po sukcesie
-
-#### C. W `handleReject()`
-- przy sukcesie:
-  - wyślij mail z `rejectionReason`
-  - resolve notifications
-  - dopiero wtedy zamknij reject dialog i główny modal
-- przy błędzie:
-  - nie zamykaj niczego
-  - zostaw komentarz w polu
-  - pokaż toast
-
-### Pliki
-- `src/components/calendar/SlotDetailModal.tsx`
-- `supabase/functions/send-calendar-notification-email/index.ts`
-
----
-
-## 3. Confirm/Reject zawiesza calendar — root cause i bezpieczna naprawa
-
-### Root cause
-Tu nie chodzi o sam warning accessibility. Prawdziwy problem to batch branch.
-
-W logach masz:
-```text
-PATCH /calendar_slots?id=in.(...)
-400 Bad Request
+### StudentBookingsSection.tsx line 264
+Replace `// No auto-scroll on load` with:
+```tsx
+useEffect(() => {
+  if (allBookings.length > 0 && viewMode === 'schedule') {
+    const timer = setTimeout(() => scrollToToday(), 200);
+    return () => clearTimeout(timer);
+  }
+}, [allBookings.length, viewMode, scrollToToday]);
 ```
 
-To znaczy, że `onUpdate()` wykonuje batch `.in('id', ids)` i dostaje zły payload albo złą kombinację pól dla tych slotów.
-Z `CalendarPage.tsx` wynika, że `SlotDetailModal` korzysta z `onUpdate={updateSlot}` z `useCalendarSlots`.
-To oznacza, że modal przekazuje **pojedynczy `slotId`**, ale gdzieś w środku batch flow dochodzi do aktualizacji wielu rekordów lub do przepływu z błędną walidacją `slot_ids`.
+## Task 4: Real Google Meet links
 
-### Najbardziej prawdopodobna przyczyna
-`getValidBatchSlotIds()` opiera się na `calendar_notifications.metadata.slot_ids`.
-Jeśli metadata są stare, uszkodzone albo zawierają sloty, których nie powinno się ruszać razem, modal nadal wchodzi w batch flow.
-Potem:
-- część slotów update się nie udaje
-- kod mimo błędu nadal częściowo idzie dalej lub pozostawia UI w rozjechanym stanie
-- kalendarz wygląda na “zawieszony”
+### New file: src/utils/meetingLinkUtils.ts
+```tsx
+export function generateFallbackMeetingLink(teacherId: string, studentId: string): string {
+  const hash = btoa(`${teacherId}-${studentId}`).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16).toLowerCase();
+  return `https://meet.jit.si/edooqoo-${hash}`;
+}
 
-### Finalna naprawa
-#### A. Twarda walidacja batch
-`getValidBatchSlotIds()` powinno walidować nie tylko:
-- array
-- strings
-- contains current slot
-- length > 1
-
-ale też:
-- wszystkie sloty istnieją
-- wszystkie sloty należą do tego samego `teacher_id`
-- wszystkie sloty mają status `booked`
-- wszystkie sloty są pending (`confirmed_at is null`)
-- wszystkie sloty mają tego samego `student_id` lub tego samego `student_notes` email
-- wszystkie są z tego samego notification batch context
-
-Jeśli nie:
-- fallback do single-slot action
-
-#### B. Helper do batch update
-Wydzielić helper w `SlotDetailModal`:
-- pobiera i waliduje sloty batch
-- aktualizuje je sekwencyjnie
-- zatrzymuje cały flow na pierwszym błędzie
-- zwraca sukces tylko gdy całość się udała
-
-#### C. Early return bez side effects
-Na błędzie:
-- bez log insert
-- bez resolve notifications
-- bez `onOpenChange(false)`
-- bez reset dialog state
-
-#### D. Confirm dialog też ma ten sam problem
-To samo trzeba zrobić dla Confirm, nie tylko Reject.
-
-#### E. Accessibility warnings
-Każdy `DialogContent` w tych confirm/reject dialogach ma dostać prawidłowe `DialogDescription`.
-To nie naprawia 400, ale usuwa szum i poprawia stabilność renderu.
-
-### Pliki
-- `src/components/calendar/SlotDetailModal.tsx`
-- opcjonalnie `src/hooks/useCalendarSlots.tsx` jeśli `updateSlot` wymaga dodatkowego guardu
-
----
-
-## 4. Lessons page: domyślnie ma wyglądać jak po kliknięciu Today
-
-### Co jest dziś źle
-`StudentBookingsSection.tsx` buduje `allBookings` i na końcu sortuje je desc:
-- najnowsza / najdalsza przyszłość lub ostatnie wpisy są na górze
-- dopiero przycisk Today przewija do sensownego miejsca
-
-Ty chcesz, żeby bez kliknięcia Today użytkownik od razu widział najbliższą lekcję.
-
-### Najbezpieczniejsze rozwiązanie
-Nie zmieniamy globalnie źródła danych ani widoków month/range.
-Zmieniamy tylko sposób budowy listy dla schedule view:
-
-```text
-[upcoming + today] rosnąco
-[past] malejąco
+export function isAutoGeneratedLink(link: string): boolean {
+  return link.startsWith('https://meet.jit.si/edooqoo-') || link.startsWith('https://meet.google.com/');
+}
 ```
 
-Czyli:
-- najbliższa nadchodząca lekcja na górze
-- przeszłość pod spodem
-- Today dalej działa, ale praktycznie staje się tylko szybkim skrótem, bo domyślny widok już jest poprawny
+### gcal-sync/index.ts — new action `create_permanent_room`
+After `action === 'upsert'` block, add:
+```ts
+} else if (action === 'create_permanent_room') {
+  const { studentId: targetStudentId } = await req.json(); // already parsed above
+  // Create a ghost event with conferenceData to get a real Meet link
+  const ghostEvent = {
+    summary: 'Edooqoo Permanent Room (auto-delete)',
+    start: { dateTime: new Date().toISOString(), timeZone: timezone },
+    end: { dateTime: new Date(Date.now() + 3600000).toISOString(), timeZone: timezone },
+    conferenceData: {
+      createRequest: {
+        requestId: `perm-${teacherId}-${targetStudentId || slotId}`,
+        conferenceSolutionKey: { type: 'hangoutsMeet' },
+      },
+    },
+  };
+  const createRes = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1`,
+    { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(ghostEvent) }
+  );
+  if (!createRes.ok) {
+    const errText = await createRes.text();
+    return new Response(JSON.stringify({ error: `GCal event creation failed: ${errText}` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+  const created = await createRes.json();
+  const meetLink = created.hangoutLink;
+  // Delete the ghost event (the Meet link persists)
+  if (created.id) {
+    await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${created.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+  }
+  return new Response(JSON.stringify({ success: true, meetLink }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+}
+```
 
-### Dlaczego to lepsze niż auto-scroll
-- nie ruszamy scrolla całej strony
-- nie ma skoków layoutu
-- użytkownik od razu widzi najważniejsze lekcje
-- month/range nie muszą się zmieniać
+Note: need to parse `studentId` from request body. The existing destructure on line 58 needs `studentId` added.
 
-### Konkretna zmiana
-W `StudentBookingsSection.tsx`:
-- zostawić obecne pobieranie danych
-- zamiast jednego desc sort dla `allBookings`
-  rozdzielić:
-  - upcoming/today
-  - past
-  - cancelled jeśli włączone
-- złożyć wynik w bardziej naturalnej kolejności dla schedule view
+### CalendarSettingsPage.tsx lines 443
+Replace `meet.google.com/lookup/...` with call to gcal-sync edge function or Jitsi fallback.
 
-Opcjonalnie:
-- jeśli viewMode !== schedule, zostawić obecne sortowanie
+### useStudents.tsx line 94
+Same replacement.
 
-### Plik
-- `src/components/calendar/StudentBookingsSection.tsx`
+### StudentPage.tsx MeetingLinkField (lines 53-114)
+Full rewrite with Default/Custom toggle, ExternalLink button, fix empty save.
+
+### CalendarSettingsPage.tsx line 477
+Add `disabled={(settings as any).auto_create_student_meeting_link}` to legacy toggle.
 
 ---
 
 ## Kolejność wdrożenia
-1. Naprawa Reject dialog i accessibility (`DialogDescription`, zamykanie dopiero po sukcesie)
-2. Utwardzenie Confirm/Reject batch flow i naprawa freeze / 400
-3. Zmiana domyślnego układu listy lessons jak po Today
-4. Wdrożenie właściwego modelu permanent meeting link per student:
-   - settings toggle
-   - auto-generation dla existing students
-   - auto-generation przy add student
-   - createSlotsBatch
-   - blokada nadpisywania przez gcal-sync
+1. **Migracja SQL** — wyczyszczenie zombie slotów
+2. **Fix `useCalendarSlots.tsx`** — guard `student_id` + `.catch()` w auto-mark
+3. **Fix `SlotDetailModal.tsx`** — usunąć sub-dialogi, dodać inline comment
+4. **Fix `StudentBookingsSection.tsx`** — auto-scroll na load
+5. **Meeting link** — nowa akcja `create_permanent_room` w gcal-sync, przebudowa `MeetingLinkField`, fix CalendarSettings + useStudents
+6. **Deploy** edge function gcal-sync
+7. **Dokumentacja** — update `llm-context.md` i `llms.txt`
 
-To jest najlepsza kolejność, bo najpierw naprawia krytyczny błąd operacyjny kalendarza, a dopiero potem większą zmianę architektoniczną meetingów.
-
----
-
-## Co świadomie robimy i czego nie robimy
-
-### Robimy
-- jeden automatycznie tworzony permanent link per student
-- komentarz do Reject działający naprawdę
-- freeze po Confirm/Reject naprawiony u źródła
-- domyślny widok lessons jak po Today
-
-### Nie robimy
-- generatora różnych Meet linków per lesson
-- przebudowy całego public booking flow poza tym, co konieczne
-- zmian w innych modułach aplikacji poza wskazanymi ścieżkami
-
----
-
-## Ważna uwaga strategiczna
-Największy błąd w obecnym podejściu to próba jednoczesnego utrzymania:
-- per-student stable room
-- per-lesson auto-generated Google Meet
-
-To są sprzeczne modele. Jeśli naprawdę chcesz prostoty dla ucznia, musimy konsekwentnie wybrać pierwszy model i zepchnąć drugi do roli pomocniczej albo legacy. Inaczej problem będzie wracał bez końca, bo system sam sobie generuje nowe linki i niszczy spójność.
-
+## Pliki do zmiany
+| Plik | Co |
+|------|-----|
+| `supabase/functions/gcal-sync/index.ts` | Nowa akcja `create_permanent_room` |
+| `src/pages/CalendarSettingsPage.tsx` | Batch-generate z GCal API, disable legacy toggle |
+| `src/hooks/useStudents.tsx` | Auto-link z GCal przy dodawaniu studenta |
+| `src/pages/StudentPage.tsx` | Toggle Default/Custom, ExternalLink button, fix empty save |
+| `src/components/calendar/SlotDetailModal.tsx` | Usunąć sub-dialogi, inline checkbox+textarea |
+| `src/hooks/useCalendarSlots.tsx` | Guard student_id + catch in needs_review |
+| `src/components/calendar/StudentBookingsSection.tsx` | Auto-scroll on load |
+| `src/utils/meetingLinkUtils.ts` | New file with fallback and auto-detection |
+| Migracja SQL | Cleanup zombie slotów |
+| `docs/llm-context.md` + `llms.txt` | Dokumentacja zmian |
