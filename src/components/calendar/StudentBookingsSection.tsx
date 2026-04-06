@@ -267,14 +267,15 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
     }
   }, []);
 
-  // Auto-scroll to today on initial load
+  // Auto-scroll to today on initial load — only once
+  const hasScrolledRef = React.useRef(false);
   useEffect(() => {
-    if (allBookings.length > 0 && !loading) {
-      // Small delay to ensure DOM is rendered
+    if (allBookings.length > 0 && !loading && !hasScrolledRef.current) {
+      hasScrolledRef.current = true;
       const timer = setTimeout(() => scrollToToday(), 150);
       return () => clearTimeout(timer);
     }
-  }, [allBookings.length > 0 && !loading]); // only trigger once when bookings first load
+  }, [allBookings, loading]);
 
   if (!email || (bookings.length === 0 && !loading && !searched)) return null;
 

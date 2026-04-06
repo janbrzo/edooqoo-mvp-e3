@@ -35,6 +35,7 @@ const StudentHubLessons = () => {
   const [bookWeekly, setBookWeekly] = useState(false);
   const [untilDate, setUntilDate] = useState('');
   const [rescheduleBookingId, setRescheduleBookingId] = useState<string | null>(null);
+  const [rescheduling, setRescheduling] = useState(false);
 
   const studentTz = useMemo(() => getStudentTimeZone(), []);
   const teacherTz = settings?.timezone || 'Europe/Warsaw';
@@ -58,6 +59,7 @@ const StudentHubLessons = () => {
   }, [bookWeekly, untilDate, selectedSlot]);
 
   const handleSlotClick = (slot: CalendarSlot) => {
+    if (rescheduling) return;
     if (rescheduleBookingId) {
       handleReschedule(rescheduleBookingId, slot.id);
       return;
@@ -67,6 +69,7 @@ const StudentHubLessons = () => {
 
   const handleReschedule = async (oldSlotId: string, newSlotId: string) => {
     if (!email || !teacherToken) return;
+    setRescheduling(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-student-bookings', {
         body: {
@@ -89,6 +92,7 @@ const StudentHubLessons = () => {
       toast({ title: 'Reschedule failed', description: err.message, variant: 'destructive' });
     }
     setRescheduleBookingId(null);
+    setRescheduling(false);
     refetchSlots();
   };
 
@@ -212,8 +216,12 @@ const StudentHubLessons = () => {
         {/* Reschedule banner */}
         {rescheduleBookingId && (
           <div className="bg-primary/10 border border-primary/30 rounded-md p-2 flex items-center justify-between text-sm">
-            <span>Select a new time slot to reschedule your lesson</span>
-            <Button variant="ghost" size="sm" onClick={() => setRescheduleBookingId(null)}>Cancel</Button>
+            {rescheduling ? (
+              <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Processing reschedule...</span>
+            ) : (
+              <span>Select a new time slot to reschedule your lesson</span>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => setRescheduleBookingId(null)} disabled={rescheduling}>Cancel</Button>
           </div>
         )}
 
