@@ -76,7 +76,15 @@
         "Live Session mode for real-time teaching",
         "Drawing and annotation tools",
         "Student Knowledge Base for AI personalization",
-        "Worksheet download as HTML and PDF"
+        "Worksheet download as HTML and PDF",
+        "Lesson calendar with public booking page and weekly recurring slots",
+        "Google Calendar sync for teachers and students with per-status event colors",
+        "Live Session mode with real-time student answer monitoring and on-the-fly exercise addition",
+        "Drawing canvas for worksheet annotation during online lessons",
+        "Reschedule system with teacher confirm/reject and automatic calendar updates",
+        "Bulk actions for batch confirm, reject, complete, and no-show slot management",
+        "Per-student Google Meet link auto-generation via Google Calendar API",
+        "Student Google Calendar integration with customizable event colors and sync toggles"
       ],
       "audience": {
         "@type": "EducationalAudience",
@@ -99,7 +107,7 @@
         "@type": "WebPage",
         "url": "https://edooqoo.com/how-it-works"
       },
-      "releaseNotes": "March 2026 — 29 exercise types, DSLM progress tracking, Student Hub portal, Google Calendar integration"
+      "releaseNotes": "April 2026 — 29 exercise types, DSLM progress tracking, Student Hub portal, Google Calendar integration, Live Session mode, Drawing canvas, Reschedule with GCal sync, Bulk actions"
     },
     {
       "@type": "Organization",
