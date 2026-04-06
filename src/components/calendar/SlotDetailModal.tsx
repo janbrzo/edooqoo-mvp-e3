@@ -93,10 +93,8 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
   const [defaultLessonPrice, setDefaultLessonPrice] = useState<number | null>(null);
   const [currency, setCurrency] = useState('USD');
   const [editDiscountPercent, setEditDiscountPercent] = useState<string>('');
-  const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [rejectComment, setRejectComment] = useState('');
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [confirmComment, setConfirmComment] = useState('');
+  const [showInlineComment, setShowInlineComment] = useState(false);
+  const [inlineComment, setInlineComment] = useState('');
   const [actionInProgress, setActionInProgress] = useState(false);
 
   useEffect(() => {
