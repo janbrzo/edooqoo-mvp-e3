@@ -367,13 +367,38 @@ const CalendarPage = () => {
             </Button>
             {!selectionMode ? (
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setSelectionMode(true)}>
-                Bulk Delete
+                Bulk Actions
               </Button>
             ) : (
               <div className="flex items-center gap-1">
-                <Button variant="destructive" size="sm" className="h-8 text-xs" onClick={handleBatchDelete} disabled={selectedSlotIds.size === 0}>
-                  Delete ({selectedSlotIds.size})
-                </Button>
+                {(!selectionType || selectionType === 'available') && (
+                  <Button variant="destructive" size="sm" className="h-8 text-xs" onClick={handleBatchDelete} disabled={selectedSlotIds.size === 0}>
+                    Delete ({selectedSlotIds.size})
+                  </Button>
+                )}
+                {selectionType === 'pending' && (
+                  <>
+                    <Button size="sm" className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={handleBatchConfirm} disabled={selectedSlotIds.size === 0}>
+                      Confirm ({selectedSlotIds.size})
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 text-xs text-destructive" onClick={handleBatchReject} disabled={selectedSlotIds.size === 0}>
+                      Reject ({selectedSlotIds.size})
+                    </Button>
+                  </>
+                )}
+                {(selectionType === 'needs_review' || selectionType === 'booked') && (
+                  <>
+                    <Button size="sm" className="h-8 text-xs" onClick={() => handleBatchStatusChange('completed')} disabled={selectedSlotIds.size === 0}>
+                      Complete ({selectedSlotIds.size})
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => handleBatchStatusChange('no_show')} disabled={selectedSlotIds.size === 0}>
+                      No Show ({selectedSlotIds.size})
+                    </Button>
+                  </>
+                )}
+                {selectedSlotIds.size > 0 && selectionType && (
+                  <span className="text-xs text-muted-foreground ml-1">{selectionType}</span>
+                )}
                 <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exitSelectionMode}>
                   Cancel
                 </Button>
