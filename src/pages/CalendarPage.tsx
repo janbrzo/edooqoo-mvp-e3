@@ -262,10 +262,19 @@ const CalendarPage = () => {
     setSelectionType(null);
   };
 
+  // Helper to extract student email from student_notes
+  const extractEmailFromNotes = (notes: string | null): string => {
+    if (!notes) return '';
+    const match = notes.match(/\(([^)]+@[^)]+)\)/);
+    return match ? match[1] : '';
+  };
+
   const handleBatchConfirm = async () => {
     if (selectedSlotIds.size === 0) return;
     if (!window.confirm(`Confirm ${selectedSlotIds.size} pending bookings?`)) return;
     const ids = Array.from(selectedSlotIds);
+    // Fetch slots to get student emails for GCal sync
+    const { data: slotsData } = await supabase.from('calendar_slots').select('id, student_notes').in('id', ids);
     await supabase.from('calendar_slots')
       .update({ confirmed_at: new Date().toISOString() } as any)
       .in('id', ids);
@@ -276,6 +285,14 @@ const CalendarPage = () => {
       supabase.functions.invoke('gcal-sync', {
         body: { teacherId: user?.id, slotId: id, action: 'upsert' },
       }).catch(console.error);
+      // Student GCal sync
+      const slotNotes = slotsData?.find(s => s.id === id)?.student_notes;
+      const sEmail = extractEmailFromNotes(slotNotes);
+      if (sEmail) {
+        supabase.functions.invoke('student-gcal-sync', {
+          body: { email: sEmail, teacherId: user?.id, slotId: id, action: 'upsert' },
+        }).catch(console.error);
+      }
     }
     toast.success(`Confirmed ${ids.length} bookings`);
     exitSelectionMode();
@@ -286,6 +303,8 @@ const CalendarPage = () => {
     if (selectedSlotIds.size === 0) return;
     if (!window.confirm(`Reject ${selectedSlotIds.size} pending bookings?`)) return;
     const ids = Array.from(selectedSlotIds);
+    // Fetch slots to get student emails for GCal sync
+    const { data: slotsData } = await supabase.from('calendar_slots').select('id, student_notes').in('id', ids);
     await supabase.from('calendar_slots')
       .update({ status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null } as any)
       .in('id', ids);
@@ -293,6 +312,14 @@ const CalendarPage = () => {
       supabase.functions.invoke('gcal-sync', {
         body: { teacherId: user?.id, slotId: id, action: 'cancel' },
       }).catch(console.error);
+      // Student GCal sync
+      const slotNotes = slotsData?.find(s => s.id === id)?.student_notes;
+      const sEmail = extractEmailFromNotes(slotNotes);
+      if (sEmail) {
+        supabase.functions.invoke('student-gcal-sync', {
+          body: { email: sEmail, teacherId: user?.id, slotId: id, action: 'delete' },
+        }).catch(console.error);
+      }
     }
     toast.success(`Rejected ${ids.length} bookings`);
     exitSelectionMode();

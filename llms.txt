@@ -30,6 +30,8 @@
 
 ### Recurring Booking Modal
 - `RecurringBookingModal.tsx`: dedicated modal for batch confirm/reject of recurring bookings from notifications
+- Checkboxes per pending slot + "Select All" toggle for selective confirm/reject
+- Partial actions keep modal open, refresh slot list, only resolve notification when all handled
 - `handleNotificationClick` routes `booking_pending` with `slot_ids.length > 1` to RecurringBookingModal
 - SlotDetailModal `getValidBatchSlotIds` always returns null — calendar clicks = single slot only
 
@@ -38,29 +40,39 @@
 - Reschedule: `StudentHubLessons` wires `onRescheduleStart`/`rescheduleBookingId` to `StudentBookingsSection`
 - Email displayed next to Log out in header
 - SlotDetailModal: compact layout (Date+Time grid-cols-4, Worksheet+Discount, Notes+MeetingLink side by side)
+- Realtime: `StudentBookingsSection` has Supabase realtime subscription + 5s polling fallback for live updates
 
 ### Student GCal Sync
 - `student-gcal-sync`: per-status colors (Grape/Banana/Basil/Tangerine defaults), status suffixes in summary
 - Sync toggles: `sync_booked`, `sync_pending` in student JSONB settings
-- Meeting link added to `description` + `location` fields
+- Meeting link: single "Join: {link}" in description + location (no duplication)
 - "Sync all existing lessons" via `get-student-hub-data` action `sync_all_lessons_gcal`
-- `StudentHubSettings.tsx`: per-status color selectors, sync toggles, sync-all button
+- `StudentHubSettings.tsx`: per-status color selectors (w-40, custom render), sync toggles, sync-all button
+- Triggered by: confirm/reject/cancel in SlotDetailModal, batch actions in CalendarPage, RecurringBookingModal, reschedule in get-student-bookings
+
+### GCal Sync — Cross-Actor
+- Reschedule: `get-student-bookings` edge function triggers both `gcal-sync` (teacher) and `student-gcal-sync` (student) on auto-reschedule and requires-confirmation reschedule
+- Confirm/Reject/Cancel: SlotDetailModal triggers `student-gcal-sync` with email from `student_notes`
+- Batch confirm/reject: CalendarPage fetches `student_notes` per slot, triggers `student-gcal-sync`
+- Teacher GCal: meeting link added to `event.description` ("Join: {link}") and `event.location`
 
 ## Edge Functions
-- `gcal-sync`: Actions: `upsert`, `delete`, `cancel`, `create_permanent_room`. Rescheduled suffix support.
-- `student-gcal-sync`: Student calendar sync with token refresh, per-status colors, meeting link, sync toggles
+- `gcal-sync`: Actions: `upsert`, `delete`, `cancel`, `create_permanent_room`. Rescheduled suffix. Meeting link in description+location.
+- `student-gcal-sync`: Student calendar sync with token refresh, per-status colors, meeting link (single "Join:" line), sync toggles
 - `send-calendar-notification-email`: Booking/rejection/confirmation emails with optional teacher comments
 - `get-student-hub-data`: Student data aggregation + `sync_all_lessons_gcal` action
+- `get-student-bookings`: Reschedule triggers gcal-sync + student-gcal-sync for both old and new slots
 
 ## File Map
 - `src/utils/meetingLinkUtils.ts` — Legacy link detection (no generation)
 - `src/hooks/useCalendarSlots.tsx` — Calendar data + realtime + auto needs_review
-- `src/components/calendar/SlotDetailModal.tsx` — Slot editing, confirm/reject (single slot only)
-- `src/components/calendar/RecurringBookingModal.tsx` — Batch confirm/reject for recurring bookings
-- `src/components/calendar/StudentBookingsSection.tsx` — Student lesson list with auto-scroll
+- `src/components/calendar/SlotDetailModal.tsx` — Slot editing, confirm/reject (single slot only), student GCal sync
+- `src/components/calendar/RecurringBookingModal.tsx` — Batch confirm/reject with checkboxes, student GCal sync
+- `src/components/calendar/StudentBookingsSection.tsx` — Student lesson list with auto-scroll, realtime + polling
 - `src/pages/StudentPage.tsx` — Student profile, MeetingLinkField component
-- `src/pages/StudentHubSettings.tsx` — Student GCal settings, per-status colors, sync toggles
+- `src/pages/StudentHubSettings.tsx` — Student GCal settings, per-status colors (w-40 custom render), sync toggles
 - `src/pages/CalendarSettingsPage.tsx` — Calendar settings, meeting link toggles
+- `src/pages/CalendarPage.tsx` — Batch actions with student GCal sync
 
 ## RAG Keywords
-meeting link, Google Meet, permanent room, per-student link, video call, Jitsi, auto-create, calendar student settings, generated_meeting_link, meeting_link_mode, create_permanent_room, ghost event, hangoutLink, reschedule badge, recurring modal, batch confirm, student gcal sync, per-status color, sync toggle
+meeting link, Google Meet, permanent room, per-student link, video call, Jitsi, auto-create, calendar student settings, generated_meeting_link, meeting_link_mode, create_permanent_room, ghost event, hangoutLink, reschedule badge, recurring modal, batch confirm, student gcal sync, per-status color, sync toggle, realtime, polling, selective confirm, checkbox, reschedule gcal
