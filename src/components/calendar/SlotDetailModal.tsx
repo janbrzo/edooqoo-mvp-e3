@@ -875,17 +875,21 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
             </div>
           )}
 
-          {slot.status === 'available' && slot.cancelled_at && slot.cancelled_by && (
-            <div className={cn(
-              "border rounded-md px-3 py-2 text-xs space-y-1",
-              slot.cancelled_by === 'student' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200'
-            )}>
-              <p className="font-medium">Previous lesson was cancelled</p>
-              {slot.cancelled_at && <p>When: {format(new Date(slot.cancelled_at), 'MMM d, yyyy HH:mm')}</p>}
-              <p>By: {slot.cancelled_by}</p>
-              {slot.cancellation_reason && <p>{slot.cancellation_reason}</p>}
-            </div>
-          )}
+          {slot.status === 'available' && slot.cancelled_at && slot.cancelled_by && (() => {
+            const isRescheduledSlot = slot.cancelled_by === 'system' && slot.cancellation_reason?.includes('Rescheduled');
+            return (
+              <div className={cn(
+                "border rounded-md px-3 py-2 text-xs space-y-1",
+                isRescheduledSlot ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200' :
+                slot.cancelled_by === 'student' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200'
+              )}>
+                <p className="font-medium">{isRescheduledSlot ? 'Previous lesson was rescheduled' : 'Previous lesson was cancelled'}</p>
+                {slot.cancelled_at && <p>When: {format(new Date(slot.cancelled_at), 'MMM d, yyyy HH:mm')}</p>}
+                <p>By: {slot.cancelled_by}</p>
+                {slot.cancellation_reason && <p>{slot.cancellation_reason}</p>}
+              </div>
+            );
+          })()}
 
           {slotLogs.length > 0 && (
             <Collapsible>

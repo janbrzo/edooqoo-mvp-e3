@@ -242,7 +242,11 @@ Deno.serve(async (req) => {
         no_show: ' — No Show',
       };
       if (effectiveStatus === 'available' && slot.cancelled_by) {
-        summary += slot.cancelled_by === 'student' ? ' — Student Cancellation' : ' — Teacher Cancellation';
+        if (slot.cancelled_by === 'system' && slot.cancellation_reason?.includes('Rescheduled')) {
+          summary += ' — Rescheduled';
+        } else {
+          summary += slot.cancelled_by === 'student' ? ' — Student Cancellation' : ' — Teacher Cancellation';
+        }
       } else if (statusSuffixMap[effectiveStatus]) {
         summary += statusSuffixMap[effectiveStatus];
       }

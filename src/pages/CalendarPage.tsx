@@ -539,6 +539,17 @@ const CalendarPage = () => {
         />
       )}
 
+      {user?.id && recurringNotification && (
+        <RecurringBookingModal
+          open={!!recurringNotification}
+          onOpenChange={(open) => { if (!open) setRecurringNotification(null); }}
+          notification={recurringNotification}
+          teacherId={user.id}
+          students={studentList}
+          onDone={() => { setRecurringNotification(null); refetch(); refetchNotifications(); }}
+        />
+      )}
+
       <AddStudentDialog
         open={addStudentOpen}
         onOpenChange={setAddStudentOpen}
