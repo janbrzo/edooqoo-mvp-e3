@@ -55,8 +55,10 @@ export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, stu
   const startHH = slot.start_time.slice(0, 5);
   const endHH = slot.end_time.slice(0, 5);
 
-  // Badge C: available slot with cancellation history
-  const showBadgeC = slot.status === 'available' && slot.cancelled_at && slot.cancelled_by;
+  // Badge R: rescheduled slot
+  const isRescheduled = slot.status === 'available' && slot.cancelled_by === 'system' && slot.cancellation_reason?.includes('Rescheduled');
+  // Badge C: available slot with cancellation history (but not rescheduled)
+  const showBadgeC = slot.status === 'available' && slot.cancelled_at && slot.cancelled_by && !isRescheduled;
 
   // Status badge letter
   const badgeKey = isBlock ? 'block' : isDeleted ? 'deleted' : isNeedsReview ? 'needs_review' : isPending ? 'pending' : slot.status;
@@ -72,8 +74,15 @@ export const CalendarSlotCard = React.memo(function CalendarSlotCard({ slot, stu
         isSelected && 'ring-2 ring-primary bg-primary/20'
       )}
     >
-      {/* Badge C — cancellation history (priority over status badge) */}
-      {showBadgeC ? (
+      {/* Badge R — rescheduled */}
+      {isRescheduled ? (
+        <div className={cn(
+          'absolute top-0 left-0 min-w-[14px] h-[14px] rounded-br text-[8px] font-bold flex items-center justify-center z-10 px-0.5',
+          'bg-indigo-400 text-indigo-900'
+        )}>
+          R
+        </div>
+      ) : showBadgeC ? (
         <div className={cn(
           'absolute top-0 left-0 min-w-[14px] h-[14px] rounded-br text-[8px] font-bold flex items-center justify-center z-10 px-0.5',
           slot.cancelled_by === 'student' ? 'bg-amber-400 text-amber-900' : 'bg-blue-400 text-blue-900'
