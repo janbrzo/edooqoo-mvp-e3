@@ -35,6 +35,7 @@ const LEGEND_ITEMS = [
   { key: 'needs_review', label: 'Needs Review', badge: '?', color: 'bg-purple-200 border-purple-400' },
   { key: 'completed', label: 'Completed', badge: '✓', color: 'bg-emerald-200 border-emerald-400' },
   { key: 'no_show', label: 'No Show', badge: 'NS', color: 'bg-red-200 border-red-400' },
+  { key: 'rescheduled', label: 'Rescheduled', badge: 'R', color: 'bg-indigo-200 border-indigo-400' },
   { key: 'student_cancelled', label: 'Student Cancellation', badge: 'SC', color: 'bg-amber-200 border-amber-400' },
   { key: 'teacher_cancelled', label: 'Teacher Cancellation', badge: 'TC', color: 'bg-blue-200 border-blue-400' },
   { key: 'block', label: 'Block', badge: 'B', color: 'bg-gray-200 border-gray-400', icon: Lock },
@@ -136,8 +137,9 @@ const CalendarPage = () => {
         if (legendFilter === 'deleted') return (s.status as any) === 'deleted';
         if (legendFilter === 'needs_review') return (s.status as any) === 'needs_review';
         if (legendFilter === 'unpaid') return !!s.student_id && !s.is_paid && ['booked','completed','needs_review'].includes(s.status);
+        if (legendFilter === 'rescheduled') return s.status === 'available' && s.cancelled_by === 'system' && s.cancellation_reason?.includes('Rescheduled');
         if (legendFilter === 'student_cancelled') return s.status === 'available' && s.cancelled_by === 'student';
-        if (legendFilter === 'teacher_cancelled') return s.status === 'available' && s.cancelled_by === 'teacher';
+        if (legendFilter === 'teacher_cancelled') return s.status === 'available' && s.cancelled_by === 'teacher' || s.status === 'available' && s.cancelled_by === 'system' && !s.cancellation_reason?.includes('Rescheduled');
         return s.status === legendFilter;
       });
     }
