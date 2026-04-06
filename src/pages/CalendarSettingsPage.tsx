@@ -429,35 +429,45 @@ const CalendarSettingsPage = () => {
                       <Label>Auto-create permanent student meeting links</Label>
                       <p className="text-xs text-muted-foreground">Automatically generate one permanent meeting link per student. All lessons for that student will use the same room.</p>
                     </div>
-                    <Switch checked={(settings as any).auto_create_student_meeting_link || false} onCheckedChange={async (v) => {
-                      await updateSettings({ auto_create_student_meeting_link: v } as any);
-                      if (v && user?.id) {
-                        // Batch-generate links for existing students without one
-                        try {
-                          const { data: students } = await supabase.from('students').select('id').eq('teacher_id', user.id).is('deleted_at', null);
-                          if (students) {
-                            for (const s of students) {
-                              const { data: existing } = await supabase.from('calendar_student_settings')
-                                .select('id, default_meeting_link').eq('student_id', s.id).eq('teacher_id', user.id).maybeSingle();
-                              if (existing?.default_meeting_link) continue;
-                              const { generateFallbackMeetingLink } = await import('@/utils/meetingLinkUtils');
-                              const link = generateFallbackMeetingLink(user.id, s.id);
-                              if (existing) {
-                                await supabase.from('calendar_student_settings').update({ default_meeting_link: link, updated_at: new Date().toISOString() } as any).eq('id', existing.id);
-                              } else {
-                                await supabase.from('calendar_student_settings').insert({ student_id: s.id, teacher_id: user.id, default_meeting_link: link } as any);
+                    <Switch 
+                      checked={(settings as any).auto_create_student_meeting_link || false}
+                      disabled={!gcalConnected}
+                      onCheckedChange={async (v) => {
+                        await updateSettings({ auto_create_student_meeting_link: v } as any);
+                        if (v && user?.id && gcalConnected) {
+                          // Batch-generate real Google Meet rooms for existing students without one
+                          try {
+                            const { data: students } = await supabase.from('students').select('id').eq('teacher_id', user.id).is('deleted_at', null);
+                            if (students) {
+                              let generated = 0;
+                              for (const s of students) {
+                                const { data: existing } = await supabase.from('calendar_student_settings')
+                                  .select('id, generated_meeting_link, meeting_link_mode').eq('student_id', s.id).eq('teacher_id', user.id).maybeSingle();
+                                // Skip if already has a generated link or is in custom mode
+                                if ((existing as any)?.generated_meeting_link) continue;
+                                if ((existing as any)?.meeting_link_mode === 'custom') continue;
+                                // Call edge function to create real Google Meet room
+                                const { data: result } = await supabase.functions.invoke('gcal-sync', {
+                                  body: { teacherId: user.id, studentId: s.id, action: 'create_permanent_room', slotId: s.id },
+                                });
+                                if (result?.meetLink) {
+                                  generated++;
+                                  // Propagate to future slots
+                                  const today = new Date().toISOString().split('T')[0];
+                                  await supabase.from('calendar_slots').update({ meeting_link: result.meetLink } as any)
+                                    .eq('teacher_id', user.id).eq('student_id', s.id).gte('slot_date', today)
+                                    .not('status', 'in', '("completed","deleted")');
+                                }
                               }
-                              // Propagate to future slots
-                              const today = new Date().toISOString().split('T')[0];
-                              await supabase.from('calendar_slots').update({ meeting_link: link } as any)
-                                .eq('teacher_id', user.id).eq('student_id', s.id).gte('slot_date', today)
-                                .not('status', 'in', '("completed","deleted")');
+                              toast.success(`Google Meet rooms created for ${generated} students`);
                             }
-                            toast.success('Permanent meeting links generated for all students');
-                          }
-                        } catch (err) { console.error('Batch link generation error:', err); }
-                      }
-                    }} />
+                          } catch (err) { console.error('Batch link generation error:', err); }
+                        }
+                      }}
+                    />
+                    {!gcalConnected && (
+                      <p className="text-xs text-amber-600 mt-1">Requires Google Calendar connection</p>
+                    )}
                   </div>
                 </div>
                 <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground space-y-2">
