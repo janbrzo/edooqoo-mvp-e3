@@ -268,7 +268,7 @@ const CalendarPage = () => {
     for (const id of ids) {
       supabase.from('calendar_slot_logs').insert({
         slot_id: id, teacher_id: user?.id, action: 'confirmed', actor: 'teacher', details: { batch: true },
-      } as any).catch(() => {});
+      } as any).then(() => {});
     }
     toast.success(`Confirmed ${ids.length} bookings`);
     exitSelectionMode();
