@@ -282,6 +282,34 @@ Deno.serve(async (req) => {
           oldSlotDate: oldSlot.slot_date, oldSlotTime: oldSlot.start_time.slice(0, 5),
         });
 
+        // GCal sync for reschedule — teacher + student
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/gcal-sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ teacherId, slotId, action: 'cancel' }),
+          });
+          await fetch(`${supabaseUrl}/functions/v1/gcal-sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ teacherId, slotId: newSlotId, action: 'upsert' }),
+          });
+        } catch (_) {}
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/student-gcal-sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ email, teacherId, slotId, action: 'delete' }),
+          });
+          await fetch(`${supabaseUrl}/functions/v1/student-gcal-sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ email, teacherId, slotId: newSlotId, action: 'upsert' }),
+          });
+        } catch (_) {}
+
         return new Response(JSON.stringify({ success: true, autoRescheduled: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -356,6 +384,22 @@ Deno.serve(async (req) => {
           teacherName, bookUrl, calendarUrl,
           oldSlotDate: oldSlot.slot_date, oldSlotTime: oldSlot.start_time.slice(0, 5),
         });
+
+        // GCal sync for reschedule request — upsert new pending slot
+        const supabaseUrl2 = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey2 = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        try {
+          await fetch(`${supabaseUrl2}/functions/v1/gcal-sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey2}` },
+            body: JSON.stringify({ teacherId, slotId: newSlotId, action: 'upsert' }),
+          });
+          await fetch(`${supabaseUrl2}/functions/v1/student-gcal-sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey2}` },
+            body: JSON.stringify({ email, teacherId, slotId: newSlotId, action: 'upsert' }),
+          });
+        } catch (_) {}
 
         return new Response(JSON.stringify({ success: true, autoRescheduled: false }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
