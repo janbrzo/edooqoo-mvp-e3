@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { teacherId, slotId, action, colorOverride } = await req.json();
+    const { teacherId, slotId, action, colorOverride, studentId } = await req.json();
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -69,6 +69,102 @@ Deno.serve(async (req) => {
       });
     }
 
+    // === create_permanent_room: does NOT need a slot ===
+    if (action === 'create_permanent_room') {
+      if (!studentId) {
+        return new Response(JSON.stringify({ error: 'studentId is required' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { data: settingsData } = await supabase
+        .from('calendar_settings')
+        .select('timezone')
+        .eq('teacher_id', teacherId)
+        .single();
+
+      const tz = settingsData?.timezone || 'Europe/Warsaw';
+
+      // Check if a generated link already exists
+      const { data: existingSettings } = await supabase.from('calendar_student_settings')
+        .select('generated_meeting_link')
+        .eq('student_id', studentId).eq('teacher_id', teacherId).maybeSingle();
+
+      if (existingSettings?.generated_meeting_link) {
+        return new Response(JSON.stringify({ success: true, meetLink: existingSettings.generated_meeting_link }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Create a temporary event to get a real Google Meet link, then delete the event
+      const tempEvent = {
+        summary: 'Edooqoo Room Setup (auto-delete)',
+        start: { dateTime: new Date().toISOString(), timeZone: tz },
+        end: { dateTime: new Date(Date.now() + 3600000).toISOString(), timeZone: tz },
+        conferenceData: {
+          createRequest: {
+            requestId: `perm-${teacherId}-${studentId}-${Date.now()}`,
+            conferenceSolutionKey: { type: 'hangoutsMeet' },
+          },
+        },
+      };
+
+      const createRes = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(tempEvent),
+        }
+      );
+
+      if (!createRes.ok) {
+        const errText = await createRes.text();
+        console.error('Failed to create temp event for permanent room:', errText);
+        return new Response(JSON.stringify({ error: 'Failed to create Meet room' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const created = await createRes.json();
+      const meetLink = created.hangoutLink || null;
+
+      // Delete the temp event immediately
+      if (created.id) {
+        await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/primary/events/${created.id}`,
+          { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      // Save the generated link to calendar_student_settings
+      if (meetLink) {
+        const { data: css } = await supabase.from('calendar_student_settings')
+          .select('id, meeting_link_mode').eq('student_id', studentId).eq('teacher_id', teacherId).maybeSingle();
+
+        const updateData: any = { generated_meeting_link: meetLink };
+        if (!css || css.meeting_link_mode === 'default') {
+          updateData.default_meeting_link = meetLink;
+          updateData.meeting_link_mode = 'default';
+        }
+
+        if (css) {
+          await supabase.from('calendar_student_settings').update({ ...updateData, updated_at: new Date().toISOString() }).eq('id', css.id);
+        } else {
+          await supabase.from('calendar_student_settings').insert({
+            student_id: studentId, teacher_id: teacherId,
+            ...updateData,
+          });
+        }
+      }
+
+      console.log('GCal create_permanent_room:', meetLink ? `success ${meetLink}` : 'no hangoutLink');
+      return new Response(JSON.stringify({ success: true, meetLink }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // === All other actions require a slot ===
     const { data: slot } = await supabase
       .from('calendar_slots')
       .select('*')
@@ -129,92 +225,6 @@ Deno.serve(async (req) => {
         );
         console.log('GCal cancel-update:', res.status);
       }
-    } else if (action === 'create_permanent_room') {
-      // Create a permanent Google Meet room for a teacher-student pair
-      const studentId = (await req.clone().json()).studentId;
-      if (!studentId) {
-        return new Response(JSON.stringify({ error: 'studentId is required' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Check if a generated link already exists
-      const { data: existingSettings } = await supabase.from('calendar_student_settings')
-        .select('generated_meeting_link')
-        .eq('student_id', studentId).eq('teacher_id', teacherId).maybeSingle();
-
-      if (existingSettings?.generated_meeting_link) {
-        return new Response(JSON.stringify({ success: true, meetLink: existingSettings.generated_meeting_link }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Create a temporary event to get a real Google Meet link, then delete the event
-      const tempEvent = {
-        summary: 'Edooqoo Room Setup (auto-delete)',
-        start: { dateTime: new Date().toISOString(), timeZone: timezone },
-        end: { dateTime: new Date(Date.now() + 3600000).toISOString(), timeZone: timezone },
-        conferenceData: {
-          createRequest: {
-            requestId: `perm-${teacherId}-${studentId}-${Date.now()}`,
-            conferenceSolutionKey: { type: 'hangoutsMeet' },
-          },
-        },
-      };
-
-      const createRes = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?conferenceDataVersion=1`,
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(tempEvent),
-        }
-      );
-
-      if (!createRes.ok) {
-        const errText = await createRes.text();
-        console.error('Failed to create temp event for permanent room:', errText);
-        return new Response(JSON.stringify({ error: 'Failed to create Meet room' }), {
-          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const created = await createRes.json();
-      const meetLink = created.hangoutLink || null;
-
-      // Delete the temp event immediately
-      if (created.id) {
-        await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${created.id}`,
-          { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
-        );
-      }
-
-      // Save the generated link to calendar_student_settings
-      if (meetLink) {
-        const { data: css } = await supabase.from('calendar_student_settings')
-          .select('id, meeting_link_mode').eq('student_id', studentId).eq('teacher_id', teacherId).maybeSingle();
-        
-        const updateData: any = { generated_meeting_link: meetLink };
-        // Only update default_meeting_link if mode is 'default' or no link exists yet
-        if (!css || css.meeting_link_mode === 'default') {
-          updateData.default_meeting_link = meetLink;
-          updateData.meeting_link_mode = 'default';
-        }
-
-        if (css) {
-          await supabase.from('calendar_student_settings').update({ ...updateData, updated_at: new Date().toISOString() }).eq('id', css.id);
-        } else {
-          await supabase.from('calendar_student_settings').insert({
-            student_id: studentId, teacher_id: teacherId,
-            ...updateData,
-          });
-        }
-      }
-
-      return new Response(JSON.stringify({ success: true, meetLink }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     } else if (action === 'upsert') {
       let summary = slot.title || 'English Lesson';
       if (slot.student_id) {
@@ -250,8 +260,8 @@ Deno.serve(async (req) => {
           no_show: settings?.gcal_color_no_show || '6',
         };
         const isPending = slot.status === 'booked' && !slot.confirmed_at;
-        const effectiveStatus = isPending ? 'pending' : (slot.status === 'needs_review' ? 'booked' : slot.status);
-        eventColorId = statusColorMap[effectiveStatus] || eventColorId;
+        const effectiveStatusForColor = isPending ? 'pending' : (slot.status === 'needs_review' ? 'booked' : slot.status);
+        eventColorId = statusColorMap[effectiveStatusForColor] || eventColorId;
       }
 
       // Determine reminders
@@ -299,7 +309,6 @@ Deno.serve(async (req) => {
         if (res.ok) {
           const updated = await res.json();
           const meetLink = updated.hangoutLink || null;
-          // Never overwrite slot meeting_link if student has a permanent link
           if (meetLink && meetLink !== slot.meeting_link && !hasPermStudentLink) {
             await supabase.from('calendar_slots').update({ meeting_link: meetLink }).eq('id', slotId);
           }
@@ -317,7 +326,6 @@ Deno.serve(async (req) => {
         if (res.ok) {
           const created = await res.json();
           const meetLink = created.hangoutLink || null;
-          // Never overwrite slot meeting_link if student has a permanent link
           await supabase.from('calendar_slots').update({
             gcal_event_id: created.id,
             ...((meetLink && !hasPermStudentLink) ? { meeting_link: meetLink } : {}),

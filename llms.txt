@@ -4,12 +4,13 @@
 
 ## Key Architecture Decisions (April 2026)
 
-### Meeting Links — GCal-Only Model
-- **Problem**: Jitsi fallback links were identical across students; `meet.google.com/lookup/` URLs expired.
+### Meeting Links — GCal-Only Model (v3)
+- **Problem**: Jitsi fallback links identical across students; edge function `create_permanent_room` blocked by slot fetch (studentId treated as slotId → 404); `studentId` not destructured from body.
 - **Solution**: Auto-generated permanent links = only real Google Meet via Google Calendar API. No Jitsi, no deterministic hashes, no lookup URLs.
+- **Critical fix (v3)**: `create_permanent_room` action moved BEFORE slot fetch in `gcal-sync/index.ts`. `studentId` added to top-level destructuring. Removed broken `req.clone().json()`.
 - **Technical Mechanics**:
   - `calendar_student_settings` has `generated_meeting_link` (auto from GCal), `meeting_link_mode` ('default'|'custom'), `default_meeting_link` (canonical effective link)
-  - `gcal-sync` edge function action `create_permanent_room` accepts `teacherId` + `studentId`, creates ghost event → extracts `hangoutLink` → deletes event → saves to DB
+  - `gcal-sync` edge function: parse body → get token → if `create_permanent_room` handle+return → else fetch slot → `delete`/`cancel`/`upsert`
   - If teacher has no GCal connection → no auto link; only manual custom link
   - `MeetingLinkField` in `StudentPage.tsx`: reads `meeting_link_mode` from DB (no URL heuristics)
   - Student-facing flows use: `slot.meeting_link` > `student_settings.default_meeting_link` (no global fallback when per-student active)
