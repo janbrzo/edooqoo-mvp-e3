@@ -420,43 +420,9 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     } catch { return true; }
   };
 
-  // Validate batch slot IDs — must be array of valid pending slots for same student
+  // Batch logic disabled — handled exclusively via RecurringBookingModal from notifications
   const getValidBatchSlotIds = async (): Promise<string[] | null> => {
-    try {
-      const { data: batchNotif } = await supabase
-        .from('calendar_notifications')
-        .select('metadata')
-        .eq('slot_id', slot.id)
-        .eq('teacher_id', slot.teacher_id)
-        .eq('is_resolved', false)
-        .in('notification_type', ['booking_pending'])
-        .maybeSingle();
-      
-      const ids = (batchNotif?.metadata as any)?.slot_ids;
-      if (!Array.isArray(ids) || ids.length <= 1) return null;
-      if (!ids.every((id: any) => typeof id === 'string')) return null;
-      if (!ids.includes(slot.id)) return null;
-
-      // Verify all slots exist, are booked+pending, belong to same teacher
-      const { data: batchSlots, error } = await supabase
-        .from('calendar_slots')
-        .select('id, status, confirmed_at, teacher_id, student_id')
-        .in('id', ids);
-      
-      if (error || !batchSlots) return null;
-      
-      // All must exist
-      if (batchSlots.length !== ids.length) return null;
-      // All must be booked + pending (no confirmed_at) + same teacher
-      const allValid = batchSlots.every((s: any) => 
-        s.status === 'booked' && !s.confirmed_at && s.teacher_id === slot.teacher_id
-      );
-      if (!allValid) return null;
-      
-      return ids;
-    } catch {
-      return null;
-    }
+    return null;
   };
 
   const handleConfirm = async () => {
