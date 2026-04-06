@@ -74,7 +74,7 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
         supabase.from('calendar_slot_logs').insert({
           slot_id: id, teacher_id: teacherId, action: 'confirmed', actor: 'teacher',
           details: { batch: true, recurring: true, comment: comment || undefined },
-        } as any).catch(() => {});
+        } as any).then(() => {});
         supabase.functions.invoke('gcal-sync', {
           body: { teacherId, slotId: id, action: 'upsert' },
         }).catch(console.error);
@@ -127,7 +127,7 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
         supabase.from('calendar_slot_logs').insert({
           slot_id: id, teacher_id: teacherId, action: 'rejected', actor: 'teacher',
           details: { batch: true, recurring: true, comment: comment || undefined },
-        } as any).catch(() => {});
+        } as any).then(() => {});
         supabase.functions.invoke('gcal-sync', {
           body: { teacherId, slotId: id, action: 'cancel' },
         }).catch(console.error);
