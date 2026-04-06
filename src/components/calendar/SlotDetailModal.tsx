@@ -480,17 +480,17 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         if (error) throw error;
         toast.success(`Confirmed ${batchSlotIds.length} lessons`);
         const canSend = await shouldSendEmail('notify_email_on_confirmation');
-        if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: confirmComment || undefined });
+        if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: inlineComment || undefined });
       } else {
         await onUpdate(slot.id, { confirmed_at: new Date().toISOString() } as any);
         const canSend = await shouldSendEmail('notify_email_on_confirmation');
-        if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: confirmComment || undefined });
+        if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: inlineComment || undefined });
       }
 
       try {
         await supabase.from('calendar_slot_logs').insert({
           slot_id: slot.id, teacher_id: slot.teacher_id, action: 'confirmed', actor: 'teacher',
-          details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, source: isReschedule ? 'reschedule_confirm' : 'booking_confirm', batch: batchSlotIds ? batchSlotIds.length : undefined, comment: confirmComment || undefined },
+          details: { student_name: studentName, student_email: extractStudentEmail(slot.student_notes), slot_date: slot.slot_date, start_time: slot.start_time, end_time: slot.end_time, source: isReschedule ? 'reschedule_confirm' : 'booking_confirm', batch: batchSlotIds ? batchSlotIds.length : undefined, comment: inlineComment || undefined },
         } as any);
       } catch (_) {}
 
