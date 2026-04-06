@@ -113,8 +113,7 @@ export function useCalendarSlots(teacherId?: string) {
         supabase.from('calendar_slots')
           .update({ status: 'needs_review' } as any)
           .in('id', ids)
-          .then(() => {})
-          .catch((err: any) => console.error('needs_review auto-update failed:', err));
+          .then(() => {}, (err: any) => console.error('needs_review auto-update failed:', err));
         const updatedData = (data || []).map((s: any) => ids.includes(s.id) ? { ...s, status: 'needs_review' } : s);
         setSlots(updatedData as unknown as CalendarSlot[]);
       } else {
