@@ -181,7 +181,7 @@ Deno.serve(async (req) => {
     }
 
     if (meetingLink) {
-      eventBody.description = `Meeting link: ${meetingLink}\n\nJoin: ${meetingLink}`;
+      eventBody.description = `Join: ${meetingLink}`;
       eventBody.location = meetingLink;
     }
 

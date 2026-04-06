@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AutoResizeTextarea } from '@/components/ui/AutoResizeTextarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarNotification } from '@/hooks/useCalendarNotifications';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -38,13 +39,14 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
   const [actionInProgress, setActionInProgress] = useState(false);
   const [showComment, setShowComment] = useState(false);
   const [comment, setComment] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const slotIds = (notification.metadata as any)?.slot_ids || [];
   const studentName = notification.student_name || 'Student';
   const studentEmail = (notification.metadata as any)?.student_email || '';
 
-  useEffect(() => {
-    if (!open || slotIds.length === 0) return;
+  const fetchSlots = () => {
+    if (slotIds.length === 0) return;
     setLoading(true);
     supabase.from('calendar_slots')
       .select('id, slot_date, start_time, end_time, status, confirmed_at, student_id')
@@ -54,23 +56,32 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
         setSlots((data || []) as SlotInfo[]);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    setSelectedIds(new Set());
+    fetchSlots();
   }, [open, notification.id]);
 
   const pendingSlots = slots.filter(s => s.status === 'booked' && !s.confirmed_at);
   const pendingIds = pendingSlots.map(s => s.id);
 
-  const handleConfirmAll = async () => {
-    if (pendingIds.length === 0) return;
+  const actionIds = selectedIds.size > 0 ? Array.from(selectedIds) : pendingIds;
+  const actionCount = actionIds.length;
+  const isPartial = selectedIds.size > 0 && selectedIds.size < pendingIds.length;
+
+  const handleConfirmSelected = async (ids: string[]) => {
+    if (ids.length === 0) return;
     setActionInProgress(true);
     try {
       const { error } = await supabase.from('calendar_slots')
         .update({ confirmed_at: new Date().toISOString() } as any)
-        .in('id', pendingIds)
+        .in('id', ids)
         .eq('teacher_id', teacherId);
       if (error) throw error;
 
-      // Log + GCal sync
-      for (const id of pendingIds) {
+      for (const id of ids) {
         supabase.from('calendar_slot_logs').insert({
           slot_id: id, teacher_id: teacherId, action: 'confirmed', actor: 'teacher',
           details: { batch: true, recurring: true, comment: comment || undefined },
@@ -78,12 +89,21 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
         supabase.functions.invoke('gcal-sync', {
           body: { teacherId, slotId: id, action: 'upsert' },
         }).catch(console.error);
+        // Student GCal sync
+        if (studentEmail) {
+          supabase.functions.invoke('student-gcal-sync', {
+            body: { email: studentEmail, teacherId, slotId: id, action: 'upsert' },
+          }).catch(console.error);
+        }
       }
 
-      // Resolve notification
-      await supabase.from('calendar_notifications')
-        .update({ is_resolved: true, resolved_action: 'approved' } as any)
-        .eq('id', notification.id);
+      const allHandled = ids.length >= pendingIds.length;
+
+      if (allHandled) {
+        await supabase.from('calendar_notifications')
+          .update({ is_resolved: true, resolved_action: 'approved' } as any)
+          .eq('id', notification.id);
+      }
 
       // Send confirmation email
       try {
@@ -100,8 +120,15 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
         }
       } catch (_) {}
 
-      toast.success(`Confirmed ${pendingIds.length} recurring lessons`);
-      onDone();
+      toast.success(`Confirmed ${ids.length} recurring lessons`);
+
+      if (allHandled) {
+        onDone();
+      } else {
+        // Partial — refresh slots, clear selection
+        setSelectedIds(new Set());
+        fetchSlots();
+      }
     } catch (err: any) {
       toast.error(err.message || 'Failed to confirm');
     } finally {
@@ -109,9 +136,9 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
     }
   };
 
-  const handleRejectAll = async () => {
-    if (pendingIds.length === 0) return;
-    if (!window.confirm(`Reject all ${pendingIds.length} recurring bookings?`)) return;
+  const handleRejectSelected = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    if (!window.confirm(`Reject ${ids.length} booking(s)?`)) return;
     setActionInProgress(true);
     try {
       const { error } = await supabase.from('calendar_slots')
@@ -119,11 +146,11 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
           status: 'available', student_id: null, booked_at: null,
           booked_by: null, confirmed_at: null, student_notes: null, title: null,
         } as any)
-        .in('id', pendingIds)
+        .in('id', ids)
         .eq('teacher_id', teacherId);
       if (error) throw error;
 
-      for (const id of pendingIds) {
+      for (const id of ids) {
         supabase.from('calendar_slot_logs').insert({
           slot_id: id, teacher_id: teacherId, action: 'rejected', actor: 'teacher',
           details: { batch: true, recurring: true, comment: comment || undefined },
@@ -131,11 +158,21 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
         supabase.functions.invoke('gcal-sync', {
           body: { teacherId, slotId: id, action: 'cancel' },
         }).catch(console.error);
+        // Student GCal sync
+        if (studentEmail) {
+          supabase.functions.invoke('student-gcal-sync', {
+            body: { email: studentEmail, teacherId, slotId: id, action: 'delete' },
+          }).catch(console.error);
+        }
       }
 
-      await supabase.from('calendar_notifications')
-        .update({ is_resolved: true, resolved_action: 'rejected' } as any)
-        .eq('id', notification.id);
+      const allHandled = ids.length >= pendingIds.length;
+
+      if (allHandled) {
+        await supabase.from('calendar_notifications')
+          .update({ is_resolved: true, resolved_action: 'rejected' } as any)
+          .eq('id', notification.id);
+      }
 
       // Send rejection email
       try {
@@ -152,8 +189,14 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
         }
       } catch (_) {}
 
-      toast.success(`Rejected ${pendingIds.length} recurring bookings`);
-      onDone();
+      toast.success(`Rejected ${ids.length} recurring bookings`);
+
+      if (allHandled) {
+        onDone();
+      } else {
+        setSelectedIds(new Set());
+        fetchSlots();
+      }
     } catch (err: any) {
       toast.error(err.message || 'Failed to reject');
     } finally {
@@ -179,14 +222,39 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
           </div>
         ) : (
           <div className="space-y-3">
+            {/* Select All */}
+            {pendingIds.length > 1 && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={selectedIds.size === pendingIds.length && pendingIds.length > 0}
+                  onCheckedChange={(checked) => {
+                    setSelectedIds(checked ? new Set(pendingIds) : new Set());
+                  }}
+                />
+                <span className="text-xs font-medium">Select All ({pendingIds.length} pending)</span>
+              </div>
+            )}
+
             {/* Slot list */}
             <div className="max-h-48 overflow-y-auto space-y-1 border rounded-md p-2">
               {slots.map(s => {
                 const isPending = s.status === 'booked' && !s.confirmed_at;
                 const isConfirmed = s.status === 'booked' && !!s.confirmed_at;
                 return (
-                  <div key={s.id} className="flex items-center justify-between text-xs py-1 border-b last:border-b-0">
-                    <span className="font-medium">
+                  <div key={s.id} className="flex items-center gap-2 text-xs py-1 border-b last:border-b-0">
+                    {isPending && (
+                      <Checkbox
+                        checked={selectedIds.has(s.id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedIds(prev => {
+                            const next = new Set(prev);
+                            checked ? next.add(s.id) : next.delete(s.id);
+                            return next;
+                          });
+                        }}
+                      />
+                    )}
+                    <span className="font-medium flex-1">
                       {format(new Date(s.slot_date), 'EEE, MMM d')} · {s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}
                     </span>
                     <span className={isPending ? 'text-amber-600' : isConfirmed ? 'text-green-600' : 'text-muted-foreground'}>
@@ -227,11 +295,11 @@ export function RecurringBookingModal({ open, onOpenChange, notification, teache
         )}
 
         <DialogFooter className="gap-2">
-          <Button size="sm" onClick={handleConfirmAll} disabled={actionInProgress || pendingIds.length === 0} className="bg-green-600 hover:bg-green-700 text-white text-xs">
-            <Check className="h-3 w-3 mr-1" /> {actionInProgress ? 'Processing...' : `Confirm All (${pendingIds.length})`}
+          <Button size="sm" onClick={() => handleConfirmSelected(actionIds)} disabled={actionInProgress || actionCount === 0} className="bg-green-600 hover:bg-green-700 text-white text-xs">
+            <Check className="h-3 w-3 mr-1" /> {actionInProgress ? 'Processing...' : isPartial ? `Confirm Selected (${actionCount})` : `Confirm All (${actionCount})`}
           </Button>
-          <Button size="sm" variant="outline" onClick={handleRejectAll} disabled={actionInProgress || pendingIds.length === 0} className="text-destructive text-xs">
-            <Ban className="h-3 w-3 mr-1" /> Reject All ({pendingIds.length})
+          <Button size="sm" variant="outline" onClick={() => handleRejectSelected(actionIds)} disabled={actionInProgress || actionCount === 0} className="text-destructive text-xs">
+            <Ban className="h-3 w-3 mr-1" /> {isPartial ? `Reject Selected (${actionCount})` : `Reject All (${actionCount})`}
           </Button>
         </DialogFooter>
       </DialogContent>

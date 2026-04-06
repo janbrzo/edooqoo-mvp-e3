@@ -98,6 +98,23 @@ export function StudentBookingsSection({ settings, token, availableSlots, onBook
     if (email.trim()) fetchBookings();
   }, [email, token, showPast]);
 
+  // Realtime subscription + polling fallback for live updates
+  useEffect(() => {
+    if (!settings?.teacher_id || !email.trim()) return;
+    const channel = supabase
+      .channel(`student-bookings-${settings.teacher_id}-${email}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_slots', filter: `teacher_id=eq.${settings.teacher_id}` },
+        () => { fetchBookings(); }
+      )
+      .subscribe();
+    // Polling fallback (RLS may block realtime for anon users)
+    const interval = setInterval(fetchBookings, 5000);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [settings?.teacher_id, email, fetchBookings]);
+
   const fetchBookings = useCallback(async () => {
     if (!email.trim()) return;
     setLoading(true);
