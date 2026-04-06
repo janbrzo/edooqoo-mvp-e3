@@ -17,6 +17,7 @@ import { UnifiedSlotModal } from '@/components/calendar/UnifiedSlotModal';
 import { SlotDetailModal } from '@/components/calendar/SlotDetailModal';
 import { LinkWorksheetModal } from '@/components/calendar/LinkWorksheetModal';
 import { CalendarNotificationBell } from '@/components/calendar/CalendarNotificationBell';
+import { RecurringBookingModal } from '@/components/calendar/RecurringBookingModal';
 import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
 import { PaymentHistoryModal } from '@/components/calendar/PaymentHistoryModal';
 import { Button } from '@/components/ui/button';
@@ -95,6 +96,7 @@ const CalendarPage = () => {
   const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [addStudentPrefill, setAddStudentPrefill] = useState<{ name: string; email: string } | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [recurringNotification, setRecurringNotification] = useState<CalendarNotification | null>(null);
 
   // Sync selectedSlot with fresh slots data
   useEffect(() => {
@@ -319,12 +321,17 @@ const CalendarPage = () => {
   };
 
   const handleNotificationClick = async (n: CalendarNotification) => {
+    // Recurring booking → open dedicated modal
+    const slotIds = (n.metadata as any)?.slot_ids;
+    if (n.notification_type === 'booking_pending' && Array.isArray(slotIds) && slotIds.length > 1 && !n.is_resolved) {
+      setRecurringNotification(n);
+      return;
+    }
     if (n.slot_id) {
       const slot = slots.find(s => s.id === n.slot_id);
       if (slot) {
         setSelectedSlot(slot);
       } else {
-        // Slot not in current view — fetch it and navigate to its date
         const { data } = await supabase.from('calendar_slots').select('*').eq('id', n.slot_id).single();
         if (data) {
           setCurrentDate(new Date(data.slot_date));
