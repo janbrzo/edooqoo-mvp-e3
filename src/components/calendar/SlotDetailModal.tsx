@@ -916,14 +916,23 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
               <Button size="sm" variant="outline" onClick={handleUndoCancel} className="text-xs h-7"><Undo2 className="h-3 w-3 mr-1" /> Undo Cancel</Button>
             )}
             {isPending && (
-              <>
-                <Button size="sm" onClick={() => { setConfirmComment(''); setShowConfirmDialog(true); }} disabled={actionInProgress} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
-                  <Check className="h-3 w-3 mr-1" /> Confirm
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => { setRejectComment(''); setShowRejectDialog(true); }} disabled={actionInProgress} className="text-destructive text-xs h-7">
-                  <Ban className="h-3 w-3 mr-1" /> Reject
-                </Button>
-              </>
+              <div className="w-full space-y-2">
+                <div className="flex gap-1">
+                  <Button size="sm" onClick={handleConfirm} disabled={actionInProgress} className="bg-green-600 hover:bg-green-700 text-white text-xs h-7">
+                    <Check className="h-3 w-3 mr-1" /> {actionInProgress ? 'Processing...' : 'Confirm'}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleReject} disabled={actionInProgress} className="text-destructive text-xs h-7">
+                    <Ban className="h-3 w-3 mr-1" /> Reject
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="inline-comment-check" checked={showInlineComment} onChange={e => setShowInlineComment(e.target.checked)} className="h-3.5 w-3.5 rounded border-border" />
+                  <label htmlFor="inline-comment-check" className="text-xs text-muted-foreground cursor-pointer">Add comment</label>
+                </div>
+                {showInlineComment && (
+                  <AutoResizeTextarea value={inlineComment} onChange={e => setInlineComment(e.target.value)} placeholder="Optional note for the student..." rows={2} className="text-xs" />
+                )}
+              </div>
             )}
             {((slot.status === 'booked' && slot.confirmed_at) || isNeedsReview) && (
               <>
