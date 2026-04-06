@@ -74,8 +74,64 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Handle sync_all_lessons_gcal
+    if (action === 'sync_all_lessons_gcal') {
+      // Find student by email
+      const { data: student } = await supabase
+        .from('students')
+        .select('id')
+        .eq('teacher_id', teacherId)
+        .ilike('student_email', normalEmail)
+        .is('deleted_at', null)
+        .maybeSingle();
+      
+      if (!student) {
+        return new Response(JSON.stringify({ count: 0, reason: 'student not found' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
-    // 2. Find student
+      // Get all booked/completed slots for this student
+      const { data: studentSlots } = await supabase
+        .from('calendar_slots')
+        .select('id')
+        .eq('student_id', student.id)
+        .eq('teacher_id', teacherId)
+        .in('status', ['booked', 'completed', 'no_show']);
+
+      if (!studentSlots || studentSlots.length === 0) {
+        return new Response(JSON.stringify({ count: 0 }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Call student-gcal-sync for each
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      let syncedCount = 0;
+      for (const s of studentSlots) {
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/student-gcal-sync`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({ email: normalEmail, teacherId, slotId: s.id, action: 'upsert' }),
+          });
+          const result = await res.json();
+          if (result.success) syncedCount++;
+        } catch (e) {
+          console.error('Sync error for slot', s.id, e);
+        }
+      }
+
+      return new Response(JSON.stringify({ count: syncedCount }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+
     const { data: studentData, error: studentError } = await supabase
       .from('students')
       .select('id, name, english_level, student_email')
