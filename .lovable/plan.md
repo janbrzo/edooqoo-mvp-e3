@@ -1,436 +1,421 @@
+# Plan: 4 naprawy — Reschedule badge, Bulk+GCal, Recurring UX, Student GCal sync
 
+## Problem 1: Reschedule pokazuje "cancelled" zamiast "rescheduled"
 
-# Plan naprawy 6 problemów — bez regresji
+### Diagnoza
 
-## Problem 1: Label "Default Meeting Link" nie zmienia się na "Custom Meeting Link"
+Gdy lekcja jest przesunięta (reschedule), stary slot dostaje `cancelled_by: 'system'` i `cancellation_reason: "Rescheduled to 2026-04-08 14:00"`. W UI:
 
-**Plik:** `src/pages/StudentPage.tsx`, linia 160
+- `CalendarSlotCard.tsx` linia 79-81: sprawdza `cancelled_by === 'student'` → SC, else → TC. Brak obsługi `cancelled_by === 'system'`.
+- `SlotDetailModal.tsx` linia 883: pokazuje "Previous lesson was cancelled" — brak sprawdzenia `cancellation_reason` zawierającego "Rescheduled".
+- GCal upsert (linia 244): status "available" + `cancelled_by` → dodaje suffix "Teacher Cancellation" zamiast "Rescheduled".
 
-**Obecny kod:**
-```tsx
-<label className="text-sm font-medium text-muted-foreground">Default Meeting Link</label>
-```
+### Rozwiązanie
 
-**Rozwiązanie:** Zmienić na dynamiczny label zależny od `mode`:
-```tsx
-<label className="text-sm font-medium text-muted-foreground">
-  {mode === 'custom' ? 'Custom Meeting Link' : 'Default Meeting Link'}
-</label>
-```
-
-Gdy `autoLinkEnabled` jest `false` (brak GCal), to label powinien mówić "Meeting Link" (bo nie ma rozróżnienia default/custom):
-```tsx
-<label className="text-sm font-medium text-muted-foreground">
-  {!autoLinkEnabled ? 'Meeting Link' : mode === 'custom' ? 'Custom Meeting Link' : 'Default Meeting Link'}
-</label>
-```
-
----
-
-## Problem 2: Reschedule nie działa na stronie `/my/.../lessons`
-
-**Diagnoza:** `StudentHubLessons.tsx` (linia 235-241) renderuje `StudentBookingsSection` BEZ propsów `onRescheduleStart` i `rescheduleBookingId`. Te propsy są opcjonalne w komponencie, więc przycisk "Reschedule" jest widoczny, ale po kliknięciu `onRescheduleStart` jest `undefined` i nic się nie dzieje.
-
-**Jak to powinno działać:** Student klika "Reschedule" na booking card → booking zostaje podświetlony → student klika available slot w kalendarzu powyżej → system wywołuje edge function `get-student-bookings` z `action: 'reschedule'`, `slotId` (stary) i `newSlotId` (nowy).
-
-**Rozwiązanie w `StudentHubLessons.tsx`:**
-
-1. Dodać stan `rescheduleBookingId`:
-```tsx
-const [rescheduleBookingId, setRescheduleBookingId] = useState<string | null>(null);
-```
-
-2. Przekazać propsy do `StudentBookingsSection`:
-```tsx
-<StudentBookingsSection
-  settings={settings as any}
-  token={teacherToken}
-  availableSlots={availableSlots}
-  onBookingChanged={() => refetchSlots()}
-  defaultEmail={email}
-  onRescheduleStart={(bookingId) => setRescheduleBookingId(bookingId)}
-  rescheduleBookingId={rescheduleBookingId}
-/>
-```
-
-3. Zmienić handler kliknięcia na slot w kalendarzu — jeśli `rescheduleBookingId` jest ustawiony, zamiast otwierać dialog bookingu, wykonać reschedule:
-```tsx
-const handleSlotClick = (slot: CalendarSlot) => {
-  if (rescheduleBookingId) {
-    handleReschedule(rescheduleBookingId, slot.id);
-    return;
-  }
-  setSelectedSlot(slot);
-};
-```
-
-4. Dodać funkcję `handleReschedule`:
-```tsx
-const handleReschedule = async (oldSlotId: string, newSlotId: string) => {
-  if (!email || !teacherToken) return;
-  try {
-    const { data, error } = await supabase.functions.invoke('get-student-bookings', {
-      body: {
-        token: teacherToken,
-        email: email.trim(),
-        action: 'reschedule',
-        slotId: oldSlotId,
-        newSlotId,
-      },
-    });
-    if (error) throw error;
-    if (data?.autoRescheduled) {
-      toast({ title: 'Lesson rescheduled successfully' });
-    } else if (data?.success) {
-      toast({ title: 'Reschedule request sent — awaiting teacher confirmation' });
-    } else {
-      toast({ title: data?.error || 'Could not reschedule', variant: 'destructive' });
-    }
-  } catch (err: any) {
-    toast({ title: 'Reschedule failed', description: err.message, variant: 'destructive' });
-  }
-  setRescheduleBookingId(null);
-  refetchSlots();
-};
-```
-
-5. Zmienić `onClick` na slot buttonach w gridzie (linia ~213) z `setSelectedSlot(slot)` na `handleSlotClick(slot)`.
-
-6. Wizualnie oznaczyć, że jesteśmy w trybie reschedule — nad gridem dodać banner:
-```tsx
-{rescheduleBookingId && (
-  <div className="bg-primary/10 border border-primary/30 rounded-md p-2 flex items-center justify-between text-sm">
-    <span>Select a new time slot to reschedule your lesson</span>
-    <Button variant="ghost" size="sm" onClick={() => setRescheduleBookingId(null)}>Cancel</Button>
-  </div>
-)}
-```
-
----
-
-## Problem 3: Modale SlotDetailModal (Lesson Pending / Lesson Booked) za długie
-
-**Diagnoza:** Modal zawiera: Student selector, Date, Start/End/Duration (3 kolumny), Worksheet, Notes, Discount, Meeting Link, Student booking info, Cancellation info, History, Footer buttons. Na ekranie 754px to za dużo.
-
-**Rozwiązanie — oszczędność ~25-30% wysokości bez usuwania niczego:**
-
-**Plik:** `src/components/calendar/SlotDetailModal.tsx`
-
-a) **Date + Start/End/Duration w jednym wierszu** (linie 794-811):
-Zamiast osobnego wiersza na Date i osobnego na Start/End/Duration, połączyć w jeden wiersz `grid-cols-4`:
-```tsx
-<div className="grid grid-cols-4 gap-2">
-  <div><Label className="text-xs">Date</Label><Input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="h-8 text-xs" /></div>
-  <div><Label className="text-xs">Start</Label><Input type="time" value={editStartTime} onChange={e => handleStartTimeChange(e.target.value)} className="h-8 text-xs" /></div>
-  <div><Label className="text-xs">End</Label><Input type="time" value={editEndTime} onChange={e => setEditEndTime(e.target.value)} className="h-8 text-xs" /></div>
-  <div><Label className="text-xs">Duration</Label>
-    <Select ...><SelectTrigger className="h-8 text-xs">...</SelectTrigger>...</Select>
-  </div>
-</div>
-```
-**Oszczędność:** ~36px (cały wiersz Date).
-
-b) **Worksheet + Discount w jednym wierszu** (linie 813-846):
-```tsx
-<div className="grid grid-cols-[1fr_80px] gap-2">
-  <div>
-    <Label className="text-xs">Worksheet</Label>
-    {/* existing worksheet select */}
-  </div>
-  <div>
-    <Label className="text-xs">Discount %</Label>
-    <Input type="number" ... className="h-8 text-xs" />
-  </div>
-</div>
-```
-**Oszczędność:** ~36px (cały wiersz Discount).
-
-c) **Notes i Meeting Link w jednym wierszu** (linie 841, 848-857):
-```tsx
-<div className="grid grid-cols-2 gap-2">
-  <div><Label className="text-xs">Notes</Label><AutoResizeTextarea ... rows={1} className="min-h-[32px] text-xs" /></div>
-  {!isBlock && hasStudent && (
-    <div><Label className="text-xs">Meeting Link</Label><Input ... className="h-8 text-xs" /></div>
-  )}
-</div>
-```
-**Oszczędność:** ~36px (cały wiersz Meeting Link).
-
-d) **Zmniejszyć `space-y-3` na `space-y-2`** (linia 735) i zmniejszyć inputs z `h-9` na `h-8`.
-
-e) **Dodać `max-h-[85vh] overflow-y-auto`** do `DraggableDialogContent` jako safety net, żeby przy małych ekranach zawsze dało się scrollować.
-
-**Łączna oszczędność:** ~108px + drobne marginesy = ~120px, co daje ok. 25% redukcji.
-
----
-
-## Problem 4: Sortowanie lesson cards na `/my/.../lessons`
-
-**Diagnoza:** W `StudentBookingsSection.tsx` linia 220-226 sortowanie dzieli bookingi na upcoming i past:
-```tsx
-const todayStr = format(new Date(), 'yyyy-MM-dd');
-const upcoming = result.filter(b => `${b.slot_date}${b.start_time}` >= `${todayStr}00:00`);
-const past = result.filter(b => `${b.slot_date}${b.start_time}` < `${todayStr}00:00`);
-upcoming.sort((a, b) => a... ascending);
-past.sort((a, b) => b... descending);
-return [...upcoming, ...past];
-```
-
-**Problem:** Upcoming sortowane ascending = na górze najwcześniejsze (6 Apr), potem późniejsze (13 Apr). Past sortowane descending. To daje kolejność: `6, 6, 7, 10, 11, 11, 12, 13, 13 | 5, 5, 5, 4, 4` — dokładnie to co user widzi.
-
-**Wymaganie usera:** "Na samej górze najnowsze, na dole najstarsze" — czyli **descending** (13→12→11→...→4→3→2→1).
-
-**Ale uwaga** — memory mówi: "Widok lekcji sortuje bookingi chronologicznie rosnąco, auto-scroll do Today". To był świadomy wybór. Teraz user chce odwrotnie.
-
-**Rozwiązanie:** Zmienić sortowanie na jednolite descending (najnowsze na górze):
-```tsx
-// Single descending sort — newest first
-result.sort((a: any, b: any) => 
-  `${b.slot_date}${b.start_time}`.localeCompare(`${a.slot_date}${a.start_time}`)
-);
-return result;
-```
-
-Usunąć podział na upcoming/past z sortowania. Auto-scroll do "Today" nadal zadziała, bo `data-date` atrybuty pozostają na elementach.
-
-**Zaktualizować scroll logic** (linia 236-261): przy descending order najnowsze daty są na górze, więc "today" jest gdzieś w środku/na górze. Logika szukania elementu z `data-date >= todayStr` musi być odwrócona — szukamy **pierwszego** elementu z datą <= today (bo lista jest descending):
+**a) Nowy badge "R" w `CalendarSlotCard.tsx`:**
+W logice badge (linia 77-82), dodać sprawdzenie:
 
 ```tsx
-const scrollToToday = useCallback(() => {
-  if (!listRef.current) return;
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const allDateEls = Array.from(listRef.current.querySelectorAll('[data-date]'));
-  if (allDateEls.length === 0) return;
-  // Descending: find first element with date <= today
-  let targetIdx = -1;
-  for (let i = 0; i < allDateEls.length; i++) {
-    const d = allDateEls[i].getAttribute('data-date') || '';
-    if (d <= todayStr) { targetIdx = i; break; }
-  }
-  if (targetIdx === -1) {
-    listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
-    return;
-  }
-  const scrollIdx = Math.max(0, targetIdx - 1);
-  const targetEl = allDateEls[scrollIdx] as HTMLElement;
-  if (targetEl && listRef.current) {
-    const containerTop = listRef.current.getBoundingClientRect().top;
-    const elTop = targetEl.getBoundingClientRect().top;
-    const offset = elTop - containerTop + listRef.current.scrollTop;
-    listRef.current.scrollTo({ top: offset, behavior: 'smooth' });
-  }
-}, []);
-```
-
----
-
-## Problem 5: Wyświetlić email zalogowanego użytkownika na `/my/`
-
-**Plik:** `src/components/student-hub/StudentHubLayout.tsx`, linia 50
-
-**Obecny kod:**
-```tsx
-<Button variant="ghost" size="sm" className="text-xs" onClick={handleLogout}>
-  <LogOut className="h-3.5 w-3.5 mr-1" /> Log out
-</Button>
-```
-
-**Rozwiązanie:** Importować `getSavedHubEmail` i wyświetlić email obok Log out:
-```tsx
-import { clearHubEmail, getSavedHubEmail } from '@/hooks/useStudentHubData';
-```
-
-```tsx
-<div className="flex items-center gap-2">
-  <span className="text-xs text-muted-foreground hidden sm:inline">{getSavedHubEmail()}</span>
-  <Button variant="ghost" size="sm" className="text-xs" onClick={handleLogout}>
-    <LogOut className="h-3.5 w-3.5 mr-1" /> Log out
-  </Button>
-</div>
-```
-
----
-
-## Problem 6: Zmiana "Bulk Delete" na "Bulk Actions" z ograniczeniem zaznaczania do jednego typu slotów
-
-**Plik:** `src/pages/CalendarPage.tsx`
-
-### 6a. Zmiana nazwy i rozszerzenie akcji
-
-**Linia 311-312:** Zmienić label:
-```tsx
-Bulk Actions
-```
-
-### 6b. Ograniczenie zaznaczania do jednego typu slotu
-
-Obecny kod (linia 162-170) w `handleSlotClick` pozwala zaznaczać tylko sloty bez studenta (`if (slot.student_id) return`). Trzeba zmienić logikę:
-
-Dodać stan `selectionType`:
-```tsx
-const [selectionType, setSelectionType] = useState<string | null>(null);
-```
-
-Zmienić `handleSlotClick` w trybie selekcji:
-```tsx
-if (selectionMode) {
-  // Determine slot type for selection grouping
-  const slotType = getSlotSelectionType(slot);
-  
-  if (selectionType && slotType !== selectionType) return; // different type — ignore
-  
-  setSelectedSlotIds(prev => {
-    const next = new Set(prev);
-    if (next.has(slot.id)) {
-      next.delete(slot.id);
-      if (next.size === 0) setSelectionType(null); // reset when empty
-    } else {
-      next.add(slot.id);
-      if (!selectionType) setSelectionType(slotType); // lock type on first selection
-    }
-    return next;
-  });
-  return;
+if (slot.cancelled_by === 'system' && slot.cancellation_reason?.includes('Rescheduled')) {
+  // Rescheduled badge
+  return <badge R, bg-indigo-400 text-indigo-900>
+} else if (slot.cancelled_by === 'student') {
+  return SC
+} else {
+  return TC
 }
 ```
 
-Funkcja `getSlotSelectionType`:
+**b) Nowy wpis w legendzie `LEGEND_ITEMS` w `CalendarPage.tsx`:**
+
 ```tsx
-const getSlotSelectionType = (slot: CalendarSlot): string => {
-  if ((slot.status as any) === 'needs_review') return 'needs_review';
-  if (slot.status === 'booked' && !slot.confirmed_at) return 'pending';
-  if (slot.status === 'booked' && slot.confirmed_at) return 'booked';
-  if (slot.status === 'available') return 'available';
-  if (slot.status === 'completed') return 'completed';
-  if (slot.status === 'no_show') return 'no_show';
-  return slot.status;
+{ key: 'rescheduled', label: 'Rescheduled', badge: 'R', color: 'bg-indigo-200 border-indigo-400' },
+```
+
+Oraz filter w `filteredSlots`:
+
+```tsx
+if (legendFilter === 'rescheduled') return s.status === 'available' && s.cancelled_by === 'system' && s.cancellation_reason?.includes('Rescheduled');
+```
+
+**c) SlotDetailModal linia 878-887:** Zmienić z "Previous lesson was cancelled" na dynamiczny tekst:
+
+```tsx
+const isRescheduledSlot = slot.cancelled_by === 'system' && slot.cancellation_reason?.includes('Rescheduled');
+// ...
+<p className="font-medium">{isRescheduledSlot ? 'Previous lesson was rescheduled' : 'Previous lesson was cancelled'}</p>
+```
+
+Kolor tła: `bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200` dla rescheduled.
+
+**d) GCal suffix w `gcal-sync/index.ts` linia 244:**
+Dodać warunek:
+
+```tsx
+if (effectiveStatus === 'available' && slot.cancelled_by) {
+  if (slot.cancelled_by === 'system' && slot.cancellation_reason?.includes('Rescheduled')) {
+    summary += ' — Rescheduled';
+  } else {
+    summary += slot.cancelled_by === 'student' ? ' — Student Cancellation' : ' — Teacher Cancellation';
+  }
+}
+```
+
+---
+
+## Problem 2: Bulk Actions nie synchronizują z Google Calendar
+
+### Diagnoza
+
+`handleBatchConfirm`, `handleBatchReject`, `handleBatchStatusChange` w `CalendarPage.tsx` robią tylko DB update — nie wywołują `gcal-sync`. SlotDetailModal robi to poprawnie (np. linia 644-648 dla status change).
+
+### Rozwiązanie
+
+Po każdym batch DB update, wywołać `gcal-sync` dla każdego slotu. Dodać wywołania po `await supabase.from(...)`:
+
+`**handleBatchConfirm` (po linii 267):**
+
+```tsx
+// GCal sync for each confirmed slot
+for (const id of ids) {
+  supabase.functions.invoke('gcal-sync', {
+    body: { teacherId: user?.id, slotId: id, action: 'upsert' },
+  }).catch(console.error);
+}
+```
+
+`**handleBatchReject` (po linii 284):**
+
+```tsx
+// GCal: update to available or delete
+for (const id of ids) {
+  supabase.functions.invoke('gcal-sync', {
+    body: { teacherId: user?.id, slotId: id, action: 'cancel' },
+  }).catch(console.error);
+}
+```
+
+`**handleBatchStatusChange` (po linii 294):**
+
+```tsx
+// GCal: update color based on status
+if (status === 'completed' || status === 'no_show') {
+  const colorMap: Record<string, string> = { completed: '10', no_show: '6' };
+  for (const id of ids) {
+    supabase.functions.invoke('gcal-sync', {
+      body: { teacherId: user?.id, slotId: id, action: 'upsert', colorOverride: colorMap[status] },
+    }).catch(console.error);
+  }
+}
+```
+
+Uwaga: wywołania są fire-and-forget (`catch(console.error)`), tak jak w SlotDetailModal. Nie blokują UI.
+
+---
+
+## Problem 3: Recurring booking — nauczyciel nie wie czy akceptuje serię czy pojedynczy slot
+
+### Diagnoza
+
+Obecny flow:
+
+- **Przez powiadomienie**: klik otwiera SlotDetailModal dla pierwszego slotu z `metadata.slot_ids`. `getValidBatchSlotIds` wykrywa batch → Confirm/Reject działa na całą serię. ALE modal wygląda identycznie jak dla single slota ("Lesson Pending").
+- **Przez klik na slot w kalendarzu**: otwiera SlotDetailModal dla tego konkretnego slotu. `getValidBatchSlotIds` sprawdza notification dla `slot.id` — jeśli to jest pierwszy slot z serii, znów znajdzie batch i zadziała na serię. Jeśli to inny slot, NIE znajdzie notification (bo notification `slot_id` = pierwszy slot) → działa na single.
+
+To jest mylące i niespójne.
+
+### Rozwiązanie
+
+**a) Nowy modal `RecurringBookingModal` dla powiadomień recurring:**
+
+Kliknięcie powiadomienia `booking_pending` z `metadata.slot_ids.length > 1` NIE otwiera `SlotDetailModal`. Zamiast tego otwiera nowy dedykowany `RecurringBookingModal`:
+
+Props:
+
+```tsx
+interface RecurringBookingModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  notification: CalendarNotification;
+  teacherId: string;
+  onDone: () => void;
+}
+```
+
+Treść modala:
+
+- Tytuł: "Recurring Booking Request"
+- Info: student name, email, data pierwszej i ostatniej lekcji, count
+- Lista dat: wszystkie sloty z `metadata.slot_ids` (pobrane z DB)
+- Dwa przyciski: "Confirm All ({count})" / "Reject All ({count})"
+- dodatkowa informacja że moze pojedynczo Confirm  /  Reject otwierajac kazdy slot ososbno
+- Opcja inline comment (jak w SlotDetailModal)
+- Logika confirm/reject: taka sama jak `handleConfirm`/`handleReject` z batchSlotIds, plus GCal sync
+
+**b) Zmiana w `CalendarPage.tsx` → `handleNotificationClick`:**
+
+```tsx
+const handleNotificationClick = async (n: CalendarNotification) => {
+  const slotIds = (n.metadata as any)?.slot_ids;
+  if (n.notification_type === 'booking_pending' && Array.isArray(slotIds) && slotIds.length > 1 && !n.is_resolved) {
+    setRecurringNotification(n);
+    return;
+  }
+  // ...existing single slot logic
 };
 ```
 
-### 6c. Dynamiczne akcje w zależności od typu zaznaczonych slotów
+Nowy state: `const [recurringNotification, setRecurringNotification] = useState<CalendarNotification | null>(null);`
 
-Zamiast tylko "Delete (N)" button, wyświetlić akcje pasujące do zaznaczonego typu:
+**c) SlotDetailModal — usunąć logikę batch z `getValidBatchSlotIds`:**
+Zmienić `getValidBatchSlotIds` by zawsze zwracać `null`. Dzięki temu kliknięcie na DOWOLNY slot w kalendarzu (pending, z serii czy nie) ZAWSZE działa na ten jeden slot. Batch jest obsługiwany wyłącznie przez RecurringBookingModal z poziomu powiadomienia.
+
+Albo lepiej — zostawić `getValidBatchSlotIds` ale dodać jasny komunikat w UI modala:
 
 ```tsx
-{selectionMode && (
-  <div className="flex items-center gap-1">
-    {selectionType === 'available' && (
-      <Button variant="destructive" size="sm" className="h-8 text-xs" onClick={handleBatchDelete} disabled={selectedSlotIds.size === 0}>
-        Delete ({selectedSlotIds.size})
-      </Button>
-    )}
-    {selectionType === 'pending' && (
-      <>
-        <Button size="sm" className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white" onClick={handleBatchConfirm} disabled={selectedSlotIds.size === 0}>
-          Confirm ({selectedSlotIds.size})
-        </Button>
-        <Button size="sm" variant="outline" className="h-8 text-xs text-destructive" onClick={handleBatchReject} disabled={selectedSlotIds.size === 0}>
-          Reject ({selectedSlotIds.size})
-        </Button>
-      </>
-    )}
-    {selectionType === 'needs_review' && (
-      <>
-        <Button size="sm" className="h-8 text-xs" onClick={() => handleBatchStatusChange('completed')} disabled={selectedSlotIds.size === 0}>
-          Complete ({selectedSlotIds.size})
-        </Button>
-        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => handleBatchStatusChange('no_show')} disabled={selectedSlotIds.size === 0}>
-          No Show ({selectedSlotIds.size})
-        </Button>
-      </>
-    )}
-    {selectionType === 'booked' && (
-      <>
-        <Button size="sm" className="h-8 text-xs" onClick={() => handleBatchStatusChange('completed')} disabled={selectedSlotIds.size === 0}>
-          Complete ({selectedSlotIds.size})
-        </Button>
-        <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => handleBatchStatusChange('no_show')} disabled={selectedSlotIds.size === 0}>
-          No Show ({selectedSlotIds.size})
-        </Button>
-      </>
-    )}
-    {selectedSlotIds.size > 0 && (
-      <span className="text-xs text-muted-foreground ml-1">
-        {selectionType} selected
-      </span>
-    )}
-    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exitSelectionMode}>Cancel</Button>
+{batchSlotCount > 1 && isPending && (
+  <div className="bg-primary/10 border border-primary/30 rounded-md p-2 text-xs">
+    This is part of a recurring booking ({batchSlotCount} lessons).
+    Confirm/Reject will apply to all {batchSlotCount} lessons.
   </div>
 )}
 ```
 
-### 6d. Nowe handlery batch
+Ostatecznie — prostsze i bezpieczniejsze podejście: **usunąć batch logic z SlotDetailModal** i obsługiwać batch wyłącznie przez RecurringBookingModal. W SlotDetailModal confirm/reject = zawsze single slot.
+
+**d) Zmiana w `getValidBatchSlotIds**` → zwraca zawsze `null`:
 
 ```tsx
-const handleBatchConfirm = async () => {
-  if (selectedSlotIds.size === 0) return;
-  if (!window.confirm(`Confirm ${selectedSlotIds.size} pending bookings?`)) return;
-  const ids = Array.from(selectedSlotIds);
-  await supabase.from('calendar_slots')
-    .update({ confirmed_at: new Date().toISOString() })
-    .in('id', ids);
-  // Log
-  for (const id of ids) {
-    supabase.from('calendar_slot_logs').insert({
-      slot_id: id, teacher_id: user?.id, action: 'confirmed', actor: 'teacher', details: { batch: true },
-    } as any).catch(() => {});
-  }
-  toast.success(`Confirmed ${ids.length} bookings`);
-  exitSelectionMode();
-  refetch();
-};
-
-const handleBatchReject = async () => {
-  if (selectedSlotIds.size === 0) return;
-  if (!window.confirm(`Reject ${selectedSlotIds.size} pending bookings?`)) return;
-  const ids = Array.from(selectedSlotIds);
-  await supabase.from('calendar_slots')
-    .update({ status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null } as any)
-    .in('id', ids);
-  toast.success(`Rejected ${ids.length} bookings`);
-  exitSelectionMode();
-  refetch();
-};
-
-const handleBatchStatusChange = async (status: string) => {
-  if (selectedSlotIds.size === 0) return;
-  if (!window.confirm(`Mark ${selectedSlotIds.size} slots as ${status}?`)) return;
-  const ids = Array.from(selectedSlotIds);
-  const updates: any = { status };
-  await supabase.from('calendar_slots').update(updates).in('id', ids);
-  toast.success(`${ids.length} slots marked as ${status}`);
-  exitSelectionMode();
-  refetch();
+const getValidBatchSlotIds = async (): Promise<string[] | null> => {
+  return null; // Batch handled exclusively via RecurringBookingModal
 };
 ```
 
-Reset `selectionType` w `exitSelectionMode`:
+---
+
+## Problem 4: Student GCal Sync — statusy, kolory, togglesy, meeting link
+
+### Diagnoza
+
+`student-gcal-sync/index.ts`:
+
+- Linia 108: zawsze `summary = "English Lesson with {teacher}"` — brak suffiksu statusu
+- Linia 98: zawsze `colorId = studentSettings.color_id || '9'` — jeden kolor dla wszystkiego
+- Linia 128-130: meeting link tylko w `description`, nie jako conferenceData
+- Brak toggles "co synchronizować"
+- Brak przycisku "sync all existing lessons"
+- Brak obsługi per-status kolorów
+
+### 4A: Status suffix i per-status kolory w `student-gcal-sync/index.ts`
+
+Zmienić `summary` na dynamiczny:
+
 ```tsx
-const exitSelectionMode = () => {
-  setSelectionMode(false);
-  setSelectedSlotIds(new Set());
-  setSelectionType(null);
+const isPending = slot.status === 'booked' && !slot.confirmed_at;
+const effectiveStatus = isPending ? 'pending' : slot.status;
+const statusSuffix: Record<string, string> = {
+  booked: ' — Booked',
+  pending: ' — Pending',
+  completed: ' — Completed',
+  no_show: ' — No Show',
 };
+let summary = `English Lesson with ${teacherName}`;
+if (slot.cancelled_by) {
+  summary += slot.cancelled_by === 'student' ? ' — Student Cancellation' : ' — Teacher Cancellation';
+} else if (statusSuffix[effectiveStatus]) {
+  summary += statusSuffix[effectiveStatus];
+}
+```
+
+Per-status kolory z settings:
+
+```tsx
+const statusColorMap: Record<string, string> = {
+  booked: studentSettings.color_booked || '3',   // Grape
+  pending: studentSettings.color_pending || '5',  // Banana
+  completed: studentSettings.color_completed || '10', // Basil
+  no_show: studentSettings.color_no_show || '6',  // Tangerine
+};
+const colorId = statusColorMap[effectiveStatus] || studentSettings.color_id || '9';
+```
+
+### 4B: Settings UI — per-status kolory w `StudentHubSettings.tsx`
+
+Zmienić z jednego `color_id` na osobne kolory per status:
+
+Usunąć obecne "Event color" (jednokolorowe). Dodać sekcję:
+
+```tsx
+<div className="space-y-2">
+  <Label className="text-sm">Event colors by status</Label>
+  {[
+    { key: 'color_booked', label: 'Booked lesson', defaultV: '3' },
+    { key: 'color_pending', label: 'Pending booking', defaultV: '5' },
+    { key: 'color_completed', label: 'Completed lesson', defaultV: '10' },
+    { key: 'color_no_show', label: 'No Show', defaultV: '6' },
+  ].map(item => (
+    <div key={item.key} className="flex items-center justify-between">
+      <span className="text-sm">{item.label}</span>
+      <Select value={settings[item.key] || item.defaultV} onValueChange={v => updateSetting(item.key, v)}>
+        <SelectTrigger className="w-36 h-8">
+          <span className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: GCAL_COLOR_HEX[settings[item.key] || item.defaultV] }} />
+            <SelectValue />
+          </span>
+        </SelectTrigger>
+        <SelectContent>
+          {GCAL_COLORS.map(c => (
+            <SelectItem key={c.v} value={c.v}>
+              <span className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: GCAL_COLOR_HEX[c.v] }} />
+                {c.l}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  ))}
+</div>
+```
+
+### 4C: Fix wyświetlania kolorów — SelectTrigger za wąski
+
+Zmienić `w-40` na `w-36` i dodać `truncate` do nazwy koloru. Albo lepiej — w SelectTrigger custom render:
+
+```tsx
+<SelectTrigger className="w-36 h-8 text-xs">
+```
+
+To wystarczy — z `text-xs` nazwa koloru się zmieści.
+
+### 4D: Przycisk "Sync all existing lessons"
+
+Dodać w `StudentHubSettings.tsx` po sekcji toggles:
+
+```tsx
+<Button variant="outline" size="sm" onClick={handleSyncAllLessons} disabled={syncing}>
+  {syncing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Calendar className="h-4 w-4 mr-2" />}
+  Sync all existing lessons to calendar
+</Button>
+```
+
+Handler `handleSyncAllLessons`:
+
+```tsx
+const handleSyncAllLessons = async () => {
+  setSyncing(true);
+  try {
+    const { data, error } = await supabase.functions.invoke('get-student-hub-data', {
+      body: { token: teacherToken, email, action: 'sync_all_lessons_gcal' },
+    });
+    if (error) throw error;
+    toast.success(`Synced ${data?.count || 0} lessons to your calendar`);
+  } catch (err) {
+    toast.error('Failed to sync lessons');
+  } finally {
+    setSyncing(false);
+  }
+};
+```
+
+W edge function `get-student-hub-data` dodać obsługę akcji `sync_all_lessons_gcal`:
+
+- Pobrać wszystkie sloty studenta z `calendar_slots` gdzie `student_id` pasuje do emaila
+- Dla każdego slotu wywołać `student-gcal-sync` z `action: 'upsert'`
+- Zwrócić `{ count }`.
+
+### 4E: Meeting link w wydarzeniu
+
+W `student-gcal-sync/index.ts` zmienić sposób dodawania meeting link:
+
+```tsx
+if (slot.meeting_link) {
+  eventBody.description = `Meeting link: ${slot.meeting_link}\n\nJoin: ${slot.meeting_link}`;
+  eventBody.location = slot.meeting_link;
+}
+
+// Also check per-student meeting link
+if (!slot.meeting_link && slot.student_id) {
+  const { data: css } = await supabase.from('calendar_student_settings')
+    .select('default_meeting_link')
+    .eq('student_id', slot.student_id)
+    .eq('teacher_id', teacherId)
+    .maybeSingle();
+  if (css?.default_meeting_link) {
+    eventBody.description = `Meeting link: ${css.default_meeting_link}`;
+    eventBody.location = css.default_meeting_link;
+  }
+}
+```
+
+### 4F: Togglesy "What to sync"
+
+Dodać do settings state i UI:
+
+```tsx
+const defaultSettings = {
+  auto_add: true,
+  reminder_minutes: 30,
+  color_booked: '3',
+  color_pending: '5',
+  color_completed: '10',
+  color_no_show: '6',
+  sync_booked: true,
+  sync_pending: true,
+};
+```
+
+UI toggles:
+
+```tsx
+<div className="space-y-2">
+  <Label className="text-sm">What to sync to Google Calendar</Label>
+  <div className="flex items-center justify-between">
+    <span className="text-sm">Booked lessons</span>
+    <Switch checked={settings.sync_booked !== false} onCheckedChange={v => updateSetting('sync_booked', v)} />
+  </div>
+  <div className="flex items-center justify-between">
+    <span className="text-sm">Pending bookings</span>
+    <Switch checked={settings.sync_pending !== false} onCheckedChange={v => updateSetting('sync_pending', v)} />
+  </div>
+</div>
+```
+
+W `student-gcal-sync/index.ts` — sprawdzić toggle:
+
+```tsx
+const isPending = slot.status === 'booked' && !slot.confirmed_at;
+if (isPending && studentSettings.sync_pending === false) {
+  return { skipped: true, reason: 'pending sync disabled' };
+}
+if (!isPending && slot.status === 'booked' && studentSettings.sync_booked === false) {
+  return { skipped: true, reason: 'booked sync disabled' };
+}
 ```
 
 ---
 
 ## Pliki do zmiany
 
-| Plik | Zmiany |
-|------|--------|
-| `src/pages/StudentPage.tsx` | Dynamiczny label Default/Custom Meeting Link |
-| `src/pages/StudentHubLessons.tsx` | Dodanie stanu reschedule, handler, przekazanie propsów, banner |
-| `src/components/calendar/SlotDetailModal.tsx` | Kompaktowy layout: Date+Time w 1 wierszu, Worksheet+Discount w 1 wierszu, Notes+Meeting w 1 wierszu, mniejsze inputy |
-| `src/components/calendar/StudentBookingsSection.tsx` | Jednolite sortowanie descending, fix scrollToToday |
-| `src/components/student-hub/StudentHubLayout.tsx` | Wyświetlenie emaila obok Log out |
-| `src/pages/CalendarPage.tsx` | Bulk Actions: nowy label, selectionType, dynamiczne akcje, handlery batch |
-| `docs/llm-context.md` | Aktualizacja sekcji calendar, student hub, meeting links |
-| `llms.txt` | Aktualizacja RAG keywords i mechanik |
+
+| Plik                                                | Zmiany                                                                                                                                          |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/calendar/CalendarSlotCard.tsx`      | Badge "R" dla rescheduled (`cancelled_by === 'system'` + `cancellation_reason` contains "Rescheduled")                                          |
+| `src/pages/CalendarPage.tsx`                        | Legend entry "Rescheduled", legend filter, GCal sync w batch handlers, RecurringBookingModal state + rendering, handleNotificationClick routing |
+| `src/components/calendar/SlotDetailModal.tsx`       | Dynamic text "rescheduled" vs "cancelled", usunięcie batch logic z confirm/reject (= zawsze single slot), kolor indigo dla rescheduled info box |
+| `src/components/calendar/RecurringBookingModal.tsx` | **NOWY** — dedykowany modal dla batch confirm/reject z powiadomień                                                                              |
+| `supabase/functions/gcal-sync/index.ts`             | Rescheduled suffix w cancel action                                                                                                              |
+| `supabase/functions/student-gcal-sync/index.ts`     | Status suffixes, per-status colors, meeting link w description+location, sync toggles                                                           |
+| `src/pages/StudentHubSettings.tsx`                  | Per-status color selectors, sync toggles, "Sync all existing lessons" button, fix wyświetlania kolorów                                          |
+| `supabase/functions/get-student-hub-data/index.ts`  | Obsługa akcji `sync_all_lessons_gcal`                                                                                                           |
+| `docs/llm-context.md`                               | Nowe sekcje                                                                                                                                     |
+| `llms.txt`                                          | Aktualizacja                                                                                                                                    |
+
 
 ## Czego NIE ruszamy
-- Edge functions (logika reschedule działa poprawnie)
-- Żadnych migracji DB
-- Worksheet engine
-- Logiki GCal sync
 
+- Logiki booking/reschedule w edge functions
+- Migracji DB (kolory i toggles studenckie są w jsonb `settings` w `student_gcal_tokens`)
+- Worksheet engine
+- Meeting link generation (gcal-sync create_permanent_room)
