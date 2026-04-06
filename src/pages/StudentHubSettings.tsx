@@ -230,10 +230,10 @@ export default function StudentHubSettings() {
                       <div key={item.key} className="flex items-center justify-between">
                         <span className="text-sm">{item.label}</span>
                         <Select value={getColorValue(item.key)} onValueChange={v => updateSetting(item.key, v)}>
-                          <SelectTrigger className="w-36 h-8 text-xs">
-                            <span className="flex items-center gap-2">
+                          <SelectTrigger className="w-40 h-8 text-xs">
+                            <span className="flex items-center gap-2 truncate">
                               <span className="w-3 h-3 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: GCAL_COLOR_HEX[getColorValue(item.key)] || '#3f51b5' }} />
-                              <SelectValue />
+                              <span className="truncate">{GCAL_COLORS.find(c => c.v === getColorValue(item.key))?.l || 'Color'}</span>
                             </span>
                           </SelectTrigger>
                           <SelectContent>

@@ -282,6 +282,18 @@ Deno.serve(async (req) => {
         reminders,
       };
 
+      // Add meeting link to description & location
+      let meetingLink = slot.meeting_link;
+      if (!meetingLink && slot.student_id) {
+        const { data: cssLink } = await supabase.from('calendar_student_settings')
+          .select('default_meeting_link').eq('student_id', slot.student_id).eq('teacher_id', teacherId).maybeSingle();
+        if (cssLink?.default_meeting_link) meetingLink = cssLink.default_meeting_link;
+      }
+      if (meetingLink) {
+        event.description = `Join: ${meetingLink}`;
+        event.location = meetingLink;
+      }
+
       // Google Meet auto-creation — skip if student has a permanent meeting link
       let hasPermStudentLink = false;
       if (slot.student_id) {

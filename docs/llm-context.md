@@ -193,3 +193,86 @@ Email shown next to "Log out" button in `StudentHubLayout` header (hidden on mob
 
 ### RAG Keywords
 student hub, logged in email, hub layout, student identity
+
+---
+
+## Realtime Student Bookings
+### Problem
+`StudentBookingsSection` had no realtime or polling. After teacher confirm/reject, student had to refresh to see changes.
+
+### Edooqoo Solution
+Added Supabase realtime subscription on `calendar_slots` (filtered by `teacher_id`) plus 5-second polling fallback for anonymous users where RLS may block realtime events.
+
+### Technical Mechanics
+- `StudentBookingsSection.tsx`: `fetchBookings` defined before useEffect hooks. Realtime channel `student-bookings-{teacherId}-{email}` triggers `fetchBookings()` on any change. `setInterval(fetchBookings, 5000)` as fallback.
+
+### RAG Keywords
+realtime, polling, student bookings, live update, fetchBookings, calendar_slots subscription
+
+---
+
+## Recurring Booking Selective Confirm/Reject
+### Problem
+RecurringBookingModal only had "Confirm All" / "Reject All". Teacher couldn't selectively confirm/reject individual lessons from a series.
+
+### Edooqoo Solution
+Added checkboxes per pending slot + "Select All" toggle. Buttons dynamically show "Confirm Selected (N)" or "Confirm All (N)". Partial actions keep modal open and refresh slot list. Only marks notification resolved when all pending slots handled.
+
+### Technical Mechanics
+- `RecurringBookingModal.tsx`: `selectedIds` state (Set), `Checkbox` from `@/components/ui/checkbox`, `handleConfirmSelected(ids)` / `handleRejectSelected(ids)`. Partial action: clears selection, re-fetches slots, keeps modal open.
+
+### RAG Keywords
+recurring booking, selective confirm, checkbox, partial confirm, batch booking, select all
+
+---
+
+## Reschedule GCal Sync
+### Problem
+Reschedule action in `get-student-bookings` didn't sync to Google Calendar for teacher or student. Confirm/reject/cancel in SlotDetailModal didn't trigger student GCal sync.
+
+### Edooqoo Solution
+- Auto-reschedule: edge function calls `gcal-sync` (cancel old + upsert new) and `student-gcal-sync` (delete old + upsert new).
+- Requires-confirmation reschedule: upserts new pending slot to both calendars.
+- SlotDetailModal confirm/reject/cancel: triggers `student-gcal-sync` with student email extracted from `student_notes`.
+- Batch confirm/reject in CalendarPage: fetches `student_notes` per slot and triggers `student-gcal-sync`.
+- RecurringBookingModal: triggers `student-gcal-sync` per slot using email from notification metadata.
+
+### Technical Mechanics
+- `get-student-bookings/index.ts`: fetch calls to `gcal-sync` and `student-gcal-sync` edge functions using `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`.
+- `SlotDetailModal.tsx`: `handleConfirm`, `handleReject`, `handleTeacherCancellation`, `handleStudentCancellation` all call `student-gcal-sync`.
+- `CalendarPage.tsx`: `handleBatchConfirm`/`handleBatchReject` fetch slot notes then call `student-gcal-sync`.
+
+### RAG Keywords
+reschedule gcal, student gcal sync, confirm gcal, reject gcal, cancel gcal, batch gcal sync
+
+---
+
+## Meeting Link in GCal Events
+### Problem
+Teacher GCal events had no meeting link. Student GCal events showed link 3 times (description had duplicated text + location).
+
+### Edooqoo Solution
+- Teacher: `gcal-sync` now adds meeting link to `event.description` ("Join: {link}") and `event.location`.
+- Student: `student-gcal-sync` simplified to single "Join: {link}" in description + location (was "Meeting link: X\n\nJoin: X").
+
+### Technical Mechanics
+- `gcal-sync/index.ts`: after building event object, checks `slot.meeting_link` or falls back to `calendar_student_settings.default_meeting_link`.
+- `student-gcal-sync/index.ts`: `eventBody.description = "Join: {link}"` (single line).
+
+### RAG Keywords
+meeting link gcal, join link, event description, event location, gcal meeting link
+
+---
+
+## Student GCal Color Selector Fix
+### Problem
+Color name truncated in SelectTrigger (w-36 too narrow). Double color circle (manual + SelectValue rendering).
+
+### Edooqoo Solution
+Increased width to w-40. Replaced `<SelectValue />` with manual render of color circle + truncated name. Prevents SelectValue from duplicating the circle icon.
+
+### Technical Mechanics
+- `StudentHubSettings.tsx`: `SelectTrigger` uses custom `<span>` with color dot + `GCAL_COLORS.find()` label instead of `<SelectValue />`.
+
+### RAG Keywords
+color selector, select trigger, truncated text, gcal colors, student hub settings

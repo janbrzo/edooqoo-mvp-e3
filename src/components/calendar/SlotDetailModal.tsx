@@ -451,6 +451,13 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         await onUpdate(slot.id, { confirmed_at: new Date().toISOString() } as any);
         const canSend = await shouldSendEmail('notify_email_on_confirmation');
         if (canSend) await sendCalendarEmail('booking_confirmation', { confirmationComment: inlineComment || undefined });
+        // Student GCal sync — update from Pending to Booked
+        const sEmail = extractStudentEmail(slot.student_notes);
+        if (sEmail) {
+          supabase.functions.invoke('student-gcal-sync', {
+            body: { email: sEmail, teacherId: slot.teacher_id, slotId: slot.id, action: 'upsert' },
+          }).catch(console.error);
+        }
       }
 
       try {
@@ -510,6 +517,13 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
         await onUpdate(slot.id, rejectUpdates as any);
         const canSend = await shouldSendEmail('notify_email_on_rejection');
         if (canSend) await sendCalendarEmail('booking_rejected', { rejectionReason: inlineComment || undefined });
+        // Student GCal sync — delete rejected booking
+        const sEmail = extractStudentEmail(slot.student_notes);
+        if (sEmail) {
+          supabase.functions.invoke('student-gcal-sync', {
+            body: { email: sEmail, teacherId: slot.teacher_id, slotId: slot.id, action: 'delete' },
+          }).catch(console.error);
+        }
         toast.success('Booking rejected, slot is available again');
       }
 
@@ -568,6 +582,13 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     await resolveNotifications(slot.id, ['booking_pending', 'booking_confirmed'], 'cancelled');
     // GCal: update to Available or delete based on settings
     supabase.functions.invoke('gcal-sync', { body: { teacherId: slot.teacher_id, slotId: slot.id, action: 'cancel' } }).catch(console.error);
+    // Student GCal sync — delete cancelled lesson
+    const tcEmail = extractStudentEmail(slot.student_notes);
+    if (tcEmail) {
+      supabase.functions.invoke('student-gcal-sync', {
+        body: { email: tcEmail, teacherId: slot.teacher_id, slotId: slot.id, action: 'delete' },
+      }).catch(console.error);
+    }
     setTimeout(() => onNotificationsChanged?.(), 300);
     onOpenChange(false);
   };
@@ -592,6 +613,13 @@ export function SlotDetailModal({ open, onOpenChange, slot, studentName, student
     await resolveNotifications(slot.id, ['booking_pending', 'booking_confirmed'], 'cancelled');
     // GCal: same behavior as teacher cancellation — update to Available or delete
     supabase.functions.invoke('gcal-sync', { body: { teacherId: slot.teacher_id, slotId: slot.id, action: 'cancel' } }).catch(console.error);
+    // Student GCal sync — delete cancelled lesson
+    const scEmail = extractStudentEmail(slot.student_notes);
+    if (scEmail) {
+      supabase.functions.invoke('student-gcal-sync', {
+        body: { email: scEmail, teacherId: slot.teacher_id, slotId: slot.id, action: 'delete' },
+      }).catch(console.error);
+    }
     setTimeout(() => onNotificationsChanged?.(), 300);
     onOpenChange(false);
   };
