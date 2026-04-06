@@ -15,7 +15,7 @@ async function getValidStudentToken(supabase: any, email: string, teacherId: str
 
   if (!tokenData) return null;
 
-  const studentSettings = tokenData.settings || { reminder_minutes: 30, color_id: '9', auto_add: true };
+  const studentSettings = tokenData.settings || { auto_add: true, reminder_minutes: 30 };
   if (!studentSettings.auto_add) return null;
 
   const expiresAt = new Date(tokenData.token_expires_at);
@@ -94,9 +94,33 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Check sync toggles
+    const isPending = slot.status === 'booked' && !slot.confirmed_at;
+    if (isPending && studentSettings.sync_pending === false) {
+      return new Response(JSON.stringify({ skipped: true, reason: 'pending sync disabled' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (!isPending && slot.status === 'booked' && studentSettings.sync_booked === false) {
+      return new Response(JSON.stringify({ skipped: true, reason: 'booked sync disabled' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const calendarId = 'primary';
-    const colorId = studentSettings.color_id || '9';
     const reminderMinutes = studentSettings.reminder_minutes || 30;
+
+    // Determine effective status
+    const effectiveStatus = isPending ? 'pending' : slot.status;
+
+    // Per-status colors
+    const statusColorMap: Record<string, string> = {
+      booked: studentSettings.color_booked || '3',   // Grape
+      pending: studentSettings.color_pending || '5',  // Banana
+      completed: studentSettings.color_completed || '10', // Basil
+      no_show: studentSettings.color_no_show || '6',  // Tangerine
+    };
+    const colorId = statusColorMap[effectiveStatus] || studentSettings.color_id || '9';
 
     // Get teacher name
     const { data: teacher } = await supabase.from('profiles')
@@ -105,7 +129,24 @@ Deno.serve(async (req) => {
       .maybeSingle();
     const teacherName = [teacher?.first_name, teacher?.last_name].filter(Boolean).join(' ') || 'Teacher';
 
-    const summary = `English Lesson with ${teacherName}`;
+    // Build summary with status suffix
+    const statusSuffix: Record<string, string> = {
+      booked: ' — Booked',
+      pending: ' — Pending',
+      completed: ' — Completed',
+      no_show: ' — No Show',
+    };
+    let summary = `English Lesson with ${teacherName}`;
+    if (slot.cancelled_by) {
+      if (slot.cancelled_by === 'system' && slot.cancellation_reason?.includes('Rescheduled')) {
+        summary += ' — Rescheduled';
+      } else {
+        summary += slot.cancelled_by === 'student' ? ' — Student Cancellation' : ' — Teacher Cancellation';
+      }
+    } else if (statusSuffix[effectiveStatus]) {
+      summary += statusSuffix[effectiveStatus];
+    }
+
     const startDateTime = `${slot.slot_date}T${slot.start_time}`;
     const endDateTime = `${slot.slot_date}T${slot.end_time}`;
 
@@ -123,17 +164,26 @@ Deno.serve(async (req) => {
         overrides: [{ method: 'popup', minutes: reminderMinutes }],
       },
       colorId,
+      extendedProperties: {
+        private: { edooqoo_slot_id: slotId },
+      },
     };
 
-    if (slot.meeting_link) {
-      eventBody.description = `Meeting link: ${slot.meeting_link}`;
+    // Meeting link — from slot or per-student settings
+    let meetingLink = slot.meeting_link;
+    if (!meetingLink && slot.student_id) {
+      const { data: css } = await supabase.from('calendar_student_settings')
+        .select('default_meeting_link')
+        .eq('student_id', slot.student_id)
+        .eq('teacher_id', teacherId)
+        .maybeSingle();
+      if (css?.default_meeting_link) meetingLink = css.default_meeting_link;
     }
 
-    // Check if we have a student_gcal_event_id stored (we'll store it in slot metadata or a simple approach)
-    // For now, use extendedProperties to track
-    eventBody.extendedProperties = {
-      private: { edooqoo_slot_id: slotId },
-    };
+    if (meetingLink) {
+      eventBody.description = `Meeting link: ${meetingLink}\n\nJoin: ${meetingLink}`;
+      eventBody.location = meetingLink;
+    }
 
     if (action === 'delete') {
       // Find and delete the event

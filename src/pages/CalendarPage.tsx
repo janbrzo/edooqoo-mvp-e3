@@ -17,6 +17,7 @@ import { UnifiedSlotModal } from '@/components/calendar/UnifiedSlotModal';
 import { SlotDetailModal } from '@/components/calendar/SlotDetailModal';
 import { LinkWorksheetModal } from '@/components/calendar/LinkWorksheetModal';
 import { CalendarNotificationBell } from '@/components/calendar/CalendarNotificationBell';
+import { RecurringBookingModal } from '@/components/calendar/RecurringBookingModal';
 import { AddStudentDialog } from '@/components/dashboard/AddStudentDialog';
 import { PaymentHistoryModal } from '@/components/calendar/PaymentHistoryModal';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ const LEGEND_ITEMS = [
   { key: 'needs_review', label: 'Needs Review', badge: '?', color: 'bg-purple-200 border-purple-400' },
   { key: 'completed', label: 'Completed', badge: '✓', color: 'bg-emerald-200 border-emerald-400' },
   { key: 'no_show', label: 'No Show', badge: 'NS', color: 'bg-red-200 border-red-400' },
+  { key: 'rescheduled', label: 'Rescheduled', badge: 'R', color: 'bg-indigo-200 border-indigo-400' },
   { key: 'student_cancelled', label: 'Student Cancellation', badge: 'SC', color: 'bg-amber-200 border-amber-400' },
   { key: 'teacher_cancelled', label: 'Teacher Cancellation', badge: 'TC', color: 'bg-blue-200 border-blue-400' },
   { key: 'block', label: 'Block', badge: 'B', color: 'bg-gray-200 border-gray-400', icon: Lock },
@@ -94,6 +96,7 @@ const CalendarPage = () => {
   const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [addStudentPrefill, setAddStudentPrefill] = useState<{ name: string; email: string } | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [recurringNotification, setRecurringNotification] = useState<CalendarNotification | null>(null);
 
   // Sync selectedSlot with fresh slots data
   useEffect(() => {
@@ -136,8 +139,9 @@ const CalendarPage = () => {
         if (legendFilter === 'deleted') return (s.status as any) === 'deleted';
         if (legendFilter === 'needs_review') return (s.status as any) === 'needs_review';
         if (legendFilter === 'unpaid') return !!s.student_id && !s.is_paid && ['booked','completed','needs_review'].includes(s.status);
+        if (legendFilter === 'rescheduled') return s.status === 'available' && s.cancelled_by === 'system' && s.cancellation_reason?.includes('Rescheduled');
         if (legendFilter === 'student_cancelled') return s.status === 'available' && s.cancelled_by === 'student';
-        if (legendFilter === 'teacher_cancelled') return s.status === 'available' && s.cancelled_by === 'teacher';
+        if (legendFilter === 'teacher_cancelled') return s.status === 'available' && s.cancelled_by === 'teacher' || s.status === 'available' && s.cancelled_by === 'system' && !s.cancellation_reason?.includes('Rescheduled');
         return s.status === legendFilter;
       });
     }
@@ -269,6 +273,9 @@ const CalendarPage = () => {
       supabase.from('calendar_slot_logs').insert({
         slot_id: id, teacher_id: user?.id, action: 'confirmed', actor: 'teacher', details: { batch: true },
       } as any).then(() => {});
+      supabase.functions.invoke('gcal-sync', {
+        body: { teacherId: user?.id, slotId: id, action: 'upsert' },
+      }).catch(console.error);
     }
     toast.success(`Confirmed ${ids.length} bookings`);
     exitSelectionMode();
@@ -282,6 +289,11 @@ const CalendarPage = () => {
     await supabase.from('calendar_slots')
       .update({ status: 'available', student_id: null, booked_at: null, booked_by: null, confirmed_at: null, student_notes: null, title: null } as any)
       .in('id', ids);
+    for (const id of ids) {
+      supabase.functions.invoke('gcal-sync', {
+        body: { teacherId: user?.id, slotId: id, action: 'cancel' },
+      }).catch(console.error);
+    }
     toast.success(`Rejected ${ids.length} bookings`);
     exitSelectionMode();
     refetch();
@@ -292,6 +304,11 @@ const CalendarPage = () => {
     if (!window.confirm(`Mark ${selectedSlotIds.size} slots as ${status}?`)) return;
     const ids = Array.from(selectedSlotIds);
     await supabase.from('calendar_slots').update({ status } as any).in('id', ids);
+    for (const id of ids) {
+      supabase.functions.invoke('gcal-sync', {
+        body: { teacherId: user?.id, slotId: id, action: 'upsert' },
+      }).catch(console.error);
+    }
     toast.success(`${ids.length} slots marked as ${status}`);
     exitSelectionMode();
     refetch();
@@ -304,12 +321,17 @@ const CalendarPage = () => {
   };
 
   const handleNotificationClick = async (n: CalendarNotification) => {
+    // Recurring booking → open dedicated modal
+    const slotIds = (n.metadata as any)?.slot_ids;
+    if (n.notification_type === 'booking_pending' && Array.isArray(slotIds) && slotIds.length > 1 && !n.is_resolved) {
+      setRecurringNotification(n);
+      return;
+    }
     if (n.slot_id) {
       const slot = slots.find(s => s.id === n.slot_id);
       if (slot) {
         setSelectedSlot(slot);
       } else {
-        // Slot not in current view — fetch it and navigate to its date
         const { data } = await supabase.from('calendar_slots').select('*').eq('id', n.slot_id).single();
         if (data) {
           setCurrentDate(new Date(data.slot_date));
@@ -514,6 +536,17 @@ const CalendarPage = () => {
           studentId={linkWorksheetSlot.student_id}
           currentWorksheetId={linkWorksheetSlot.worksheet_id}
           onLink={handleWorksheetLinked}
+        />
+      )}
+
+      {user?.id && recurringNotification && (
+        <RecurringBookingModal
+          open={!!recurringNotification}
+          onOpenChange={(open) => { if (!open) setRecurringNotification(null); }}
+          notification={recurringNotification}
+          teacherId={user.id}
+          students={studentList}
+          onDone={() => { setRecurringNotification(null); refetch(); refetchNotifications(); }}
         />
       )}
 
