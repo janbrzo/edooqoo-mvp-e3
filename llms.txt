@@ -75,4 +75,4 @@
 - `src/pages/CalendarPage.tsx` — Batch actions with student GCal sync
 
 ## RAG Keywords
-meeting link, Google Meet, permanent room, per-student link, video call, Jitsi, auto-create, calendar student settings, generated_meeting_link, meeting_link_mode, create_permanent_room, ghost event, hangoutLink, reschedule badge, recurring modal, batch confirm, student gcal sync, per-status color, sync toggle, realtime, polling, selective confirm, checkbox, reschedule gcal
+meeting link, Google Meet, permanent room, per-student link, video call, Jitsi, auto-create, calendar student settings, generated_meeting_link, meeting_link_mode, create_permanent_room, ghost event, hangoutLink, reschedule badge, recurring modal, batch confirm, student gcal sync, per-status color, sync toggle, realtime, polling, selective confirm, checkbox, reschedule gcal, reschedule decision gcal sync, meeting link email, scrollToToday fix, hasScrolledRef, rescheduling loading state

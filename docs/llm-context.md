@@ -276,3 +276,29 @@ Increased width to w-40. Replaced `<SelectValue />` with manual render of color 
 
 ### RAG Keywords
 color selector, select trigger, truncated text, gcal colors, student hub settings
+
+---
+
+## Reschedule Decision — GCal Sync & Meeting Link in Email (April 2026)
+
+### Problem
+1. `calendar-handle-reschedule-decision` confirm/reject had zero GCal sync calls — teacher and student calendars not updated after reschedule decision.
+2. Reschedule confirmation email missing `meetingLink` — no Join Meeting button.
+3. `scrollToToday()` in `StudentBookingsSection` fired every 5s due to polling re-triggering the effect.
+4. Reschedule UI had no loading feedback — students could click multiple slots during processing.
+
+### Edooqoo Solution
+- Confirm: teacher GCal upsert old slot (now available/rescheduled) + upsert new (confirmed). Student GCal delete old + upsert new.
+- Reject: teacher GCal cancel new slot. Student GCal delete new pending event.
+- Email: fetch `meeting_link` from slot or `calendar_student_settings.default_meeting_link`, pass as `meetingLink` to template.
+- Scroll: `hasScrolledRef` ensures `scrollToToday()` runs only once after initial load.
+- UI: `rescheduling` state blocks slot clicks and shows `Loader2` spinner during processing.
+
+### Technical Mechanics
+- `supabase/functions/calendar-handle-reschedule-decision/index.ts`: After confirm → `gcal-sync upsert` old+new (teacher) + `student-gcal-sync delete` old + `upsert` new. After reject → `gcal-sync cancel` new + `student-gcal-sync delete` new. Before email → fetch meetingLink from slot/student_settings.
+- `supabase/functions/get-student-bookings/index.ts`: Auto-reschedule `sendEmail('reschedule_confirmation')` now includes `meetingLink` fetched from slot or student settings.
+- `src/components/calendar/StudentBookingsSection.tsx`: `hasScrolledRef = useRef(false)` — scroll executes only when `!hasScrolledRef.current`.
+- `src/pages/StudentHubLessons.tsx`: `rescheduling` state set true at start of `handleReschedule`, false after completion. `handleSlotClick` returns early if `rescheduling`. Banner shows spinner during processing.
+
+### RAG Keywords
+reschedule gcal sync, confirm reject calendar, meeting link email, scrollToToday fix, reschedule loading, hasScrolledRef, rescheduling state, calendar-handle-reschedule-decision gcal
