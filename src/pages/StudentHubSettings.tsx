@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Calendar, Settings, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { StudentHubLayout } from '@/components/student-hub/StudentHubLayout';
 import { getSavedHubEmail } from '@/hooks/useStudentHubData';
@@ -26,6 +25,24 @@ const GCAL_COLOR_HEX: Record<string, string> = {
   '10': '#0b8043', '11': '#d50000',
 };
 
+const STATUS_COLOR_ITEMS = [
+  { key: 'color_booked', label: 'Booked lesson', defaultV: '3' },
+  { key: 'color_pending', label: 'Pending booking', defaultV: '5' },
+  { key: 'color_completed', label: 'Completed lesson', defaultV: '10' },
+  { key: 'color_no_show', label: 'No Show', defaultV: '6' },
+];
+
+const DEFAULT_SETTINGS: Record<string, any> = {
+  auto_add: true,
+  reminder_minutes: 30,
+  color_booked: '3',
+  color_pending: '5',
+  color_completed: '10',
+  color_no_show: '6',
+  sync_booked: true,
+  sync_pending: true,
+};
+
 export default function StudentHubSettings() {
   const { teacherToken } = useParams<{ teacherToken: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -33,13 +50,9 @@ export default function StudentHubSettings() {
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
-  const [settings, setSettings] = useState({
-    auto_add: true,
-    reminder_minutes: 30,
-    color_id: '9',
-  });
+  const [syncing, setSyncing] = useState(false);
+  const [settings, setSettings] = useState<Record<string, any>>({ ...DEFAULT_SETTINGS });
 
-  // Check for successful gcal connection via callback redirect
   useEffect(() => {
     const gcal = searchParams.get('gcal');
     if (gcal === 'connected') {
@@ -50,7 +63,6 @@ export default function StudentHubSettings() {
     }
   }, [searchParams, setSearchParams]);
 
-  // Fetch current state
   useEffect(() => {
     if (!email || !teacherToken) return;
     fetchConnectionStatus();
@@ -59,14 +71,13 @@ export default function StudentHubSettings() {
   const fetchConnectionStatus = async () => {
     setLoading(true);
     try {
-      // We need to check via edge function since student has no auth
       const { data } = await supabase.functions.invoke('get-student-hub-data', {
         body: { token: teacherToken, email, action: 'get_gcal_status' },
       });
       if (data?.gcal_connected) {
         setConnected(true);
         if (data.gcal_settings) {
-          setSettings(data.gcal_settings);
+          setSettings({ ...DEFAULT_SETTINGS, ...data.gcal_settings });
         }
       }
     } catch (err) {
@@ -117,9 +128,24 @@ export default function StudentHubSettings() {
     }
   };
 
-  if (!email) {
-    return null;
-  }
+  const handleSyncAllLessons = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-student-hub-data', {
+        body: { token: teacherToken, email, action: 'sync_all_lessons_gcal' },
+      });
+      if (error) throw error;
+      toast.success(`Synced ${data?.count || 0} lessons to your calendar`);
+    } catch (err) {
+      toast.error('Failed to sync lessons');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  if (!email) return null;
+
+  const getColorValue = (key: string) => settings[key] || DEFAULT_SETTINGS[key];
 
   return (
     <StudentHubLayout>
@@ -131,7 +157,6 @@ export default function StudentHubSettings() {
           <p className="text-muted-foreground text-sm mt-1">Manage your preferences</p>
         </div>
 
-        {/* Google Calendar Sync */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -154,6 +179,7 @@ export default function StudentHubSettings() {
                 </div>
 
                 <div className="space-y-4 pt-2">
+                  {/* Auto-add toggle */}
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Auto-add lessons to calendar</Label>
@@ -165,6 +191,20 @@ export default function StudentHubSettings() {
                     />
                   </div>
 
+                  {/* What to sync */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">What to sync to Google Calendar</Label>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Booked lessons</span>
+                      <Switch checked={settings.sync_booked !== false} onCheckedChange={v => updateSetting('sync_booked', v)} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Pending bookings</span>
+                      <Switch checked={settings.sync_pending !== false} onCheckedChange={v => updateSetting('sync_pending', v)} />
+                    </div>
+                  </div>
+
+                  {/* Reminder */}
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Reminder before lesson</Label>
@@ -183,29 +223,40 @@ export default function StudentHubSettings() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Event color</Label>
-                      <p className="text-xs text-muted-foreground">Color for lesson events in your calendar</p>
-                    </div>
-                    <Select value={settings.color_id} onValueChange={v => updateSetting('color_id', v)}>
-                      <SelectTrigger className="w-40">
-                        <span className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: GCAL_COLOR_HEX[settings.color_id] || '#3f51b5' }} />
-                          <SelectValue />
-                        </span>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {GCAL_COLORS.map(c => (
-                          <SelectItem key={c.v} value={c.v}>
+                  {/* Per-status colors */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Event colors by status</Label>
+                    {STATUS_COLOR_ITEMS.map(item => (
+                      <div key={item.key} className="flex items-center justify-between">
+                        <span className="text-sm">{item.label}</span>
+                        <Select value={getColorValue(item.key)} onValueChange={v => updateSetting(item.key, v)}>
+                          <SelectTrigger className="w-36 h-8 text-xs">
                             <span className="flex items-center gap-2">
-                              <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: GCAL_COLOR_HEX[c.v] }} />
-                              {c.l}
+                              <span className="w-3 h-3 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: GCAL_COLOR_HEX[getColorValue(item.key)] || '#3f51b5' }} />
+                              <SelectValue />
                             </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {GCAL_COLORS.map(c => (
+                              <SelectItem key={c.v} value={c.v}>
+                                <span className="flex items-center gap-2">
+                                  <span className="w-3 h-3 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: GCAL_COLOR_HEX[c.v] }} />
+                                  {c.l}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Sync all existing */}
+                  <div className="pt-2 space-y-2">
+                    <Button variant="outline" size="sm" onClick={handleSyncAllLessons} disabled={syncing}>
+                      {syncing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Calendar className="h-4 w-4 mr-2" />}
+                      Sync all existing lessons to calendar
+                    </Button>
                   </div>
                 </div>
 
@@ -229,7 +280,6 @@ export default function StudentHubSettings() {
           </CardContent>
         </Card>
 
-        {/* Info card */}
         <Card>
           <CardContent className="pt-6">
             <div className="bg-muted/50 rounded-md p-4 text-sm text-muted-foreground space-y-2">
@@ -239,6 +289,7 @@ export default function StudentHubSettings() {
                 <li>Each lesson gets a reminder notification before it starts.</li>
                 <li>If a lesson is cancelled, it will be removed from your calendar.</li>
                 <li>Your Google account is only used for calendar events — we don't access any other data.</li>
+                <li>Event colors change based on lesson status (booked, pending, completed).</li>
               </ul>
             </div>
           </CardContent>
