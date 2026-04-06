@@ -163,6 +163,17 @@ Deno.serve(async (req) => {
           ? await supabase.from('calendar_slots').select('slot_date, start_time').eq('id', oldSlotId).maybeSingle()
           : { data: null };
 
+        // Get meeting link for new slot
+        let meetingLink = newSlot.meeting_link || '';
+        if (!meetingLink && newSlot.student_id) {
+          const { data: css } = await supabase.from('calendar_student_settings')
+            .select('default_meeting_link')
+            .eq('student_id', newSlot.student_id)
+            .eq('teacher_id', user.id)
+            .maybeSingle();
+          if (css?.default_meeting_link) meetingLink = css.default_meeting_link;
+        }
+
         await fetch(`${supabaseUrl}/functions/v1/send-calendar-notification-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -171,8 +182,42 @@ Deno.serve(async (req) => {
             slotDate: newSlot.slot_date, slotTime: newSlot.start_time.slice(0, 5),
             teacherName, teacherEmail, bookUrl, calendarUrl,
             oldSlotDate: oldSlotData?.slot_date, oldSlotTime: oldSlotData?.start_time?.slice(0, 5),
+            meetingLink,
           }),
         }).catch(console.error);
+      }
+
+      // GCal sync — teacher: upsert old (now available/rescheduled) + upsert new (now confirmed)
+      try {
+        if (oldSlotId) {
+          await fetch(`${supabaseUrl}/functions/v1/gcal-sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ teacherId: user.id, slotId: oldSlotId, action: 'upsert' }),
+          });
+        }
+        await fetch(`${supabaseUrl}/functions/v1/gcal-sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+          body: JSON.stringify({ teacherId: user.id, slotId: newSlotId, action: 'upsert' }),
+        });
+      } catch (_) {}
+      // Student GCal sync — delete old event, upsert new as Booked
+      if (studentEmail) {
+        try {
+          if (oldSlotId) {
+            await fetch(`${supabaseUrl}/functions/v1/student-gcal-sync`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+              body: JSON.stringify({ email: studentEmail, teacherId: user.id, slotId: oldSlotId, action: 'delete' }),
+            });
+          }
+          await fetch(`${supabaseUrl}/functions/v1/student-gcal-sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ email: studentEmail, teacherId: user.id, slotId: newSlotId, action: 'upsert' }),
+          });
+        } catch (_) {}
       }
 
       return new Response(JSON.stringify({ success: true, action: 'confirmed' }), {
@@ -219,6 +264,24 @@ Deno.serve(async (req) => {
             teacherName, teacherEmail, bookUrl, calendarUrl,
           }),
         }).catch(console.error);
+      }
+
+      // GCal sync — remove pending from both calendars
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/gcal-sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+          body: JSON.stringify({ teacherId: user.id, slotId: newSlotId, action: 'cancel' }),
+        });
+      } catch (_) {}
+      if (studentEmail) {
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/student-gcal-sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseKey}` },
+            body: JSON.stringify({ email: studentEmail, teacherId: user.id, slotId: newSlotId, action: 'delete' }),
+          });
+        } catch (_) {}
       }
 
       return new Response(JSON.stringify({ success: true, action: 'rejected' }), {

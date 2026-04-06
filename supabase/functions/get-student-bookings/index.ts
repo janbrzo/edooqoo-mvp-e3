@@ -275,11 +275,23 @@ Deno.serve(async (req) => {
           metadata: { old_slot_id: slotId, new_slot_id: newSlotId, student_email: email },
         });
 
+        // Get meeting link for reschedule confirmation email
+        let rescheduleMeetingLink = updateResult?.[0]?.meeting_link || '';
+        if (!rescheduleMeetingLink && oldSlot.student_id) {
+          const { data: css } = await supabase.from('calendar_student_settings')
+            .select('default_meeting_link')
+            .eq('student_id', oldSlot.student_id)
+            .eq('teacher_id', teacherId)
+            .maybeSingle();
+          if (css?.default_meeting_link) rescheduleMeetingLink = css.default_meeting_link;
+        }
+
         await sendEmail('reschedule_confirmation', {
           studentEmail: email, studentName,
           slotDate: newSlotData?.slot_date, slotTime: newSlotData?.start_time?.slice(0, 5),
           teacherName, teacherEmail, bookUrl, calendarUrl,
           oldSlotDate: oldSlot.slot_date, oldSlotTime: oldSlot.start_time.slice(0, 5),
+          meetingLink: rescheduleMeetingLink,
         });
 
         // GCal sync for reschedule — teacher + student
