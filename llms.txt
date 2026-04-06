@@ -1,78 +1,133 @@
 # Edooqoo — LLMs Reference
 
-> AI-powered ecosystem for English tutors. 1-on-1 adult education.
+> AI-powered ecosystem for English tutors. 1-on-1 adult education. Full docs: docs/llm-context.md
 
-## Key Architecture Decisions (April 2026)
+## Application Architecture
+- SPA: React 18 + Vite 5 + Tailwind v3 + TypeScript 5 + shadcn/ui
+- Backend: Supabase (PostgreSQL + Auth + Edge Functions + Realtime + Storage)
+- Payments: Stripe (subscriptions + one-time tokens)
+- AI: Gemini 2.5 Flash (worksheet generation), verify-open-answers (AI grading)
+- Media: generate-audio (TTS), generate-image (AI images), transcribe-audio
+- Calendar: Google Calendar API (teacher + student sync)
+- 47 pages, 53 hooks, 49 edge functions
 
-### Meeting Links — GCal-Only Model (v3)
-- **Problem**: Jitsi fallback links identical across students; edge function `create_permanent_room` blocked by slot fetch (studentId treated as slotId → 404); `studentId` not destructured from body. Batch generation skipped students with `meeting_link_mode='custom'` from migration even if they had no link. Label always showed "Default Meeting Link".
-- **Solution**: Auto-generated permanent links = only real Google Meet via Google Calendar API. No Jitsi, no deterministic hashes, no lookup URLs. Label dynamically shows Default/Custom/Meeting Link based on mode and GCal status.
-- **Batch fix (v4)**: Batch skip logic: skip student only if `meeting_link_mode='custom' AND default_meeting_link IS NOT NULL`. Edge function sets `meeting_link_mode='default'` when existing record has no `default_meeting_link`.
-- **Technical Mechanics**:
-  - `calendar_student_settings` has `generated_meeting_link` (auto from GCal), `meeting_link_mode` ('default'|'custom'), `default_meeting_link` (canonical effective link)
-  - `gcal-sync` edge function: parse body → get token → if `create_permanent_room` handle+return → else fetch slot → `delete`/`cancel`/`upsert`
-  - If teacher has no GCal connection → no auto link; only manual custom link
-  - `MeetingLinkField` in `StudentPage.tsx`: reads `meeting_link_mode` from DB (no URL heuristics)
-  - Student-facing flows use: `slot.meeting_link` > `student_settings.default_meeting_link` (no global fallback when per-student active)
-  - `src/utils/meetingLinkUtils.ts` — only legacy detection helper, no generation functions
+## Feature Modules
 
-### Calendar Stability & Bulk Actions
-- `needs_review` auto-update guards: `student_id IS NOT NULL` filter + error handler
-- Zombie slots (booked + no student) cleaned via migration
-- Confirm/Reject uses inline comment (no sub-dialogs) — `showInlineComment` + `inlineComment` state
-- **Bulk Actions** (v2): replaces "Bulk Delete". Selection restricted to one slot type (`selectionType` state). Actions: Delete (available), Confirm/Reject (pending), Complete/No Show (booked/needs_review). Uses atomic `.update().in('id', ids)`. All batch actions fire `gcal-sync` per slot.
+### Worksheet Generation Engine
+- 29 exercise types (20 basic + 5 audio + 4 picture), CEFR A1-C2
+- Gemini 2.5 Flash, streaming SSE, 200K char ai_response
+- Post-gen: processExercises, deepFixTextObjects, media generation
+- Each item carries nano_skill: {name, confidence, reason} for DSLM
+- Key: useWorksheetGeneration, generateWorksheet edge fn, WorksheetForm/
+- RAG: worksheet generator, AI worksheets, ESL materials, CEFR exercises
 
-### Reschedule Badge
-- Rescheduled slots (`cancelled_by='system'` + reason contains 'Rescheduled') show "R" badge (indigo) instead of TC
-- SlotDetailModal: "Previous lesson was rescheduled" text + indigo bg
-- GCal suffix: " — Rescheduled"
-- Legend filter: `rescheduled`
+### Homework System
+- Assign → student completes online → AI grades open-ended (verify-open-answers)
+- homework_assignments, homework_student_answers, homework_teacher_corrections tables
+- Deadline + email reminders, completion tracking, teacher review
+- Key: useInteractiveHomework, HomeworkReviewPage, send-homework-email
+- RAG: homework grading, AI evaluation, open-ended assessment
 
-### Recurring Booking Modal
-- `RecurringBookingModal.tsx`: dedicated modal for batch confirm/reject of recurring bookings from notifications
-- Checkboxes per pending slot + "Select All" toggle for selective confirm/reject
-- Partial actions keep modal open, refresh slot list, only resolve notification when all handled
-- `handleNotificationClick` routes `booking_pending` with `slot_ids.length > 1` to RecurringBookingModal
-- SlotDetailModal `getValidBatchSlotIds` always returns null — calendar clicks = single slot only
+### Flashcards & Spaced Repetition
+- SM-2 algorithm, per-card scheduling, bidirectional study
+- flashcard_sets, flashcard_cards, flashcard_progress tables
+- Generate from worksheet vocabulary or manual creation
+- Key: useFlashcardLearning, translate-flashcard, FlashcardsLearning page
+- RAG: flashcards, spaced repetition, vocabulary retention
 
-### Student Hub
-- Lesson list: unified descending sort (newest first), auto-scroll to Today
-- Reschedule: `StudentHubLessons` wires `onRescheduleStart`/`rescheduleBookingId` to `StudentBookingsSection`
-- Email displayed next to Log out in header
-- SlotDetailModal: compact layout (Date+Time grid-cols-4, Worksheet+Discount, Notes+MeetingLink side by side)
-- Realtime: `StudentBookingsSection` has Supabase realtime subscription + 5s polling fallback for live updates
+### Welcome Test & Learning Paths
+- 49 questions, 5 skill areas (grammar, vocabulary, reading, listening, speaking)
+- 4 Learning Paths: Comfort, Guided, Accelerated, Target (15 signals)
+- Result: student_learning_profiles with CEFR estimate + radar chart
+- Key: useWelcomeTest, process-welcome-test, WelcomeTestPage
+- RAG: placement test, level assessment, CEFR test
 
-### Student GCal Sync
-- `student-gcal-sync`: per-status colors (Grape/Banana/Basil/Tangerine defaults), status suffixes in summary
-- Sync toggles: `sync_booked`, `sync_pending` in student JSONB settings
-- Meeting link: single "Join: {link}" in description + location (no duplication)
-- "Sync all existing lessons" via `get-student-hub-data` action `sync_all_lessons_gcal`
-- `StudentHubSettings.tsx`: per-status color selectors (w-40, custom render), sync toggles, sync-all button
-- Triggered by: confirm/reject/cancel in SlotDetailModal, batch actions in CalendarPage, RecurringBookingModal, reschedule in get-student-bookings
+### DSLM (Dynamic Student Learning Model)
+- 4-layer: Events → Metrics → Profiles → Decisions
+- Nano-skill format: "B1.grammar.present_perfect.negative"
+- Trend detection: improving, stable, declining
+- student_events, student_learning_elements, future_worksheet_suggestions tables
+- Key: useStudentEvents (dslm/), useSkillMetrics, generate-timeline
+- RAG: progress tracking, nano-skill, mastery, learning analytics
 
-### GCal Sync — Cross-Actor
-- Reschedule: `get-student-bookings` edge function triggers both `gcal-sync` (teacher) and `student-gcal-sync` (student) on auto-reschedule and requires-confirmation reschedule
-- Confirm/Reject/Cancel: SlotDetailModal triggers `student-gcal-sync` with email from `student_notes`
-- Batch confirm/reject: CalendarPage fetches `student_notes` per slot, triggers `student-gcal-sync`
-- Teacher GCal: meeting link added to `event.description` ("Join: {link}") and `event.location`
+### Student Hub Portal
+- Email-first portal at /my/:teacherToken, 30-day localStorage session
+- Dashboard, flashcards, homework, worksheets, lessons, settings
+- Student GCal sync with per-status colors and sync toggles
+- Key: get-student-hub-data, useStudentHubData, StudentHub* pages
+- RAG: student portal, student dashboard, self-study
 
-## Edge Functions
-- `gcal-sync`: Actions: `upsert`, `delete`, `cancel`, `create_permanent_room`. Rescheduled suffix. Meeting link in description+location.
-- `student-gcal-sync`: Student calendar sync with token refresh, per-status colors, meeting link (single "Join:" line), sync toggles
-- `send-calendar-notification-email`: Booking/rejection/confirmation emails with optional teacher comments
-- `get-student-hub-data`: Student data aggregation + `sync_all_lessons_gcal` action
-- `get-student-bookings`: Reschedule triggers gcal-sync + student-gcal-sync for both old and new slots
+### Lesson Calendar & Booking
+- Teacher calendar with realtime subscription on calendar_slots
+- Statuses: available, booked, pending, completed, no_show, needs_review, deleted
+- Public booking page via public_calendar_slug
+- Weekly recurring via calendar_recurrence_rules
+- GCal teacher: gcal-sync (upsert/delete/cancel/create_permanent_room)
+- GCal student: student-gcal-sync (per-status colors, sync toggles)
+- Meeting links: GCal-only model, ghost event → hangoutLink extraction
+- Reschedule: student initiates → teacher confirm/reject → GCal sync both sides
+- Bulk Actions: batch confirm/reject/complete/no-show with GCal sync
+- Recurring Booking Modal: selective confirm/reject with checkboxes
+- Realtime: teacher subscription, student subscription + 5s polling, scrollToToday once (hasScrolledRef)
+- Key: useCalendarSlots, CalendarPage, SlotDetailModal, RecurringBookingModal, calendar-handle-reschedule-decision
+- RAG: lesson calendar, booking, Google Calendar, Google Meet, recurring, reschedule, meeting link
+
+### Token & Subscription System
+- Stripe: Free (2 tokens), Side-Gig ($9/15mo), Full-Time ($19/30mo), Pro ($79/90mo)
+- Token flow: monthly allowance → purchased tokens → rollover tokens
+- Rollover: unused monthly → rollover at cycle end
+- Key: useTokenSystem, usePlanLogic, create-subscription, stripe-webhook
+- RAG: pricing, subscription, Stripe, tokens
+
+### Interactive Worksheets & Live Sessions
+- Shareable permanent links (/shared/:token), interactive student mode
+- Live Session: realtime answer monitoring, up to 12 exercises, nano-skill mastery ratings
+- Drawing canvas overlay for annotation
+- Key: useInteractiveSharedWorksheet, useLiveSessionAnswers, useDrawingCanvas
+- RAG: interactive worksheet, live session, real-time, sharing
+
+### Student Management
+- Student profiles with knowledge entries (strengths, weaknesses, interests, goals)
+- Knowledge entries injected into AI worksheet generation prompts
+- Key: useStudents, useStudentKnowledge, StudentPage
+- RAG: student profile, personalization, knowledge base
+
+### Download System
+- HTML/PDF export, optional payment for non-subscribers
+- Key: useDownloadStatus, upload-to-r2, create-export-payment
+- RAG: worksheet download, PDF export
+
+### Admin Dashboard
+- User stats, impersonation (admin-impersonate), activity log
+- Key: AdminDashboardPage, AdminImpersonationBanner
+- RAG: admin, user management
+
+### SEO Infrastructure
+- 70+ static HTML landing pages (grammar, topics, audience, CEFR, comparisons)
+- 65+ blog articles (React index + static HTML)
+- Structured data: SoftwareApplication, FAQPage, HowTo, WebSite, BreadcrumbList
+- AI discovery: llms.txt, llms-full.txt, llms-answers.txt, openapi.yaml, knowledge-graph.json, ai-plugin.json
+- sitemap.xml (510 URLs), robots.txt (15+ AI bots)
+- Key: Index.tsx, About, Pricing, HowItWorks, ExerciseTypes, Prompts, Glossary, Resources, Blog
+- RAG: SEO, landing pages, blog, structured data, AI discovery
+
+## Edge Functions (49 total)
+generateWorksheet, generate-audio, generate-image, transcribe-audio, verify-open-answers, process-pending-ai-evaluations, process-welcome-test, generate-welcome-test-audio, generate-timeline, track-student-event, track-user-event, send-homework-email, send-homework-reminders, send-flashcard-email, send-test-email, send-worksheet-email, send-calendar-notification-email, translate-flashcard, get-student-hub-data, get-student-bookings, find-teachers-by-student-email, gcal-auth-start, gcal-auth-callback, gcal-sync, student-gcal-auth-start, student-gcal-auth-callback, student-gcal-sync, calendar-handle-reschedule-decision, calendar-export-csv, create-subscription, stripe-webhook, check-subscription-status, customer-portal, downgrade-subscription, finalize-upgrade, create-export-payment, verify-export-payment, upload-to-r2, add-tokens, admin-impersonate, add-rls-policies, delete-account, cleanup-anonymous-users, notify-generation-failure, submitFeedback, test-send-reminder, test-webhook
 
 ## File Map
-- `src/utils/meetingLinkUtils.ts` — Legacy link detection (no generation)
-- `src/hooks/useCalendarSlots.tsx` — Calendar data + realtime + auto needs_review
-- `src/components/calendar/SlotDetailModal.tsx` — Slot editing, confirm/reject (single slot only), student GCal sync
-- `src/components/calendar/RecurringBookingModal.tsx` — Batch confirm/reject with checkboxes, student GCal sync
-- `src/components/calendar/StudentBookingsSection.tsx` — Student lesson list with auto-scroll, realtime + polling
-- `src/pages/StudentPage.tsx` — Student profile, MeetingLinkField component
-- `src/pages/StudentHubSettings.tsx` — Student GCal settings, per-status colors (w-40 custom render), sync toggles
-- `src/pages/CalendarSettingsPage.tsx` — Calendar settings, meeting link toggles
-- `src/pages/CalendarPage.tsx` — Batch actions with student GCal sync
+- `src/pages/` — 47 route pages
+- `src/hooks/` — 53 business logic hooks (+dslm/)
+- `src/components/worksheet/` — 58 exercise renderers & worksheet UI
+- `src/components/homework/` — Homework assign & review
+- `src/components/student-homework/` — Student interactive homework
+- `src/components/flashcards/` — Flashcard UI
+- `src/components/calendar/` — Calendar slots, modals, booking
+- `src/components/student-hub/` — Student Hub layout
+- `src/components/welcome-test/` — Welcome test UI
+- `src/components/dslm/` — Progress tracking UI
+- `src/components/drawing/` — Drawing canvas
+- `src/components/landing/` — Landing page sections
+- `supabase/functions/` — 49 edge functions
 
 ## RAG Keywords
-meeting link, Google Meet, permanent room, per-student link, video call, Jitsi, auto-create, calendar student settings, generated_meeting_link, meeting_link_mode, create_permanent_room, ghost event, hangoutLink, reschedule badge, recurring modal, batch confirm, student gcal sync, per-status color, sync toggle, realtime, polling, selective confirm, checkbox, reschedule gcal, reschedule decision gcal sync, meeting link email, scrollToToday fix, hasScrolledRef, rescheduling loading state
+ESL, EFL, TESOL, TEFL, andragogy, private English tutor, Business English, online English teacher, language school, worksheet generator, AI worksheets, CEFR, grammar exercises, vocabulary, reading comprehension, listening, speaking, writing, homework grading, automatic assessment, placement test, spaced repetition, SM-2, flashcards, nano-skill, mastery tracking, learning analytics, lesson calendar, Google Calendar, Google Meet, booking, student portal, Student Hub, interactive worksheets, live session, drawing canvas, Stripe subscription, token system, PDF export
